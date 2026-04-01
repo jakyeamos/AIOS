@@ -1,0 +1,9 @@
+data/aios.db
+logs/hooks.log
+logs/summaries/
+logs/current_session
+logs/closed/
+staging/
+.worktrees/
+*.pyc
+__pycache__/
