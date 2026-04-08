@@ -12,5 +12,6 @@ staging/
 .superpowers/
 config/cli-keys.env
 data/rule-artifacts/
+archive/legacy-ai-os/logs/
 *.pyc
 __pycache__/
