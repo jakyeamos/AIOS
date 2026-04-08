@@ -17,7 +17,7 @@ LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
 CLOSED_DIR = os.path.expanduser("~/AIOS/logs/closed")
 SUMMARIES_DIR = os.path.expanduser("~/AIOS/logs/summaries")
 VAULT = os.path.expanduser("~/Vaults/Command-Center")
-HANDOFFS = os.path.join(VAULT, "02 AI OS/02 Session Handoffs")
+HANDOFFS = os.path.expanduser("~/AIOS/staging/session-handoffs")
 
 
 def log(msg: str) -> None:

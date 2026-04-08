@@ -17,14 +17,26 @@ DB = os.path.expanduser("~/AIOS/data/aios.db")
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
 VAULT = os.path.expanduser("~/Vaults/Command-Center")
 PROJECTS_DIR = os.path.join(VAULT, "03 Projects")
+NAME_MAP_PATH = os.path.expanduser("~/AIOS/config/project-name-map.json")
 
-PROJECT_NAME_MAP = {
+_PROJECT_NAME_MAP_FALLBACK = {
     "Fantasy": "Fantasy",
     "Bball": "Bball",
     "soundscape-app": "Soundscape",
     "remodelvision": "RemodelVision",
     "jakyeamos": "jakyeamos",
 }
+
+
+def load_project_name_map() -> dict:
+    try:
+        with open(NAME_MAP_PATH) as f:
+            return json.load(f)
+    except Exception:
+        return _PROJECT_NAME_MAP_FALLBACK
+
+
+PROJECT_NAME_MAP = load_project_name_map()
 
 
 def log(msg: str) -> None:

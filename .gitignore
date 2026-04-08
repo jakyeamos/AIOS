@@ -1,9 +1,16 @@
 data/aios.db
 logs/hooks.log
+logs/*.log
+logs/session_packet_*.md
+logs/vault-lint-latest.json
 logs/summaries/
 logs/current_session
 logs/closed/
 staging/
 .worktrees/
+.pytest_cache/
+.superpowers/
+config/cli-keys.env
+data/rule-artifacts/
 *.pyc
 __pycache__/

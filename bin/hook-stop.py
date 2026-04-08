@@ -57,6 +57,38 @@ def main() -> None:
 
         now = datetime.now(timezone.utc).isoformat()
 
+        # Flag reusable insights from this session
+        insight_count = 0
+        try:
+            insight_cur = conn.execute(
+                """
+                SELECT prompt_text, classification FROM prompts_used
+                WHERE session_id = ? AND reusable_candidate = 1
+                ORDER BY rowid
+                """,
+                (session_id,),
+            )
+            insight_rows = insight_cur.fetchall()
+            insight_count = len(insight_rows)
+            for prompt_text, classification in insight_rows:
+                conn.execute(
+                    """
+                    INSERT OR IGNORE INTO patterns
+                      (id, class, title, domain, state, confidence, source_type,
+                       first_observed_at, created_at, project_id)
+                    VALUES (?, 'prompt', ?, 'prompting', 'observation', 0.50, 'session-stop', ?, ?, ?)
+                    """,
+                    (
+                        str(uuid.uuid4()),
+                        f"Reusable prompt [{classification}]: {prompt_text[:80]}",
+                        now,
+                        now,
+                        row[1],  # project_id
+                    ),
+                )
+        except Exception as e:
+            log(f"insight flagging error: {e}")
+
         # Build summary candidate
         prompts_cur = conn.execute(
             "SELECT classification, prompt_text, reusable_candidate FROM prompts_used WHERE session_id = ? ORDER BY rowid",
@@ -89,10 +121,22 @@ def main() -> None:
         with open(candidate_path, "w") as f:
             json.dump(summary, f, indent=2)
 
+        # Find handoff file in staging (named {date}-{project}-{session_id[:8]}.md)
+        handoff_path = None
+        try:
+            staging_dir = os.path.expanduser("~/AIOS/staging/session-handoffs")
+            short_id = session_id[:8]
+            for fname in os.listdir(staging_dir):
+                if fname.endswith(f"-{short_id}.md"):
+                    handoff_path = os.path.join(staging_dir, fname)
+                    break
+        except Exception as e:
+            log(f"handoff path scan failed: {e}")
+
         # Close session in DB
         conn.execute(
-            "UPDATE sessions SET status = 'closed', ended_at = ?, summary_candidate_path = ? WHERE id = ?",
-            (now, candidate_path, session_id),
+            "UPDATE sessions SET status = 'closed', ended_at = ?, summary_candidate_path = ?, handoff_path = ? WHERE id = ?",
+            (now, candidate_path, handoff_path, session_id),
         )
 
         # Log Stop event
@@ -106,8 +150,8 @@ def main() -> None:
 
         conn.commit()
         conn.close()
-        msg = f"{len(prompts)} prompts · {len(artifacts)} artifacts captured"
-        log(f"session {session_id} closed. summary: {candidate_path}")
+        msg = f"{len(prompts)} prompts · {len(artifacts)} artifacts captured · {insight_count} insights flagged"
+        log(f"session {session_id} closed. summary: {candidate_path}. handoff: {handoff_path or 'none'}")
         print(f"AIOS · session closed · {msg}")
         subprocess.run(
             ["osascript", "-e", f'display notification "{msg}" with title "AIOS · Session Closed"'],

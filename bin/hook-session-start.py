@@ -2,6 +2,7 @@
 """
 AIOS hook: SessionStart
 Creates a session row in SQLite on session open.
+Generates a compact context packet and injects it into the session.
 Claude Code passes JSON via stdin.
 """
 
@@ -10,10 +11,15 @@ import sqlite3
 import sys
 import os
 import hashlib
+import subprocess
 from datetime import datetime, timezone
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
+VAULT = os.path.expanduser("~/Vaults/Command-Center")
+VAULT_SEARCH = os.path.expanduser("~/AIOS/bin/vault-search.py")
+PACKET_DIR = os.path.expanduser("~/AIOS/logs")
+MAX_PACKET_CHARS = 1800  # ~400 tokens
 
 
 def log(msg: str) -> None:
@@ -40,6 +46,120 @@ def get_or_create_project(conn: sqlite3.Connection, cwd: str) -> str:
     return project_id
 
 
+def get_project_name(conn: sqlite3.Connection, project_id: str) -> str:
+    cur = conn.execute("SELECT name FROM projects WHERE id = ?", (project_id,))
+    row = cur.fetchone()
+    return row[0] if row else ""
+
+
+def vault_search(args: list[str]) -> dict:
+    """Call vault-search.py and return parsed JSON result."""
+    try:
+        result = subprocess.run(
+            ["python3", VAULT_SEARCH] + args,
+            capture_output=True, text=True, timeout=8,
+        )
+        if result.returncode == 0 and result.stdout:
+            return json.loads(result.stdout)
+    except Exception:
+        pass
+    return {"results": [], "count": 0}
+
+
+def get_active_rules(conn: sqlite3.Connection, max_rules: int = 3) -> list[str]:
+    """Return top N human-approved rules by confidence for session context."""
+    try:
+        cur = conn.execute(
+            "SELECT title, body, domain, confidence FROM active_rules ORDER BY confidence DESC LIMIT ?",
+            (max_rules,),
+        )
+        rules = []
+        for title, body, domain, confidence in cur.fetchall():
+            text = body.strip() if body else title
+            rules.append(f"- [{domain}] {text}")
+        return rules
+    except Exception:
+        return []
+
+
+def get_open_bug(conn: sqlite3.Connection, project_id: str) -> str | None:
+    """Return a one-line summary of the most recent open bug for this project."""
+    cur = conn.execute(
+        "SELECT symptom, root_cause FROM bug_log WHERE project_id = ? AND status = 'open' ORDER BY created_at DESC LIMIT 1",
+        (project_id,),
+    )
+    row = cur.fetchone()
+    if not row:
+        return None
+    symptom, root_cause = row
+    if root_cause:
+        return f"{symptom} (root cause: {root_cause})"
+    return symptom
+
+
+def extract_open_actions(handoff_excerpt: str) -> list[str]:
+    """Extract unchecked action items from a handoff excerpt."""
+    actions = []
+    for line in handoff_excerpt.splitlines():
+        line = line.strip()
+        if line.startswith("- [ ]") and len(line) > 5:
+            actions.append(line[5:].strip())
+    return actions[:5]  # Cap at 5
+
+
+def generate_packet(project_name: str, project_id: str, conn: sqlite3.Connection) -> str:
+    """Assemble a compact session context packet."""
+    parts = []
+
+    # 1. Project note — extract Current Focus section only
+    note_result = vault_search(["--note", project_name])
+    if note_result.get("count", 0) > 0:
+        note_excerpt = note_result["results"][0].get("excerpt", "")
+        if note_excerpt and "<!-- No commits" not in note_excerpt and "<!-- Add context" not in note_excerpt:
+            # Extract just Current Focus if present
+            import re
+            cf_match = re.search(r"## Current Focus\n\n(.*?)(?=\n## |\Z)", note_excerpt, re.DOTALL)
+            if cf_match:
+                focus_text = cf_match.group(1).strip()
+                if focus_text and "<!--" not in focus_text and len(focus_text) > 20:
+                    parts.append(f"**Current Focus ({project_name}):**\n{focus_text[:400]}")
+
+    # 2. Open next actions from most recent handoff
+    handoff_result = vault_search(["--handoffs", project_name, "--last", "1"])
+    if handoff_result.get("count", 0) > 0:
+        excerpt = handoff_result["results"][0].get("excerpt", "")
+        actions = extract_open_actions(excerpt)
+        if actions:
+            action_lines = "\n".join(f"- [ ] {a}" for a in actions)
+            parts.append(f"**Open actions (last session):**\n{action_lines}")
+
+        # Grab outcome from most recent handoff too
+        import re
+        outcome_match = re.search(r"### Outcome\n(.+?)(?=\n###|\Z)", excerpt, re.DOTALL)
+        if outcome_match:
+            outcome = outcome_match.group(1).strip()[:200]
+            if outcome:
+                parts.append(f"**Last session outcome:** {outcome}")
+
+    # 3. Most recent open bug
+    open_bug = get_open_bug(conn, project_id)
+    if open_bug:
+        parts.append(f"**Open bug:** {open_bug[:200]}")
+
+    # 4. Active rules (human-approved patterns)
+    rules = get_active_rules(conn, max_rules=3)
+    if rules:
+        parts.append("**Active rules:**\n" + "\n".join(rules))
+
+    if not parts:
+        return ""
+
+    packet = "\n\n".join(parts)
+    if len(packet) > MAX_PACKET_CHARS:
+        packet = packet[:MAX_PACKET_CHARS] + "\n\n_(packet truncated)_"
+    return packet
+
+
 def main() -> None:
     try:
         data = json.loads(sys.stdin.read())
@@ -54,6 +174,8 @@ def main() -> None:
         log("no session_id in payload")
         sys.exit(0)
 
+    context_packet = ""
+
     try:
         conn = sqlite3.connect(DB)
         project_id = get_or_create_project(conn, cwd)
@@ -61,7 +183,6 @@ def main() -> None:
         # Check if session already exists — /clear re-fires SessionStart with same ID
         existing = conn.execute("SELECT id, status FROM sessions WHERE id=?", (session_id,)).fetchone()
         if existing:
-            # Session already exists — just update current_session file and exit
             conn.close()
             current_path = os.path.expanduser("~/AIOS/logs/current_session")
             with open(current_path, "w") as f:
@@ -90,6 +211,20 @@ def main() -> None:
             ),
         )
         conn.commit()
+
+        # Generate session packet
+        project_name = get_project_name(conn, project_id)
+        if project_name:
+            try:
+                context_packet = generate_packet(project_name, project_id, conn)
+                if context_packet:
+                    packet_path = os.path.join(PACKET_DIR, f"session_packet_{session_id}.md")
+                    with open(packet_path, "w") as f:
+                        f.write(context_packet)
+                    log(f"session packet written: {packet_path} ({len(context_packet)} chars)")
+            except Exception as e:
+                log(f"packet generation error: {e}")
+
         conn.close()
 
         # Write current session pointer
@@ -98,8 +233,14 @@ def main() -> None:
             f.write(session_id)
 
         log(f"session {session_id} opened (project: {project_id}, cwd: {cwd})")
+
     except Exception as e:
         log(f"db error: {e}")
+
+    # Output context packet for injection (empty string = no injection)
+    if context_packet:
+        output = {"context": f"<!-- AIOS session context -->\n{context_packet}"}
+        print(json.dumps(output))
 
 
 if __name__ == "__main__":
