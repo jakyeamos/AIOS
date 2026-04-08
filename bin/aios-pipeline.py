@@ -1,0 +1,252 @@
+#!/usr/bin/env python3
+"""
+AIOS: aios-pipeline.py
+Daily automation orchestrator — run as a cron job or manually.
+
+Phases (skipped individually on failure, pipeline continues):
+  1. Codex ingest      — scan ~/.codex/sessions for new rollouts
+  2. Score patterns    — recompute frequency/impact, auto-promote/demote
+  3. Bundle new rules  — generate eval bundles for newly promoted rules
+  4. Lab experiments   — run Harbor benchmarks (skipped if Docker unavailable)
+  5. Personal extract  — mine sessions/prompts for personal patterns
+  6. Vault report      — write lab-report summary to Obsidian
+
+Usage:
+  python3 ~/AIOS/bin/aios-pipeline.py [--skip-lab] [--dry-run] [--verbose]
+
+Cron (daily at 06:00):
+  0 6 * * * python3 ~/AIOS/bin/aios-pipeline.py >> ~/AIOS/logs/pipeline.log 2>&1
+"""
+import argparse
+import subprocess
+import sys
+import shutil
+from datetime import datetime, timezone
+from pathlib import Path
+
+BIN  = Path(__file__).parent
+LOG  = Path.home() / "AIOS/logs/pipeline.log"
+VAULT = Path.home() / "Vaults/Command-Center/02 AI OS"
+
+PHASES = [
+    "codex-ingest",
+    "score-patterns",
+    "bundle-rules",
+    "lab-experiments",
+    "personal-extract",
+    "vault-report",
+]
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _log(msg: str, verbose: bool = False) -> None:
+    ts = _now()
+    line = f"{ts} [pipeline] {msg}"
+    try:
+        LOG.parent.mkdir(parents=True, exist_ok=True)
+        with LOG.open("a") as f:
+            f.write(line + "\n")
+    except Exception:
+        pass
+    print(line)
+
+
+def _run(cmd: list[str], label: str, verbose: bool) -> tuple[bool, str]:
+    """Run a subprocess, return (success, output)."""
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=600,
+        )
+        output = result.stdout.strip()
+        if result.returncode != 0:
+            err = result.stderr.strip()
+            return False, f"exit {result.returncode}: {err[:300]}"
+        return True, output
+    except subprocess.TimeoutExpired:
+        return False, "timeout after 600s"
+    except Exception as exc:
+        return False, str(exc)
+
+
+def _docker_available() -> bool:
+    try:
+        result = subprocess.run(
+            ["docker", "info"], capture_output=True, timeout=10
+        )
+        return result.returncode == 0
+    except Exception:
+        return False
+
+
+def _write_vault_report(report_text: str, verbose: bool) -> None:
+    """Write lab report summary to Obsidian vault."""
+    vault_dir = VAULT / "05 Tooling"
+    vault_dir.mkdir(parents=True, exist_ok=True)
+    date_str = datetime.now().strftime("%Y-%m-%d")
+    report_path = vault_dir / f"lab-report-{date_str}.md"
+    report_path.write_text(
+        f"# Lab Report — {date_str}\n\n"
+        "```\n"
+        f"{report_text}\n"
+        "```\n"
+    )
+    if verbose:
+        _log(f"  vault report written to {report_path}", verbose)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--skip-lab", action="store_true",
+                        help="Skip lab experiment phase")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="Pass --dry-run to sub-scripts where supported")
+    parser.add_argument("--verbose", action="store_true")
+    args = parser.parse_args()
+
+    _log("=== AIOS daily pipeline starting ===")
+    results: dict[str, str] = {}
+
+    # ── Phase 1: Codex ingest ─────────────────────────────────────────────────
+    _log("phase 1/6: Codex ingest")
+    ok, out = _run(
+        ["python3", str(BIN / "cron-ingest-codex.py")],
+        "codex-ingest",
+        args.verbose,
+    )
+    if ok:
+        # Pull last line as summary
+        summary = out.splitlines()[-1] if out else "ok"
+        results["codex-ingest"] = f"ok — {summary}"
+        _log(f"  {summary}")
+    else:
+        results["codex-ingest"] = f"FAILED: {out}"
+        _log(f"  FAILED: {out}")
+
+    # ── Phase 2: Score patterns ───────────────────────────────────────────────
+    _log("phase 2/6: score patterns")
+    score_cmd = ["python3", str(BIN / "score-patterns.py")]
+    if args.dry_run:
+        score_cmd.append("--dry-run")
+    ok, out = _run(score_cmd, "score-patterns", args.verbose)
+    if ok:
+        summary = out.splitlines()[-3] if len(out.splitlines()) >= 3 else out[:120]
+        results["score-patterns"] = f"ok — {summary}"
+        _log(f"  {summary}")
+        if args.verbose:
+            for line in out.splitlines():
+                _log(f"    {line}", verbose=True)
+    else:
+        results["score-patterns"] = f"FAILED: {out}"
+        _log(f"  FAILED: {out}")
+
+    # ── Phase 3: Bundle new rules ─────────────────────────────────────────────
+    _log("phase 3/6: bundle new rules (lab_status=pending)")
+    import sqlite3
+    DB = Path.home() / "AIOS/data/aios.db"
+    try:
+        conn = sqlite3.connect(DB)
+        pending = conn.execute(
+            "SELECT id FROM patterns WHERE lab_status='pending' AND state='rule'"
+        ).fetchall()
+        conn.close()
+        if pending:
+            for (pid,) in pending:
+                ok, out = _run(
+                    ["python3", str(BIN / "generate-rule-bundle.py"),
+                     "--pattern-id", pid],
+                    "generate-rule-bundle",
+                    args.verbose,
+                )
+                if ok:
+                    results[f"bundle-{pid[:8]}"] = "ok"
+                    _log(f"  bundle generated for {pid[:8]}")
+                else:
+                    results[f"bundle-{pid[:8]}"] = f"FAILED: {out}"
+                    _log(f"  bundle FAILED for {pid[:8]}: {out}")
+        else:
+            results["bundle-rules"] = "skip — no pending rules"
+            _log("  no pending rules to bundle")
+    except Exception as exc:
+        results["bundle-rules"] = f"FAILED: {exc}"
+        _log(f"  FAILED: {exc}")
+
+    # ── Phase 4: Lab experiments ──────────────────────────────────────────────
+    _log("phase 4/6: lab experiments")
+    if args.skip_lab:
+        results["lab-experiments"] = "skip — --skip-lab"
+        _log("  skipped (--skip-lab)")
+    elif not _docker_available():
+        results["lab-experiments"] = "skip — Docker not running"
+        _log("  skipped (Docker not available)")
+    else:
+        lab_cmd = ["python3", str(BIN / "trigger-lab-experiment.py"), "--all"]
+        if args.dry_run:
+            lab_cmd.append("--dry-run")
+        ok, out = _run(lab_cmd, "lab-experiments", args.verbose)
+        if ok:
+            summary = out.splitlines()[-1] if out else "ok"
+            results["lab-experiments"] = f"ok — {summary}"
+            _log(f"  {summary}")
+        else:
+            results["lab-experiments"] = f"FAILED: {out}"
+            _log(f"  FAILED: {out}")
+
+    # ── Phase 5: Personal pattern extraction ─────────────────────────────────
+    _log("phase 5/6: personal pattern extraction")
+    extract_bin = BIN / "extract-personal-patterns.py"
+    if extract_bin.exists():
+        ok, out = _run(
+            ["python3", str(extract_bin)],
+            "extract-personal",
+            args.verbose,
+        )
+        if ok:
+            summary = out.splitlines()[-1] if out else "ok"
+            results["personal-extract"] = f"ok — {summary}"
+            _log(f"  {summary}")
+        else:
+            results["personal-extract"] = f"FAILED: {out}"
+            _log(f"  FAILED: {out}")
+    else:
+        results["personal-extract"] = "skip — extract-personal-patterns.py not found"
+        _log("  skipped (extract-personal-patterns.py not found)")
+
+    # ── Phase 6: Vault report ─────────────────────────────────────────────────
+    _log("phase 6/6: vault report")
+    ok, report_text = _run(
+        ["python3", str(BIN / "lab-report.py"), "--limit", "20"],
+        "lab-report",
+        args.verbose,
+    )
+    if ok and report_text.strip():
+        try:
+            _write_vault_report(report_text, args.verbose)
+            results["vault-report"] = "ok"
+            _log("  lab report written to vault")
+        except Exception as exc:
+            results["vault-report"] = f"FAILED: {exc}"
+            _log(f"  vault write FAILED: {exc}")
+    else:
+        results["vault-report"] = f"FAILED: {report_text}"
+        _log(f"  lab-report FAILED: {report_text}")
+
+    # ── Summary ───────────────────────────────────────────────────────────────
+    _log("=== pipeline complete ===")
+    ok_count  = sum(1 for v in results.values() if v.startswith("ok"))
+    skip_count = sum(1 for v in results.values() if v.startswith("skip"))
+    fail_count = sum(1 for v in results.values() if v.startswith("FAILED"))
+    _log(f"  {ok_count} ok, {skip_count} skipped, {fail_count} failed")
+    for phase, status in results.items():
+        _log(f"  {phase:<30} {status[:80]}")
+
+    sys.exit(0 if fail_count == 0 else 1)
+
+
+if __name__ == "__main__":
+    main()
