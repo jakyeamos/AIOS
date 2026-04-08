@@ -1,10 +1,19 @@
 # AI History Import/Archive Subsystem — Design Spec
 
 **Date:** 2026-04-01  
-**Status:** Draft — pending user approval  
-**Scope:** Additive module for importing ChatGPT and Claude export conversations into the existing hybrid AIOS architecture  
+**Status:** Implemented in `/Users/jakyeamos/AIOS` main worktree; real ChatGPT import still pending export availability  
+**Scope:** Additive module for importing ChatGPT exports, Claude export-bundle conversations, and Codex local session history into the existing hybrid AIOS architecture  
 **Scale:** Hundreds of conversations  
 **Pipeline approach:** Script-driven batch pipeline with staged review (Approach A)
+
+## Implementation Update (2026-04-02)
+
+- Completed live imports:
+  - Claude batch `20260402033854--claude`: 145 total, 59 promoted, 86 deferred
+  - Codex batch `20260402034120--codex`: 314 total, 57 promoted, 257 deferred
+- ChatGPT real import is still pending because no export is available yet.
+- Deferred semantics were refined during implementation: `deferred` means individually thin, not discarded. Deferred notes remain staged, are included in aggregate pattern analysis, and can be promoted later with `promote-imports.sh --include-deferred`.
+- The actual execution order diverged from the original plan because ChatGPT data was unavailable: infrastructure first, then review/promote scripts, dedup coverage, Claude import, Codex import, and health check integration.
 
 ---
 
@@ -29,7 +38,7 @@ Imported AI history is a **third category** — not operational state, not proje
 09 Archive/
   AI History/
     _Index.md                         ← coverage table + links to batch notes (manually maintained)
-    _Batch-20260401.md                ← batch synthesis note (one per import run)
+    _Batch-20260401104530--chatgpt.md ← batch synthesis note (one per import run)
     ChatGPT/
       2024/
         2024-03-15-context-windows-tradeoffs.md
@@ -41,6 +50,9 @@ Imported AI history is a **third category** — not operational state, not proje
         2025-01-10-soundscape-architecture.md
       2026/
         ...
+    Codex/
+      2026/
+        2026-04-01-ai-history-import-plan--4f83c2a1.md
 
 06 Knowledge/
   Concepts/
@@ -50,7 +62,7 @@ Imported AI history is a **third category** — not operational state, not proje
 ```
 
 **Rules:**
-- Conversations: `09 Archive/AI History/{Source}/{YYYY}/YYYY-MM-DD-{slug}.md`
+- Conversations: `09 Archive/AI History/{Source}/{YYYY}/YYYY-MM-DD-{slug}--{id8}.md`
 - Entity pages: `06 Knowledge/Concepts/` (ideas, patterns) or `06 Knowledge/References/` (tools, APIs, people)
 - Entity pages are never created by the pipeline. They are created manually when a concept has appeared in 3+ conversations and you have something personal to say about it.
 - `_Index.md` is hand-maintained. `_Batch-{id}.md` notes are scaffolded by the pipeline and filled in by hand.
@@ -61,9 +73,11 @@ Imported AI history is a **third category** — not operational state, not proje
 ## Ingestion Pipeline
 
 ```
-~/AIOS/staging/ai-history/raw/         ← raw export files (permanent, never deleted)
+~/AIOS/staging/ai-history/raw/         ← raw export files / snapshots (permanent, never deleted)
     chatgpt-export-2024-03.json
-    claude-export-2026-01.json
+    claude-export-2026-01/conversations.json
+    codex-export-2026-04/session_index.jsonl
+    codex-export-2026-04/rollout-2026-04-01T16-54-50-019d4ad3-....jsonl
 
         │
         ▼  import-ai-history.py --source chatgpt --file raw/... [--dry-run]
@@ -72,14 +86,15 @@ Imported AI history is a **third category** — not operational state, not proje
 ~/AIOS/staging/ai-history/ready/       ← transformed markdown (disposable, re-generable)
     ChatGPT/2024/
         2024-03-15-context-windows-tradeoffs.md
-    import-batch-20260401.json          ← batch metadata (also written to SQLite)
+    Codex/2026/
+        2026-04-01-ai-history-import-plan--4f83c2a1.md
 
         │
-        ▼  review-imports.sh --batch 20260401
-        │  (read-only: stats, flags, deferred list, entity candidates)
+        ▼  review-imports.sh --batch 20260401104530--chatgpt
+        │  (read-only: stats, flags, deferred list, aggregate topic candidates)
         │
 
-        ▼  promote-imports.sh --batch 20260401 [--exclude slug1,slug2]
+        ▼  promote-imports.sh --batch 20260401104530--chatgpt [--exclude id1,id2] [--include-deferred]
         │  (copies approved notes to vault, updates SQLite, scaffolds batch synthesis note)
         │
 
@@ -87,11 +102,14 @@ Imported AI history is a **third category** — not operational state, not proje
 ```
 
 **Pipeline rules:**
-- Raw exports live permanently in `raw/`. They are the ground truth.
+- Raw exports or raw local-history snapshots live permanently in `raw/`. They are the ground truth.
 - `ready/` is disposable. Delete and re-run if output quality is wrong.
 - Nothing enters the vault until `promote-imports.sh` is explicitly invoked.
 - Review is per-batch (stats + flags), not per-note. The batch is the unit of approval.
+- Aggregate topic analysis should include both `keep` and `deferred` notes so thin conversations can still reveal recurring patterns.
 - The pipeline marks conversations as `deferred` (not `rejected`) automatically. Only humans set `rejected`.
+- For Claude, the source of truth is the exported `conversations.json` file inside the bundle directory.
+- For Codex, the source of truth is the copied JSONL rollout/session snapshot from `~/.codex`, not Chromium cache files.
 
 ---
 
@@ -102,7 +120,7 @@ Imported AI history is a **third category** — not operational state, not proje
 ```yaml
 ---
 type: ai-history
-source: chatgpt            # chatgpt | claude
+source: chatgpt            # chatgpt | claude | codex
 model: gpt-4               # from export metadata if available
 date: 2024-03-15
 title: "Context Windows and Retrieval Tradeoffs"
@@ -111,8 +129,8 @@ tags:
   - ai-history/chatgpt
   - topic/context-windows
   - topic/retrieval
-import_batch: 20260401
-quality: keep              # keep | deferred (pipeline judgment)
+import_batch: 20260401104530--chatgpt
+quality: keep              # keep | deferred (pipeline judgment; deferred = thin individually, still useful in aggregate)
 ---
 
 ## Summary
@@ -153,7 +171,7 @@ Leave blank at import time if not inferrable — this is the section to fill in 
 ```yaml
 ---
 type: archive-batch
-batch_id: 20260401
+batch_id: 20260401104530--chatgpt
 source: chatgpt
 date_range: "2023-01 → 2025-12"
 conversation_count: 312
@@ -166,6 +184,10 @@ deferred_count: 25
 Freeform. Written by hand after reviewing the batch.
 
 ## Recurring Themes
+
+- ...
+
+## Thin Conversation Patterns
 
 - ...
 
@@ -187,7 +209,7 @@ Freeform. Written by hand after reviewing the batch.
 - [ ] rag-vs-full-context (appeared 5 times)
 ```
 
-This note is scaffolded by `promote-imports.sh` (counts auto-filled from SQLite). The prose sections are filled in by hand. This is where historical data becomes a brain instead of a library.
+This note is scaffolded by `promote-imports.sh` (counts auto-filled from SQLite). The prose sections are filled in by hand. It should synthesize both promoted notes and any repeated thin-conversation patterns that surfaced during review. This is where historical data becomes a brain instead of a library.
 
 ---
 
@@ -234,16 +256,17 @@ updated: 2026-04-01
 
 | Source | Date Range | Count |
 |--------|------------|-------|
-| ChatGPT | 2023-01 → 2025-12 | 312 |
-| Claude | 2025-06 → 2026-03 | 87 |
+| Claude | 2025-02 → 2026-03 | 59 |
+| Codex | 2026-02 → 2026-04 | 57 |
 
 ## Import Batches
 
-- [[_Batch-20260401]] — ChatGPT full export (312 conversations)
+- [[_Batch-20260402033854--claude]] — Claude export bundle (59 promoted, 86 deferred)
+- [[_Batch-20260402034120--codex]] — Codex local session snapshot (57 promoted, 257 deferred)
 
 ## Notes
 
-<!-- Themes, notable clusters, what's missing -->
+<!-- Themes, notable clusters, what's missing; ChatGPT real import still pending -->
 ```
 
 ---
@@ -268,7 +291,7 @@ updated: 2026-04-01
 
 ### Entity creation process
 
-The pipeline flags entity candidates in batch metadata (slug + count). It does not create the page. You create the page when you find it useful, not when the threshold fires.
+The review step flags entity candidates from repeated topic tags derived from the title plus the first substantive exchange. It does not create the page. You create the page when you find it useful, not when the threshold fires.
 
 ---
 
@@ -276,13 +299,15 @@ The pipeline flags entity candidates in batch metadata (slug + count). It does n
 
 ```sql
 CREATE TABLE ai_history_imports (
-  id                TEXT PRIMARY KEY,   -- SHA256[:12] of source+date+title
-  batch_id          TEXT NOT NULL,      -- e.g. "20260401"
-  source            TEXT NOT NULL,      -- chatgpt | claude
+  id                TEXT PRIMARY KEY,   -- SHA256[:12] of source+source_id+date+title
+  batch_id          TEXT NOT NULL,      -- e.g. "20260401104530--chatgpt"
+  source            TEXT NOT NULL,      -- chatgpt | claude | codex
+  source_id         TEXT,               -- source-native conversation/session id
   model             TEXT,
   conversation_date TEXT NOT NULL,
   title             TEXT NOT NULL,
   slug              TEXT NOT NULL,
+  topic_tags        TEXT NOT NULL DEFAULT '[]',
   vault_path        TEXT,               -- NULL until promoted
   quality           TEXT DEFAULT 'keep',  -- keep | deferred (pipeline judgment; deferred = flagged low-value)
   status            TEXT DEFAULT 'staged',   -- staged | promoted | rejected (workflow state)
@@ -303,7 +328,7 @@ CREATE INDEX idx_imports_date   ON ai_history_imports(conversation_date);
 
 **Quality vocabulary (`quality` column — pipeline judgment):**
 - `keep` — pipeline judged substantive; default for conversations above length/exchange threshold
-- `deferred` — pipeline flagged as possibly low-value (short, single exchange); not promoted by default but retained in SQLite and raw export; can be promoted later
+- `deferred` — pipeline flagged as individually thin (short, single exchange, or low assistant word count); not promoted by default but retained in SQLite and raw export, included in pattern analysis, and promotable later
 
 **What stays in SQLite only:** batch metadata, promotion status, date/source/title, quality flag, vault path.  
 **What stays in markdown only:** conversation content, summaries, key exchanges, why it mattered.
@@ -363,21 +388,22 @@ This script does not write to the vault. It surfaces candidates for you to decid
 
 ## Implementation Plan
 
-### Phase 1 — Infrastructure (do first)
-1. Fix Open Actions dashboard (`FROM "" AND -"09 Archive"`)
-2. Create vault folder structure (`09 Archive/AI History/ChatGPT/`, `Claude/`, `_Index.md`)
-3. Create staging directories (`~/AIOS/staging/ai-history/raw/`, `ready/`)
-4. Add `ai_history_imports` table to `aios.db` via migration script
-5. Write `import-ai-history.py` — ChatGPT format, `--dry-run` mode first
-6. Write `review-imports.sh` — read-only batch stats from SQLite
-7. Write `promote-imports.sh` — vault promotion + batch synthesis note scaffold
+### Phase 1 — Infrastructure (completed 2026-04-02)
+1. Fix Open Actions dashboard (`FROM "" AND -"09 Archive"`) [done]
+2. Create vault folder structure (`09 Archive/AI History/ChatGPT/`, `Claude/`, `Codex/`, `_Index.md`) [done]
+3. Create staging directories (`~/AIOS/staging/ai-history/raw/`, `ready/`) [done]
+4. Add `ai_history_imports` table to `aios.db` via migration script [done]
+5. Write `import-ai-history.py` with `--dry-run` mode [done]
+6. Write `review-imports.sh` — read-only batch stats from SQLite [done]
+7. Write `promote-imports.sh` — vault promotion + batch synthesis note scaffold [done]
 
-### Phase 2 — Claude format + quality
-8. Add Claude export format support to `import-ai-history.py`
-9. Add quality scoring (flag single-exchange, <200 word conversations as `deferred`)
-10. Add deduplication check (slug + date collision in SQLite before staging)
-11. Update `health_check.sh` with import stats block
-12. Add `New AI History Import` QuickAdd choice (optional — for single manual imports)
+### Phase 2 — Claude + Codex format + quality (completed 2026-04-02 except real ChatGPT import)
+8. Add Claude `conversations.json` export support to `import-ai-history.py` [done]
+9. Add Codex local JSONL rollout/session support to `import-ai-history.py` [done]
+10. Add quality scoring (flag single-exchange, <200 word conversations as `deferred`) [done]
+11. Add deduplication check (source-native ID collision in SQLite before staging) [done at unit level and live for Claude; ChatGPT rerun still pending export]
+12. Update `health_check.sh` with import stats block [done]
+13. Add `New AI History Import` QuickAdd choice (optional — for single manual imports) [not implemented; still optional]
 
 ### Phase 3 — Resurfacing and enrichment (later)
 - `resurface.sh` with `--month`, `--concepts`, `--project` modes
@@ -391,23 +417,23 @@ This script does not write to the vault. It surfaces candidates for you to decid
 
 1. **Fix Open Actions dashboard.** Add `AND -"09 Archive"` to the `FROM` clause. One line. Do this before anything else.
 
-2. **Create vault structure.** `mkdir -p` for `09 Archive/AI History/ChatGPT` and `Claude`. Create `_Index.md` with coverage table and batch links sections, empty.
+2. **Create vault structure.** `mkdir -p` for `09 Archive/AI History/ChatGPT`, `Claude`, and `Codex`. Create `_Index.md` with coverage table and batch links sections, empty.
 
 3. **Create staging directories.** `mkdir -p ~/AIOS/staging/ai-history/raw ~/AIOS/staging/ai-history/ready`.
 
 4. **Write and run migration.** `~/AIOS/bin/migrate-add-ai-history.sh` — runs the `CREATE TABLE ai_history_imports` DDL against `aios.db`. Run once.
 
-5. **Copy first raw export to staging.** Put `conversations.json` (ChatGPT) into `~/AIOS/staging/ai-history/raw/`. Inspect the JSON structure — identify which fields map to date, title, model, message content. Note the format quirks before writing the parser.
+5. **Copy the first available raw export to staging.** Use the real export or snapshot that actually exists first. In practice, Claude and Codex were completed before ChatGPT because the ChatGPT export was not available.
 
 6. **Write parser skeleton with `--dry-run`.** `import-ai-history.py --source chatgpt --file raw/... --dry-run` prints what it would generate (title, slug, date, quality) without writing. Validate on 10 conversations.
 
 7. **Add markdown writer.** Extend parser to write conversation notes to `ready/{Source}/{YYYY}/`. Check frontmatter on 5 sample notes manually — especially `type: ai-history` and no forbidden fields.
 
-8. **Write `review-imports.sh`.** Queries `ai_history_imports` for a batch. Prints: total, date range, deferred count, deferred examples, entity candidates (topics appearing 3+). Read-only.
+8. **Write `review-imports.sh`.** Queries `ai_history_imports` for a batch. Prints: total, date range, deferred count, deferred examples, keep IDs, aggregate topic candidates across keep and deferred, and deferred-only clusters. Read-only.
 
-9. **Write `promote-imports.sh`.** Copies approved notes from `ready/` to vault. Updates SQLite `status` to `promoted`. Scaffolds `_Batch-{id}.md` with auto-filled counts. Prints summary.
+9. **Write `promote-imports.sh`.** Copies approved notes from `ready/` to vault. Updates SQLite `status` to `promoted`. Scaffolds `_Batch-{id}.md` with auto-filled counts. Supports `--include-deferred` when thin conversations should be preserved in the vault as part of a broader pattern layer.
 
-10. **Full pipeline dry run on 20-30 conversations.** Run parse → stage → review → promote on a small slice. Verify: notes land in `09 Archive/AI History/`, Open Actions dashboard shows nothing from archive, Obsidian search finds the imported notes, `aios.db` reflects promoted status.
+10. **Run the full pipeline on the first available source.** Run parse → stage → review → promote on the real source data you actually have. Verify: notes land in `09 Archive/AI History/`, Open Actions dashboard shows nothing from archive, Obsidian search finds the imported notes, and `aios.db` reflects promoted status.
 
 ---
 

@@ -1,0 +1,149 @@
+[
+  {
+    "uuid": "claude-conv-aaa",
+    "name": "Soundscape Architecture Discussion",
+    "summary": "",
+    "created_at": "2025-01-10T15:30:00.000000+00:00",
+    "updated_at": "2025-01-10T16:00:00.000000+00:00",
+    "account": {"uuid": "user-uuid"},
+    "chat_messages": [
+      {
+        "uuid": "msg-1",
+        "text": "I am building a music social platform and need to decide whether to use event sourcing or a traditional CRUD model for the feed.",
+        "content": [
+          {
+            "start_timestamp": "2025-01-10T15:30:00.000000+00:00",
+            "stop_timestamp": "2025-01-10T15:30:00.000000+00:00",
+            "flags": null,
+            "type": "text",
+            "text": "I am building a music social platform and need to decide whether to use event sourcing or a traditional CRUD model for the feed.",
+            "citations": []
+          }
+        ],
+        "sender": "human",
+        "created_at": "2025-01-10T15:30:00.000000+00:00",
+        "updated_at": "2025-01-10T15:30:00.000000+00:00",
+        "attachments": [],
+        "files": [{"file_name": "architecture-diagram.png"}]
+      },
+      {
+        "uuid": "msg-2",
+        "text": "",
+        "content": [
+          {
+            "start_timestamp": "2025-01-10T15:31:00.000000+00:00",
+            "stop_timestamp": "2025-01-10T15:31:01.000000+00:00",
+            "flags": null,
+            "type": "thinking",
+            "thinking": "Comparing event sourcing and CRUD tradeoffs for a feed system.",
+            "summaries": [{"summary": "Comparing architecture tradeoffs"}],
+            "cut_off": false,
+            "truncated": false,
+            "alternative_display_type": null,
+            "signature": null
+          },
+          {
+            "start_timestamp": "2025-01-10T15:31:01.000000+00:00",
+            "stop_timestamp": "2025-01-10T15:31:02.000000+00:00",
+            "flags": null,
+            "type": "text",
+            "text": "For a music social feed the tradeoffs break down like this. Event sourcing gives you an immutable audit log and makes it easy to rebuild materialized views when your feed algorithm changes. The downside is operational complexity: you need a projection layer and your reads become eventually consistent. CRUD is simpler to start with and easier to reason about for a small team.",
+            "citations": []
+          },
+          {
+            "start_timestamp": "2025-01-10T15:31:02.000000+00:00",
+            "stop_timestamp": "2025-01-10T15:31:02.500000+00:00",
+            "flags": null,
+            "type": "tool_use",
+            "id": null,
+            "name": "web_search",
+            "input": {"query": "event sourcing feed architecture tradeoffs"},
+            "message": "Searching the web",
+            "integration_name": null,
+            "integration_icon_url": null,
+            "icon_name": null,
+            "context": null,
+            "display_content": null,
+            "approval_options": null,
+            "approval_key": null,
+            "is_mcp_app": null,
+            "mcp_server_url": null
+          },
+          {
+            "start_timestamp": null,
+            "stop_timestamp": null,
+            "flags": null,
+            "type": "tool_result",
+            "tool_use_id": null,
+            "name": "web_search",
+            "content": [
+              {
+                "type": "knowledge",
+                "title": "Event Sourcing Overview",
+                "url": "https://example.com/event-sourcing",
+                "text": "Event sourcing keeps an append-only record of changes.",
+                "is_citable": true
+              }
+            ]
+          },
+          {
+            "start_timestamp": null,
+            "stop_timestamp": null,
+            "flags": null,
+            "type": "token_budget"
+          }
+        ],
+        "sender": "assistant",
+        "created_at": "2025-01-10T15:31:00.000000+00:00",
+        "updated_at": "2025-01-10T15:31:00.000000+00:00",
+        "attachments": [
+          {
+            "file_name": "decision-notes.html",
+            "file_size": 1024,
+            "file_type": "text/html",
+            "extracted_content": "<html><body><p>Architecture notes</p></body></html>"
+          }
+        ],
+        "files": []
+      },
+      {
+        "uuid": "msg-3",
+        "text": "What about the real-time aspects? We need listeners to see new tracks as they are posted.",
+        "content": [
+          {
+            "start_timestamp": "2025-01-10T15:32:00.000000+00:00",
+            "stop_timestamp": "2025-01-10T15:32:00.000000+00:00",
+            "flags": null,
+            "type": "text",
+            "text": "What about the real-time aspects? We need listeners to see new tracks as they are posted.",
+            "citations": []
+          }
+        ],
+        "sender": "human",
+        "created_at": "2025-01-10T15:32:00.000000+00:00",
+        "updated_at": "2025-01-10T15:32:00.000000+00:00",
+        "attachments": [],
+        "files": []
+      },
+      {
+        "uuid": "msg-4",
+        "text": "For real-time delivery the architecture choice is separate from CRUD versus event sourcing. You want a pub-sub layer. The simplest path is Postgres LISTEN/NOTIFY or a Redis pub-sub channel that your API server subscribes to. Both approaches integrate well with WebSockets.",
+        "content": [
+          {
+            "start_timestamp": "2025-01-10T15:33:00.000000+00:00",
+            "stop_timestamp": "2025-01-10T15:33:00.000000+00:00",
+            "flags": null,
+            "type": "text",
+            "text": "For real-time delivery the architecture choice is separate from CRUD versus event sourcing. You want a pub-sub layer. The simplest path is Postgres LISTEN/NOTIFY or a Redis pub-sub channel that your API server subscribes to. Both approaches integrate well with WebSockets.",
+            "citations": []
+          }
+        ],
+        "sender": "assistant",
+        "created_at": "2025-01-10T15:33:00.000000+00:00",
+        "updated_at": "2025-01-10T15:33:00.000000+00:00",
+        "attachments": [],
+        "files": []
+      }
+    ]
+  }
+]

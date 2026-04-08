@@ -1,0 +1,97 @@
+[
+  {
+    "title": "Context Windows and Retrieval",
+    "create_time": 1710460800.0,
+    "update_time": 1710464400.0,
+    "id": "conv-aaa",
+    "conversation_id": "conv-aaa",
+    "mapping": {
+      "node-sys": {
+        "id": "node-sys",
+        "message": {
+          "id": "node-sys",
+          "author": {"role": "system"},
+          "content": {"content_type": "text", "parts": [""]},
+          "create_time": 1710460800.0
+        },
+        "parent": null,
+        "children": ["node-u1"]
+      },
+      "node-u1": {
+        "id": "node-u1",
+        "message": {
+          "id": "node-u1",
+          "author": {"role": "user"},
+          "content": {"content_type": "text", "parts": ["How do context windows affect retrieval quality in RAG systems?"]},
+          "create_time": 1710460801.0
+        },
+        "parent": "node-sys",
+        "children": ["node-a1"]
+      },
+      "node-a1": {
+        "id": "node-a1",
+        "message": {
+          "id": "node-a1",
+          "author": {"role": "assistant"},
+          "content": {"content_type": "text", "parts": ["Context windows have a significant impact on retrieval quality in RAG systems. When the context window is too small you cannot fit enough retrieved chunks to give the model sufficient information to synthesize a good answer. When it is too large the model may lose focus on the most relevant parts of the retrieved context. The sweet spot depends on the density of your documents and the nature of the queries. For most production RAG systems a 4k to 8k context window works well with chunk sizes around 512 tokens and top-k retrieval of 5 to 10 chunks."]},
+          "create_time": 1710460802.0
+        },
+        "parent": "node-u1",
+        "children": ["node-u2"]
+      },
+      "node-u2": {
+        "id": "node-u2",
+        "message": {
+          "id": "node-u2",
+          "author": {"role": "user"},
+          "content": {"content_type": "text", "parts": ["What happens when the retrieved context contradicts the model's training?"]},
+          "create_time": 1710460803.0
+        },
+        "parent": "node-a1",
+        "children": ["node-a2"]
+      },
+      "node-a2": {
+        "id": "node-a2",
+        "message": {
+          "id": "node-a2",
+          "author": {"role": "assistant"},
+          "content": {"content_type": "text", "parts": ["This is called retrieval-training conflict and it is one of the harder problems in RAG. Models generally follow retrieved context over parametric knowledge when the retrieved text is authoritative and clearly stated. But when the conflict is subtle or the retrieved text is ambiguous the model may hallucinate a blend of both sources. The best mitigations are to use explicit instruction framing like answer only from the provided context and to include confidence signaling in your retrieval pipeline so the model knows when evidence is weak."]},
+          "create_time": 1710460804.0
+        },
+        "parent": "node-u2",
+        "children": []
+      }
+    }
+  },
+  {
+    "title": "Hi",
+    "create_time": 1710460900.0,
+    "update_time": 1710460901.0,
+    "id": "conv-bbb",
+    "conversation_id": "conv-bbb",
+    "mapping": {
+      "node-u1": {
+        "id": "node-u1",
+        "message": {
+          "id": "node-u1",
+          "author": {"role": "user"},
+          "content": {"content_type": "text", "parts": ["Hi"]},
+          "create_time": 1710460900.0
+        },
+        "parent": null,
+        "children": ["node-a1"]
+      },
+      "node-a1": {
+        "id": "node-a1",
+        "message": {
+          "id": "node-a1",
+          "author": {"role": "assistant"},
+          "content": {"content_type": "text", "parts": ["Hello! How can I help?"]},
+          "create_time": 1710460901.0
+        },
+        "parent": "node-u1",
+        "children": []
+      }
+    }
+  }
+]
