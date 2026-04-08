@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "_experiment": "include-recent-decision",
+  "session_packet": {
+    "max_chars": 1800,
+    "include_open_actions": true,
+    "include_recent_bug": true,
+    "include_recent_decision": true
+  },
+  "prompt_retrieval": {
+    "enabled": true,
+    "debug": {
+      "search_bug_log": true,
+      "search_archive": true,
+      "max_results": 3
+    },
+    "plan": {
+      "search_handoff_decisions": true,
+      "max_handoffs": 2
+    },
+    "refactor": {
+      "search_handoff_decisions": true,
+      "max_handoffs": 2
+    },
+    "implement": {
+      "search_handoff_next_actions": true,
+      "max_handoffs": 2
+    },
+    "review": {
+      "search_handoff_decisions": true,
+      "max_handoffs": 2
+    }
+  },
+  "reusable_prompt_hint": {
+    "enabled": true,
+    "min_similarity": 0.6
+  }
+}
