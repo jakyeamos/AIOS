@@ -6,13 +6,14 @@ Generates a compact context packet and injects it into the session.
 Claude Code passes JSON via stdin.
 """
 
-import json
-import sqlite3
-import sys
-import os
 import hashlib
+import json
+import os
+import sqlite3
 import subprocess
-from datetime import datetime, timezone
+import sys
+from datetime import UTC, datetime
+from pathlib import Path
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
@@ -23,7 +24,7 @@ MAX_PACKET_CHARS = 1800  # ~400 tokens
 
 
 def log(msg: str) -> None:
-    ts = datetime.now(timezone.utc).isoformat()
+    ts = datetime.now(UTC).isoformat()
     try:
         with open(LOG, "a") as f:
             f.write(f"{ts} [session-start] {msg}\n")
@@ -74,12 +75,25 @@ def get_active_rules(conn: sqlite3.Connection, max_rules: int = 3) -> list[str]:
             (max_rules,),
         )
         rules = []
-        for title, body, domain, confidence in cur.fetchall():
+        for title, body, domain, _confidence in cur.fetchall():
             text = body.strip() if body else title
             rules.append(f"- [{domain}] {text}")
         return rules
     except Exception:
         return []
+
+
+def get_review_queue_hint(conn: sqlite3.Connection) -> str | None:
+    """Return a one-line hint if patterns are awaiting human approval."""
+    try:
+        count = conn.execute(
+            "SELECT COUNT(*) FROM patterns WHERE state='knowledge'"
+        ).fetchone()[0]
+        if count > 0:
+            return f"{count} pattern(s) in review queue — run: approve-pattern --list"
+        return None
+    except Exception:
+        return None
 
 
 def get_open_bug(conn: sqlite3.Connection, project_id: str) -> str | None:
@@ -107,7 +121,47 @@ def extract_open_actions(handoff_excerpt: str) -> list[str]:
     return actions[:5]  # Cap at 5
 
 
-def generate_packet(project_name: str, project_id: str, conn: sqlite3.Connection) -> str:
+def get_cts_context(cwd: str, objective: str) -> str | None:
+    repo_root = Path(cwd).expanduser().resolve()
+    try:
+        root = Path(__file__).resolve().parents[1]
+        if str(root) not in sys.path:
+            sys.path.insert(0, str(root))
+        from services.cts import get_minimal_context  # noqa: PLC0415
+    except Exception as e:
+        log(f"cts unavailable: {e}")
+        return None
+    try:
+        payload = get_minimal_context(
+            repo_path=str(repo_root),
+            task=objective or "session startup context",
+            changed_files=[],
+            max_tokens=240,
+        )
+    except Exception as e:
+        log(f"cts context lookup failed: {e}")
+        return None
+    if payload.get("index_status") != "current":
+        return None
+    nodes = payload.get("directly_relevant_nodes", [])[:6]
+    node_text = "\n".join(f"- `{node}`" for node in nodes) if nodes else "- (none)"
+    confidence_note = payload.get("confidence_note") or "No confidence caveats."
+    return (
+        "**Code Topology (CTS):**\n"
+        f"- Architecture: {payload.get('architecture_summary', '')}\n"
+        f"- Estimated blast radius: {payload.get('estimated_blast_radius', 0)} files\n"
+        f"- Confidence: {confidence_note}\n"
+        f"- Relevant nodes:\n{node_text}"
+    )
+
+
+def generate_packet(
+    project_name: str,
+    project_id: str,
+    conn: sqlite3.Connection,
+    cwd: str,
+    objective: str,
+) -> str:
     """Assemble a compact session context packet."""
     parts = []
 
@@ -151,6 +205,16 @@ def generate_packet(project_name: str, project_id: str, conn: sqlite3.Connection
     if rules:
         parts.append("**Active rules:**\n" + "\n".join(rules))
 
+    # 5. Pattern review queue hint (shown only when actionable)
+    review_hint = get_review_queue_hint(conn)
+    if review_hint:
+        parts.append(f"**Review queue:** {review_hint}")
+
+    # 6. Code Topology Service context (only when index is current)
+    cts_context = get_cts_context(cwd, objective)
+    if cts_context:
+        parts.append(cts_context)
+
     if not parts:
         return ""
 
@@ -169,6 +233,7 @@ def main() -> None:
 
     session_id = data.get("session_id", "")
     cwd = data.get("cwd", os.getcwd())
+    objective = data.get("objective", "")
 
     if not session_id:
         log("no session_id in payload")
@@ -196,7 +261,7 @@ def main() -> None:
               (id, project_id, tool, started_at, status, cwd)
             VALUES (?, ?, 'claude-code', ?, 'open', ?)
             """,
-            (session_id, project_id, datetime.now(timezone.utc).isoformat(), cwd),
+            (session_id, project_id, datetime.now(UTC).isoformat(), cwd),
         )
         conn.execute(
             """
@@ -206,7 +271,7 @@ def main() -> None:
             (
                 f"{session_id}-start",
                 session_id,
-                datetime.now(timezone.utc).isoformat(),
+                datetime.now(UTC).isoformat(),
                 json.dumps(data),
             ),
         )
@@ -216,7 +281,13 @@ def main() -> None:
         project_name = get_project_name(conn, project_id)
         if project_name:
             try:
-                context_packet = generate_packet(project_name, project_id, conn)
+                context_packet = generate_packet(
+                    project_name=project_name,
+                    project_id=project_id,
+                    conn=conn,
+                    cwd=cwd,
+                    objective=objective,
+                )
                 if context_packet:
                     packet_path = os.path.join(PACKET_DIR, f"session_packet_{session_id}.md")
                     with open(packet_path, "w") as f:

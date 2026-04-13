@@ -1,0 +1,11 @@
+{
+  "id": "python-blast-001",
+  "query_type": "impact_radius",
+  "prompt": {
+    "repo_root": "/Users/jakyeamos/AIOS",
+    "changed_files": ["bin/hook-session-start.py"],
+    "max_depth": 3
+  },
+  "expected": []
+}
+

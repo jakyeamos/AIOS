@@ -1,0 +1,11 @@
+{
+  "id": "bug-localization-001",
+  "query_type": "detect_changes",
+  "prompt": {
+    "repo_root": "/Users/jakyeamos/AIOS",
+    "base": "HEAD~1",
+    "changed_files": ["bin/hook-prompt-submit.py"]
+  },
+  "expected": []
+}
+

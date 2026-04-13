@@ -1,0 +1,12 @@
+{
+  "id": "monorepo-navigation-001",
+  "query_type": "minimal_context",
+  "prompt": {
+    "repo_root": "/Users/jakyeamos/AIOS",
+    "task": "trace project and sessions data flow",
+    "changed_files": ["bin/hook-session-start.py"],
+    "max_tokens": 300
+  },
+  "expected": []
+}
+

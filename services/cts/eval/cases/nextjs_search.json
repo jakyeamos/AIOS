@@ -1,0 +1,12 @@
+{
+  "id": "nextjs-search-001",
+  "query_type": "semantic_search",
+  "prompt": {
+    "repo_root": "/Users/jakyeamos/AIOS/aios-ui",
+    "query": "projects page",
+    "kind": "Function",
+    "limit": 10
+  },
+  "expected": []
+}
+

@@ -1,0 +1,11 @@
+{
+  "id": "typescript-impact-001",
+  "query_type": "impact_radius",
+  "prompt": {
+    "repo_root": "/Users/jakyeamos/AIOS/aios-ui",
+    "changed_files": ["app/page.tsx"],
+    "max_depth": 2
+  },
+  "expected": []
+}
+

@@ -5,11 +5,12 @@ and what each store is responsible for. Update this when the architecture change
 
 ---
 
-## The Three Stores
+## The Four Stores
 
 | Store | Path | Authority domain |
 |---|---|---|
 | **SQLite** | `~/AIOS/data/aios.db` | All machine-readable operational state |
+| **CTS Graph Store** | `~/AIOS/data/cts/` | Per-repo code topology indexes (local-only) |
 | **Vault** | `~/Vaults/Command-Center/` | All human-readable content and human-authored knowledge |
 | **Staging** | `~/AIOS/staging/` | All content in transit awaiting review or promotion |
 
@@ -17,6 +18,9 @@ Code truth lives in `~/Projects/*/` git repos. AIOS observes code; it does not o
 
 GitNexus code intelligence (`.gitnexus/` per repo) is an external read-only service.
 AIOS hooks may query it but must never write to it or depend on it for core retrieval.
+
+CTS graph indexes are local-only operational artifacts. They can be rebuilt from source code and
+must never be treated as canonical source-of-truth over the code repository itself.
 
 ---
 
@@ -33,6 +37,20 @@ AIOS hooks may query it but must never write to it or depend on it for core retr
 - `pattern_events` — confirmation/contradiction trail, written by hooks
 - `workflow_metrics` — performance and throughput tracking
 - `ai_history_imports` with `status='staged'` — import pipeline writes here; promotion requires human
+
+## CTS Graph Store — Authoritative for derived code topology only
+
+### What belongs here
+
+- Per-repo `graph.db` SQLite files under `~/AIOS/data/cts/<repo_hash>/`
+- Derived structural nodes/edges, confidence scores, staleness flags, and FTS indexes
+- Optional benchmark outputs under `~/AIOS/data/cts/eval_results.json`
+
+### Guardrails
+
+- CTS data is derived from source code and may be stale or low-confidence.
+- CTS data must not be synchronized to remote repos or committed to source control.
+- CTS never writes to project source files; it only reads code and updates local index files.
 
 ### What requires human approval before writing/updating
 

@@ -1,4 +1,5 @@
 data/aios.db
+data/cts/
 logs/hooks.log
 logs/*.log
 logs/session_packet_*.md
