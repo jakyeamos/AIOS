@@ -1,0 +1,55 @@
+{
+  "placeholderPatterns": [
+    "coming soon",
+    "todo",
+    "tbd",
+    "lorem ipsum",
+    "placeholder",
+    "sample data",
+    "dummy data"
+  ],
+  "marketingPatterns": [
+    "powerful",
+    "seamless",
+    "unlock",
+    "supercharge",
+    "transform your workflow",
+    "next-generation",
+    "analytics dashboard"
+  ],
+  "genericStatLabels": [
+    "performance",
+    "insights",
+    "overview",
+    "analytics",
+    "usage",
+    "activity"
+  ],
+  "actionWords": [
+    "retry",
+    "open",
+    "create",
+    "run",
+    "fix",
+    "adjust filter",
+    "clear filter"
+  ],
+  "demoDataModules": [
+    "@/lib/seed",
+    "@/demo",
+    "@/mocks",
+    "@/fixtures"
+  ],
+  "realDataIndicators": [
+    "getCaller",
+    "fetch",
+    "db",
+    "prisma",
+    "trpc"
+  ],
+  "clientOnlyImports": [
+    "next/navigation",
+    "@tanstack/react-query",
+    "recharts"
+  ]
+}
