@@ -23,18 +23,15 @@ Usage:
   python3 ~/AIOS/bin/trigger-lab-experiment.py --all [--dry-run]
 """
 import argparse
+import importlib.util as _ilu
 import json
 import os
-import shutil
 import sqlite3
 import subprocess
 import sys
-import time
-import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-import importlib.util as _ilu
 
 def _load_rule_artifacts():
     spec = _ilu.spec_from_file_location(
@@ -62,7 +59,7 @@ HOLDOUT_FLOOR        = -0.05   # holdout must not drop more than this
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 # ---------------------------------------------------------------------------
@@ -314,7 +311,7 @@ def run_experiment(
 
     bundle_id = _get_bundle_id(conn, pattern_id)
     patch_spec = _build_patch_spec(artifact)
-    run_id = f"run-{pattern_id[:8]}-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
+    run_id = f"run-{pattern_id[:8]}-{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}"
 
     print(f"\nExperiment: {run_id}")
     print(f"  pattern: {pattern.get('title', '')[:60]!r}")
@@ -455,7 +452,6 @@ def _preflight_check() -> list[str]:
         issues.append("docker info timed out — daemon may be unresponsive")
 
     # OPENAI_API_KEY set?
-    import os
     if not os.environ.get("OPENAI_API_KEY"):
         issues.append("OPENAI_API_KEY not set in environment")
 
@@ -496,7 +492,7 @@ def main():
     if not patterns:
         print("No eligible patterns found.")
         if args.pattern_id:
-            print(f"  (pattern must have state='rule', human_approved=1)")
+            print("  (pattern must have state='rule', human_approved=1)")
         conn.close()
         return
 

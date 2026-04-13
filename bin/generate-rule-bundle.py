@@ -12,15 +12,14 @@ Usage:
   python3 ~/AIOS/bin/generate-rule-bundle.py --artifact <path.json>
 """
 import argparse
+import importlib.util as _ilu
 import json
-import os
 import sqlite3
+import sys
 import textwrap
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-import importlib.util as _ilu
-import sys
 
 def _load_rule_artifacts():
     spec = _ilu.spec_from_file_location(
@@ -54,11 +53,11 @@ RUN mkdir -p /task/output
 # ---------------------------------------------------------------------------
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _bundle_id(pattern_id: str) -> str:
-    ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    ts = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
     return f"bundle-{pattern_id[:8]}-{ts}"
 
 

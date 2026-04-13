@@ -16,7 +16,6 @@ Usage:
 """
 
 import argparse
-import os
 import re
 from datetime import date, timedelta
 from pathlib import Path

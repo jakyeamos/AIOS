@@ -9,11 +9,8 @@ Strategy:
   - Run any time; safe to re-run (deduplication by section header marker)
 """
 
-import sqlite3
-import os
-import re
 import json
-from datetime import datetime, timezone
+import sqlite3
 from pathlib import Path
 
 DB_PATH = Path.home() / ".claude-mem" / "claude-mem.db"
@@ -239,7 +236,7 @@ def main():
 
     conn.close()
 
-    print(f"\n=== Summary ===")
+    print("\n=== Summary ===")
     print(f"  Created:          {stats['created']}")
     print(f"  Appended:         {stats['appended']}")
     print(f"  Already exported: {stats['already-exported']}")

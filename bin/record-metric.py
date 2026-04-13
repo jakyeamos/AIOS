@@ -23,7 +23,7 @@ import os
 import sqlite3
 import sys
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
@@ -35,7 +35,7 @@ KNOWN_METRICS = {
 
 
 def log(msg: str) -> None:
-    ts = datetime.now(timezone.utc).isoformat()
+    ts = datetime.now(UTC).isoformat()
     try:
         with open(LOG, "a") as f:
             f.write(f"{ts} [record-metric] {msg}\n")
@@ -92,7 +92,7 @@ def main() -> None:
 
     try:
         conn = sqlite3.connect(DB)
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         for name, value in metrics.items():
             row_id = str(uuid.uuid4())
             conn.execute(

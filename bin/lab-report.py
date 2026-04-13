@@ -10,7 +10,6 @@ Usage:
   python3 ~/AIOS/bin/lab-report.py --patch-type verification_toggle
 """
 import argparse
-import json
 import os
 import sqlite3
 from collections import defaultdict

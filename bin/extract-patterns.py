@@ -18,7 +18,7 @@ import re
 import sqlite3
 import uuid
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
@@ -50,7 +50,7 @@ CLASS_TO_DOMAIN = {
 
 def insert_pattern(conn: sqlite3.Connection, class_: str, title: str, evidence: list, confidence: float) -> None:
     domain = CLASS_TO_DOMAIN.get(class_, "unclassified")
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     conn.execute(
         """
         INSERT INTO patterns
@@ -268,7 +268,7 @@ def main() -> None:
     conn.close()
 
     summary = {
-        "run_at": datetime.now(timezone.utc).isoformat(),
+        "run_at": datetime.now(UTC).isoformat(),
         "inserted": {
             "prompt": len(prompt_inserted),
             "bug_fix": len(bug_inserted),

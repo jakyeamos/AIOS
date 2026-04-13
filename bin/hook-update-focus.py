@@ -11,7 +11,7 @@ import re
 import sqlite3
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
@@ -40,7 +40,7 @@ PROJECT_NAME_MAP = load_project_name_map()
 
 
 def log(msg: str) -> None:
-    ts = datetime.now(timezone.utc).isoformat()
+    ts = datetime.now(UTC).isoformat()
     try:
         with open(LOG, "a") as f:
             f.write(f"{ts} [update-focus] {msg}\n")
@@ -93,7 +93,7 @@ def find_project_note(repo_path: str, project_name: str) -> str | None:
 
 
 def update_note(note_path: str, commits: list[str]) -> None:
-    with open(note_path, "r") as f:
+    with open(note_path) as f:
         content = f.read()
 
     # Build new Current Focus block

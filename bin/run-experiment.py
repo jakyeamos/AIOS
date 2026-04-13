@@ -23,7 +23,7 @@ import shutil
 import sqlite3
 import sys
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 POLICY_PATH = os.path.expanduser("~/AIOS/config/retrieval-policy.json")
@@ -47,7 +47,7 @@ def cmd_start(args: list[str]) -> None:
 
     exp_id = str(uuid.uuid4())[:8]
     conn = get_conn()
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     conn.execute(
         "INSERT INTO experiments (id, name, surface, hypothesis, started_at) VALUES (?, ?, ?, ?, ?)",
         (exp_id, name, surface, hypothesis, now),
@@ -92,7 +92,7 @@ def cmd_end(args: list[str]) -> None:
         sys.exit(1)
 
     conn = get_conn()
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     conn.execute(
         "UPDATE experiments SET verdict=?, ended_at=?, notes=? WHERE id=?",
         (verdict, now, notes, exp_id),

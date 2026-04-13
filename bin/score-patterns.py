@@ -17,7 +17,7 @@ import argparse
 import os
 import sqlite3
 import subprocess
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
@@ -44,7 +44,7 @@ RECENCY_HALF_LIFE_DAYS = 90   # score halves every 90 days of silence
 
 
 def now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _recency_multiplier(last_seen_at: str | None) -> float:
@@ -54,10 +54,9 @@ def _recency_multiplier(last_seen_at: str | None) -> float:
     try:
         last = datetime.fromisoformat(last_seen_at.rstrip("Z"))
         if last.tzinfo is None:
-            last = last.replace(tzinfo=timezone.utc)
-        days_silent = (datetime.now(timezone.utc) - last).days
+            last = last.replace(tzinfo=UTC)
+        days_silent = (datetime.now(UTC) - last).days
         # Exponential decay: multiplier = 0.5 ^ (days / half_life)
-        import math
         return round(0.5 ** (days_silent / RECENCY_HALF_LIFE_DAYS), 4)
     except Exception:
         return 1.0
@@ -126,7 +125,7 @@ def main():
     promoted   = {"notice→hypothesis": 0, "hypothesis→rule": 0}
     demoted    = {"rule→hypothesis": 0}
     scored     = 0
-    cutoff_str = (datetime.now(timezone.utc) - timedelta(days=DEMOTION_DAYS)).isoformat()
+    cutoff_str = (datetime.now(UTC) - timedelta(days=DEMOTION_DAYS)).isoformat()
 
     for row in patterns:
         p = dict(row)
@@ -168,7 +167,7 @@ def main():
                 demoted["rule→hypothesis"] += 1
 
         if new_state != state:
-            tag = f"[DRY] " if args.dry_run else ""
+            tag = "[DRY] " if args.dry_run else ""
             print(f"  {tag}{state} → {new_state}: {p['title'][:80]!r}")
             if not args.dry_run:
                 extra = ", human_approved=0" if new_state == "hypothesis" and state == "rule" else ""

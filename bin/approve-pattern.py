@@ -20,7 +20,7 @@ import argparse
 import os
 import sqlite3
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 
@@ -32,7 +32,7 @@ CLASS_THRESHOLDS = {
 
 
 def now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def check_gates(conn: sqlite3.Connection, row: dict) -> tuple[bool, list[str]]:
@@ -52,7 +52,7 @@ def check_gates(conn: sqlite3.Connection, row: dict) -> tuple[bool, list[str]]:
     if first:
         try:
             observed = datetime.fromisoformat(first.replace("Z", "+00:00"))
-            age_days = (datetime.now(timezone.utc) - observed).days
+            age_days = (datetime.now(UTC) - observed).days
             if age_days < 14:
                 failures.append(f"Gate 2 FAIL: only {age_days} days old, need 14+")
         except ValueError:
@@ -113,7 +113,7 @@ def approve_one(conn: sqlite3.Connection, pid: str, force: bool = False) -> None
         return
 
     if not all_pass and force:
-        print(f"\nForce-approving despite gate failures:")
+        print("\nForce-approving despite gate failures:")
         for f in failures:
             print(f"  {f}")
 

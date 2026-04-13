@@ -17,7 +17,7 @@ import json
 import os
 import re
 import sqlite3
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 VAULT = os.path.expanduser("~/Vaults/Command-Center")
@@ -112,7 +112,7 @@ def check_stale_patterns() -> list[dict]:
     issues = []
     try:
         conn = sqlite3.connect(DB)
-        cutoff = (datetime.now(timezone.utc) - timedelta(days=STALE_DAYS)).isoformat()
+        cutoff = (datetime.now(UTC) - timedelta(days=STALE_DAYS)).isoformat()
         cur = conn.execute(
             """
             SELECT id, class, title, created_at
@@ -255,7 +255,7 @@ def main() -> None:
         by_check.setdefault(key, []).append(issue)
 
     result = {
-        "run_at": datetime.now(timezone.utc).isoformat(),
+        "run_at": datetime.now(UTC).isoformat(),
         "total_issues": len(all_issues),
         "summary": {k: len(v) for k, v in by_check.items()},
         "issues": all_issues,

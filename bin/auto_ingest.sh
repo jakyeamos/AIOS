@@ -31,7 +31,6 @@ for file in "${files[@]}"; do
   ended=$(python3 -c "import json; d=json.load(open('$file')); print(d.get('ended_at',''))")
   prompt_count=$(python3 -c "import json; d=json.load(open('$file')); print(d.get('prompt_count',0))")
   reusable=$(python3 -c "import json; d=json.load(open('$file')); print(d.get('reusable_prompt_count',0))")
-  cwd=$(python3 -c "import json; d=json.load(open('$file')); print(d.get('cwd') or '')")
   objective=$(python3 -c "import json; d=json.load(open('$file')); print(d.get('objective') or '')")
   classifications=$(python3 -c "import json; d=json.load(open('$file')); print(', '.join(d.get('prompt_classifications',[])))")
 

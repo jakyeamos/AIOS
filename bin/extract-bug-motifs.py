@@ -13,12 +13,11 @@ Usage:
 
 import argparse
 import json
-import os
 import re
 import sqlite3
 import uuid
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 DB = Path.home() / "AIOS" / "data" / "aios.db"
@@ -59,7 +58,7 @@ KNOWN_MOTIFS = [
 
 
 def now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def list_motifs(conn: sqlite3.Connection) -> None:

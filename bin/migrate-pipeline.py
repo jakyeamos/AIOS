@@ -7,7 +7,7 @@ Safe to run multiple times (idempotent).
 """
 import os
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 
@@ -67,7 +67,7 @@ def main():
 
     conn.commit()
     conn.close()
-    print(f"\nMigration complete — {datetime.now(timezone.utc).isoformat()}")
+    print(f"\nMigration complete — {datetime.now(UTC).isoformat()}")
 
 
 if __name__ == "__main__":

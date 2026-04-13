@@ -20,8 +20,7 @@ Cron (daily at 06:00):
 import argparse
 import subprocess
 import sys
-import shutil
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 BIN  = Path(__file__).parent
@@ -39,7 +38,7 @@ PHASES = [
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _log(msg: str, verbose: bool = False) -> None:

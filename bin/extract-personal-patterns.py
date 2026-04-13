@@ -21,7 +21,7 @@ import argparse
 import re
 import sqlite3
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 DB = Path.home() / "AIOS/data/aios.db"
@@ -78,7 +78,7 @@ SIGNAL_MAP = [
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _extract_lines(text: str, pattern: re.Pattern, max_len: int = 200) -> list[str]:
@@ -135,7 +135,6 @@ def _scan_prompts(
     gate by MIN_SESSIONS before inserting. Prevents single-session noise from
     entering the candidate queue. prompts_used has no created_at so all rows
     are scanned; deduplication is by title."""
-    from collections import defaultdict
 
     counts = {k: 0 for k, _ in SIGNAL_MAP}
     # Include session_id so we can count distinct sessions per signal
@@ -174,7 +173,6 @@ def _scan_ai_history(
     """Scan ai_history_imports markdown files (vault_path column).
     Two-pass: each distinct file counts as one 'session'. Only insert
     signals that appear in MIN_SESSIONS+ distinct files."""
-    from collections import defaultdict
 
     counts = {k: 0 for k, _ in SIGNAL_MAP}
     rows = conn.execute(
@@ -243,7 +241,7 @@ def main() -> None:
     args = parser.parse_args()
 
     cutoff = (
-        datetime.now(timezone.utc) - timedelta(days=args.days)
+        datetime.now(UTC) - timedelta(days=args.days)
     ).isoformat()
 
     conn = sqlite3.connect(DB)

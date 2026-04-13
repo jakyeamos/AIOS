@@ -1,0 +1,39 @@
+[project]
+name = "aios"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+exclude = ["archive/**", "staging/**", "aios-ui/**"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes (unused imports, undefined names)
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "SIM", # flake8-simplify
+]
+ignore = [
+    "E501", # line too long — ruff format handles this
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B", "SIM"]
+
+[tool.basedpyright]
+pythonVersion = "3.12"
+include = ["bin", "tests", "services"]
+exclude = ["archive", "staging", "aios-ui"]
+typeCheckingMode = "standard"
+reportMissingImports = "warning"
+reportMissingModuleSource = "none"
+
+[tool.vulture]
+min_confidence = 70
+paths = ["bin", "services"]
+exclude = ["archive/", "staging/"]

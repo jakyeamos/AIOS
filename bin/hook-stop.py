@@ -10,7 +10,7 @@ import sqlite3
 import subprocess
 import sys
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
@@ -18,7 +18,7 @@ SUMMARIES_DIR = os.path.expanduser("~/AIOS/logs/summaries")
 
 
 def log(msg: str) -> None:
-    ts = datetime.now(timezone.utc).isoformat()
+    ts = datetime.now(UTC).isoformat()
     try:
         with open(LOG, "a") as f:
             f.write(f"{ts} [stop] {msg}\n")
@@ -52,10 +52,10 @@ def main() -> None:
         if row[5] == "closed":
             log(f"session {session_id} already closed, skipping")
             conn.close()
-            print(f"AIOS · session already closed, skipping")
+            print("AIOS · session already closed, skipping")
             sys.exit(0)
 
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Flag reusable insights from this session
         insight_count = 0

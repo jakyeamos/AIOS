@@ -14,7 +14,7 @@ Usage:
 import argparse
 import os
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
@@ -54,7 +54,7 @@ def format_pattern_block(row: dict) -> str:
 
 
 def build_rules_md(domain: str, rows: list[dict]) -> str:
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     count = len(rows)
     lines = [
         BEGIN_MARKER,
@@ -80,7 +80,7 @@ def build_rules_md(domain: str, rows: list[dict]) -> str:
 
 
 def build_hypotheses_md(domain: str, rows: list[dict]) -> str:
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     count = len(rows)
 
     # Compute class thresholds for confirmations_needed display
@@ -124,7 +124,7 @@ def build_hypotheses_md(domain: str, rows: list[dict]) -> str:
 
 
 def build_knowledge_md(domain: str, rows: list[dict]) -> str:
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     count = len(rows)
     lines = [
         BEGIN_MARKER,
@@ -150,7 +150,7 @@ def build_knowledge_md(domain: str, rows: list[dict]) -> str:
 
 
 def build_index_md(stats: list[dict]) -> str:
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     lines = [
         BEGIN_MARKER,
         "",

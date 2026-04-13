@@ -16,7 +16,7 @@ import os
 import re
 import sqlite3
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
@@ -30,7 +30,7 @@ MAX_ITEMS_PER_HANDOFF = 12
 
 
 def now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def extract_frontmatter(text: str) -> dict:

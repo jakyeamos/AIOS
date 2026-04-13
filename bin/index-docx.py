@@ -11,10 +11,9 @@ Usage:
 """
 
 import argparse
-import os
 import sqlite3
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 DB = Path.home() / "AIOS" / "data" / "aios.db"
@@ -106,7 +105,7 @@ def main() -> None:
 
     inserted = 0
     skipped = 0
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
 
     for docx_path in docx_files:
         path_str = str(docx_path)

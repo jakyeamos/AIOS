@@ -17,15 +17,14 @@ Usage:
 import argparse
 import os
 import sqlite3
-import sys
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 
 
 def now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def review(conn: sqlite3.Connection, domain: str | None, limit: int) -> None:
@@ -150,7 +149,7 @@ def review(conn: sqlite3.Connection, domain: str | None, limit: int) -> None:
 
 def _print_summary(promoted: int, discarded: int, skipped: int, annotated: int) -> None:
     print(f"\n{'='*40}")
-    print(f"Session summary:")
+    print("Session summary:")
     print(f"  → knowledge : {promoted} ({annotated} with body)")
     print(f"  discarded   : {discarded}")
     print(f"  kept        : {skipped}")

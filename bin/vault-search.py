@@ -21,7 +21,6 @@ import json
 import os
 import re
 import sys
-from datetime import datetime
 from pathlib import Path
 
 VAULT = os.path.expanduser("~/Vaults/Command-Center")
@@ -87,7 +86,7 @@ def walk_vault(root_dir: str | None = None) -> list[tuple[str, str]]:
             if fname.endswith(".md"):
                 full_path = os.path.join(root, fname)
                 try:
-                    with open(full_path, "r", encoding="utf-8", errors="ignore") as f:
+                    with open(full_path, encoding="utf-8", errors="ignore") as f:
                         content = f.read()
                     results.append((full_path, content))
                 except Exception:
@@ -104,7 +103,7 @@ def mode_note(project_name: str) -> dict:
     ]
     for path in candidates:
         if os.path.exists(path):
-            with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            with open(path, encoding="utf-8", errors="ignore") as f:
                 content = f.read()
             fm = parse_frontmatter(content)
             return {
@@ -177,7 +176,7 @@ def mode_handoffs(project_name: str, last: int = 3) -> dict:
     results = []
     for _, path, fname in candidates[:last]:
         try:
-            with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            with open(path, encoding="utf-8", errors="ignore") as f:
                 content = f.read()
         except Exception:
             continue

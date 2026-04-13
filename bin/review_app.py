@@ -9,9 +9,9 @@ import os
 import sqlite3
 import uuid
 import webbrowser
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
-from flask import Flask, jsonify, request, render_template_string
+from flask import Flask, jsonify, render_template_string, request
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 CONTRADICTION_LOG = os.path.expanduser("~/AIOS/logs/contradictions.log")
@@ -34,7 +34,7 @@ def get_db():
 
 
 def utcnow() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def record_metric(conn, metric_name: str, notes: str = "") -> None:
@@ -133,7 +133,7 @@ def api_approve_list():
     rows = conn.execute(
         "SELECT * FROM patterns WHERE state='knowledge' AND human_approved=0 ORDER BY confidence DESC"
     ).fetchall()
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=14)).isoformat()
+    cutoff = (datetime.now(UTC) - timedelta(days=14)).isoformat()
     result = []
     for r in rows:
         p = dict(r)
@@ -166,7 +166,7 @@ def api_approve(pid):
         conn.close()
         return jsonify({"ok": False, "error": "not found"}), 404
     p = dict(row)
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=14)).isoformat()
+    cutoff = (datetime.now(UTC) - timedelta(days=14)).isoformat()
     threshold = CLASS_THRESHOLDS.get(p.get("class", ""), DEFAULT_THRESHOLD)
     distinct_sessions = conn.execute(
         """SELECT COUNT(DISTINCT session_id) FROM pattern_events
@@ -344,7 +344,8 @@ def api_personal_discard(pid):
 @app.post("/api/personal/<pid>/promote-vault")
 def api_personal_promote_vault(pid):
     """Write an approved personal pattern to the Obsidian mental map."""
-    import subprocess, sys
+    import subprocess
+    import sys
     conn = get_db()
     row = conn.execute("SELECT * FROM patterns WHERE id=?", (pid,)).fetchone()
     if not row:

@@ -25,8 +25,7 @@ import json
 import os
 import re
 import sqlite3
-import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
@@ -54,7 +53,7 @@ CLASS_THRESHOLDS = {
 
 
 def log(msg: str) -> None:
-    ts = datetime.now(timezone.utc).isoformat()
+    ts = datetime.now(UTC).isoformat()
     try:
         with open(LOG, "a") as f:
             f.write(f"{ts} {msg}\n")
@@ -99,7 +98,7 @@ def generate_wiki_stub(pattern_id: str, class_: str, title: str,
     """Returns (wiki_content, slug)."""
     slug = title_to_slug(title)
     page_title = wiki_title(title, class_)
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today = datetime.now(UTC).strftime("%Y-%m-%d")
     evidence_str = "\n".join(f"- {e}" for e in evidence[:8]) if evidence else "- (none recorded)"
 
     content = f"""---
@@ -195,7 +194,7 @@ def promote(dry_run: bool = False) -> None:
             if not dry_run:
                 conn.execute(
                     "UPDATE patterns SET status='promoted', state='knowledge', promoted_at=?, vault_path=? WHERE id=?",
-                    (datetime.now(timezone.utc).isoformat(), wiki_path, pid),
+                    (datetime.now(UTC).isoformat(), wiki_path, pid),
                 )
             promoted.append((title, wiki_path, "existing"))
             continue
@@ -204,7 +203,7 @@ def promote(dry_run: bool = False) -> None:
             Path(wiki_path).write_text(content, encoding="utf-8")
             conn.execute(
                 "UPDATE patterns SET status='promoted', state='knowledge', promoted_at=?, vault_path=? WHERE id=?",
-                (datetime.now(timezone.utc).isoformat(), wiki_path, pid),
+                (datetime.now(UTC).isoformat(), wiki_path, pid),
             )
         promoted.append((title, wiki_path, "new"))
 

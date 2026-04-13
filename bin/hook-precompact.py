@@ -10,7 +10,7 @@ import os
 import sqlite3
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
@@ -21,7 +21,7 @@ HANDOFFS = os.path.expanduser("~/AIOS/staging/session-handoffs")
 
 
 def log(msg: str) -> None:
-    ts = datetime.now(timezone.utc).isoformat()
+    ts = datetime.now(UTC).isoformat()
     try:
         with open(LOG, "a") as f:
             f.write(f"{ts} [precompact] {msg}\n")
@@ -162,7 +162,7 @@ def main() -> None:
             sys.exit(0)
 
         _, started_at, cwd, _, project_name, repo_path = row
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         prompts = conn.execute(
             "SELECT classification, reusable_candidate, prompt_text FROM prompts_used WHERE session_id = ?",

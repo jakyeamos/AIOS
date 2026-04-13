@@ -12,12 +12,11 @@ Usage:
 """
 
 import argparse
-import os
 import re
 import sqlite3
 import uuid
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 DB = Path.home() / "AIOS" / "data" / "aios.db"
@@ -26,7 +25,7 @@ MIN_COUNT_DEFAULT = 3
 
 
 def now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def extract_title_bigrams(titles: list[str]) -> Counter:

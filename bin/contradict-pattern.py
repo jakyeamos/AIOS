@@ -13,15 +13,14 @@ import argparse
 import os
 import sqlite3
 import uuid
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import UTC, datetime
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 CONTRADICTION_LOG = os.path.expanduser("~/AIOS/logs/contradictions.log")
 
 
 def now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def log_contradiction(title: str, old_state: str, new_state: str, note: str) -> None:
@@ -48,7 +47,7 @@ def contradict(conn: sqlite3.Connection, pid: str, session_id: str | None, note:
 
     old_state = row["state"]
     if old_state == "dormant":
-        print(f"Pattern is dormant — cannot contradict. Use confirm-pattern.py to reactivate first.")
+        print("Pattern is dormant — cannot contradict. Use confirm-pattern.py to reactivate first.")
         return
 
     new_count = (row["contradiction_count"] or 0) + 1

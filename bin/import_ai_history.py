@@ -10,9 +10,8 @@ This module is imported by tests and called by the CLI (import-ai-history.py).
 import hashlib
 import json
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-
 
 # --- Configuration ---
 
@@ -243,7 +242,7 @@ def parse_chatgpt_conversation(raw: dict, batch_id: str) -> dict:
     """Parse a single ChatGPT conversation object into a normalized conv dict."""
     title = normalize_whitespace(raw.get("title") or "Untitled Conversation") or "Untitled Conversation"
     create_time = float(raw.get("create_time") or 0)
-    date = datetime.fromtimestamp(create_time, tz=timezone.utc).strftime("%Y-%m-%d")
+    date = datetime.fromtimestamp(create_time, tz=UTC).strftime("%Y-%m-%d")
     source_id = str(raw.get("conversation_id") or raw.get("id") or "")
     mapping = raw.get("mapping") or {}
     messages = parse_chatgpt_messages(mapping)

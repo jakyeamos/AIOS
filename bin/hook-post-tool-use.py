@@ -10,7 +10,7 @@ import re
 import sqlite3
 import sys
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
@@ -39,7 +39,7 @@ MIN_BUG_SYMPTOM_CHARS = 40
 
 
 def log(msg: str) -> None:
-    ts = datetime.now(timezone.utc).isoformat()
+    ts = datetime.now(UTC).isoformat()
     try:
         with open(LOG, "a") as f:
             f.write(f"{ts} [post-tool-use] {msg}\n")
@@ -205,7 +205,7 @@ def main() -> None:
             conn.close()
             sys.exit(0)
 
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Log the event (strip large response bodies to keep DB small)
         payload = {

@@ -11,7 +11,7 @@ import sqlite3
 import subprocess
 import sys
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
@@ -35,7 +35,7 @@ CLASSIFICATIONS = {
 
 
 def log(msg: str) -> None:
-    ts = datetime.now(timezone.utc).isoformat()
+    ts = datetime.now(UTC).isoformat()
     try:
         with open(LOG, "a") as f:
             f.write(f"{ts} [prompt-submit] {msg}\n")
@@ -361,7 +361,7 @@ def main() -> None:
             (
                 str(uuid.uuid4()),
                 session_id,
-                datetime.now(timezone.utc).isoformat(),
+                datetime.now(UTC).isoformat(),
                 json.dumps({
                     "session_id": session_id,
                     "classification": classification,

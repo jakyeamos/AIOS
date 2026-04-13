@@ -14,7 +14,6 @@ import json
 import os
 import sqlite3
 import sys
-from datetime import datetime, timezone
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 

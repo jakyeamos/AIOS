@@ -35,7 +35,7 @@ OPEN_BUG_LIST=$(sqlite3 "$DB" \
    FROM bug_log b LEFT JOIN projects p ON b.project_id = p.id
    WHERE b.status = 'open' ORDER BY b.created_at DESC LIMIT 10;")
 
-CANDIDATES=$(ls ~/AIOS/logs/summaries/ 2>/dev/null | wc -l | tr -d ' ')
+CANDIDATES=$(find ~/AIOS/logs/summaries/ -maxdepth 1 -type f 2>/dev/null | wc -l | tr -d ' ')
 
 # --- Write report to vault ---
 cat > "$REPORT" << EOF

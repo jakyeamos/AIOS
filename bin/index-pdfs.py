@@ -14,11 +14,10 @@ Options:
 """
 
 import argparse
-import os
 import sqlite3
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 DB = Path.home() / "AIOS" / "data" / "aios.db"
@@ -115,7 +114,7 @@ def main() -> None:
 
     inserted = 0
     skipped = 0
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
 
     for pdf_path in pdfs:
         path_str = str(pdf_path)

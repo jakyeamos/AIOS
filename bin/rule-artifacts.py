@@ -8,10 +8,8 @@ into claude-improvement-lab with all metadata needed to generate tasks and
 interpret results.
 """
 import json
-import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 
 ARTIFACTS_DIR = Path.home() / "AIOS/data/rule-artifacts"
 
@@ -42,7 +40,7 @@ CAPABILITY_TO_MUTATION = {
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def infer_capability_class(pattern: dict) -> str:

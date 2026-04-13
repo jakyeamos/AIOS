@@ -13,7 +13,7 @@ import argparse
 import os
 import sqlite3
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 
@@ -25,7 +25,7 @@ CLASS_THRESHOLDS = {
 
 
 def now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def confirm(conn: sqlite3.Connection, pid: str, session_id: str | None, note: str) -> None:

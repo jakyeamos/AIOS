@@ -25,7 +25,7 @@ Usage:
 import argparse
 import re
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 DB         = Path.home() / "AIOS/data/aios.db"
@@ -34,7 +34,7 @@ MOC_PATH   = MENTAL_MAP / "_index.md"
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _slug(title: str) -> str:
