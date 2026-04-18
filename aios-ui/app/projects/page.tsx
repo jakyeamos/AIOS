@@ -9,7 +9,10 @@ export default async function ProjectsPage(): Promise<React.JSX.Element> {
   const projects = await caller.projects.list({ limit: 100 });
 
   return (
-    <PageShell title="Projects" subtitle="Per-project activity, health, and open issues.">
+    <PageShell
+      title="Projects"
+      subtitle="Project dossiers are the durable memory surface for current state, rules, decisions, and recent changes."
+    >
       <section className="panel-card">
         <div className="table-head">
           <span>Name</span>

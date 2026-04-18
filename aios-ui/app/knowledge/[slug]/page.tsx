@@ -4,22 +4,22 @@ import { KnowledgePageView } from "@/components/knowledge/KnowledgePageView";
 import { PageShell } from "@/components/layout/PageShell";
 import { getCaller } from "@/server/caller";
 
-export default async function ProjectDetailPage({
+export default async function KnowledgeDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }): Promise<React.JSX.Element> {
-  const { id } = await params;
+  const { slug } = await params;
   const caller = await getCaller();
-  const result = await caller.knowledge.projectDossier({ projectId: id });
+  const page = await caller.knowledge.detail({ slug });
 
-  if (!result) {
+  if (!page) {
     notFound();
   }
 
   return (
-    <PageShell title={result.title} subtitle="Project dossier with memory, decisions, and recent changes.">
-      <KnowledgePageView page={result} />
+    <PageShell title={page.title} subtitle={page.summary}>
+      <KnowledgePageView page={page} />
     </PageShell>
   );
 }

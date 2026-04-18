@@ -17,8 +17,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AIOS Command",
-  description: "Operator dashboard for AIOS sessions, prompts, and efficiency.",
+  title: "AIOS Knowledge OS",
+  description: "Knowledge, workflow memory, grounded retrieval, and orchestration control plane for AIOS.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }): React.JSX.Element {

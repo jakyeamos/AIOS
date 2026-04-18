@@ -4,16 +4,17 @@ export type NavItem = {
 };
 
 export const PRIMARY_NAV: NavItem[] = [
-  { href: "/", label: "Command Center" },
-  { href: "/runs", label: "Run Inspector" },
-  { href: "/workflows", label: "Workflows" },
-  { href: "/prompts", label: "Prompts & Rules" },
+  { href: "/", label: "Overview" },
+  { href: "/knowledge", label: "Knowledge" },
+  { href: "/projects", label: "Projects" },
+  { href: "/control", label: "Control Plane" },
+  { href: "/query", label: "Grounded Query" },
+  { href: "/runs", label: "Runs" },
+  { href: "/prompts", label: "Rules" },
+  { href: "/workflows", label: "Workflow Metrics" },
   { href: "/costs", label: "Efficiency" },
   { href: "/automations", label: "Automations" },
-  { href: "/projects", label: "Projects" },
-  { href: "/feedback", label: "Alignment" },
-  { href: "/compare", label: "Diff & Compare" },
   { href: "/settings", label: "Settings" },
 ];
 
-export const APP_TITLE = "AIOS Command";
+export const APP_TITLE = "AIOS Knowledge OS";

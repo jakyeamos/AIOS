@@ -26,6 +26,24 @@ def log(msg: str) -> None:
         pass
 
 
+def ensure_memory_updates_table(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS memory_updates (
+            id TEXT PRIMARY KEY,
+            project_id TEXT REFERENCES projects(id),
+            session_id TEXT REFERENCES sessions(id),
+            source TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            changes_json TEXT NOT NULL DEFAULT '[]',
+            risks_json TEXT NOT NULL DEFAULT '[]',
+            open_questions_json TEXT NOT NULL DEFAULT '[]',
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        )
+        """
+    )
+
+
 def main() -> None:
     try:
         data = json.loads(sys.stdin.read())
@@ -56,6 +74,7 @@ def main() -> None:
             sys.exit(0)
 
         now = datetime.now(UTC).isoformat()
+        ensure_memory_updates_table(conn)
 
         # Flag reusable insights from this session
         insight_count = 0
@@ -107,7 +126,7 @@ def main() -> None:
             "project_id": row[1],
             "started_at": row[2],
             "ended_at": now,
-            "cwd": row[4],
+            "cwd": row[3],
             "objective": row[4],
             "prompt_count": len(prompts),
             "reusable_prompt_count": sum(1 for p in prompts if p[2]),
@@ -133,10 +152,63 @@ def main() -> None:
         except Exception as e:
             log(f"handoff path scan failed: {e}")
 
+        bug_rows = conn.execute(
+            "SELECT symptom FROM bug_log WHERE session_id = ? ORDER BY created_at DESC LIMIT 3",
+            (session_id,),
+        ).fetchall()
+        recent_paths = [artifact[1] for artifact in artifacts if artifact[1]][:5]
+        change_items = [f"Artifact touched: {path}" for path in recent_paths]
+
+        classifications = sorted({prompt[0] for prompt in prompts if prompt[0]})
+        if classifications:
+            change_items.append("Prompt classifications: " + ", ".join(classifications))
+
+        risk_items = [f"Observed failure: {bug[0]}" for bug in bug_rows]
+        if not handoff_path:
+            risk_items.append("No session handoff file was found at close.")
+
+        open_questions = []
+        if len(prompts) == 0:
+            open_questions.append("Why were no prompts captured for this session?")
+        if len(artifacts) == 0:
+            open_questions.append("Should this session have produced durable artifacts or was it analysis-only?")
+
+        memory_summary = (
+            f"Closed session for objective '{row[4] or 'unspecified'}' with "
+            f"{len(prompts)} prompts and {len(artifacts)} artifacts."
+        )
+
         # Close session in DB
         conn.execute(
             "UPDATE sessions SET status = 'closed', ended_at = ?, summary_candidate_path = ?, handoff_path = ? WHERE id = ?",
             (now, candidate_path, handoff_path, session_id),
+        )
+
+        conn.execute(
+            """
+            INSERT INTO memory_updates (
+                id,
+                project_id,
+                session_id,
+                source,
+                summary,
+                changes_json,
+                risks_json,
+                open_questions_json,
+                created_at
+            )
+            VALUES (?, ?, ?, 'hook-stop', ?, ?, ?, ?, ?)
+            """,
+            (
+                str(uuid.uuid4()),
+                row[1],
+                session_id,
+                memory_summary,
+                json.dumps(change_items),
+                json.dumps(risk_items),
+                json.dumps(open_questions),
+                now,
+            ),
         )
 
         # Log Stop event

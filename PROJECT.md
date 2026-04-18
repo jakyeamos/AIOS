@@ -61,6 +61,30 @@ This implementation pass establishes:
 - grounded query and inspectable retrieval surfaces
 - orchestration run logging and briefing packet generation
 - ADR support and handoff documentation for continuation
+- post-run memory updates written into dedicated control-plane state
+
+## Implemented On 2026-04-18
+
+The current app now includes:
+
+- `knowledge` routes for projects, decisions, workflows, agents, and system pages
+- `control` route for workflow selection, agent registry, run history, and packet generation
+- `query` route for grounded, inspectable internal answers
+- dedicated control-plane schema:
+  - `orchestration_runs`
+  - `briefing_packets`
+  - `memory_updates`
+- ADR-backed decision logging in `docs/adr/`
+- upgraded project dossiers with memory, rules, likely files, decisions, and recent changes
+- `hook-stop.py` memory update writes on session close
+
+## Still Missing
+
+- execution-state transitions beyond planned/ready
+- richer task routing tied to real subagent registries
+- contradiction/drift detection beyond lightweight hooks
+- vault-backed wiki entity ingestion as first-class page objects
+- tighter CTS integration inside packet generation and grounded query
 
 ## Guardrails
 
