@@ -19,8 +19,10 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
+from aios_paths import get_vault_subpath
+
 DB = os.path.expanduser("~/AIOS/data/aios.db")
-HANDOFFS_DIR = Path.home() / "Vaults/Command-Center/02 AI OS/02 Session Handoffs"
+HANDOFFS_DIR = get_vault_subpath("02 AI OS", "02 Session Handoffs")
 
 # Minimum character length for a learning item to be worth recording
 MIN_ITEM_LEN = 40

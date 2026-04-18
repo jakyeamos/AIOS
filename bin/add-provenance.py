@@ -20,7 +20,9 @@ import re
 from datetime import date, timedelta
 from pathlib import Path
 
-VAULT = Path.home() / "Vaults/Command-Center"
+from aios_paths import get_vault_root
+
+VAULT = get_vault_root()
 
 TARGETS = [
     {

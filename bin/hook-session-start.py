@@ -15,9 +15,11 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+from aios_paths import get_vault_root
+
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
-VAULT = os.path.expanduser("~/Vaults/Command-Center")
+VAULT = str(get_vault_root())
 VAULT_SEARCH = os.path.expanduser("~/AIOS/bin/vault-search.py")
 PACKET_DIR = os.path.expanduser("~/AIOS/logs")
 MAX_PACKET_CHARS = 1800  # ~400 tokens

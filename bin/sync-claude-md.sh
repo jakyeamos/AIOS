@@ -4,7 +4,8 @@
 
 set -euo pipefail
 
-VAULT="$HOME/Vaults/Command-Center/06 Knowledge/Claude-Context"
+VAULT_ROOT="${AIOS_VAULT_ROOT:-$HOME/projects/Vaults/Command-Center}"
+VAULT="$VAULT_ROOT/06 Knowledge/Claude-Context"
 DRY_RUN=false
 FILTER=""
 

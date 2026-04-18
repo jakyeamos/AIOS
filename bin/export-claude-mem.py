@@ -13,8 +13,10 @@ import json
 import sqlite3
 from pathlib import Path
 
+from aios_paths import get_vault_subpath
+
 DB_PATH = Path.home() / ".claude-mem" / "claude-mem.db"
-VAULT_SESSIONS = Path.home() / "Vaults/Command-Center/02 AI OS/02 Session Handoffs"
+VAULT_SESSIONS = get_vault_subpath("02 AI OS", "02 Session Handoffs")
 CM_MARKER = "<!-- claude-mem-exported -->"
 
 def short_id(uuid_str):

@@ -17,8 +17,10 @@ import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 
+from aios_paths import get_vault_subpath
+
 DB = os.path.expanduser("~/AIOS/data/aios.db")
-DOMAINS_DIR = os.path.expanduser("~/Vaults/Command-Center/06 Knowledge/Domains")
+DOMAINS_DIR = str(get_vault_subpath("06 Knowledge", "Domains"))
 
 DOMAINS = ["debugging", "prompting", "architecture", "workflow", "system"]
 

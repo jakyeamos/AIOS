@@ -22,7 +22,10 @@ from datetime import datetime
 from html.parser import HTMLParser
 from pathlib import Path
 
-VAULT = Path(os.environ.get("VAULT", os.path.expanduser("~/Vaults/Command-Center")))
+from aios_paths import get_vault_root
+
+DEFAULT_VAULT = get_vault_root()
+VAULT = Path(os.environ.get("VAULT") or os.environ.get("AIOS_VAULT_ROOT") or DEFAULT_VAULT)
 CORPUS_DIR = "Personal-Corpus"
 
 
@@ -414,7 +417,7 @@ def main():
     parser.add_argument(
         "--vault",
         default=str(VAULT),
-        help="Obsidian vault root (default: ~/Vaults/Command-Center)",
+        help=f"Obsidian vault root (default: {DEFAULT_VAULT})",
     )
     parser.add_argument(
         "--service",

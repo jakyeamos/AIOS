@@ -31,7 +31,7 @@ from pathlib import Path
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 # Stubs land in staging, not directly in vault.
 # Human must author the body, then manually promote to:
-#   ~/Vaults/Command-Center/06 Knowledge/Wiki/
+#   ~/projects/Vaults/Command-Center/06 Knowledge/Wiki/
 WIKI_DIR = os.path.expanduser("~/AIOS/staging/knowledge-drafts")
 LOG = os.path.expanduser("~/AIOS/logs/promote-patterns.log")
 
@@ -109,7 +109,7 @@ quality: staging-draft
 created: {today}
 source_pattern_id: {pattern_id}
 confidence: {confidence:.2f}
-promote_to: "~/Vaults/Command-Center/06 Knowledge/Wiki/{slug}.md"
+promote_to: "~/projects/Vaults/Command-Center/06 Knowledge/Wiki/{slug}.md"
 tags:
   - wiki-draft
   - pattern/{class_}
@@ -119,7 +119,7 @@ tags:
 
 <!-- STAGING DRAFT — not yet in vault.
      Author the sections below, then move this file to:
-     ~/Vaults/Command-Center/06 Knowledge/Wiki/{slug}.md
+     ~/projects/Vaults/Command-Center/06 Knowledge/Wiki/{slug}.md
      Change type: wiki, quality: human-curated before promoting. -->
 
 ## Pattern

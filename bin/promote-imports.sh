@@ -4,7 +4,8 @@ set -euo pipefail
 
 DB=~/AIOS/data/aios.db
 READY=~/AIOS/staging/ai-history/ready
-VAULT=~/Vaults/Command-Center/"09 Archive/AI History"
+VAULT_ROOT="${AIOS_VAULT_ROOT:-$HOME/projects/Vaults/Command-Center}"
+VAULT="$VAULT_ROOT/09 Archive/AI History"
 NOW=$(date "+%Y-%m-%d %H:%M")
 SEP="----------------------------------------------------------------"
 

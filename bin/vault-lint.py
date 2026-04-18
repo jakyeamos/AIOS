@@ -20,13 +20,15 @@ import sqlite3
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-VAULT = os.path.expanduser("~/Vaults/Command-Center")
+from aios_paths import get_vault_root, get_vault_subpath
+
+VAULT = str(get_vault_root())
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 OUTPUT = os.path.expanduser("~/AIOS/logs/vault-lint-latest.json")
 
-PROJECTS_DIR = os.path.join(VAULT, "03 Projects")
-HANDOFFS_DIR = os.path.join(VAULT, "02 AI OS", "02 Session Handoffs")
-ARCHIVE_DIR = os.path.join(VAULT, "09 Archive", "AI History")
+PROJECTS_DIR = str(get_vault_subpath("03 Projects"))
+HANDOFFS_DIR = str(get_vault_subpath("02 AI OS", "02 Session Handoffs"))
+ARCHIVE_DIR = str(get_vault_subpath("09 Archive", "AI History"))
 
 SYNTHESIS_SECTIONS = ["Recurring Themes", "Repeated Blind Spots", "Prompt Patterns", "Concepts Deserving a Page"]
 STALE_DAYS = 30

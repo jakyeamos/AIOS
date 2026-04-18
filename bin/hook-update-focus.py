@@ -13,10 +13,11 @@ import subprocess
 import sys
 from datetime import UTC, datetime
 
+from aios_paths import get_vault_subpath
+
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
-VAULT = os.path.expanduser("~/Vaults/Command-Center")
-PROJECTS_DIR = os.path.join(VAULT, "03 Projects")
+PROJECTS_DIR = str(get_vault_subpath("03 Projects"))
 NAME_MAP_PATH = os.path.expanduser("~/AIOS/config/project-name-map.json")
 
 _PROJECT_NAME_MAP_FALLBACK = {

@@ -5,7 +5,7 @@ set -euo pipefail
 
 DB=~/AIOS/data/aios.db
 SUMMARIES=~/AIOS/logs/summaries
-VAULT=~/Vaults/Command-Center
+VAULT="${AIOS_VAULT_ROOT:-$HOME/projects/Vaults/Command-Center}"
 HANDOFFS="$VAULT/02 AI OS/02 Session Handoffs"
 LOG=~/AIOS/logs/hooks.log
 

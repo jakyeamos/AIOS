@@ -23,8 +23,10 @@ import re
 import sys
 from pathlib import Path
 
-VAULT = os.path.expanduser("~/Vaults/Command-Center")
-ARCHIVE_DIR = os.path.join(VAULT, "09 Archive")
+from aios_paths import get_vault_root, get_vault_subpath
+
+VAULT = str(get_vault_root())
+ARCHIVE_DIR = str(get_vault_subpath("09 Archive"))
 MAX_RESULTS = 5
 MAX_EXCERPT_CHARS = 300
 

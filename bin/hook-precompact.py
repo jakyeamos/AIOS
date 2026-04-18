@@ -12,11 +12,13 @@ import subprocess
 import sys
 from datetime import UTC, datetime
 
+from aios_paths import get_vault_root
+
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
 CLOSED_DIR = os.path.expanduser("~/AIOS/logs/closed")
 SUMMARIES_DIR = os.path.expanduser("~/AIOS/logs/summaries")
-VAULT = os.path.expanduser("~/Vaults/Command-Center")
+VAULT = str(get_vault_root())
 HANDOFFS = os.path.expanduser("~/AIOS/staging/session-handoffs")
 
 

@@ -3,7 +3,7 @@
 set -euo pipefail
 
 DB=~/AIOS/data/aios.db
-VAULT=~/Vaults/Command-Center
+VAULT="${AIOS_VAULT_ROOT:-$HOME/projects/Vaults/Command-Center}"
 REPORT="$VAULT/01 Dashboard/Health Check.md"
 NOW=$(date "+%Y-%m-%d %H:%M")
 WEEK_AGO=$(date -v-7d +"%Y-%m-%dT%H:%M:%SZ")

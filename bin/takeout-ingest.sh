@@ -4,7 +4,7 @@
 # Usage:
 #   takeout-ingest.sh <takeout.zip | takeout-dir>
 #   takeout-ingest.sh <takeout.zip> --service drive
-#   takeout-ingest.sh <takeout.zip> --vault ~/Vaults/Command-Center
+#   takeout-ingest.sh <takeout.zip> --vault ~/projects/Vaults/Command-Center
 #
 # Handles both zipped exports and pre-extracted directories.
 # Writes processed markdown to vault/Personal-Corpus/ and leaves raw data untouched.
@@ -12,7 +12,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="${0:A:h}"
-VAULT="${VAULT:-$HOME/Vaults/Command-Center}"
+DEFAULT_VAULT="${AIOS_VAULT_ROOT:-$HOME/projects/Vaults/Command-Center}"
+VAULT="${VAULT:-$DEFAULT_VAULT}"
 WORK_DIR="/tmp/takeout-ingest-$$"
 SERVICE="all"
 INPUT=""

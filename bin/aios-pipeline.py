@@ -23,9 +23,11 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+from aios_paths import get_vault_subpath
+
 BIN  = Path(__file__).parent
 LOG  = Path.home() / "AIOS/logs/pipeline.log"
-VAULT = Path.home() / "Vaults/Command-Center/02 AI OS"
+VAULT = get_vault_subpath("02 AI OS")
 
 PHASES = [
     "codex-ingest",

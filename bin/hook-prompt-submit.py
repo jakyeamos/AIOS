@@ -13,6 +13,8 @@ import sys
 import uuid
 from datetime import UTC, datetime
 
+from aios_paths import get_vault_root, rewrite_legacy_vault_path
+
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
 VAULT_SEARCH = os.path.expanduser("~/AIOS/bin/vault-search.py")
@@ -98,7 +100,7 @@ def retrieve_context(classification: str, prompt: str, project_name: str, conn: 
     source = ""
 
     # Vault accessibility guard — skip vault-backed retrieval if vault isn't mounted
-    vault_root = os.path.expanduser("~/Vaults/Command-Center")
+    vault_root = str(get_vault_root())
     vault_accessible = os.path.isdir(vault_root)
 
     if classification == "debug":
@@ -212,8 +214,8 @@ def retrieve_context(classification: str, prompt: str, project_name: str, conn: 
     # Wiki retrieval (human-curated vault entries only — never staging)
     wiki_cfg = policy.get("wiki_retrieval", {})
     if wiki_cfg.get("enabled", False) and classification in wiki_cfg.get("classifications", []):
-        wiki_dir_raw = wiki_cfg.get("vault_wiki_dir", "~/Vaults/Command-Center/06 Knowledge/Wiki")
-        wiki_dir = os.path.expanduser(wiki_dir_raw)
+        wiki_dir_raw = wiki_cfg.get("vault_wiki_dir", "~/projects/Vaults/Command-Center/06 Knowledge/Wiki")
+        wiki_dir = os.path.expanduser(rewrite_legacy_vault_path(wiki_dir_raw) or wiki_dir_raw)
         if os.path.isdir(wiki_dir):
             try:
                 # Extract key terms from prompt (skip short/stop words)

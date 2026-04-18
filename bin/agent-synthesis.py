@@ -19,8 +19,10 @@ from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 
+from aios_paths import get_vault_subpath
+
 DB = Path.home() / "AIOS" / "data" / "aios.db"
-ARCHIVE = Path.home() / "Vaults/Command-Center/09 Archive/AI History"
+ARCHIVE = get_vault_subpath("09 Archive", "AI History")
 MIN_COUNT_DEFAULT = 3
 
 

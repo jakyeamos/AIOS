@@ -4,7 +4,7 @@ AIOS: promote-personal-patterns.py
 Write human-approved personal patterns to the Obsidian mental map.
 
 For each personal pattern with human_approved=1 and no vault_path set:
-  - Writes a note to ~/Vaults/Command-Center/04 Personal/Mental-Map/<slug>.md
+  - Writes a note to ~/projects/Vaults/Command-Center/04 Personal/Mental-Map/<slug>.md
   - Creates/updates the MOC at Mental-Map/_index.md
   - Updates vault_path in aios.db
 
@@ -28,8 +28,10 @@ import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 
+from aios_paths import get_vault_subpath
+
 DB         = Path.home() / "AIOS/data/aios.db"
-MENTAL_MAP = Path.home() / "Vaults/Command-Center/04 Personal/Mental-Map"
+MENTAL_MAP = get_vault_subpath("04 Personal", "Mental-Map")
 MOC_PATH   = MENTAL_MAP / "_index.md"
 
 

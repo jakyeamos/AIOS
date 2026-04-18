@@ -45,7 +45,7 @@
   "wiki_retrieval": {
     "enabled": true,
     "require_human_curated": true,
-    "vault_wiki_dir": "~/Vaults/Command-Center/06 Knowledge/Wiki",
+    "vault_wiki_dir": "~/projects/Vaults/Command-Center/06 Knowledge/Wiki",
     "classifications": ["explain", "debug", "plan"],
     "max_results": 2,
     "max_chars_per_entry": 300

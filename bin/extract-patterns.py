@@ -21,8 +21,10 @@ from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 
+from aios_paths import get_vault_subpath
+
 DB = os.path.expanduser("~/AIOS/data/aios.db")
-HANDOFFS_DIR = os.path.expanduser("~/Vaults/Command-Center/02 AI OS/02 Session Handoffs")
+HANDOFFS_DIR = str(get_vault_subpath("02 AI OS", "02 Session Handoffs"))
 MIN_FREQUENCY = 2          # min occurrences before a pattern is worth recording
 MIN_PROMPT_LENGTH = 20     # ignore very short prompts as noise
 TOP_N = 10                 # max patterns extracted per class per run
