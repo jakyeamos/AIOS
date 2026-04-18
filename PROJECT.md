@@ -1,0 +1,70 @@
+# AIOS Project Truth
+
+Last updated: 2026-04-18
+
+## What AIOS Is
+
+AIOS is the local operating system for work context, agent workflows, and durable project memory.
+It is intended to unify:
+
+- structured knowledge pages
+- grounded retrieval and query surfaces
+- workflow and orchestration state
+- task-specific delegation packets
+- durable continuity across long-running sessions
+
+## Current Reality
+
+The repository currently contains three meaningful subsystems:
+
+1. `aios-ui/`
+   A Next.js local dashboard over `~/AIOS/data/aios.db`. It is strongest at session/run observability.
+
+2. `bin/` and `services/`
+   Python hooks, importers, storage maintenance tools, and the CTS prototype.
+
+3. `docs/`
+   Design intent for storage, knowledge, CTS, and the current UI, but not yet a single implemented architecture.
+
+## Current Product Boundary
+
+Shipped AIOS behavior today is primarily:
+
+- session logging
+- prompt logging
+- artifact logging
+- bug capture
+- pattern extraction
+- lightweight startup retrieval
+- dashboard-style visibility into runs, prompts, projects, and costs
+
+It is not yet a real knowledge OS or orchestration control plane.
+
+## Target Architecture Direction
+
+AIOS must separate and expose these layers explicitly:
+
+1. Durable knowledge
+2. Project memory
+3. Live workflow/orchestration state
+4. Briefing packet generation
+5. Grounded retrieval/query logic
+6. Inspectability for routing, retrieval, assumptions, and changes
+
+## This Pass
+
+This implementation pass establishes:
+
+- an audit artifact documenting the gap to the target system
+- first-class control-plane schema and modules inside `aios-ui`
+- knowledge-oriented information architecture instead of dashboard-only navigation
+- grounded query and inspectable retrieval surfaces
+- orchestration run logging and briefing packet generation
+- ADR support and handoff documentation for continuation
+
+## Guardrails
+
+- SQLite remains authoritative for machine-readable operational state
+- Vault remains authoritative for curated human-readable knowledge
+- staging remains non-canonical
+- AIOS should prefer explicit inspectable pipelines over hidden prompt behavior
