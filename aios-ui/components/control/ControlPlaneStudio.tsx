@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { StatusBadge } from "@/components/primitives/StatusBadge";
 import type { AgentProfile, BriefingPacket, OrchestrationRun, WorkflowTemplate } from "@/lib/control-plane";
 import { trpc } from "@/lib/trpc";
 
@@ -161,10 +162,25 @@ export function ControlPlaneStudio({
           <div className="stack">
             {recentRuns.map((run) => (
               <article key={run.id} className="entity-card">
-                <p className="panel-title">{run.objective}</p>
+                <div className="panel-row">
+                  <p className="panel-title">{run.objective}</p>
+                  <StatusBadge
+                    status={
+                      run.status === "completed"
+                        ? "healthy"
+                        : run.status === "failed"
+                          ? "error"
+                          : run.status === "canceled" || run.status === "superseded"
+                            ? "warning"
+                            : "unknown"
+                    }
+                    label={run.status}
+                  />
+                </div>
                 <p className="panel-subtitle">
                   {run.projectName} · {run.workflowKey} · {run.agentKey}
                 </p>
+                {run.resultSummary ? <p className="entity-meta">{run.resultSummary}</p> : null}
               </article>
             ))}
           </div>
@@ -179,6 +195,7 @@ export function ControlPlaneStudio({
                 <p className="panel-subtitle">
                   {packet.workflowKey} · {packet.agentKey}
                 </p>
+                <p className="entity-meta">{packet.sections.length} packet sections</p>
               </article>
             ))}
           </div>

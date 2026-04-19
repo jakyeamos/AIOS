@@ -6,9 +6,11 @@ import type {
   BriefingPacket,
   ContextTrace,
   OrchestrationRun,
+  OrchestrationRunStatus,
   PacketSection,
 } from "@/lib/control-plane";
 import { agentProfiles, findAgentProfile, findWorkflowTemplate, workflowTemplates } from "@/server/aios/catalog";
+import { getCtsContext } from "@/server/aios/cts";
 import { getProjectDossier, listKnowledgePages } from "@/server/aios/knowledge";
 import { listRecentChanges } from "@/server/aios/changes";
 import { ensureControlPlaneSchema } from "@/server/aios/schema";
@@ -16,15 +18,20 @@ import { ensureControlPlaneSchema } from "@/server/aios/schema";
 type RunRow = {
   id: string;
   projectId: string | null;
+  sessionId: string | null;
   projectName: string | null;
   objective: string;
   workflowKey: string;
   agentKey: string;
-  status: "planned" | "ready" | "executed" | "superseded";
+  status: OrchestrationRunStatus;
   rationale: string;
   assumptionsJson: string;
   contextTraceJson: string;
   createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+  resultSummary: string | null;
+  memoryUpdateId: string | null;
   packetId: string | null;
 };
 
@@ -89,6 +96,7 @@ const deriveContextTrace = (
   decisionCount: number,
   recentChangeCount: number,
   likelyFiles: string[],
+  ctsContext: ReturnType<typeof getCtsContext>,
 ): ContextTrace[] => [
   {
     source: "project-dossier",
@@ -114,6 +122,16 @@ const deriveContextTrace = (
     freshness: projectSummary,
     confidence: likelyFiles.length > 0 ? 0.7 : 0.45,
   },
+  ...(ctsContext && ctsContext.index_status === "current"
+    ? [
+        {
+          source: "cts",
+          reason: `Loaded CTS architecture summary and ${(ctsContext.directly_relevant_nodes ?? []).length} relevant nodes.`,
+          freshness: ctsContext.confidence_note ?? "CTS index current",
+          confidence: 0.76,
+        } satisfies ContextTrace,
+      ]
+    : []),
 ];
 
 const buildPacketSections = (input: {
@@ -126,6 +144,7 @@ const buildPacketSections = (input: {
   likelyFiles: string[];
   recentChanges: string[];
   risks: string[];
+  ctsContext: ReturnType<typeof getCtsContext>;
 }): PacketSection[] => [
   {
     title: "Project Overview",
@@ -167,6 +186,18 @@ const buildPacketSections = (input: {
   {
     title: "Likely Files Or Surfaces",
     items: input.likelyFiles.length > 0 ? input.likelyFiles : ["No artifact-backed likely files were found."],
+  },
+  {
+    title: "Code Topology",
+    items:
+      input.ctsContext && input.ctsContext.index_status === "current"
+        ? [
+            `Architecture: ${input.ctsContext.architecture_summary ?? "Unavailable"}`,
+            `Estimated blast radius: ${input.ctsContext.estimated_blast_radius ?? 0} files`,
+            `Confidence: ${input.ctsContext.confidence_note ?? "Not provided"}`,
+            ...(input.ctsContext.directly_relevant_nodes ?? []).slice(0, 6).map((node) => `Relevant node: ${node}`),
+          ]
+        : ["CTS context was unavailable or stale for this repo."],
   },
   {
     title: "Acceptance Criteria",
@@ -211,6 +242,34 @@ const buildPacketSections = (input: {
   },
 ];
 
+const loadProjectRepoPath = (db: Database.Database, projectId: string | null): string | null => {
+  if (!projectId) {
+    return null;
+  }
+
+  const row = db
+    .prepare("SELECT repo_path AS repoPath FROM projects WHERE id = ? LIMIT 1")
+    .get(projectId) as { repoPath: string } | undefined;
+
+  return row?.repoPath ?? null;
+};
+
+const supersedePendingRuns = (db: Database.Database, projectId: string | null): void => {
+  if (!projectId) {
+    return;
+  }
+
+  db.prepare(
+    `
+    UPDATE orchestration_runs
+    SET status = 'superseded',
+        updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+    WHERE project_id = ?
+      AND status IN ('planned', 'ready')
+  `,
+  ).run(projectId);
+};
+
 export const listControlPlaneRuns = (db: Database.Database): OrchestrationRun[] => {
   ensureControlPlaneSchema(db);
 
@@ -220,6 +279,7 @@ export const listControlPlaneRuns = (db: Database.Database): OrchestrationRun[] 
       SELECT
         r.id,
         r.project_id AS projectId,
+        r.session_id AS sessionId,
         p.name AS projectName,
         r.objective,
         r.workflow_key AS workflowKey,
@@ -229,6 +289,10 @@ export const listControlPlaneRuns = (db: Database.Database): OrchestrationRun[] 
         r.assumptions_json AS assumptionsJson,
         r.context_trace_json AS contextTraceJson,
         r.created_at AS createdAt,
+        r.updated_at AS updatedAt,
+        r.completed_at AS completedAt,
+        r.result_summary AS resultSummary,
+        r.memory_update_id AS memoryUpdateId,
         r.packet_id AS packetId
       FROM orchestration_runs r
       LEFT JOIN projects p ON p.id = r.project_id
@@ -241,6 +305,7 @@ export const listControlPlaneRuns = (db: Database.Database): OrchestrationRun[] 
   return rows.map((row) => ({
     id: row.id,
     projectId: row.projectId,
+    sessionId: row.sessionId,
     projectName: row.projectName ?? "Unscoped",
     objective: row.objective,
     workflowKey: row.workflowKey,
@@ -250,6 +315,10 @@ export const listControlPlaneRuns = (db: Database.Database): OrchestrationRun[] 
     assumptions: parseJsonArray<string[]>(row.assumptionsJson, []),
     contextTrace: parseJsonArray<ContextTrace[]>(row.contextTraceJson, []),
     createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    completedAt: row.completedAt,
+    resultSummary: row.resultSummary,
+    memoryUpdateId: row.memoryUpdateId,
     packetId: row.packetId,
   }));
 };
@@ -310,6 +379,7 @@ export const planTask = (
   const projectId = input.projectId ?? null;
   const dossier = projectId ? getProjectDossier(db, projectId) : null;
   const projectName = dossier?.title ?? "Unscoped AIOS work";
+  const repoPath = loadProjectRepoPath(db, projectId);
   const workflow = findWorkflowTemplate(input.objective);
   const agent = findAgentProfile(input.objective);
   const decisionPages = listKnowledgePages(db)
@@ -324,14 +394,20 @@ export const planTask = (
   const risks =
     dossier?.sections.find((section) => section.title === "Durable Memory")?.items.filter((item) => item.startsWith("Risk: ")) ?? [];
   const assumptions = deriveAssumptions(input.objective, projectName);
+  const ctsContext = getCtsContext(repoPath, input.objective);
+  const combinedLikelyFiles = [
+    ...likelyFiles,
+    ...(ctsContext?.directly_relevant_nodes ?? []).slice(0, 4),
+  ].filter((value, index, items) => items.indexOf(value) === index);
   const contextTrace = deriveContextTrace(
     projectName,
     dossier?.freshness ?? "Derived from knowledge index",
     decisionPages.length,
     dossier?.recentChanges.length ?? 0,
-    likelyFiles,
+    combinedLikelyFiles,
+    ctsContext,
   );
-  const rationale = `Selected ${workflow.name} with ${agent.name} because the objective emphasizes ${workflow.triggers[0]}.`;
+  const rationale = `Selected ${workflow.name} with ${agent.name} because the objective emphasizes ${workflow.triggers[0]} and the current state is best handled through an explicit control-plane packet.`;
   const packetSections = buildPacketSections({
     projectName,
     objective: input.objective,
@@ -339,14 +415,17 @@ export const planTask = (
     agentName: agent.name,
     dossierSummary: dossier?.summary ?? "No project dossier was available; use system-level knowledge and recent decisions.",
     decisions: decisionPages,
-    likelyFiles,
+    likelyFiles: combinedLikelyFiles,
     recentChanges,
     risks,
+    ctsContext,
   });
 
   const runId = `run-${randomUUID()}`;
   const packetId = `packet-${randomUUID()}`;
   const markdown = packetToMarkdown(input.objective, workflow.name, agent.name, packetSections);
+
+  supersedePendingRuns(db, projectId);
 
   db.prepare(
     `

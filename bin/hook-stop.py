@@ -6,6 +6,7 @@ Closes the session, writes a summary candidate, extracts next-action hints.
 
 import json
 import os
+import re
 import sqlite3
 import subprocess
 import sys
@@ -32,6 +33,8 @@ def ensure_memory_updates_table(conn: sqlite3.Connection) -> None:
         CREATE TABLE IF NOT EXISTS memory_updates (
             id TEXT PRIMARY KEY,
             project_id TEXT REFERENCES projects(id),
+            run_id TEXT,
+            packet_id TEXT,
             session_id TEXT REFERENCES sessions(id),
             source TEXT NOT NULL,
             summary TEXT NOT NULL,
@@ -42,6 +45,109 @@ def ensure_memory_updates_table(conn: sqlite3.Connection) -> None:
         )
         """
     )
+
+    existing = {
+        row[1] for row in conn.execute("PRAGMA table_info(memory_updates)").fetchall()
+    }
+    if "run_id" not in existing:
+        conn.execute("ALTER TABLE memory_updates ADD COLUMN run_id TEXT")
+    if "packet_id" not in existing:
+        conn.execute("ALTER TABLE memory_updates ADD COLUMN packet_id TEXT")
+
+
+def ensure_orchestration_runs_columns(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS orchestration_runs (
+            id TEXT PRIMARY KEY,
+            project_id TEXT,
+            session_id TEXT,
+            objective TEXT NOT NULL,
+            workflow_key TEXT NOT NULL,
+            agent_key TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'planned',
+            rationale TEXT NOT NULL,
+            assumptions_json TEXT NOT NULL DEFAULT '[]',
+            context_trace_json TEXT NOT NULL DEFAULT '[]',
+            packet_id TEXT,
+            memory_update_id TEXT,
+            result_summary TEXT,
+            completed_at TEXT,
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+            updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        )
+        """
+    )
+
+    existing = {
+        row[1] for row in conn.execute("PRAGMA table_info(orchestration_runs)").fetchall()
+    }
+    additions = {
+        "memory_update_id": "TEXT",
+        "result_summary": "TEXT",
+        "completed_at": "TEXT",
+    }
+    for column_name, definition in additions.items():
+        if column_name not in existing:
+            conn.execute(f"ALTER TABLE orchestration_runs ADD COLUMN {column_name} {definition}")
+
+
+def _tokenize(text: str | None) -> set[str]:
+    if not text:
+        return set()
+
+    stop = {
+        "this", "that", "with", "from", "into", "then", "than", "what", "when",
+        "where", "which", "task", "work", "aios", "project", "system",
+    }
+    return {
+        token
+        for token in re.findall(r"[a-z0-9]{4,}", text.lower())
+        if token not in stop
+    }
+
+
+def find_matching_orchestration_run(
+    conn: sqlite3.Connection,
+    project_id: str | None,
+    objective: str | None,
+) -> tuple[str | None, str | None]:
+    if not project_id:
+        return None, None
+
+    rows = conn.execute(
+        """
+        SELECT id, packet_id, objective, status, created_at
+        FROM orchestration_runs
+        WHERE project_id = ?
+          AND status IN ('ready', 'in_progress')
+        ORDER BY created_at DESC
+        LIMIT 5
+        """,
+        (project_id,),
+    ).fetchall()
+
+    if not rows:
+        return None, None
+
+    session_tokens = _tokenize(objective)
+    best_row = None
+    best_score = -1
+
+    for row in rows:
+        run_tokens = _tokenize(row[2])
+        overlap = len(session_tokens & run_tokens)
+        score = overlap * 10
+        if row[3] == "in_progress":
+            score += 5
+        if best_row is None or score > best_score:
+            best_row = row
+            best_score = score
+
+    if best_row and (best_score >= 10 or len(rows) == 1):
+        return best_row[0], best_row[1]
+
+    return None, None
 
 
 def main() -> None:
@@ -75,6 +181,7 @@ def main() -> None:
 
         now = datetime.now(UTC).isoformat()
         ensure_memory_updates_table(conn)
+        ensure_orchestration_runs_columns(conn)
 
         # Flag reusable insights from this session
         insight_count = 0
@@ -177,6 +284,8 @@ def main() -> None:
             f"Closed session for objective '{row[4] or 'unspecified'}' with "
             f"{len(prompts)} prompts and {len(artifacts)} artifacts."
         )
+        linked_run_id, linked_packet_id = find_matching_orchestration_run(conn, row[1], row[4])
+        memory_update_id = str(uuid.uuid4())
 
         # Close session in DB
         conn.execute(
@@ -189,6 +298,8 @@ def main() -> None:
             INSERT INTO memory_updates (
                 id,
                 project_id,
+                run_id,
+                packet_id,
                 session_id,
                 source,
                 summary,
@@ -197,11 +308,13 @@ def main() -> None:
                 open_questions_json,
                 created_at
             )
-            VALUES (?, ?, ?, 'hook-stop', ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, 'hook-stop', ?, ?, ?, ?, ?)
             """,
             (
-                str(uuid.uuid4()),
+                memory_update_id,
                 row[1],
+                linked_run_id,
+                linked_packet_id,
                 session_id,
                 memory_summary,
                 json.dumps(change_items),
@@ -210,6 +323,28 @@ def main() -> None:
                 now,
             ),
         )
+
+        if linked_run_id:
+            conn.execute(
+                """
+                UPDATE orchestration_runs
+                SET session_id = ?,
+                    status = 'completed',
+                    memory_update_id = ?,
+                    result_summary = ?,
+                    completed_at = ?,
+                    updated_at = ?
+                WHERE id = ?
+                """,
+                (
+                    session_id,
+                    memory_update_id,
+                    memory_summary,
+                    now,
+                    now,
+                    linked_run_id,
+                ),
+            )
 
         # Log Stop event
         conn.execute(

@@ -15,10 +15,13 @@ export default async function KnowledgePage(): Promise<React.JSX.Element> {
         <KnowledgeIndex title="Projects" pages={grouped.project} />
         <KnowledgeIndex title="Decisions" pages={grouped.decision} />
       </div>
-      <div className="grid grid-3">
+      <div className="grid grid-2">
+        <KnowledgeIndex title="Concepts" pages={grouped.concept} />
+        <KnowledgeIndex title="Systems" pages={grouped.system} />
+      </div>
+      <div className="grid grid-2">
         <KnowledgeIndex title="Workflows" pages={grouped.workflow} />
         <KnowledgeIndex title="Agents" pages={grouped.agent} />
-        <KnowledgeIndex title="Systems" pages={grouped.system} />
       </div>
     </PageShell>
   );

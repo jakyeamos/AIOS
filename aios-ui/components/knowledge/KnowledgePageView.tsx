@@ -84,6 +84,20 @@ export function KnowledgePageView({ page }: { page: KnowledgePageDetail }): Reac
               </ul>
             </article>
             <article className="entity-card">
+              <p className="panel-title">Backlinks</p>
+              <ul className="detail-list">
+                {page.backlinks.length > 0 ? (
+                  page.backlinks.map((backlink) => (
+                    <li key={`${backlink.relation}-${backlink.href}`}>
+                      {backlink.relation}: <Link href={backlink.href}>{backlink.label}</Link>
+                    </li>
+                  ))
+                ) : (
+                  <li>No backlinks have been resolved for this page yet.</li>
+                )}
+              </ul>
+            </article>
+            <article className="entity-card">
               <p className="panel-title">References</p>
               <ul className="detail-list">
                 {page.references.map((reference) => (

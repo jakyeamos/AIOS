@@ -14,10 +14,13 @@ import type {
 import { agentProfiles, workflowTemplates } from "@/server/aios/catalog";
 import { listRecentChanges } from "@/server/aios/changes";
 import {
+  extractWikiLinks,
   extractMarkdownTitle,
   extractSection,
+  parseFrontmatterList,
   parseSimpleFrontmatter,
   resolveAiosRoot,
+  resolveVaultRoot,
   stripFrontmatter,
   summarizeParagraph,
 } from "@/server/aios/filesystem";
@@ -77,10 +80,23 @@ type SystemRecord = {
   sections: Array<{ title: string; items: string[]; body?: string }>;
 };
 
+type WikiRecord = {
+  slug: string;
+  title: string;
+  summary: string;
+  sourcePath: string;
+  createdAt: string;
+  tags: string[];
+  confidence: number;
+  links: string[];
+  sections: Array<{ title: string; body?: string; items: string[] }>;
+};
+
 const makeProjectSlug = (id: string): string => `project-${id}`;
 const makeWorkflowSlug = (key: string): string => `workflow-${key}`;
 const makeAgentSlug = (key: string): string => `agent-${key}`;
 const makeSystemSlug = (key: string): string => `system-${key}`;
+const makeConceptSlug = (fileStem: string): string => `concept-${fileStem}`;
 
 const freshnessLabel = (isoValue: string | null): string => {
   if (!isoValue) {
@@ -112,6 +128,52 @@ const parseJsonArray = (raw: string): string[] => {
   }
 
   return [];
+};
+
+const parseConfidence = (value: string | undefined, defaultValue = 0.82): number => {
+  if (!value) {
+    return defaultValue;
+  }
+
+  if (value === "high") {
+    return 0.9;
+  }
+
+  if (value === "medium") {
+    return 0.72;
+  }
+
+  if (value === "low") {
+    return 0.55;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isNaN(parsed)) {
+    return parsed > 1 ? parsed / 100 : parsed;
+  }
+
+  return defaultValue;
+};
+
+const extractWikiSections = (content: string): Array<{ title: string; body?: string; items: string[] }> => {
+  const stripped = stripFrontmatter(content);
+  const matches = stripped.matchAll(/^##\s+(.+)\n([\s\S]*?)(?=^##\s+|\Z)/gm);
+
+  return Array.from(matches).map((match) => {
+    const title = match[1].trim();
+    const body = match[2].trim();
+    const items = body
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith("- ") || /^\d+\.\s/.test(line))
+      .map((line) => line.replace(/^-\s+/, "").replace(/^\d+\.\s+/, ""));
+
+    return {
+      title,
+      body: body.length > 0 ? body : undefined,
+      items,
+    };
+  });
 };
 
 const loadDecisions = (): DecisionRecord[] => {
@@ -232,6 +294,47 @@ const loadSystems = (): SystemRecord[] => {
       ],
     },
   ];
+};
+
+const loadWikiPages = (): WikiRecord[] => {
+  const wikiDir = path.join(resolveVaultRoot(), "06 Knowledge", "Wiki");
+
+  if (!fs.existsSync(wikiDir)) {
+    return [];
+  }
+
+  return fs
+    .readdirSync(wikiDir)
+    .filter((name) => name.endsWith(".md"))
+    .sort()
+    .map((name) => {
+      const fullPath = path.join(wikiDir, name);
+      const content = fs.readFileSync(fullPath, "utf8");
+      const frontmatter = parseSimpleFrontmatter(content);
+      const tags = parseFrontmatterList(content, "tags");
+      const reviewStatus = frontmatter["review-status"] ?? "current";
+      const provenance = frontmatter.provenance ?? "human";
+      const quality = frontmatter.quality ?? "human-curated";
+
+      if (reviewStatus === "pending" || provenance === "agent-promoted" || quality === "draft") {
+        return null;
+      }
+
+      const fileStem = name.replace(/\.md$/, "");
+
+      return {
+        slug: makeConceptSlug(fileStem),
+        title: extractMarkdownTitle(content, fileStem),
+        summary: summarizeParagraph(content),
+        sourcePath: fullPath,
+        createdAt: frontmatter.created ?? fs.statSync(fullPath).mtime.toISOString(),
+        tags,
+        confidence: parseConfidence(frontmatter.confidence, quality === "human-curated" ? 0.88 : 0.72),
+        links: extractWikiLinks(content),
+        sections: extractWikiSections(content),
+      } satisfies WikiRecord;
+    })
+    .filter((record): record is WikiRecord => Boolean(record));
 };
 
 const listProjectRows = (db: Database.Database): ProjectRow[] => {
@@ -377,8 +480,18 @@ export const listKnowledgePages = (db: Database.Database): KnowledgePageSummary[
     confidence: 0.92,
     tags: ["system"],
   } satisfies KnowledgePageSummary));
+  const conceptPages = loadWikiPages().map((page) => ({
+    slug: page.slug,
+    title: page.title,
+    kind: "concept",
+    summary: page.summary,
+    status: "healthy",
+    freshness: freshnessLabel(page.createdAt),
+    confidence: page.confidence,
+    tags: page.tags.length > 0 ? page.tags : ["wiki"],
+  } satisfies KnowledgePageSummary));
 
-  return [...projectPages, ...decisionPages, ...workflowPages, ...agentPages, ...systemPages].sort((left, right) =>
+  return [...projectPages, ...decisionPages, ...workflowPages, ...agentPages, ...systemPages, ...conceptPages].sort((left, right) =>
     left.title.localeCompare(right.title),
   );
 };
@@ -713,6 +826,70 @@ const buildSystemDetail = (db: Database.Database, key: string): KnowledgePageDet
   };
 };
 
+const resolveKnowledgeRelationship = (
+  db: Database.Database,
+  label: string,
+  relation: string,
+): KnowledgeRelationship | null => {
+  const normalized = label.trim().toLowerCase();
+  const page = listKnowledgePages(db).find((entry) => entry.title.toLowerCase() === normalized);
+
+  if (!page) {
+    return null;
+  }
+
+  return {
+    label: page.title,
+    href: `/knowledge/${page.slug}`,
+    kind: page.kind,
+    relation,
+  };
+};
+
+const buildConceptDetail = (db: Database.Database, slug: string): KnowledgePageDetail | null => {
+  const wikiPages = loadWikiPages();
+  const page = wikiPages.find((entry) => entry.slug === slug);
+
+  if (!page) {
+    return null;
+  }
+
+  const relationships = page.links
+    .map((link) => resolveKnowledgeRelationship(db, link, "Links to"))
+    .filter((relationship): relationship is KnowledgeRelationship => Boolean(relationship));
+
+  const backlinks = wikiPages
+    .filter((entry) => entry.slug !== page.slug && entry.links.some((link) => link.toLowerCase() === page.title.toLowerCase()))
+    .map((entry) => ({
+      label: entry.title,
+      href: `/knowledge/${entry.slug}`,
+      kind: "concept" as const,
+      relation: "Linked from",
+    }));
+
+  return {
+    slug: page.slug,
+    title: page.title,
+    kind: "concept",
+    summary: page.summary,
+    status: "healthy",
+    freshness: freshnessLabel(page.createdAt),
+    confidence: page.confidence,
+    tags: page.tags.length > 0 ? page.tags : ["wiki"],
+    references: [
+      {
+        label: path.basename(page.sourcePath),
+        href: `/knowledge/${page.slug}`,
+        detail: page.sourcePath,
+      },
+    ],
+    relationships,
+    backlinks,
+    sections: page.sections.length > 0 ? page.sections : [{ title: "Overview", body: page.summary, items: [] }],
+    recentChanges: listRecentChanges(db, { limit: 5 }).filter((item) => item.kind === "decision" || item.kind === "memory"),
+  };
+};
+
 export const getKnowledgePage = (db: Database.Database, slug: string): KnowledgePageDetail | null => {
   if (slug.startsWith("project-")) {
     return buildProjectDetail(db, slug.slice("project-".length));
@@ -728,6 +905,10 @@ export const getKnowledgePage = (db: Database.Database, slug: string): Knowledge
 
   if (slug.startsWith("system-")) {
     return buildSystemDetail(db, slug.slice("system-".length));
+  }
+
+  if (slug.startsWith("concept-")) {
+    return buildConceptDetail(db, slug);
   }
 
   return buildDecisionDetail(db, slug);
@@ -747,5 +928,6 @@ export const listKnowledgeKinds = (db: Database.Database): Record<KnowledgePageK
     workflow: pages.filter((page) => page.kind === "workflow"),
     agent: pages.filter((page) => page.kind === "agent"),
     system: pages.filter((page) => page.kind === "system"),
+    concept: pages.filter((page) => page.kind === "concept"),
   };
 };

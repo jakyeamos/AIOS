@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 type FrontmatterRecord = Record<string, string>;
@@ -13,6 +14,23 @@ export const resolveAiosRoot = (): string => {
   }
 
   return process.cwd();
+};
+
+export const resolveVaultRoot = (): string => {
+  const envRoot = process.env.AIOS_VAULT_ROOT;
+  const candidates = [
+    envRoot ? path.resolve(envRoot.replace(/^~(?=$|\/|\\)/, os.homedir())) : null,
+    path.join(os.homedir(), "projects", "Vaults", "Command-Center"),
+    path.join(os.homedir(), "Vaults", "Command-Center"),
+  ].filter((candidate): candidate is string => Boolean(candidate));
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return path.join(os.homedir(), "projects", "Vaults", "Command-Center");
 };
 
 export const parseSimpleFrontmatter = (content: string): FrontmatterRecord => {
@@ -36,6 +54,31 @@ export const parseSimpleFrontmatter = (content: string): FrontmatterRecord => {
     });
 
   return Object.fromEntries(entries);
+};
+
+export const parseFrontmatterList = (content: string, key: string): string[] => {
+  if (!content.startsWith("---\n")) {
+    return [];
+  }
+
+  const end = content.indexOf("\n---", 4);
+  if (end === -1) {
+    return [];
+  }
+
+  const frontmatter = content.slice(0, end + 4);
+  const matcher = new RegExp(`^${key}:\\s*\\n((?:\\s+-\\s+.+\\n?)*)`, "m");
+  const match = frontmatter.match(matcher);
+
+  if (!match?.[1]) {
+    return [];
+  }
+
+  return match[1]
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("- "))
+    .map((line) => line.slice(2).trim());
 };
 
 export const stripFrontmatter = (content: string): string => {
@@ -68,4 +111,16 @@ export const summarizeParagraph = (content: string): string => {
     .trim();
   const firstParagraph = stripped.split(/\n\s*\n/)[0] ?? "";
   return firstParagraph.slice(0, 260).trim();
+};
+
+export const extractWikiLinks = (content: string): string[] => {
+  const matches = content.match(/\[\[([^[\]]+)\]\]/g) ?? [];
+
+  return matches.map((match) =>
+    match
+      .slice(2, -2)
+      .split("|")[0]
+      .split("#")[0]
+      .trim(),
+  );
 };

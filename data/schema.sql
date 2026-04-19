@@ -113,6 +113,9 @@ CREATE TABLE IF NOT EXISTS orchestration_runs (
   assumptions_json TEXT NOT NULL DEFAULT '[]',
   context_trace_json TEXT NOT NULL DEFAULT '[]',
   packet_id TEXT,
+  memory_update_id TEXT,
+  result_summary TEXT,
+  completed_at TEXT,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
@@ -134,6 +137,8 @@ CREATE INDEX IF NOT EXISTS idx_briefing_packets_project
 CREATE TABLE IF NOT EXISTS memory_updates (
   id TEXT PRIMARY KEY,
   project_id TEXT REFERENCES projects(id),
+  run_id TEXT REFERENCES orchestration_runs(id),
+  packet_id TEXT REFERENCES briefing_packets(id),
   session_id TEXT REFERENCES sessions(id),
   source TEXT NOT NULL,
   summary TEXT NOT NULL,

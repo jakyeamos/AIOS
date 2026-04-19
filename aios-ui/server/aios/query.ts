@@ -1,6 +1,7 @@
 import type Database from "better-sqlite3";
 
 import type { GroundedAnswer, GroundedCitation } from "@/lib/control-plane";
+import { getCtsContext } from "@/server/aios/cts";
 import { getProjectDossier, listKnowledgePages } from "@/server/aios/knowledge";
 import { listRecentChanges } from "@/server/aios/changes";
 
@@ -36,6 +37,7 @@ const makeProjectCitations = (
   projectId: string,
   projectTitle: string,
   recentChanges: ReturnType<typeof listRecentChanges>,
+  includeCts = false,
 ): GroundedCitation[] => [
   {
     label: `${projectTitle} dossier`,
@@ -47,7 +49,28 @@ const makeProjectCitations = (
     href: change.href ?? "/knowledge",
     excerpt: change.summary,
   })),
+  ...(includeCts
+    ? [
+        {
+          label: "Code Topology Service",
+          href: "/knowledge/system-cts",
+          excerpt: "Structural code context used to ground likely files and blast-radius signals.",
+        } satisfies GroundedCitation,
+      ]
+    : []),
 ];
+
+const loadProjectRepoPath = (db: Database.Database, projectId: string | null): string | null => {
+  if (!projectId) {
+    return null;
+  }
+
+  const row = db
+    .prepare("SELECT repo_path AS repoPath FROM projects WHERE id = ? LIMIT 1")
+    .get(projectId) as { repoPath: string } | undefined;
+
+  return row?.repoPath ?? null;
+};
 
 export const answerGroundedQuestion = (
   db: Database.Database,
@@ -56,6 +79,8 @@ export const answerGroundedQuestion = (
   const intent = classifyIntent(input.question);
   const projectId = input.projectId ?? null;
   const dossier = projectId ? getProjectDossier(db, projectId) : null;
+  const repoPath = loadProjectRepoPath(db, projectId);
+  const ctsContext = getCtsContext(repoPath, input.question);
   const recentChanges = listRecentChanges(db, { projectId: projectId ?? undefined, limit: 5 });
   const decisionPages = listKnowledgePages(db).filter((page) => page.kind === "decision").slice(0, 3);
 
@@ -80,12 +105,24 @@ export const answerGroundedQuestion = (
         href: change.href ?? "/control",
         excerpt: change.summary,
       })),
-      retrievalTrace: recentChanges.map((change) => ({
-        source: change.kind,
-        reason: `Loaded ${change.kind} signal for recent changes.`,
-        freshness: change.timestamp,
-        confidence: change.confidence,
-      })),
+      retrievalTrace: [
+        ...recentChanges.map((change) => ({
+          source: change.kind,
+          reason: `Loaded ${change.kind} signal for recent changes.`,
+          freshness: change.timestamp,
+          confidence: change.confidence,
+        })),
+        ...(ctsContext && ctsContext.index_status === "current"
+          ? [
+              {
+                source: "cts",
+                reason: "Loaded CTS context while evaluating recent changes impact.",
+                freshness: ctsContext.confidence_note ?? "CTS index current",
+                confidence: 0.74,
+              },
+            ]
+          : []),
+      ],
     };
   }
 
@@ -95,17 +132,28 @@ export const answerGroundedQuestion = (
       question: input.question,
       intent,
       answer: `${dossier.title} is ${dossier.status} with freshness "${dossier.freshness}". The strongest durable state signal is: ${memorySection?.body ?? dossier.summary}`,
-      facts: dossier.sections.flatMap((section) => section.items).slice(0, 6),
+      facts: [
+        ...dossier.sections.flatMap((section) => section.items).slice(0, 6),
+        ...(ctsContext && ctsContext.index_status === "current"
+          ? [
+              `CTS architecture: ${ctsContext.architecture_summary ?? "Unavailable"}`,
+              ...(ctsContext.directly_relevant_nodes ?? []).slice(0, 3).map((node) => `CTS node: ${node}`),
+            ]
+          : []),
+      ],
       inferences: [
         dossier.status === "warning"
           ? "Open bugs or weak memory signals are making this project operationally noisy."
           : "The project has enough recent state to support task-scoped delegation.",
+        ...(ctsContext && ctsContext.index_status === "current"
+          ? ["CTS context suggests the likely implementation surface can be narrowed before delegation."]
+          : []),
       ],
       recommendations: [
         "Use the project dossier or control plane packet generator before delegating implementation work.",
       ],
       assumptions: [],
-      citations: makeProjectCitations(projectId, dossier.title, recentChanges),
+      citations: makeProjectCitations(projectId, dossier.title, recentChanges, Boolean(ctsContext && ctsContext.index_status === "current")),
       retrievalTrace: [
         {
           source: "project-dossier",
@@ -113,6 +161,16 @@ export const answerGroundedQuestion = (
           freshness: dossier.freshness,
           confidence: dossier.confidence,
         },
+        ...(ctsContext && ctsContext.index_status === "current"
+          ? [
+              {
+                source: "cts",
+                reason: "Loaded CTS architecture and relevant node context for the project state answer.",
+                freshness: ctsContext.confidence_note ?? "CTS index current",
+                confidence: 0.76,
+              },
+            ]
+          : []),
       ],
     };
   }
@@ -157,15 +215,21 @@ export const answerGroundedQuestion = (
       facts: [
         dossier.summary,
         ...likelyFiles.slice(0, 4).map((filePath) => `Likely file: ${filePath}`),
+        ...(ctsContext && ctsContext.index_status === "current"
+          ? (ctsContext.directly_relevant_nodes ?? []).slice(0, 4).map((node) => `CTS node: ${node}`)
+          : []),
       ],
       inferences: [
         "Without a task-specific packet, the agent would receive too much low-signal operational history.",
+        ...(ctsContext && ctsContext.index_status === "current"
+          ? ["CTS context can further narrow the likely code surface before execution starts."]
+          : []),
       ],
       recommendations: [
         "Generate a packet from the Control Plane page with the exact task objective before delegation.",
       ],
       assumptions: [],
-      citations: makeProjectCitations(projectId, dossier.title, recentChanges),
+      citations: makeProjectCitations(projectId, dossier.title, recentChanges, Boolean(ctsContext && ctsContext.index_status === "current")),
       retrievalTrace: [
         {
           source: "project-dossier",
@@ -173,6 +237,16 @@ export const answerGroundedQuestion = (
           freshness: dossier.freshness,
           confidence: dossier.confidence,
         },
+        ...(ctsContext && ctsContext.index_status === "current"
+          ? [
+              {
+                source: "cts",
+                reason: "Loaded CTS nodes for agent-brief grounding.",
+                freshness: ctsContext.confidence_note ?? "CTS index current",
+                confidence: 0.76,
+              },
+            ]
+          : []),
       ],
     };
   }

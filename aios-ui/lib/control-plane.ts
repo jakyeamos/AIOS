@@ -1,4 +1,4 @@
-export type KnowledgePageKind = "project" | "decision" | "workflow" | "agent" | "system";
+export type KnowledgePageKind = "project" | "decision" | "workflow" | "agent" | "system" | "concept";
 
 export type HealthStatus = "healthy" | "warning" | "error" | "unknown";
 
@@ -30,6 +30,15 @@ export type ChangeItem = {
   kind: "session" | "decision" | "packet" | "memory" | "bug";
   confidence: number;
 };
+
+export type OrchestrationRunStatus =
+  | "planned"
+  | "ready"
+  | "in_progress"
+  | "completed"
+  | "failed"
+  | "canceled"
+  | "superseded";
 
 export type KnowledgePageSummary = {
   slug: string;
@@ -96,14 +105,19 @@ export type OrchestrationRun = {
   id: string;
   projectId: string | null;
   projectName: string;
+  sessionId: string | null;
   objective: string;
   workflowKey: string;
   agentKey: string;
-  status: "planned" | "ready" | "executed" | "superseded";
+  status: OrchestrationRunStatus;
   rationale: string;
   assumptions: string[];
   contextTrace: ContextTrace[];
   createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+  resultSummary: string | null;
+  memoryUpdateId: string | null;
   packetId: string | null;
 };
 
