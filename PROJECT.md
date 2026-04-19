@@ -77,14 +77,26 @@ The current app now includes:
 - ADR-backed decision logging in `docs/adr/`
 - upgraded project dossiers with memory, rules, likely files, decisions, and recent changes
 - `hook-stop.py` memory update writes on session close
+- orchestration run lifecycle closure from `hook-stop.py`, including:
+  - `session_id`
+  - `memory_update_id`
+  - `result_summary`
+  - `completed_at`
+- curated vault wiki ingestion into first-class `concept` knowledge pages
+- derived wiki backlinks and relationship resolution inside the knowledge surface
+- CTS-backed enrichment for:
+  - control-plane packet generation
+  - grounded query project-state answers
+  - grounded query agent brief answers
+  - inspectable retrieval traces
 
 ## Still Missing
 
-- execution-state transitions beyond planned/ready
-- richer task routing tied to real subagent registries
+- explicit `in_progress` and failure/cancel transitions driven by real execution events rather than session-close heuristics
+- richer task routing tied to real subagent registries and invocation backends
 - contradiction/drift detection beyond lightweight hooks
-- vault-backed wiki entity ingestion as first-class page objects
-- tighter CTS integration inside packet generation and grounded query
+- persisted knowledge indexing beyond read-time vault derivation
+- packet/result inspection surfaces that show exactly what changed after a run
 
 ## Guardrails
 
