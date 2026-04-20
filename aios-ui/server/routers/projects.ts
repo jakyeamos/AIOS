@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import type { TaskiProjectSummary } from "@/lib/control-plane";
+import { getTaskiProjectSummary } from "@/server/aios/taski";
 import type { Project, ProjectStatus, Session } from "@/lib/types";
 import { tableExists } from "@/server/db";
 import { createTRPCRouter, publicProcedure } from "@/server/trpc";
@@ -175,4 +177,8 @@ export const projectsRouter = createTRPCRouter({
         sessions: sessionsRows.map(mapSession),
       };
     }),
+
+  taskiSummary: publicProcedure
+    .input(z.object({ projectId: z.string().min(1) }))
+    .query(({ ctx, input }): TaskiProjectSummary | null => getTaskiProjectSummary(ctx.db, input.projectId)),
 });

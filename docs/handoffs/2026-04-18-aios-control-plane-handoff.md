@@ -1,7 +1,7 @@
 # AIOS Control Plane Handoff
 
-Date: 2026-04-18
-Scope: audit + control-plane implementation pass + follow-on architecture steps
+Date: 2026-04-19
+Scope: audit + control-plane implementation pass + topic-graph / ranked-packet vertical slice
 
 ## What Was Audited
 
@@ -50,19 +50,45 @@ Scope: audit + control-plane implementation pass + follow-on architecture steps
 - Added CTS-backed topology sections and retrieval traces in packet generation and grounded query flows
 - Updated `/control` to surface run status badges and result summaries
 - Updated `/knowledge` to expose concepts and backlinks directly in the page surface
+- Added persisted topic graph tables:
+  - `knowledge_topics`
+  - `knowledge_relationships`
+  - `knowledge_references`
+  - `knowledge_markers`
+  - `knowledge_graph_state`
+- Added compact ranked packet metadata to `briefing_packets`:
+  - `policy_mode`
+  - `token_budget`
+  - `selection_trace_json`
+  - `omitted_context_json`
+- Added traced expansion logging in `packet_expansions`
+- Added layered learning writebacks in `improvement_writebacks`
+- Added topic-graph ingestion and search in [aios-ui/server/aios/topic-graph.ts](/Users/jakyeamos/AIOS/aios-ui/server/aios/topic-graph.ts)
+- Added ranked packet assembly and expansion logic in [aios-ui/server/aios/packet-assembly.ts](/Users/jakyeamos/AIOS/aios-ui/server/aios/packet-assembly.ts)
+- Added Taski-led project operating surface in:
+  - [aios-ui/server/aios/taski.ts](/Users/jakyeamos/AIOS/aios-ui/server/aios/taski.ts)
+  - [aios-ui/components/projects/TaskiProjectSurface.tsx](/Users/jakyeamos/AIOS/aios-ui/components/projects/TaskiProjectSurface.tsx)
+- Reworked `/projects/[id]` to make the Taski summary the dominant operating tab
+- Reworked `/control` packet generation around the hardened compact-ranked default and explicit targeted expansion
+- Added architecture note in [2026-04-19-topic-graph-ranked-packets.md](/Users/jakyeamos/AIOS/docs/architecture/2026-04-19-topic-graph-ranked-packets.md)
+- Added hook-stop writeback proposals into `improvement_writebacks`
 
 ## Intentionally Deferred
 
 - Real execution tracking beyond plan/ready/completed heuristics
 - multi-agent registry tied to actual invocation backends
-- contradiction/drift jobs that write structured findings
-- persisted wiki indexing instead of read-time derivation
-- stronger run matching than the current token-overlap heuristic in `hook-stop.py`
+- stronger contradiction/drift jobs beyond the current lexical/freshness heuristics
+- exact run/session handshake instead of heuristic token-overlap matching in `hook-stop.py`
 - explicit failure/cancel transitions from runtime events
+- approval UI/workflow for applying or rejecting global and token-regressive writebacks
 - cleanup of pre-existing anti-slop warnings in older UI routes
 
 ## Exact Files To Continue From
 
+- [aios-ui/server/aios/topic-graph.ts](/Users/jakyeamos/AIOS/aios-ui/server/aios/topic-graph.ts)
+- [aios-ui/server/aios/packet-assembly.ts](/Users/jakyeamos/AIOS/aios-ui/server/aios/packet-assembly.ts)
+- [aios-ui/server/aios/taski.ts](/Users/jakyeamos/AIOS/aios-ui/server/aios/taski.ts)
+- [aios-ui/server/aios/learning.ts](/Users/jakyeamos/AIOS/aios-ui/server/aios/learning.ts)
 - [aios-ui/server/aios/knowledge.ts](/Users/jakyeamos/AIOS/aios-ui/server/aios/knowledge.ts)
 - [aios-ui/server/aios/control-plane.ts](/Users/jakyeamos/AIOS/aios-ui/server/aios/control-plane.ts)
 - [aios-ui/server/aios/query.ts](/Users/jakyeamos/AIOS/aios-ui/server/aios/query.ts)
@@ -71,6 +97,7 @@ Scope: audit + control-plane implementation pass + follow-on architecture steps
 - [aios-ui/server/aios/changes.ts](/Users/jakyeamos/AIOS/aios-ui/server/aios/changes.ts)
 - [aios-ui/components/control/ControlPlaneStudio.tsx](/Users/jakyeamos/AIOS/aios-ui/components/control/ControlPlaneStudio.tsx)
 - [aios-ui/components/knowledge/KnowledgePageView.tsx](/Users/jakyeamos/AIOS/aios-ui/components/knowledge/KnowledgePageView.tsx)
+- [aios-ui/components/projects/TaskiProjectSurface.tsx](/Users/jakyeamos/AIOS/aios-ui/components/projects/TaskiProjectSurface.tsx)
 - [aios-ui/components/query/GroundedQueryStudio.tsx](/Users/jakyeamos/AIOS/aios-ui/components/query/GroundedQueryStudio.tsx)
 - [bin/hook-stop.py](/Users/jakyeamos/AIOS/bin/hook-stop.py)
 - [schema.sql](/Users/jakyeamos/AIOS/schema.sql)
@@ -79,16 +106,17 @@ Scope: audit + control-plane implementation pass + follow-on architecture steps
 ## Unresolved Architectural Questions
 
 - Should orchestration runs stay SQLite-first, or should some run metadata also be mirrored into the vault as curated operational narratives?
-- Should knowledge pages remain derived-at-read-time from vault content, or should AIOS maintain a persisted page/index layer with explicit backlinks?
+- Should knowledge pages fully pivot to the persisted topic graph for all detail rendering, or continue as hybrid dossier/wiki views with graph enrichment?
 - Should grounded query remain deterministic for inspectability, or should it later gain an LLM answerer constrained by the same retrieval trace?
 - How much of packet generation should come from CTS vs session/artifact history vs curated ADRs?
 - Should run completion linkage move from token overlap to an explicit run/session handshake written at delegation time?
+- Should writeback proposals be auto-generated only at session stop, or also continuously after packet expansion and run inspection?
 
 ## Recommended Next Implementation Order
 
-1. Add an explicit run/session handshake so completion updates do not depend on heuristic objective matching in [bin/hook-stop.py](/Users/jakyeamos/AIOS/bin/hook-stop.py)
-2. Introduce `in_progress`, `failed`, and `canceled` transitions from real execution events and render those transitions in `/control`
-3. Persist wiki-derived pages/backlinks into an index or cache layer so knowledge browsing is not rebuilt only at read time
-4. Add contradiction/staleness detectors that write structured findings surfaced in `/query` and `/knowledge`
+1. Add an explicit run/session handshake so completion updates and writebacks do not depend on heuristic objective matching in [bin/hook-stop.py](/Users/jakyeamos/AIOS/bin/hook-stop.py)
+2. Introduce `in_progress`, `failed`, and `canceled` transitions from real execution events and render those transitions in `/control` and the Taski surface
+3. Add approval UI for `improvement_writebacks`, especially for `global_policy` and token-regressive proposals
+4. Strengthen contradiction/drift detection so markers come from structured evaluation rather than only lexical overlap and freshness cues
 5. Tie workflow and agent registry entries to real invocation backends so AIOS becomes the actual control plane rather than a planner plus ledger
-6. Clean up the remaining older dashboard routes and pre-existing anti-slop warnings
+6. Clean up the remaining older dashboard routes and pre-existing anti-slop warnings once the operating surfaces are stable

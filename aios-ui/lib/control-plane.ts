@@ -82,11 +82,29 @@ export type PacketSection = {
   items: string[];
 };
 
+export type PacketPolicyMode = "compact-ranked" | "explore";
+
 export type ContextTrace = {
   source: string;
   reason: string;
   freshness: string;
   confidence: number;
+};
+
+export type PacketSelectionTraceItem = {
+  section: string;
+  label: string;
+  sourceKind: string;
+  sourceHref: string;
+  score: number;
+  reason: string;
+};
+
+export type OmittedContextItem = {
+  label: string;
+  sourceKind: string;
+  score: number;
+  reason: string;
 };
 
 export type BriefingPacket = {
@@ -99,6 +117,10 @@ export type BriefingPacket = {
   createdAt: string;
   markdown: string;
   sections: PacketSection[];
+  policyMode: PacketPolicyMode;
+  tokenBudget: number;
+  selectionTrace: PacketSelectionTraceItem[];
+  omittedContext: OmittedContextItem[];
 };
 
 export type OrchestrationRun = {
@@ -137,4 +159,96 @@ export type GroundedAnswer = {
   assumptions: string[];
   citations: GroundedCitation[];
   retrievalTrace: ContextTrace[];
+};
+
+export type TopicGraphKind = KnowledgePageKind | "task_type" | "policy";
+
+export type TopicGraphTopic = {
+  id: string;
+  slug: string;
+  title: string;
+  kind: TopicGraphKind;
+  summary: string;
+  confidence: number;
+  freshness: string;
+  tags: string[];
+  canonicalHref: string;
+  referenceCount: number;
+  markerCount: number;
+};
+
+export type TopicGraphRelationship = {
+  relation: string;
+  fromSlug: string;
+  toSlug: string;
+  fromTitle: string;
+  toTitle: string;
+  weight: number;
+};
+
+export type TopicGraphReference = {
+  sourceKind: string;
+  sourceId: string | null;
+  label: string;
+  href: string;
+  excerpt: string;
+  freshness: string;
+  confidence: number;
+};
+
+export type TopicGraphMarker = {
+  kind: "contradiction" | "drift" | "stale";
+  severity: "warning" | "error" | "info";
+  summary: string;
+  sourceRef: string | null;
+};
+
+export type PacketExpansionKind = "topic" | "failure_pattern" | "code_area" | "policy" | "recent_run";
+
+export type PacketExpansion = {
+  id: string;
+  runId: string | null;
+  packetId: string;
+  projectId: string | null;
+  requestKind: PacketExpansionKind;
+  requestTarget: string;
+  tokenBudget: number;
+  status: "completed";
+  returnedContext: string[];
+  trace: ContextTrace[];
+  createdAt: string;
+};
+
+export type ImprovementLayerType = "topic" | "project" | "workflow" | "task_type" | "global_policy";
+
+export type ImprovementWriteback = {
+  id: string;
+  runId: string | null;
+  projectId: string | null;
+  layerType: ImprovementLayerType;
+  layerKey: string;
+  title: string;
+  summary: string;
+  evidence: string[];
+  status: "proposed" | "pending_approval" | "applied" | "rejected";
+  requiresApproval: boolean;
+  approvalReason: string | null;
+  tokenRegressive: boolean;
+  createdAt: string;
+};
+
+export type TaskiProjectSummary = {
+  projectId: string;
+  projectTitle: string;
+  status: HealthStatus;
+  freshness: string;
+  overview: string;
+  topTopics: TopicGraphTopic[];
+  activeRuns: OrchestrationRun[];
+  blockers: string[];
+  recentFailures: string[];
+  recentSuccesses: string[];
+  learnedPolicies: ImprovementWriteback[];
+  driftMarkers: TopicGraphMarker[];
+  suggestedNextActions: string[];
 };

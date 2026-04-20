@@ -4,6 +4,7 @@ import type { GroundedAnswer, GroundedCitation } from "@/lib/control-plane";
 import { getCtsContext } from "@/server/aios/cts";
 import { getProjectDossier, listKnowledgePages } from "@/server/aios/knowledge";
 import { listRecentChanges } from "@/server/aios/changes";
+import { getTopicMarkers, getTopicReferences, searchTopicGraph } from "@/server/aios/topic-graph";
 
 const classifyIntent = (
   question: string,
@@ -83,6 +84,7 @@ export const answerGroundedQuestion = (
   const ctsContext = getCtsContext(repoPath, input.question);
   const recentChanges = listRecentChanges(db, { projectId: projectId ?? undefined, limit: 5 });
   const decisionPages = listKnowledgePages(db).filter((page) => page.kind === "decision").slice(0, 3);
+  const topicMatches = searchTopicGraph(db, { projectId, query: input.question, limit: 4 });
 
   if (intent === "what_changed") {
     return {
@@ -95,6 +97,7 @@ export const answerGroundedQuestion = (
       facts: recentChanges.map((change) => `${change.title}: ${change.summary}`),
       inferences: [
         "Recent changes are dominated by operational traces, so project memory capture still needs broader adoption.",
+        ...(topicMatches.length > 0 ? [`Topic graph linked this question to ${topicMatches[0].topic.title}.`] : []),
       ],
       recommendations: [
         "Use the control plane packet flow before delegation so future runs produce richer change history.",
@@ -106,6 +109,12 @@ export const answerGroundedQuestion = (
         excerpt: change.summary,
       })),
       retrievalTrace: [
+        ...topicMatches.map((match) => ({
+          source: "topic-graph",
+          reason: `Matched topic ${match.topic.title}. ${match.why}`,
+          freshness: match.topic.freshness,
+          confidence: match.topic.confidence,
+        })),
         ...recentChanges.map((change) => ({
           source: change.kind,
           reason: `Loaded ${change.kind} signal for recent changes.`,
@@ -134,6 +143,7 @@ export const answerGroundedQuestion = (
       answer: `${dossier.title} is ${dossier.status} with freshness "${dossier.freshness}". The strongest durable state signal is: ${memorySection?.body ?? dossier.summary}`,
       facts: [
         ...dossier.sections.flatMap((section) => section.items).slice(0, 6),
+        ...topicMatches.flatMap((match) => getTopicReferences(db, match.topic.slug, 1).map((reference) => `${match.topic.title}: ${reference.excerpt}`)),
         ...(ctsContext && ctsContext.index_status === "current"
           ? [
               `CTS architecture: ${ctsContext.architecture_summary ?? "Unavailable"}`,
@@ -145,6 +155,7 @@ export const answerGroundedQuestion = (
         dossier.status === "warning"
           ? "Open bugs or weak memory signals are making this project operationally noisy."
           : "The project has enough recent state to support task-scoped delegation.",
+        ...(topicMatches.length > 0 ? [`Most relevant indexed topic is ${topicMatches[0].topic.title}.`] : []),
         ...(ctsContext && ctsContext.index_status === "current"
           ? ["CTS context suggests the likely implementation surface can be narrowed before delegation."]
           : []),
@@ -161,6 +172,12 @@ export const answerGroundedQuestion = (
           freshness: dossier.freshness,
           confidence: dossier.confidence,
         },
+        ...topicMatches.map((match) => ({
+          source: "topic-graph",
+          reason: `Matched topic ${match.topic.title}. ${match.why}`,
+          freshness: match.topic.freshness,
+          confidence: match.topic.confidence,
+        })),
         ...(ctsContext && ctsContext.index_status === "current"
           ? [
               {
@@ -214,6 +231,7 @@ export const answerGroundedQuestion = (
       answer: `An agent working on ${dossier.title} should start from the project dossier, recent change signals, and likely files, then request a control-plane packet for task-specific constraints.`,
       facts: [
         dossier.summary,
+        ...topicMatches.slice(0, 2).map((match) => `Topic: ${match.topic.title}`),
         ...likelyFiles.slice(0, 4).map((filePath) => `Likely file: ${filePath}`),
         ...(ctsContext && ctsContext.index_status === "current"
           ? (ctsContext.directly_relevant_nodes ?? []).slice(0, 4).map((node) => `CTS node: ${node}`)
@@ -221,6 +239,7 @@ export const answerGroundedQuestion = (
       ],
       inferences: [
         "Without a task-specific packet, the agent would receive too much low-signal operational history.",
+        ...(topicMatches.length > 0 ? ["Ranked topics indicate which durable context should reach the packet first."] : []),
         ...(ctsContext && ctsContext.index_status === "current"
           ? ["CTS context can further narrow the likely code surface before execution starts."]
           : []),
@@ -237,6 +256,12 @@ export const answerGroundedQuestion = (
           freshness: dossier.freshness,
           confidence: dossier.confidence,
         },
+        ...topicMatches.map((match) => ({
+          source: "topic-graph",
+          reason: `Matched topic ${match.topic.title}. ${match.why}`,
+          freshness: match.topic.freshness,
+          confidence: match.topic.confidence,
+        })),
         ...(ctsContext && ctsContext.index_status === "current"
           ? [
               {
@@ -260,9 +285,11 @@ export const answerGroundedQuestion = (
       "The storage contract separates SQLite, vault, CTS, and staging.",
       "The UI was originally built as an observability dashboard.",
       "Control-plane runs and briefing packets are now tracked separately from durable knowledge.",
+      ...topicMatches.slice(0, 2).map((match) => `Matched topic: ${match.topic.title}`),
     ],
     inferences: [
       "The main product risk is still architectural drift between documented intent and shipped surfaces.",
+      ...(topicMatches.length > 0 ? ["The indexed topic graph is now a live retrieval substrate for grounded answers."] : []),
     ],
     recommendations: [
       "Prefer the knowledge, query, and control-plane routes over treating runs/prompts as the primary product.",
@@ -281,6 +308,20 @@ export const answerGroundedQuestion = (
       },
     ],
     retrievalTrace: [
+      ...topicMatches.map((match) => ({
+        source: "topic-graph",
+        reason: `Matched topic ${match.topic.title}. ${match.why}`,
+        freshness: match.topic.freshness,
+        confidence: match.topic.confidence,
+      })),
+      ...topicMatches.flatMap((match) =>
+        getTopicMarkers(db, match.topic.slug, 1).map((marker) => ({
+          source: marker.kind,
+          reason: marker.summary,
+          freshness: match.topic.freshness,
+          confidence: 0.66,
+        })),
+      ),
       {
         source: "knowledge-index",
         reason: "Loaded system-level pages and current control-plane primitives.",

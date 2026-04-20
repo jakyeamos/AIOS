@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { StatusBadge } from "@/components/primitives/StatusBadge";
-import type { AgentProfile, BriefingPacket, OrchestrationRun, WorkflowTemplate } from "@/lib/control-plane";
+import type { AgentProfile, BriefingPacket, OrchestrationRun, PacketExpansionKind, WorkflowTemplate } from "@/lib/control-plane";
 import { trpc } from "@/lib/trpc";
 
 type ProjectOption = {
@@ -30,7 +30,12 @@ export function ControlPlaneStudio({
   const [objective, setObjective] = useState(
     "Turn AIOS into an explicit knowledge and orchestration control plane.",
   );
+  const [policyMode, setPolicyMode] = useState<BriefingPacket["policyMode"]>("compact-ranked");
+  const [tokenBudget, setTokenBudget] = useState<string>("900");
+  const [expansionKind, setExpansionKind] = useState<PacketExpansionKind>("topic");
+  const [expansionTarget, setExpansionTarget] = useState("");
   const planner = trpc.controlPlane.plan.useMutation();
+  const expander = trpc.controlPlane.expand.useMutation();
 
   return (
     <div className="page-content">
@@ -63,6 +68,19 @@ export function ControlPlaneStudio({
               placeholder="Describe the task you want AIOS to route."
             />
           </label>
+          <div className="grid grid-2">
+            <label className="field">
+              Context Policy
+              <select value={policyMode} onChange={(event) => setPolicyMode(event.target.value as BriefingPacket["policyMode"])}>
+                <option value="compact-ranked">compact-ranked</option>
+                <option value="explore">explore</option>
+              </select>
+            </label>
+            <label className="field">
+              Token Budget
+              <input value={tokenBudget} onChange={(event) => setTokenBudget(event.target.value)} />
+            </label>
+          </div>
           <button
             type="button"
             className="button-primary"
@@ -71,6 +89,8 @@ export function ControlPlaneStudio({
               planner.mutate({
                 objective: objective.trim(),
                 projectId: projectId || undefined,
+                policyMode,
+                tokenBudget: Number(tokenBudget) || 900,
               })
             }
           >
@@ -134,12 +154,32 @@ export function ControlPlaneStudio({
                   ))}
                 </ul>
               </article>
+              <article className="entity-card">
+                <p className="panel-title">Omitted Context</p>
+                <ul className="detail-list">
+                  {planner.data.packet.omittedContext.length > 0 ? (
+                    planner.data.packet.omittedContext.map((item) => (
+                      <li key={`${item.sourceKind}-${item.label}`}>
+                        {item.label}: {item.reason}
+                      </li>
+                    ))
+                  ) : (
+                    <li>No lower-ranked context was omitted within the current packet budget.</li>
+                  )}
+                </ul>
+              </article>
             </div>
           </section>
 
           <section className="panel-card">
             <h3 className="section-title">Briefing Packet</h3>
             <div className="stack">
+              <article className="entity-card">
+                <p className="panel-title">Packet Policy</p>
+                <p className="panel-subtitle">
+                  {planner.data.packet.policyMode} · budget {planner.data.packet.tokenBudget}
+                </p>
+              </article>
               {planner.data.packet.sections.map((section) => (
                 <article key={section.title} className="packet-section">
                   <p className="panel-title">{section.title}</p>
@@ -151,6 +191,63 @@ export function ControlPlaneStudio({
                   </ul>
                 </article>
               ))}
+              <article className="entity-card">
+                <p className="panel-title">Selection Trace</p>
+                <ul className="detail-list">
+                  {planner.data.packet.selectionTrace.map((trace) => (
+                    <li key={`${trace.section}-${trace.label}`}>
+                      {trace.section}: {trace.label} ({trace.sourceKind}, score {trace.score}) - {trace.reason}
+                    </li>
+                  ))}
+                </ul>
+              </article>
+              <article className="entity-card">
+                <p className="panel-title">Targeted Expansion</p>
+                <div className="stack">
+                  <label className="field">
+                    Expansion kind
+                    <select value={expansionKind} onChange={(event) => setExpansionKind(event.target.value as PacketExpansionKind)}>
+                      <option value="topic">topic</option>
+                      <option value="failure_pattern">failure_pattern</option>
+                      <option value="code_area">code_area</option>
+                      <option value="policy">policy</option>
+                      <option value="recent_run">recent_run</option>
+                    </select>
+                  </label>
+                  <label className="field">
+                    Target
+                    <input
+                      value={expansionTarget}
+                      onChange={(event) => setExpansionTarget(event.target.value)}
+                      placeholder="e.g. Prisma execution or failed packet policy"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="button-secondary"
+                    disabled={expander.isPending || expansionTarget.trim().length < 2}
+                    onClick={() =>
+                      expander.mutate({
+                        packetId: planner.data.packet.id,
+                        runId: planner.data.run.id,
+                        projectId: planner.data.packet.projectId ?? undefined,
+                        requestKind: expansionKind,
+                        requestTarget: expansionTarget.trim(),
+                        tokenBudget: 180,
+                      })
+                    }
+                  >
+                    {expander.isPending ? "Loading expansion..." : "Request targeted expansion"}
+                  </button>
+                  {expander.data ? (
+                    <ul className="detail-list">
+                      {expander.data.returnedContext.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              </article>
             </div>
           </section>
         </div>

@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-04-18
+Last updated: 2026-04-19
 
 ## What AIOS Is
 
@@ -90,13 +90,36 @@ The current app now includes:
   - grounded query agent brief answers
   - inspectable retrieval traces
 
+## Implemented On 2026-04-19
+
+This pass adds the first persisted topic-graph and compact-packet vertical slice:
+
+- persisted indexed knowledge layer:
+  - `knowledge_topics`
+  - `knowledge_relationships`
+  - `knowledge_references`
+  - `knowledge_markers`
+  - `knowledge_graph_state`
+- compact ranked packet delivery as the default orchestration policy
+- explicit packet trace and omitted-context storage in `briefing_packets`
+- traced targeted expansion logging in `packet_expansions`
+- improvement writeback storage in `improvement_writebacks`
+- Taski-led project operating surface on `/projects/[id]`
+- topic-graph-backed retrieval in grounded query
+- concept pages enriched with persisted references, relationships, and drift markers
+- post-run improvement writeback proposals from `hook-stop.py`
+- architecture note for the hardened retrieval policy:
+  - `docs/architecture/2026-04-19-topic-graph-ranked-packets.md`
+
 ## Still Missing
 
 - explicit `in_progress` and failure/cancel transitions driven by real execution events rather than session-close heuristics
 - richer task routing tied to real subagent registries and invocation backends
-- contradiction/drift detection beyond lightweight hooks
-- persisted knowledge indexing beyond read-time vault derivation
-- packet/result inspection surfaces that show exactly what changed after a run
+- stronger contradiction/drift detection beyond current lexical and freshness heuristics
+- explicit run/session handshake instead of heuristic session-close run matching
+- approval workflows that let the user review and apply global or token-regressive writebacks inside the UI
+- richer Taski operating controls beyond the first summary surface
+- packet/result inspection surfaces that show exact post-run deltas at file and topic level
 
 ## Guardrails
 
@@ -104,3 +127,7 @@ The current app now includes:
 - Vault remains authoritative for curated human-readable knowledge
 - staging remains non-canonical
 - AIOS should prefer explicit inspectable pipelines over hidden prompt behavior
+- default agent context policy is locked:
+  - broad retrieval may happen inside AIOS
+  - only compact ranked output reaches the agent by default
+  - targeted expansion must be explicit and traced

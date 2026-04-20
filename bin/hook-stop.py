@@ -92,6 +92,78 @@ def ensure_orchestration_runs_columns(conn: sqlite3.Connection) -> None:
             conn.execute(f"ALTER TABLE orchestration_runs ADD COLUMN {column_name} {definition}")
 
 
+def ensure_improvement_writebacks_table(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS improvement_writebacks (
+            id TEXT PRIMARY KEY,
+            run_id TEXT REFERENCES orchestration_runs(id),
+            project_id TEXT REFERENCES projects(id),
+            layer_type TEXT NOT NULL,
+            layer_key TEXT NOT NULL,
+            title TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            evidence_json TEXT NOT NULL DEFAULT '[]',
+            proposed_change_json TEXT NOT NULL DEFAULT '{}',
+            status TEXT NOT NULL DEFAULT 'proposed',
+            requires_approval INTEGER NOT NULL DEFAULT 0,
+            approval_reason TEXT,
+            token_regressive INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        )
+        """
+    )
+
+
+def insert_writeback(
+    conn: sqlite3.Connection,
+    run_id: str | None,
+    project_id: str | None,
+    layer_type: str,
+    layer_key: str,
+    title: str,
+    summary: str,
+    evidence: list[str],
+    requires_approval: bool = False,
+    approval_reason: str | None = None,
+    token_regressive: bool = False,
+) -> None:
+    conn.execute(
+        """
+        INSERT INTO improvement_writebacks (
+            id,
+            run_id,
+            project_id,
+            layer_type,
+            layer_key,
+            title,
+            summary,
+            evidence_json,
+            proposed_change_json,
+            status,
+            requires_approval,
+            approval_reason,
+            token_regressive
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, '{}', ?, ?, ?, ?)
+        """,
+        (
+            f"writeback-{uuid.uuid4()}",
+            run_id,
+            project_id,
+            layer_type,
+            layer_key,
+            title,
+            summary,
+            json.dumps(evidence),
+            "pending_approval" if requires_approval else "proposed",
+            1 if requires_approval else 0,
+            approval_reason,
+            1 if token_regressive else 0,
+        ),
+    )
+
+
 def _tokenize(text: str | None) -> set[str]:
     if not text:
         return set()
@@ -182,6 +254,7 @@ def main() -> None:
         now = datetime.now(UTC).isoformat()
         ensure_memory_updates_table(conn)
         ensure_orchestration_runs_columns(conn)
+        ensure_improvement_writebacks_table(conn)
 
         # Flag reusable insights from this session
         insight_count = 0
@@ -325,6 +398,16 @@ def main() -> None:
         )
 
         if linked_run_id:
+            run_row = conn.execute(
+                """
+                SELECT workflow_key, agent_key
+                FROM orchestration_runs
+                WHERE id = ?
+                LIMIT 1
+                """,
+                (linked_run_id,),
+            ).fetchone()
+
             conn.execute(
                 """
                 UPDATE orchestration_runs
@@ -345,6 +428,41 @@ def main() -> None:
                     linked_run_id,
                 ),
             )
+
+            insert_writeback(
+                conn,
+                linked_run_id,
+                row[1],
+                "project",
+                row[1],
+                f"Project writeback from {row[4] or 'unspecified objective'}",
+                memory_summary,
+                change_items[:3] if change_items else [memory_summary],
+            )
+
+            if run_row:
+                token_regressive = len(change_items) > 4 or len(prompts) > 12
+                insert_writeback(
+                    conn,
+                    linked_run_id,
+                    row[1],
+                    "workflow",
+                    run_row[0],
+                    f"Workflow learning for {run_row[0]}",
+                    (
+                        "Compact ranked context should stay the default."
+                        if not token_regressive
+                        else "This run may be pushing packet breadth upward and should not alter defaults without approval."
+                    ),
+                    [memory_summary, *risk_items[:2]],
+                    requires_approval=token_regressive,
+                    approval_reason=(
+                        "Potential token-regressive learning proposal."
+                        if token_regressive
+                        else None
+                    ),
+                    token_regressive=token_regressive,
+                )
 
         # Log Stop event
         conn.execute(

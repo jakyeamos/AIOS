@@ -25,6 +25,7 @@ import {
   summarizeParagraph,
 } from "@/server/aios/filesystem";
 import { ensureControlPlaneSchema } from "@/server/aios/schema";
+import { getTopicMarkers, getTopicReferences, getTopicRelationships } from "@/server/aios/topic-graph";
 import { tableExists } from "@/server/db";
 
 type ProjectRow = {
@@ -97,6 +98,22 @@ const makeWorkflowSlug = (key: string): string => `workflow-${key}`;
 const makeAgentSlug = (key: string): string => `agent-${key}`;
 const makeSystemSlug = (key: string): string => `system-${key}`;
 const makeConceptSlug = (fileStem: string): string => `concept-${fileStem}`;
+
+const inferKindFromSlug = (slug: string): KnowledgePageKind => {
+  if (slug.startsWith("project-")) {
+    return "project";
+  }
+  if (slug.startsWith("workflow-")) {
+    return "workflow";
+  }
+  if (slug.startsWith("agent-")) {
+    return "agent";
+  }
+  if (slug.startsWith("system-")) {
+    return "system";
+  }
+  return "concept";
+};
 
 const freshnessLabel = (isoValue: string | null): string => {
   if (!isoValue) {
@@ -857,6 +874,14 @@ const buildConceptDetail = (db: Database.Database, slug: string): KnowledgePageD
   const relationships = page.links
     .map((link) => resolveKnowledgeRelationship(db, link, "Links to"))
     .filter((relationship): relationship is KnowledgeRelationship => Boolean(relationship));
+  const indexedRelationships = getTopicRelationships(db, slug, 6).map((relationship) => ({
+    label: relationship.toTitle,
+    href: `/knowledge/${relationship.toSlug}`,
+    kind: inferKindFromSlug(relationship.toSlug),
+    relation: relationship.relation,
+  })) as KnowledgeRelationship[];
+  const indexedReferences = getTopicReferences(db, slug, 6);
+  const topicMarkers = getTopicMarkers(db, slug, 4);
 
   const backlinks = wikiPages
     .filter((entry) => entry.slug !== page.slug && entry.links.some((link) => link.toLowerCase() === page.title.toLowerCase()))
@@ -882,10 +907,31 @@ const buildConceptDetail = (db: Database.Database, slug: string): KnowledgePageD
         href: `/knowledge/${page.slug}`,
         detail: page.sourcePath,
       },
+      ...indexedReferences.map((reference) => ({
+        label: reference.label,
+        href: reference.href,
+        detail: `${reference.sourceKind}: ${reference.excerpt}`,
+      })),
     ],
-    relationships,
+    relationships: [...relationships, ...indexedRelationships].filter(
+      (relationship, index, items) =>
+        items.findIndex((candidate) => candidate.href === relationship.href && candidate.relation === relationship.relation) === index,
+    ),
     backlinks,
-    sections: page.sections.length > 0 ? page.sections : [{ title: "Overview", body: page.summary, items: [] }],
+    sections:
+      page.sections.length > 0
+        ? [
+            ...page.sections,
+            ...(topicMarkers.length > 0
+              ? [
+                  {
+                    title: "Drift And Contradiction Markers",
+                    items: topicMarkers.map((marker) => `${marker.kind}: ${marker.summary}`),
+                  },
+                ]
+              : []),
+          ]
+        : [{ title: "Overview", body: page.summary, items: [] }],
     recentChanges: listRecentChanges(db, { limit: 5 }).filter((item) => item.kind === "decision" || item.kind === "memory"),
   };
 };
