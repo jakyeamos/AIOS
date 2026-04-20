@@ -14,6 +14,9 @@ CREATE TABLE sessions (
   started_at             TEXT NOT NULL,
   ended_at               TEXT,
   objective              TEXT,
+  run_id                 TEXT REFERENCES orchestration_runs(id),
+  invocation_id          TEXT REFERENCES orchestration_invocations(id),
+  runtime_metadata_json  TEXT NOT NULL DEFAULT '{}',
   status                 TEXT NOT NULL DEFAULT 'open',  -- open | closed | abandoned
   cwd                    TEXT,
   summary_candidate_path TEXT,
@@ -141,14 +144,53 @@ CREATE TABLE orchestration_runs (
   rationale TEXT NOT NULL,
   assumptions_json TEXT NOT NULL DEFAULT '[]',
   context_trace_json TEXT NOT NULL DEFAULT '[]',
+  backend_key TEXT,
+  active_invocation_id TEXT REFERENCES orchestration_invocations(id),
   packet_id TEXT,
   memory_update_id TEXT,
   result_summary TEXT,
+  started_at TEXT,
   completed_at TEXT,
+  failed_at TEXT,
+  canceled_at TEXT,
+  superseded_by_run_id TEXT,
+  status_reason_json TEXT NOT NULL DEFAULT '{}',
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 CREATE INDEX idx_orchestration_runs_project ON orchestration_runs(project_id, created_at);
+CREATE TABLE orchestration_invocations (
+  id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL REFERENCES orchestration_runs(id),
+  backend_key TEXT NOT NULL,
+  backend_label TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'queued',
+  handshake_token TEXT NOT NULL,
+  session_id TEXT REFERENCES sessions(id),
+  pid INTEGER,
+  command_json TEXT NOT NULL DEFAULT '[]',
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  started_at TEXT,
+  ended_at TEXT,
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX idx_orchestration_invocations_run ON orchestration_invocations(run_id, created_at);
+CREATE TABLE orchestration_run_events (
+  id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL REFERENCES orchestration_runs(id),
+  project_id TEXT REFERENCES projects(id),
+  session_id TEXT REFERENCES sessions(id),
+  invocation_id TEXT REFERENCES orchestration_invocations(id),
+  event_type TEXT NOT NULL,
+  from_status TEXT,
+  to_status TEXT,
+  summary TEXT NOT NULL,
+  reason_json TEXT NOT NULL DEFAULT '{}',
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX idx_orchestration_run_events_run ON orchestration_run_events(run_id, created_at);
 CREATE TABLE briefing_packets (
   id TEXT PRIMARY KEY,
   run_id TEXT NOT NULL REFERENCES orchestration_runs(id),
@@ -260,10 +302,56 @@ CREATE TABLE improvement_writebacks (
   summary TEXT NOT NULL,
   evidence_json TEXT NOT NULL DEFAULT '[]',
   proposed_change_json TEXT NOT NULL DEFAULT '{}',
+  impact_scope TEXT NOT NULL DEFAULT 'scoped',
   status TEXT NOT NULL DEFAULT 'proposed',
   requires_approval INTEGER NOT NULL DEFAULT 0,
   approval_reason TEXT,
   token_regressive INTEGER NOT NULL DEFAULT 0,
-  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  decision_note TEXT,
+  decision_actor TEXT,
+  decision_at TEXT
 );
 CREATE INDEX idx_improvement_writebacks_project ON improvement_writebacks(project_id, created_at);
+CREATE TABLE improvement_writeback_events (
+  id TEXT PRIMARY KEY,
+  writeback_id TEXT NOT NULL REFERENCES improvement_writebacks(id),
+  run_id TEXT REFERENCES orchestration_runs(id),
+  event_type TEXT NOT NULL,
+  from_status TEXT,
+  to_status TEXT,
+  actor TEXT NOT NULL DEFAULT 'system',
+  note TEXT,
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX idx_improvement_writeback_events_writeback ON improvement_writeback_events(writeback_id, created_at DESC);
+CREATE TABLE consistency_evaluations (
+  id TEXT PRIMARY KEY,
+  project_id TEXT REFERENCES projects(id),
+  run_id TEXT REFERENCES orchestration_runs(id),
+  packet_id TEXT REFERENCES briefing_packets(id),
+  invocation_id TEXT REFERENCES orchestration_invocations(id),
+  trigger_kind TEXT NOT NULL,
+  evaluator_version TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX idx_consistency_evaluations_project ON consistency_evaluations(project_id, created_at DESC);
+CREATE TABLE consistency_findings (
+  id TEXT PRIMARY KEY,
+  evaluation_id TEXT NOT NULL REFERENCES consistency_evaluations(id),
+  project_id TEXT REFERENCES projects(id),
+  run_id TEXT REFERENCES orchestration_runs(id),
+  packet_id TEXT REFERENCES briefing_packets(id),
+  topic_slug TEXT,
+  finding_kind TEXT NOT NULL,
+  severity TEXT NOT NULL,
+  rule_key TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  provenance_json TEXT NOT NULL DEFAULT '[]',
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX idx_consistency_findings_project ON consistency_findings(project_id, created_at DESC);

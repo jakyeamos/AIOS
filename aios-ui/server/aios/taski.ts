@@ -4,6 +4,7 @@ import type { TaskiProjectSummary, TopicGraphMarker } from "@/lib/control-plane"
 import { listControlPlaneRuns } from "@/server/aios/control-plane";
 import { getProjectDossier } from "@/server/aios/knowledge";
 import { proposeRunWritebacks } from "@/server/aios/learning";
+import { listConsistencyFindings } from "@/server/aios/runtime";
 import { getTopicMarkers, listImprovementWritebacks, searchTopicGraph } from "@/server/aios/topic-graph";
 
 const parseRiskItems = (items: string[]): string[] =>
@@ -46,9 +47,15 @@ export const getTaskiProjectSummary = (db: Database.Database, projectId: string)
     .slice(0, 3);
 
   const driftMarkers: TopicGraphMarker[] = topTopics.flatMap((topic) => getTopicMarkers(db, topic.slug, 2)).slice(0, 4);
+  const consistencyFindings = listConsistencyFindings(db, { projectId, limit: 8 }).slice(0, 6);
+  const pendingApprovals = learnedPolicies.filter((policy) => policy.requiresApproval).slice(0, 6);
   const suggestedNextActions = [
     "Use compact ranked packets before delegation.",
-    ...(blockers.length > 0 ? ["Resolve the current blockers before broadening workflow scope."] : ["Promote the strongest recent run learning into approved project policy."]),
+    ...(pendingApprovals.length > 0
+      ? ["Review the queued approval proposals before broadening default behavior."]
+      : blockers.length > 0
+        ? ["Resolve the current blockers before broadening workflow scope."]
+        : ["Promote the strongest recent run learning into approved project policy."]),
     ...(topTopics.length > 0 ? [`Review the top linked topic first: ${topTopics[0].title}.`] : []),
   ];
 
@@ -65,6 +72,8 @@ export const getTaskiProjectSummary = (db: Database.Database, projectId: string)
     recentSuccesses,
     learnedPolicies,
     driftMarkers,
+    consistencyFindings,
+    pendingApprovals,
     suggestedNextActions,
   };
 };

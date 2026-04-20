@@ -1,10 +1,22 @@
 import { z } from "zod";
 
-import { getControlPlaneOverview, planTask, requestPacketExpansion } from "@/server/aios/control-plane";
+import {
+  cancelControlPlaneRun,
+  getControlPlaneOverview,
+  getControlPlaneRunDetail,
+  invokeControlPlaneRun,
+  planTask,
+  requestPacketExpansion,
+  reviewControlPlaneWriteback,
+} from "@/server/aios/control-plane";
 import { createTRPCRouter, publicProcedure } from "@/server/trpc";
 
 export const controlPlaneRouter = createTRPCRouter({
   overview: publicProcedure.query(({ ctx }) => getControlPlaneOverview(ctx.db)),
+
+  runDetail: publicProcedure
+    .input(z.object({ runId: z.string().min(1) }))
+    .query(({ ctx, input }) => getControlPlaneRunDetail(ctx.db, input.runId)),
 
   plan: publicProcedure
     .input(
@@ -16,6 +28,22 @@ export const controlPlaneRouter = createTRPCRouter({
       }),
     )
     .mutation(({ ctx, input }) => planTask(ctx.db, input)),
+
+  invoke: publicProcedure
+    .input(
+      z.object({
+        runId: z.string().min(1),
+      }),
+    )
+    .mutation(({ ctx, input }) => invokeControlPlaneRun(ctx.db, input)),
+
+  cancel: publicProcedure
+    .input(
+      z.object({
+        runId: z.string().min(1),
+      }),
+    )
+    .mutation(({ ctx, input }) => cancelControlPlaneRun(ctx.db, input)),
 
   expand: publicProcedure
     .input(
@@ -29,4 +57,14 @@ export const controlPlaneRouter = createTRPCRouter({
       }),
     )
     .mutation(({ ctx, input }) => requestPacketExpansion(ctx.db, input)),
+
+  reviewWriteback: publicProcedure
+    .input(
+      z.object({
+        writebackId: z.string().min(1),
+        decision: z.enum(["applied", "rejected"]),
+        note: z.string().max(400).optional(),
+      }),
+    )
+    .mutation(({ ctx, input }) => reviewControlPlaneWriteback(ctx.db, input)),
 });

@@ -15,9 +15,15 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+from aios_orchestration_runtime import (
+    ensure_runtime_schema,
+    link_session_runtime,
+    transition_run,
+    update_invocation,
+)
 from aios_paths import get_vault_root
 
-DB = os.path.expanduser("~/AIOS/data/aios.db")
+DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
 VAULT = str(get_vault_root())
 VAULT_SEARCH = os.path.expanduser("~/AIOS/bin/vault-search.py")
@@ -236,6 +242,9 @@ def main() -> None:
     session_id = data.get("session_id", "")
     cwd = data.get("cwd", os.getcwd())
     objective = data.get("objective", "")
+    run_id = data.get("run_id")
+    invocation_id = data.get("invocation_id")
+    backend_key = data.get("backend_key")
 
     if not session_id:
         log("no session_id in payload")
@@ -246,10 +255,44 @@ def main() -> None:
     try:
         conn = sqlite3.connect(DB)
         project_id = get_or_create_project(conn, cwd)
+        ensure_runtime_schema(conn)
 
         # Check if session already exists — /clear re-fires SessionStart with same ID
         existing = conn.execute("SELECT id, status FROM sessions WHERE id=?", (session_id,)).fetchone()
         if existing:
+            if run_id or invocation_id:
+                link_session_runtime(
+                    conn,
+                    session_id=session_id,
+                    run_id=run_id,
+                    invocation_id=invocation_id,
+                    runtime_metadata={
+                        "backend_key": backend_key,
+                        "cwd": cwd,
+                    },
+                    objective=objective or None,
+                )
+                if invocation_id:
+                    update_invocation(
+                        conn,
+                        invocation_id=invocation_id,
+                        status="running",
+                        session_id=session_id,
+                        metadata={"cwd": cwd},
+                        started_at=datetime.now(UTC).isoformat(),
+                    )
+                if run_id:
+                    transition_run(
+                        conn,
+                        run_id=run_id,
+                        to_status="in_progress",
+                        event_type="in_progress",
+                        summary="Runtime session started.",
+                        session_id=session_id,
+                        invocation_id=invocation_id,
+                        reason={"kind": "session_start", "backend_key": backend_key},
+                    )
+                conn.commit()
             conn.close()
             current_path = os.path.expanduser("~/AIOS/logs/current_session")
             with open(current_path, "w") as f:
@@ -260,10 +303,10 @@ def main() -> None:
         conn.execute(
             """
             INSERT OR IGNORE INTO sessions
-              (id, project_id, tool, started_at, status, cwd)
-            VALUES (?, ?, 'claude-code', ?, 'open', ?)
+              (id, project_id, tool, started_at, objective, status, cwd)
+            VALUES (?, ?, 'claude-code', ?, ?, 'open', ?)
             """,
-            (session_id, project_id, datetime.now(UTC).isoformat(), cwd),
+            (session_id, project_id, datetime.now(UTC).isoformat(), objective or None, cwd),
         )
         conn.execute(
             """
@@ -277,6 +320,38 @@ def main() -> None:
                 json.dumps(data),
             ),
         )
+        if run_id or invocation_id:
+            link_session_runtime(
+                conn,
+                session_id=session_id,
+                run_id=run_id,
+                invocation_id=invocation_id,
+                runtime_metadata={
+                    "backend_key": backend_key,
+                    "cwd": cwd,
+                },
+                objective=objective or None,
+            )
+        if invocation_id:
+            update_invocation(
+                conn,
+                invocation_id=invocation_id,
+                status="running",
+                session_id=session_id,
+                metadata={"cwd": cwd},
+                started_at=datetime.now(UTC).isoformat(),
+            )
+        if run_id:
+            transition_run(
+                conn,
+                run_id=run_id,
+                to_status="in_progress",
+                event_type="in_progress",
+                summary="Runtime session started.",
+                session_id=session_id,
+                invocation_id=invocation_id,
+                reason={"kind": "session_start", "backend_key": backend_key},
+            )
         conn.commit()
 
         # Generate session packet

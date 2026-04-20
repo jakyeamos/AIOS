@@ -62,6 +62,11 @@ This implementation pass establishes:
 - orchestration run logging and briefing packet generation
 - ADR support and handoff documentation for continuation
 - post-run memory updates written into dedicated control-plane state
+- explicit run/session handshake and invocation records
+- event-driven lifecycle transitions with durable history
+- approval review surfaces for gated writebacks
+- structured evaluator outputs for contradiction, drift, and stale-truth detection
+- a real managed invocation backend path tied to the workflow/agent registry
 
 ## Implemented On 2026-04-18
 
@@ -111,15 +116,57 @@ This pass adds the first persisted topic-graph and compact-packet vertical slice
 - architecture note for the hardened retrieval policy:
   - `docs/architecture/2026-04-19-topic-graph-ranked-packets.md`
 
+This pass also turns the execution layer into a real control-plane path:
+
+- explicit durable handshake through:
+  - `orchestration_runs.id`
+  - `sessions.run_id`
+  - `sessions.invocation_id`
+  - `orchestration_invocations`
+- first-class lifecycle and trace tables:
+  - `orchestration_run_events`
+  - `improvement_writeback_events`
+- event-driven run statuses now written from runtime events:
+  - `planned`
+  - `ready`
+  - `in_progress`
+  - `completed`
+  - `failed`
+  - `canceled`
+  - `superseded`
+- structured run state on `orchestration_runs`:
+  - `backend_key`
+  - `active_invocation_id`
+  - `started_at`
+  - `failed_at`
+  - `canceled_at`
+  - `superseded_by_run_id`
+  - `status_reason_json`
+- approval decision persistence on `improvement_writebacks`
+- structured evaluation storage:
+  - `consistency_evaluations`
+  - `consistency_findings`
+- `/control` upgraded from packet planning only to:
+  - managed run invocation
+  - runtime status inspection
+  - approval review
+  - event timeline / evaluator trace
+- Taski project surface upgraded to show:
+  - structured findings
+  - approval queue
+  - event-driven run state
+- managed backend runner in `bin/aios-managed-run.py`
+- `hook-session-start.py` now moves explicitly linked runs to `in_progress`
+- `hook-stop.py` now resolves the exact run by handshake first and only falls back to heuristic matching as a legacy escape hatch
+
 ## Still Missing
 
-- explicit `in_progress` and failure/cancel transitions driven by real execution events rather than session-close heuristics
-- richer task routing tied to real subagent registries and invocation backends
-- stronger contradiction/drift detection beyond current lexical and freshness heuristics
-- explicit run/session handshake instead of heuristic session-close run matching
-- approval workflows that let the user review and apply global or token-regressive writebacks inside the UI
-- richer Taski operating controls beyond the first summary surface
-- packet/result inspection surfaces that show exact post-run deltas at file and topic level
+- more than one production-grade invocation backend beyond the new managed local runtime
+- richer backend adapters for external/manual agent sessions so they emit the same handshake without fallback
+- broader evaluator rule coverage and explicit finding resolution workflows
+- deeper packet/result inspection at file/topic delta level
+- richer Taski operator controls beyond summary, approvals, and run/evaluator inspection
+- legacy heuristic run matching still exists only as a fallback for older sessions that lack explicit handshake metadata
 
 ## Guardrails
 

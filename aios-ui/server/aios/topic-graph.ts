@@ -148,6 +148,15 @@ const parseJsonArray = <T>(raw: string, fallback: T): T => {
   }
 };
 
+const parseJsonRecord = (raw: string, fallback: Record<string, unknown> = {}): Record<string, unknown> => {
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
 const normalizeText = (value: string): string =>
   value
     .toLowerCase()
@@ -758,47 +767,48 @@ const updateTopicFreshness = (db: Database.Database): void => {
 
 const addDerivedMarkers = (db: Database.Database): void => {
   const topics = db.prepare("SELECT id, slug, title FROM knowledge_topics").all() as Array<{ id: string; slug: string; title: string }>;
+  const topicIdBySlug = new Map(topics.map((topic) => [topic.slug, topic.id]));
 
-  for (const topic of topics) {
-    const refs = db
-      .prepare(
-        `
-        SELECT source_kind AS sourceKind, label, freshness, metadata_json AS metadataJson
-        FROM knowledge_references
-        WHERE topic_id = ?
-      `,
-      )
-      .all(topic.id) as Array<{ sourceKind: string; label: string; freshness: string; metadataJson: string }>;
+  const findings = db.prepare(
+    `
+      SELECT
+        topic_slug AS topicSlug,
+        finding_kind AS findingKind,
+        severity,
+        summary,
+        rule_key AS ruleKey
+      FROM consistency_findings
+      ORDER BY created_at DESC
+      LIMIT 120
+    `,
+  ).all() as Array<{
+    topicSlug: string | null;
+    findingKind: "direct_contradiction" | "likely_stale" | "soft_tension";
+    severity: TopicGraphMarker["severity"];
+    summary: string;
+    ruleKey: string;
+  }>;
 
-    const hasFailure = refs.some((ref) => {
-      const metadata = parseJsonArray<Record<string, string>>(ref.metadataJson, {});
-      return metadata.status === "failed" || metadata.status === "canceled";
-    });
-    const hasSuccess = refs.some((ref) => {
-      const metadata = parseJsonArray<Record<string, string>>(ref.metadataJson, {});
-      return metadata.status === "completed";
-    });
-    if (hasFailure && hasSuccess) {
-      addMarker(db, topic.id, {
-        kind: "contradiction",
-        severity: "warning",
-        summary: `${topic.title} has both failure and completion evidence in recent runs.`,
-        sourceRef: topic.slug,
-      });
+  for (const finding of findings) {
+    if (!finding.topicSlug) {
+      continue;
+    }
+    const topicId = topicIdBySlug.get(finding.topicSlug);
+    if (!topicId) {
+      continue;
     }
 
-    const hasOldWiki = refs.some((ref) => ref.sourceKind === "wiki" && ref.freshness.includes("Stale"));
-    const hasFreshOperational = refs.some(
-      (ref) => (ref.sourceKind === "run" || ref.sourceKind === "memory") && ref.freshness.includes("last day"),
-    );
-    if (hasOldWiki && hasFreshOperational) {
-      addMarker(db, topic.id, {
-        kind: "drift",
-        severity: "info",
-        summary: `${topic.title} has fresh operational evidence that may have outpaced the curated wiki page.`,
-        sourceRef: topic.slug,
-      });
-    }
+    addMarker(db, topicId, {
+      kind:
+        finding.findingKind === "direct_contradiction"
+          ? "contradiction"
+          : finding.findingKind === "likely_stale"
+            ? "stale"
+            : "drift",
+      severity: finding.severity,
+      summary: finding.summary,
+      sourceRef: finding.ruleKey,
+    });
   }
 };
 
@@ -1024,11 +1034,17 @@ export const listImprovementWritebacks = (
         title,
         summary,
         evidence_json AS evidenceJson,
+        proposed_change_json AS proposedChangeJson,
+        impact_scope AS impactScope,
         status,
         requires_approval AS requiresApproval,
         approval_reason AS approvalReason,
         token_regressive AS tokenRegressive,
-        created_at AS createdAt
+        created_at AS createdAt,
+        updated_at AS updatedAt,
+        decision_note AS decisionNote,
+        decision_actor AS decisionActor,
+        decision_at AS decisionAt
       FROM improvement_writebacks
       WHERE (? IS NULL OR project_id = ?)
       ORDER BY created_at DESC
@@ -1044,11 +1060,17 @@ export const listImprovementWritebacks = (
       title: string;
       summary: string;
       evidenceJson: string;
+      proposedChangeJson: string;
+      impactScope: string;
       status: ImprovementWriteback["status"];
       requiresApproval: number;
       approvalReason: string | null;
       tokenRegressive: number;
       createdAt: string;
+      updatedAt: string;
+      decisionNote: string | null;
+      decisionActor: string | null;
+      decisionAt: string | null;
     }>;
 
   return rows.map((row) => ({
@@ -1060,11 +1082,17 @@ export const listImprovementWritebacks = (
     title: row.title,
     summary: row.summary,
     evidence: parseJsonArray<string[]>(row.evidenceJson, []),
+    proposedChange: parseJsonRecord(row.proposedChangeJson),
+    impactScope: row.impactScope,
     status: row.status,
     requiresApproval: Boolean(row.requiresApproval),
     approvalReason: row.approvalReason,
     tokenRegressive: Boolean(row.tokenRegressive),
     createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    decisionNote: row.decisionNote,
+    decisionActor: row.decisionActor,
+    decisionAt: row.decisionAt,
   }));
 };
 

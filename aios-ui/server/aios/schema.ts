@@ -40,6 +40,44 @@ export const ensureControlPlaneSchema = (db: Database.Database): void => {
     CREATE INDEX IF NOT EXISTS idx_orchestration_runs_project
       ON orchestration_runs(project_id, created_at DESC);
 
+    CREATE TABLE IF NOT EXISTS orchestration_invocations (
+      id TEXT PRIMARY KEY,
+      run_id TEXT NOT NULL REFERENCES orchestration_runs(id),
+      backend_key TEXT NOT NULL,
+      backend_label TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'queued',
+      handshake_token TEXT NOT NULL,
+      session_id TEXT REFERENCES sessions(id),
+      pid INTEGER,
+      command_json TEXT NOT NULL DEFAULT '[]',
+      metadata_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+      started_at TEXT,
+      ended_at TEXT,
+      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_orchestration_invocations_run
+      ON orchestration_invocations(run_id, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS orchestration_run_events (
+      id TEXT PRIMARY KEY,
+      run_id TEXT NOT NULL REFERENCES orchestration_runs(id),
+      project_id TEXT REFERENCES projects(id),
+      session_id TEXT REFERENCES sessions(id),
+      invocation_id TEXT REFERENCES orchestration_invocations(id),
+      event_type TEXT NOT NULL,
+      from_status TEXT,
+      to_status TEXT,
+      summary TEXT NOT NULL,
+      reason_json TEXT NOT NULL DEFAULT '{}',
+      metadata_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_orchestration_run_events_run
+      ON orchestration_run_events(run_id, created_at DESC);
+
     CREATE TABLE IF NOT EXISTS briefing_packets (
       id TEXT PRIMARY KEY,
       run_id TEXT NOT NULL REFERENCES orchestration_runs(id),
@@ -182,15 +220,85 @@ export const ensureControlPlaneSchema = (db: Database.Database): void => {
 
     CREATE INDEX IF NOT EXISTS idx_improvement_writebacks_project
       ON improvement_writebacks(project_id, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS improvement_writeback_events (
+      id TEXT PRIMARY KEY,
+      writeback_id TEXT NOT NULL REFERENCES improvement_writebacks(id),
+      run_id TEXT REFERENCES orchestration_runs(id),
+      event_type TEXT NOT NULL,
+      from_status TEXT,
+      to_status TEXT,
+      actor TEXT NOT NULL DEFAULT 'system',
+      note TEXT,
+      metadata_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_improvement_writeback_events_writeback
+      ON improvement_writeback_events(writeback_id, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS consistency_evaluations (
+      id TEXT PRIMARY KEY,
+      project_id TEXT REFERENCES projects(id),
+      run_id TEXT REFERENCES orchestration_runs(id),
+      packet_id TEXT REFERENCES briefing_packets(id),
+      invocation_id TEXT REFERENCES orchestration_invocations(id),
+      trigger_kind TEXT NOT NULL,
+      evaluator_version TEXT NOT NULL,
+      summary TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_consistency_evaluations_project
+      ON consistency_evaluations(project_id, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS consistency_findings (
+      id TEXT PRIMARY KEY,
+      evaluation_id TEXT NOT NULL REFERENCES consistency_evaluations(id),
+      project_id TEXT REFERENCES projects(id),
+      run_id TEXT REFERENCES orchestration_runs(id),
+      packet_id TEXT REFERENCES briefing_packets(id),
+      topic_slug TEXT,
+      finding_kind TEXT NOT NULL,
+      severity TEXT NOT NULL,
+      rule_key TEXT NOT NULL,
+      summary TEXT NOT NULL,
+      provenance_json TEXT NOT NULL DEFAULT '[]',
+      metadata_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_consistency_findings_project
+      ON consistency_findings(project_id, created_at DESC);
   `);
 
+  ensureColumn(db, "sessions", "run_id", "TEXT REFERENCES orchestration_runs(id)");
+  ensureColumn(db, "sessions", "invocation_id", "TEXT REFERENCES orchestration_invocations(id)");
+  ensureColumn(db, "sessions", "runtime_metadata_json", "TEXT NOT NULL DEFAULT '{}'");
   ensureColumn(db, "orchestration_runs", "memory_update_id", "TEXT");
   ensureColumn(db, "orchestration_runs", "result_summary", "TEXT");
   ensureColumn(db, "orchestration_runs", "completed_at", "TEXT");
+  ensureColumn(db, "orchestration_runs", "backend_key", "TEXT");
+  ensureColumn(db, "orchestration_runs", "active_invocation_id", "TEXT REFERENCES orchestration_invocations(id)");
+  ensureColumn(db, "orchestration_runs", "started_at", "TEXT");
+  ensureColumn(db, "orchestration_runs", "failed_at", "TEXT");
+  ensureColumn(db, "orchestration_runs", "canceled_at", "TEXT");
+  ensureColumn(db, "orchestration_runs", "superseded_by_run_id", "TEXT");
+  ensureColumn(db, "orchestration_runs", "status_reason_json", "TEXT NOT NULL DEFAULT '{}'");
   ensureColumn(db, "briefing_packets", "policy_mode", "TEXT NOT NULL DEFAULT 'compact-ranked'");
   ensureColumn(db, "briefing_packets", "token_budget", "INTEGER NOT NULL DEFAULT 900");
   ensureColumn(db, "briefing_packets", "selection_trace_json", "TEXT NOT NULL DEFAULT '[]'");
   ensureColumn(db, "briefing_packets", "omitted_context_json", "TEXT NOT NULL DEFAULT '[]'");
   ensureColumn(db, "memory_updates", "run_id", "TEXT");
   ensureColumn(db, "memory_updates", "packet_id", "TEXT");
+  ensureColumn(db, "improvement_writebacks", "impact_scope", "TEXT NOT NULL DEFAULT 'scoped'");
+  ensureColumn(db, "improvement_writebacks", "decision_note", "TEXT");
+  ensureColumn(db, "improvement_writebacks", "decision_actor", "TEXT");
+  ensureColumn(db, "improvement_writebacks", "decision_at", "TEXT");
+  ensureColumn(
+    db,
+    "improvement_writebacks",
+    "updated_at",
+    "TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))",
+  );
 };

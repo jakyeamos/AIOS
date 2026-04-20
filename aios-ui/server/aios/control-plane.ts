@@ -2,10 +2,26 @@ import { randomUUID } from "node:crypto";
 
 import type Database from "better-sqlite3";
 
-import type { BriefingPacket, OrchestrationRun, OrchestrationRunStatus } from "@/lib/control-plane";
-import { agentProfiles, workflowTemplates } from "@/server/aios/catalog";
+import type {
+  BriefingPacket,
+  ConsistencyFinding,
+  ControlPlaneRunDetail,
+  ImprovementWriteback,
+  OrchestrationRun,
+  OrchestrationRunStatus,
+} from "@/lib/control-plane";
+import { agentProfiles, invocationBackends, workflowTemplates } from "@/server/aios/catalog";
 import { assembleRankedPacket, expandPacketContext } from "@/server/aios/packet-assembly";
 import { ensureControlPlaneSchema } from "@/server/aios/schema";
+import {
+  cancelManagedInvocation,
+  getRunDetail,
+  listConsistencyFindings,
+  listInvocationBackends,
+  reviewWriteback,
+  startManagedInvocation,
+} from "@/server/aios/runtime";
+import { listImprovementWritebacks } from "@/server/aios/topic-graph";
 
 type RunRow = {
   id: string;
@@ -22,6 +38,13 @@ type RunRow = {
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
+  startedAt: string | null;
+  failedAt: string | null;
+  canceledAt: string | null;
+  backendKey: string | null;
+  activeInvocationId: string | null;
+  supersededByRunId: string | null;
+  statusReasonJson: string | null;
   resultSummary: string | null;
   memoryUpdateId: string | null;
   packetId: string | null;
@@ -51,20 +74,78 @@ const parseJsonArray = <T>(raw: string, fallback: T): T => {
   }
 };
 
-const supersedePendingRuns = (db: Database.Database, projectId: string | null): void => {
+const parseJsonRecord = (raw: string | null): Record<string, unknown> => {
+  if (!raw) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+};
+
+const supersedePendingRuns = (db: Database.Database, projectId: string | null, supersedingRunId: string): void => {
   if (!projectId) {
     return;
   }
 
-  db.prepare(
-    `
-    UPDATE orchestration_runs
-    SET status = 'superseded',
-        updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
-    WHERE project_id = ?
-      AND status IN ('planned', 'ready')
-  `,
-  ).run(projectId);
+  const rows = db
+    .prepare(
+      `
+      SELECT id, status
+      FROM orchestration_runs
+      WHERE project_id = ?
+        AND status IN ('planned', 'ready')
+    `,
+    )
+    .all(projectId) as Array<{ id: string; status: OrchestrationRunStatus }>;
+
+  const now = new Date().toISOString();
+  for (const row of rows) {
+    db.prepare(
+      `
+      UPDATE orchestration_runs
+      SET status = 'superseded',
+          superseded_by_run_id = ?,
+          status_reason_json = ?,
+          updated_at = ?
+      WHERE id = ?
+    `,
+    ).run(
+      supersedingRunId,
+      JSON.stringify({ kind: "superseded", supersededByRunId: supersedingRunId }),
+      now,
+      row.id,
+    );
+    db.prepare(
+      `
+      INSERT INTO orchestration_run_events (
+        id,
+        run_id,
+        project_id,
+        event_type,
+        from_status,
+        to_status,
+        summary,
+        reason_json,
+        metadata_json,
+        created_at
+      )
+      VALUES (?, ?, ?, 'superseded', ?, 'superseded', ?, ?, '{}', ?)
+    `,
+    ).run(
+      `run-event-${randomUUID()}`,
+      row.id,
+      projectId,
+      row.status,
+      `Superseded by newer run ${supersedingRunId}.`,
+      JSON.stringify({ supersededByRunId: supersedingRunId }),
+      now,
+    );
+  }
 };
 
 export const listControlPlaneRuns = (db: Database.Database): OrchestrationRun[] => {
@@ -88,6 +169,13 @@ export const listControlPlaneRuns = (db: Database.Database): OrchestrationRun[] 
         r.created_at AS createdAt,
         r.updated_at AS updatedAt,
         r.completed_at AS completedAt,
+        r.started_at AS startedAt,
+        r.failed_at AS failedAt,
+        r.canceled_at AS canceledAt,
+        r.backend_key AS backendKey,
+        r.active_invocation_id AS activeInvocationId,
+        r.superseded_by_run_id AS supersededByRunId,
+        r.status_reason_json AS statusReasonJson,
         r.result_summary AS resultSummary,
         r.memory_update_id AS memoryUpdateId,
         r.packet_id AS packetId
@@ -114,6 +202,13 @@ export const listControlPlaneRuns = (db: Database.Database): OrchestrationRun[] 
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     completedAt: row.completedAt,
+    startedAt: row.startedAt,
+    failedAt: row.failedAt,
+    canceledAt: row.canceledAt,
+    backendKey: row.backendKey,
+    activeInvocationId: row.activeInvocationId,
+    supersededByRunId: row.supersededByRunId,
+    statusReason: parseJsonRecord(row.statusReasonJson),
     resultSummary: row.resultSummary,
     memoryUpdateId: row.memoryUpdateId,
     packetId: row.packetId,
@@ -167,14 +262,23 @@ const listPacketRows = (db: Database.Database, limit = 12): BriefingPacket[] => 
 export const getControlPlaneOverview = (db: Database.Database): {
   workflowTemplates: typeof workflowTemplates;
   agentProfiles: typeof agentProfiles;
+  invocationBackends: typeof invocationBackends;
   runs: OrchestrationRun[];
   packets: BriefingPacket[];
-} => ({
-  workflowTemplates,
-  agentProfiles,
-  runs: listControlPlaneRuns(db),
-  packets: listPacketRows(db),
-});
+  pendingWritebacks: ImprovementWriteback[];
+  recentFindings: ConsistencyFinding[];
+} => {
+  const runs = listControlPlaneRuns(db);
+  return {
+    workflowTemplates,
+    agentProfiles,
+    invocationBackends: listInvocationBackends(),
+    runs,
+    packets: listPacketRows(db),
+    pendingWritebacks: listImprovementWritebacks(db, { limit: 12 }).filter((writeback) => writeback.requiresApproval),
+    recentFindings: listConsistencyFindings(db, { limit: 12 }),
+  };
+};
 
 export const planTask = (
   db: Database.Database,
@@ -186,8 +290,12 @@ export const planTask = (
   const assembledPacket = assembleRankedPacket(db, input);
   const runId = `run-${randomUUID()}`;
   const packetId = `packet-${randomUUID()}`;
+  const backendKey =
+    workflowTemplates.find((workflow) => workflow.key === assembledPacket.workflowKey)?.defaultBackendKey ??
+    agentProfiles.find((agent) => agent.key === assembledPacket.agentKey)?.defaultBackendKey ??
+    invocationBackends[0].key;
 
-  supersedePendingRuns(db, projectId);
+  supersedePendingRuns(db, projectId, runId);
 
   db.prepare(
     `
@@ -201,9 +309,11 @@ export const planTask = (
       rationale,
       assumptions_json,
       context_trace_json,
+      backend_key,
+      status_reason_json,
       packet_id
     )
-    VALUES (?, ?, ?, ?, ?, 'ready', ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, 'planned', ?, ?, ?, ?, '{}', ?)
   `,
   ).run(
     runId,
@@ -214,7 +324,32 @@ export const planTask = (
     assembledPacket.rationale,
     JSON.stringify(assembledPacket.assumptions),
     JSON.stringify(assembledPacket.contextTrace),
+    backendKey,
     packetId,
+  );
+
+  db.prepare(
+    `
+    INSERT INTO orchestration_run_events (
+      id,
+      run_id,
+      project_id,
+      event_type,
+      to_status,
+      summary,
+      reason_json,
+      metadata_json,
+      created_at
+    )
+    VALUES (?, ?, ?, 'planned', 'planned', ?, '{}', ?, ?)
+  `,
+  ).run(
+    `run-event-${randomUUID()}`,
+    runId,
+    projectId,
+    "Run record created before packet persistence.",
+    JSON.stringify({ backendKey }),
+    new Date().toISOString(),
   );
 
   db.prepare(
@@ -246,8 +381,58 @@ export const planTask = (
     JSON.stringify(assembledPacket.sections),
     assembledPacket.policyMode,
     assembledPacket.tokenBudget,
-    JSON.stringify(assembledPacket.selectionTrace),
-    JSON.stringify(assembledPacket.omittedContext),
+      JSON.stringify(assembledPacket.selectionTrace),
+      JSON.stringify(assembledPacket.omittedContext),
+  );
+
+  db.prepare(
+    `
+    UPDATE orchestration_runs
+    SET status = 'ready',
+        updated_at = ?,
+        status_reason_json = ?
+    WHERE id = ?
+  `,
+  ).run(
+    new Date().toISOString(),
+    JSON.stringify({
+      kind: "packet_ready",
+      backendKey,
+      policyMode: assembledPacket.policyMode,
+      tokenBudget: assembledPacket.tokenBudget,
+    }),
+    runId,
+  );
+  db.prepare(
+    `
+    INSERT INTO orchestration_run_events (
+      id,
+      run_id,
+      project_id,
+      event_type,
+      from_status,
+      to_status,
+      summary,
+      reason_json,
+      metadata_json,
+      created_at
+    )
+    VALUES (?, ?, ?, 'ready', 'planned', 'ready', ?, ?, ?, ?)
+  `,
+  ).run(
+    `run-event-${randomUUID()}`,
+    runId,
+    projectId,
+    "Briefing packet persisted and backend selected.",
+    JSON.stringify({
+      backendKey,
+      policyMode: assembledPacket.policyMode,
+      tokenBudget: assembledPacket.tokenBudget,
+    }),
+    JSON.stringify({
+      packetId,
+    }),
+    new Date().toISOString(),
   );
 
   const run = listControlPlaneRuns(db).find((entry) => entry.id === runId);
@@ -271,3 +456,40 @@ export const requestPacketExpansion = (
     tokenBudget?: number;
   },
 ) => expandPacketContext(db, input);
+
+export const getControlPlaneRunDetail = (db: Database.Database, runId: string): ControlPlaneRunDetail | null => {
+  const run = listControlPlaneRuns(db).find((entry) => entry.id === runId);
+  if (!run) {
+    return null;
+  }
+  return getRunDetail(db, run);
+};
+
+export const invokeControlPlaneRun = (
+  db: Database.Database,
+  input: { runId: string },
+): { runDetail: ControlPlaneRunDetail } => {
+  startManagedInvocation(db, input);
+  const detail = getControlPlaneRunDetail(db, input.runId);
+  if (!detail) {
+    throw new Error("Run not found after invocation.");
+  }
+  return { runDetail: detail };
+};
+
+export const cancelControlPlaneRun = (
+  db: Database.Database,
+  input: { runId: string },
+): { runDetail: ControlPlaneRunDetail } => {
+  cancelManagedInvocation(db, input);
+  const detail = getControlPlaneRunDetail(db, input.runId);
+  if (!detail) {
+    throw new Error("Run not found after cancellation.");
+  }
+  return { runDetail: detail };
+};
+
+export const reviewControlPlaneWriteback = (
+  db: Database.Database,
+  input: { writebackId: string; decision: "applied" | "rejected"; note?: string | null },
+): ImprovementWriteback => reviewWriteback(db, input);

@@ -1,0 +1,497 @@
+"""
+Regression tests for the orchestration runtime/control-plane handshake.
+
+Run from the repository root:
+    python3 -m pytest tests/test_orchestration_runtime.py -v
+"""
+
+import io
+import importlib.util
+import json
+import os
+import sqlite3
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "bin"))
+
+
+def _load_module(module_name: str, relative_path: str):
+    module_path = ROOT / relative_path
+    spec = importlib.util.spec_from_file_location(module_name, module_path)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _apply_base_schema(conn: sqlite3.Connection) -> None:
+    schema = (ROOT / "schema.sql").read_text()
+    conn.executescript(schema)
+
+
+def _insert_project(conn: sqlite3.Connection, repo_path: Path) -> str:
+    project_id = "project-aios"
+    conn.execute(
+        """
+        INSERT INTO projects (id, name, repo_path, obsidian_path, status)
+        VALUES (?, 'AIOS', ?, ?, 'active')
+        """,
+        (project_id, str(repo_path), str(repo_path)),
+    )
+    return project_id
+
+
+@pytest.fixture
+def runtime_db(tmp_path: Path) -> Path:
+    from aios_orchestration_runtime import ensure_runtime_schema
+
+    db_path = tmp_path / "aios.db"
+    conn = sqlite3.connect(db_path)
+    _apply_base_schema(conn)
+    ensure_runtime_schema(conn)
+    conn.commit()
+    conn.close()
+    return db_path
+
+
+def test_hook_stop_uses_explicit_run_handshake(runtime_db: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    hook_stop = _load_module("hook_stop", "bin/hook-stop.py")
+
+    repo_path = tmp_path / "repo"
+    repo_path.mkdir()
+    (repo_path / "PROJECT.md").write_text("# AIOS\n\n## Still Missing\n- Old gap\n")
+
+    conn = sqlite3.connect(runtime_db)
+    project_id = _insert_project(conn, repo_path)
+    session_id = "session-explicit"
+    run_id = "run-explicit"
+    invocation_id = "invoke-explicit"
+
+    conn.execute(
+        """
+        INSERT INTO sessions (id, project_id, tool, started_at, objective, status, cwd)
+        VALUES (?, ?, 'claude-code', '2026-04-19T00:00:00Z', 'Close the run explicitly', 'open', ?)
+        """,
+        (session_id, project_id, str(repo_path)),
+    )
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (
+            id, project_id, objective, workflow_key, agent_key, status, rationale,
+            assumptions_json, context_trace_json, created_at, updated_at
+        )
+        VALUES (?, ?, 'Close the run explicitly', 'implementation-delivery', 'implementation-lead',
+                'ready', 'Test rationale', '[]', '[]', '2026-04-19T00:00:00Z', '2026-04-19T00:00:00Z')
+        """,
+        (run_id, project_id),
+    )
+    conn.execute(
+        """
+        INSERT INTO orchestration_invocations (
+            id, run_id, backend_key, backend_label, status, handshake_token,
+            command_json, metadata_json, created_at, updated_at
+        )
+        VALUES (?, ?, 'aios-managed-runtime', 'AIOS Managed Runtime', 'launching', ?, '[]', '{}',
+                '2026-04-19T00:00:00Z', '2026-04-19T00:00:00Z')
+        """,
+        (invocation_id, run_id, run_id),
+    )
+    conn.execute(
+        """
+        UPDATE sessions
+        SET run_id = ?, invocation_id = ?, runtime_metadata_json = ?
+        WHERE id = ?
+        """,
+        (run_id, invocation_id, json.dumps({"backend_key": "aios-managed-runtime"}), session_id),
+    )
+    conn.commit()
+    conn.close()
+
+    monkeypatch.setattr(hook_stop, "DB", str(runtime_db))
+    monkeypatch.setattr(hook_stop, "LOG", str(tmp_path / "hooks.log"))
+    monkeypatch.setattr(hook_stop, "SUMMARIES_DIR", str(tmp_path / "summaries"))
+    monkeypatch.setattr(hook_stop.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        hook_stop,
+        "find_matching_orchestration_run",
+        lambda *_args, **_kwargs: pytest.fail("legacy matcher should not run for explicit handshake"),
+    )
+    monkeypatch.setattr(
+        sys,
+        "stdin",
+        io.StringIO(
+            json.dumps(
+                {
+                    "session_id": session_id,
+                    "run_id": run_id,
+                    "invocation_id": invocation_id,
+                    "run_outcome": "completed",
+                    "result_summary": "Managed runtime completed successfully.",
+                    "reason_json": {"kind": "normal_exit"},
+                }
+            )
+        ),
+    )
+
+    hook_stop.main()
+
+    conn = sqlite3.connect(runtime_db)
+    run = conn.execute(
+        """
+        SELECT status, session_id, result_summary, completed_at, active_invocation_id
+        FROM orchestration_runs
+        WHERE id = ?
+        """,
+        (run_id,),
+    ).fetchone()
+    assert run is not None
+    assert run[0] == "completed"
+    assert run[1] == session_id
+    assert run[2] == "Managed runtime completed successfully."
+    assert run[3] is not None
+    assert run[4] == invocation_id
+
+    invocation = conn.execute(
+        "SELECT status, session_id, ended_at FROM orchestration_invocations WHERE id = ?",
+        (invocation_id,),
+    ).fetchone()
+    assert invocation == ("completed", session_id, invocation[2])
+
+    event_rows = conn.execute(
+        """
+        SELECT event_type, to_status, summary
+        FROM orchestration_run_events
+        WHERE run_id = ?
+        ORDER BY created_at
+        """,
+        (run_id,),
+    ).fetchall()
+    assert ("completed", "completed", "Managed runtime completed successfully.") in event_rows
+    conn.close()
+
+
+def test_runtime_transition_records_failed_reason_metadata(runtime_db: Path, tmp_path: Path) -> None:
+    from aios_orchestration_runtime import ensure_runtime_schema, transition_run
+
+    repo_path = tmp_path / "repo"
+    repo_path.mkdir()
+    (repo_path / "PROJECT.md").write_text("# AIOS\n")
+
+    conn = sqlite3.connect(runtime_db)
+    project_id = _insert_project(conn, repo_path)
+    ensure_runtime_schema(conn)
+    run_id = "run-failed"
+
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (
+            id, project_id, objective, workflow_key, agent_key, status, rationale,
+            assumptions_json, context_trace_json, created_at, updated_at
+        )
+        VALUES (?, ?, 'Managed runtime fails', 'implementation-delivery', 'debug-surgeon',
+                'in_progress', 'Failure path', '[]', '[]', '2026-04-19T00:00:00Z', '2026-04-19T00:00:00Z')
+        """,
+        (run_id, project_id),
+    )
+
+    transition_run(
+        conn,
+        run_id=run_id,
+        to_status="failed",
+        event_type="failed",
+        summary="Backend command crashed.",
+        reason={"kind": "exception", "error": "RuntimeError", "message": "boom"},
+    )
+    conn.commit()
+
+    run = conn.execute(
+        "SELECT status, status_reason_json, failed_at FROM orchestration_runs WHERE id = ?",
+        (run_id,),
+    ).fetchone()
+    assert run is not None
+    assert run[0] == "failed"
+    assert json.loads(run[1]) == {"kind": "exception", "error": "RuntimeError", "message": "boom"}
+    assert run[2] is not None
+
+    event = conn.execute(
+        """
+        SELECT event_type, to_status, reason_json
+        FROM orchestration_run_events
+        WHERE run_id = ?
+        ORDER BY created_at DESC
+        LIMIT 1
+        """,
+        (run_id,),
+    ).fetchone()
+    assert event is not None
+    assert event[0] == "failed"
+    assert event[1] == "failed"
+    assert json.loads(event[2]) == {"kind": "exception", "error": "RuntimeError", "message": "boom"}
+    conn.close()
+
+
+def test_structured_evaluator_emits_stale_and_contradiction_findings(runtime_db: Path, tmp_path: Path) -> None:
+    from aios_orchestration_runtime import ensure_runtime_schema, evaluate_run_consistency
+
+    repo_path = tmp_path / "repo"
+    repo_path.mkdir()
+    (repo_path / "PROJECT.md").write_text(
+        "\n".join(
+            [
+                "# AIOS",
+                "",
+                "Last updated: 2026-04-18",
+                "",
+                "## Still Missing",
+                "- explicit run/session handshake",
+                "- approval UI for global changes",
+                "",
+                "## Guardrails",
+                "- compact ranked output reaches the agent by default",
+            ]
+        )
+    )
+
+    conn = sqlite3.connect(runtime_db)
+    project_id = _insert_project(conn, repo_path)
+    ensure_runtime_schema(conn)
+
+    run_id = "run-eval"
+    packet_id = "packet-eval"
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (
+            id, project_id, objective, workflow_key, agent_key, status, rationale,
+            assumptions_json, context_trace_json, packet_id, result_summary,
+            completed_at, created_at, updated_at
+        )
+        VALUES (
+            ?, ?, 'Implement explicit run handshake and approval UI',
+            'knowledge-os-evolution', 'implementation-lead', 'completed',
+            'Evaluator test', '[]', '[]', ?, 'Explicit handshake shipped with approval controls.',
+            '2026-04-19T12:00:00Z', '2026-04-19T12:00:00Z', '2026-04-19T12:00:00Z'
+        )
+        """,
+        (run_id, project_id, packet_id),
+    )
+    conn.execute(
+        """
+        INSERT INTO briefing_packets (
+            id, run_id, project_id, objective, workflow_key, agent_key, packet_markdown,
+            sections_json, policy_mode, token_budget, selection_trace_json, omitted_context_json, created_at
+        )
+        VALUES (
+            ?, ?, ?, 'Implement explicit run handshake and approval UI',
+            'knowledge-os-evolution', 'implementation-lead', 'packet',
+            ?, 'explore', 1500, '[]', '[]', '2026-04-19T11:55:00Z'
+        )
+        """,
+        (
+            packet_id,
+            run_id,
+            project_id,
+            json.dumps(
+                [
+                    {"title": "Objective", "items": ["explicit run/session handshake", "approval UI"]},
+                    {"title": "Policy", "items": ["Use compact ranked output by default."]},
+                ]
+            ),
+        ),
+    )
+    conn.execute(
+        """
+        INSERT INTO memory_updates (
+            id, project_id, run_id, packet_id, source, summary,
+            changes_json, risks_json, open_questions_json, created_at
+        )
+        VALUES (
+            'memory-eval', ?, ?, ?, 'hook-stop',
+            'Shipped the explicit run handshake and approval UI.',
+            ?, ?, ?, '2026-04-19T12:01:00Z'
+        )
+        """,
+        (
+            project_id,
+            run_id,
+            packet_id,
+            json.dumps(["Added explicit run/session handshake", "Added approval UI"]),
+            json.dumps(["Run objective still conflicts with a recent canceled attempt"]),
+            json.dumps(["Should compact-ranked remain the only default?"]),
+        ),
+    )
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (
+            id, project_id, objective, workflow_key, agent_key, status, rationale,
+            assumptions_json, context_trace_json, created_at, updated_at
+        )
+        VALUES (
+            'run-canceled', ?, 'Implement explicit run handshake',
+            'implementation-delivery', 'debug-surgeon', 'canceled',
+            'Canceled attempt', '[]', '[]', '2026-04-19T10:00:00Z', '2026-04-19T10:00:00Z'
+        )
+        """,
+        (project_id,),
+    )
+    conn.commit()
+
+    evaluation_id = evaluate_run_consistency(conn, run_id)
+    findings = conn.execute(
+        """
+        SELECT finding_kind, rule_key, summary
+        FROM consistency_findings
+        WHERE evaluation_id = ?
+        ORDER BY finding_kind, rule_key
+        """,
+        (evaluation_id,),
+    ).fetchall()
+    conn.close()
+
+    kinds = {row[0] for row in findings}
+    assert "likely_stale" in kinds
+    assert "direct_contradiction" in kinds
+    assert "soft_tension" in kinds
+
+
+def test_managed_runtime_completes_via_explicit_handshake(runtime_db: Path, tmp_path: Path) -> None:
+    from aios_orchestration_runtime import ensure_runtime_schema
+
+    repo_path = tmp_path / "repo"
+    repo_path.mkdir()
+    (repo_path / "PROJECT.md").write_text(
+        "\n".join(
+            [
+                "# AIOS",
+                "",
+                "Last updated: 2026-04-19",
+                "",
+                "## Guardrails",
+                "- compact ranked output reaches the agent by default",
+            ]
+        )
+    )
+
+    home = tmp_path / "home"
+    (home / "AIOS" / "logs").mkdir(parents=True)
+
+    conn = sqlite3.connect(runtime_db)
+    project_id = _insert_project(conn, repo_path)
+    ensure_runtime_schema(conn)
+    run_id = "run-managed"
+    invocation_id = "invoke-managed"
+    packet_id = "packet-managed"
+
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (
+            id, project_id, objective, workflow_key, agent_key, status, rationale,
+            assumptions_json, context_trace_json, backend_key, packet_id, created_at, updated_at
+        )
+        VALUES (
+            ?, ?, 'Managed runtime handshake integration',
+            'implementation-delivery', 'implementation-lead', 'ready',
+            'Managed runtime test', '[]', '[]', 'aios-managed-runtime', ?, '2026-04-19T00:00:00Z', '2026-04-19T00:00:00Z'
+        )
+        """,
+        (run_id, project_id, packet_id),
+    )
+    conn.execute(
+        """
+        INSERT INTO briefing_packets (
+            id, run_id, project_id, objective, workflow_key, agent_key,
+            packet_markdown, sections_json, policy_mode, token_budget,
+            selection_trace_json, omitted_context_json, created_at
+        )
+        VALUES (
+            ?, ?, ?, 'Managed runtime handshake integration',
+            'implementation-delivery', 'implementation-lead',
+            'packet', '[]', 'compact-ranked', 900, '[]', '[]', '2026-04-19T00:00:00Z'
+        )
+        """,
+        (packet_id, run_id, project_id),
+    )
+    conn.execute(
+        """
+        INSERT INTO orchestration_invocations (
+            id, run_id, backend_key, backend_label, status, handshake_token,
+            command_json, metadata_json, created_at, updated_at
+        )
+        VALUES (
+            ?, ?, 'aios-managed-runtime', 'AIOS Managed Runtime', 'launching', ?,
+            '[]', '{}', '2026-04-19T00:00:00Z', '2026-04-19T00:00:00Z'
+        )
+        """,
+        (invocation_id, run_id, run_id),
+    )
+    conn.commit()
+    conn.close()
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "bin" / "aios-managed-run.py"),
+            "--run-id",
+            run_id,
+            "--invocation-id",
+            invocation_id,
+            "--db",
+            str(runtime_db),
+        ],
+        cwd=str(ROOT),
+        env={
+            **os.environ,
+            "HOME": str(home),
+            "AIOS_DB": str(runtime_db),
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr or result.stdout
+
+    conn = sqlite3.connect(runtime_db)
+    run = conn.execute(
+        """
+        SELECT status, session_id, active_invocation_id, completed_at
+        FROM orchestration_runs
+        WHERE id = ?
+        """,
+        (run_id,),
+    ).fetchone()
+    assert run is not None
+    assert run[0] == "completed"
+    assert run[1] is not None
+    assert run[2] == invocation_id
+    assert run[3] is not None
+
+    invocation = conn.execute(
+        """
+        SELECT status, session_id, started_at, ended_at
+        FROM orchestration_invocations
+        WHERE id = ?
+        """,
+        (invocation_id,),
+    ).fetchone()
+    assert invocation is not None
+    assert invocation[0] == "completed"
+    assert invocation[1] == run[1]
+    assert invocation[2] is not None
+    assert invocation[3] is not None
+
+    event_types = {
+        row[0]
+        for row in conn.execute(
+            "SELECT event_type FROM orchestration_run_events WHERE run_id = ?",
+            (run_id,),
+        ).fetchall()
+    }
+    conn.close()
+
+    assert "in_progress" in event_types
+    assert "completed" in event_types

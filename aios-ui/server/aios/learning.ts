@@ -108,17 +108,36 @@ export const proposeRunWritebacks = (db: Database.Database, runId: string): void
       summary,
       evidence_json,
       proposed_change_json,
+      impact_scope,
       status,
       requires_approval,
       approval_reason,
-      token_regressive
+      token_regressive,
+      created_at,
+      updated_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, '{}', ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  const insertEvent = db.prepare(`
+    INSERT INTO improvement_writeback_events (
+      id,
+      writeback_id,
+      run_id,
+      event_type,
+      to_status,
+      actor,
+      note,
+      metadata_json,
+      created_at
+    )
+    VALUES (?, ?, ?, 'proposed', ?, 'system', ?, '{}', ?)
   `);
 
   for (const row of rows) {
+    const writebackId = `writeback-${randomUUID()}`;
+    const timestamp = new Date().toISOString();
     insert.run(
-      `writeback-${randomUUID()}`,
+      writebackId,
       run.id,
       run.projectId,
       row.layerType,
@@ -126,10 +145,25 @@ export const proposeRunWritebacks = (db: Database.Database, runId: string): void
       row.title,
       row.summary,
       JSON.stringify(row.evidence),
+      JSON.stringify({
+        source: "legacy-backfill",
+        workflowKey: run.workflowKey,
+      }),
+      row.layerType === "workflow" ? "workflow-default" : "project",
       row.status,
       row.requiresApproval ? 1 : 0,
       row.approvalReason,
       row.tokenRegressive ? 1 : 0,
+      timestamp,
+      timestamp,
+    );
+    insertEvent.run(
+      `writeback-event-${randomUUID()}`,
+      writebackId,
+      run.id,
+      row.status,
+      row.summary,
+      timestamp,
     );
   }
 };

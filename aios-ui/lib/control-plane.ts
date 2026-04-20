@@ -40,6 +40,14 @@ export type OrchestrationRunStatus =
   | "canceled"
   | "superseded";
 
+export type OrchestrationInvocationStatus =
+  | "queued"
+  | "launching"
+  | "running"
+  | "completed"
+  | "failed"
+  | "canceled";
+
 export type KnowledgePageSummary = {
   slug: string;
   title: string;
@@ -65,6 +73,7 @@ export type AgentProfile = {
   summary: string;
   bestFor: string[];
   guardrails: string[];
+  defaultBackendKey: string;
 };
 
 export type WorkflowTemplate = {
@@ -74,6 +83,16 @@ export type WorkflowTemplate = {
   triggers: string[];
   deliverables: string[];
   validation: string[];
+  defaultBackendKey: string;
+};
+
+export type InvocationBackend = {
+  key: string;
+  label: string;
+  summary: string;
+  transport: "managed_session" | "manual_session";
+  supportsCancel: boolean;
+  commandPreview: string[];
 };
 
 export type PacketSection = {
@@ -138,9 +157,48 @@ export type OrchestrationRun = {
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
+  startedAt: string | null;
+  failedAt: string | null;
+  canceledAt: string | null;
+  backendKey: string | null;
+  activeInvocationId: string | null;
+  supersededByRunId: string | null;
+  statusReason: Record<string, unknown>;
   resultSummary: string | null;
   memoryUpdateId: string | null;
   packetId: string | null;
+};
+
+export type OrchestrationRunEvent = {
+  id: string;
+  runId: string;
+  projectId: string | null;
+  sessionId: string | null;
+  invocationId: string | null;
+  eventType: string;
+  fromStatus: OrchestrationRunStatus | null;
+  toStatus: OrchestrationRunStatus | null;
+  summary: string;
+  reason: Record<string, unknown>;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type OrchestrationInvocation = {
+  id: string;
+  runId: string;
+  backendKey: string;
+  backendLabel: string;
+  status: OrchestrationInvocationStatus;
+  handshakeToken: string;
+  sessionId: string | null;
+  pid: number | null;
+  command: string[];
+  metadata: Record<string, unknown>;
+  createdAt: string;
+  startedAt: string | null;
+  endedAt: string | null;
+  updatedAt: string;
 };
 
 export type GroundedCitation = {
@@ -230,11 +288,70 @@ export type ImprovementWriteback = {
   title: string;
   summary: string;
   evidence: string[];
+  proposedChange: Record<string, unknown>;
+  impactScope: string;
   status: "proposed" | "pending_approval" | "applied" | "rejected";
   requiresApproval: boolean;
   approvalReason: string | null;
   tokenRegressive: boolean;
   createdAt: string;
+  updatedAt: string;
+  decisionNote: string | null;
+  decisionActor: string | null;
+  decisionAt: string | null;
+};
+
+export type ImprovementWritebackEvent = {
+  id: string;
+  writebackId: string;
+  runId: string | null;
+  eventType: string;
+  fromStatus: ImprovementWriteback["status"] | null;
+  toStatus: ImprovementWriteback["status"] | null;
+  actor: string;
+  note: string | null;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type ConsistencyFindingKind = "direct_contradiction" | "likely_stale" | "soft_tension";
+
+export type ConsistencyFinding = {
+  id: string;
+  evaluationId: string;
+  projectId: string | null;
+  runId: string | null;
+  packetId: string | null;
+  topicSlug: string | null;
+  findingKind: ConsistencyFindingKind;
+  severity: "info" | "warning" | "error";
+  ruleKey: string;
+  summary: string;
+  provenance: Array<Record<string, unknown>>;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type ConsistencyEvaluation = {
+  id: string;
+  projectId: string | null;
+  runId: string | null;
+  packetId: string | null;
+  invocationId: string | null;
+  triggerKind: string;
+  evaluatorVersion: string;
+  summary: string;
+  createdAt: string;
+  findings: ConsistencyFinding[];
+};
+
+export type ControlPlaneRunDetail = {
+  run: OrchestrationRun;
+  events: OrchestrationRunEvent[];
+  invocations: OrchestrationInvocation[];
+  writebacks: ImprovementWriteback[];
+  writebackEvents: ImprovementWritebackEvent[];
+  evaluations: ConsistencyEvaluation[];
 };
 
 export type TaskiProjectSummary = {
@@ -250,5 +367,7 @@ export type TaskiProjectSummary = {
   recentSuccesses: string[];
   learnedPolicies: ImprovementWriteback[];
   driftMarkers: TopicGraphMarker[];
+  consistencyFindings: ConsistencyFinding[];
+  pendingApprovals: ImprovementWriteback[];
   suggestedNextActions: string[];
 };

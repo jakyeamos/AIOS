@@ -112,6 +112,34 @@ export function TaskiProjectSurface({
                   )}
                 </ul>
               </article>
+              <article className="entity-card">
+                <p className="panel-title">Structured Findings</p>
+                <ul className="detail-list">
+                  {summary.consistencyFindings.length > 0 ? (
+                    summary.consistencyFindings.map((finding) => (
+                      <li key={finding.id}>
+                        {finding.findingKind}: {finding.summary}
+                      </li>
+                    ))
+                  ) : (
+                    <li>No structured evaluator findings are attached to this project yet.</li>
+                  )}
+                </ul>
+              </article>
+              <article className="entity-card">
+                <p className="panel-title">Approval Queue</p>
+                <ul className="detail-list">
+                  {summary.pendingApprovals.length > 0 ? (
+                    summary.pendingApprovals.map((proposal) => (
+                      <li key={proposal.id}>
+                        {proposal.title}: {proposal.approvalReason ?? proposal.summary}
+                      </li>
+                    ))
+                  ) : (
+                    <li>No pending approval proposals are blocking this project right now.</li>
+                  )}
+                </ul>
+              </article>
             </div>
           </section>
 

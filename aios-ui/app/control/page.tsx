@@ -18,8 +18,11 @@ export default async function ControlPlanePage(): Promise<React.JSX.Element> {
         projects={projects.map((project) => ({ id: project.id, name: project.name }))}
         workflowTemplates={overview.workflowTemplates}
         agentProfiles={overview.agentProfiles}
+        invocationBackends={overview.invocationBackends}
         recentRuns={overview.runs}
         recentPackets={overview.packets}
+        pendingWritebacks={overview.pendingWritebacks}
+        recentFindings={overview.recentFindings}
       />
     </PageShell>
   );

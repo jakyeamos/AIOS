@@ -13,7 +13,16 @@ import sys
 import uuid
 from datetime import UTC, datetime
 
-DB = os.path.expanduser("~/AIOS/data/aios.db")
+from aios_orchestration_runtime import (
+    ensure_runtime_schema,
+    evaluate_run_consistency,
+    insert_writeback,
+    resolve_run_linkage,
+    transition_run,
+    update_invocation,
+)
+
+DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
 SUMMARIES_DIR = os.path.expanduser("~/AIOS/logs/summaries")
 
@@ -53,115 +62,6 @@ def ensure_memory_updates_table(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE memory_updates ADD COLUMN run_id TEXT")
     if "packet_id" not in existing:
         conn.execute("ALTER TABLE memory_updates ADD COLUMN packet_id TEXT")
-
-
-def ensure_orchestration_runs_columns(conn: sqlite3.Connection) -> None:
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS orchestration_runs (
-            id TEXT PRIMARY KEY,
-            project_id TEXT,
-            session_id TEXT,
-            objective TEXT NOT NULL,
-            workflow_key TEXT NOT NULL,
-            agent_key TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'planned',
-            rationale TEXT NOT NULL,
-            assumptions_json TEXT NOT NULL DEFAULT '[]',
-            context_trace_json TEXT NOT NULL DEFAULT '[]',
-            packet_id TEXT,
-            memory_update_id TEXT,
-            result_summary TEXT,
-            completed_at TEXT,
-            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
-            updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-        )
-        """
-    )
-
-    existing = {
-        row[1] for row in conn.execute("PRAGMA table_info(orchestration_runs)").fetchall()
-    }
-    additions = {
-        "memory_update_id": "TEXT",
-        "result_summary": "TEXT",
-        "completed_at": "TEXT",
-    }
-    for column_name, definition in additions.items():
-        if column_name not in existing:
-            conn.execute(f"ALTER TABLE orchestration_runs ADD COLUMN {column_name} {definition}")
-
-
-def ensure_improvement_writebacks_table(conn: sqlite3.Connection) -> None:
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS improvement_writebacks (
-            id TEXT PRIMARY KEY,
-            run_id TEXT REFERENCES orchestration_runs(id),
-            project_id TEXT REFERENCES projects(id),
-            layer_type TEXT NOT NULL,
-            layer_key TEXT NOT NULL,
-            title TEXT NOT NULL,
-            summary TEXT NOT NULL,
-            evidence_json TEXT NOT NULL DEFAULT '[]',
-            proposed_change_json TEXT NOT NULL DEFAULT '{}',
-            status TEXT NOT NULL DEFAULT 'proposed',
-            requires_approval INTEGER NOT NULL DEFAULT 0,
-            approval_reason TEXT,
-            token_regressive INTEGER NOT NULL DEFAULT 0,
-            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-        )
-        """
-    )
-
-
-def insert_writeback(
-    conn: sqlite3.Connection,
-    run_id: str | None,
-    project_id: str | None,
-    layer_type: str,
-    layer_key: str,
-    title: str,
-    summary: str,
-    evidence: list[str],
-    requires_approval: bool = False,
-    approval_reason: str | None = None,
-    token_regressive: bool = False,
-) -> None:
-    conn.execute(
-        """
-        INSERT INTO improvement_writebacks (
-            id,
-            run_id,
-            project_id,
-            layer_type,
-            layer_key,
-            title,
-            summary,
-            evidence_json,
-            proposed_change_json,
-            status,
-            requires_approval,
-            approval_reason,
-            token_regressive
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, '{}', ?, ?, ?, ?)
-        """,
-        (
-            f"writeback-{uuid.uuid4()}",
-            run_id,
-            project_id,
-            layer_type,
-            layer_key,
-            title,
-            summary,
-            json.dumps(evidence),
-            "pending_approval" if requires_approval else "proposed",
-            1 if requires_approval else 0,
-            approval_reason,
-            1 if token_regressive else 0,
-        ),
-    )
 
 
 def _tokenize(text: str | None) -> set[str]:
@@ -252,9 +152,19 @@ def main() -> None:
             sys.exit(0)
 
         now = datetime.now(UTC).isoformat()
+        run_outcome = data.get("run_outcome") or "completed"
+        explicit_result_summary = data.get("result_summary")
+        reason_json = data.get("reason_json")
+        if isinstance(reason_json, str):
+            try:
+                reason_json = json.loads(reason_json)
+            except Exception:
+                reason_json = {"raw": reason_json}
+        if not isinstance(reason_json, dict):
+            reason_json = {}
+
         ensure_memory_updates_table(conn)
-        ensure_orchestration_runs_columns(conn)
-        ensure_improvement_writebacks_table(conn)
+        ensure_runtime_schema(conn)
 
         # Flag reusable insights from this session
         insight_count = 0
@@ -357,7 +267,15 @@ def main() -> None:
             f"Closed session for objective '{row[4] or 'unspecified'}' with "
             f"{len(prompts)} prompts and {len(artifacts)} artifacts."
         )
-        linked_run_id, linked_packet_id = find_matching_orchestration_run(conn, row[1], row[4])
+        linked_run_id, linked_packet_id, linked_invocation_id, used_legacy_link = resolve_run_linkage(
+            conn,
+            session_id=session_id,
+            payload_run_id=data.get("run_id"),
+            payload_invocation_id=data.get("invocation_id"),
+            legacy_matcher=find_matching_orchestration_run,
+            project_id=row[1],
+            objective=row[4],
+        )
         memory_update_id = str(uuid.uuid4())
 
         # Close session in DB
@@ -408,53 +326,75 @@ def main() -> None:
                 (linked_run_id,),
             ).fetchone()
 
-            conn.execute(
-                """
-                UPDATE orchestration_runs
-                SET session_id = ?,
-                    status = 'completed',
-                    memory_update_id = ?,
-                    result_summary = ?,
-                    completed_at = ?,
-                    updated_at = ?
-                WHERE id = ?
-                """,
-                (
-                    session_id,
-                    memory_update_id,
-                    memory_summary,
-                    now,
-                    now,
-                    linked_run_id,
+            runtime_summary = explicit_result_summary or memory_summary
+            transition_run(
+                conn,
+                run_id=linked_run_id,
+                to_status=run_outcome,
+                event_type=run_outcome,
+                summary=runtime_summary,
+                reason=(
+                    {
+                        **reason_json,
+                        "linkage": "legacy-match" if used_legacy_link else "explicit-handshake",
+                    }
                 ),
+                session_id=session_id,
+                invocation_id=linked_invocation_id,
+                result_summary=runtime_summary,
+                memory_update_id=memory_update_id,
+                created_at=now,
             )
+            if linked_invocation_id:
+                update_invocation(
+                    conn,
+                    invocation_id=linked_invocation_id,
+                    status=run_outcome,
+                    session_id=session_id,
+                    metadata={
+                        "result_summary": runtime_summary,
+                        "reason": reason_json,
+                        "linked_via": "legacy-match" if used_legacy_link else "explicit-handshake",
+                    },
+                    ended_at=now,
+                )
 
             insert_writeback(
                 conn,
-                linked_run_id,
-                row[1],
-                "project",
-                row[1],
-                f"Project writeback from {row[4] or 'unspecified objective'}",
-                memory_summary,
-                change_items[:3] if change_items else [memory_summary],
+                run_id=linked_run_id,
+                project_id=row[1],
+                layer_type="project",
+                layer_key=row[1],
+                title=f"Project writeback from {row[4] or 'unspecified objective'}",
+                summary=memory_summary,
+                evidence=change_items[:3] if change_items else [memory_summary],
+                proposed_change={
+                    "source": "hook-stop",
+                    "memory_update_id": memory_update_id,
+                },
+                impact_scope="project",
             )
 
             if run_row:
                 token_regressive = len(change_items) > 4 or len(prompts) > 12
                 insert_writeback(
                     conn,
-                    linked_run_id,
-                    row[1],
-                    "workflow",
-                    run_row[0],
-                    f"Workflow learning for {run_row[0]}",
-                    (
+                    run_id=linked_run_id,
+                    project_id=row[1],
+                    layer_type="workflow",
+                    layer_key=run_row[0],
+                    title=f"Workflow learning for {run_row[0]}",
+                    summary=(
                         "Compact ranked context should stay the default."
                         if not token_regressive
                         else "This run may be pushing packet breadth upward and should not alter defaults without approval."
                     ),
-                    [memory_summary, *risk_items[:2]],
+                    evidence=[memory_summary, *risk_items[:2]],
+                    proposed_change={
+                        "default_packet_policy": "compact-ranked",
+                        "workflow_key": run_row[0],
+                    },
+                    impact_scope="workflow-default",
                     requires_approval=token_regressive,
                     approval_reason=(
                         "Potential token-regressive learning proposal."
@@ -462,6 +402,16 @@ def main() -> None:
                         else None
                     ),
                     token_regressive=token_regressive,
+                )
+            evaluate_run_consistency(
+                conn,
+                linked_run_id,
+                invocation_id=linked_invocation_id,
+            )
+            if used_legacy_link:
+                log(
+                    "legacy run-link fallback used for "
+                    f"session {session_id} -> run {linked_run_id}"
                 )
 
         # Log Stop event
