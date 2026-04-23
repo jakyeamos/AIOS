@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . && tsc --noEmit",
-    "lint:architecture": "dependency-cruiser --config .dependency-cruiser.cjs app components lib server --output-type err-long"
+    "lint:architecture": "dependency-cruiser --config .dependency-cruiser.cjs app components lib server --output-type err-long",
+    "lint:anti-slop:fixtures": "eslint --config eslint/anti-slop-fixtures.config.mjs \"eslint/fixtures/anti-slop/pass/**/*.jsx\""
   },
   "dependencies": {
     "@tanstack/react-query": "^5.66.11",

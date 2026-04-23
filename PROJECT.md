@@ -259,6 +259,20 @@ Phase 1a prompt library baseline is now implemented:
 - phase architecture note:
   - `docs/architecture/2026-04-23-aios-prompt-library-phase1.md`
 
+Phase 1b anti-slop ESLint ratchet is now implemented on top of existing plugin wiring:
+
+- anti-slop fixture lint lane:
+  - `aios-ui/eslint/anti-slop-fixtures.config.mjs`
+  - `aios-ui/eslint/fixtures/anti-slop/pass/**`
+  - `npm --prefix aios-ui run lint:anti-slop:fixtures`
+- architecture-enforcement profile metadata:
+  - `config/architecture-enforcement/profiles.json` now includes `anti-slop-fixtures` adapter for `ts-nextjs-v1`
+- CI quality wiring:
+  - `.github/workflows/aios-ui-quality.yml`
+  - runs `lint`, `lint:architecture`, and `lint:anti-slop:fixtures` for `aios-ui`
+- ratchet docs + rollout guidance:
+  - `docs/architecture/2026-04-23-anti-slop-eslint-ratchet.md`
+
 ## Still Missing
 
 - more than one production-grade invocation backend beyond the new managed local runtime

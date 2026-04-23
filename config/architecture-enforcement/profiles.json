@@ -75,6 +75,21 @@
             "eslint.config.mjs",
             "tsconfig.json"
           ]
+        },
+        {
+          "id": "anti-slop-fixtures",
+          "type": "command",
+          "command": [
+            "npm",
+            "run",
+            "lint:anti-slop:fixtures"
+          ],
+          "requires_paths": [
+            "package.json",
+            ".config/anti-slop.json",
+            "eslint/anti-slop-fixtures.config.mjs",
+            "eslint/fixtures/anti-slop/pass"
+          ]
         }
       ]
     }
