@@ -76,6 +76,8 @@ Each template is a single `.md` file. The YAML frontmatter is the machine contra
 
 ### Required frontmatter fields
 
+This Phase 1 field list is canonical for `bin/validate-prompts.py`. Do not use the older roadmap shorthand fields (`title`, `category`, `surfaces`, `reuse_count`, `quality_score`, `variables`, `example_inputs`, `evaluation_criteria`, `notes`) unless this spec is deliberately revised and the validator is updated in the same change.
+
 | Field | Type | Description |
 |---|---|---|
 | `id` | string | Unique, snake_case identifier (matches filename) |
@@ -336,3 +338,492 @@ Covers:
 - Prompt A/B testing automation (manual via run-experiment.py)
 - Prompt versioning via git tags (changelog in frontmatter is sufficient)
 - TypeScript/Node tooling (Python throughout)
+
+---
+
+## Phase 2 — Validation-Driven Execution Strategy System
+
+**Date:** 2026-04-22
+**Status:** Ready to run
+**Type:** Audit + implementation prompt
+**Supersedes:** The prompt library vision above. This phase reframes raw prompt templates as validated execution strategy bundles.
+
+### Purpose
+
+Build a system that improves AI output quality over time by transforming raw human requests into validated, task-specific execution strategies before they are sent to the model.
+
+This is not a loose prompt library.
+This is not a bag of magic strings.
+Treat this as core infrastructure.
+
+**Core objective:** Optimize for the highest rate of high-quality completions under acceptable safety, trust, and cost constraints.
+
+**Primary principle:** The validated artifact is NOT a raw prompt. The validated artifact is an execution strategy bundle.
+
+**Scope gate:** This phase is intentionally downstream of the Improvement Engine audit. Treat the lifecycle, experiment environments, promotion automation, and number of seeded task families below as maximum target architecture, not mandatory first-pass scope. The actual implementation slice must be calibrated by the audit's recommendation: lean deterministic, hybrid, or LLM-heavy.
+
+A strategy bundle may include:
+- canonical task spec
+- surface adapter
+- command template
+- skill bundle
+- context profile
+- validation profile
+- model/effort profile
+- execution mode
+
+This matters because AIOS runs across multiple surfaces:
+- Claude Code, where execution is often command + skills + context + validations
+- Codex, where execution is often looser prose and structured task framing
+
+The system must support both without pretending they are identical.
+
+### Prompt
+
+You are auditing and implementing a validation-driven prompt and execution-strategy system for AIOS.
+
+Goal:
+Build a system that improves AI output quality over time by transforming raw human requests into validated, task-specific execution strategies before they are sent to the model.
+
+This is not a loose prompt library.
+This is not a bag of magic strings.
+Treat this as core infrastructure.
+
+Core objective:
+Optimize for the highest rate of high-quality completions under acceptable safety, trust, and cost constraints.
+
+Primary principle:
+The validated artifact is NOT a raw prompt.
+The validated artifact is an execution strategy bundle.
+
+A strategy bundle may include:
+- canonical task spec
+- surface adapter
+- command template
+- skill bundle
+- context profile
+- validation profile
+- model/effort profile
+- execution mode
+
+This matters because AIOS runs across multiple surfaces:
+- Claude Code, where execution is often command + skills + context + validations
+- Codex, where execution is often looser prose and structured task framing
+
+The system must support both without pretending they are identical.
+
+What to build:
+Design and implement a validation-driven system with these layers:
+
+1. Canonical Task Spec Registry
+2. Surface-Specific Execution Strategy Registry
+3. Prompt / Instruction Compiler
+4. Evaluation and Validation Pipeline
+5. Experiment Logging System
+6. Rollout State Machine
+7. Seeded Strategies for major task families
+
+Critical design decision:
+Use shared canonical task families across Claude Code and Codex, with shared core rubric philosophy, but different surface-specific execution strategies and adapter behavior.
+
+---
+
+#### System Architecture Requirements
+
+**A. Canonical Task Spec Layer**
+This layer is shared across surfaces.
+
+Each canonical task spec must define:
+- task_family
+- task_intent_description
+- required_inputs
+- optional_inputs
+- output_contract
+- hard_constraints
+- quality_rubric_profile
+- default_context_requirements
+
+This layer is the stable abstraction.
+Do not let surface-specific prompt wording replace it.
+
+**B. Execution Strategy Bundle Layer**
+This is the actual validated unit.
+
+Each execution strategy bundle must include:
+- strategy_id
+- strategy_version
+- task_family
+- surface (claude_code, codex, later extensible)
+- status (draft, experimental, shadow, canary, validated, watchlist, deprecated, rolled_back)
+- command_adapter_version
+- skill_bundle_version
+- context_profile_version
+- validation_profile_version
+- model_profile
+- execution_mode
+- token_budget_class
+- expected_repo_scope
+- safety_scope
+- rollout_policy
+- parent_strategy_id
+- change_hypothesis
+- created_at
+- created_by
+
+Interpretation by surface:
+- In Claude Code, command_adapter_version refers to slash command / harness entrypoint shape.
+- In Codex, command_adapter_version refers to prose renderer / instruction assembly shape.
+
+Skill bundle handling:
+- Skill files are not validated individually as the main promoted artifact.
+- Skill bundles are validated only as part of bundled execution strategies.
+- Still version skill bundles separately for traceability and rollback analysis.
+
+**C. Surface Adapter Layer**
+Support at minimum:
+- Claude Code adapter
+- Codex adapter
+
+Claude Code adapter should assume execution is influenced by:
+- slash commands
+- skills
+- injected repo context
+- validation routines
+- handoff behavior
+- effort/model routing
+
+Codex adapter should assume execution is influenced by:
+- compiled prose structure
+- explicit constraints
+- output contracts
+- attached context
+- model profile
+
+Do not force both surfaces into the same rendering shape.
+Keep the task-family lineage shared, but the adapter implementation distinct.
+
+**D. Prompt / Instruction Compiler**
+The compiler must assemble:
+- raw user ask
+- extracted intent and parameters
+- canonical task spec
+- selected execution strategy bundle
+- relevant context profile
+- hard constraints
+- output contract
+- validation expectations
+
+The compiler must preserve user intent and avoid hidden over-mutation.
+Do not bloat every request into a giant template.
+Select leaner strategies for simpler asks and deeper strategies for high-complexity asks.
+
+---
+
+#### Validation Philosophy
+
+The system must NOT treat formats as proven because they "felt good once."
+
+The first implementation pass may stop at schema validation, manual/semi-automated evidence capture, and a small number of seed strategies if the Improvement Engine audit finds that full replay/shadow/canary infrastructure would be premature.
+
+A strategy becomes proven only through staged evidence:
+- designed
+- schema-validated
+- tested offline
+- shadowed in real usage
+- canaried live
+- promoted
+- continuously monitored
+
+Use this validation lifecycle:
+- draft
+- experimental
+- shadow
+- canary
+- validated
+- watchlist
+- deprecated
+- rolled_back
+
+The system must support promotion, rollback, regression monitoring, and version lineage.
+
+---
+
+#### Evaluation Framework
+
+Use four layers of evaluation, in this exact order:
+
+**1. Hard Fail Gates**
+These are promotion blockers. If any fail, the run cannot count as a success.
+
+Hard fail examples:
+- hallucination / fabricated repo facts
+- critical constraint violation
+- severe misalignment to the user ask
+- missing required output contract sections
+- dangerous over-scoping
+- false claim of validation or completion
+
+**2. Quality Score**
+This is the primary score. Use a 100-point weighted score with task-family-specific weights.
+
+Global quality dimensions:
+- correctness / groundedness
+- intent preservation
+- specificity
+- actionability
+- scope discipline
+- non-genericness
+- correction burden
+
+Add task-family-specific dimensions. Examples:
+
+Architecture review:
+- prioritization quality
+- structural insight
+- file-level practicality
+- tradeoff clarity
+
+PRD generation:
+- requirement clarity
+- acceptance criteria quality
+- edge-case coverage
+- implementation readiness
+
+Bug investigation:
+- root-cause clarity
+- evidence-vs-guess separation
+- targeted fix quality
+- validation readiness
+
+Writing rewrite:
+- meaning preservation
+- tone preservation
+- clarity improvement
+- voice retention
+
+**3. Completion Score**
+This is secondary to quality.
+
+Completion dimensions:
+- delivered usable output
+- followed output contract
+- low retry requirement
+- low unnecessary clarification rate
+- materially advanced the task
+
+**4. Efficiency Score**
+This is a tie-breaker, not a primary objective.
+
+Efficiency dimensions:
+- token cost
+- latency
+- context size
+- tool-call count
+- repo churn
+
+Important: do not collapse everything into one global score at first.
+Store: hard_fail_pass, hard_fail_types, quality_score, quality_dimension_breakdown, completion_score, efficiency_score.
+Only derive higher-level promotion decisions after storing raw components.
+
+---
+
+#### Promotion Rules
+
+**Draft → Experimental**
+- schema-valid strategy bundle
+- explicit hypothesis
+- linked task family
+- linked rubric
+- complete required metadata
+
+**Experimental → Shadow**
+- offline evals beat baseline on quality_score
+- no worse on hard-fail rate
+- within acceptable efficiency budget
+- sampled human review says the candidate is promising
+
+**Shadow → Canary**
+- shadow runs on real requests show stable quality advantage
+- no major scope regressions
+- no operational blowups
+- no increase in severe correction burden
+
+**Canary → Validated**
+- statistically meaningful improvement or clearly durable directional win on quality and high-quality completion rate
+- no hard-fail regression
+- acceptable efficiency cost
+- human review signoff for high-impact task families
+
+**Validated → Watchlist**
+Trigger when: quality drops over trailing window, correction burden rises, model/provider changes cause drift, token cost jumps, rollback-worthy incidents appear.
+
+**Watchlist / Validated → Rolled_Back**
+Trigger immediately when: hallucination spikes, damaging repo edits increase, correction burden rises above threshold, hard-fail rate materially exceeds incumbent.
+
+Optimization target: highest rate of high-quality completions. Not highest raw completion rate.
+
+---
+
+#### Experiment Environments
+
+**1. Offline Replay Harness**
+Use historical tasks and curated eval corpora. This is where candidates become promising.
+
+**2. Shadow Mode**
+Run candidate strategies silently on real tasks without serving them. Mandatory before meaningful promotion.
+
+**3. Canary Rollout**
+Expose candidate strategies to a small slice of matching traffic. Measure quality, completion, trust, and cost before promotion.
+
+---
+
+#### Subrepo Testing for Claude Code
+
+Claude Code strategy testing must support subrepo-based evaluation.
+
+Subrepo testing should evaluate:
+- command template changes
+- skill bundle changes
+- context profile changes
+- validation profile changes
+- effort/model routing changes
+- handoff behavior changes
+
+Do NOT validate individual skill files as standalone promoted artifacts.
+Validate bundled Claude execution strategies.
+
+Use subrepos representing different challenge patterns:
+- clean small app
+- messy monorepo
+- backend-heavy service
+- UI-heavy app
+- repo with architecture drift
+- repo with weak tests
+- repo with misleading structure
+
+---
+
+#### Claude Code vs Codex
+
+Shared across both:
+- task family definitions
+- hard fail gates
+- core quality philosophy
+- promotion lifecycle
+- experiment logging envelope
+
+Different per surface:
+- renderer / adapter behavior
+- context assembly
+- effort routing
+- component versions
+- rubric weights where appropriate
+- operational metrics emphasis
+
+Claude Code strategy bundles: command-and-skill-driven execution packages.
+Codex strategy bundles: compiled prose-and-context execution packages.
+
+---
+
+#### Experiment Logging Requirements
+
+Store per-run evidence first, aggregate summaries second.
+
+Every run must log at minimum:
+
+Core metadata:
+- run_id, timestamp, task_family, surface, strategy_id, strategy_version
+- task_spec_version, model_profile, repo_or_project_id if applicable
+- input_fingerprint, task_complexity_band, repo_size_band
+
+Execution metadata:
+- command_adapter_version, skill_bundle_version, context_profile_version
+- validation_profile_version, execution_mode, token_budget_class
+
+Outcome metadata:
+- hard_fail_pass, hard_fail_types, quality_score, quality_dimension_breakdown
+- completion_score, efficiency_score, human_review_score if sampled
+- user_acceptance_proxy, correction_burden_proxy, retry_count
+- fallback_used, latency, input_tokens, output_tokens
+
+Claude-specific metadata:
+- files_touched, validation_commands_run, validation_pass_fail
+- handoff_doc_produced, repo_churn_size
+
+Codex-specific metadata:
+- output_structure_compliance, implementation_specificity, rewrite_depth if applicable
+
+---
+
+#### Initial Task Families to Seed
+
+Target architecture should eventually cover:
+
+- architecture_review
+- audit_and_implement
+- PRD_generation
+- repo_refactor
+- codebase_quality_cleanup
+- bug_investigation
+- research_summary
+- writing_rewrite
+- handoff_doc_generation
+
+For the first implementation pass, seed only the highest-leverage subset justified by the Improvement Engine audit. For each selected task family:
+- create canonical task spec
+- define quality rubric profile
+- define hard constraints
+- define default context requirements
+- create at least one Claude Code strategy bundle
+- create at least one Codex strategy bundle
+- define initial baseline strategy
+- define validation hypothesis for next candidate strategy
+
+---
+
+#### Implementation Expectations
+
+Expected outputs:
+1. Executive Summary
+2. Current-State Audit
+3. Proposed Architecture
+4. Data Model / Schemas
+5. Runtime Flow
+6. Validation Lifecycle Design
+7. Evaluation Framework
+8. Rollout / Promotion State Machine
+9. Experiment Logging Design
+10. Claude Code Strategy Design
+11. Codex Strategy Design
+12. Initial Seeded Task Specs and Strategies
+13. Concrete Code / File Changes
+14. Migration Plan from ad hoc prompts to validated execution strategies
+15. Risks, Tradeoffs, and Failure Modes
+16. Next Recommended Improvements
+
+Implementation quality bar:
+- prefer durable architecture over clever hacks
+- prefer explicit schemas over freeform blobs
+- prefer inspectability over hidden automation
+- prefer bundle-level validation over folklore
+- keep orchestration thin and helpers consolidated
+- do not scatter strategy logic across the repo
+- make versioning, promotion, and rollback explicit
+- integrate with adjacent systems if they already exist instead of duplicating them
+
+Naming guidance:
+You may rename "prompt library" to something more accurate such as:
+- prompt compiler
+- task spec registry
+- execution strategy registry
+- instruction compiler
+- validation-driven execution layer
+
+Make the naming reflect the architecture, not prompt-engineering folklore.
+
+Default bias:
+Choose quality over raw completion.
+Choose completion over efficiency.
+Choose trust and traceability over magic.
+Choose bundle-level validation over component mythology.
+Choose per-run evidence over aggregate vibes.

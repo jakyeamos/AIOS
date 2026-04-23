@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-04-19
+Last updated: 2026-04-23
 
 ## What AIOS Is
 
@@ -167,6 +167,19 @@ This pass also turns the execution layer into a real control-plane path:
 - deeper packet/result inspection at file/topic delta level
 - richer Taski operator controls beyond summary, approvals, and run/evaluator inspection
 - legacy heuristic run matching still exists only as a fallback for older sessions that lack explicit handshake metadata
+
+## Spec Roadmap Corrections On 2026-04-23
+
+The spec execution roadmap has been corrected before execution:
+
+- Anti-Slop ESLint is now treated as an existing integration to audit and ratchet, not a greenfield build.
+- Workflow orchestration must extend the existing control-plane primitives instead of recreating them.
+- Phase 0 is serial by default because architecture enforcement, agent CLI surfaces, and success criteria share scripts, hooks, docs, and runtime contracts.
+- Prompt Library Phase 1 uses the schema in `2026-04-08-prompt-library-design.md` as canonical.
+- Agent Workflow CLI work must honor the hard checkpoint before implementation.
+- Success criteria own judging rubrics; Standards Delta owns project health scoring and remediation.
+- Prompt Library Phase 2 is scoped by the Improvement Engine audit rather than requiring full replay/shadow/canary infrastructure up front.
+- UI Command Center now has an explicit MVP gate before the broader ten-surface target.
 
 ## Guardrails
 
