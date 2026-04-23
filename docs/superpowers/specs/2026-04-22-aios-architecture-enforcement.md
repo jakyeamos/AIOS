@@ -9,43 +9,50 @@
 
 ## Purpose
 
-Turn AIOS's intended architecture into executable rules. Make architectural drift difficult, obvious, and CI-blocking. Use Dependency Cruiser for dependency-boundary enforcement and Biome/lint-based checks for import, layering, naming, and policy rules.
+Turn AIOS's intended architecture standards into executable rules for all linked development projects. Make architectural drift difficult, obvious, and CI-blocking where each project supports blocking checks. Use stack-appropriate enforcement: Dependency Cruiser/ESLint for TypeScript module boundaries, ruff/import checks for Python, and additional adapters where a project profile warrants them.
 
-**Primary outcome:** Enforce architecture by tooling instead of docs or convention.
+**Primary outcome:** AIOS can tell agents which architecture rules apply to the project they are editing, run those checks, and report violations through a global control plane instead of relying on docs or convention.
 
 ---
 
 ## Prompt
 
-You are implementing machine-enforced architectural constraints in the AIOS codebase.
+You are implementing AIOS-managed architectural constraints for agent-run development across all linked projects.
 
 Goal:
-Make AIOS architecture enforceable by tooling instead of relying on docs or convention. Use Dependency Cruiser for dependency-boundary enforcement and Biome/lint-based checks for import, layering, naming, and policy rules. The result should make architectural drift difficult, obvious, and CI-blocking when appropriate.
+Make architecture enforceable by tooling instead of relying on docs or convention. AIOS is the orchestration/control layer; this repository is the implementation home and first self-check target, not the only target. Use Dependency Cruiser/ESLint where they fit TypeScript/React projects, ruff/import checks where they fit Python, and other narrow adapters where needed. The result should make architectural drift difficult, obvious, and CI-blocking when appropriate across linked projects.
 
 Primary outcome:
-Turn AIOS's intended architecture into executable rules.
+Turn AIOS's global architecture standards into executable project profiles and checks.
 
 Context:
 AIOS is evolving into a durable orchestration and command-center system. Maintainability, modularity, observability, and agent-safe structure matter more than clever shortcuts. This implementation should support long-term growth, sub-agent-driven development, experimentation systems, UI visibility, and clean separation of concerns.
 
 Instructions:
-1. Audit the current repo structure before changing anything.
-2. Infer the existing architectural layers, module boundaries, and likely failure points.
-3. Propose a target rule set that reflects how the repo should be organized going forward.
-4. Implement enforcement using the strongest available mechanism:
-   - Use Dependency Cruiser for cross-folder/module dependency constraints
-   - Use Biome where it can enforce policy cleanly
-   - If Biome cannot realistically express a rule, use an appropriate lint/custom validation mechanism instead of faking it
-5. Prefer real enforcement over aspirational comments.
-6. Keep the implementation understandable and maintainable by future agents.
-7. Do not introduce heavy complexity unless it clearly improves enforcement quality.
+1. Audit AIOS's current project registry/control-plane structure before changing anything.
+2. Audit this repository as the control-plane implementation target and use it as a self-check proof, but do not treat `aios-ui/` as the whole scope.
+3. Infer the architectural layers, module boundaries, and likely failure points that AIOS must enforce across linked project types.
+4. Propose a target rule model with project profiles/adapters so each linked repo can declare its stack, layers, allowed boundaries, and enforcement commands.
+5. Implement enforcement using the strongest available mechanism:
+   - Use Dependency Cruiser for TypeScript cross-folder/module dependency constraints
+   - Use ESLint/Biome where they can enforce policy cleanly
+   - Use ruff/import validation or a small custom checker for Python where appropriate
+   - If a tool cannot realistically express a rule, use an appropriate supplemental validation mechanism instead of faking it
+6. Prefer real enforcement over aspirational comments.
+7. Keep the implementation understandable and maintainable by future agents.
+8. Do not introduce heavy complexity unless it clearly improves enforcement quality.
+
+Execution guardrail:
+Do not begin by installing Dependency Cruiser or other tooling only in `aios-ui/`. That would harden one bootstrap target while missing the purpose of this phase. First create or update the AIOS-level enforcement profile model, then wire `aios-ui/` as a TypeScript/Next.js proof of that model.
 
 ---
 
 ### Audit Objectives
 
-Find in the current repo:
-- Current top-level architecture and major subsystems
+Find in AIOS and the first target project profiles:
+- Current AIOS control-plane architecture and project registry shape
+- Current top-level architecture and major subsystems in this repository as a self-check target
+- Existing linked-project metadata or missing metadata needed to apply rules outside this repo
 - Circular dependencies
 - Cross-layer violations
 - Feature-to-feature coupling that should go through shared/public APIs
@@ -57,7 +64,7 @@ Find in the current repo:
 
 ### Target Enforcement Categories
 
-Implement rules for as many of these as the repo structure supports:
+Implement rules for as many of these as project profiles support. A rule may be global, stack-specific, or project-specific.
 
 #### 1. Layering Rules
 - UI/presentation cannot import infra/db/runtime internals directly
@@ -85,16 +92,17 @@ Implement rules for as many of these as the repo structure supports:
 #### 6. Naming / Placement / Policy Rules
 - Enforce conventions that support architecture clarity
 - Prevent files of certain types from living in the wrong layers
-- Enforce any obvious repo-specific rules that improve maintainability
+- Enforce obvious project-specific rules only when they can be represented in an AIOS project profile, not as one-off assumptions hidden in this repo
 
 ---
 
 ### Implementation Requirements
 
 - Add or update Dependency Cruiser config
-- Add or update Biome/lint config as appropriate
-- Wire checks into package scripts
-- Wire checks into CI
+- Add or update ESLint/Biome/ruff/custom validation config as appropriate per project profile
+- Add or update AIOS metadata that records which enforcement profile applies to which project
+- Wire checks into package scripts or project-local commands where available
+- Wire checks into CI where available and expose non-CI checks through AIOS command surfaces
 - Make failures readable and actionable
 - Document the rule system in a concise architecture-enforcement doc
 - Include examples of allowed vs disallowed dependency patterns
@@ -107,24 +115,24 @@ Do not force everything through Biome if it weakens the solution. If AIOS needs 
 
 ### Deliverables
 
-1. Architectural audit summary
-2. Proposed target dependency/layer model
-3. Implemented rule configs
-4. Any required script/CI changes
-5. Short documentation for developers/agents
-6. A backlog of rules that should exist later but are not yet safe to enforce
+1. Architectural audit summary for AIOS as the global control plane
+2. Proposed project-profile and dependency/layer model
+3. Implemented rule configs/adapters for the first target profiles
+4. Any required script/CI/AIOS metadata changes
+5. Short documentation for developers/agents explaining how checks apply in any linked project
+6. A backlog of rules or project adapters that should exist later but are not yet safe to enforce
 7. A note explaining each rule and why it exists
 
 ---
 
 ### Acceptance Criteria
 
-- Architectural boundary violations are automatically detected
-- CI fails on real violations
-- At least the major layers/modules of AIOS are protected from obvious drift
+- Architectural boundary violations are automatically detected for at least one AIOS self-check target and one reusable project profile
+- CI or an AIOS-visible check command fails on real violations where the project supports blocking checks
+- At least the major layers/modules of AIOS and the first linked-project profile are protected from obvious drift
 - Circular dependencies are surfaced and addressed or explicitly documented
 - The rule set is understandable enough that future agents can extend it safely
-- The repo is more structurally legible after the change than before
+- AIOS is more capable of guiding agents across projects after the change than before
 - No fake enforcement, no dead config, no decorative tooling
 
 ---
@@ -137,10 +145,10 @@ Do not force everything through Biome if it weakens the solution. If AIOS needs 
 - Preserve working behavior unless a structural improvement requires change
 - Explain tradeoffs when a rule is intentionally softened
 
-If the repo is too inconsistent to enforce strong rules immediately:
+If a project is too inconsistent to enforce strong rules immediately:
 - implement the strongest safe baseline now
 - document the next ratchet step
-- leave the repo in a better-enforced state than you found it
+- leave AIOS with a clearer enforcement profile and a better path to ratchet that project later
 
 ---
 

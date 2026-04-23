@@ -10,7 +10,7 @@
 
 ## Purpose
 
-Add a first-class "Standards Delta / Project Health" system that measures each project against AIOS-defined standards, computes an explainable health score, and makes the path to backfilling the project to standard operationally clear.
+Add a first-class "Standards Delta / Project Health" system that measures every linked development project against AIOS-defined standards, computes an explainable health score, and makes the path to backfilling each project to standard operationally clear.
 
 **This is not a cosmetic scoring feature.** Treat it as a governance + remediation control plane for project quality.
 
@@ -27,7 +27,7 @@ Add a first-class "Standards Delta / Project Health" system that measures each p
 You are working on the AIOS UI + Taski project management system.
 
 Objective:
-Add a first-class "Standards Delta / Project Health" system that measures each project against AIOS-defined standards and rules, computes an explainable health score, and makes the path to backfilling the project to standard operationally clear.
+Add a first-class "Standards Delta / Project Health" system that measures each linked development project against AIOS-defined standards and rules, computes an explainable health score, and makes the path to backfilling the project to standard operationally clear.
 
 This is not a cosmetic scoring feature. Treat it as a governance + remediation control plane for project quality.
 
@@ -78,7 +78,7 @@ Make the system extensible so new domains and standards can be added without sch
 
 ### 2. Project Assessments
 
-Each project has an assessment layer recording current compliance against standards.
+Each linked project has an assessment layer recording current compliance against standards.
 
 Supported statuses: `pass | partial | fail | unknown | waived | not_applicable`
 
@@ -384,6 +384,6 @@ When a user opens AIOS, they should immediately understand:
 - which are regressing
 - what is missing vs merely unevaluated
 - what few actions would most improve a project
-- what backfill path gets the repo closest to target standard fastest
+- what backfill path gets each linked project closest to target standard fastest
 
 Do not implement a vanity score. Implement a standards delta system that makes project quality measurable, auditable, and operationally improvable.

@@ -33,7 +33,7 @@ Audit my current workflow, control plane, CLI surfaces, skills system, metadata 
 
 1. JSON-first CLI surfaces for agents
 2. Single-shot structured metadata snapshots before agent execution
-3. Automatic skill installation / refresh tied to project linking or bootstrap
+3. Automatic skill installation / refresh tied to project linking or bootstrap across linked development projects
 4. Stable semantic exit codes + structured logs for deterministic agent behavior
 5. Clear separation between:
    - static knowledge / rules / conventions
@@ -58,7 +58,7 @@ I am interested in the claims made by agent-native backend / workflow systems be
 - reducing repeated discovery
 - making workflows more deterministic
 - improving agent control planes
-- improving repo-local instructions / skills
+- improving AIOS-managed and project-linked instructions / skills
 - making tools easier for Claude Code / similar agents to use
 
 However:
@@ -112,7 +112,7 @@ Ideal examples:
 Audit whether the current system forces the agent to infer state from scattered files, docs, scripts, logs, and conventions instead of fetching one structured overview.
 
 #### C. Skills / Instruction Installation
-Audit how repo-local instructions, skills, prompts, conventions, guardrails, and project-specific guidance are installed, refreshed, versioned, and surfaced.
+Audit how AIOS-managed instructions, skills, prompts, conventions, guardrails, and project-specific guidance are installed, refreshed, versioned, and surfaced for linked projects.
 
 Check:
 - are skills auto-installed or manually copied?
@@ -155,7 +155,7 @@ The result must fit the actual workflow, not an imagined one.
 
 Assume:
 - Claude Code / agentic dev ergonomics matter
-- repo-local skills / hooks / control-plane quality matter
+- AIOS-managed skills / hooks / control-plane quality matter across projects
 - token efficiency and reliable automation matter
 - deterministic infrastructure is preferred over magical abstraction
 - no unnecessary migration pressure
@@ -179,7 +179,7 @@ Give a concise verdict:
 Give a structured audit of the current system by category:
 - CLI / command surfaces
 - metadata exposure
-- skills / repo instructions
+- skills / project-linked instructions
 - logs / exit codes / failures
 - MCP dependence
 - agent bootstrap flow
@@ -250,7 +250,7 @@ If continuing automatically, implementation must begin in a clearly separate sec
 Only after the hard checkpoint is complete and cleared, continue with:
 
 **5. Implementation**
-Actually implement the highest-value improvements directly in the repo.
+Actually implement the highest-value improvements directly in AIOS, with this repository as the control-plane implementation home.
 Do not just propose them.
 
 Minimum implementation target:
@@ -312,7 +312,7 @@ There should be a cheap way for the agent to answer:
 - what workflow is active?
 - what tools are available?
 - what skills / instructions apply?
-- what is the repo state?
+- what is the linked project state?
 - what are the current failure / health signals?
 - what environment assumptions matter?
 
@@ -349,7 +349,7 @@ This work is successful if, after implementation:
 - the agent has a cheaper and more deterministic startup flow
 - important state can be inspected through structured output
 - repeated discovery is reduced
-- repo-local instructions / skills are easier to install and refresh
+- AIOS-managed and project-linked instructions / skills are easier to install and refresh
 - common failures are easier for agents to classify
 - routine operations rely less on scattered context and guesswork
 - the result strengthens the existing workflow instead of replacing it with a platform dependency

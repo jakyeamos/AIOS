@@ -9,7 +9,7 @@
 
 ## Purpose
 
-Turn repo-local success criteria from passive documentation into a first-class control plane for agent quality. Success criteria must actively shape planning, implementation, review, completion, and long-term learning.
+Turn AIOS-managed success criteria from passive documentation into a first-class control plane for agent quality across all linked development projects. Success criteria must actively shape planning, implementation, review, completion, and long-term learning.
 
 **Core idea:**
 - Skills define how work is done.
@@ -24,7 +24,7 @@ Turn repo-local success criteria from passive documentation into a first-class c
 You are auditing and implementing a success-criteria-driven evaluation system inside AIOS.
 
 Goal:
-Turn repo-local success criteria into a first-class control plane for agent quality. These files should not be passive documentation. They must actively shape planning, implementation, review, completion, and long-term learning.
+Turn AIOS-managed success criteria into a first-class control plane for agent quality across all linked development projects. These files should not be passive documentation. They must actively shape planning, implementation, review, completion, and long-term learning.
 
 Core idea:
 - Skills define how work is done.
@@ -33,7 +33,7 @@ Core idea:
 - Stored evaluation artifacts define how the system improves over time.
 
 Context:
-The repo already has or is expected to have files like:
+AIOS already has or is expected to have global criteria files like:
 - spec/success-criteria/code-simplicity.md
 - spec/success-criteria/security-review.md
 - spec/success-criteria/observability.md
@@ -48,14 +48,14 @@ The target state is an AIOS where:
 6. This system is wired into the real workflow, not just written down in docs.
 
 Your task:
-Audit the current repo state, identify what is missing, then implement the strongest reasonable version of this system. Large refactors are allowed if they materially improve clarity, enforceability, and long-term maintainability.
+Audit the current AIOS control-plane state, identify what is missing, then implement the strongest reasonable version of this system. This repository is the implementation home; the criteria must be applicable to any linked project through task type, domain, skill, and project-profile rules. Large refactors are allowed if they materially improve clarity, enforceability, and long-term maintainability.
 
 Important constraints:
 - Do not treat this as a docs-only task.
 - Do not stop at generic guidance.
 - Do not create dead files that are never loaded by agents.
 - Prefer explicit enforcement over vague convention.
-- Prefer repo-local standards over generic "best practices."
+- Prefer AIOS-managed standards and project-profile applicability over generic "best practices."
 - Keep the architecture legible. Thin display surfaces, consolidated helpers, clear boundaries.
 - Make the system easy for both humans and agents to inspect.
 - Be aggressive about removing ambiguity, duplicated logic, dead paths, and unowned standards.
@@ -128,7 +128,7 @@ Each criteria file should have a consistent schema/section layout:
 
 ### 4. Real evaluation mechanism
 
-Implement the strongest reasonable version for this repo:
+Implement the strongest reasonable version for AIOS:
 - a script
 - a registry-driven evaluator
 - a workflow-integrated review step
@@ -200,11 +200,11 @@ Only add criteria that are justified by the architecture and workflow.
 
 ## Execution Instructions
 
-1. Audit the repo first.
+1. Audit AIOS first, including how linked projects are represented.
 2. Summarize the delta between current state and target state.
 3. Implement the system incrementally.
 4. As you go, update documentation and any project truth/handoff files that should reflect the new architecture.
-5. If the repo is too large to finish in one pass, do not stop with vague notes. Create a concrete handoff document that records:
+5. If AIOS integration is too large to finish in one pass, do not stop with vague notes. Create a concrete handoff document that records:
    - what was completed
    - what remains
    - exact files touched
@@ -259,7 +259,7 @@ Provide:
 ## Biases to Follow
 - Prefer enforcement over aspiration.
 - Prefer explicit evaluation over vibes.
-- Prefer local repo truth over generalized doctrine.
+- Prefer AIOS project truth and project-profile metadata over generalized doctrine.
 - Prefer measurable quality loops over one-off rules.
 - Prefer a smaller number of strong standards over many weak ones.
 

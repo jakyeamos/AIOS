@@ -5,7 +5,7 @@ Last updated: 2026-04-23
 ## What AIOS Is
 
 AIOS is the local operating system for work context, agent workflows, and durable project memory.
-It is intended to unify:
+It is the orchestration layer for agents across all linked development projects, not just a dashboard or standards system for this repository. It is intended to unify:
 
 - structured knowledge pages
 - grounded retrieval and query surfaces
@@ -172,6 +172,7 @@ This pass also turns the execution layer into a real control-plane path:
 
 The spec execution roadmap has been corrected before execution:
 
+- The roadmap now treats AIOS as the global orchestration/control layer for all linked development projects. This repo is the implementation home and first self-check target, not the whole scope.
 - Anti-Slop ESLint is now treated as an existing integration to audit and ratchet, not a greenfield build.
 - Workflow orchestration must extend the existing control-plane primitives instead of recreating them.
 - Phase 0 is serial by default because architecture enforcement, agent CLI surfaces, and success criteria share scripts, hooks, docs, and runtime contracts.
