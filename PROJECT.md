@@ -273,6 +273,22 @@ Phase 1b anti-slop ESLint ratchet is now implemented on top of existing plugin w
 - ratchet docs + rollout guidance:
   - `docs/architecture/2026-04-23-anti-slop-eslint-ratchet.md`
 
+Phase 1c improvement engine audit (audit-only) is complete:
+
+- decision-quality audit memo:
+  - `docs/architecture/2026-04-23-aios-improvement-engine-audit.md`
+- scored seven capability areas against ideal target architecture:
+  - scheduled experimentation infrastructure
+  - prompt experimentation
+  - rule experimentation
+  - evaluation system
+  - improvement loop integrity
+  - operational architecture
+  - cost/speed/complexity tradeoffs
+- recommendation selected for downstream planning:
+  - hybrid path (deterministic cron gates + selective qualitative judgment)
+- explicit "Brutal Truth" section delivered per spec requirements.
+
 ## Still Missing
 
 - more than one production-grade invocation backend beyond the new managed local runtime
