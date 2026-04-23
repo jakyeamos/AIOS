@@ -312,6 +312,30 @@ Phase 2a workflow orchestration baseline is now implemented:
 - phase architecture note:
   - `docs/architecture/2026-04-23-aios-workflow-orchestration-phase2a.md`
 
+Phase 2b prompt library phase 2 (execution strategies) is now implemented as a hybrid baseline:
+
+- canonical task-spec registry:
+  - `config/execution-strategies/task-specs.json`
+- surface strategy bundles:
+  - `config/execution-strategies/strategies.json`
+  - seeded first-slice task family: `audit_and_implement`
+  - includes one validated strategy for each required surface:
+    - `audit_and_implement_claude_v1`
+    - `audit_and_implement_codex_v1`
+- deterministic compiler/selector:
+  - `services/execution_strategy.py`
+  - selects strategy by `task_family + surface`, compiles constraints/contracts/rubric into execution instructions
+- validation and generated selection registry:
+  - `bin/validate-execution-strategies.py`
+  - `config/execution-strategies/registry.json`
+- runtime integration:
+  - workflow normalization now attaches execution strategy bundles for implementation workflows
+  - managed runtime maps backend to strategy surface (`claude_code` vs `codex`)
+- metadata observability:
+  - `aios metadata --json` now includes execution strategy coverage summary
+- phase architecture note:
+  - `docs/architecture/2026-04-23-aios-prompt-library-phase2.md`
+
 ## Still Missing
 
 - more than one production-grade invocation backend beyond the new managed local runtime

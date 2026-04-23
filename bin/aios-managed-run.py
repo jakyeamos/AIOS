@@ -220,9 +220,11 @@ def main() -> int:
     workflow_summary: str | None = None
 
     try:
+        surface = "claude_code" if "claude" in backend_key else "codex"
         workflow_context = WorkflowExecutionContext(
             objective=context["objective"] or "",
             workflow_key=context["workflow_key"] or "implementation-delivery",
+            surface=surface,
             repo_path=context["repo_path"],
             vault_root=context["obsidian_path"],
             run_id=run_id,

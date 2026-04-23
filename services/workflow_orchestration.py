@@ -8,10 +8,16 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from services.execution_strategy import StrategySelectionError, compile_execution_strategy
+
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_WORKFLOW_REGISTRY = ROOT / "config" / "workflows" / "registry.json"
 DEFAULT_SKILL_REGISTRY = ROOT / "config" / "workflows" / "skills.json"
 DEFAULT_PROMPT_REGISTRY = ROOT / "prompts" / "registry.json"
+WORKFLOW_TASK_FAMILIES = {
+    "implementation-delivery": "audit_and_implement",
+    "failure-recovery": "audit_and_implement",
+}
 
 
 @dataclass(frozen=True)
@@ -49,6 +55,7 @@ class SkillSpec:
 class WorkflowExecutionContext:
     objective: str
     workflow_key: str
+    surface: str = "codex"
     repo_path: str | None = None
     vault_root: str | None = None
     prompt_registry_path: str | None = None
@@ -238,20 +245,42 @@ def _normalize_prompt(
     *,
     objective: str,
     workflow_key: str,
+    surface: str,
     prompt_registry_path: Path,
 ) -> dict[str, Any]:
     templates = _load_prompt_templates(prompt_registry_path)
     template_id = _select_prompt_template(objective, workflow_key, templates)
+    strategy_bundle: dict[str, Any] | None = None
+    task_family = WORKFLOW_TASK_FAMILIES.get(workflow_key)
+    if task_family:
+        try:
+            strategy_bundle = compile_execution_strategy(
+                objective=objective,
+                task_family=task_family,
+                surface=surface,
+            )
+        except StrategySelectionError:
+            strategy_bundle = None
     normalized = (
         f"Objective: {objective.strip()}\n"
         f"Workflow: {workflow_key}\n"
         "Deliverable: Provide structured output that preserves factual meaning and explicit evidence references."
     )
+    if strategy_bundle:
+        normalized += (
+            f"\nStrategy: {strategy_bundle['strategy_id']} "
+            f"v{strategy_bundle['strategy_version']} ({strategy_bundle['surface']})"
+        )
     if template_id:
         normalized += f"\nTemplate: {template_id}"
     state["template_id"] = template_id
+    state["execution_strategy"] = strategy_bundle
     state["normalized_prompt"] = normalized
-    return {"template_id": template_id, "normalized_prompt": normalized}
+    return {
+        "template_id": template_id,
+        "strategy_id": strategy_bundle.get("strategy_id") if strategy_bundle else None,
+        "normalized_prompt": normalized,
+    }
 
 
 def _retrieve_style_profile(vault_root: Path | None) -> tuple[dict[str, Any], list[str]]:
@@ -401,6 +430,7 @@ def _execute_skill(
             state,
             objective=context.objective,
             workflow_key=context.workflow_key,
+            surface=context.surface,
             prompt_registry_path=prompt_path,
         )
         return output, None
@@ -549,6 +579,7 @@ def execute_workflow(
         "unresolved_issues": unresolved,
         "artifacts": {
             "template_id": run_state.get("template_id"),
+            "execution_strategy": run_state.get("execution_strategy"),
             "normalized_prompt": run_state.get("normalized_prompt"),
             "style_profile": run_state.get("style_profile"),
             "evidence_notes": run_state.get("evidence_notes", []),

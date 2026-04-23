@@ -1,0 +1,49 @@
+{
+  "version": "2026-04-23",
+  "task_specs": [
+    {
+      "task_family": "audit_and_implement",
+      "task_intent_description": "Audit the current state, identify concrete gaps, and implement scoped, verifiable fixes.",
+      "required_inputs": [
+        {
+          "objective": "Precise user outcome to deliver."
+        },
+        {
+          "target_scope": "Explicit files, modules, or bounded repo area to modify."
+        }
+      ],
+      "optional_inputs": [
+        {
+          "constraints": "Safety, architectural, or rollout constraints that must be preserved."
+        },
+        {
+          "verification_targets": "Commands/tests that should pass before completion."
+        }
+      ],
+      "output_contract": [
+        "Prioritized audit findings tied to concrete evidence.",
+        "Implemented scoped changes aligned to the stated objective.",
+        "Explicit verification outcome with residual risk notes when applicable."
+      ],
+      "hard_constraints": [
+        "Do not fabricate implementation or test outcomes.",
+        "Do not expand scope beyond objective without explicit approval.",
+        "Preserve repository conventions and active guardrails.",
+        "Record blockers explicitly instead of guessing."
+      ],
+      "quality_rubric_profile": {
+        "correctness_groundedness": 30,
+        "intent_preservation": 20,
+        "scope_discipline": 20,
+        "actionability": 15,
+        "verification_rigor": 15
+      },
+      "default_context_requirements": [
+        "Current project truth status",
+        "Applicable success criteria",
+        "Recent orchestration and run findings",
+        "Relevant code topology or file context"
+      ]
+    }
+  ]
+}

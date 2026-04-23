@@ -1,0 +1,122 @@
+{
+  "version": "2026-04-23",
+  "valid_statuses": [
+    "draft",
+    "experimental",
+    "shadow",
+    "canary",
+    "validated",
+    "watchlist",
+    "deprecated",
+    "rolled_back"
+  ],
+  "command_adapters": [
+    {
+      "version": "claude_code_adapter_v1",
+      "surface": "claude_code",
+      "template": "Use command-and-skill execution. Emit an explicit audit-first plan, apply scoped edits, run named verifications, and produce a handoff-ready summary."
+    },
+    {
+      "version": "codex_adapter_v1",
+      "surface": "codex",
+      "template": "Use concise structured prose with explicit constraints, actionable edits, and deterministic verification statements."
+    }
+  ],
+  "skill_bundles": [
+    {
+      "version": "audit_impl_skill_bundle_v1",
+      "skills": [
+        "prompt_library_normalizer",
+        "scope_check"
+      ],
+      "notes": "Baseline bundle for scoped audit-and-implementation tasks."
+    }
+  ],
+  "context_profiles": [
+    {
+      "version": "repo_compact_context_v1",
+      "requirements": [
+        "objective",
+        "project truth",
+        "success criteria",
+        "recent run findings"
+      ],
+      "token_budget_class": "medium"
+    }
+  ],
+  "validation_profiles": [
+    {
+      "version": "audit_impl_validation_v1",
+      "hard_fail_gates": [
+        "no fabricated validation claims",
+        "no unsupported repository facts",
+        "no dangerous scope expansion"
+      ],
+      "quality_dimensions": [
+        "correctness_groundedness",
+        "intent_preservation",
+        "scope_discipline",
+        "actionability",
+        "verification_rigor"
+      ]
+    }
+  ],
+  "strategies": [
+    {
+      "strategy_id": "audit_and_implement_claude_v1",
+      "strategy_version": "1.0",
+      "task_family": "audit_and_implement",
+      "surface": "claude_code",
+      "status": "validated",
+      "command_adapter_version": "claude_code_adapter_v1",
+      "skill_bundle_version": "audit_impl_skill_bundle_v1",
+      "context_profile_version": "repo_compact_context_v1",
+      "validation_profile_version": "audit_impl_validation_v1",
+      "model_profile": {
+        "target_model": "claude-code-default",
+        "reasoning_effort": "high"
+      },
+      "execution_mode": "hybrid",
+      "token_budget_class": "medium",
+      "expected_repo_scope": "scoped",
+      "safety_scope": "local-repo-only",
+      "rollout_policy": {
+        "mode": "manual_gated",
+        "traffic_percentage": 100,
+        "review_required": true
+      },
+      "parent_strategy_id": null,
+      "change_hypothesis": "A structured audit-first bundle reduces correction burden for implementation tasks on Claude Code.",
+      "created_at": "2026-04-23T00:00:00Z",
+      "created_by": "jakyeamos"
+    },
+    {
+      "strategy_id": "audit_and_implement_codex_v1",
+      "strategy_version": "1.0",
+      "task_family": "audit_and_implement",
+      "surface": "codex",
+      "status": "validated",
+      "command_adapter_version": "codex_adapter_v1",
+      "skill_bundle_version": "audit_impl_skill_bundle_v1",
+      "context_profile_version": "repo_compact_context_v1",
+      "validation_profile_version": "audit_impl_validation_v1",
+      "model_profile": {
+        "target_model": "codex-default",
+        "reasoning_effort": "medium"
+      },
+      "execution_mode": "hybrid",
+      "token_budget_class": "medium",
+      "expected_repo_scope": "scoped",
+      "safety_scope": "local-repo-only",
+      "rollout_policy": {
+        "mode": "manual_gated",
+        "traffic_percentage": 100,
+        "review_required": true
+      },
+      "parent_strategy_id": null,
+      "change_hypothesis": "Compiled task-family instructions improve codex output contract compliance and scope discipline.",
+      "created_at": "2026-04-23T00:00:00Z",
+      "created_by": "jakyeamos"
+    }
+  ]
+}

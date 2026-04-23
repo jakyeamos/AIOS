@@ -1,6 +1,8 @@
 # AIOS Prompt Library
 
 Repo source-of-truth for reusable prompt templates used by AIOS hooks.
+Phase 2 extends this into validation-driven execution strategy bundles under
+`config/execution-strategies/`.
 
 ## Why this exists
 
@@ -46,6 +48,15 @@ python3 bin/validate-prompts.py
 ```
 
 Validation enforces schema, duplicate IDs, filename alignment, and non-empty criteria contracts.
+
+Execution strategy validation:
+
+```bash
+python3 bin/validate-execution-strategies.py
+```
+
+This validates canonical task specs + surface strategy bundles and regenerates
+`config/execution-strategies/registry.json`.
 
 ## Evaluate a template
 

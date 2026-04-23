@@ -231,6 +231,31 @@ def _workflow_registry_summary(config_root: Path) -> dict[str, Any]:
     }
 
 
+def _execution_strategy_summary(config_root: Path) -> dict[str, Any]:
+    registry_path = config_root / "execution-strategies" / "registry.json"
+    if not registry_path.exists():
+        return {
+            "task_family_count": 0,
+            "strategy_count": 0,
+            "registry_path": str(registry_path),
+            "task_families": [],
+        }
+
+    loaded = _load_json(registry_path)
+    task_families = loaded.get("task_families", [])
+    selection = loaded.get("selection", [])
+    if not isinstance(task_families, list):
+        task_families = []
+    if not isinstance(selection, list):
+        selection = []
+    return {
+        "task_family_count": len(task_families),
+        "strategy_count": len(selection),
+        "registry_path": str(registry_path),
+        "task_families": [str(item) for item in task_families],
+    }
+
+
 def _latest_success_criteria_evaluation(conn: sqlite3.Connection) -> dict[str, Any] | None:
     if not _table_exists(conn, "success_criteria_evaluations"):
         return None
@@ -589,6 +614,7 @@ def _metadata_payload(
             "registry": _workflow_registry_summary(config_root),
             "latest_execution_report": latest_workflow_report,
         },
+        "execution_strategies": _execution_strategy_summary(config_root),
         "health": _health_payload(conn, logs_dir),
         "recent_failures_preview": _recent_failures_payload(conn, logs_dir, last=5),
         "available_commands": [

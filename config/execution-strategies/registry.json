@@ -1,0 +1,26 @@
+{
+  "generated_at": "2026-04-23T18:31:55.347201+00:00",
+  "task_specs_file": "/Users/jakyeamos/AIOS/config/execution-strategies/task-specs.json",
+  "strategies_file": "/Users/jakyeamos/AIOS/config/execution-strategies/strategies.json",
+  "task_families": [
+    "audit_and_implement"
+  ],
+  "selection": [
+    {
+      "task_family": "audit_and_implement",
+      "surface": "claude_code",
+      "strategy_id": "audit_and_implement_claude_v1",
+      "strategy_version": "1.0",
+      "status": "validated",
+      "execution_mode": "hybrid"
+    },
+    {
+      "task_family": "audit_and_implement",
+      "surface": "codex",
+      "strategy_id": "audit_and_implement_codex_v1",
+      "strategy_version": "1.0",
+      "status": "validated",
+      "execution_mode": "hybrid"
+    }
+  ]
+}

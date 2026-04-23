@@ -84,3 +84,17 @@ def test_unknown_workflow_raises(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="Unknown workflow key"):
         execute_workflow(context)
+
+
+def test_implementation_workflow_attaches_execution_strategy() -> None:
+    context = WorkflowExecutionContext(
+        objective="Audit and implement a scoped fix for failing runtime checks",
+        workflow_key="implementation-delivery",
+        surface="codex",
+    )
+
+    report = execute_workflow(context)
+    assert report["status"] == "completed"
+    strategy = report["artifacts"]["execution_strategy"]
+    assert strategy is not None
+    assert strategy["strategy_id"] == "audit_and_implement_codex_v1"

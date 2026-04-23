@@ -211,6 +211,28 @@ def test_metadata_and_skills_refresh_flow(tmp_path: Path, capsys) -> None:
         ),
         encoding="utf-8",
     )
+    strategy_dir = config_root / "execution-strategies"
+    strategy_dir.mkdir()
+    (strategy_dir / "registry.json").write_text(
+        json.dumps(
+            {
+                "task_families": ["audit_and_implement"],
+                "selection": [
+                    {
+                        "task_family": "audit_and_implement",
+                        "surface": "codex",
+                        "strategy_id": "audit_and_implement_codex_v1",
+                    },
+                    {
+                        "task_family": "audit_and_implement",
+                        "surface": "claude_code",
+                        "strategy_id": "audit_and_implement_claude_v1",
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
     conn = sqlite3.connect(db_path)
     conn.execute(
         """
@@ -261,6 +283,8 @@ def test_metadata_and_skills_refresh_flow(tmp_path: Path, capsys) -> None:
     assert metadata_output["data"]["success_criteria"]["latest_evaluation"]["id"] == "eval-1"
     assert metadata_output["data"]["workflow_orchestration"]["registry"]["count"] == 1
     assert metadata_output["data"]["workflow_orchestration"]["latest_execution_report"]["id"] == "wr-1"
+    assert metadata_output["data"]["execution_strategies"]["task_family_count"] == 1
+    assert metadata_output["data"]["execution_strategies"]["strategy_count"] == 2
 
     dry_run_exit = run_cli(
         [
