@@ -1,0 +1,53 @@
+{
+  "version": "2026-04-23",
+  "entries": [
+    {
+      "id": "global",
+      "project_id": null,
+      "source": "~/.claude/CLAUDE.md",
+      "target": "06 Knowledge/Claude-Context/global.md"
+    },
+    {
+      "id": "amos-saas",
+      "project_id": "amos-saas",
+      "source": "~/Projects/amos-saas/CLAUDE.md",
+      "target": "06 Knowledge/Claude-Context/amos-saas.md"
+    },
+    {
+      "id": "bball",
+      "project_id": "bball",
+      "source": "~/Projects/Bball/CLAUDE.md",
+      "target": "06 Knowledge/Claude-Context/bball.md"
+    },
+    {
+      "id": "fantasy",
+      "project_id": "fantasy",
+      "source": "~/Projects/Fantasy/CLAUDE.md",
+      "target": "06 Knowledge/Claude-Context/fantasy.md"
+    },
+    {
+      "id": "remodelvision",
+      "project_id": "remodelvision",
+      "source": "~/Projects/remodelvision/.claude/CLAUDE.md",
+      "target": "06 Knowledge/Claude-Context/remodelvision.md"
+    },
+    {
+      "id": "soundscape-app",
+      "project_id": "soundscape-app",
+      "source": "~/Projects/soundscape-app/CLAUDE.md",
+      "target": "06 Knowledge/Claude-Context/soundscape.md"
+    },
+    {
+      "id": "amos-group",
+      "project_id": "amos-group",
+      "source": "~/Projects/amos-group/CLAUDE.md",
+      "target": "06 Knowledge/Claude-Context/amos-group.md"
+    },
+    {
+      "id": "dispatches",
+      "project_id": "dispatches",
+      "source": "~/Projects/dispatches-from-cyberspace/docs/meta/CLAUDE.md",
+      "target": "06 Knowledge/Claude-Context/dispatches.md"
+    }
+  ]
+}

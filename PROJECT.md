@@ -182,16 +182,27 @@ Phase 0a architecture enforcement baseline is now live as an AIOS-managed profil
 - architecture audit + rollout doc:
   - `docs/architecture/2026-04-23-aios-architecture-enforcement.md`
 
-Phase 0b agent workflow audit checkpoint is complete (audit-only, implementation paused by gate):
+Phase 0b agent workflow CLI surfaces are now implemented after the hard checkpoint:
 
-- audit package delivered:
+- audit package (checkpoint gate):
   - `docs/architecture/2026-04-23-aios-agent-workflow-audit.md`
-- key gaps confirmed before implementation:
-  - no unified `aios <status|metadata|health|logs|recent-failures>` command family
-  - no single-shot `metadata --json` snapshot for agent preflight
-  - inconsistent semantic exit-code behavior across scripts/hooks
-  - skill/instruction refresh remains manual and stale-prone
-- hard checkpoint was honored: no Phase 0b implementation changes were made yet beyond the audit package and project-truth update
+- unified JSON-first command surface:
+  - `bin/aios.py`
+  - `services/aios_cli.py`
+- implemented command family:
+  - `aios status --json`
+  - `aios health --json`
+  - `aios metadata --json`
+  - `aios logs --json`
+  - `aios recent-failures --json`
+  - `aios skills status --json`
+  - `aios skills refresh --json [--apply]`
+- standardized semantic exit-code envelope on unified surfaces:
+  - usage, not-found, dependency/config, runtime
+- instruction/skills refresh flow moved to declarative registry:
+  - `config/instruction-registry.json`
+- implementation handoff:
+  - `docs/handoffs/2026-04-23-aios-agent-workflow-cli-handoff.md`
 
 ## Still Missing
 
