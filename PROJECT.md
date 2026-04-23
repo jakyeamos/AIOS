@@ -359,13 +359,53 @@ Phase 3a AIOS UI command center MVP is now implemented:
   - `docs/aios-ui-command-center-implementation-plan.md`
   - `docs/aios-ui-command-center-handoff.md`
 
+Phase 3b Standards Delta / Project Health is now implemented:
+
+- standards are now first-class AIOS registry objects:
+  - `config/standards/registry.json`
+  - fields include domain, weight, severity, evaluation method, remediation playbook, applicability, versioning, and waiver policy metadata
+- standards-health scoring engine and persistence:
+  - `services/standards_health.py`
+  - explainable penalty model with explicit handling for:
+    - `pass`
+    - `partial`
+    - `fail`
+    - `unknown`
+    - `regressed fail`
+    - `waived`
+    - `not_applicable`
+- durable governance/remediation tables are now live:
+  - `standards_profiles`
+  - `standards_definitions`
+  - `project_standards_profiles`
+  - `standards_assessments`
+  - `standards_delta_items`
+  - `standards_backfill_tasks`
+  - `standards_health_snapshots`
+- runtime integration:
+  - `hook-stop.py` now records standards-health snapshots after session close
+  - each run writes deltas and Taski-traceable backfill tasks
+- metadata observability:
+  - `aios metadata --json` now includes standards registry summary + latest health snapshot
+- Taski/UI health surfaces:
+  - `aios-ui/server/aios/standards-health.ts`
+  - `aios-ui/components/projects/TaskiProjectSurface.tsx` now renders:
+    - health header
+    - domain breakdown
+    - delta matrix
+    - prioritized backfill lane
+    - standards migration view
+  - `aios-ui/app/projects/page.tsx` now shows per-project health score, critical deltas, unknown coverage, and score trend
+- phase architecture note:
+  - `docs/architecture/2026-04-23-aios-standards-delta-health-phase3b.md`
+
 ## Still Missing
 
 - more than one production-grade invocation backend beyond the new managed local runtime
 - richer backend adapters for external/manual agent sessions so they emit the same handshake without fallback
 - broader evaluator rule coverage and explicit finding resolution workflows
 - deeper packet/result inspection at file/topic delta level
-- richer Taski operator controls beyond summary, approvals, and run/evaluator inspection
+- richer Taski operator controls beyond summary, approvals, run/evaluator inspection, and standards backfill visibility
 - legacy heuristic run matching still exists only as a fallback for older sessions that lack explicit handshake metadata
 - linked-project profile ratchet completion (`amos-saas`, `soundscape-app`, `GitNexus`, `Terrace`, `portfolio`) so each has native profile config + CI wiring in-repo
 

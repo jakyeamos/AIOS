@@ -41,6 +41,16 @@ def evaluate_and_record(*args: Any, **kwargs: Any) -> dict[str, Any]:
     return evaluate_and_record_impl(*args, **kwargs)
 
 
+def evaluate_standards_health(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from services.standards_health import (  # noqa: PLC0415
+        evaluate_and_record as evaluate_standards_impl,
+    )
+
+    return evaluate_standards_impl(*args, **kwargs)
+
+
 def log(msg: str) -> None:
     ts = datetime.now(UTC).isoformat()
     try:
@@ -473,6 +483,18 @@ def main() -> None:
         log(
             "success criteria evaluation recorded: "
             f"{criteria_eval['evaluation_id']} ({criteria_eval['summary']})"
+        )
+        standards_eval = evaluate_standards_health(
+            conn,
+            project_id=row[1],
+            project_name=project_name,
+            run_id=linked_run_id,
+            session_id=session_id,
+            trigger_kind="session_close",
+        )
+        log(
+            "standards health snapshot recorded: "
+            f"{standards_eval['snapshot_id']} ({standards_eval['summary']})"
         )
 
         # Log Stop event

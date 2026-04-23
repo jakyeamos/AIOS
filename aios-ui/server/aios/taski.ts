@@ -5,6 +5,7 @@ import { listControlPlaneRuns } from "@/server/aios/control-plane";
 import { getProjectDossier } from "@/server/aios/knowledge";
 import { proposeRunWritebacks } from "@/server/aios/learning";
 import { listConsistencyFindings } from "@/server/aios/runtime";
+import { getProjectStandardsHealth } from "@/server/aios/standards-health";
 import { getTopicMarkers, listImprovementWritebacks, searchTopicGraph } from "@/server/aios/topic-graph";
 
 const parseRiskItems = (items: string[]): string[] =>
@@ -49,8 +50,14 @@ export const getTaskiProjectSummary = (db: Database.Database, projectId: string)
   const driftMarkers: TopicGraphMarker[] = topTopics.flatMap((topic) => getTopicMarkers(db, topic.slug, 2)).slice(0, 4);
   const consistencyFindings = listConsistencyFindings(db, { projectId, limit: 8 }).slice(0, 6);
   const pendingApprovals = learnedPolicies.filter((policy) => policy.requiresApproval).slice(0, 6);
+  const standardsHealth = getProjectStandardsHealth(db, projectId);
   const suggestedNextActions = [
     "Use compact ranked packets before delegation.",
+    ...(standardsHealth && standardsHealth.backfillTasks.length > 0
+      ? [
+          `Complete top standards backfill task first: ${standardsHealth.backfillTasks[0].title}.`,
+        ]
+      : []),
     ...(pendingApprovals.length > 0
       ? ["Review the queued approval proposals before broadening default behavior."]
       : blockers.length > 0
@@ -75,5 +82,6 @@ export const getTaskiProjectSummary = (db: Database.Database, projectId: string)
     consistencyFindings,
     pendingApprovals,
     suggestedNextActions,
+    standardsHealth,
   };
 };

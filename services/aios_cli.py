@@ -256,6 +256,80 @@ def _execution_strategy_summary(config_root: Path) -> dict[str, Any]:
     }
 
 
+def _standards_registry_summary(config_root: Path) -> dict[str, Any]:
+    registry_path = config_root / "standards" / "registry.json"
+    if not registry_path.exists():
+        return {
+            "profile_id": None,
+            "profile_version": None,
+            "standard_count": 0,
+            "domains": [],
+            "registry_path": str(registry_path),
+        }
+
+    loaded = _load_json(registry_path)
+    profile = loaded.get("profile", {})
+    standards = loaded.get("standards", [])
+    if not isinstance(profile, dict):
+        profile = {}
+    if not isinstance(standards, list):
+        standards = []
+    domains = sorted(
+        {
+            str(item.get("domain", ""))
+            for item in standards
+            if isinstance(item, dict) and item.get("domain")
+        }
+    )
+    return {
+        "profile_id": profile.get("id"),
+        "profile_version": profile.get("version"),
+        "default_attached_version": profile.get("default_attached_version"),
+        "standard_count": len([item for item in standards if isinstance(item, dict) and item.get("id")]),
+        "domains": domains,
+        "registry_path": str(registry_path),
+    }
+
+
+def _latest_standards_snapshot(conn: sqlite3.Connection) -> dict[str, Any] | None:
+    if not _table_exists(conn, "standards_health_snapshots"):
+        return None
+    row = conn.execute(
+        """
+        SELECT
+            id,
+            project_id,
+            profile_id,
+            attached_version,
+            latest_version,
+            overall_score,
+            critical_delta_count,
+            regression_count,
+            unknown_count,
+            evaluation_confidence,
+            created_at
+        FROM standards_health_snapshots
+        ORDER BY created_at DESC
+        LIMIT 1
+        """
+    ).fetchone()
+    if row is None:
+        return None
+    return {
+        "id": row["id"],
+        "project_id": row["project_id"],
+        "profile_id": row["profile_id"],
+        "attached_version": row["attached_version"],
+        "latest_version": row["latest_version"],
+        "overall_score": row["overall_score"],
+        "critical_delta_count": row["critical_delta_count"],
+        "regression_count": row["regression_count"],
+        "unknown_count": row["unknown_count"],
+        "evaluation_confidence": row["evaluation_confidence"],
+        "created_at": row["created_at"],
+    }
+
+
 def _latest_success_criteria_evaluation(conn: sqlite3.Connection) -> dict[str, Any] | None:
     if not _table_exists(conn, "success_criteria_evaluations"):
         return None
@@ -587,6 +661,7 @@ def _metadata_payload(
     run_counts = _run_status_counts(conn)
     latest_criteria_eval = _latest_success_criteria_evaluation(conn)
     latest_workflow_report = _latest_workflow_execution_report(conn)
+    latest_standards_snapshot = _latest_standards_snapshot(conn)
 
     return {
         "system": {
@@ -615,6 +690,10 @@ def _metadata_payload(
             "latest_execution_report": latest_workflow_report,
         },
         "execution_strategies": _execution_strategy_summary(config_root),
+        "standards_delta": {
+            "registry": _standards_registry_summary(config_root),
+            "latest_snapshot": latest_standards_snapshot,
+        },
         "health": _health_payload(conn, logs_dir),
         "recent_failures_preview": _recent_failures_payload(conn, logs_dir, last=5),
         "available_commands": [

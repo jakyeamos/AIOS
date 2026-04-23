@@ -1,0 +1,331 @@
+{
+  "profile": {
+    "id": "aios-core",
+    "title": "AIOS Core Standards",
+    "version": "2026.05.0",
+    "default_attached_version": "2026.04.0",
+    "domains": [
+      "architecture",
+      "code_quality",
+      "testing",
+      "security",
+      "observability",
+      "documentation",
+      "workflow_agent_control",
+      "release_ci_discipline",
+      "product_readiness"
+    ],
+    "metadata": {
+      "owner": "aios",
+      "notes": "Seed standards profile for portfolio health governance in Phase 3b."
+    }
+  },
+  "standards": [
+    {
+      "id": "architecture.boundary_enforcement",
+      "title": "Architecture Boundaries Enforced",
+      "description": "Each linked project has an active architecture-enforcement profile and boundary checks.",
+      "domain": "architecture",
+      "weight": 9,
+      "severity_if_missing": 5,
+      "evaluation_method": "auto",
+      "expected_state": {
+        "profiles_bound": true,
+        "boundary_checks_available": true
+      },
+      "remediation_playbook": {
+        "summary": "Bind the project to an architecture profile and wire dependency/layer checks in local CI.",
+        "effort": 3,
+        "leverage": 1.4
+      },
+      "blocking_dependencies": [],
+      "version": "2026.04.0",
+      "introduced_version": "2026.04.0",
+      "applicability": {
+        "projects": ["*"],
+        "stacks": ["python", "typescript"]
+      },
+      "waiver_policy": {
+        "allowed": true,
+        "requires_owner": true,
+        "requires_review_date": true,
+        "max_days": 30
+      },
+      "related_criteria": ["repo-boundary-discipline"],
+      "metadata": {
+        "foundational": true
+      }
+    },
+    {
+      "id": "code_quality.lint_ratchet",
+      "title": "Code Quality Ratchet",
+      "description": "Each project has enforceable lint/static checks aligned to stack standards.",
+      "domain": "code_quality",
+      "weight": 7,
+      "severity_if_missing": 4,
+      "evaluation_method": "auto",
+      "expected_state": {
+        "lint_or_static_check_script": true
+      },
+      "remediation_playbook": {
+        "summary": "Add and enforce stack-appropriate lint/static checks in local and CI commands.",
+        "effort": 2,
+        "leverage": 1.2
+      },
+      "blocking_dependencies": ["architecture.boundary_enforcement"],
+      "version": "2026.04.0",
+      "introduced_version": "2026.04.0",
+      "applicability": {
+        "projects": ["*"]
+      },
+      "waiver_policy": {
+        "allowed": true,
+        "requires_owner": true,
+        "requires_review_date": true,
+        "max_days": 14
+      },
+      "related_criteria": ["code-simplicity"],
+      "metadata": {
+        "foundational": true
+      }
+    },
+    {
+      "id": "testing.trust_signal",
+      "title": "Testing Trust Signal",
+      "description": "Recent success-criteria evaluations show healthy testing trust and no blocker failures.",
+      "domain": "testing",
+      "weight": 8,
+      "severity_if_missing": 5,
+      "evaluation_method": "auto",
+      "expected_state": {
+        "blocker_count": 0,
+        "criteria": ["testing-trust"]
+      },
+      "remediation_playbook": {
+        "summary": "Add or repair deterministic tests and improve coverage where criteria detect trust gaps.",
+        "effort": 3,
+        "leverage": 1.35
+      },
+      "blocking_dependencies": ["code_quality.lint_ratchet"],
+      "version": "2026.04.0",
+      "introduced_version": "2026.04.0",
+      "applicability": {
+        "projects": ["*"]
+      },
+      "waiver_policy": {
+        "allowed": true,
+        "requires_owner": true,
+        "requires_review_date": true,
+        "max_days": 7
+      },
+      "related_criteria": ["testing-trust"],
+      "metadata": {
+        "foundational": true
+      }
+    },
+    {
+      "id": "security.review_traceability",
+      "title": "Security Review Traceability",
+      "description": "Security review evidence is captured for relevant work and unresolved security findings are visible.",
+      "domain": "security",
+      "weight": 8,
+      "severity_if_missing": 5,
+      "evaluation_method": "semi_auto",
+      "expected_state": {
+        "security_findings_tracked": true,
+        "unresolved_blockers": 0
+      },
+      "remediation_playbook": {
+        "summary": "Run focused security review and close or explicitly waive findings with owner and review date.",
+        "effort": 4,
+        "leverage": 1.4
+      },
+      "blocking_dependencies": ["testing.trust_signal"],
+      "version": "2026.05.0",
+      "introduced_version": "2026.05.0",
+      "applicability": {
+        "projects": ["*"],
+        "domains": ["security", "auth"]
+      },
+      "waiver_policy": {
+        "allowed": true,
+        "requires_owner": true,
+        "requires_review_date": true,
+        "max_days": 14
+      },
+      "related_criteria": ["security-review"],
+      "metadata": {
+        "foundational": false
+      }
+    },
+    {
+      "id": "observability.run_signal_integrity",
+      "title": "Run Signal Integrity",
+      "description": "Workflow/run observability signals are persisted and recent execution reports are available.",
+      "domain": "observability",
+      "weight": 6,
+      "severity_if_missing": 3,
+      "evaluation_method": "auto",
+      "expected_state": {
+        "run_events_persisted": true,
+        "workflow_execution_reports": true
+      },
+      "remediation_playbook": {
+        "summary": "Restore run event and workflow report ingestion so operators can inspect execution provenance.",
+        "effort": 2,
+        "leverage": 1.15
+      },
+      "blocking_dependencies": ["workflow_agent_control.explicit_handshake"],
+      "version": "2026.04.0",
+      "introduced_version": "2026.04.0",
+      "applicability": {
+        "projects": ["*"]
+      },
+      "waiver_policy": {
+        "allowed": true,
+        "requires_owner": true,
+        "requires_review_date": true,
+        "max_days": 14
+      },
+      "related_criteria": ["observability", "workflow-state-integrity"],
+      "metadata": {
+        "foundational": false
+      }
+    },
+    {
+      "id": "documentation.truth_file_currency",
+      "title": "Truth File Currency",
+      "description": "Project truth documentation exists and is maintained as part of implementation completion.",
+      "domain": "documentation",
+      "weight": 5,
+      "severity_if_missing": 3,
+      "evaluation_method": "auto",
+      "expected_state": {
+        "truth_file_exists": true
+      },
+      "remediation_playbook": {
+        "summary": "Create or update the project truth file after each atomic implementation set.",
+        "effort": 1,
+        "leverage": 1.1
+      },
+      "blocking_dependencies": [],
+      "version": "2026.04.0",
+      "introduced_version": "2026.04.0",
+      "applicability": {
+        "projects": ["*"]
+      },
+      "waiver_policy": {
+        "allowed": true,
+        "requires_owner": true,
+        "requires_review_date": true,
+        "max_days": 7
+      },
+      "related_criteria": ["truth-file-consistency"],
+      "metadata": {
+        "foundational": false
+      }
+    },
+    {
+      "id": "workflow_agent_control.explicit_handshake",
+      "title": "Explicit Workflow Handshake",
+      "description": "Sessions and invocations are linked by explicit run handshake metadata.",
+      "domain": "workflow_agent_control",
+      "weight": 9,
+      "severity_if_missing": 5,
+      "evaluation_method": "auto",
+      "expected_state": {
+        "session_run_linkage_ratio": ">=0.9"
+      },
+      "remediation_playbook": {
+        "summary": "Route executions through managed orchestration paths and repair hooks that omit linkage metadata.",
+        "effort": 3,
+        "leverage": 1.5
+      },
+      "blocking_dependencies": [],
+      "version": "2026.04.0",
+      "introduced_version": "2026.04.0",
+      "applicability": {
+        "projects": ["*"]
+      },
+      "waiver_policy": {
+        "allowed": true,
+        "requires_owner": true,
+        "requires_review_date": true,
+        "max_days": 7
+      },
+      "related_criteria": ["workflow-state-integrity"],
+      "metadata": {
+        "foundational": true
+      }
+    },
+    {
+      "id": "release_ci_discipline.automated_checks",
+      "title": "Release / CI Discipline",
+      "description": "Project has enforceable CI workflow checks for lint, tests, and required quality gates.",
+      "domain": "release_ci_discipline",
+      "weight": 6,
+      "severity_if_missing": 4,
+      "evaluation_method": "auto",
+      "expected_state": {
+        "ci_workflow_present": true
+      },
+      "remediation_playbook": {
+        "summary": "Add or repair CI workflows to enforce baseline lint/test/quality checks on pull requests.",
+        "effort": 2,
+        "leverage": 1.2
+      },
+      "blocking_dependencies": ["code_quality.lint_ratchet", "testing.trust_signal"],
+      "version": "2026.04.0",
+      "introduced_version": "2026.04.0",
+      "applicability": {
+        "projects": ["*"],
+        "excludes": ["prototype"]
+      },
+      "waiver_policy": {
+        "allowed": true,
+        "requires_owner": true,
+        "requires_review_date": true,
+        "max_days": 21
+      },
+      "related_criteria": ["testing-trust", "repo-boundary-discipline"],
+      "metadata": {
+        "foundational": false
+      }
+    },
+    {
+      "id": "product_readiness.command_center_operability",
+      "title": "Product Readiness Control Surface",
+      "description": "Project has an operator-facing control surface with explainable health and remediation pathing.",
+      "domain": "product_readiness",
+      "weight": 7,
+      "severity_if_missing": 4,
+      "evaluation_method": "semi_auto",
+      "expected_state": {
+        "health_surface": true,
+        "backfill_lane": true,
+        "migration_visibility": true
+      },
+      "remediation_playbook": {
+        "summary": "Ship a source-backed project health panel including delta matrix, backfill lane, and migration state.",
+        "effort": 3,
+        "leverage": 1.3
+      },
+      "blocking_dependencies": ["workflow_agent_control.explicit_handshake", "observability.run_signal_integrity"],
+      "version": "2026.05.0",
+      "introduced_version": "2026.05.0",
+      "applicability": {
+        "projects": ["*"]
+      },
+      "waiver_policy": {
+        "allowed": true,
+        "requires_owner": true,
+        "requires_review_date": true,
+        "max_days": 21
+      },
+      "related_criteria": ["workflow-state-integrity", "truth-file-consistency"],
+      "metadata": {
+        "foundational": false
+      }
+    }
+  ]
+}

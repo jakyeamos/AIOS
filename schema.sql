@@ -401,3 +401,137 @@ CREATE TABLE success_criteria_findings (
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 CREATE INDEX idx_success_criteria_findings_eval ON success_criteria_findings(evaluation_id, created_at DESC);
+CREATE TABLE standards_profiles (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  version TEXT NOT NULL,
+  default_attached_version TEXT NOT NULL,
+  domains_json TEXT NOT NULL DEFAULT '[]',
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  status TEXT NOT NULL DEFAULT 'active',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE TABLE standards_definitions (
+  id TEXT PRIMARY KEY,
+  standard_id TEXT NOT NULL,
+  profile_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  domain TEXT NOT NULL,
+  weight REAL NOT NULL,
+  severity_if_missing INTEGER NOT NULL,
+  evaluation_method TEXT NOT NULL,
+  expected_state_json TEXT NOT NULL DEFAULT '{}',
+  remediation_playbook_json TEXT NOT NULL DEFAULT '{}',
+  blocking_dependencies_json TEXT NOT NULL DEFAULT '[]',
+  version TEXT NOT NULL,
+  introduced_version TEXT NOT NULL,
+  applicability_json TEXT NOT NULL DEFAULT '{}',
+  waiver_policy_json TEXT NOT NULL DEFAULT '{}',
+  related_criteria_json TEXT NOT NULL DEFAULT '[]',
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  is_latest INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  UNIQUE(standard_id, profile_id, version)
+);
+CREATE INDEX idx_standards_definitions_profile ON standards_definitions(profile_id, is_latest, domain);
+CREATE TABLE project_standards_profiles (
+  project_id TEXT PRIMARY KEY REFERENCES projects(id),
+  profile_id TEXT NOT NULL,
+  attached_version TEXT NOT NULL,
+  latest_version TEXT NOT NULL,
+  migration_mode TEXT NOT NULL DEFAULT 'current',
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE TABLE standards_assessments (
+  id TEXT PRIMARY KEY,
+  snapshot_id TEXT NOT NULL,
+  project_id TEXT NOT NULL REFERENCES projects(id),
+  standard_id TEXT NOT NULL,
+  profile_id TEXT NOT NULL,
+  standard_version TEXT NOT NULL,
+  status TEXT NOT NULL,
+  measured_state_json TEXT NOT NULL DEFAULT '{}',
+  expected_state_snapshot_json TEXT NOT NULL DEFAULT '{}',
+  reason TEXT,
+  evidence_json TEXT NOT NULL DEFAULT '[]',
+  last_evaluated_at TEXT NOT NULL,
+  evaluator_type TEXT NOT NULL,
+  confidence REAL NOT NULL DEFAULT 0.5,
+  regression_flag INTEGER NOT NULL DEFAULT 0,
+  waiver_rationale TEXT,
+  waiver_owner TEXT,
+  waiver_review_at TEXT,
+  waiver_affects_portfolio INTEGER NOT NULL DEFAULT 1,
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX idx_standards_assessments_project ON standards_assessments(project_id, last_evaluated_at DESC);
+CREATE TABLE standards_delta_items (
+  id TEXT PRIMARY KEY,
+  snapshot_id TEXT NOT NULL,
+  project_id TEXT NOT NULL REFERENCES projects(id),
+  standard_id TEXT NOT NULL,
+  profile_id TEXT NOT NULL,
+  standard_version TEXT NOT NULL,
+  domain TEXT NOT NULL,
+  severity INTEGER NOT NULL,
+  status TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  remediation_playbook_json TEXT NOT NULL DEFAULT '{}',
+  estimated_health_impact REAL NOT NULL DEFAULT 0,
+  blockers_json TEXT NOT NULL DEFAULT '[]',
+  foundational INTEGER NOT NULL DEFAULT 0,
+  downstream INTEGER NOT NULL DEFAULT 0,
+  linked_task_ids_json TEXT NOT NULL DEFAULT '[]',
+  priority_score REAL NOT NULL DEFAULT 0,
+  priority_bucket TEXT NOT NULL DEFAULT 'high_leverage',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX idx_standards_delta_items_project ON standards_delta_items(project_id, updated_at DESC);
+CREATE TABLE standards_backfill_tasks (
+  id TEXT PRIMARY KEY,
+  snapshot_id TEXT NOT NULL,
+  project_id TEXT NOT NULL REFERENCES projects(id),
+  delta_item_id TEXT NOT NULL REFERENCES standards_delta_items(id),
+  standard_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  problem_statement TEXT NOT NULL,
+  expected_state TEXT NOT NULL,
+  acceptance_criteria_json TEXT NOT NULL DEFAULT '[]',
+  effort REAL NOT NULL DEFAULT 1,
+  dependency_chain_json TEXT NOT NULL DEFAULT '[]',
+  expected_health_impact REAL NOT NULL DEFAULT 0,
+  owner TEXT,
+  priority_score REAL NOT NULL DEFAULT 0,
+  priority_bucket TEXT NOT NULL DEFAULT 'high_leverage',
+  blocked INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'open',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX idx_standards_backfill_tasks_project ON standards_backfill_tasks(project_id, updated_at DESC);
+CREATE TABLE standards_health_snapshots (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL REFERENCES projects(id),
+  profile_id TEXT NOT NULL,
+  attached_version TEXT NOT NULL,
+  latest_version TEXT NOT NULL,
+  standards_version TEXT NOT NULL,
+  overall_score REAL NOT NULL,
+  weighted_delta REAL NOT NULL,
+  max_penalty REAL NOT NULL,
+  unmet_standards_count INTEGER NOT NULL,
+  critical_delta_count INTEGER NOT NULL,
+  regression_count INTEGER NOT NULL,
+  unknown_count INTEGER NOT NULL,
+  unknown_coverage REAL NOT NULL,
+  evaluation_confidence REAL NOT NULL,
+  domain_scores_json TEXT NOT NULL DEFAULT '{}',
+  score_explain_json TEXT NOT NULL DEFAULT '{}',
+  migration_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX idx_standards_health_snapshots_project ON standards_health_snapshots(project_id, created_at DESC);

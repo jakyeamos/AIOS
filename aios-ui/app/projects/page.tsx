@@ -16,6 +16,9 @@ export default async function ProjectsPage(): Promise<React.JSX.Element> {
       <section className="panel-card">
         <div className="table-head">
           <span>Name</span>
+          <span>Health</span>
+          <span>Critical</span>
+          <span>Unknown</span>
           <span>Sessions</span>
           <span>Open Bugs</span>
           <span>Status</span>
@@ -25,6 +28,9 @@ export default async function ProjectsPage(): Promise<React.JSX.Element> {
             <span>
               <Link href={`/projects/${project.id}`}>{project.name}</Link>
             </span>
+            <span>{project.healthScore === null ? "n/a" : `${project.healthScore.toFixed(2)} (${project.healthTrend?.toFixed(2) ?? "0.00"})`}</span>
+            <span>{project.criticalDeltaCount}</span>
+            <span>{project.unknownCoverage === null ? "n/a" : `${(project.unknownCoverage * 100).toFixed(1)}%`}</span>
             <span>{project.sessionCount}</span>
             <span>{project.openBugs}</span>
             <span>

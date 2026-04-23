@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { TaskiProjectSummary } from "@/lib/control-plane";
+import { ensureControlPlaneSchema } from "@/server/aios/schema";
 import { getTaskiProjectSummary } from "@/server/aios/taski";
 import type { Project, ProjectStatus, Session } from "@/lib/types";
 import { tableExists } from "@/server/db";
@@ -15,6 +16,10 @@ type ProjectRow = {
   sessionCount: number;
   lastActiveAt: string | null;
   openBugs: number;
+  healthScore: number | null;
+  criticalDeltaCount: number | null;
+  unknownCoverage: number | null;
+  healthTrend: number | null;
 };
 
 type ProjectSessionRow = {
@@ -60,6 +65,10 @@ const mapProject = (row: ProjectRow): Project => ({
   sessionCount: row.sessionCount,
   lastActiveAt: row.lastActiveAt,
   openBugs: row.openBugs,
+  healthScore: row.healthScore === null ? null : Number(row.healthScore),
+  criticalDeltaCount: Number(row.criticalDeltaCount ?? 0),
+  unknownCoverage: row.unknownCoverage === null ? null : Number(row.unknownCoverage),
+  healthTrend: row.healthTrend === null ? null : Number(row.healthTrend),
 });
 
 const mapSession = (row: ProjectSessionRow): Session => ({
@@ -82,6 +91,7 @@ export const projectsRouter = createTRPCRouter({
   list: publicProcedure
     .input(z.object({ limit: z.number().int().min(1).max(200).default(100) }).optional())
     .query(({ ctx, input }): Project[] => {
+      ensureControlPlaneSchema(ctx.db);
       if (!tableExists("projects")) {
         return [];
       }
@@ -90,6 +100,28 @@ export const projectsRouter = createTRPCRouter({
       const openBugSelect = tableExists("bug_log")
         ? "(SELECT COUNT(*) FROM bug_log b WHERE b.project_id = p.id AND b.status = 'open')"
         : "0";
+      const healthScoreSelect = tableExists("standards_health_snapshots")
+        ? "(SELECT overall_score FROM standards_health_snapshots sh WHERE sh.project_id = p.id ORDER BY sh.created_at DESC LIMIT 1)"
+        : "NULL";
+      const criticalDeltaSelect = tableExists("standards_health_snapshots")
+        ? "(SELECT critical_delta_count FROM standards_health_snapshots sh WHERE sh.project_id = p.id ORDER BY sh.created_at DESC LIMIT 1)"
+        : "0";
+      const unknownCoverageSelect = tableExists("standards_health_snapshots")
+        ? "(SELECT unknown_coverage FROM standards_health_snapshots sh WHERE sh.project_id = p.id ORDER BY sh.created_at DESC LIMIT 1)"
+        : "NULL";
+      const healthTrendSelect = tableExists("standards_health_snapshots")
+        ? `(
+            SELECT COALESCE(latest.overall_score, 0) - COALESCE(previous.overall_score, latest.overall_score, 0)
+            FROM (SELECT overall_score FROM standards_health_snapshots WHERE project_id = p.id ORDER BY created_at DESC LIMIT 1) latest
+            LEFT JOIN (
+              SELECT overall_score
+              FROM standards_health_snapshots
+              WHERE project_id = p.id
+              ORDER BY created_at DESC
+              LIMIT 1 OFFSET 1
+            ) previous ON 1=1
+          )`
+        : "NULL";
       const rows = ctx.db
         .prepare(
           `
@@ -101,7 +133,11 @@ export const projectsRouter = createTRPCRouter({
             p.created_at AS createdAt,
             (SELECT COUNT(*) FROM sessions s WHERE s.project_id = p.id) AS sessionCount,
             (SELECT MAX(s.started_at) FROM sessions s WHERE s.project_id = p.id) AS lastActiveAt,
-            ${openBugSelect} AS openBugs
+            ${openBugSelect} AS openBugs,
+            ${healthScoreSelect} AS healthScore,
+            ${criticalDeltaSelect} AS criticalDeltaCount,
+            ${unknownCoverageSelect} AS unknownCoverage,
+            ${healthTrendSelect} AS healthTrend
           FROM projects p
           ORDER BY (lastActiveAt IS NULL) ASC, lastActiveAt DESC, p.name ASC
           LIMIT ?
@@ -115,6 +151,7 @@ export const projectsRouter = createTRPCRouter({
   detail: publicProcedure
     .input(z.object({ id: z.string().min(1) }))
     .query(({ ctx, input }): { project: Project | null; sessions: Session[] } => {
+      ensureControlPlaneSchema(ctx.db);
       if (!tableExists("projects")) {
         return { project: null, sessions: [] };
       }
@@ -122,6 +159,28 @@ export const projectsRouter = createTRPCRouter({
       const openBugSelect = tableExists("bug_log")
         ? "(SELECT COUNT(*) FROM bug_log b WHERE b.project_id = p.id AND b.status = 'open')"
         : "0";
+      const healthScoreSelect = tableExists("standards_health_snapshots")
+        ? "(SELECT overall_score FROM standards_health_snapshots sh WHERE sh.project_id = p.id ORDER BY sh.created_at DESC LIMIT 1)"
+        : "NULL";
+      const criticalDeltaSelect = tableExists("standards_health_snapshots")
+        ? "(SELECT critical_delta_count FROM standards_health_snapshots sh WHERE sh.project_id = p.id ORDER BY sh.created_at DESC LIMIT 1)"
+        : "0";
+      const unknownCoverageSelect = tableExists("standards_health_snapshots")
+        ? "(SELECT unknown_coverage FROM standards_health_snapshots sh WHERE sh.project_id = p.id ORDER BY sh.created_at DESC LIMIT 1)"
+        : "NULL";
+      const healthTrendSelect = tableExists("standards_health_snapshots")
+        ? `(
+            SELECT COALESCE(latest.overall_score, 0) - COALESCE(previous.overall_score, latest.overall_score, 0)
+            FROM (SELECT overall_score FROM standards_health_snapshots WHERE project_id = p.id ORDER BY created_at DESC LIMIT 1) latest
+            LEFT JOIN (
+              SELECT overall_score
+              FROM standards_health_snapshots
+              WHERE project_id = p.id
+              ORDER BY created_at DESC
+              LIMIT 1 OFFSET 1
+            ) previous ON 1=1
+          )`
+        : "NULL";
       const projectRow = ctx.db
         .prepare(
           `
@@ -133,7 +192,11 @@ export const projectsRouter = createTRPCRouter({
             p.created_at AS createdAt,
             (SELECT COUNT(*) FROM sessions s WHERE s.project_id = p.id) AS sessionCount,
             (SELECT MAX(s.started_at) FROM sessions s WHERE s.project_id = p.id) AS lastActiveAt,
-            ${openBugSelect} AS openBugs
+            ${openBugSelect} AS openBugs,
+            ${healthScoreSelect} AS healthScore,
+            ${criticalDeltaSelect} AS criticalDeltaCount,
+            ${unknownCoverageSelect} AS unknownCoverage,
+            ${healthTrendSelect} AS healthTrend
           FROM projects p
           WHERE p.id = ?
           LIMIT 1

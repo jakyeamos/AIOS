@@ -93,6 +93,10 @@ export type Project = {
   sessionCount: number;
   lastActiveAt: string | null;
   openBugs: number;
+  healthScore: number | null;
+  criticalDeltaCount: number;
+  unknownCoverage: number | null;
+  healthTrend: number | null;
 };
 
 export type CostBreakdownPoint = {

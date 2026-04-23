@@ -354,6 +354,82 @@ export type ControlPlaneRunDetail = {
   evaluations: ConsistencyEvaluation[];
 };
 
+export type StandardsAssessmentStatus = "pass" | "partial" | "fail" | "unknown" | "waived" | "not_applicable";
+
+export type StandardsDomainScore = {
+  domain: string;
+  score: number;
+  confidence: number;
+  weight: number;
+};
+
+export type StandardsDeltaItem = {
+  id: string;
+  standardId: string;
+  domain: string;
+  severity: number;
+  status: StandardsAssessmentStatus;
+  summary: string;
+  estimatedHealthImpact: number;
+  blockers: string[];
+  foundational: boolean;
+  linkedTaskIds: string[];
+  priorityScore: number;
+  priorityBucket: "foundational" | "high_leverage" | "quick_wins" | "blocked" | "waived_deferred";
+};
+
+export type StandardsBackfillTask = {
+  id: string;
+  deltaItemId: string;
+  standardId: string;
+  title: string;
+  problemStatement: string;
+  expectedState: string;
+  acceptanceCriteria: string[];
+  effort: number;
+  dependencyChain: string[];
+  expectedHealthImpact: number;
+  owner: string | null;
+  priorityScore: number;
+  priorityBucket: StandardsDeltaItem["priorityBucket"];
+  blocked: boolean;
+  status: string;
+};
+
+export type StandardsMigration = {
+  attachedVersion: string;
+  latestVersion: string;
+  migrationDeltaCount: number;
+  migrationWeight: number;
+  items: Array<{
+    standardId: string;
+    title: string;
+    domain: string;
+    introducedVersion: string;
+    weight: number;
+  }>;
+};
+
+export type StandardsHealthSummary = {
+  snapshotId: string;
+  profileId: string;
+  attachedVersion: string;
+  latestVersion: string;
+  overallScore: number;
+  weightedDelta: number;
+  unmetStandardsCount: number;
+  criticalDeltaCount: number;
+  regressionCount: number;
+  unknownCount: number;
+  unknownCoverage: number;
+  evaluationConfidence: number;
+  createdAt: string;
+  domainScores: StandardsDomainScore[];
+  deltaItems: StandardsDeltaItem[];
+  backfillTasks: StandardsBackfillTask[];
+  migration: StandardsMigration;
+};
+
 export type TaskiProjectSummary = {
   projectId: string;
   projectTitle: string;
@@ -370,4 +446,5 @@ export type TaskiProjectSummary = {
   consistencyFindings: ConsistencyFinding[];
   pendingApprovals: ImprovementWriteback[];
   suggestedNextActions: string[];
+  standardsHealth: StandardsHealthSummary | null;
 };

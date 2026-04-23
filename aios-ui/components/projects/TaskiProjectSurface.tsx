@@ -6,6 +6,27 @@ import type { KnowledgePageDetail, TaskiProjectSummary } from "@/lib/control-pla
 import { KnowledgePageView } from "@/components/knowledge/KnowledgePageView";
 import { StatusBadge } from "@/components/primitives/StatusBadge";
 
+const bucketLabel: Record<string, string> = {
+  foundational: "foundational",
+  high_leverage: "high leverage",
+  quick_wins: "quick wins",
+  blocked: "blocked",
+  waived_deferred: "waived/deferred",
+};
+
+const standardsStatusTone = (status: string): "healthy" | "warning" | "error" | "unknown" => {
+  if (status === "pass" || status === "waived") {
+    return "healthy";
+  }
+  if (status === "fail") {
+    return "error";
+  }
+  if (status === "partial") {
+    return "warning";
+  }
+  return "unknown";
+};
+
 export function TaskiProjectSurface({
   summary,
   dossier,
@@ -141,6 +162,100 @@ export function TaskiProjectSurface({
                 </ul>
               </article>
             </div>
+          </section>
+
+          <section className="panel-card">
+            <h3 className="section-title">Standards Delta / Health</h3>
+            {summary.standardsHealth ? (
+              <div className="stack">
+                <article className="entity-card">
+                  <div className="panel-row">
+                    <p className="panel-title">Health Header</p>
+                    <StatusBadge
+                      status={
+                        summary.standardsHealth.overallScore >= 80
+                          ? "healthy"
+                          : summary.standardsHealth.overallScore >= 60
+                            ? "warning"
+                            : "error"
+                      }
+                      label={`${summary.standardsHealth.overallScore.toFixed(2)} / 100`}
+                    />
+                  </div>
+                  <ul className="detail-list">
+                    <li>Critical deltas: {summary.standardsHealth.criticalDeltaCount}</li>
+                    <li>Unknown standards: {summary.standardsHealth.unknownCount}</li>
+                    <li>Regression count: {summary.standardsHealth.regressionCount}</li>
+                    <li>Evaluation confidence: {summary.standardsHealth.evaluationConfidence.toFixed(2)}</li>
+                    <li>Last evaluated: {summary.standardsHealth.createdAt}</li>
+                  </ul>
+                </article>
+
+                <article className="entity-card">
+                  <p className="panel-title">Domain Breakdown</p>
+                  <ul className="detail-list">
+                    {summary.standardsHealth.domainScores.map((domain) => (
+                      <li key={domain.domain}>
+                        {domain.domain}: {domain.score.toFixed(2)} (confidence {domain.confidence.toFixed(2)})
+                      </li>
+                    ))}
+                    {summary.standardsHealth.domainScores.length === 0 ? <li>No domain-level scores were persisted.</li> : null}
+                  </ul>
+                </article>
+
+                <article className="entity-card">
+                  <p className="panel-title">Delta Matrix</p>
+                  <ul className="detail-list">
+                    {summary.standardsHealth.deltaItems.slice(0, 10).map((delta) => (
+                      <li key={delta.id}>
+                        <span style={{ marginRight: "0.5rem" }}>
+                          <StatusBadge status={standardsStatusTone(delta.status)} label={delta.status} />
+                        </span>
+                        {delta.standardId} ({delta.domain}) · impact {delta.estimatedHealthImpact.toFixed(2)} · {delta.summary}
+                      </li>
+                    ))}
+                    {summary.standardsHealth.deltaItems.length === 0 ? <li>No active delta items were generated.</li> : null}
+                  </ul>
+                </article>
+
+                <article className="entity-card">
+                  <p className="panel-title">Backfill Lane</p>
+                  <ul className="detail-list">
+                    {summary.standardsHealth.backfillTasks.slice(0, 10).map((task) => (
+                      <li key={task.id}>
+                        {task.title} · {bucketLabel[task.priorityBucket] ?? task.priorityBucket} · priority {task.priorityScore.toFixed(2)}
+                        {task.blocked ? " · blocked" : ""}
+                      </li>
+                    ))}
+                    {summary.standardsHealth.backfillTasks.length === 0 ? (
+                      <li>No remediation tasks were generated from the latest standards snapshot.</li>
+                    ) : null}
+                  </ul>
+                </article>
+
+                <article className="entity-card">
+                  <p className="panel-title">Standards Migration</p>
+                  <ul className="detail-list">
+                    <li>
+                      Attached version {summary.standardsHealth.migration.attachedVersion} vs latest{" "}
+                      {summary.standardsHealth.migration.latestVersion}
+                    </li>
+                    <li>Migration delta count: {summary.standardsHealth.migration.migrationDeltaCount}</li>
+                    {summary.standardsHealth.migration.items.slice(0, 6).map((item) => (
+                      <li key={`${item.standardId}-${item.introducedVersion}`}>
+                        {item.standardId} introduced in {item.introducedVersion} ({item.domain})
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              </div>
+            ) : (
+              <article className="entity-card">
+                <p className="panel-subtitle">
+                  No standards health snapshot is available yet. Run a linked session to generate assessments and remediation tasks.
+                </p>
+              </article>
+            )}
           </section>
 
           <section className="panel-card">

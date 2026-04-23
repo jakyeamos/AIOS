@@ -257,8 +257,73 @@ def test_metadata_and_skills_refresh_flow(tmp_path: Path, capsys) -> None:
         VALUES ('eval-1', 'p1', 'run-1', 's1', 3, 1, 0, 'latest criteria summary', '2026-04-23T00:50:00Z')
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE standards_health_snapshots (
+            id TEXT PRIMARY KEY,
+            project_id TEXT,
+            profile_id TEXT,
+            attached_version TEXT,
+            latest_version TEXT,
+            standards_version TEXT,
+            overall_score REAL,
+            weighted_delta REAL,
+            max_penalty REAL,
+            unmet_standards_count INTEGER,
+            critical_delta_count INTEGER,
+            regression_count INTEGER,
+            unknown_count INTEGER,
+            unknown_coverage REAL,
+            evaluation_confidence REAL,
+            domain_scores_json TEXT,
+            score_explain_json TEXT,
+            migration_json TEXT,
+            created_at TEXT
+        )
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO standards_health_snapshots (
+            id, project_id, profile_id, attached_version, latest_version, standards_version,
+            overall_score, weighted_delta, max_penalty, unmet_standards_count, critical_delta_count,
+            regression_count, unknown_count, unknown_coverage, evaluation_confidence,
+            domain_scores_json, score_explain_json, migration_json, created_at
+        )
+        VALUES (
+            'health-1', 'p1', 'aios-core', '2026.04.0', '2026.05.0', '2026.05.0',
+            84.25, 8.5, 50.0, 2, 1, 0, 1, 0.22, 0.81,
+            '{}', '{}', '{}', '2026-04-23T00:55:00Z'
+        )
+        """
+    )
     conn.commit()
     conn.close()
+
+    standards_dir = config_root / "standards"
+    standards_dir.mkdir()
+    (standards_dir / "registry.json").write_text(
+        json.dumps(
+            {
+                "profile": {
+                    "id": "aios-core",
+                    "version": "2026.05.0",
+                    "default_attached_version": "2026.04.0",
+                },
+                "standards": [
+                    {
+                        "id": "architecture.boundary_enforcement",
+                        "domain": "architecture",
+                    },
+                    {
+                        "id": "testing.trust_signal",
+                        "domain": "testing",
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
 
     metadata_exit = run_cli(
         [
@@ -285,6 +350,9 @@ def test_metadata_and_skills_refresh_flow(tmp_path: Path, capsys) -> None:
     assert metadata_output["data"]["workflow_orchestration"]["latest_execution_report"]["id"] == "wr-1"
     assert metadata_output["data"]["execution_strategies"]["task_family_count"] == 1
     assert metadata_output["data"]["execution_strategies"]["strategy_count"] == 2
+    assert metadata_output["data"]["standards_delta"]["registry"]["profile_id"] == "aios-core"
+    assert metadata_output["data"]["standards_delta"]["registry"]["standard_count"] == 2
+    assert metadata_output["data"]["standards_delta"]["latest_snapshot"]["id"] == "health-1"
 
     dry_run_exit = run_cli(
         [
