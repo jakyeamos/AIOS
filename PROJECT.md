@@ -336,6 +336,29 @@ Phase 2b prompt library phase 2 (execution strategies) is now implemented as a h
 - phase architecture note:
   - `docs/architecture/2026-04-23-aios-prompt-library-phase2.md`
 
+Phase 3a AIOS UI command center MVP is now implemented:
+
+- command-center homepage (`aios-ui/app/page.tsx`) now provides source-backed situational awareness for:
+  - system health
+  - active/failing/stale run signals
+  - approvals/interventions inbox
+  - unified change timeline (runs, approvals, changes, experiments)
+- shared status/provenance model added:
+  - `aios-ui/lib/status-provenance.ts`
+  - explicit states: `confirmed`, `inferred`, `stale`, `missing`
+- reusable provenance UI primitive added:
+  - `aios-ui/components/primitives/ProvenanceBadge.tsx`
+- control-plane observability upgraded with provenance badges:
+  - `aios-ui/components/control/ControlPlaneStudio.tsx`
+  - run history, run detail, and approval queue now expose status confidence + source metadata
+- command-center IA/navigation labels updated:
+  - `aios-ui/lib/constants.ts`
+  - `aios-ui/components/layout/TopBar.tsx`
+- command-center docs delivered per spec:
+  - `docs/aios-ui-command-center-audit.md`
+  - `docs/aios-ui-command-center-implementation-plan.md`
+  - `docs/aios-ui-command-center-handoff.md`
+
 ## Still Missing
 
 - more than one production-grade invocation backend beyond the new managed local runtime

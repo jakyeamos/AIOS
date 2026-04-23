@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { ProvenanceBadge } from "@/components/primitives/ProvenanceBadge";
 import { StatusBadge } from "@/components/primitives/StatusBadge";
 import type {
   AgentProfile,
@@ -14,6 +15,7 @@ import type {
   PacketExpansionKind,
   WorkflowTemplate,
 } from "@/lib/control-plane";
+import { assessRunStatus, assessWritebackStatus } from "@/lib/status-provenance";
 import { trpc } from "@/lib/trpc";
 
 type ProjectOption = {
@@ -32,37 +34,11 @@ type ControlPlaneStudioProps = {
   recentFindings: ConsistencyFinding[];
 };
 
-const statusTone = (status: OrchestrationRun["status"]): "healthy" | "warning" | "error" | "unknown" => {
-  if (status === "completed") {
-    return "healthy";
-  }
-  if (status === "failed") {
-    return "error";
-  }
-  if (status === "canceled" || status === "superseded") {
-    return "warning";
-  }
-  return "unknown";
-};
-
 const findingTone = (severity: ConsistencyFinding["severity"]): "healthy" | "warning" | "error" | "unknown" => {
   if (severity === "error") {
     return "error";
   }
   if (severity === "warning") {
-    return "warning";
-  }
-  return "unknown";
-};
-
-const writebackTone = (status: ImprovementWriteback["status"]): "healthy" | "warning" | "error" | "unknown" => {
-  if (status === "applied") {
-    return "healthy";
-  }
-  if (status === "rejected") {
-    return "error";
-  }
-  if (status === "pending_approval") {
     return "warning";
   }
   return "unknown";
@@ -121,6 +97,7 @@ export function ControlPlaneStudio({
   );
 
   const selectedRunDetail: ControlPlaneRunDetail | null = runDetailQuery.data ?? null;
+  const selectedRunStatus = selectedRunDetail ? assessRunStatus(selectedRunDetail.run) : null;
 
   return (
     <div className="page-content">
@@ -356,62 +333,73 @@ export function ControlPlaneStudio({
           <h3 className="section-title">Approval Queue</h3>
           <div className="stack">
             {pendingWritebacks.length > 0 ? (
-              pendingWritebacks.map((writeback) => (
-                <article key={writeback.id} className="entity-card">
-                  <div className="panel-row">
-                    <p className="panel-title">{writeback.title}</p>
-                    <StatusBadge status={writebackTone(writeback.status)} label={writeback.status} />
-                  </div>
-                  <p className="panel-subtitle">{writeback.summary}</p>
-                  <p className="entity-meta">
-                    impact: {writeback.impactScope} · layer: {writeback.layerType}/{writeback.layerKey}
-                  </p>
-                  {writeback.approvalReason ? <p className="entity-meta">why review is required: {writeback.approvalReason}</p> : null}
-                  <ul className="detail-list">
-                    {writeback.evidence.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                  <label className="field">
-                    Decision note
-                    <textarea
-                      rows={2}
-                      value={reviewNotes[writeback.id] ?? ""}
-                      onChange={(event) => setReviewNotes((current) => ({ ...current, [writeback.id]: event.target.value }))}
-                    />
-                  </label>
-                  <div className="panel-row">
-                    <button
-                      type="button"
-                      className="button-primary"
-                      disabled={reviewer.isPending}
-                      onClick={() =>
-                        reviewer.mutate({
-                          writebackId: writeback.id,
-                          decision: "applied",
-                          note: reviewNotes[writeback.id] ?? undefined,
-                        })
-                      }
-                    >
-                      Approve
-                    </button>
-                    <button
-                      type="button"
-                      className="button-secondary"
-                      disabled={reviewer.isPending}
-                      onClick={() =>
-                        reviewer.mutate({
-                          writebackId: writeback.id,
-                          decision: "rejected",
-                          note: reviewNotes[writeback.id] ?? undefined,
-                        })
-                      }
-                    >
-                      Reject
-                    </button>
-                  </div>
-                </article>
-              ))
+              pendingWritebacks.map((writeback) => {
+                const writebackStatus = assessWritebackStatus(writeback);
+                return (
+                  <article key={writeback.id} className="entity-card">
+                    <div className="panel-row">
+                      <p className="panel-title">{writeback.title}</p>
+                      <div className="badge-row">
+                        <StatusBadge status={writebackStatus.tone} label={writeback.status} />
+                        <ProvenanceBadge
+                          level={writebackStatus.provenance}
+                          source={writebackStatus.source}
+                          reason={writebackStatus.reason}
+                        />
+                      </div>
+                    </div>
+                    <p className="panel-subtitle">{writeback.summary}</p>
+                    <p className="entity-meta">
+                      impact: {writeback.impactScope} · layer: {writeback.layerType}/{writeback.layerKey}
+                    </p>
+                    {writeback.approvalReason ? <p className="entity-meta">why review is required: {writeback.approvalReason}</p> : null}
+                    <p className="entity-meta">source: {writebackStatus.source}</p>
+                    <ul className="detail-list">
+                      {writeback.evidence.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                    <label className="field">
+                      Decision note
+                      <textarea
+                        rows={2}
+                        value={reviewNotes[writeback.id] ?? ""}
+                        onChange={(event) => setReviewNotes((current) => ({ ...current, [writeback.id]: event.target.value }))}
+                      />
+                    </label>
+                    <div className="panel-row">
+                      <button
+                        type="button"
+                        className="button-primary"
+                        disabled={reviewer.isPending}
+                        onClick={() =>
+                          reviewer.mutate({
+                            writebackId: writeback.id,
+                            decision: "applied",
+                            note: reviewNotes[writeback.id] ?? undefined,
+                          })
+                        }
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        className="button-secondary"
+                        disabled={reviewer.isPending}
+                        onClick={() =>
+                          reviewer.mutate({
+                            writebackId: writeback.id,
+                            decision: "rejected",
+                            note: reviewNotes[writeback.id] ?? undefined,
+                          })
+                        }
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </article>
+                );
+              })
             ) : (
               <article className="entity-card">
                 <p className="panel-subtitle">No gated proposals are currently waiting for review.</p>
@@ -447,46 +435,53 @@ export function ControlPlaneStudio({
         <section className="panel-card">
           <h3 className="section-title">Run History</h3>
           <div className="stack">
-            {recentRuns.map((run) => (
-              <article key={run.id} className="entity-card">
-                <div className="panel-row">
-                  <p className="panel-title">{run.objective}</p>
-                  <StatusBadge status={statusTone(run.status)} label={run.status} />
-                </div>
-                <p className="panel-subtitle">
-                  {run.projectName} · {run.workflowKey} · {run.agentKey}
-                </p>
-                <p className="entity-meta">
-                  backend: {run.backendKey ?? "unassigned"} · invocation: {run.activeInvocationId ?? "none"}
-                </p>
-                {run.resultSummary ? <p className="entity-meta">{run.resultSummary}</p> : null}
-                <div className="panel-row">
-                  <button type="button" className="button-secondary" onClick={() => setSelectedRunId(run.id)}>
-                    Inspect
-                  </button>
-                  {run.status === "ready" ? (
-                    <button
-                      type="button"
-                      className="button-primary"
-                      disabled={invoker.isPending}
-                      onClick={() => invoker.mutate({ runId: run.id })}
-                    >
-                      Invoke
+            {recentRuns.map((run) => {
+              const runStatus = assessRunStatus(run);
+              return (
+                <article key={run.id} className="entity-card">
+                  <div className="panel-row">
+                    <p className="panel-title">{run.objective}</p>
+                    <div className="badge-row">
+                      <StatusBadge status={runStatus.tone} label={run.status} />
+                      <ProvenanceBadge level={runStatus.provenance} source={runStatus.source} reason={runStatus.reason} />
+                    </div>
+                  </div>
+                  <p className="panel-subtitle">
+                    {run.projectName} · {run.workflowKey} · {run.agentKey}
+                  </p>
+                  <p className="entity-meta">
+                    backend: {run.backendKey ?? "unassigned"} · invocation: {run.activeInvocationId ?? "none"}
+                  </p>
+                  <p className="entity-meta">source: {runStatus.source}</p>
+                  {run.resultSummary ? <p className="entity-meta">{run.resultSummary}</p> : null}
+                  <div className="panel-row">
+                    <button type="button" className="button-secondary" onClick={() => setSelectedRunId(run.id)}>
+                      Inspect
                     </button>
-                  ) : null}
-                  {run.status === "in_progress" ? (
-                    <button
-                      type="button"
-                      className="button-secondary"
-                      disabled={canceller.isPending}
-                      onClick={() => canceller.mutate({ runId: run.id })}
-                    >
-                      Cancel
-                    </button>
-                  ) : null}
-                </div>
-              </article>
-            ))}
+                    {run.status === "ready" ? (
+                      <button
+                        type="button"
+                        className="button-primary"
+                        disabled={invoker.isPending}
+                        onClick={() => invoker.mutate({ runId: run.id })}
+                      >
+                        Invoke
+                      </button>
+                    ) : null}
+                    {run.status === "in_progress" ? (
+                      <button
+                        type="button"
+                        className="button-secondary"
+                        disabled={canceller.isPending}
+                        onClick={() => canceller.mutate({ runId: run.id })}
+                      >
+                        Cancel
+                      </button>
+                    ) : null}
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </section>
 
@@ -515,7 +510,14 @@ export function ControlPlaneStudio({
               <h3 className="section-title">Run Detail</h3>
               <p className="panel-subtitle">{selectedRunDetail.run.objective}</p>
             </div>
-            <StatusBadge status={statusTone(selectedRunDetail.run.status)} label={selectedRunDetail.run.status} />
+            <div className="badge-row">
+              <StatusBadge status={selectedRunStatus?.tone ?? "unknown"} label={selectedRunDetail.run.status} />
+              <ProvenanceBadge
+                level={selectedRunStatus?.provenance ?? "missing"}
+                source={selectedRunStatus?.source ?? "orchestration_runs"}
+                reason={selectedRunStatus?.reason ?? "Run detail missing source metadata."}
+              />
+            </div>
           </div>
           <div className="detail-grid" style={{ marginTop: "1rem" }}>
             <article className="entity-card">
