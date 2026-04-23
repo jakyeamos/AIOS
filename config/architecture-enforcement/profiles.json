@@ -1,0 +1,82 @@
+{
+  "version": "2026-04-23",
+  "profiles": [
+    {
+      "id": "python-service-v1",
+      "stack": "python",
+      "description": "Layering and cycle checks for Python service + CLI repositories.",
+      "adapters": [
+        {
+          "id": "python-import-boundaries",
+          "type": "python_import_rules",
+          "include": [
+            "bin",
+            "services"
+          ],
+          "layers_from_path": {
+            "bin": "bin",
+            "services": "services"
+          },
+          "forbidden_imports": [
+            {
+              "source_layer": "services",
+              "target_layer": "bin",
+              "reason": "Reusable service modules cannot depend on CLI entrypoints."
+            }
+          ],
+          "fail_on_cycles": true
+        },
+        {
+          "id": "ruff-baseline",
+          "type": "command",
+          "command": [
+            ".venv/bin/ruff",
+            "check",
+            "bin",
+            "services"
+          ],
+          "requires_paths": [
+            "pyproject.toml",
+            ".venv/bin/ruff",
+            "bin",
+            "services"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ts-nextjs-v1",
+      "stack": "typescript-nextjs",
+      "description": "Next.js/TypeScript architecture checks via Dependency Cruiser and lint.",
+      "adapters": [
+        {
+          "id": "dependency-cruiser-boundaries",
+          "type": "command",
+          "command": [
+            "npm",
+            "run",
+            "lint:architecture"
+          ],
+          "requires_paths": [
+            ".dependency-cruiser.cjs",
+            "package.json"
+          ]
+        },
+        {
+          "id": "eslint-and-types",
+          "type": "command",
+          "command": [
+            "npm",
+            "run",
+            "lint"
+          ],
+          "requires_paths": [
+            "package.json",
+            "eslint.config.mjs",
+            "tsconfig.json"
+          ]
+        }
+      ]
+    }
+  ]
+}

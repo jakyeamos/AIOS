@@ -159,6 +159,29 @@ This pass also turns the execution layer into a real control-plane path:
 - `hook-session-start.py` now moves explicitly linked runs to `in_progress`
 - `hook-stop.py` now resolves the exact run by handshake first and only falls back to heuristic matching as a legacy escape hatch
 
+## Implemented On 2026-04-23
+
+Phase 0a architecture enforcement baseline is now live as an AIOS-managed profile system:
+
+- AIOS registry for reusable architecture profiles:
+  - `config/architecture-enforcement/profiles.json`
+  - `config/architecture-enforcement/projects.json`
+- new enforcement runner and CLI:
+  - `services/architecture_enforcement.py`
+  - `bin/architecture-enforcement.py`
+- Python profile (`python-service-v1`) enforcing:
+  - `services -> bin` import boundary denial
+  - cycle detection for local Python modules
+  - optional ruff adapter when local tooling exists
+- Next.js profile (`ts-nextjs-v1`) enforcing:
+  - Dependency Cruiser layer boundaries + cycle detection
+  - existing ESLint/TypeScript lint checks
+- proof-target wiring in `aios-ui`:
+  - `.dependency-cruiser.cjs`
+  - `npm run lint:architecture`
+- architecture audit + rollout doc:
+  - `docs/architecture/2026-04-23-aios-architecture-enforcement.md`
+
 ## Still Missing
 
 - more than one production-grade invocation backend beyond the new managed local runtime
@@ -167,6 +190,7 @@ This pass also turns the execution layer into a real control-plane path:
 - deeper packet/result inspection at file/topic delta level
 - richer Taski operator controls beyond summary, approvals, and run/evaluator inspection
 - legacy heuristic run matching still exists only as a fallback for older sessions that lack explicit handshake metadata
+- linked-project profile ratchet completion (`amos-saas`, `soundscape-app`, `GitNexus`, `Terrace`, `portfolio`) so each has native profile config + CI wiring in-repo
 
 ## Spec Roadmap Corrections On 2026-04-23
 

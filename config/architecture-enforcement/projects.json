@@ -1,0 +1,81 @@
+{
+  "version": "2026-04-23",
+  "projects": [
+    {
+      "id": "aios",
+      "name": "AIOS",
+      "path": ".",
+      "profile_bindings": [
+        {
+          "profile_id": "python-service-v1",
+          "working_directory": "."
+        },
+        {
+          "profile_id": "ts-nextjs-v1",
+          "working_directory": "aios-ui"
+        }
+      ],
+      "proof_target": true
+    },
+    {
+      "id": "amos-saas",
+      "name": "amos-saas",
+      "path": "~/Projects/amos-saas",
+      "profile_bindings": [
+        {
+          "profile_id": "ts-nextjs-v1",
+          "working_directory": "."
+        }
+      ],
+      "proof_target": false
+    },
+    {
+      "id": "soundscape-app",
+      "name": "soundscape-app",
+      "path": "~/Projects/soundscape-app",
+      "profile_bindings": [
+        {
+          "profile_id": "ts-nextjs-v1",
+          "working_directory": "."
+        }
+      ],
+      "proof_target": false
+    },
+    {
+      "id": "gitnexus",
+      "name": "GitNexus",
+      "path": "~/Projects/GitNexus",
+      "profile_bindings": [
+        {
+          "profile_id": "python-service-v1",
+          "working_directory": "."
+        }
+      ],
+      "proof_target": false
+    },
+    {
+      "id": "terrace",
+      "name": "Terrace",
+      "path": "~/Projects/Terrace",
+      "profile_bindings": [
+        {
+          "profile_id": "ts-nextjs-v1",
+          "working_directory": "."
+        }
+      ],
+      "proof_target": false
+    },
+    {
+      "id": "portfolio",
+      "name": "portfolio",
+      "path": "~/Projects/portfolio",
+      "profile_bindings": [
+        {
+          "profile_id": "ts-nextjs-v1",
+          "working_directory": "."
+        }
+      ],
+      "proof_target": false
+    }
+  ]
+}

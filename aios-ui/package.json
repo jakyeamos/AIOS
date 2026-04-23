@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint . && tsc --noEmit"
+    "lint": "eslint . && tsc --noEmit",
+    "lint:architecture": "dependency-cruiser --config .dependency-cruiser.cjs app components lib server --output-type err-long"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.66.11",
@@ -26,6 +27,7 @@
     "@types/node": "^22.13.1",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
+    "dependency-cruiser": "^16.10.4",
     "eslint": "^9.19.0",
     "eslint-config-next": "^16.0.0",
     "eslint-plugin-anti-slop": "file:../../projects/eslint-plugin-anti-slop",
