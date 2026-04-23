@@ -204,6 +204,36 @@ Phase 0b agent workflow CLI surfaces are now implemented after the hard checkpoi
 - implementation handoff:
   - `docs/handoffs/2026-04-23-aios-agent-workflow-cli-handoff.md`
 
+Phase 0c success criteria control-plane baseline is now live:
+
+- criteria registry + skill mapping:
+  - `config/success-criteria/registry.json`
+  - `config/success-criteria/skill-map.json`
+- canonical criteria docs and discovery index:
+  - `spec/success-criteria/index.md`
+  - `spec/success-criteria/_template.md`
+  - normalized criteria docs for:
+    - `code-simplicity`
+    - `testing-trust`
+    - `security-review`
+    - `observability`
+    - `truth-file-consistency`
+    - `repo-boundary-discipline`
+    - `workflow-state-integrity`
+- runtime evaluator and artifact persistence:
+  - `services/success_criteria.py`
+  - `data/success-criteria/evaluations/*.json`
+- hook integration:
+  - `hook-session-start.py` now previews applicable criteria before implementation
+  - `hook-stop.py` now evaluates changed patch paths and records criteria findings
+- durable schema additions:
+  - `success_criteria_evaluations`
+  - `success_criteria_findings`
+- metadata snapshot visibility:
+  - `aios metadata --json` now exposes criteria catalog + latest evaluation
+- phase architecture note:
+  - `docs/architecture/2026-04-23-aios-success-criteria-system.md`
+
 ## Still Missing
 
 - more than one production-grade invocation backend beyond the new managed local runtime

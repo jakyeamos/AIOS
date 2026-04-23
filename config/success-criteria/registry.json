@@ -1,0 +1,165 @@
+{
+  "version": "2026-04-23",
+  "criteria": [
+    {
+      "id": "code-simplicity",
+      "title": "Protect Simplicity and Comprehension",
+      "path": "spec/success-criteria/code-simplicity.md",
+      "scope": "global",
+      "blocking": true,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "implementation",
+          "refactor",
+          "bugfix",
+          "review"
+        ],
+        "domains": [
+          "*"
+        ]
+      },
+      "related": [
+        "testing-trust",
+        "repo-boundary-discipline"
+      ]
+    },
+    {
+      "id": "testing-trust",
+      "title": "Do Not Treat Test Volume as Trust",
+      "path": "spec/success-criteria/testing-trust.md",
+      "scope": "task-type",
+      "blocking": false,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "implementation",
+          "refactor",
+          "testing",
+          "bugfix",
+          "review"
+        ],
+        "domains": [
+          "testing",
+          "*"
+        ]
+      },
+      "related": [
+        "code-simplicity",
+        "observability"
+      ]
+    },
+    {
+      "id": "security-review",
+      "title": "Security Review Before Sensitive Change Acceptance",
+      "path": "spec/success-criteria/security-review.md",
+      "scope": "domain-specific",
+      "blocking": true,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "implementation",
+          "bugfix",
+          "review"
+        ],
+        "domains": [
+          "security"
+        ]
+      },
+      "related": [
+        "repo-boundary-discipline"
+      ]
+    },
+    {
+      "id": "observability",
+      "title": "Observability Completeness for Operational Changes",
+      "path": "spec/success-criteria/observability.md",
+      "scope": "domain-specific",
+      "blocking": false,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "implementation",
+          "bugfix",
+          "review"
+        ],
+        "domains": [
+          "observability",
+          "workflow",
+          "reliability"
+        ]
+      },
+      "related": [
+        "testing-trust"
+      ]
+    },
+    {
+      "id": "truth-file-consistency",
+      "title": "Project Truth File Consistency",
+      "path": "spec/success-criteria/truth-file-consistency.md",
+      "scope": "project-domain-specific",
+      "blocking": true,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "implementation",
+          "bugfix",
+          "refactor"
+        ],
+        "domains": [
+          "*"
+        ],
+        "project_names": [
+          "AIOS"
+        ]
+      },
+      "related": [
+        "workflow-state-integrity"
+      ]
+    },
+    {
+      "id": "repo-boundary-discipline",
+      "title": "Repository Boundary Discipline",
+      "path": "spec/success-criteria/repo-boundary-discipline.md",
+      "scope": "global",
+      "blocking": true,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "implementation",
+          "bugfix",
+          "refactor"
+        ],
+        "domains": [
+          "*"
+        ]
+      },
+      "related": [
+        "truth-file-consistency"
+      ]
+    },
+    {
+      "id": "workflow-state-integrity",
+      "title": "Workflow State Integrity",
+      "path": "spec/success-criteria/workflow-state-integrity.md",
+      "scope": "domain-specific",
+      "blocking": false,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "implementation",
+          "bugfix",
+          "review",
+          "planning"
+        ],
+        "domains": [
+          "workflow",
+          "reliability"
+        ]
+      },
+      "related": [
+        "truth-file-consistency"
+      ]
+    }
+  ]
+}

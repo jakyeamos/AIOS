@@ -340,3 +340,41 @@ CREATE TABLE IF NOT EXISTS consistency_findings (
 );
 CREATE INDEX IF NOT EXISTS idx_consistency_findings_project
   ON consistency_findings(project_id, created_at DESC);
+CREATE TABLE IF NOT EXISTS success_criteria_evaluations (
+  id TEXT PRIMARY KEY,
+  project_id TEXT REFERENCES projects(id),
+  run_id TEXT REFERENCES orchestration_runs(id),
+  session_id TEXT REFERENCES sessions(id),
+  packet_id TEXT REFERENCES briefing_packets(id),
+  task_id TEXT,
+  objective TEXT,
+  trigger_kind TEXT NOT NULL,
+  evaluator_version TEXT NOT NULL,
+  criteria_ids_json TEXT NOT NULL DEFAULT '[]',
+  files_changed_json TEXT NOT NULL DEFAULT '[]',
+  pass_count INTEGER NOT NULL DEFAULT 0,
+  warning_count INTEGER NOT NULL DEFAULT 0,
+  blocker_count INTEGER NOT NULL DEFAULT 0,
+  accepted_tradeoffs_json TEXT NOT NULL DEFAULT '[]',
+  summary TEXT NOT NULL,
+  artifact_path TEXT,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX IF NOT EXISTS idx_success_criteria_eval_project
+  ON success_criteria_evaluations(project_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_success_criteria_eval_run
+  ON success_criteria_evaluations(run_id, created_at DESC);
+CREATE TABLE IF NOT EXISTS success_criteria_findings (
+  id TEXT PRIMARY KEY,
+  evaluation_id TEXT NOT NULL REFERENCES success_criteria_evaluations(id),
+  criterion_id TEXT NOT NULL,
+  criterion_title TEXT NOT NULL,
+  criterion_scope TEXT NOT NULL,
+  level TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  evidence_json TEXT NOT NULL DEFAULT '[]',
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX IF NOT EXISTS idx_success_criteria_findings_eval
+  ON success_criteria_findings(evaluation_id, created_at DESC);

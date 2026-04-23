@@ -190,6 +190,52 @@ def _linked_projects(config_root: Path) -> list[dict[str, Any]]:
     return results
 
 
+def _criteria_catalog_summary(config_root: Path) -> dict[str, Any]:
+    registry_path = config_root / "success-criteria" / "registry.json"
+    if not registry_path.exists():
+        return {"count": 0, "registry_path": str(registry_path), "criteria_ids": []}
+    loaded = _load_json(registry_path)
+    criteria = loaded.get("criteria", [])
+    if not isinstance(criteria, list):
+        criteria = []
+    criteria_ids = [
+        str(item.get("id", ""))
+        for item in criteria
+        if isinstance(item, dict) and item.get("id")
+    ]
+    return {
+        "count": len(criteria_ids),
+        "registry_path": str(registry_path),
+        "criteria_ids": criteria_ids,
+    }
+
+
+def _latest_success_criteria_evaluation(conn: sqlite3.Connection) -> dict[str, Any] | None:
+    if not _table_exists(conn, "success_criteria_evaluations"):
+        return None
+    row = conn.execute(
+        """
+        SELECT id, project_id, run_id, session_id, pass_count, warning_count, blocker_count, summary, created_at
+        FROM success_criteria_evaluations
+        ORDER BY created_at DESC
+        LIMIT 1
+        """
+    ).fetchone()
+    if row is None:
+        return None
+    return {
+        "id": row["id"],
+        "project_id": row["project_id"],
+        "run_id": row["run_id"],
+        "session_id": row["session_id"],
+        "pass_count": row["pass_count"],
+        "warning_count": row["warning_count"],
+        "blocker_count": row["blocker_count"],
+        "summary": row["summary"],
+        "created_at": row["created_at"],
+    }
+
+
 def _extract_hash(content: str) -> str | None:
     for line in content.splitlines():
         if line.startswith("source_hash:"):
@@ -469,6 +515,7 @@ def _metadata_payload(
     current_session_path = logs_dir / "current_session"
     current_session = current_session_path.read_text(encoding="utf-8").strip() if current_session_path.exists() else None
     run_counts = _run_status_counts(conn)
+    latest_criteria_eval = _latest_success_criteria_evaluation(conn)
 
     return {
         "system": {
@@ -488,6 +535,10 @@ def _metadata_payload(
             "run_status_counts": run_counts,
         },
         "instructions": instructions,
+        "success_criteria": {
+            "catalog": _criteria_catalog_summary(config_root),
+            "latest_evaluation": latest_criteria_eval,
+        },
         "health": _health_payload(conn, logs_dir),
         "recent_failures_preview": _recent_failures_payload(conn, logs_dir, last=5),
         "available_commands": [

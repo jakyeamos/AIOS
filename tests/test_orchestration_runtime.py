@@ -5,8 +5,8 @@ Run from the repository root:
     python3 -m pytest tests/test_orchestration_runtime.py -v
 """
 
-import io
 import importlib.util
+import io
 import json
 import os
 import sqlite3
@@ -110,12 +110,38 @@ def test_hook_stop_uses_explicit_run_handshake(runtime_db: Path, tmp_path: Path,
         """,
         (run_id, invocation_id, json.dumps({"backend_key": "aios-managed-runtime"}), session_id),
     )
+    conn.execute(
+        """
+        INSERT INTO artifacts (id, session_id, artifact_type, path, metadata_json, created_at)
+        VALUES ('artifact-patch', ?, 'patch', ?, '{}', '2026-04-19T00:00:00Z')
+        """,
+        (session_id, str(repo_path / "services" / "orchestration.py")),
+    )
+    conn.execute(
+        """
+        INSERT INTO artifacts (id, session_id, artifact_type, path, metadata_json, created_at)
+        VALUES ('artifact-report', ?, 'control-plane-report', ?, '{}', '2026-04-19T00:01:00Z')
+        """,
+        (session_id, str(tmp_path / "reports" / "invocation.json")),
+    )
     conn.commit()
     conn.close()
+
+    captured_criteria_args: dict[str, object] = {}
+
+    def _fake_evaluate_and_record(_conn: sqlite3.Connection, **kwargs: object) -> dict[str, object]:
+        captured_criteria_args.update(kwargs)
+        return {
+            "evaluation_id": "criteria-eval-test",
+            "summary": "ok",
+            "counts": {"pass": 1, "warning": 0, "blocker": 0},
+            "criteria_ids": ["code-simplicity"],
+        }
 
     monkeypatch.setattr(hook_stop, "DB", str(runtime_db))
     monkeypatch.setattr(hook_stop, "LOG", str(tmp_path / "hooks.log"))
     monkeypatch.setattr(hook_stop, "SUMMARIES_DIR", str(tmp_path / "summaries"))
+    monkeypatch.setattr(hook_stop, "evaluate_and_record", _fake_evaluate_and_record)
     monkeypatch.setattr(hook_stop.subprocess, "run", lambda *args, **kwargs: None)
     monkeypatch.setattr(
         hook_stop,
@@ -173,6 +199,7 @@ def test_hook_stop_uses_explicit_run_handshake(runtime_db: Path, tmp_path: Path,
         (run_id,),
     ).fetchall()
     assert ("completed", "completed", "Managed runtime completed successfully.") in event_rows
+    assert captured_criteria_args["changed_files"] == [str(repo_path / "services" / "orchestration.py")]
     conn.close()
 
 

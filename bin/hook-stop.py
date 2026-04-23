@@ -12,6 +12,8 @@ import subprocess
 import sys
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
 
 from aios_orchestration_runtime import (
     ensure_runtime_schema,
@@ -22,9 +24,21 @@ from aios_orchestration_runtime import (
     update_invocation,
 )
 
+ROOT = Path(__file__).resolve().parents[1]
+
 DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
 SUMMARIES_DIR = os.path.expanduser("~/AIOS/logs/summaries")
+
+
+def evaluate_and_record(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from services.success_criteria import (
+        evaluate_and_record as evaluate_and_record_impl,  # noqa: PLC0415
+    )
+
+    return evaluate_and_record_impl(*args, **kwargs)
 
 
 def log(msg: str) -> None:
@@ -120,6 +134,18 @@ def find_matching_orchestration_run(
         return best_row[0], best_row[1]
 
     return None, None
+
+
+def get_project_name(conn: sqlite3.Connection, project_id: str | None) -> str | None:
+    if not project_id:
+        return None
+    row = conn.execute(
+        "SELECT name FROM projects WHERE id = ? LIMIT 1",
+        (project_id,),
+    ).fetchone()
+    if not row:
+        return None
+    return str(row[0])
 
 
 def main() -> None:
@@ -267,6 +293,7 @@ def main() -> None:
             f"Closed session for objective '{row[4] or 'unspecified'}' with "
             f"{len(prompts)} prompts and {len(artifacts)} artifacts."
         )
+        project_name = get_project_name(conn, row[1])
         linked_run_id, linked_packet_id, linked_invocation_id, used_legacy_link = resolve_run_linkage(
             conn,
             session_id=session_id,
@@ -413,6 +440,40 @@ def main() -> None:
                     "legacy run-link fallback used for "
                     f"session {session_id} -> run {linked_run_id}"
                 )
+
+        criteria_changed_paths = [
+            path
+            for artifact_type, path in artifacts
+            if path and artifact_type == "patch"
+        ]
+        prompt_classifications = [
+            prompt[0]
+            for prompt in prompts
+            if prompt[0]
+        ]
+        accepted_tradeoffs = reason_json.get("accepted_tradeoffs", [])
+        if not isinstance(accepted_tradeoffs, list):
+            accepted_tradeoffs = [str(accepted_tradeoffs)]
+        criteria_eval = evaluate_and_record(
+            conn,
+            project_id=row[1],
+            project_name=project_name,
+            run_id=linked_run_id,
+            session_id=session_id,
+            packet_id=linked_packet_id,
+            objective=row[4],
+            task_id=linked_run_id or session_id,
+            trigger_kind="session_close",
+            cwd=row[3],
+            prompt_classifications=prompt_classifications,
+            changed_files=criteria_changed_paths,
+            used_legacy_link=used_legacy_link,
+            accepted_tradeoffs=accepted_tradeoffs,
+        )
+        log(
+            "success criteria evaluation recorded: "
+            f"{criteria_eval['evaluation_id']} ({criteria_eval['summary']})"
+        )
 
         # Log Stop event
         conn.execute(

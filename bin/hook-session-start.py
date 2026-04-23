@@ -14,6 +14,7 @@ import subprocess
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from aios_orchestration_runtime import (
     ensure_runtime_schema,
@@ -23,12 +24,24 @@ from aios_orchestration_runtime import (
 )
 from aios_paths import get_vault_root
 
+ROOT = Path(__file__).resolve().parents[1]
+
 DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
 VAULT = str(get_vault_root())
 VAULT_SEARCH = os.path.expanduser("~/AIOS/bin/vault-search.py")
 PACKET_DIR = os.path.expanduser("~/AIOS/logs")
 MAX_PACKET_CHARS = 1800  # ~400 tokens
+
+
+def preview_applicable_criteria(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from services.success_criteria import (
+        preview_applicable_criteria as preview_applicable_criteria_impl,  # noqa: PLC0415
+    )
+
+    return preview_applicable_criteria_impl(*args, **kwargs)
 
 
 def log(msg: str) -> None:
@@ -218,7 +231,30 @@ def generate_packet(
     if review_hint:
         parts.append(f"**Review queue:** {review_hint}")
 
-    # 6. Code Topology Service context (only when index is current)
+    # 6. Success criteria preview (resolved before implementation begins)
+    criteria_preview = preview_applicable_criteria(
+        project_id=project_id,
+        project_name=project_name,
+        objective=objective,
+    )
+    criteria_rows = criteria_preview.get("criteria", [])
+    if criteria_rows:
+        criteria_lines = [
+            f"- {row['id']} ({'blocker' if row['blocking'] else 'advisory'})"
+            for row in criteria_rows[:8]
+        ]
+        context_hint = criteria_preview.get("context", {})
+        context_bits = []
+        if context_hint.get("task_types"):
+            context_bits.append("task_types=" + ", ".join(context_hint["task_types"]))
+        if context_hint.get("domains"):
+            context_bits.append("domains=" + ", ".join(context_hint["domains"]))
+        header = "**Applicable success criteria:**"
+        if context_bits:
+            header += " (" + "; ".join(context_bits) + ")"
+        parts.append(header + "\n" + "\n".join(criteria_lines))
+
+    # 7. Code Topology Service context (only when index is current)
     cts_context = get_cts_context(cwd, objective)
     if cts_context:
         parts.append(cts_context)

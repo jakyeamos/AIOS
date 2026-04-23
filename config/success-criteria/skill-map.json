@@ -1,0 +1,25 @@
+{
+  "version": "2026-04-23",
+  "skill_to_criteria": {
+    "simplifier": [
+      "code-simplicity",
+      "testing-trust"
+    ],
+    "refactor": [
+      "code-simplicity",
+      "truth-file-consistency"
+    ],
+    "security": [
+      "security-review",
+      "repo-boundary-discipline"
+    ],
+    "observability": [
+      "observability",
+      "testing-trust"
+    ],
+    "workflow": [
+      "workflow-state-integrity",
+      "truth-file-consistency"
+    ]
+  }
+}

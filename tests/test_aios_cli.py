@@ -161,6 +161,47 @@ def test_metadata_and_skills_refresh_flow(tmp_path: Path, capsys) -> None:
         ),
         encoding="utf-8",
     )
+    criteria_dir = config_root / "success-criteria"
+    criteria_dir.mkdir()
+    (criteria_dir / "registry.json").write_text(
+        json.dumps(
+            {
+                "criteria": [
+                    {
+                        "id": "code-simplicity",
+                        "title": "Protect Simplicity and Comprehension",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        """
+        CREATE TABLE success_criteria_evaluations (
+            id TEXT PRIMARY KEY,
+            project_id TEXT,
+            run_id TEXT,
+            session_id TEXT,
+            pass_count INTEGER,
+            warning_count INTEGER,
+            blocker_count INTEGER,
+            summary TEXT,
+            created_at TEXT
+        )
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO success_criteria_evaluations (
+            id, project_id, run_id, session_id, pass_count, warning_count, blocker_count, summary, created_at
+        )
+        VALUES ('eval-1', 'p1', 'run-1', 's1', 3, 1, 0, 'latest criteria summary', '2026-04-23T00:50:00Z')
+        """
+    )
+    conn.commit()
+    conn.close()
 
     metadata_exit = run_cli(
         [
@@ -181,6 +222,8 @@ def test_metadata_and_skills_refresh_flow(tmp_path: Path, capsys) -> None:
     assert metadata_output["ok"] is True
     assert metadata_output["data"]["linked_projects"]["count"] == 1
     assert metadata_output["data"]["instructions"]["summary"]["missing_target"] == 1
+    assert metadata_output["data"]["success_criteria"]["catalog"]["count"] == 1
+    assert metadata_output["data"]["success_criteria"]["latest_evaluation"]["id"] == "eval-1"
 
     dry_run_exit = run_cli(
         [
