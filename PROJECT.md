@@ -234,6 +234,31 @@ Phase 0c success criteria control-plane baseline is now live:
 - phase architecture note:
   - `docs/architecture/2026-04-23-aios-success-criteria-system.md`
 
+Phase 1a prompt library baseline is now implemented:
+
+- prompt template source-of-truth tree:
+  - `prompts/README.md`
+  - `prompts/research.md`
+  - `prompts/summarization.md`
+  - `prompts/coding_debug.md`
+  - `prompts/content_writing.md`
+  - `prompts/reasoning.md`
+  - `prompts/evals/*/cases.md`
+- prompt validation/index generation:
+  - `bin/validate-prompts.py`
+  - generated registry: `prompts/registry.json`
+- vault + DB sync path:
+  - `bin/sync-prompts.py`
+  - updates `prompt_library_links` using body-hash linkage
+- hook integration:
+  - `hook-prompt-submit.py` now resolves best template by classification + tag overlap and injects compact hint context
+- test coverage:
+  - `tests/test_validate_prompts.py`
+  - `tests/test_hook_prompt_submit.py`
+  - fixture set: `tests/fixtures/prompts/*.md`
+- phase architecture note:
+  - `docs/architecture/2026-04-23-aios-prompt-library-phase1.md`
+
 ## Still Missing
 
 - more than one production-grade invocation backend beyond the new managed local runtime

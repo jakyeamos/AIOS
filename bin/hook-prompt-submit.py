@@ -7,6 +7,7 @@ Logs prompt metadata, flags reusable candidates, and retrieves relevant context.
 import hashlib
 import json
 import os
+import re
 import sqlite3
 import subprocess
 import sys
@@ -20,6 +21,10 @@ LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
 VAULT_SEARCH = os.path.expanduser("~/AIOS/bin/vault-search.py")
 POLICY_PATH = os.path.expanduser("~/AIOS/config/retrieval-policy.json")
 MAX_RETRIEVAL_CHARS = 1200  # ~300 tokens
+PROMPTS_ROOT = os.environ.get("AIOS_PROMPTS_ROOT", os.path.expanduser("~/AIOS/prompts"))
+PROMPT_REGISTRY_PATH = os.path.join(PROMPTS_ROOT, "registry.json")
+PROMPT_PURPOSE_MAX_CHARS = 200
+PROMPT_MATCH_MIN_SCORE = 1
 
 REUSABLE_SIGNALS = [
     "how do i", "how to", "explain", "refactor", "review", "write a",
@@ -34,6 +39,85 @@ CLASSIFICATIONS = {
     "review": ["review", "check", "audit", "analyze", "evaluate"],
     "explain": ["explain", "what is", "how does", "what does", "why does"],
 }
+
+
+def _tokenize_text(value: str) -> set[str]:
+    return {token for token in re.findall(r"[a-z0-9_]+", value.lower()) if token}
+
+
+def _input_names(rows: object) -> list[str]:
+    if not isinstance(rows, list):
+        return []
+    names: list[str] = []
+    for row in rows:
+        if isinstance(row, dict):
+            for key in row:
+                names.append(str(key))
+    return names
+
+
+def _load_prompt_registry() -> list[dict]:
+    try:
+        with open(PROMPT_REGISTRY_PATH, encoding="utf-8") as handle:
+            payload = json.load(handle)
+        templates = payload.get("templates", [])
+        if isinstance(templates, list):
+            return [item for item in templates if isinstance(item, dict)]
+    except Exception:
+        return []
+    return []
+
+
+def _render_template_hint(template: dict) -> str:
+    template_id = str(template.get("id", ""))
+    name = str(template.get("name", template_id))
+    version = str(template.get("version", ""))
+    purpose = str(template.get("purpose", "")).strip()
+    purpose = re.sub(r"\s+", " ", purpose)
+    if len(purpose) > PROMPT_PURPOSE_MAX_CHARS:
+        purpose = purpose[:PROMPT_PURPOSE_MAX_CHARS].rstrip() + "..."
+
+    required = ", ".join(_input_names(template.get("required_inputs")))
+    optional_names = _input_names(template.get("optional_inputs"))
+    optional = ", ".join(optional_names) if optional_names else ""
+    full_template_path = os.path.join(PROMPTS_ROOT, f"{template_id}.md")
+
+    required_text = required if required else "(none)"
+    optional_text = f" | Optional: {optional}" if optional else ""
+
+    return (
+        f"**Prompt template match: {name} v{version}**\n"
+        f"Purpose: {purpose}\n"
+        f"Required: {required_text}{optional_text}\n"
+        f"Full template: cat {full_template_path}"
+    )
+
+
+def _best_prompt_template(classification: str, prompt: str) -> dict | None:
+    templates = _load_prompt_registry()
+    if not templates:
+        return None
+
+    prompt_tokens = _tokenize_text(prompt)
+    best_score = -1
+    best_template: dict | None = None
+    for template in templates:
+        score = 0
+        if str(template.get("classification", "")).strip() == classification:
+            score += 1
+
+        tags = template.get("tags", [])
+        tag_tokens: set[str] = set()
+        if isinstance(tags, list):
+            for tag in tags:
+                tag_tokens.update(_tokenize_text(str(tag)))
+        score += len(tag_tokens & prompt_tokens)
+
+        if score > best_score and score >= PROMPT_MATCH_MIN_SCORE:
+            best_score = score
+            best_template = template
+
+    return best_template
 
 
 def log(msg: str) -> None:
@@ -93,11 +177,19 @@ def retrieve_context(classification: str, prompt: str, project_name: str, conn: 
     Returns ("", "") if nothing retrieved.
     """
     retrieval_cfg = policy.get("prompt_retrieval", {})
-    if not retrieval_cfg.get("enabled", True):
-        return "", ""
-
     parts = []
     source = ""
+    matched_template = _best_prompt_template(classification, prompt)
+    if matched_template:
+        parts.append(_render_template_hint(matched_template))
+        source = "prompt_library"
+    if not retrieval_cfg.get("enabled", True):
+        if not parts:
+            return "", ""
+        context_only = "\n\n".join(parts)
+        if len(context_only) > MAX_RETRIEVAL_CHARS:
+            context_only = context_only[:MAX_RETRIEVAL_CHARS] + "\n_(retrieval truncated)_"
+        return context_only, source
 
     # Vault accessibility guard — skip vault-backed retrieval if vault isn't mounted
     vault_root = str(get_vault_root())
@@ -122,7 +214,7 @@ def retrieve_context(classification: str, prompt: str, project_name: str, conn: 
                 bugs = cur.fetchall()
                 if bugs:
                     bug_lines = []
-                    for symptom, root_cause, fix in bugs:
+                    for symptom, root_cause, _fix in bugs:
                         line = f"- {symptom}"
                         if root_cause:
                             line += f" (cause: {root_cause})"
@@ -132,18 +224,16 @@ def retrieve_context(classification: str, prompt: str, project_name: str, conn: 
             except Exception:
                 pass
 
-        if cfg.get("search_archive", True):
+        if cfg.get("search_archive", True) and not parts:
             # Only search archive if no open bugs matched (avoid noise when bugs already surfaced)
-            if not parts:
-                # Extract key terms from prompt (skip stop words, min 4 chars)
-                stop = {"this", "that", "with", "from", "have", "what", "when", "where", "which"}
-                terms = " ".join(w for w in prompt.lower().split() if len(w) >= 4 and w not in stop)[:60]
-                if terms:
-                    archive_result = vault_search(["--grep", terms, "--section", "Key Changes", "--source", "archive"])
-                    if archive_result.get("count", 0) > 0:
-                        titles = [r["title"] for r in archive_result["results"][:2]]
-                        parts.append(f"**Related archive notes:** {', '.join(titles)}")
-                        source = source or "archive"
+            stop = {"this", "that", "with", "from", "have", "what", "when", "where", "which"}
+            terms = " ".join(w for w in prompt.lower().split() if len(w) >= 4 and w not in stop)[:60]
+            if terms:
+                archive_result = vault_search(["--grep", terms, "--section", "Key Changes", "--source", "archive"])
+                if archive_result.get("count", 0) > 0:
+                    titles = [r["title"] for r in archive_result["results"][:2]]
+                    parts.append(f"**Related archive notes:** {', '.join(titles)}")
+                    source = source or "archive"
 
     elif classification in ("plan", "review", "refactor"):
         cfg = retrieval_cfg.get(classification, {})
@@ -155,7 +245,6 @@ def retrieve_context(classification: str, prompt: str, project_name: str, conn: 
                 for r in handoff_result["results"]:
                     excerpt = r.get("excerpt", "")
                     # Extract decisions section
-                    import re
                     m = re.search(r"### Decisions\n(.+?)(?=\n###|\Z)", excerpt, re.DOTALL)
                     if m:
                         dec_text = m.group(1).strip()[:300]
@@ -174,7 +263,6 @@ def retrieve_context(classification: str, prompt: str, project_name: str, conn: 
                 action_parts = []
                 for r in handoff_result["results"]:
                     excerpt = r.get("excerpt", "")
-                    import re
                     m = re.search(r"### Next Actions\n(.+?)(?=\n###|\Z)", excerpt, re.DOTALL)
                     if m:
                         actions_text = m.group(1).strip()[:300]
@@ -233,7 +321,8 @@ def retrieve_context(classification: str, prompt: str, project_name: str, conn: 
                         if any(t in fname_lower for t in terms):
                             fpath = os.path.join(wiki_dir, fname)
                             try:
-                                text = open(fpath, encoding="utf-8", errors="replace").read(max_chars * 2)
+                                with open(fpath, encoding="utf-8", errors="replace") as handle:
+                                    text = handle.read(max_chars * 2)
                                 # Strip frontmatter
                                 if text.startswith("---"):
                                     end = text.find("---", 3)
@@ -265,7 +354,7 @@ def retrieve_context(classification: str, prompt: str, project_name: str, conn: 
             source = source or "gitnexus"
 
     # Reusable prompt hint
-    if policy.get("reusable_prompt_hint", {}).get("enabled", True):
+    if not matched_template and policy.get("reusable_prompt_hint", {}).get("enabled", True):
         prompt_lower = prompt.lower()
         try:
             cur = conn.execute(
@@ -336,11 +425,9 @@ def main() -> None:
 
         project_name = get_project_name(conn, session_id)
 
-        # Retrieve context for relevant classifications
-        if classification in ("debug", "plan", "review", "refactor", "implement"):
-            retrieval_context, retrieval_source = retrieve_context(
-                classification, prompt, project_name, conn, policy
-            )
+        retrieval_context, retrieval_source = retrieve_context(
+            classification, prompt, project_name, conn, policy
+        )
 
         conn.execute(
             """

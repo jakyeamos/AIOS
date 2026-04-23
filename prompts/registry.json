@@ -1,0 +1,159 @@
+{
+  "generated_at": "2026-04-23T18:06:32.849253+00:00",
+  "templates": [
+    {
+      "id": "coding_debug",
+      "name": "Coding Debug",
+      "version": "1.0",
+      "classification": "debug",
+      "tags": [
+        "debug",
+        "bug",
+        "error",
+        "fix",
+        "failing"
+      ],
+      "purpose": "Diagnose a concrete software failure and produce a minimal, evidence-backed fix path.",
+      "required_inputs": [
+        {
+          "symptom": "Exact error or observed failure behavior."
+        },
+        {
+          "context": "Relevant code paths, commands, or logs."
+        }
+      ],
+      "optional_inputs": [
+        {
+          "hypothesis": "Current likely root cause."
+        },
+        {
+          "constraints": "Boundaries such as no new deps or compatibility requirements."
+        }
+      ],
+      "last_updated": "2026-04-23",
+      "file": "prompts/coding_debug.md"
+    },
+    {
+      "id": "content_writing",
+      "name": "Audience-Scoped Content Writing",
+      "version": "1.0",
+      "classification": "other",
+      "tags": [
+        "writing",
+        "draft",
+        "messaging"
+      ],
+      "purpose": "Draft clear, audience-appropriate prose with explicit structure and constraints.",
+      "required_inputs": [
+        {
+          "objective": "What the writing must accomplish."
+        },
+        {
+          "audience": "Who will read it and what they need."
+        }
+      ],
+      "optional_inputs": [
+        {
+          "tone": "Desired tone constraints."
+        },
+        {
+          "must_include": "Required facts, links, or sections."
+        }
+      ],
+      "last_updated": "2026-04-23",
+      "file": "prompts/content_writing.md"
+    },
+    {
+      "id": "reasoning",
+      "name": "Decision Reasoning",
+      "version": "1.0",
+      "classification": "plan",
+      "tags": [
+        "reasoning",
+        "decision",
+        "tradeoff",
+        "strategy"
+      ],
+      "purpose": "Turn ambiguous asks into decision-ready recommendations with explicit assumptions and tradeoffs.",
+      "required_inputs": [
+        {
+          "question": "The decision or problem to resolve."
+        },
+        {
+          "constraints": "Hard boundaries, dependencies, and risk tolerance."
+        }
+      ],
+      "optional_inputs": [
+        {
+          "options": "Candidate approaches already under consideration."
+        },
+        {
+          "decision_deadline": "Time horizon for recommendation."
+        }
+      ],
+      "last_updated": "2026-04-23",
+      "file": "prompts/reasoning.md"
+    },
+    {
+      "id": "research",
+      "name": "Research Synthesis",
+      "version": "1.0",
+      "classification": "plan",
+      "tags": [
+        "research",
+        "analysis",
+        "compare",
+        "synthesize"
+      ],
+      "purpose": "Build a source-grounded synthesis that turns scattered findings into a decision-ready briefing.",
+      "required_inputs": [
+        {
+          "topic": "The research question or decision to answer."
+        },
+        {
+          "sources": "Relevant source material with links or file references."
+        }
+      ],
+      "optional_inputs": [
+        {
+          "constraints": "Time, scope, domain, or policy limits."
+        },
+        {
+          "audience": "Decision-maker profile and expected depth."
+        }
+      ],
+      "last_updated": "2026-04-23",
+      "file": "prompts/research.md"
+    },
+    {
+      "id": "summarization",
+      "name": "Structured Summarization",
+      "version": "1.0",
+      "classification": "explain",
+      "tags": [
+        "summarize",
+        "brief",
+        "digest"
+      ],
+      "purpose": "Convert long or noisy material into a concise, structured summary without losing key meaning.",
+      "required_inputs": [
+        {
+          "source_content": "The content to summarize."
+        },
+        {
+          "focus": "What matters most for the summary audience."
+        }
+      ],
+      "optional_inputs": [
+        {
+          "length_target": "Desired output length."
+        },
+        {
+          "format": "Preferred output shape such as bullets or sections."
+        }
+      ],
+      "last_updated": "2026-04-23",
+      "file": "prompts/summarization.md"
+    }
+  ]
+}

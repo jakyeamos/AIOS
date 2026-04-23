@@ -1,0 +1,96 @@
+from __future__ import annotations
+
+import importlib.util
+import json
+import sqlite3
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _load_hook_module():
+    module_path = ROOT / "bin" / "hook-prompt-submit.py"
+    spec = importlib.util.spec_from_file_location("hook_prompt_submit", module_path)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_best_prompt_template_scores_classification_and_tags(tmp_path: Path) -> None:
+    module = _load_hook_module()
+    registry_path = tmp_path / "registry.json"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "templates": [
+                    {
+                        "id": "coding_debug",
+                        "name": "Coding Debug",
+                        "version": "1.0",
+                        "classification": "debug",
+                        "tags": ["debug", "error", "fix"],
+                        "purpose": "Debug failures",
+                        "required_inputs": [{"symptom": "desc"}, {"context": "desc"}],
+                    },
+                    {
+                        "id": "research",
+                        "name": "Research",
+                        "version": "1.0",
+                        "classification": "plan",
+                        "tags": ["research", "synthesize"],
+                        "purpose": "Research synthesis",
+                        "required_inputs": [{"topic": "desc"}, {"sources": "desc"}],
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    module.PROMPT_REGISTRY_PATH = str(registry_path)
+    module.PROMPTS_ROOT = str(tmp_path)
+
+    match = module._best_prompt_template("debug", "please debug this error and propose fix")
+    assert match is not None
+    assert match["id"] == "coding_debug"
+
+
+def test_retrieve_context_includes_template_hint_when_retrieval_disabled(tmp_path: Path) -> None:
+    module = _load_hook_module()
+    registry_path = tmp_path / "registry.json"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "templates": [
+                    {
+                        "id": "reasoning",
+                        "name": "Decision Reasoning",
+                        "version": "1.0",
+                        "classification": "plan",
+                        "tags": ["reasoning", "decision"],
+                        "purpose": "Turn ambiguity into recommendation.",
+                        "required_inputs": [{"question": "desc"}, {"constraints": "desc"}],
+                        "optional_inputs": [{"options": "desc"}],
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    module.PROMPT_REGISTRY_PATH = str(registry_path)
+    module.PROMPTS_ROOT = str(tmp_path)
+
+    conn = sqlite3.connect(":memory:")
+    context, source = module.retrieve_context(
+        "plan",
+        "Need reasoning for a decision under constraints",
+        "AIOS",
+        conn,
+        {"prompt_retrieval": {"enabled": False}, "reusable_prompt_hint": {"enabled": False}},
+    )
+    conn.close()
+
+    assert source == "prompt_library"
+    assert "Prompt template match: Decision Reasoning v1.0" in context
+    assert "Required: question, constraints" in context
