@@ -182,6 +182,17 @@ Phase 0a architecture enforcement baseline is now live as an AIOS-managed profil
 - architecture audit + rollout doc:
   - `docs/architecture/2026-04-23-aios-architecture-enforcement.md`
 
+Phase 0b agent workflow audit checkpoint is complete (audit-only, implementation paused by gate):
+
+- audit package delivered:
+  - `docs/architecture/2026-04-23-aios-agent-workflow-audit.md`
+- key gaps confirmed before implementation:
+  - no unified `aios <status|metadata|health|logs|recent-failures>` command family
+  - no single-shot `metadata --json` snapshot for agent preflight
+  - inconsistent semantic exit-code behavior across scripts/hooks
+  - skill/instruction refresh remains manual and stale-prone
+- hard checkpoint was honored: no Phase 0b implementation changes were made yet beyond the audit package and project-truth update
+
 ## Still Missing
 
 - more than one production-grade invocation backend beyond the new managed local runtime
