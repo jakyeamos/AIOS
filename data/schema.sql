@@ -165,6 +165,18 @@ CREATE TABLE IF NOT EXISTS orchestration_run_events (
 );
 CREATE INDEX IF NOT EXISTS idx_orchestration_run_events_run
   ON orchestration_run_events(run_id, created_at DESC);
+CREATE TABLE IF NOT EXISTS workflow_execution_reports (
+  id TEXT PRIMARY KEY,
+  run_id TEXT REFERENCES orchestration_runs(id),
+  invocation_id TEXT REFERENCES orchestration_invocations(id),
+  workflow_key TEXT NOT NULL,
+  status TEXT NOT NULL,
+  report_json TEXT NOT NULL DEFAULT '{}',
+  artifact_path TEXT,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX IF NOT EXISTS idx_workflow_execution_reports_run
+  ON workflow_execution_reports(run_id, created_at DESC);
 CREATE TABLE IF NOT EXISTS briefing_packets (
   id TEXT PRIMARY KEY,
   run_id TEXT NOT NULL REFERENCES orchestration_runs(id),

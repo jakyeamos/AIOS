@@ -1,0 +1,190 @@
+{
+  "version": "2026-04-23",
+  "skills": [
+    {
+      "key": "prompt_library_normalizer",
+      "purpose": "Map loose request wording to a validated prompt template and normalized intent contract.",
+      "allowed_stages": [
+        "normalize_prompt"
+      ],
+      "input_schema": {
+        "objective": "string",
+        "workflow_key": "string"
+      },
+      "output_schema": {
+        "template_id": "string|null",
+        "normalized_prompt": "string"
+      },
+      "invariants": [
+        "Preserve user intent.",
+        "Do not introduce new task objectives."
+      ],
+      "failure_conditions": [
+        "No template match and no fallback prompt."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic"
+    },
+    {
+      "key": "obsidian_corpus_retriever",
+      "purpose": "Retrieve bounded style profile context from the personal corpus for writing tasks.",
+      "allowed_stages": [
+        "enrich_context"
+      ],
+      "input_schema": {
+        "objective": "string",
+        "vault_root": "string"
+      },
+      "output_schema": {
+        "style_profile": "object",
+        "evidence_notes": "string[]"
+      },
+      "invariants": [
+        "Retrieve bounded excerpts only.",
+        "Do not dump full notes into prompts."
+      ],
+      "failure_conditions": [
+        "Vault unavailable and no fallback style profile."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic"
+    },
+    {
+      "key": "academic_draft_generator",
+      "purpose": "Generate structured draft sections from normalized objective and context profile.",
+      "allowed_stages": [
+        "generate"
+      ],
+      "input_schema": {
+        "normalized_prompt": "string",
+        "style_profile": "object"
+      },
+      "output_schema": {
+        "draft_text": "string"
+      },
+      "invariants": [
+        "Preserve argument intent and section structure."
+      ],
+      "failure_conditions": [
+        "Missing sectioned draft output."
+      ],
+      "side_effects": [],
+      "execution_mode": "heuristic"
+    },
+    {
+      "key": "personal_corpus_humanizer",
+      "purpose": "Improve prose rhythm/readability while preserving factual meaning, citations, and specificity.",
+      "allowed_stages": [
+        "transform"
+      ],
+      "input_schema": {
+        "draft_text": "string",
+        "style_profile": "object"
+      },
+      "output_schema": {
+        "humanized_text": "string"
+      },
+      "invariants": [
+        "Must preserve factual meaning.",
+        "Must preserve argument structure.",
+        "Must preserve citation references."
+      ],
+      "failure_conditions": [
+        "Meaning drift beyond configured threshold."
+      ],
+      "side_effects": [],
+      "execution_mode": "heuristic"
+    },
+    {
+      "key": "structure_checker",
+      "purpose": "Verify required paper structure is present.",
+      "allowed_stages": [
+        "validate"
+      ],
+      "input_schema": {
+        "humanized_text": "string"
+      },
+      "output_schema": {
+        "passed": "boolean",
+        "issues": "string[]"
+      },
+      "invariants": [
+        "Validation output must be explicit pass/fail."
+      ],
+      "failure_conditions": [
+        "Missing required section headings."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic"
+    },
+    {
+      "key": "citation_checker",
+      "purpose": "Verify citation coverage is present and non-empty.",
+      "allowed_stages": [
+        "validate"
+      ],
+      "input_schema": {
+        "humanized_text": "string"
+      },
+      "output_schema": {
+        "passed": "boolean",
+        "issues": "string[]"
+      },
+      "invariants": [
+        "No fake citation claims when no citation marker exists."
+      ],
+      "failure_conditions": [
+        "No citation markers in output."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic"
+    },
+    {
+      "key": "meaning_preservation_checker",
+      "purpose": "Check transformed prose for major keyword/intent drift from draft.",
+      "allowed_stages": [
+        "validate"
+      ],
+      "input_schema": {
+        "draft_text": "string",
+        "humanized_text": "string"
+      },
+      "output_schema": {
+        "passed": "boolean",
+        "issues": "string[]",
+        "overlap_ratio": "number"
+      },
+      "invariants": [
+        "Meaning-preservation evaluation must be reproducible."
+      ],
+      "failure_conditions": [
+        "Keyword overlap below threshold."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic"
+    },
+    {
+      "key": "scope_check",
+      "purpose": "Ensure output remains scoped to objective and contract.",
+      "allowed_stages": [
+        "validate"
+      ],
+      "input_schema": {
+        "objective": "string",
+        "output_text": "string"
+      },
+      "output_schema": {
+        "passed": "boolean",
+        "issues": "string[]"
+      },
+      "invariants": [
+        "Detect obvious out-of-scope expansion."
+      ],
+      "failure_conditions": [
+        "Output does not reference objective terms."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic"
+    }
+  ]
+}

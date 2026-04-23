@@ -1,0 +1,175 @@
+{
+  "version": "2026-04-23",
+  "stage_kinds": [
+    "parse_request",
+    "normalize_prompt",
+    "enrich_context",
+    "generate",
+    "transform",
+    "validate",
+    "finalize"
+  ],
+  "workflows": [
+    {
+      "key": "academic_paper_v1",
+      "name": "Academic Paper v1",
+      "purpose": "Route paper-writing requests through deterministic staged execution with explicit validation.",
+      "trigger_hints": [
+        "write a paper",
+        "academic paper",
+        "research paper",
+        "essay with citations"
+      ],
+      "output_contract": [
+        "structured sections",
+        "citation placeholders or links",
+        "meaning-preserving humanized prose",
+        "validation summary"
+      ],
+      "required_validations": [
+        "structure_checker",
+        "citation_checker",
+        "meaning_preservation_checker"
+      ],
+      "stages": [
+        {
+          "key": "parse_request",
+          "kind": "parse_request",
+          "required_skills": []
+        },
+        {
+          "key": "normalize_prompt",
+          "kind": "normalize_prompt",
+          "required_skills": [
+            "prompt_library_normalizer"
+          ]
+        },
+        {
+          "key": "enrich_context",
+          "kind": "enrich_context",
+          "required_skills": [
+            "obsidian_corpus_retriever"
+          ]
+        },
+        {
+          "key": "draft_sections",
+          "kind": "generate",
+          "required_skills": [
+            "academic_draft_generator"
+          ]
+        },
+        {
+          "key": "transform_prose",
+          "kind": "transform",
+          "required_skills": [
+            "personal_corpus_humanizer"
+          ]
+        },
+        {
+          "key": "validate",
+          "kind": "validate",
+          "required_skills": [
+            "structure_checker",
+            "citation_checker",
+            "meaning_preservation_checker"
+          ]
+        },
+        {
+          "key": "finalize",
+          "kind": "finalize",
+          "required_skills": []
+        }
+      ]
+    },
+    {
+      "key": "implementation-delivery",
+      "name": "Implementation Delivery",
+      "purpose": "Default implementation workflow for scoped code changes.",
+      "trigger_hints": [
+        "implement",
+        "build",
+        "feature",
+        "refactor"
+      ],
+      "output_contract": [
+        "scoped plan",
+        "changed files",
+        "validation checklist"
+      ],
+      "required_validations": [
+        "scope_check"
+      ],
+      "stages": [
+        {
+          "key": "parse_request",
+          "kind": "parse_request",
+          "required_skills": []
+        },
+        {
+          "key": "normalize_prompt",
+          "kind": "normalize_prompt",
+          "required_skills": [
+            "prompt_library_normalizer"
+          ]
+        },
+        {
+          "key": "validate",
+          "kind": "validate",
+          "required_skills": [
+            "scope_check"
+          ]
+        },
+        {
+          "key": "finalize",
+          "kind": "finalize",
+          "required_skills": []
+        }
+      ]
+    },
+    {
+      "key": "failure-recovery",
+      "name": "Failure Recovery",
+      "purpose": "Debug-focused workflow for recovering broken runs or regressions.",
+      "trigger_hints": [
+        "debug",
+        "failure",
+        "broken",
+        "fix regression"
+      ],
+      "output_contract": [
+        "failure brief",
+        "root-cause hypothesis",
+        "retest steps"
+      ],
+      "required_validations": [
+        "scope_check"
+      ],
+      "stages": [
+        {
+          "key": "parse_request",
+          "kind": "parse_request",
+          "required_skills": []
+        },
+        {
+          "key": "normalize_prompt",
+          "kind": "normalize_prompt",
+          "required_skills": [
+            "prompt_library_normalizer"
+          ]
+        },
+        {
+          "key": "validate",
+          "kind": "validate",
+          "required_skills": [
+            "scope_check"
+          ]
+        },
+        {
+          "key": "finalize",
+          "kind": "finalize",
+          "required_skills": []
+        }
+      ]
+    }
+  ]
+}

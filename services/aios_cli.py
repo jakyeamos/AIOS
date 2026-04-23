@@ -210,6 +210,27 @@ def _criteria_catalog_summary(config_root: Path) -> dict[str, Any]:
     }
 
 
+def _workflow_registry_summary(config_root: Path) -> dict[str, Any]:
+    registry_path = config_root / "workflows" / "registry.json"
+    if not registry_path.exists():
+        return {"count": 0, "registry_path": str(registry_path), "workflow_keys": []}
+
+    loaded = _load_json(registry_path)
+    workflows = loaded.get("workflows", [])
+    if not isinstance(workflows, list):
+        workflows = []
+    workflow_keys = [
+        str(item.get("key", ""))
+        for item in workflows
+        if isinstance(item, dict) and item.get("key")
+    ]
+    return {
+        "count": len(workflow_keys),
+        "registry_path": str(registry_path),
+        "workflow_keys": workflow_keys,
+    }
+
+
 def _latest_success_criteria_evaluation(conn: sqlite3.Connection) -> dict[str, Any] | None:
     if not _table_exists(conn, "success_criteria_evaluations"):
         return None
@@ -232,6 +253,30 @@ def _latest_success_criteria_evaluation(conn: sqlite3.Connection) -> dict[str, A
         "warning_count": row["warning_count"],
         "blocker_count": row["blocker_count"],
         "summary": row["summary"],
+        "created_at": row["created_at"],
+    }
+
+
+def _latest_workflow_execution_report(conn: sqlite3.Connection) -> dict[str, Any] | None:
+    if not _table_exists(conn, "workflow_execution_reports"):
+        return None
+    row = conn.execute(
+        """
+        SELECT id, run_id, invocation_id, workflow_key, status, artifact_path, created_at
+        FROM workflow_execution_reports
+        ORDER BY created_at DESC
+        LIMIT 1
+        """
+    ).fetchone()
+    if row is None:
+        return None
+    return {
+        "id": row["id"],
+        "run_id": row["run_id"],
+        "invocation_id": row["invocation_id"],
+        "workflow_key": row["workflow_key"],
+        "status": row["status"],
+        "artifact_path": row["artifact_path"],
         "created_at": row["created_at"],
     }
 
@@ -516,6 +561,7 @@ def _metadata_payload(
     current_session = current_session_path.read_text(encoding="utf-8").strip() if current_session_path.exists() else None
     run_counts = _run_status_counts(conn)
     latest_criteria_eval = _latest_success_criteria_evaluation(conn)
+    latest_workflow_report = _latest_workflow_execution_report(conn)
 
     return {
         "system": {
@@ -538,6 +584,10 @@ def _metadata_payload(
         "success_criteria": {
             "catalog": _criteria_catalog_summary(config_root),
             "latest_evaluation": latest_criteria_eval,
+        },
+        "workflow_orchestration": {
+            "registry": _workflow_registry_summary(config_root),
+            "latest_execution_report": latest_workflow_report,
         },
         "health": _health_payload(conn, logs_dir),
         "recent_failures_preview": _recent_failures_payload(conn, logs_dir, last=5),

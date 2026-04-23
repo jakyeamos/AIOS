@@ -43,6 +43,15 @@ def _seed_db(path: Path) -> None:
             reason_json TEXT,
             created_at TEXT
         );
+        CREATE TABLE workflow_execution_reports (
+            id TEXT PRIMARY KEY,
+            run_id TEXT,
+            invocation_id TEXT,
+            workflow_key TEXT,
+            status TEXT,
+            artifact_path TEXT,
+            created_at TEXT
+        );
         """
     )
     conn.execute("INSERT INTO projects (id, name, status) VALUES ('p1', 'AIOS', 'active')")
@@ -63,6 +72,17 @@ def _seed_db(path: Path) -> None:
         """
         INSERT INTO orchestration_run_events (id, run_id, to_status, summary, reason_json, created_at)
         VALUES ('e1', 'run-1', 'failed', 'Run failed', '{}', '2026-04-23T00:30:00Z')
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO workflow_execution_reports (
+            id, run_id, invocation_id, workflow_key, status, artifact_path, created_at
+        )
+        VALUES (
+            'wr-1', 'run-1', 'inv-1', 'academic_paper_v1', 'completed',
+            '/tmp/workflow-report.json', '2026-04-23T00:35:00Z'
+        )
         """
     )
     conn.commit()
@@ -176,6 +196,21 @@ def test_metadata_and_skills_refresh_flow(tmp_path: Path, capsys) -> None:
         ),
         encoding="utf-8",
     )
+    workflows_dir = config_root / "workflows"
+    workflows_dir.mkdir()
+    (workflows_dir / "registry.json").write_text(
+        json.dumps(
+            {
+                "workflows": [
+                    {
+                        "key": "academic_paper_v1",
+                        "name": "Academic Paper v1",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
     conn = sqlite3.connect(db_path)
     conn.execute(
         """
@@ -224,6 +259,8 @@ def test_metadata_and_skills_refresh_flow(tmp_path: Path, capsys) -> None:
     assert metadata_output["data"]["instructions"]["summary"]["missing_target"] == 1
     assert metadata_output["data"]["success_criteria"]["catalog"]["count"] == 1
     assert metadata_output["data"]["success_criteria"]["latest_evaluation"]["id"] == "eval-1"
+    assert metadata_output["data"]["workflow_orchestration"]["registry"]["count"] == 1
+    assert metadata_output["data"]["workflow_orchestration"]["latest_execution_report"]["id"] == "wr-1"
 
     dry_run_exit = run_cli(
         [

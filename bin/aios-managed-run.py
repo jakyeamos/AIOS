@@ -19,12 +19,27 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
-from aios_orchestration_runtime import default_db_path, ensure_runtime_schema, update_invocation
+from aios_orchestration_runtime import (
+    default_db_path,
+    ensure_runtime_schema,
+    insert_workflow_execution_report,
+    update_invocation,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from services.workflow_orchestration import (  # noqa: E402
+    WorkflowExecutionContext,
+    execute_workflow,
+    summarize_execution_report,
+)
+
 HOOK_SESSION_START = ROOT / "bin" / "hook-session-start.py"
 HOOK_STOP = ROOT / "bin" / "hook-stop.py"
 REPORT_DIR = ROOT / "logs" / "control-plane" / "invocations"
+WORKFLOW_REPORT_DIR = ROOT / "logs" / "control-plane" / "workflow-reports"
 
 
 class RunCanceled(Exception):
@@ -45,6 +60,7 @@ def load_run_context(db_path: str, run_id: str) -> dict[str, str | None]:
             r.workflow_key,
             r.agent_key,
             COALESCE(p.repo_path, ?) AS repo_path,
+            p.obsidian_path,
             r.packet_id
         FROM orchestration_runs r
         LEFT JOIN projects p ON p.id = r.project_id
@@ -61,7 +77,8 @@ def load_run_context(db_path: str, run_id: str) -> dict[str, str | None]:
         "workflow_key": row[1],
         "agent_key": row[2],
         "repo_path": row[3],
-        "packet_id": row[4],
+        "obsidian_path": row[4],
+        "packet_id": row[5],
     }
 
 
@@ -85,6 +102,9 @@ def write_invocation_report(
     session_id: str,
     backend_key: str,
     context: dict[str, str | None],
+    workflow_report_path: str | None = None,
+    workflow_report_id: str | None = None,
+    workflow_summary: str | None = None,
 ) -> str:
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     report_path = REPORT_DIR / f"{invocation_id}.json"
@@ -97,6 +117,9 @@ def write_invocation_report(
         "workflow_key": context["workflow_key"],
         "agent_key": context["agent_key"],
         "packet_id": context["packet_id"],
+        "workflow_report_id": workflow_report_id,
+        "workflow_report_path": workflow_report_path,
+        "workflow_summary": workflow_summary,
         "recorded_at": now_iso(),
     }
     report_path.write_text(json.dumps(report, indent=2))
@@ -192,8 +215,66 @@ def main() -> int:
     outcome = "completed"
     result_summary = "Managed runtime captured invocation metadata and completed normally."
     reason_json: dict[str, object] = {"kind": "normal_exit", "backend_key": backend_key}
+    workflow_report_id: str | None = None
+    workflow_report_path: str | None = None
+    workflow_summary: str | None = None
 
     try:
+        workflow_context = WorkflowExecutionContext(
+            objective=context["objective"] or "",
+            workflow_key=context["workflow_key"] or "implementation-delivery",
+            repo_path=context["repo_path"],
+            vault_root=context["obsidian_path"],
+            run_id=run_id,
+            invocation_id=invocation_id,
+        )
+        workflow_report = execute_workflow(workflow_context)
+        workflow_summary = summarize_execution_report(workflow_report)
+        if workflow_report.get("status") != "completed":
+            raise RuntimeError(
+                f"Workflow execution failed for {workflow_context.workflow_key}: "
+                + "; ".join(workflow_report.get("unresolved_issues", []))
+            )
+
+        WORKFLOW_REPORT_DIR.mkdir(parents=True, exist_ok=True)
+        workflow_path = WORKFLOW_REPORT_DIR / f"{invocation_id}.json"
+        workflow_path.write_text(json.dumps(workflow_report, indent=2), encoding="utf-8")
+        workflow_report_path = str(workflow_path)
+
+        conn = sqlite3.connect(db_path)
+        ensure_runtime_schema(conn)
+        workflow_report_id = insert_workflow_execution_report(
+            conn,
+            run_id=run_id,
+            invocation_id=invocation_id,
+            workflow_key=workflow_context.workflow_key,
+            status=str(workflow_report.get("status", "completed")),
+            report=workflow_report,
+            artifact_path=workflow_report_path,
+        )
+        conn.execute(
+            """
+            INSERT INTO artifacts (id, session_id, artifact_type, path, metadata_json, created_at)
+            VALUES (?, ?, 'workflow-execution-report', ?, ?, ?)
+            """,
+            (
+                f"artifact-{uuid.uuid4()}",
+                session_id,
+                workflow_report_path,
+                json.dumps(
+                    {
+                        "run_id": run_id,
+                        "invocation_id": invocation_id,
+                        "workflow_key": workflow_context.workflow_key,
+                        "workflow_report_id": workflow_report_id,
+                    }
+                ),
+                now_iso(),
+            ),
+        )
+        conn.commit()
+        conn.close()
+
         report_path = write_invocation_report(
             db_path,
             run_id=run_id,
@@ -201,8 +282,14 @@ def main() -> int:
             session_id=session_id,
             backend_key=backend_key,
             context=context,
+            workflow_report_path=workflow_report_path,
+            workflow_report_id=workflow_report_id,
+            workflow_summary=workflow_summary,
         )
-        result_summary = f"Managed runtime completed and wrote invocation report {report_path}."
+        result_summary = (
+            f"Managed runtime completed and wrote invocation report {report_path}. "
+            f"{workflow_summary}"
+        )
     except RunCanceled as exc:
         outcome = "canceled"
         result_summary = "Managed runtime canceled before completion."
@@ -215,6 +302,8 @@ def main() -> int:
             "error": exc.__class__.__name__,
             "message": str(exc),
             "backend_key": backend_key,
+            "workflow_report_id": workflow_report_id,
+            "workflow_report_path": workflow_report_path,
         }
 
     if canceled["flag"] and outcome == "completed":

@@ -9,7 +9,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-
 RUN_STATUSES = {
     "planned",
     "ready",
@@ -161,6 +160,26 @@ def ensure_runtime_schema(conn: sqlite3.Connection) -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_improvement_writeback_events_writeback
           ON improvement_writeback_events(writeback_id, created_at DESC)
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS workflow_execution_reports (
+            id TEXT PRIMARY KEY,
+            run_id TEXT REFERENCES orchestration_runs(id),
+            invocation_id TEXT REFERENCES orchestration_invocations(id),
+            workflow_key TEXT NOT NULL,
+            status TEXT NOT NULL,
+            report_json TEXT NOT NULL DEFAULT '{}',
+            artifact_path TEXT,
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_workflow_execution_reports_run
+          ON workflow_execution_reports(run_id, created_at DESC)
         """
     )
     conn.execute(
@@ -532,6 +551,46 @@ def link_session_runtime(
         """,
         (run_id, invocation_id, objective, _json(payload), session_id),
     )
+
+
+def insert_workflow_execution_report(
+    conn: sqlite3.Connection,
+    *,
+    run_id: str,
+    invocation_id: str,
+    workflow_key: str,
+    status: str,
+    report: dict[str, Any],
+    artifact_path: str | None = None,
+) -> str:
+    ensure_runtime_schema(conn)
+    report_id = f"workflow-report-{uuid.uuid4()}"
+    conn.execute(
+        """
+        INSERT INTO workflow_execution_reports (
+            id,
+            run_id,
+            invocation_id,
+            workflow_key,
+            status,
+            report_json,
+            artifact_path,
+            created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            report_id,
+            run_id,
+            invocation_id,
+            workflow_key,
+            status,
+            _json(report),
+            artifact_path,
+            now_iso(),
+        ),
+    )
+    return report_id
 
 
 def resolve_run_linkage(

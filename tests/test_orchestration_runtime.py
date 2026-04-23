@@ -511,6 +511,32 @@ def test_managed_runtime_completes_via_explicit_handshake(runtime_db: Path, tmp_
     assert invocation[2] is not None
     assert invocation[3] is not None
 
+    workflow_report = conn.execute(
+        """
+        SELECT workflow_key, status, artifact_path
+        FROM workflow_execution_reports
+        WHERE run_id = ?
+        LIMIT 1
+        """,
+        (run_id,),
+    ).fetchone()
+    assert workflow_report is not None
+    assert workflow_report[0] == "implementation-delivery"
+    assert workflow_report[1] == "completed"
+    assert workflow_report[2] is not None
+
+    workflow_artifact = conn.execute(
+        """
+        SELECT artifact_type, path
+        FROM artifacts
+        WHERE session_id = ? AND artifact_type = 'workflow-execution-report'
+        LIMIT 1
+        """,
+        (run[1],),
+    ).fetchone()
+    assert workflow_artifact is not None
+    assert workflow_artifact[1] == workflow_report[2]
+
     event_types = {
         row[0]
         for row in conn.execute(

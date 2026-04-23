@@ -289,6 +289,29 @@ Phase 1c improvement engine audit (audit-only) is complete:
   - hybrid path (deterministic cron gates + selective qualitative judgment)
 - explicit "Brutal Truth" section delivered per spec requirements.
 
+Phase 2a workflow orchestration baseline is now implemented:
+
+- typed workflow + skill registry is now first-class:
+  - `config/workflows/registry.json`
+  - `config/workflows/skills.json`
+- deterministic workflow execution engine:
+  - `services/workflow_orchestration.py`
+  - explicit stage model execution with contract validation
+- reference workflow vertical slice delivered:
+  - `academic_paper_v1`
+  - stages: parse -> normalize -> enrich -> generate -> transform -> validate -> finalize
+  - explicit humanizer contract enforcement via meaning-preservation validation gate
+- workflow execution reporting is now durable:
+  - `workflow_execution_reports` table (runtime + canonical schema files)
+  - report artifacts: `logs/control-plane/workflow-reports/<invocation-id>.json`
+  - managed runtime writes `workflow-execution-report` artifacts and links them to run/invocation state
+- managed runtime integration:
+  - `bin/aios-managed-run.py` now executes workflow pipelines, records execution reports, and includes workflow summary linkage in invocation report metadata
+- metadata observability:
+  - `aios metadata --json` now includes workflow registry summary and latest execution report pointer
+- phase architecture note:
+  - `docs/architecture/2026-04-23-aios-workflow-orchestration-phase2a.md`
+
 ## Still Missing
 
 - more than one production-grade invocation backend beyond the new managed local runtime
