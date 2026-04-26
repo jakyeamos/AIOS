@@ -37,6 +37,78 @@ def _base_conn() -> sqlite3.Connection:
     return conn
 
 
+def test_unconfigured_taski_project_infers_pipeline_from_repo_scripts(tmp_path: Path) -> None:
+    repo = tmp_path / "tm"
+    repo.mkdir()
+    (repo / ".git").mkdir()
+    (repo / "package.json").write_text(
+        json.dumps(
+            {
+                "scripts": {
+                    "lint": "eslint .",
+                    "typecheck": "tsc --noEmit",
+                    "test": "vitest",
+                    "build": "vite build",
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    config_path = tmp_path / "quality-pipeline.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "standard": {
+                    "version": "2026-04-26",
+                    "gates": [
+                        {"key": "install", "label": "Install", "tier": "tier_1_core", "required": True, "applicability": ["all"]},
+                        {"key": "lint", "label": "Lint", "tier": "tier_1_core", "required": True, "applicability": ["all"]},
+                        {"key": "typecheck", "label": "Typecheck", "tier": "tier_1_core", "required": True, "applicability": ["typescript_app"]},
+                        {"key": "test", "label": "Test", "tier": "tier_1_core", "required": True, "applicability": ["all"]},
+                        {"key": "build", "label": "Build", "tier": "tier_1_core", "required": True, "applicability": ["typescript_app"]},
+                        {"key": "architecture", "label": "Architecture", "tier": "tier_1_core", "required": True, "applicability": ["all"]},
+                        {"key": "ci", "label": "CI", "tier": "tier_1_core", "required": True, "applicability": ["all"]},
+                    ],
+                },
+                "projects": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    conn = sqlite3.connect(":memory:")
+    conn.execute(
+        """
+        CREATE TABLE projects (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          repo_path TEXT NOT NULL,
+          obsidian_path TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'active'
+        )
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO projects (id, name, repo_path, obsidian_path, status)
+        VALUES ('tm-id', 'tm', ?, '.', 'active')
+        """,
+        (str(repo),),
+    )
+    ensure_quality_pipeline_schema(conn)
+
+    summary = get_project_quality_pipeline(conn, "tm-id", config_path=config_path)
+
+    assert summary["full_pipeline"] is False
+    assert summary["coverage"]["configured_required"] == 5
+    assert summary["coverage"]["required"] == 7
+    commands = {gate["key"]: gate["command"] for gate in summary["gates"]}
+    assert commands["install"] == "npm ci"
+    assert commands["lint"] == "npm run lint"
+    assert commands["typecheck"] == "npm run typecheck"
+    assert commands["test"] == "npm test"
+    assert commands["build"] == "npm run build"
+
+
 def test_soundscape_standard_pipeline_uses_latest_gate_results(tmp_path: Path) -> None:
     config_path = tmp_path / "quality-pipeline.json"
     config_path.write_text(

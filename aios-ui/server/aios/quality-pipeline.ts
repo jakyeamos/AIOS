@@ -83,6 +83,20 @@ const loadConfig = (): QualityPipelineConfig => {
   }
 };
 
+const loadProjectRow = (db: Database.Database, projectId: string): ProjectMatchRow | null => {
+  const row = db
+    .prepare(
+      `
+      SELECT name, repo_path AS repoPath
+      FROM projects
+      WHERE id = ?
+      LIMIT 1
+    `,
+    )
+    .get(projectId) as ProjectMatchRow | undefined;
+  return row ?? null;
+};
+
 const normalizeGateStatus = (status: string): QualityPipelineGateStatus => {
   if (
     status === "pass" ||
@@ -149,16 +163,7 @@ const latestRunsByGate = (db: Database.Database, projectId: string): Map<string,
 
 const projectMatchKeys = (db: Database.Database, projectId: string): Set<string> => {
   const keys = new Set<string>([projectId, projectId.toLowerCase()]);
-  const row = db
-    .prepare(
-      `
-      SELECT name, repo_path AS repoPath
-      FROM projects
-      WHERE id = ?
-      LIMIT 1
-    `,
-    )
-    .get(projectId) as ProjectMatchRow | undefined;
+  const row = loadProjectRow(db, projectId);
   if (!row) {
     return keys;
   }
@@ -173,6 +178,100 @@ const projectMatchKeys = (db: Database.Database, projectId: string): Set<string>
     keys.add(basename.toLowerCase());
   }
   return keys;
+};
+
+const readPackageScripts = (repoPath: string): Record<string, string> => {
+  const packagePath = path.join(repoPath, "package.json");
+  try {
+    const parsed = JSON.parse(fs.readFileSync(packagePath, "utf8")) as unknown;
+    if (!parsed || typeof parsed !== "object") {
+      return {};
+    }
+    const scripts = (parsed as { scripts?: unknown }).scripts;
+    if (!scripts || typeof scripts !== "object") {
+      return {};
+    }
+    return Object.fromEntries(Object.entries(scripts).filter((entry): entry is [string, string] => typeof entry[1] === "string"));
+  } catch {
+    return {};
+  }
+};
+
+const exists = (targetPath: string): boolean => {
+  try {
+    return fs.existsSync(targetPath);
+  } catch {
+    return false;
+  }
+};
+
+const inferInstallCommand = (repoPath: string): string | null => {
+  if (exists(path.join(repoPath, "pnpm-lock.yaml"))) {
+    return "pnpm install --frozen-lockfile";
+  }
+  if (exists(path.join(repoPath, "package-lock.json")) || exists(path.join(repoPath, "package.json"))) {
+    return "npm ci";
+  }
+  if (exists(path.join(repoPath, "uv.lock")) || exists(path.join(repoPath, "pyproject.toml"))) {
+    return "uv sync";
+  }
+  if (exists(path.join(repoPath, "requirements.txt"))) {
+    return "python -m pip install -r requirements.txt";
+  }
+  return null;
+};
+
+const scriptCommand = (scripts: Record<string, string>, key: string): string | null => {
+  if (!scripts[key]) {
+    return null;
+  }
+  return key === "test" ? "npm test" : `npm run ${key}`;
+};
+
+const inferProjectConfig = (db: Database.Database, projectId: string): ProjectPipelineConfig => {
+  const row = loadProjectRow(db, projectId);
+  if (!row) {
+    return { project_id: projectId, applies_to: ["all"], full_pipeline: false, gates: {} };
+  }
+  const repoPath = row.repoPath.trim();
+  const scripts = readPackageScripts(repoPath);
+  const appliesTo: string[] = [];
+  if (exists(path.join(repoPath, "package.json"))) {
+    appliesTo.push("typescript_app");
+  }
+  if (exists(path.join(repoPath, "pyproject.toml")) || exists(path.join(repoPath, "requirements.txt"))) {
+    appliesTo.push("python_service");
+  }
+  const gates: Record<string, GateConfig> = {};
+  const install = inferInstallCommand(repoPath);
+  if (install) {
+    gates.install = { command: install, working_directory: "." };
+  }
+  for (const key of ["lint", "typecheck", "test", "build"]) {
+    const command = scriptCommand(scripts, key);
+    if (command) {
+      gates[key] = { command, working_directory: "." };
+    }
+  }
+  if (exists(path.join(repoPath, "scripts", "aios-architecture-check.mjs"))) {
+    gates.architecture = { command: "node scripts/aios-architecture-check.mjs", working_directory: "." };
+  }
+  const workflowDir = path.join(repoPath, ".github", "workflows");
+  if (exists(workflowDir)) {
+    try {
+      if (fs.readdirSync(workflowDir).some((file) => file.endsWith(".yml") || file.endsWith(".yaml"))) {
+        gates.ci = { command: ".github/workflows", working_directory: "." };
+      }
+    } catch {
+      // Ignore unreadable workflow directories; the gate remains missing.
+    }
+  }
+  return {
+    project_id: row.name.trim() || projectId,
+    applies_to: appliesTo.length > 0 ? appliesTo : ["all"],
+    full_pipeline: false,
+    gates,
+  };
 };
 
 const overallStatus = (gates: QualityPipelineGate[], blockedReason: string | null): QualityPipelineOverallStatus => {
@@ -196,10 +295,11 @@ export const getProjectQualityPipeline = (db: Database.Database, projectId: stri
   const config = loadConfig();
   const standard = config.standard ?? {};
   const matchKeys = projectMatchKeys(db, projectId);
-  const projectConfig = (config.projects ?? []).find((project) => {
+  const projectConfig =
+    (config.projects ?? []).find((project) => {
     const key = project.project_id?.trim();
     return key ? matchKeys.has(key) || matchKeys.has(key.toLowerCase()) : false;
-  });
+    }) ?? inferProjectConfig(db, projectId);
   const projectGates = projectConfig?.gates ?? {};
   const projectApplicability = stringList(projectConfig?.applies_to, ["all"]);
   const latest = latestRunsByGate(db, projectId);

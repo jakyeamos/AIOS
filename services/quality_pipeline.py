@@ -55,6 +55,16 @@ def _load_config(path: Path) -> dict[str, Any]:
     return payload
 
 
+def _load_project_row(conn: sqlite3.Connection, project_id: str) -> tuple[str, str] | None:
+    row = conn.execute(
+        "SELECT name, repo_path FROM projects WHERE id = ? LIMIT 1",
+        (project_id,),
+    ).fetchone()
+    if row is None:
+        return None
+    return str(row[0]).strip(), str(row[1]).strip()
+
+
 def _json_list(raw: str | None) -> list[str]:
     if not raw:
         return []
@@ -122,14 +132,10 @@ def _latest_runs(conn: sqlite3.Connection, project_id: str) -> dict[str, dict[st
 
 def _project_match_keys(conn: sqlite3.Connection, project_id: str) -> set[str]:
     keys = {project_id, project_id.lower()}
-    row = conn.execute(
-        "SELECT name, repo_path FROM projects WHERE id = ? LIMIT 1",
-        (project_id,),
-    ).fetchone()
+    row = _load_project_row(conn, project_id)
     if row is None:
         return keys
-    name = str(row[0]).strip()
-    repo_path = str(row[1]).strip()
+    name, repo_path = row
     if name:
         keys.add(name)
         keys.add(name.lower())
@@ -139,6 +145,77 @@ def _project_match_keys(conn: sqlite3.Connection, project_id: str) -> set[str]:
             keys.add(basename)
             keys.add(basename.lower())
     return keys
+
+
+def _load_package_scripts(repo_path: Path) -> dict[str, Any]:
+    package_path = repo_path / "package.json"
+    if not package_path.exists():
+        return {}
+    try:
+        payload = json.loads(package_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    scripts = payload.get("scripts")
+    return scripts if isinstance(scripts, dict) else {}
+
+
+def _detect_install_command(repo_path: Path) -> str | None:
+    if (repo_path / "pnpm-lock.yaml").exists():
+        return "pnpm install --frozen-lockfile"
+    if (repo_path / "package-lock.json").exists() or (repo_path / "package.json").exists():
+        return "npm ci"
+    if (repo_path / "uv.lock").exists() or (repo_path / "pyproject.toml").exists():
+        return "uv sync"
+    if (repo_path / "requirements.txt").exists():
+        return "python -m pip install -r requirements.txt"
+    return None
+
+
+def _script_command(scripts: dict[str, Any], key: str) -> str | None:
+    value = scripts.get(key)
+    if isinstance(value, str):
+        if key == "test":
+            return "npm test"
+        return f"npm run {key}"
+    return None
+
+
+def _infer_project_config(conn: sqlite3.Connection, project_id: str) -> dict[str, Any]:
+    row = _load_project_row(conn, project_id)
+    if row is None:
+        return {"project_id": project_id, "applies_to": ["all"], "full_pipeline": False, "gates": {}}
+    name, repo_path_raw = row
+    repo_path = Path(repo_path_raw).expanduser()
+    scripts = _load_package_scripts(repo_path)
+    applies_to: list[str] = []
+    if (repo_path / "package.json").exists():
+        applies_to.append("typescript_app")
+    if (repo_path / "pyproject.toml").exists() or (repo_path / "requirements.txt").exists():
+        applies_to.append("python_service")
+    if not applies_to:
+        applies_to.append("all")
+
+    gates: dict[str, dict[str, str]] = {}
+    install = _detect_install_command(repo_path)
+    if install:
+        gates["install"] = {"command": install, "working_directory": "."}
+    for key in ("lint", "typecheck", "build"):
+        command = _script_command(scripts, key)
+        if command:
+            gates[key] = {"command": command, "working_directory": "."}
+    if isinstance(scripts.get("test"), str):
+        gates["test"] = {"command": "npm test", "working_directory": "."}
+    if (repo_path / "scripts" / "aios-architecture-check.mjs").exists():
+        gates["architecture"] = {"command": "node scripts/aios-architecture-check.mjs", "working_directory": "."}
+    workflow_dir = repo_path / ".github" / "workflows"
+    if workflow_dir.exists() and any(path.suffix in {".yml", ".yaml"} for path in workflow_dir.iterdir()):
+        gates["ci"] = {"command": ".github/workflows", "working_directory": "."}
+    return {
+        "project_id": name or project_id,
+        "applies_to": applies_to,
+        "full_pipeline": False,
+        "gates": gates,
+    }
 
 
 def _string_list(value: Any, fallback: list[str]) -> list[str]:
@@ -195,6 +272,8 @@ def get_project_quality_pipeline(
         ),
         {},
     )
+    if not project_config:
+        project_config = _infer_project_config(conn, project_id)
     project_gates = project_config.get("gates") if isinstance(project_config.get("gates"), dict) else {}
     project_applicability = _string_list(project_config.get("applies_to"), ["all"])
     latest = _latest_runs(conn, project_id)

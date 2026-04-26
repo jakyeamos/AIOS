@@ -403,6 +403,8 @@ Phase 3b Standards Delta / Project Health is now implemented:
     - Domain Specific: SEO/Lighthouse, telemetry utility, database restore/PITR, mobile release, full release E2E
   - `quality_pipeline_runs` records durable per-project gate results with evidence and source metadata
   - `services/quality_pipeline.py` and `aios-ui/server/aios/quality-pipeline.ts` resolve generated AIOS project IDs to stable repo slugs/names
+  - `services/project_inventory.py` and `bin/sync-project-inventory.py` sync Git repositories from `~/projects` into the Taski `projects` table; Taski project inventory is the source of truth
+  - unconfigured Taski projects now receive inferred Tier 1 gates from their repo path, lockfile/package metadata, package scripts, architecture script, and workflow directory
   - `soundscape-app` is the gold-profile implementation with core, production, public-web, telemetry, database, and mobile gates; other projects inherit only applicable gates instead of Soundscape-specific requirements
   - the Projects index now shows per-project pipeline coverage/status, and Taski project detail now includes a first-class Quality Pipeline panel with tier coverage
 - phase architecture note:
