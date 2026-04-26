@@ -6,10 +6,11 @@ Daily automation orchestrator — run as a cron job or manually.
 Phases (skipped individually on failure, pipeline continues):
   1. Codex ingest      — scan ~/.codex/sessions for new rollouts
   2. Score patterns    — recompute frequency/impact, auto-promote/demote
-  3. Bundle new rules  — generate eval bundles for newly promoted rules
-  4. Lab experiments   — run Harbor benchmarks (skipped if Docker unavailable)
-  5. Personal extract  — mine sessions/prompts for personal patterns
-  6. Vault report      — write lab-report summary to Obsidian
+  3. Workflow synthesis — propose reusable workflows from recurring patterns
+  4. Bundle new rules  — generate eval bundles for newly promoted rules
+  5. Lab experiments   — run Harbor benchmarks (skipped if Docker unavailable)
+  6. Personal extract  — mine sessions/prompts for personal patterns
+  7. Vault report      — write lab-report summary to Obsidian
 
 Usage:
   python3 ~/AIOS/bin/aios-pipeline.py [--skip-lab] [--dry-run] [--verbose]
@@ -114,7 +115,7 @@ def main() -> None:
     results: dict[str, str] = {}
 
     # ── Phase 1: Codex ingest ─────────────────────────────────────────────────
-    _log("phase 1/6: Codex ingest")
+    _log("phase 1/7: Codex ingest")
     ok, out = _run(
         ["python3", str(BIN / "cron-ingest-codex.py")],
         "codex-ingest",
@@ -130,7 +131,7 @@ def main() -> None:
         _log(f"  FAILED: {out}")
 
     # ── Phase 2: Score patterns ───────────────────────────────────────────────
-    _log("phase 2/6: score patterns")
+    _log("phase 2/7: score patterns")
     score_cmd = ["python3", str(BIN / "score-patterns.py")]
     if args.dry_run:
         score_cmd.append("--dry-run")
@@ -146,8 +147,22 @@ def main() -> None:
         results["score-patterns"] = f"FAILED: {out}"
         _log(f"  FAILED: {out}")
 
-    # ── Phase 3: Bundle new rules ─────────────────────────────────────────────
-    _log("phase 3/6: bundle new rules (lab_status=pending)")
+    # ── Phase 3: Workflow synthesis ───────────────────────────────────────────
+    _log("phase 3/7: workflow synthesis")
+    synth_cmd = ["python3", str(BIN / "synthesize-workflows.py")]
+    if args.dry_run:
+        synth_cmd.append("--dry-run")
+    ok, out = _run(synth_cmd, "synthesize-workflows", args.verbose)
+    if ok:
+        summary = out.splitlines()[-1] if out else "ok"
+        results["synthesize-workflows"] = f"ok — {summary}"
+        _log(f"  {summary}")
+    else:
+        results["synthesize-workflows"] = f"FAILED: {out}"
+        _log(f"  FAILED: {out}")
+
+    # ── Phase 4: Bundle new rules ─────────────────────────────────────────────
+    _log("phase 4/7: bundle new rules (lab_status=pending)")
     import sqlite3
     DB = Path.home() / "AIOS/data/aios.db"
     try:
@@ -177,8 +192,8 @@ def main() -> None:
         results["bundle-rules"] = f"FAILED: {exc}"
         _log(f"  FAILED: {exc}")
 
-    # ── Phase 4: Lab experiments ──────────────────────────────────────────────
-    _log("phase 4/6: lab experiments")
+    # ── Phase 5: Lab experiments ──────────────────────────────────────────────
+    _log("phase 5/7: lab experiments")
     if args.skip_lab:
         results["lab-experiments"] = "skip — --skip-lab"
         _log("  skipped (--skip-lab)")
@@ -198,8 +213,8 @@ def main() -> None:
             results["lab-experiments"] = f"FAILED: {out}"
             _log(f"  FAILED: {out}")
 
-    # ── Phase 5: Personal pattern extraction ─────────────────────────────────
-    _log("phase 5/6: personal pattern extraction")
+    # ── Phase 6: Personal pattern extraction ─────────────────────────────────
+    _log("phase 6/7: personal pattern extraction")
     extract_bin = BIN / "extract-personal-patterns.py"
     if extract_bin.exists():
         ok, out = _run(
@@ -218,8 +233,8 @@ def main() -> None:
         results["personal-extract"] = "skip — extract-personal-patterns.py not found"
         _log("  skipped (extract-personal-patterns.py not found)")
 
-    # ── Phase 6: Vault report ─────────────────────────────────────────────────
-    _log("phase 6/6: vault report")
+    # ── Phase 7: Vault report ─────────────────────────────────────────────────
+    _log("phase 7/7: vault report")
     ok, report_text = _run(
         ["python3", str(BIN / "lab-report.py"), "--limit", "20"],
         "lab-report",

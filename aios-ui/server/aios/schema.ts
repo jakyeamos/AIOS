@@ -276,6 +276,27 @@ export const ensureControlPlaneSchema = (db: Database.Database): void => {
     CREATE INDEX IF NOT EXISTS idx_consistency_findings_project
       ON consistency_findings(project_id, created_at DESC);
 
+    CREATE TABLE IF NOT EXISTS workflow_synthesis_proposals (
+      id TEXT PRIMARY KEY,
+      proposal_key TEXT NOT NULL UNIQUE,
+      title TEXT NOT NULL,
+      summary TEXT NOT NULL,
+      source_pattern_ids_json TEXT NOT NULL DEFAULT '[]',
+      workflow_spec_json TEXT NOT NULL DEFAULT '{}',
+      skill_specs_json TEXT NOT NULL DEFAULT '[]',
+      validation_plan_json TEXT NOT NULL DEFAULT '{}',
+      evidence_json TEXT NOT NULL DEFAULT '[]',
+      status TEXT NOT NULL DEFAULT 'pending_approval',
+      reviewer TEXT,
+      review_note TEXT,
+      reviewed_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_workflow_synthesis_proposals_status
+      ON workflow_synthesis_proposals(status, created_at DESC);
+
     CREATE TABLE IF NOT EXISTS standards_profiles (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,

@@ -558,3 +558,22 @@ CREATE TABLE quality_pipeline_runs (
 );
 CREATE INDEX idx_quality_pipeline_runs_project_gate
   ON quality_pipeline_runs(project_id, gate_key, completed_at DESC, created_at DESC);
+CREATE TABLE workflow_synthesis_proposals (
+  id TEXT PRIMARY KEY,
+  proposal_key TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  source_pattern_ids_json TEXT NOT NULL DEFAULT '[]',
+  workflow_spec_json TEXT NOT NULL DEFAULT '{}',
+  skill_specs_json TEXT NOT NULL DEFAULT '[]',
+  validation_plan_json TEXT NOT NULL DEFAULT '{}',
+  evidence_json TEXT NOT NULL DEFAULT '[]',
+  status TEXT NOT NULL DEFAULT 'pending_approval',
+  reviewer TEXT,
+  review_note TEXT,
+  reviewed_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX idx_workflow_synthesis_proposals_status
+  ON workflow_synthesis_proposals(status, created_at DESC);
