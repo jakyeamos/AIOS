@@ -41,6 +41,12 @@ const pipelineStatusTone = (status: string): "healthy" | "warning" | "error" | "
   return "unknown";
 };
 
+const pipelineTierLabel: Record<string, string> = {
+  tier_1_core: "Tier 1 Core",
+  production_app: "Production App",
+  domain_specific: "Domain Specific",
+};
+
 export function TaskiProjectSurface({
   summary,
   dossier,
@@ -354,6 +360,18 @@ export function TaskiProjectSurface({
               </article>
 
               <article className="entity-card">
+                <p className="panel-title">Tier Coverage</p>
+                <ul className="detail-list">
+                  {Object.entries(summary.qualityPipeline.coverageByTier).map(([tier, coverage]) => (
+                    <li key={tier}>
+                      {pipelineTierLabel[tier] ?? tier}: configured {coverage.configuredRequired} / {coverage.required}; passing{" "}
+                      {coverage.passingRequired} / {coverage.required}
+                    </li>
+                  ))}
+                </ul>
+              </article>
+
+              <article className="entity-card">
                 <p className="panel-title">Gate Matrix</p>
                 <ul className="detail-list">
                   {summary.qualityPipeline.gates.map((gate) => (
@@ -361,7 +379,7 @@ export function TaskiProjectSurface({
                       <span style={{ marginRight: "0.5rem" }}>
                         <StatusBadge status={pipelineStatusTone(gate.status)} label={gate.status} />
                       </span>
-                      {gate.label}
+                      {pipelineTierLabel[gate.tier] ?? gate.tier} · {gate.label}
                       {gate.required ? " · required" : ""}
                       {gate.command ? ` · ${gate.command}` : " · no command configured"}
                       {gate.completedAt ? ` · ${gate.completedAt}` : ""}

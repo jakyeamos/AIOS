@@ -1,45 +1,205 @@
 {
   "standard": {
     "version": "2026-04-26",
-    "description": "Standard AIOS linked-project quality pipeline. A full project pipeline has lint, typecheck, test, build, architecture, and CI gates.",
+    "description": "Portable AIOS linked-project quality pipeline. Tier 1 is required for every active project; production-app and domain-specific gates apply only when a project declares the matching applicability tag.",
+    "tiers": [
+      {
+        "key": "tier_1_core",
+        "label": "Tier 1 Core",
+        "description": "Portable gates required for every linked project."
+      },
+      {
+        "key": "production_app",
+        "label": "Production App",
+        "description": "Additional release confidence gates for deployed products."
+      },
+      {
+        "key": "domain_specific",
+        "label": "Domain Specific",
+        "description": "Only required when the project has the matching product domain."
+      }
+    ],
     "gates": [
+      {
+        "key": "install",
+        "label": "Frozen Install",
+        "tier": "tier_1_core",
+        "required": true,
+        "applicability": [
+          "all"
+        ]
+      },
       {
         "key": "lint",
         "label": "Lint",
-        "required": true
+        "tier": "tier_1_core",
+        "required": true,
+        "applicability": [
+          "all"
+        ]
       },
       {
         "key": "typecheck",
         "label": "Typecheck",
-        "required": true
+        "tier": "tier_1_core",
+        "required": true,
+        "applicability": [
+          "typescript_app"
+        ]
       },
       {
         "key": "test",
         "label": "Test",
-        "required": true
+        "tier": "tier_1_core",
+        "required": true,
+        "applicability": [
+          "all"
+        ]
       },
       {
         "key": "build",
         "label": "Build",
-        "required": true
+        "tier": "tier_1_core",
+        "required": true,
+        "applicability": [
+          "app",
+          "typescript_app",
+          "python_service"
+        ]
       },
       {
         "key": "architecture",
-        "label": "Architecture",
-        "required": true
+        "label": "Architecture Boundary",
+        "tier": "tier_1_core",
+        "required": true,
+        "applicability": [
+          "all"
+        ]
       },
       {
         "key": "ci",
-        "label": "CI Gate",
-        "required": true
+        "label": "CI Quality Gate",
+        "tier": "tier_1_core",
+        "required": true,
+        "applicability": [
+          "all"
+        ]
+      },
+      {
+        "key": "secret_scan",
+        "label": "Secret Scan",
+        "tier": "production_app",
+        "required": true,
+        "applicability": [
+          "production_app"
+        ]
+      },
+      {
+        "key": "env_validation",
+        "label": "Environment Validation",
+        "tier": "production_app",
+        "required": true,
+        "applicability": [
+          "production_app"
+        ]
+      },
+      {
+        "key": "dependency_security",
+        "label": "Dependency Security",
+        "tier": "production_app",
+        "required": true,
+        "applicability": [
+          "production_app"
+        ]
+      },
+      {
+        "key": "coverage",
+        "label": "Coverage Gate",
+        "tier": "production_app",
+        "required": true,
+        "applicability": [
+          "production_app"
+        ]
+      },
+      {
+        "key": "e2e_smoke",
+        "label": "E2E Smoke",
+        "tier": "production_app",
+        "required": true,
+        "applicability": [
+          "production_app"
+        ]
+      },
+      {
+        "key": "seo",
+        "label": "SEO / Lighthouse",
+        "tier": "domain_specific",
+        "required": true,
+        "applicability": [
+          "public_web"
+        ]
+      },
+      {
+        "key": "telemetry_utility",
+        "label": "Telemetry Utility",
+        "tier": "domain_specific",
+        "required": true,
+        "applicability": [
+          "telemetry_product"
+        ]
+      },
+      {
+        "key": "db_restore",
+        "label": "Database Restore Drill",
+        "tier": "domain_specific",
+        "required": true,
+        "applicability": [
+          "database_backed"
+        ]
+      },
+      {
+        "key": "pitr_monitor",
+        "label": "PITR Monitor",
+        "tier": "domain_specific",
+        "required": true,
+        "applicability": [
+          "database_backed"
+        ]
+      },
+      {
+        "key": "mobile_release",
+        "label": "Mobile Release",
+        "tier": "domain_specific",
+        "required": true,
+        "applicability": [
+          "mobile_app"
+        ]
+      },
+      {
+        "key": "full_e2e",
+        "label": "Full Release E2E",
+        "tier": "domain_specific",
+        "required": true,
+        "applicability": [
+          "public_web",
+          "mobile_app"
+        ]
       }
     ]
   },
   "projects": [
     {
       "project_id": "aios",
+      "applies_to": [
+        "python_service",
+        "typescript_app"
+      ],
       "full_pipeline": true,
       "gates": {
+        "install": {
+          "command": "uv sync --extra dev && pnpm install --frozen-lockfile",
+          "working_directory": "."
+        },
         "lint": {
           "command": "pnpm lint",
           "working_directory": "aios-ui"
@@ -68,8 +228,20 @@
     },
     {
       "project_id": "soundscape-app",
+      "applies_to": [
+        "typescript_app",
+        "production_app",
+        "public_web",
+        "telemetry_product",
+        "database_backed",
+        "mobile_app"
+      ],
       "full_pipeline": true,
       "gates": {
+        "install": {
+          "command": "pnpm install --frozen-lockfile",
+          "working_directory": "."
+        },
         "lint": {
           "command": "pnpm lint",
           "working_directory": "."
@@ -91,15 +263,68 @@
           "working_directory": "."
         },
         "ci": {
-          "command": ".github/workflows/aios-quality.yml",
+          "command": ".github/workflows/pr-checks.yml",
+          "working_directory": "."
+        },
+        "secret_scan": {
+          "command": "gitleaks/gitleaks-action in pr-checks.yml",
+          "working_directory": "."
+        },
+        "env_validation": {
+          "command": "pnpm env:check",
+          "working_directory": "."
+        },
+        "dependency_security": {
+          "command": "pnpm audit or dependency review gate",
+          "working_directory": "."
+        },
+        "coverage": {
+          "command": "pnpm test:coverage",
+          "working_directory": "."
+        },
+        "e2e_smoke": {
+          "command": "pnpm e2e:smoke",
+          "working_directory": "."
+        },
+        "seo": {
+          "command": "pnpm tsx packages/web/scripts/validate-seo.ts && pnpm lighthouse",
+          "working_directory": "."
+        },
+        "telemetry_utility": {
+          "command": "pnpm telemetry:utility:validate && pnpm telemetry:utility:test",
+          "working_directory": "."
+        },
+        "db_restore": {
+          "command": ".github/workflows/restore-drill.yml",
+          "working_directory": "."
+        },
+        "pitr_monitor": {
+          "command": ".github/workflows/pitr-monitoring.yml",
+          "working_directory": "."
+        },
+        "mobile_release": {
+          "command": ".github/workflows/mobile-release.yml",
+          "working_directory": "."
+        },
+        "full_e2e": {
+          "command": ".github/workflows/release-e2e-full.yml",
           "working_directory": "."
         }
       }
     },
     {
       "project_id": "amos-saas",
+      "applies_to": [
+        "typescript_app",
+        "production_app",
+        "public_web"
+      ],
       "full_pipeline": false,
       "gates": {
+        "install": {
+          "command": "npm ci",
+          "working_directory": "."
+        },
         "lint": {
           "command": "npm run lint",
           "working_directory": "."
@@ -120,8 +345,15 @@
     },
     {
       "project_id": "terrace",
+      "applies_to": [
+        "typescript_app"
+      ],
       "full_pipeline": false,
       "gates": {
+        "install": {
+          "command": "npm ci",
+          "working_directory": "."
+        },
         "test": {
           "command": "npm test",
           "working_directory": "."
@@ -138,8 +370,16 @@
     },
     {
       "project_id": "portfolio",
+      "applies_to": [
+        "typescript_app",
+        "public_web"
+      ],
       "full_pipeline": false,
       "gates": {
+        "install": {
+          "command": "npm ci",
+          "working_directory": "."
+        },
         "lint": {
           "command": "npm run lint",
           "working_directory": "."
@@ -160,6 +400,9 @@
     },
     {
       "project_id": "gitnexus",
+      "applies_to": [
+        "python_service"
+      ],
       "full_pipeline": false,
       "blocked_reason": "Repository path/access is unavailable locally.",
       "gates": {}

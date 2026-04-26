@@ -6,6 +6,7 @@ import type Database from "better-sqlite3";
 import type {
   QualityPipelineGate,
   QualityPipelineGateStatus,
+  QualityPipelineGateTier,
   QualityPipelineOverallStatus,
   QualityPipelineSummary,
 } from "@/lib/control-plane";
@@ -22,11 +23,14 @@ type GateConfig = {
 type StandardGateConfig = {
   key?: string;
   label?: string;
+  tier?: string;
+  applicability?: string[];
   required?: boolean;
 };
 
 type ProjectPipelineConfig = {
   project_id?: string;
+  applies_to?: string[];
   full_pipeline?: boolean;
   blocked_reason?: string;
   gates?: Record<string, GateConfig>;
@@ -92,6 +96,26 @@ const normalizeGateStatus = (status: string): QualityPipelineGateStatus => {
     return status;
   }
   return "unknown";
+};
+
+const normalizeGateTier = (tier: string | undefined): QualityPipelineGateTier => {
+  if (tier === "tier_1_core" || tier === "production_app" || tier === "domain_specific") {
+    return tier;
+  }
+  return "tier_1_core";
+};
+
+const stringList = (value: string[] | undefined, fallback: string[]): string[] => {
+  const items = (value ?? []).map((item) => item.trim()).filter((item) => item.length > 0);
+  return items.length > 0 ? items : fallback;
+};
+
+const isApplicable = (gateApplicability: string[], projectApplicability: string[]): boolean => {
+  if (gateApplicability.includes("all")) {
+    return true;
+  }
+  const projectKeys = new Set(projectApplicability);
+  return gateApplicability.some((item) => projectKeys.has(item));
 };
 
 const latestRunsByGate = (db: Database.Database, projectId: string): Map<string, PipelineRunRow> => {
@@ -177,11 +201,14 @@ export const getProjectQualityPipeline = (db: Database.Database, projectId: stri
     return key ? matchKeys.has(key) || matchKeys.has(key.toLowerCase()) : false;
   });
   const projectGates = projectConfig?.gates ?? {};
+  const projectApplicability = stringList(projectConfig?.applies_to, ["all"]);
   const latest = latestRunsByGate(db, projectId);
   const blockedReason = projectConfig?.blocked_reason ?? null;
   const gates: QualityPipelineGate[] = (standard.gates ?? [])
     .filter((gate): gate is Required<Pick<StandardGateConfig, "key">> & StandardGateConfig => typeof gate.key === "string" && gate.key.length > 0)
+    .filter((gate) => isApplicable(stringList(gate.applicability, ["all"]), projectApplicability))
     .map((gate) => {
+      const applicability = stringList(gate.applicability, ["all"]);
       const gateConfig = projectGates[gate.key];
       const latestRun = latest.get(gate.key);
       const configured = Boolean(gateConfig);
@@ -196,6 +223,9 @@ export const getProjectQualityPipeline = (db: Database.Database, projectId: stri
       return {
         key: gate.key,
         label: gate.label ?? gate.key,
+        tier: normalizeGateTier(gate.tier),
+        applicable: true,
+        applicability,
         required,
         configured,
         status,
@@ -209,6 +239,39 @@ export const getProjectQualityPipeline = (db: Database.Database, projectId: stri
       };
     });
   const required = gates.filter((gate) => gate.required);
+  const coverageByTier = {
+    tier_1_core: {
+      required: 0,
+      configuredRequired: 0,
+      passingRequired: 0,
+      total: 0,
+    },
+    production_app: {
+      required: 0,
+      configuredRequired: 0,
+      passingRequired: 0,
+      total: 0,
+    },
+    domain_specific: {
+      required: 0,
+      configuredRequired: 0,
+      passingRequired: 0,
+      total: 0,
+    },
+  };
+  for (const gate of gates) {
+    const tierCoverage = coverageByTier[gate.tier];
+    tierCoverage.total += 1;
+    if (gate.required) {
+      tierCoverage.required += 1;
+      if (gate.configured) {
+        tierCoverage.configuredRequired += 1;
+      }
+      if (gate.status === "pass") {
+        tierCoverage.passingRequired += 1;
+      }
+    }
+  }
   return {
     projectId,
     standardVersion: standard.version ?? "unknown",
@@ -221,6 +284,7 @@ export const getProjectQualityPipeline = (db: Database.Database, projectId: stri
       passingRequired: required.filter((gate) => gate.status === "pass").length,
       total: gates.length,
     },
+    coverageByTier,
     gates,
   };
 };

@@ -11,11 +11,15 @@ DEFAULT_CONFIG_PATH = REPO_ROOT / "config" / "quality-pipeline.json"
 
 GateStatus = Literal["pass", "fail", "running", "stale", "missing", "blocked", "unknown"]
 OverallStatus = Literal["healthy", "warning", "error", "blocked", "unknown"]
+GateTier = Literal["tier_1_core", "production_app", "domain_specific"]
 
 
 class PipelineGateSummary(TypedDict):
     key: str
     label: str
+    tier: GateTier
+    applicable: bool
+    applicability: list[str]
     required: bool
     configured: bool
     status: GateStatus
@@ -35,6 +39,7 @@ class PipelineSummary(TypedDict):
     overall_status: OverallStatus
     blocked_reason: str | None
     coverage: dict[str, int]
+    coverage_by_tier: dict[str, dict[str, int]]
     gates: list[PipelineGateSummary]
 
 
@@ -136,6 +141,26 @@ def _project_match_keys(conn: sqlite3.Connection, project_id: str) -> set[str]:
     return keys
 
 
+def _string_list(value: Any, fallback: list[str]) -> list[str]:
+    if not isinstance(value, list):
+        return fallback
+    items = [str(item).strip() for item in value if isinstance(item, str) and str(item).strip()]
+    return items or fallback
+
+
+def _gate_tier(value: Any) -> GateTier:
+    if value in {"tier_1_core", "production_app", "domain_specific"}:
+        return value
+    return "tier_1_core"
+
+
+def _is_applicable(gate_applicability: list[str], project_applicability: list[str]) -> bool:
+    if "all" in gate_applicability:
+        return True
+    project_keys = set(project_applicability)
+    return any(item in project_keys for item in gate_applicability)
+
+
 def _overall_status(gates: list[PipelineGateSummary], blocked_reason: str | None) -> OverallStatus:
     if blocked_reason:
         return "blocked"
@@ -171,6 +196,7 @@ def get_project_quality_pipeline(
         {},
     )
     project_gates = project_config.get("gates") if isinstance(project_config.get("gates"), dict) else {}
+    project_applicability = _string_list(project_config.get("applies_to"), ["all"])
     latest = _latest_runs(conn, project_id)
     blocked_reason = project_config.get("blocked_reason") if isinstance(project_config.get("blocked_reason"), str) else None
 
@@ -180,6 +206,10 @@ def get_project_quality_pipeline(
             continue
         gate_key = str(gate.get("key", "")).strip()
         if not gate_key:
+            continue
+        applicability = _string_list(gate.get("applicability"), ["all"])
+        applicable = _is_applicable(applicability, project_applicability)
+        if not applicable:
             continue
         gate_config = project_gates.get(gate_key) if isinstance(project_gates.get(gate_key), dict) else None
         latest_run = latest.get(gate_key)
@@ -194,6 +224,9 @@ def get_project_quality_pipeline(
             {
                 "key": gate_key,
                 "label": str(gate.get("label", gate_key)),
+                "tier": _gate_tier(gate.get("tier")),
+                "applicable": applicable,
+                "applicability": applicability,
                 "required": bool(gate.get("required", False)),
                 "configured": configured,
                 "status": status,  # type: ignore[typeddict-item]
@@ -210,6 +243,16 @@ def get_project_quality_pipeline(
     required = [gate for gate in gates if gate["required"]]
     configured_required = [gate for gate in required if gate["configured"]]
     passing_required = [gate for gate in required if gate["status"] == "pass"]
+    coverage_by_tier: dict[str, dict[str, int]] = {}
+    for tier in ("tier_1_core", "production_app", "domain_specific"):
+        tier_gates = [gate for gate in gates if gate["tier"] == tier]
+        tier_required = [gate for gate in tier_gates if gate["required"]]
+        coverage_by_tier[tier] = {
+            "required": len(tier_required),
+            "configured_required": len([gate for gate in tier_required if gate["configured"]]),
+            "passing_required": len([gate for gate in tier_required if gate["status"] == "pass"]),
+            "total": len(tier_gates),
+        }
 
     return {
         "project_id": project_id,
@@ -223,6 +266,7 @@ def get_project_quality_pipeline(
             "passing_required": len(passing_required),
             "total": len(gates),
         },
+        "coverage_by_tier": coverage_by_tier,
         "gates": gates,
     }
 

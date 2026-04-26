@@ -158,3 +158,68 @@ def test_pipeline_config_matches_generated_project_ids_by_name(tmp_path: Path) -
     assert summary["project_id"] == "fc3a2cf7bb27c243"
     assert summary["coverage"]["configured_required"] == 1
     assert summary["gates"][0]["command"] == "pnpm lint"
+
+
+def test_portable_standard_tracks_tiers_and_applicability(tmp_path: Path) -> None:
+    config_path = tmp_path / "quality-pipeline.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "standard": {
+                    "version": "2026-04-26",
+                    "gates": [
+                        {
+                            "key": "lint",
+                            "label": "Lint",
+                            "tier": "tier_1_core",
+                            "required": True,
+                            "applicability": ["all"],
+                        },
+                        {
+                            "key": "e2e_smoke",
+                            "label": "E2E Smoke",
+                            "tier": "production_app",
+                            "required": True,
+                            "applicability": ["production_app"],
+                        },
+                        {
+                            "key": "seo",
+                            "label": "SEO",
+                            "tier": "domain_specific",
+                            "required": True,
+                            "applicability": ["public_web"],
+                        },
+                        {
+                            "key": "mobile_release",
+                            "label": "Mobile Release",
+                            "tier": "domain_specific",
+                            "required": True,
+                            "applicability": ["mobile_app"],
+                        },
+                    ],
+                },
+                "projects": [
+                    {
+                        "project_id": "soundscape-app",
+                        "applies_to": ["typescript_app", "production_app", "public_web"],
+                        "gates": {
+                            "lint": {"command": "pnpm lint"},
+                            "e2e_smoke": {"command": "pnpm e2e:smoke"},
+                            "seo": {"command": "pnpm tsx packages/web/scripts/validate-seo.ts"},
+                        },
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    conn = _base_conn()
+
+    summary = get_project_quality_pipeline(conn, "soundscape-app", config_path=config_path)
+
+    assert [gate["key"] for gate in summary["gates"]] == ["lint", "e2e_smoke", "seo"]
+    assert summary["coverage_by_tier"]["tier_1_core"]["configured_required"] == 1
+    assert summary["coverage_by_tier"]["production_app"]["required"] == 1
+    assert summary["coverage_by_tier"]["domain_specific"]["required"] == 1
+    assert all(gate["applicable"] for gate in summary["gates"])
+    assert all(gate["tier"] in {"tier_1_core", "production_app", "domain_specific"} for gate in summary["gates"])

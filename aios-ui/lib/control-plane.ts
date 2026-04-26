@@ -481,9 +481,14 @@ export type QualityPipelineGateStatus = "pass" | "fail" | "running" | "stale" | 
 
 export type QualityPipelineOverallStatus = "healthy" | "warning" | "error" | "blocked" | "unknown";
 
+export type QualityPipelineGateTier = "tier_1_core" | "production_app" | "domain_specific";
+
 export type QualityPipelineGate = {
   key: string;
   label: string;
+  tier: QualityPipelineGateTier;
+  applicable: boolean;
+  applicability: string[];
   required: boolean;
   configured: boolean;
   status: QualityPipelineGateStatus;
@@ -508,6 +513,12 @@ export type QualityPipelineSummary = {
     passingRequired: number;
     total: number;
   };
+  coverageByTier: Record<QualityPipelineGateTier, {
+    required: number;
+    configuredRequired: number;
+    passingRequired: number;
+    total: number;
+  }>;
   gates: QualityPipelineGate[];
 };
 
