@@ -263,6 +263,16 @@ def test_runtime_transition_records_failed_reason_metadata(runtime_db: Path, tmp
     conn.close()
 
 
+def test_legacy_linkage_requires_explicit_emergency_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+    hook_stop = _load_module("hook_stop_fallback", "bin/hook-stop.py")
+
+    monkeypatch.delenv("AIOS_ALLOW_LEGACY_RUN_LINK", raising=False)
+    assert hook_stop.legacy_run_link_fallback_enabled() is False
+
+    monkeypatch.setenv("AIOS_ALLOW_LEGACY_RUN_LINK", "1")
+    assert hook_stop.legacy_run_link_fallback_enabled() is True
+
+
 def test_structured_evaluator_emits_stale_and_contradiction_findings(runtime_db: Path, tmp_path: Path) -> None:
     from aios_orchestration_runtime import ensure_runtime_schema, evaluate_run_consistency
 
@@ -354,6 +364,35 @@ def test_structured_evaluator_emits_stale_and_contradiction_findings(runtime_db:
     )
     conn.execute(
         """
+        INSERT INTO artifacts (id, session_id, artifact_type, path, metadata_json, created_at)
+        VALUES (
+            'artifact-unpredicted', 'session-eval', 'patch', ?, ?,
+            '2026-04-19T12:02:00Z'
+        )
+        """,
+        (
+            str(repo_path / "services" / "new_runtime.py"),
+            json.dumps({"run_id": run_id}),
+        ),
+    )
+    conn.execute(
+        """
+        INSERT INTO standards_health_snapshots (
+            id, project_id, profile_id, attached_version, latest_version, standards_version,
+            overall_score, weighted_delta, max_penalty, unmet_standards_count, critical_delta_count,
+            regression_count, unknown_count, unknown_coverage, evaluation_confidence,
+            domain_scores_json, score_explain_json, migration_json, created_at
+        )
+        VALUES (
+            'health-eval', ?, 'aios-core', '2026.04.0', '2026.05.0', '2026.05.0',
+            72.0, 12.0, 40.0, 3, 1, 0, 2, 0.25, 0.7,
+            '{}', '{}', '{}', '2026-04-19T12:03:00Z'
+        )
+        """,
+        (project_id,),
+    )
+    conn.execute(
+        """
         INSERT INTO orchestration_runs (
             id, project_id, objective, workflow_key, agent_key, status, rationale,
             assumptions_json, context_trace_json, created_at, updated_at
@@ -384,6 +423,8 @@ def test_structured_evaluator_emits_stale_and_contradiction_findings(runtime_db:
     assert "likely_stale" in kinds
     assert "direct_contradiction" in kinds
     assert "soft_tension" in kinds
+    assert "file_topic_delta" in kinds
+    assert "standards_evidence_gap" in kinds
 
 
 def test_managed_runtime_completes_via_explicit_handshake(runtime_db: Path, tmp_path: Path) -> None:

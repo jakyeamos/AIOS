@@ -51,6 +51,12 @@ def _table_exists(conn: sqlite3.Connection, name: str) -> bool:
     return row is not None
 
 
+def _table_columns(conn: sqlite3.Connection, name: str) -> set[str]:
+    if not _table_exists(conn, name):
+        return set()
+    return {str(row["name"]) for row in conn.execute(f"PRAGMA table_info({name})").fetchall()}
+
+
 def _parse_iso(value: str | None) -> datetime | None:
     if not value:
         return None
@@ -156,6 +162,49 @@ def _run_status_counts(conn: sqlite3.Connection) -> dict[str, int]:
         "SELECT status, COUNT(*) AS count FROM orchestration_runs GROUP BY status"
     ).fetchall()
     return {str(row["status"]): int(row["count"]) for row in rows}
+
+
+def _handshake_coverage(conn: sqlite3.Connection) -> dict[str, Any]:
+    if not _table_exists(conn, "sessions"):
+        return {
+            "total_sessions": 0,
+            "explicitly_linked_sessions": 0,
+            "coverage": 0.0,
+            "legacy_fallback_policy": "disabled_by_default",
+            "emergency_flag": "AIOS_ALLOW_LEGACY_RUN_LINK",
+        }
+    columns = _table_columns(conn, "sessions")
+    if not {"run_id", "invocation_id"}.issubset(columns):
+        total = _count(conn, "sessions")
+        return {
+            "total_sessions": total,
+            "explicitly_linked_sessions": 0,
+            "coverage": 0.0,
+            "target_coverage": 0.9,
+            "legacy_fallback_policy": "disabled_by_default",
+            "emergency_flag": "AIOS_ALLOW_LEGACY_RUN_LINK",
+            "ready_to_remove_fallback": False,
+        }
+    row = conn.execute(
+        """
+        SELECT
+            COUNT(*) AS total,
+            SUM(CASE WHEN run_id IS NOT NULL AND invocation_id IS NOT NULL THEN 1 ELSE 0 END) AS explicit_count
+        FROM sessions
+        """
+    ).fetchone()
+    total = int(row["total"] or 0) if row else 0
+    explicit_count = int(row["explicit_count"] or 0) if row else 0
+    coverage = round(explicit_count / total, 4) if total else 0.0
+    return {
+        "total_sessions": total,
+        "explicitly_linked_sessions": explicit_count,
+        "coverage": coverage,
+        "target_coverage": 0.9,
+        "legacy_fallback_policy": "disabled_by_default",
+        "emergency_flag": "AIOS_ALLOW_LEGACY_RUN_LINK",
+        "ready_to_remove_fallback": coverage >= 0.9,
+    }
 
 
 def _linked_projects(config_root: Path) -> list[dict[str, Any]]:
@@ -522,6 +571,7 @@ def _status_payload(conn: sqlite3.Connection) -> dict[str, Any]:
         "sessions_24h": _count(conn, "sessions", "started_at > datetime('now', '-1 day')"),
         "open_bugs": _count(conn, "bug_log", "status='open'"),
         "run_status_counts": _run_status_counts(conn),
+        "handshake_coverage": _handshake_coverage(conn),
         "last_session": _last_session(conn),
     }
 

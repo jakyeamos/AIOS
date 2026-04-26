@@ -18,6 +18,8 @@ import {
   getRunDetail,
   listConsistencyFindings,
   listInvocationBackends,
+  registerStrictManualInvocation,
+  resolveConsistencyFinding,
   reviewWriteback,
   startManagedInvocation,
 } from "@/server/aios/runtime";
@@ -477,6 +479,25 @@ export const invokeControlPlaneRun = (
   return { runDetail: detail };
 };
 
+export const registerControlPlaneManualInvocation = (
+  db: Database.Database,
+  input: {
+    runId: string;
+    sessionId: string;
+    invocationId?: string;
+    backendKey?: "manual-session-legacy" | "codex-managed-runtime" | "claude-managed-runtime";
+    actor?: string;
+    note?: string | null;
+  },
+): { runDetail: ControlPlaneRunDetail } => {
+  registerStrictManualInvocation(db, input);
+  const detail = getControlPlaneRunDetail(db, input.runId);
+  if (!detail) {
+    throw new Error("Run not found after strict manual registration.");
+  }
+  return { runDetail: detail };
+};
+
 export const cancelControlPlaneRun = (
   db: Database.Database,
   input: { runId: string },
@@ -493,3 +514,8 @@ export const reviewControlPlaneWriteback = (
   db: Database.Database,
   input: { writebackId: string; decision: "applied" | "rejected"; note?: string | null },
 ): ImprovementWriteback => reviewWriteback(db, input);
+
+export const resolveControlPlaneFinding = (
+  db: Database.Database,
+  input: Parameters<typeof resolveConsistencyFinding>[1],
+): ConsistencyFinding => resolveConsistencyFinding(db, input);

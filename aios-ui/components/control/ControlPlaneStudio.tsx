@@ -65,6 +65,8 @@ export function ControlPlaneStudio({
   const [expansionTarget, setExpansionTarget] = useState("");
   const [selectedRunId, setSelectedRunId] = useState<string>(recentRuns[0]?.id ?? "");
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
+  const [manualSessionId, setManualSessionId] = useState("");
+  const [findingNotes, setFindingNotes] = useState<Record<string, string>>({});
 
   const planner = trpc.controlPlane.plan.useMutation({
     onSuccess: async (result) => {
@@ -86,6 +88,17 @@ export function ControlPlaneStudio({
     },
   });
   const reviewer = trpc.controlPlane.reviewWriteback.useMutation({
+    onSuccess: async () => {
+      await Promise.all([utils.controlPlane.overview.invalidate(), utils.controlPlane.runDetail.invalidate()]);
+    },
+  });
+  const manualRegistrar = trpc.controlPlane.registerManualInvocation.useMutation({
+    onSuccess: async (result) => {
+      setSelectedRunId(result.runDetail.run.id);
+      await Promise.all([utils.controlPlane.overview.invalidate(), utils.controlPlane.runDetail.invalidate()]);
+    },
+  });
+  const findingResolver = trpc.controlPlane.resolveFinding.useMutation({
     onSuccess: async () => {
       await Promise.all([utils.controlPlane.overview.invalidate(), utils.controlPlane.runDetail.invalidate()]);
     },
@@ -191,7 +204,10 @@ export function ControlPlaneStudio({
               <article key={backend.key} className="entity-card">
                 <div className="panel-row">
                   <p className="panel-title">{backend.label}</p>
-                  <StatusBadge status={backend.transport === "managed_session" ? "healthy" : "warning"} label={backend.transport} />
+                  <StatusBadge
+                    status={backend.deprecated ? "warning" : backend.transport === "managed_session" ? "healthy" : "warning"}
+                    label={backend.deprecated ? "deprecated" : backend.transport}
+                  />
                 </div>
                 <p className="panel-subtitle">{backend.summary}</p>
                 <p className="mono">{backend.commandPreview.join(" ")}</p>
@@ -468,6 +484,11 @@ export function ControlPlaneStudio({
                         Invoke
                       </button>
                     ) : null}
+                    {run.status === "ready" ? (
+                      <button type="button" className="button-secondary" onClick={() => setSelectedRunId(run.id)}>
+                        Manual Link
+                      </button>
+                    ) : null}
                     {run.status === "in_progress" ? (
                       <button
                         type="button"
@@ -521,6 +542,29 @@ export function ControlPlaneStudio({
           </div>
           <div className="detail-grid" style={{ marginTop: "1rem" }}>
             <article className="entity-card">
+              <p className="panel-title">Strict Manual Handshake</p>
+              <p className="panel-subtitle">Register an existing hook-created session to this run without heuristic matching.</p>
+              <label className="field">
+                Session ID
+                <input value={manualSessionId} onChange={(event) => setManualSessionId(event.target.value)} />
+              </label>
+              <button
+                type="button"
+                className="button-secondary"
+                disabled={manualRegistrar.isPending || manualSessionId.trim().length < 3}
+                onClick={() =>
+                  manualRegistrar.mutate({
+                    runId: selectedRunDetail.run.id,
+                    sessionId: manualSessionId.trim(),
+                    backendKey: "manual-session-legacy",
+                    actor: "operator",
+                  })
+                }
+              >
+                Register Manual Handshake
+              </button>
+            </article>
+            <article className="entity-card">
               <p className="panel-title">Lifecycle Events</p>
               <ul className="detail-list">
                 {selectedRunDetail.events.map((event) => (
@@ -558,13 +602,74 @@ export function ControlPlaneStudio({
               </ul>
             </article>
             <article className="entity-card">
+              <p className="panel-title">Packet / Result Delta</p>
+              <ul className="detail-list">
+                <li>Packet: {selectedRunDetail.inspection.packetId ?? "none"}</li>
+                <li>Selected sections: {selectedRunDetail.inspection.selectedSections.map((section) => `${section.title} (${section.itemCount})`).join(", ") || "none"}</li>
+                <li>Omitted context count: {selectedRunDetail.inspection.omittedContextCount}</li>
+                <li>Touched files: {selectedRunDetail.inspection.touchedFiles.length}</li>
+                <li>Unpredicted touched files: {selectedRunDetail.inspection.unpredictedTouchedFiles.length}</li>
+              </ul>
+            </article>
+            <article className="entity-card">
+              <p className="panel-title">Health Impact</p>
+              <ul className="detail-list">
+                {selectedRunDetail.inspection.standardsDeltas.length > 0 ? (
+                  selectedRunDetail.inspection.standardsDeltas.map((delta) => (
+                    <li key={delta.standardId}>
+                      {delta.standardId}: {delta.status} · impact {delta.estimatedHealthImpact.toFixed(2)} · {delta.priorityBucket}
+                    </li>
+                  ))
+                ) : (
+                  <li>No standards deltas attached to this project snapshot.</li>
+                )}
+              </ul>
+            </article>
+            <article className="entity-card">
               <p className="panel-title">Evaluator Findings</p>
               <ul className="detail-list">
                 {selectedRunDetail.evaluations.length > 0 ? (
                   selectedRunDetail.evaluations.flatMap((evaluation) =>
                     evaluation.findings.map((finding) => (
                       <li key={finding.id}>
-                        {finding.findingKind}: {finding.summary}
+                        {finding.findingKind}: {finding.summary} ({finding.resolutionStatus})
+                        <label className="field">
+                          Resolution note
+                          <input
+                            value={findingNotes[finding.id] ?? ""}
+                            onChange={(event) => setFindingNotes((current) => ({ ...current, [finding.id]: event.target.value }))}
+                          />
+                        </label>
+                        <div className="panel-row">
+                          <button
+                            type="button"
+                            className="button-secondary"
+                            disabled={findingResolver.isPending}
+                            onClick={() =>
+                              findingResolver.mutate({
+                                findingId: finding.id,
+                                status: "mitigated",
+                                rationale: findingNotes[finding.id] ?? undefined,
+                              })
+                            }
+                          >
+                            Mitigate
+                          </button>
+                          <button
+                            type="button"
+                            className="button-secondary"
+                            disabled={findingResolver.isPending}
+                            onClick={() =>
+                              findingResolver.mutate({
+                                findingId: finding.id,
+                                status: "accepted_tradeoff",
+                                rationale: findingNotes[finding.id] ?? undefined,
+                              })
+                            }
+                          >
+                            Accept
+                          </button>
+                        </div>
                       </li>
                     )),
                   )

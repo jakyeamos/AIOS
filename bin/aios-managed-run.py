@@ -40,6 +40,11 @@ HOOK_SESSION_START = ROOT / "bin" / "hook-session-start.py"
 HOOK_STOP = ROOT / "bin" / "hook-stop.py"
 REPORT_DIR = ROOT / "logs" / "control-plane" / "invocations"
 WORKFLOW_REPORT_DIR = ROOT / "logs" / "control-plane" / "workflow-reports"
+BACKEND_SURFACES = {
+    "codex-managed-runtime": "codex",
+    "claude-managed-runtime": "claude_code",
+    "aios-managed-runtime": "codex",
+}
 
 
 class RunCanceled(Exception):
@@ -147,7 +152,7 @@ def write_invocation_report(
             f"tool-event-{uuid.uuid4()}",
             session_id,
             now_iso(),
-            json.dumps({"report_path": str(report_path), "run_id": run_id}),
+            json.dumps({"report_path": str(report_path), "run_id": run_id, "backend_key": backend_key}),
         ),
     )
     conn.commit()
@@ -159,7 +164,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--invocation-id", required=True)
-    parser.add_argument("--backend-key", default=os.environ.get("AIOS_BACKEND_KEY", "aios-managed-runtime"))
+    parser.add_argument("--backend-key", default=os.environ.get("AIOS_BACKEND_KEY", "codex-managed-runtime"))
     parser.add_argument("--db", default=os.environ.get("AIOS_DB", default_db_path()))
     args = parser.parse_args()
 
@@ -220,7 +225,9 @@ def main() -> int:
     workflow_summary: str | None = None
 
     try:
-        surface = "claude_code" if "claude" in backend_key else "codex"
+        surface = BACKEND_SURFACES.get(backend_key)
+        if surface is None:
+            raise RuntimeError(f"Unsupported managed backend key: {backend_key}")
         workflow_context = WorkflowExecutionContext(
             objective=context["objective"] or "",
             workflow_key=context["workflow_key"] or "implementation-delivery",

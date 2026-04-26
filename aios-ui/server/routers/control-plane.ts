@@ -6,7 +6,9 @@ import {
   getControlPlaneRunDetail,
   invokeControlPlaneRun,
   planTask,
+  registerControlPlaneManualInvocation,
   requestPacketExpansion,
+  resolveControlPlaneFinding,
   reviewControlPlaneWriteback,
 } from "@/server/aios/control-plane";
 import { createTRPCRouter, publicProcedure } from "@/server/trpc";
@@ -36,6 +38,19 @@ export const controlPlaneRouter = createTRPCRouter({
       }),
     )
     .mutation(({ ctx, input }) => invokeControlPlaneRun(ctx.db, input)),
+
+  registerManualInvocation: publicProcedure
+    .input(
+      z.object({
+        runId: z.string().min(1),
+        sessionId: z.string().min(1),
+        invocationId: z.string().min(1).optional(),
+        backendKey: z.enum(["manual-session-legacy", "codex-managed-runtime", "claude-managed-runtime"]).optional(),
+        actor: z.string().min(1).max(80).optional(),
+        note: z.string().max(400).optional(),
+      }),
+    )
+    .mutation(({ ctx, input }) => registerControlPlaneManualInvocation(ctx.db, input)),
 
   cancel: publicProcedure
     .input(
@@ -67,4 +82,16 @@ export const controlPlaneRouter = createTRPCRouter({
       }),
     )
     .mutation(({ ctx, input }) => reviewControlPlaneWriteback(ctx.db, input)),
+
+  resolveFinding: publicProcedure
+    .input(
+      z.object({
+        findingId: z.string().min(1),
+        status: z.enum(["open", "accepted_tradeoff", "mitigated", "dismissed", "reopened"]),
+        actor: z.string().min(1).max(80).optional(),
+        rationale: z.string().max(500).optional(),
+        evidence: z.array(z.record(z.string(), z.unknown())).optional(),
+      }),
+    )
+    .mutation(({ ctx, input }) => resolveControlPlaneFinding(ctx.db, input)),
 });

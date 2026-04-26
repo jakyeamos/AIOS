@@ -7,6 +7,7 @@ import type Database from "better-sqlite3";
 import type {
   ConsistencyEvaluation,
   ConsistencyFinding,
+  ConsistencyFindingResolutionStatus,
   ControlPlaneRunDetail,
   ImprovementWriteback,
   ImprovementWritebackEvent,
@@ -15,6 +16,7 @@ import type {
   OrchestrationRun,
   OrchestrationRunEvent,
   OrchestrationRunStatus,
+  RunInspection,
 } from "@/lib/control-plane";
 import { findInvocationBackend, invocationBackends } from "@/server/aios/catalog";
 import { resolveAiosRoot } from "@/server/aios/filesystem";
@@ -215,6 +217,8 @@ const recordWritebackEvent = (
 };
 
 export const listInvocationBackends = (): InvocationBackend[] => invocationBackends;
+
+const defaultManagedBackendKey = "codex-managed-runtime";
 
 export const listRunEvents = (db: Database.Database, runId: string): OrchestrationRunEvent[] => {
   ensureControlPlaneSchema(db);
@@ -447,6 +451,11 @@ export const listConsistencyEvaluations = (
         summary,
         provenance_json AS provenanceJson,
         metadata_json AS metadataJson,
+        resolution_status AS resolutionStatus,
+        resolution_actor AS resolutionActor,
+        resolution_rationale AS resolutionRationale,
+        resolution_evidence_json AS resolutionEvidenceJson,
+        resolved_at AS resolvedAt,
         created_at AS createdAt
       FROM consistency_findings
       WHERE evaluation_id IN (${placeholders})
@@ -466,6 +475,11 @@ export const listConsistencyEvaluations = (
       summary: string;
       provenanceJson: string;
       metadataJson: string;
+      resolutionStatus: ConsistencyFindingResolutionStatus;
+      resolutionActor: string | null;
+      resolutionRationale: string | null;
+      resolutionEvidenceJson: string;
+      resolvedAt: string | null;
       createdAt: string;
     }>;
 
@@ -485,6 +499,11 @@ export const listConsistencyEvaluations = (
       summary: finding.summary,
       provenance: parseJsonArray<Array<Record<string, unknown>>>(finding.provenanceJson, []),
       metadata: parseJsonRecord(finding.metadataJson),
+      resolutionStatus: finding.resolutionStatus,
+      resolutionActor: finding.resolutionActor,
+      resolutionRationale: finding.resolutionRationale,
+      resolutionEvidence: parseJsonArray<Array<Record<string, unknown>>>(finding.resolutionEvidenceJson, []),
+      resolvedAt: finding.resolvedAt,
       createdAt: finding.createdAt,
     });
     findingsByEvaluation.set(finding.evaluationId, bucket);
@@ -637,6 +656,118 @@ export const reviewWriteback = (
   };
 };
 
+export const resolveConsistencyFinding = (
+  db: Database.Database,
+  input: {
+    findingId: string;
+    status: ConsistencyFindingResolutionStatus;
+    actor?: string;
+    rationale?: string | null;
+    evidence?: Array<Record<string, unknown>>;
+  },
+): ConsistencyFinding => {
+  ensureControlPlaneSchema(db);
+  const current = db
+    .prepare(
+      `
+      SELECT
+        id,
+        evaluation_id AS evaluationId,
+        project_id AS projectId,
+        run_id AS runId,
+        packet_id AS packetId,
+        topic_slug AS topicSlug,
+        finding_kind AS findingKind,
+        severity,
+        rule_key AS ruleKey,
+        summary,
+        provenance_json AS provenanceJson,
+        metadata_json AS metadataJson,
+        created_at AS createdAt
+      FROM consistency_findings
+      WHERE id = ?
+      LIMIT 1
+    `,
+    )
+    .get(input.findingId) as
+    | {
+        id: string;
+        evaluationId: string;
+        projectId: string | null;
+        runId: string | null;
+        packetId: string | null;
+        topicSlug: string | null;
+        findingKind: ConsistencyFinding["findingKind"];
+        severity: ConsistencyFinding["severity"];
+        ruleKey: string;
+        summary: string;
+        provenanceJson: string;
+        metadataJson: string;
+        createdAt: string;
+      }
+    | undefined;
+
+  if (!current) {
+    throw new Error("Finding not found.");
+  }
+
+  const now = nowIso();
+  const resolvedAt = input.status === "open" || input.status === "reopened" ? null : now;
+  db.prepare(
+    `
+    UPDATE consistency_findings
+    SET resolution_status = ?,
+        resolution_actor = ?,
+        resolution_rationale = ?,
+        resolution_evidence_json = ?,
+        resolved_at = ?
+    WHERE id = ?
+  `,
+  ).run(
+    input.status,
+    input.actor ?? "operator",
+    input.rationale ?? null,
+    JSON.stringify(input.evidence ?? []),
+    resolvedAt,
+    input.findingId,
+  );
+
+  if (current.runId) {
+    recordRunEvent(db, {
+      runId: current.runId,
+      projectId: current.projectId,
+      eventType: "finding_resolution_recorded",
+      summary: `Finding ${current.ruleKey} marked ${input.status}.`,
+      metadata: {
+        findingId: current.id,
+        resolutionStatus: input.status,
+        actor: input.actor ?? "operator",
+      },
+    });
+  }
+
+  return {
+    id: current.id,
+    evaluationId: current.evaluationId,
+    projectId: current.projectId,
+    runId: current.runId,
+    packetId: current.packetId,
+    topicSlug: current.topicSlug,
+    findingKind: current.findingKind,
+    severity: current.severity,
+    ruleKey: current.ruleKey,
+    summary: current.summary,
+    provenance: parseJsonArray<Array<Record<string, unknown>>>(current.provenanceJson, []),
+    metadata: parseJsonRecord(current.metadataJson),
+    resolutionStatus: input.status,
+    resolutionActor: input.actor ?? "operator",
+    resolutionRationale: input.rationale ?? null,
+    resolutionEvidence: input.evidence ?? [],
+    resolvedAt,
+    createdAt: current.createdAt,
+  };
+};
+
 export const startManagedInvocation = (
   db: Database.Database,
   input: { runId: string },
@@ -679,12 +810,15 @@ export const startManagedInvocation = (
     throw new Error("Run is already in progress.");
   }
 
-  const backend = findInvocationBackend(run.backendKey ?? "aios-managed-runtime");
+  const backend = findInvocationBackend(run.backendKey ?? defaultManagedBackendKey);
+  if (backend.transport !== "managed_session") {
+    throw new Error("Selected backend cannot be launched as a managed invocation.");
+  }
   const root = resolveAiosRoot();
   const scriptPath = path.join(root, "bin", "aios-managed-run.py");
   const invocationId = `invoke-${randomUUID()}`;
   const createdAt = nowIso();
-  const command = ["python3", scriptPath, "--run-id", run.id, "--invocation-id", invocationId];
+  const command = ["python3", scriptPath, "--run-id", run.id, "--invocation-id", invocationId, "--backend-key", backend.key];
 
   db.prepare(
     `
@@ -795,6 +929,138 @@ export const startManagedInvocation = (
   return { invocationId, backend };
 };
 
+export const registerStrictManualInvocation = (
+  db: Database.Database,
+  input: {
+    runId: string;
+    sessionId: string;
+    invocationId?: string;
+    backendKey?: "manual-session-legacy" | "codex-managed-runtime" | "claude-managed-runtime";
+    actor?: string;
+    note?: string | null;
+  },
+): { invocationId: string; backend: InvocationBackend } => {
+  ensureControlPlaneSchema(db);
+  const run = db
+    .prepare(
+      `
+      SELECT id, project_id AS projectId, status, backend_key AS backendKey
+      FROM orchestration_runs
+      WHERE id = ?
+      LIMIT 1
+    `,
+    )
+    .get(input.runId) as
+    | {
+        id: string;
+        projectId: string | null;
+        status: OrchestrationRunStatus;
+        backendKey: string | null;
+      }
+    | undefined;
+
+  if (!run) {
+    throw new Error("Run not found.");
+  }
+
+  const session = db.prepare("SELECT id FROM sessions WHERE id = ? LIMIT 1").get(input.sessionId) as { id: string } | undefined;
+  if (!session) {
+    throw new Error("Session not found. Strict manual registration requires an existing hook-created session.");
+  }
+
+  const backend = findInvocationBackend(input.backendKey ?? "manual-session-legacy");
+  const invocationId = input.invocationId ?? `invoke-manual-${randomUUID()}`;
+  const now = nowIso();
+
+  db.prepare(
+    `
+    INSERT INTO orchestration_invocations (
+      id,
+      run_id,
+      backend_key,
+      backend_label,
+      status,
+      handshake_token,
+      session_id,
+      command_json,
+      metadata_json,
+      created_at,
+      started_at,
+      updated_at
+    )
+    VALUES (?, ?, ?, ?, 'running', ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      run_id = excluded.run_id,
+      backend_key = excluded.backend_key,
+      backend_label = excluded.backend_label,
+      status = excluded.status,
+      session_id = excluded.session_id,
+      metadata_json = excluded.metadata_json,
+      updated_at = excluded.updated_at
+  `,
+  ).run(
+    invocationId,
+    run.id,
+    backend.key,
+    backend.label,
+    run.id,
+    input.sessionId,
+    JSON.stringify(["manual", "strict-handshake"]),
+    JSON.stringify({
+      actor: input.actor ?? "operator",
+      note: input.note ?? null,
+      strictHandshake: true,
+      registeredAt: now,
+    }),
+    now,
+    now,
+    now,
+  );
+
+  db.prepare(
+    `
+    UPDATE sessions
+    SET run_id = ?,
+        invocation_id = ?,
+        runtime_metadata_json = ?
+    WHERE id = ?
+  `,
+  ).run(
+    run.id,
+    invocationId,
+    JSON.stringify({ backend_key: backend.key, strict_manual_handshake: true }),
+    input.sessionId,
+  );
+
+  db.prepare(
+    `
+    UPDATE orchestration_runs
+    SET backend_key = ?,
+        active_invocation_id = ?,
+        session_id = ?,
+        status = CASE WHEN status IN ('planned', 'ready') THEN 'in_progress' ELSE status END,
+        started_at = COALESCE(started_at, ?),
+        updated_at = ?
+    WHERE id = ?
+  `,
+  ).run(backend.key, invocationId, input.sessionId, now, now, run.id);
+
+  recordRunEvent(db, {
+    runId: run.id,
+    projectId: run.projectId,
+    sessionId: input.sessionId,
+    invocationId,
+    eventType: "strict_manual_invocation_registered",
+    fromStatus: run.status,
+    toStatus: run.status === "planned" || run.status === "ready" ? "in_progress" : run.status,
+    summary: `Strict manual handshake registered via ${backend.label}.`,
+    metadata: { backendKey: backend.key, actor: input.actor ?? "operator" },
+    createdAt: now,
+  });
+
+  return { invocationId, backend };
+};
+
 export const cancelManagedInvocation = (
   db: Database.Database,
   input: { runId: string },
@@ -850,6 +1116,123 @@ export const cancelManagedInvocation = (
     summary: "Cancellation signal sent to managed invocation.",
     metadata: { pid: current.pid },
   });
+};
+
+const extractFileMentions = (items: string[]): string[] => {
+  const matches = new Set<string>();
+  for (const item of items) {
+    for (const match of item.matchAll(/(?:[A-Za-z0-9_.-]+\/)+[A-Za-z0-9_.-]+\.[A-Za-z0-9]+/g)) {
+      matches.add(match[0]);
+    }
+  }
+  return [...matches].sort();
+};
+
+const buildRunInspection = (db: Database.Database, run: OrchestrationRun): RunInspection => {
+  ensureControlPlaneSchema(db);
+  const packet = run.packetId
+    ? (db
+        .prepare(
+          `
+          SELECT sections_json AS sectionsJson, omitted_context_json AS omittedContextJson
+          FROM briefing_packets
+          WHERE id = ?
+          LIMIT 1
+        `,
+        )
+        .get(run.packetId) as { sectionsJson: string; omittedContextJson: string } | undefined)
+    : undefined;
+  const sections = packet ? parseJsonArray<Array<{ title: string; items?: string[] }>>(packet.sectionsJson, []) : [];
+  const omitted = packet ? parseJsonArray<unknown[]>(packet.omittedContextJson, []) : [];
+  const packetItems = sections.flatMap((section) => section.items ?? []);
+  const packetMentionedFiles = extractFileMentions(packetItems);
+
+  const artifacts = db
+    .prepare(
+      `
+      SELECT path
+      FROM artifacts
+      WHERE (? IS NOT NULL AND session_id = ?)
+         OR metadata_json LIKE ?
+      ORDER BY created_at DESC
+      LIMIT 60
+    `,
+    )
+    .all(run.sessionId, run.sessionId, `%${run.id}%`) as Array<{ path: string | null }>;
+  const touchedFiles = artifacts
+    .map((artifact) => artifact.path)
+    .filter((pathValue): pathValue is string => Boolean(pathValue))
+    .filter((pathValue) => !pathValue.includes("/logs/control-plane/"))
+    .sort();
+  const unpredictedTouchedFiles = touchedFiles.filter((pathValue) => {
+    if (packetMentionedFiles.length === 0) {
+      return true;
+    }
+    return !packetMentionedFiles.some((mention) => pathValue.endsWith(mention) || pathValue.includes(mention));
+  });
+
+  const deltas = db
+    .prepare(
+      `
+      SELECT standard_id AS standardId,
+             status,
+             estimated_health_impact AS estimatedHealthImpact,
+             priority_bucket AS priorityBucket
+      FROM standards_delta_items
+      WHERE project_id = ?
+      ORDER BY updated_at DESC, priority_score DESC
+      LIMIT 12
+    `,
+    )
+    .all(run.projectId) as Array<{
+      standardId: string;
+      status: RunInspection["standardsDeltas"][number]["status"];
+      estimatedHealthImpact: number;
+      priorityBucket: RunInspection["standardsDeltas"][number]["priorityBucket"];
+    }>;
+
+  const unresolved = listConsistencyFindings(db, { runId: run.id, limit: 20 })
+    .filter((finding) => finding.resolutionStatus === "open" || finding.resolutionStatus === "reopened")
+    .map((finding) => ({
+      id: finding.id,
+      ruleKey: finding.ruleKey,
+      severity: finding.severity,
+      summary: finding.summary,
+    }));
+
+  const riskRows = db
+    .prepare(
+      `
+      SELECT risks_json AS risksJson
+      FROM memory_updates
+      WHERE run_id = ?
+         OR (? IS NOT NULL AND session_id = ?)
+      ORDER BY created_at DESC
+      LIMIT 5
+    `,
+    )
+    .all(run.id, run.sessionId, run.sessionId) as Array<{ risksJson: string }>;
+  const riskCarryover = riskRows.flatMap((row) => parseJsonArray<string[]>(row.risksJson, [])).slice(0, 12);
+
+  return {
+    packetId: run.packetId,
+    selectedSections: sections.map((section) => ({
+      title: section.title,
+      itemCount: section.items?.length ?? 0,
+    })),
+    omittedContextCount: omitted.length,
+    touchedFiles,
+    packetMentionedFiles,
+    unpredictedTouchedFiles,
+    standardsDeltas: deltas.map((delta) => ({
+      standardId: delta.standardId,
+      status: delta.status,
+      estimatedHealthImpact: Number(delta.estimatedHealthImpact),
+      priorityBucket: delta.priorityBucket,
+    })),
+    unresolvedFindings: unresolved,
+    riskCarryover,
+  };
 };
 
 export const getRunDetail = (db: Database.Database, run: OrchestrationRun): ControlPlaneRunDetail => {
@@ -935,5 +1318,6 @@ export const getRunDetail = (db: Database.Database, run: OrchestrationRun): Cont
       hydratedWritebacks.map((writeback) => writeback.id),
     ),
     evaluations: listConsistencyEvaluations(db, { runId: run.id, limit: 6 }),
+    inspection: buildRunInspection(db, run),
   };
 };

@@ -348,6 +348,11 @@ CREATE TABLE IF NOT EXISTS consistency_findings (
   summary TEXT NOT NULL,
   provenance_json TEXT NOT NULL DEFAULT '[]',
   metadata_json TEXT NOT NULL DEFAULT '{}',
+  resolution_status TEXT NOT NULL DEFAULT 'open',
+  resolution_actor TEXT,
+  resolution_rationale TEXT,
+  resolution_evidence_json TEXT NOT NULL DEFAULT '[]',
+  resolved_at TEXT,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 CREATE INDEX IF NOT EXISTS idx_consistency_findings_project
@@ -497,6 +502,9 @@ CREATE TABLE IF NOT EXISTS standards_backfill_tasks (
   dependency_chain_json TEXT NOT NULL DEFAULT '[]',
   expected_health_impact REAL NOT NULL DEFAULT 0,
   owner TEXT,
+  blocked_reason TEXT,
+  due_at TEXT,
+  review_at TEXT,
   priority_score REAL NOT NULL DEFAULT 0,
   priority_bucket TEXT NOT NULL DEFAULT 'high_leverage',
   blocked INTEGER NOT NULL DEFAULT 0,
@@ -529,3 +537,18 @@ CREATE TABLE IF NOT EXISTS standards_health_snapshots (
 );
 CREATE INDEX IF NOT EXISTS idx_standards_health_snapshots_project
   ON standards_health_snapshots(project_id, created_at DESC);
+CREATE TABLE IF NOT EXISTS quality_pipeline_runs (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL REFERENCES projects(id),
+  gate_key TEXT NOT NULL,
+  command TEXT,
+  status TEXT NOT NULL,
+  source TEXT NOT NULL DEFAULT 'manual',
+  evidence_json TEXT NOT NULL DEFAULT '[]',
+  started_at TEXT,
+  completed_at TEXT,
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX IF NOT EXISTS idx_quality_pipeline_runs_project_gate
+  ON quality_pipeline_runs(project_id, gate_key, completed_at DESC, created_at DESC);

@@ -47,6 +47,14 @@ def _json(value: Any) -> str:
     return json.dumps(value, sort_keys=True)
 
 
+def table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
+    row = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=? LIMIT 1",
+        (table_name,),
+    ).fetchone()
+    return row is not None
+
+
 def ensure_runtime_schema(conn: sqlite3.Connection) -> None:
     conn.execute(
         """
@@ -218,6 +226,11 @@ def ensure_runtime_schema(conn: sqlite3.Connection) -> None:
             summary TEXT NOT NULL,
             provenance_json TEXT NOT NULL DEFAULT '[]',
             metadata_json TEXT NOT NULL DEFAULT '{}',
+            resolution_status TEXT NOT NULL DEFAULT 'open',
+            resolution_actor TEXT,
+            resolution_rationale TEXT,
+            resolution_evidence_json TEXT NOT NULL DEFAULT '[]',
+            resolved_at TEXT,
             created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
         )
         """
@@ -271,6 +284,11 @@ def ensure_runtime_schema(conn: sqlite3.Connection) -> None:
         "updated_at",
         "TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))",
     )
+    ensure_column(conn, "consistency_findings", "resolution_status", "TEXT NOT NULL DEFAULT 'open'")
+    ensure_column(conn, "consistency_findings", "resolution_actor", "TEXT")
+    ensure_column(conn, "consistency_findings", "resolution_rationale", "TEXT")
+    ensure_column(conn, "consistency_findings", "resolution_evidence_json", "TEXT NOT NULL DEFAULT '[]'")
+    ensure_column(conn, "consistency_findings", "resolved_at", "TEXT")
 
 
 def get_run_row(conn: sqlite3.Connection, run_id: str) -> sqlite3.Row | None:
@@ -936,6 +954,56 @@ def _load_project_topics(conn: sqlite3.Connection, project_id: str | None) -> li
     return [{"slug": row[0], "title": row[1], "summary": row[2]} for row in rows]
 
 
+def _load_run_artifacts(conn: sqlite3.Connection, run_id: str, session_id: str | None) -> list[str]:
+    if not table_exists(conn, "artifacts"):
+        return []
+    rows = conn.execute(
+        """
+        SELECT path
+        FROM artifacts
+        WHERE (? IS NOT NULL AND session_id = ?)
+           OR metadata_json LIKE ?
+        ORDER BY created_at DESC
+        LIMIT 80
+        """,
+        (session_id, session_id, f"%{run_id}%"),
+    ).fetchall()
+    return sorted({str(row[0]) for row in rows if row[0]})
+
+
+def _packet_file_mentions(packet: dict[str, Any]) -> list[str]:
+    matches: set[str] = set()
+    for section in packet["sections"]:
+        for item in section.get("items", []):
+            for match in re.findall(r"(?:[A-Za-z0-9_.-]+/)+[A-Za-z0-9_.-]+\\.[A-Za-z0-9]+", str(item)):
+                matches.add(match)
+    return sorted(matches)
+
+
+def _latest_standards_signal(conn: sqlite3.Connection, project_id: str | None) -> dict[str, Any] | None:
+    if not project_id or not table_exists(conn, "standards_health_snapshots"):
+        return None
+    row = conn.execute(
+        """
+        SELECT id, overall_score, critical_delta_count, unknown_count, evaluation_confidence
+        FROM standards_health_snapshots
+        WHERE project_id = ?
+        ORDER BY created_at DESC
+        LIMIT 1
+        """,
+        (project_id,),
+    ).fetchone()
+    if not row:
+        return None
+    return {
+        "id": row[0],
+        "overall_score": row[1],
+        "critical_delta_count": row[2],
+        "unknown_count": row[3],
+        "evaluation_confidence": row[4],
+    }
+
+
 def evaluate_run_consistency(
     conn: sqlite3.Connection,
     run_id: str,
@@ -947,7 +1015,7 @@ def evaluate_run_consistency(
     row = conn.execute(
         """
         SELECT r.id, r.project_id, r.objective, r.workflow_key, r.agent_key, r.status,
-               r.result_summary, r.packet_id, p.repo_path
+               r.result_summary, r.packet_id, p.repo_path, r.session_id
         FROM orchestration_runs r
         LEFT JOIN projects p ON p.id = r.project_id
         WHERE r.id = ?
@@ -960,11 +1028,15 @@ def evaluate_run_consistency(
 
     project_id = row[1]
     packet_id = row[7]
+    session_id = row[9]
     truth = _load_project_truth(row[8])
     packet = _load_packet_context(conn, packet_id)
     memory = _load_latest_memory(conn, run_id)
     recent_runs = _load_recent_runs(conn, project_id, run_id) if project_id else []
     topics = _load_project_topics(conn, project_id)
+    artifacts = _load_run_artifacts(conn, run_id, session_id)
+    packet_mentions = _packet_file_mentions(packet)
+    standards_signal = _latest_standards_signal(conn, project_id)
 
     evidence_text = " ".join(
         [
@@ -1088,6 +1160,89 @@ def evaluate_run_consistency(
                     "policy_mode": packet["policy_mode"],
                     "token_budget": packet["token_budget"],
                 },
+            }
+        )
+
+    if row[5] == "completed":
+        workflow_report_count = 0
+        if table_exists(conn, "workflow_execution_reports"):
+            workflow_report_count = int(
+                conn.execute(
+                    "SELECT COUNT(*) FROM workflow_execution_reports WHERE run_id = ?",
+                    (run_id,),
+                ).fetchone()[0]
+            )
+        if workflow_report_count == 0:
+            findings.append(
+                {
+                    "finding_kind": "workflow_state_gap",
+                    "severity": "error",
+                    "rule_key": "workflow.completed_without_execution_report",
+                    "summary": "Run is completed but no workflow execution report is linked.",
+                    "provenance": [
+                        {"source_kind": "run", "run_id": run_id, "status": row[5]},
+                        {"source_kind": "workflow_execution_reports", "count": workflow_report_count},
+                    ],
+                    "metadata": {"workflow_key": row[3], "agent_key": row[4]},
+                }
+            )
+
+    if artifacts:
+        unpredicted = [
+            artifact
+            for artifact in artifacts
+            if packet_mentions
+            and not any(artifact.endswith(mention) or mention in artifact for mention in packet_mentions)
+        ]
+        if packet_mentions and unpredicted:
+            findings.append(
+                {
+                    "finding_kind": "packet_result_delta",
+                    "severity": "warning",
+                    "rule_key": "packet.predicted_files_vs_artifacts",
+                    "summary": (
+                        f"{len(unpredicted)} touched artifacts were not forecast by the packet file hints."
+                    ),
+                    "provenance": [
+                        {"source_kind": "packet", "packet_id": packet_id, "mentioned_files": packet_mentions},
+                        {"source_kind": "artifacts", "paths": unpredicted[:12]},
+                    ],
+                    "metadata": {"unpredicted_count": len(unpredicted)},
+                }
+            )
+        if not packet_mentions:
+            findings.append(
+                {
+                    "finding_kind": "file_topic_delta",
+                    "severity": "info",
+                    "rule_key": "packet.no_file_predictions_for_artifacts",
+                    "summary": "Artifacts were recorded but the packet did not include file-level predictions.",
+                    "provenance": [
+                        {"source_kind": "packet", "packet_id": packet_id},
+                        {"source_kind": "artifacts", "paths": artifacts[:12]},
+                    ],
+                    "metadata": {"artifact_count": len(artifacts)},
+                }
+            )
+
+    if standards_signal and (
+        int(standards_signal["critical_delta_count"] or 0) > 0
+        or int(standards_signal["unknown_count"] or 0) > 0
+    ):
+        findings.append(
+            {
+                "finding_kind": "standards_evidence_gap",
+                "severity": "warning"
+                if int(standards_signal["critical_delta_count"] or 0) == 0
+                else "error",
+                "rule_key": "standards.unresolved_project_health_delta",
+                "summary": (
+                    "Latest standards health snapshot has unresolved critical or unknown standards."
+                ),
+                "provenance": [
+                    {"source_kind": "standards_health_snapshot", **standards_signal},
+                ],
+                "metadata": standards_signal,
             }
         )
 

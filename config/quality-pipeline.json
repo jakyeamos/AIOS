@@ -1,0 +1,168 @@
+{
+  "standard": {
+    "version": "2026-04-26",
+    "description": "Standard AIOS linked-project quality pipeline. A full project pipeline has lint, typecheck, test, build, architecture, and CI gates.",
+    "gates": [
+      {
+        "key": "lint",
+        "label": "Lint",
+        "required": true
+      },
+      {
+        "key": "typecheck",
+        "label": "Typecheck",
+        "required": true
+      },
+      {
+        "key": "test",
+        "label": "Test",
+        "required": true
+      },
+      {
+        "key": "build",
+        "label": "Build",
+        "required": true
+      },
+      {
+        "key": "architecture",
+        "label": "Architecture",
+        "required": true
+      },
+      {
+        "key": "ci",
+        "label": "CI Gate",
+        "required": true
+      }
+    ]
+  },
+  "projects": [
+    {
+      "project_id": "aios",
+      "full_pipeline": true,
+      "gates": {
+        "lint": {
+          "command": "pnpm lint",
+          "working_directory": "aios-ui"
+        },
+        "typecheck": {
+          "command": "pnpm lint",
+          "working_directory": "aios-ui"
+        },
+        "test": {
+          "command": "uv run pytest -q",
+          "working_directory": "."
+        },
+        "build": {
+          "command": "pnpm build",
+          "working_directory": "aios-ui"
+        },
+        "architecture": {
+          "command": "uv run python bin/architecture-enforcement.py --project aios",
+          "working_directory": "."
+        },
+        "ci": {
+          "command": "local quality gate matrix",
+          "working_directory": "."
+        }
+      }
+    },
+    {
+      "project_id": "soundscape-app",
+      "full_pipeline": true,
+      "gates": {
+        "lint": {
+          "command": "pnpm lint",
+          "working_directory": "."
+        },
+        "typecheck": {
+          "command": "pnpm typecheck",
+          "working_directory": "."
+        },
+        "test": {
+          "command": "pnpm test",
+          "working_directory": "."
+        },
+        "build": {
+          "command": "pnpm build",
+          "working_directory": "."
+        },
+        "architecture": {
+          "command": "node scripts/aios-architecture-check.mjs",
+          "working_directory": "."
+        },
+        "ci": {
+          "command": ".github/workflows/aios-quality.yml",
+          "working_directory": "."
+        }
+      }
+    },
+    {
+      "project_id": "amos-saas",
+      "full_pipeline": false,
+      "gates": {
+        "lint": {
+          "command": "npm run lint",
+          "working_directory": "."
+        },
+        "build": {
+          "command": "npm run build",
+          "working_directory": "."
+        },
+        "architecture": {
+          "command": "node scripts/aios-architecture-check.mjs",
+          "working_directory": "."
+        },
+        "ci": {
+          "command": ".github/workflows/aios-quality.yml",
+          "working_directory": "."
+        }
+      }
+    },
+    {
+      "project_id": "terrace",
+      "full_pipeline": false,
+      "gates": {
+        "test": {
+          "command": "npm test",
+          "working_directory": "."
+        },
+        "architecture": {
+          "command": "node scripts/aios-architecture-check.mjs",
+          "working_directory": "."
+        },
+        "ci": {
+          "command": ".github/workflows/aios-quality.yml",
+          "working_directory": "."
+        }
+      }
+    },
+    {
+      "project_id": "portfolio",
+      "full_pipeline": false,
+      "gates": {
+        "lint": {
+          "command": "npm run lint",
+          "working_directory": "."
+        },
+        "build": {
+          "command": "npm run build",
+          "working_directory": "."
+        },
+        "architecture": {
+          "command": "node scripts/aios-architecture-check.mjs",
+          "working_directory": "."
+        },
+        "ci": {
+          "command": ".github/workflows/aios-quality.yml",
+          "working_directory": "."
+        }
+      }
+    },
+    {
+      "project_id": "gitnexus",
+      "full_pipeline": false,
+      "blocked_reason": "Repository path/access is unavailable locally.",
+      "gates": {}
+    }
+  ]
+}

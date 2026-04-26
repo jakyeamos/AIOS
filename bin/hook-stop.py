@@ -146,6 +146,10 @@ def find_matching_orchestration_run(
     return None, None
 
 
+def legacy_run_link_fallback_enabled() -> bool:
+    return os.environ.get("AIOS_ALLOW_LEGACY_RUN_LINK", "").lower() in {"1", "true", "yes"}
+
+
 def get_project_name(conn: sqlite3.Connection, project_id: str | None) -> str | None:
     if not project_id:
         return None
@@ -304,15 +308,21 @@ def main() -> None:
             f"{len(prompts)} prompts and {len(artifacts)} artifacts."
         )
         project_name = get_project_name(conn, row[1])
+        legacy_fallback_enabled = legacy_run_link_fallback_enabled()
         linked_run_id, linked_packet_id, linked_invocation_id, used_legacy_link = resolve_run_linkage(
             conn,
             session_id=session_id,
             payload_run_id=data.get("run_id"),
             payload_invocation_id=data.get("invocation_id"),
-            legacy_matcher=find_matching_orchestration_run,
+            legacy_matcher=find_matching_orchestration_run if legacy_fallback_enabled else None,
             project_id=row[1],
             objective=row[4],
         )
+        if not linked_run_id and row[1]:
+            log(
+                "strict run-linkage required; no explicit run/session/invocation handshake "
+                f"found for session {session_id}"
+            )
         memory_update_id = str(uuid.uuid4())
 
         # Close session in DB

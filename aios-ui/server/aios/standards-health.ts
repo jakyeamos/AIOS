@@ -54,6 +54,9 @@ type BackfillTaskRow = {
   dependencyChainJson: string;
   expectedHealthImpact: number;
   owner: string | null;
+  blockedReason: string | null;
+  dueAt: string | null;
+  reviewAt: string | null;
   priorityScore: number;
   priorityBucket: StandardsDeltaItem["priorityBucket"];
   blocked: number;
@@ -201,6 +204,9 @@ export const getProjectStandardsHealth = (
         dependency_chain_json AS dependencyChainJson,
         expected_health_impact AS expectedHealthImpact,
         owner,
+        blocked_reason AS blockedReason,
+        due_at AS dueAt,
+        review_at AS reviewAt,
         priority_score AS priorityScore,
         priority_bucket AS priorityBucket,
         blocked,
@@ -225,6 +231,9 @@ export const getProjectStandardsHealth = (
     dependencyChain: parseJsonArray<string[]>(row.dependencyChainJson, []),
     expectedHealthImpact: Number(row.expectedHealthImpact),
     owner: row.owner,
+    blockedReason: row.blockedReason,
+    dueAt: row.dueAt,
+    reviewAt: row.reviewAt,
     priorityScore: Number(row.priorityScore),
     priorityBucket: row.priorityBucket,
     blocked: row.blocked === 1,
@@ -250,4 +259,64 @@ export const getProjectStandardsHealth = (
     backfillTasks,
     migration: parseMigration(snapshot.migrationJson, snapshot.attachedVersion, snapshot.latestVersion),
   };
+};
+
+export const updateStandardsBackfillTask = (
+  db: Database.Database,
+  input: {
+    taskId: string;
+    owner?: string | null;
+    status?: string;
+    priorityBucket?: StandardsBackfillTask["priorityBucket"];
+    blocked?: boolean;
+    blockedReason?: string | null;
+    dueAt?: string | null;
+    reviewAt?: string | null;
+  },
+): StandardsBackfillTask => {
+  ensureControlPlaneSchema(db);
+  const current = db
+    .prepare(
+      `
+      SELECT project_id AS projectId, snapshot_id AS snapshotId
+      FROM standards_backfill_tasks
+      WHERE id = ?
+      LIMIT 1
+    `,
+    )
+    .get(input.taskId) as { projectId: string; snapshotId: string } | undefined;
+
+  if (!current) {
+    throw new Error("Standards backfill task not found.");
+  }
+
+  const updates: string[] = [];
+  const values: Array<string | number | null> = [];
+  const setIfPresent = (column: string, value: string | number | null | undefined): void => {
+    if (value === undefined) {
+      return;
+    }
+    updates.push(`${column} = ?`);
+    values.push(value);
+  };
+
+  setIfPresent("owner", input.owner ?? undefined);
+  setIfPresent("status", input.status);
+  setIfPresent("priority_bucket", input.priorityBucket);
+  setIfPresent("blocked", input.blocked === undefined ? undefined : input.blocked ? 1 : 0);
+  setIfPresent("blocked_reason", input.blockedReason ?? undefined);
+  setIfPresent("due_at", input.dueAt ?? undefined);
+  setIfPresent("review_at", input.reviewAt ?? undefined);
+  updates.push("updated_at = ?");
+  values.push(new Date().toISOString());
+  values.push(input.taskId);
+
+  db.prepare(`UPDATE standards_backfill_tasks SET ${updates.join(", ")} WHERE id = ?`).run(...values);
+
+  const summary = getProjectStandardsHealth(db, current.projectId);
+  const task = summary?.backfillTasks.find((candidate) => candidate.id === input.taskId);
+  if (!task) {
+    throw new Error("Standards backfill task was updated but could not be reloaded.");
+  }
+  return task;
 };

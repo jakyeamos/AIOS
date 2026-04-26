@@ -1,9 +1,12 @@
 import { z } from "zod";
+import type Database from "better-sqlite3";
 
 import type { TaskiProjectSummary } from "@/lib/control-plane";
-import { ensureControlPlaneSchema } from "@/server/aios/schema";
-import { getTaskiProjectSummary } from "@/server/aios/taski";
 import type { Project, ProjectStatus, Session } from "@/lib/types";
+import { getProjectQualityPipeline } from "@/server/aios/quality-pipeline";
+import { ensureControlPlaneSchema } from "@/server/aios/schema";
+import { updateStandardsBackfillTask } from "@/server/aios/standards-health";
+import { getTaskiProjectSummary } from "@/server/aios/taski";
 import { tableExists } from "@/server/db";
 import { createTRPCRouter, publicProcedure } from "@/server/trpc";
 
@@ -56,20 +59,26 @@ const normalizeTool = (tool: string): Session["tool"] => {
   return "codex";
 };
 
-const mapProject = (row: ProjectRow): Project => ({
-  id: row.id,
-  name: row.name,
-  repoPath: row.repoPath,
-  status: normalizeStatus(row.status),
-  createdAt: row.createdAt,
-  sessionCount: row.sessionCount,
-  lastActiveAt: row.lastActiveAt,
-  openBugs: row.openBugs,
-  healthScore: row.healthScore === null ? null : Number(row.healthScore),
-  criticalDeltaCount: Number(row.criticalDeltaCount ?? 0),
-  unknownCoverage: row.unknownCoverage === null ? null : Number(row.unknownCoverage),
-  healthTrend: row.healthTrend === null ? null : Number(row.healthTrend),
-});
+const mapProject = (db: Database.Database, row: ProjectRow): Project => {
+  const qualityPipeline = getProjectQualityPipeline(db, row.id);
+  return {
+    id: row.id,
+    name: row.name,
+    repoPath: row.repoPath,
+    status: normalizeStatus(row.status),
+    createdAt: row.createdAt,
+    sessionCount: row.sessionCount,
+    lastActiveAt: row.lastActiveAt,
+    openBugs: row.openBugs,
+    healthScore: row.healthScore === null ? null : Number(row.healthScore),
+    criticalDeltaCount: Number(row.criticalDeltaCount ?? 0),
+    unknownCoverage: row.unknownCoverage === null ? null : Number(row.unknownCoverage),
+    healthTrend: row.healthTrend === null ? null : Number(row.healthTrend),
+    pipelineStatus: qualityPipeline.overallStatus,
+    pipelineConfiguredRequired: qualityPipeline.coverage.configuredRequired,
+    pipelineRequired: qualityPipeline.coverage.required,
+  };
+};
 
 const mapSession = (row: ProjectSessionRow): Session => ({
   id: row.id,
@@ -145,7 +154,7 @@ export const projectsRouter = createTRPCRouter({
         )
         .all(limit) as ProjectRow[];
 
-      return rows.map(mapProject);
+      return rows.map((row) => mapProject(ctx.db, row));
     }),
 
   detail: publicProcedure
@@ -236,7 +245,7 @@ export const projectsRouter = createTRPCRouter({
         : [];
 
       return {
-        project: projectRow ? mapProject(projectRow) : null,
+        project: projectRow ? mapProject(ctx.db, projectRow) : null,
         sessions: sessionsRows.map(mapSession),
       };
     }),
@@ -244,4 +253,19 @@ export const projectsRouter = createTRPCRouter({
   taskiSummary: publicProcedure
     .input(z.object({ projectId: z.string().min(1) }))
     .query(({ ctx, input }): TaskiProjectSummary | null => getTaskiProjectSummary(ctx.db, input.projectId)),
+
+  updateBackfillTask: publicProcedure
+    .input(
+      z.object({
+        taskId: z.string().min(1),
+        owner: z.string().max(120).nullable().optional(),
+        status: z.string().min(1).max(40).optional(),
+        priorityBucket: z.enum(["foundational", "high_leverage", "quick_wins", "blocked", "waived_deferred"]).optional(),
+        blocked: z.boolean().optional(),
+        blockedReason: z.string().max(400).nullable().optional(),
+        dueAt: z.string().max(40).nullable().optional(),
+        reviewAt: z.string().max(40).nullable().optional(),
+      }),
+    )
+    .mutation(({ ctx, input }) => updateStandardsBackfillTask(ctx.db, input)),
 });

@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { KnowledgePageDetail, TaskiProjectSummary } from "@/lib/control-plane";
 import { KnowledgePageView } from "@/components/knowledge/KnowledgePageView";
 import { StatusBadge } from "@/components/primitives/StatusBadge";
+import { trpc } from "@/lib/trpc";
 
 const bucketLabel: Record<string, string> = {
   foundational: "foundational",
@@ -27,6 +28,19 @@ const standardsStatusTone = (status: string): "healthy" | "warning" | "error" | 
   return "unknown";
 };
 
+const pipelineStatusTone = (status: string): "healthy" | "warning" | "error" | "unknown" => {
+  if (status === "healthy" || status === "pass") {
+    return "healthy";
+  }
+  if (status === "error" || status === "fail" || status === "missing" || status === "blocked") {
+    return "error";
+  }
+  if (status === "warning" || status === "running" || status === "stale") {
+    return "warning";
+  }
+  return "unknown";
+};
+
 export function TaskiProjectSurface({
   summary,
   dossier,
@@ -35,6 +49,12 @@ export function TaskiProjectSurface({
   dossier: KnowledgePageDetail;
 }): React.JSX.Element {
   const [tab, setTab] = useState<"taski" | "dossier">("taski");
+  const utils = trpc.useUtils();
+  const backfillUpdater = trpc.projects.updateBackfillTask.useMutation({
+    onSuccess: async () => {
+      await utils.projects.taskiSummary.invalidate({ projectId: summary.projectId });
+    },
+  });
 
   return (
     <div className="page-content">
@@ -225,6 +245,55 @@ export function TaskiProjectSurface({
                       <li key={task.id}>
                         {task.title} · {bucketLabel[task.priorityBucket] ?? task.priorityBucket} · priority {task.priorityScore.toFixed(2)}
                         {task.blocked ? " · blocked" : ""}
+                        <div className="panel-row" style={{ marginTop: "0.5rem" }}>
+                          <button
+                            type="button"
+                            className="button-secondary"
+                            disabled={backfillUpdater.isPending}
+                            onClick={() =>
+                              backfillUpdater.mutate({
+                                taskId: task.id,
+                                owner: task.owner ?? "operator",
+                                status: "in_progress",
+                                blocked: false,
+                                priorityBucket: task.priorityBucket,
+                              })
+                            }
+                          >
+                            Start
+                          </button>
+                          <button
+                            type="button"
+                            className="button-secondary"
+                            disabled={backfillUpdater.isPending}
+                            onClick={() =>
+                              backfillUpdater.mutate({
+                                taskId: task.id,
+                                status: "blocked",
+                                blocked: true,
+                                blockedReason: task.dependencyChain.join(", ") || "Blocked pending upstream dependency.",
+                                priorityBucket: "blocked",
+                              })
+                            }
+                          >
+                            Block
+                          </button>
+                          <button
+                            type="button"
+                            className="button-secondary"
+                            disabled={backfillUpdater.isPending}
+                            onClick={() =>
+                              backfillUpdater.mutate({
+                                taskId: task.id,
+                                status: "done",
+                                blocked: false,
+                                reviewAt: new Date().toISOString(),
+                              })
+                            }
+                          >
+                            Resolve
+                          </button>
+                        </div>
                       </li>
                     ))}
                     {summary.standardsHealth.backfillTasks.length === 0 ? (
@@ -256,6 +325,52 @@ export function TaskiProjectSurface({
                 </p>
               </article>
             )}
+          </section>
+
+          <section className="panel-card">
+            <h3 className="section-title">Quality Pipeline</h3>
+            <div className="stack">
+              <article className="entity-card">
+                <div className="panel-row">
+                  <p className="panel-title">
+                    Standard {summary.qualityPipeline.standardVersion}
+                    {summary.qualityPipeline.fullPipeline ? " · full pipeline" : " · partial pipeline"}
+                  </p>
+                  <StatusBadge
+                    status={pipelineStatusTone(summary.qualityPipeline.overallStatus)}
+                    label={summary.qualityPipeline.overallStatus}
+                  />
+                </div>
+                <ul className="detail-list">
+                  <li>
+                    Required gates configured: {summary.qualityPipeline.coverage.configuredRequired} /{" "}
+                    {summary.qualityPipeline.coverage.required}
+                  </li>
+                  <li>
+                    Required gates passing: {summary.qualityPipeline.coverage.passingRequired} / {summary.qualityPipeline.coverage.required}
+                  </li>
+                  {summary.qualityPipeline.blockedReason ? <li>Blocked: {summary.qualityPipeline.blockedReason}</li> : null}
+                </ul>
+              </article>
+
+              <article className="entity-card">
+                <p className="panel-title">Gate Matrix</p>
+                <ul className="detail-list">
+                  {summary.qualityPipeline.gates.map((gate) => (
+                    <li key={gate.key}>
+                      <span style={{ marginRight: "0.5rem" }}>
+                        <StatusBadge status={pipelineStatusTone(gate.status)} label={gate.status} />
+                      </span>
+                      {gate.label}
+                      {gate.required ? " · required" : ""}
+                      {gate.command ? ` · ${gate.command}` : " · no command configured"}
+                      {gate.completedAt ? ` · ${gate.completedAt}` : ""}
+                      {gate.blockedReason ? ` · ${gate.blockedReason}` : ""}
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            </div>
           </section>
 
           <section className="panel-card">

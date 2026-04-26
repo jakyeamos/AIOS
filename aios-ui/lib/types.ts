@@ -97,6 +97,9 @@ export type Project = {
   criticalDeltaCount: number;
   unknownCoverage: number | null;
   healthTrend: number | null;
+  pipelineStatus: "healthy" | "warning" | "error" | "blocked" | "unknown";
+  pipelineConfiguredRequired: number;
+  pipelineRequired: number;
 };
 
 export type CostBreakdownPoint = {

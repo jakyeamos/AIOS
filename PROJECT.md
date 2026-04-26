@@ -396,6 +396,12 @@ Phase 3b Standards Delta / Project Health is now implemented:
     - prioritized backfill lane
     - standards migration view
   - `aios-ui/app/projects/page.tsx` now shows per-project health score, critical deltas, unknown coverage, and score trend
+- quality pipeline surfaces:
+  - `config/quality-pipeline.json` defines the standard linked-project gate model: lint, typecheck, test, build, architecture, and CI
+  - `quality_pipeline_runs` records durable per-project gate results with evidence and source metadata
+  - `services/quality_pipeline.py` and `aios-ui/server/aios/quality-pipeline.ts` resolve generated AIOS project IDs to stable repo slugs/names
+  - `soundscape-app` and `AIOS` are configured as full-pipeline projects; `amos-saas`, `Terrace`, and `portfolio` are visible as partial pipelines until missing required gates are added
+  - the Projects index now shows per-project pipeline coverage/status, and Taski project detail now includes a first-class Quality Pipeline panel
 - phase architecture note:
   - `docs/architecture/2026-04-23-aios-standards-delta-health-phase3b.md`
 

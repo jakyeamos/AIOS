@@ -4,6 +4,7 @@ import type { TaskiProjectSummary, TopicGraphMarker } from "@/lib/control-plane"
 import { listControlPlaneRuns } from "@/server/aios/control-plane";
 import { getProjectDossier } from "@/server/aios/knowledge";
 import { proposeRunWritebacks } from "@/server/aios/learning";
+import { getProjectQualityPipeline } from "@/server/aios/quality-pipeline";
 import { listConsistencyFindings } from "@/server/aios/runtime";
 import { getProjectStandardsHealth } from "@/server/aios/standards-health";
 import { getTopicMarkers, listImprovementWritebacks, searchTopicGraph } from "@/server/aios/topic-graph";
@@ -51,8 +52,14 @@ export const getTaskiProjectSummary = (db: Database.Database, projectId: string)
   const consistencyFindings = listConsistencyFindings(db, { projectId, limit: 8 }).slice(0, 6);
   const pendingApprovals = learnedPolicies.filter((policy) => policy.requiresApproval).slice(0, 6);
   const standardsHealth = getProjectStandardsHealth(db, projectId);
+  const qualityPipeline = getProjectQualityPipeline(db, projectId);
   const suggestedNextActions = [
     "Use compact ranked packets before delegation.",
+    ...(qualityPipeline.overallStatus === "error"
+      ? ["Complete the missing or failing required quality pipeline gates before broadening project work."]
+      : qualityPipeline.overallStatus === "blocked"
+        ? [`Unblock the quality pipeline dependency: ${qualityPipeline.blockedReason ?? "missing project access"}.`]
+        : []),
     ...(standardsHealth && standardsHealth.backfillTasks.length > 0
       ? [
           `Complete top standards backfill task first: ${standardsHealth.backfillTasks[0].title}.`,
@@ -83,5 +90,6 @@ export const getTaskiProjectSummary = (db: Database.Database, projectId: string)
     pendingApprovals,
     suggestedNextActions,
     standardsHealth,
+    qualityPipeline,
   };
 };

@@ -87,12 +87,15 @@ export type WorkflowTemplate = {
 };
 
 export type InvocationBackend = {
-  key: string;
+  key: "codex-managed-runtime" | "claude-managed-runtime" | "manual-session-legacy";
   label: string;
   summary: string;
   transport: "managed_session" | "manual_session";
   supportsCancel: boolean;
   commandPreview: string[];
+  surface: "codex" | "claude_code" | "manual";
+  deprecated?: boolean;
+  requiresStrictHandshake?: boolean;
 };
 
 export type PacketSection = {
@@ -314,7 +317,20 @@ export type ImprovementWritebackEvent = {
   createdAt: string;
 };
 
-export type ConsistencyFindingKind = "direct_contradiction" | "likely_stale" | "soft_tension";
+export type ConsistencyFindingKind =
+  | "direct_contradiction"
+  | "likely_stale"
+  | "soft_tension"
+  | "workflow_state_gap"
+  | "packet_result_delta"
+  | "file_topic_delta"
+  | "standards_evidence_gap";
+export type ConsistencyFindingResolutionStatus =
+  | "open"
+  | "accepted_tradeoff"
+  | "mitigated"
+  | "dismissed"
+  | "reopened";
 
 export type ConsistencyFinding = {
   id: string;
@@ -329,6 +345,11 @@ export type ConsistencyFinding = {
   summary: string;
   provenance: Array<Record<string, unknown>>;
   metadata: Record<string, unknown>;
+  resolutionStatus: ConsistencyFindingResolutionStatus;
+  resolutionActor: string | null;
+  resolutionRationale: string | null;
+  resolutionEvidence: Array<Record<string, unknown>>;
+  resolvedAt: string | null;
   createdAt: string;
 };
 
@@ -352,6 +373,29 @@ export type ControlPlaneRunDetail = {
   writebacks: ImprovementWriteback[];
   writebackEvents: ImprovementWritebackEvent[];
   evaluations: ConsistencyEvaluation[];
+  inspection: RunInspection;
+};
+
+export type RunInspection = {
+  packetId: string | null;
+  selectedSections: Array<{ title: string; itemCount: number }>;
+  omittedContextCount: number;
+  touchedFiles: string[];
+  packetMentionedFiles: string[];
+  unpredictedTouchedFiles: string[];
+  standardsDeltas: Array<{
+    standardId: string;
+    status: StandardsAssessmentStatus;
+    estimatedHealthImpact: number;
+    priorityBucket: StandardsDeltaItem["priorityBucket"];
+  }>;
+  unresolvedFindings: Array<{
+    id: string;
+    ruleKey: string;
+    severity: ConsistencyFinding["severity"];
+    summary: string;
+  }>;
+  riskCarryover: string[];
 };
 
 export type StandardsAssessmentStatus = "pass" | "partial" | "fail" | "unknown" | "waived" | "not_applicable";
@@ -390,6 +434,9 @@ export type StandardsBackfillTask = {
   dependencyChain: string[];
   expectedHealthImpact: number;
   owner: string | null;
+  blockedReason: string | null;
+  dueAt: string | null;
+  reviewAt: string | null;
   priorityScore: number;
   priorityBucket: StandardsDeltaItem["priorityBucket"];
   blocked: boolean;
@@ -430,6 +477,40 @@ export type StandardsHealthSummary = {
   migration: StandardsMigration;
 };
 
+export type QualityPipelineGateStatus = "pass" | "fail" | "running" | "stale" | "missing" | "blocked" | "unknown";
+
+export type QualityPipelineOverallStatus = "healthy" | "warning" | "error" | "blocked" | "unknown";
+
+export type QualityPipelineGate = {
+  key: string;
+  label: string;
+  required: boolean;
+  configured: boolean;
+  status: QualityPipelineGateStatus;
+  command: string | null;
+  workingDirectory: string | null;
+  latestRunId: string | null;
+  source: string | null;
+  evidence: string[];
+  completedAt: string | null;
+  blockedReason: string | null;
+};
+
+export type QualityPipelineSummary = {
+  projectId: string;
+  standardVersion: string;
+  fullPipeline: boolean;
+  overallStatus: QualityPipelineOverallStatus;
+  blockedReason: string | null;
+  coverage: {
+    required: number;
+    configuredRequired: number;
+    passingRequired: number;
+    total: number;
+  };
+  gates: QualityPipelineGate[];
+};
+
 export type TaskiProjectSummary = {
   projectId: string;
   projectTitle: string;
@@ -447,4 +528,5 @@ export type TaskiProjectSummary = {
   pendingApprovals: ImprovementWriteback[];
   suggestedNextActions: string[];
   standardsHealth: StandardsHealthSummary | null;
+  qualityPipeline: QualityPipelineSummary;
 };

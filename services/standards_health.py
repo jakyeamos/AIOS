@@ -316,6 +316,9 @@ def ensure_standards_health_schema(conn: sqlite3.Connection) -> None:
             dependency_chain_json TEXT NOT NULL DEFAULT '[]',
             expected_health_impact REAL NOT NULL DEFAULT 0,
             owner TEXT,
+            blocked_reason TEXT,
+            due_at TEXT,
+            review_at TEXT,
             priority_score REAL NOT NULL DEFAULT 0,
             priority_bucket TEXT NOT NULL DEFAULT 'high_leverage',
             blocked INTEGER NOT NULL DEFAULT 0,
@@ -615,6 +618,24 @@ def _find_security_signal(conn: sqlite3.Connection, project_id: str) -> tuple[As
     return "pass", "Recent security-review findings did not surface warnings/blockers.", 0.75, evidence
 
 
+def _unresolved_critical_findings(conn: sqlite3.Connection, project_id: str) -> tuple[int, list[str]]:
+    if not _table_exists(conn, "consistency_findings"):
+        return 0, []
+    rows = conn.execute(
+        """
+        SELECT rule_key, summary
+        FROM consistency_findings
+        WHERE project_id = ?
+          AND severity = 'error'
+          AND COALESCE(resolution_status, 'open') IN ('open', 'reopened')
+        ORDER BY created_at DESC
+        LIMIT 10
+        """,
+        (project_id,),
+    ).fetchall()
+    return len(rows), [f"{row[0]}: {row[1]}" for row in rows]
+
+
 def _evaluate_known_standard(
     conn: sqlite3.Connection,
     *,
@@ -779,12 +800,22 @@ def _evaluate_known_standard(
         return "partial", "Workflows directory exists but no YAML workflows were found.", 0.55, {"workflows_dir": str(workflows_dir)}, [str(workflows_dir)], "auto"
 
     if standard_id == "product_readiness.command_center_operability":
+        unresolved_count, unresolved_evidence = _unresolved_critical_findings(conn, project_id)
         required_paths = [
             REPO_ROOT / "aios-ui" / "app" / "page.tsx",
             REPO_ROOT / "aios-ui" / "components" / "projects" / "TaskiProjectSurface.tsx",
             REPO_ROOT / "docs" / "aios-ui-command-center-handoff.md",
         ]
         existing = [str(path) for path in required_paths if path.exists()]
+        if unresolved_count > 0:
+            return (
+                "fail",
+                f"{unresolved_count} unresolved critical evaluator findings are still open.",
+                0.9,
+                {"unresolved_critical_findings": unresolved_count, "required_paths": existing},
+                unresolved_evidence,
+                "semi_auto",
+            )
         if len(existing) == len(required_paths):
             return "pass", "Control-surface primitives are present for project health operations.", 0.7, {"required_paths": existing}, existing, "semi_auto"
         if existing:
@@ -1167,6 +1198,9 @@ def _persist_delta_and_tasks(
                 dependency_chain_json,
                 expected_health_impact,
                 owner,
+                blocked_reason,
+                due_at,
+                review_at,
                 priority_score,
                 priority_bucket,
                 blocked,
@@ -1174,7 +1208,7 @@ def _persist_delta_and_tasks(
                 created_at,
                 updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 task["id"],
@@ -1190,6 +1224,9 @@ def _persist_delta_and_tasks(
                 _json(task["dependency_chain"]),
                 task["expected_health_impact"],
                 task["owner"],
+                None,
+                None,
+                None,
                 task["priority_score"],
                 task["priority_bucket"],
                 int(task["blocked"]),

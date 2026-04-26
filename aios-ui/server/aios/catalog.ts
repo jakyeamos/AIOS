@@ -2,20 +2,33 @@ import type { AgentProfile, InvocationBackend, WorkflowTemplate } from "@/lib/co
 
 export const invocationBackends: InvocationBackend[] = [
   {
-    key: "aios-managed-runtime",
-    label: "AIOS Managed Runtime",
-    summary: "Starts a managed local session with explicit run/invocation handshake, lifecycle events, and cancel support.",
+    key: "codex-managed-runtime",
+    label: "Codex Managed Runtime",
+    summary: "Starts a managed Codex-oriented local session with explicit run/invocation handshake, lifecycle events, and cancel support.",
     transport: "managed_session",
     supportsCancel: true,
-    commandPreview: ["python3", "bin/aios-managed-run.py"],
+    commandPreview: ["python3", "bin/aios-managed-run.py", "--backend-key", "codex-managed-runtime"],
+    surface: "codex",
+  },
+  {
+    key: "claude-managed-runtime",
+    label: "Claude Managed Runtime",
+    summary: "Starts a managed Claude-oriented local session with the same strict handshake and workflow reporting contract.",
+    transport: "managed_session",
+    supportsCancel: true,
+    commandPreview: ["python3", "bin/aios-managed-run.py", "--backend-key", "claude-managed-runtime"],
+    surface: "claude_code",
   },
   {
     key: "manual-session-legacy",
     label: "Manual Session (Legacy)",
-    summary: "Legacy path for operator-run sessions that may still rely on session hooks without managed invocation.",
+    summary: "Deprecated manual path. New external/manual sessions must register a strict run/invocation/session handshake.",
     transport: "manual_session",
     supportsCancel: false,
-    commandPreview: ["manual"],
+    commandPreview: ["manual", "strict-handshake-required"],
+    surface: "manual",
+    deprecated: true,
+    requiresStrictHandshake: true,
   },
 ];
 
@@ -33,7 +46,7 @@ export const agentProfiles: AgentProfile[] = [
       "Prefer removing weak abstractions over preserving them.",
       "Write architectural rationale and tradeoffs as durable artifacts.",
     ],
-    defaultBackendKey: "aios-managed-runtime",
+    defaultBackendKey: "claude-managed-runtime",
   },
   {
     key: "implementation-lead",
@@ -48,7 +61,7 @@ export const agentProfiles: AgentProfile[] = [
       "Favor thin pages and concentrated server-side helper logic.",
       "Expose inspectability instead of hiding behavior in prompts.",
     ],
-    defaultBackendKey: "aios-managed-runtime",
+    defaultBackendKey: "codex-managed-runtime",
   },
   {
     key: "debug-surgeon",
@@ -63,7 +76,7 @@ export const agentProfiles: AgentProfile[] = [
       "Use existing evidence before proposing new abstraction.",
       "Record failure mode and recovery path into durable memory.",
     ],
-    defaultBackendKey: "aios-managed-runtime",
+    defaultBackendKey: "codex-managed-runtime",
   },
   {
     key: "memory-curator",
@@ -78,7 +91,7 @@ export const agentProfiles: AgentProfile[] = [
       "Separate durable knowledge from transient workflow state.",
       "Do not elevate staging content into canonical knowledge.",
     ],
-    defaultBackendKey: "aios-managed-runtime",
+    defaultBackendKey: "claude-managed-runtime",
   },
 ];
 
@@ -102,7 +115,7 @@ export const workflowTemplates: WorkflowTemplate[] = [
       "Schema and UI boundaries are explicit.",
       "Routing, retrieval, and packet generation are inspectable.",
     ],
-    defaultBackendKey: "aios-managed-runtime",
+    defaultBackendKey: "codex-managed-runtime",
   },
   {
     key: "implementation-delivery",
@@ -123,7 +136,7 @@ export const workflowTemplates: WorkflowTemplate[] = [
       "Packet includes constraints, non-goals, and escalation conditions.",
       "Relevant architecture and prior decisions are cited.",
     ],
-    defaultBackendKey: "aios-managed-runtime",
+    defaultBackendKey: "codex-managed-runtime",
   },
   {
     key: "failure-recovery",
@@ -144,7 +157,7 @@ export const workflowTemplates: WorkflowTemplate[] = [
       "Original symptom is captured.",
       "Recovery steps and unresolved questions are logged.",
     ],
-    defaultBackendKey: "aios-managed-runtime",
+    defaultBackendKey: "codex-managed-runtime",
   },
 ];
 
