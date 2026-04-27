@@ -11,6 +11,28 @@ type WorkflowRow = {
   avgTokens: number;
 };
 
+export type WorkflowProposalSummary = {
+  id: string;
+  proposalKey: string;
+  title: string;
+  summary: string;
+  status: string;
+  sourcePatternIds: string[];
+  evidence: string[];
+  createdAt: string;
+};
+
+type WorkflowProposalRow = {
+  id: string;
+  proposalKey: string;
+  title: string;
+  summary: string;
+  status: string;
+  sourcePatternIdsJson: string;
+  evidenceJson: string;
+  createdAt: string;
+};
+
 const clamp = (value: number): number => {
   if (value < 0) {
     return 0;
@@ -21,6 +43,19 @@ const clamp = (value: number): number => {
   }
 
   return value;
+};
+
+const parseStringArray = (raw: string): string[] => {
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.filter((item): item is string => typeof item === "string");
+  } catch {
+    return [];
+  }
 };
 
 export const workflowsRouter = createTRPCRouter({
@@ -57,5 +92,48 @@ export const workflowsRouter = createTRPCRouter({
       successRate: clamp(row.rawAverage > 1 ? row.rawAverage / 100 : row.rawAverage),
       avgTokens: Number.isFinite(row.avgTokens) ? Math.round(row.avgTokens) : 0,
     }));
+  }),
+  proposals: publicProcedure.query(({ ctx }): WorkflowProposalSummary[] => {
+    if (!tableExists("workflow_synthesis_proposals")) {
+      return [];
+    }
+
+    const rows = ctx.db
+      .prepare(
+        `
+        SELECT
+          id,
+          proposal_key AS proposalKey,
+          title,
+          summary,
+          status,
+          source_pattern_ids_json AS sourcePatternIdsJson,
+          evidence_json AS evidenceJson,
+          created_at AS createdAt
+        FROM workflow_synthesis_proposals
+        ORDER BY
+          CASE status
+            WHEN 'pending_approval' THEN 0
+            WHEN 'approved' THEN 1
+            ELSE 2
+          END,
+          created_at DESC
+        LIMIT 40
+      `,
+      )
+      .all() as WorkflowProposalRow[];
+
+    return rows.map(
+      (row): WorkflowProposalSummary => ({
+        id: row.id,
+        proposalKey: row.proposalKey,
+        title: row.title,
+        summary: row.summary,
+        status: row.status,
+        sourcePatternIds: parseStringArray(row.sourcePatternIdsJson),
+        evidence: parseStringArray(row.evidenceJson),
+        createdAt: row.createdAt,
+      }),
+    );
   }),
 });
