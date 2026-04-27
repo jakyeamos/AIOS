@@ -240,6 +240,8 @@ Phase 0c success criteria control-plane baseline is now live:
 
 The `aios-ui` root layout now suppresses hydration warnings on the root `<html>` element so browser-extension-injected root attributes do not surface as app hydration errors during local development.
 
+The knowledge and topic-graph freshness labels now share one formatter. Routine 8-44 day-old records display as `Updated N days ago`; the stronger `Stale for N days` label is reserved for records 45+ days old.
+
 Phase 1a prompt library baseline is now implemented:
 
 - prompt template source-of-truth tree:

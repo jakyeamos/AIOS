@@ -21,6 +21,7 @@ import {
   resolveVaultRoot,
   summarizeParagraph,
 } from "@/server/aios/filesystem";
+import { formatFreshnessLabel, scoreFreshnessLabel } from "@/server/aios/freshness";
 import { ensureControlPlaneSchema } from "@/server/aios/schema";
 
 type TopicRow = {
@@ -192,38 +193,7 @@ const tokenize = (value: string): string[] => {
     .filter((token) => token.length >= 3 && !stopWords.has(token));
 };
 
-const estimateFreshnessLabel = (isoValue: string | null): string => {
-  if (!isoValue) {
-    return "Unknown freshness";
-  }
-
-  const timestamp = new Date(isoValue).getTime();
-  if (Number.isNaN(timestamp)) {
-    return isoValue;
-  }
-
-  const deltaDays = Math.floor((Date.now() - timestamp) / 86_400_000);
-  if (deltaDays <= 1) {
-    return "Updated in the last day";
-  }
-  if (deltaDays <= 7) {
-    return `Updated ${deltaDays} days ago`;
-  }
-  return `Stale for ${deltaDays} days`;
-};
-
-const freshnessScore = (freshness: string): number => {
-  if (freshness.includes("last day")) {
-    return 1;
-  }
-  if (freshness.includes("days ago")) {
-    return 0.7;
-  }
-  if (freshness.includes("Stale")) {
-    return 0.3;
-  }
-  return 0.5;
-};
+const estimateFreshnessLabel = (isoValue: string | null): string => formatFreshnessLabel(isoValue);
 
 const collectWikiSeeds = (): TopicSeed[] => {
   const wikiDir = path.join(resolveVaultRoot(), "06 Knowledge", "Wiki");
@@ -895,7 +865,7 @@ export const searchTopicGraph = (
       const overlap = [...queryTokens].filter((token) =>
         tokenize([row.title, row.summary, ...tags].join(" ")).includes(token),
       ).length;
-      const score = projectBoost + overlap * 12 + freshnessScore(row.freshness) * 10 + row.confidence * 15 + row.referenceCount;
+      const score = projectBoost + overlap * 12 + scoreFreshnessLabel(row.freshness) * 10 + row.confidence * 15 + row.referenceCount;
       const why = projectBoost > 0 ? "Direct project topic match." : overlap > 0 ? `Matched ${overlap} query terms.` : "Retained by graph confidence and freshness.";
 
       return {

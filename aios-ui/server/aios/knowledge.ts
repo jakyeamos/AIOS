@@ -24,6 +24,7 @@ import {
   stripFrontmatter,
   summarizeParagraph,
 } from "@/server/aios/filesystem";
+import { formatFreshnessLabel } from "@/server/aios/freshness";
 import { ensureControlPlaneSchema } from "@/server/aios/schema";
 import { getTopicMarkers, getTopicReferences, getTopicRelationships } from "@/server/aios/topic-graph";
 import { tableExists } from "@/server/db";
@@ -115,24 +116,7 @@ const inferKindFromSlug = (slug: string): KnowledgePageKind => {
   return "concept";
 };
 
-const freshnessLabel = (isoValue: string | null): string => {
-  if (!isoValue) {
-    return "No recent activity";
-  }
-
-  const now = Date.now();
-  const deltaDays = Math.floor((now - new Date(isoValue).getTime()) / 86_400_000);
-
-  if (deltaDays <= 1) {
-    return "Updated in the last day";
-  }
-
-  if (deltaDays <= 7) {
-    return `Updated ${deltaDays} days ago`;
-  }
-
-  return `Stale for ${deltaDays} days`;
-};
+const freshnessLabel = (isoValue: string | null): string => formatFreshnessLabel(isoValue, "No recent activity");
 
 const parseJsonArray = (raw: string): string[] => {
   try {
