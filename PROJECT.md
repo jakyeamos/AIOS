@@ -26,6 +26,8 @@ The repository currently contains three meaningful subsystems:
 3. `docs/`
    Design intent for storage, knowledge, CTS, and the current UI, but not yet a single implemented architecture.
 
+Root operator documentation now lives in `README.md`, including local UI launch commands, key UI routes, store paths, workflow proposal backfill, and verification commands.
+
 ## Current Product Boundary
 
 Shipped AIOS behavior today is primarily:
