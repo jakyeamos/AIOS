@@ -425,6 +425,28 @@ Phase 3b Standards Delta / Project Health is now implemented:
 - phase architecture note:
   - `docs/architecture/2026-04-23-aios-standards-delta-health-phase3b.md`
 
+RTK context compression is now integrated as an AIOS system primitive:
+
+- unified command interface:
+  - `services/rtk_integration.py`
+  - `bin/rtk-run.py`
+  - `rtk_run(command, mode)` with `compressed`, `raw`, and `adaptive` modes
+- compression rules and context waste map:
+  - `config/rtk/rules.json`
+  - `docs/architecture/2026-04-27-aios-rtk-context-compression.md`
+- lifecycle hook integration:
+  - `hook-session-start.py` creates RTK schema and injects active compression policy
+  - `hook-post-tool-use.py` compresses Bash tool responses, records telemetry, and surfaces compact output
+  - `hook-stop.py` logs per-session RTK savings in Stop event metadata
+- workflow/runtime integration:
+  - `bin/aios-pipeline.py` routes managed subprocess output through RTK adaptive mode
+  - workflow execution reports include RTK policy metadata for implementation and failure-recovery workflows
+- telemetry and UI:
+  - `rtk_compression_events` records raw/compressed token estimates, reductions, ambiguous failures, raw tee paths, and workflow keys
+  - `workflow_metrics` receives RTK token metrics for existing efficiency comparisons
+  - `aios metadata --json` and `aios --json rtk` expose RTK rules and metrics
+  - `/costs` now surfaces RTK tokens saved, reduction percent, ambiguous failures, and savings by workflow
+
 ## Still Missing
 
 - more than one production-grade invocation backend beyond the new managed local runtime
