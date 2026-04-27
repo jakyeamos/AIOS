@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-04-23
+Last updated: 2026-04-27
 
 ## What AIOS Is
 
@@ -235,6 +235,10 @@ Phase 0c success criteria control-plane baseline is now live:
   - `aios metadata --json` now exposes criteria catalog + latest evaluation
 - phase architecture note:
   - `docs/architecture/2026-04-23-aios-success-criteria-system.md`
+
+## Implemented On 2026-04-27
+
+The `aios-ui` root layout now suppresses hydration warnings on the root `<html>` element so browser-extension-injected root attributes do not surface as app hydration errors during local development.
 
 Phase 1a prompt library baseline is now implemented:
 
