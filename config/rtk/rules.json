@@ -1,0 +1,79 @@
+{
+  "version": "2026-04-27",
+  "default_mode": "compressed",
+  "interface": "rtk_run(command: string, mode: \"compressed\" | \"raw\" | \"adaptive\")",
+  "preserve": [
+    "exit codes",
+    "errors and stack traces",
+    "changed files",
+    "failing tests",
+    "key diffs",
+    "reproduction commands",
+    "raw output path when failure output is tee'd"
+  ],
+  "reduce": [
+    "repetitive logs",
+    "successful test noise",
+    "unchanged files",
+    "boilerplate CLI output",
+    "package-manager progress output",
+    "git transfer progress"
+  ],
+  "workflow_modes": {
+    "code_generation": "compressed",
+    "test_execution": "adaptive",
+    "ci_cd_simulation": "adaptive",
+    "debugging": "adaptive",
+    "refactoring": "compressed",
+    "exploration": "compressed"
+  },
+  "high_token_sources": [
+    {
+      "source": "test runners",
+      "examples": ["pytest", "jest", "vitest", "playwright", "cargo test"],
+      "enters_context_at": ["Bash/PostToolUse", "quality pipeline reports", "agent final summaries"],
+      "approx_token_cost": "500-12000",
+      "full_fidelity": "optional unless failure is ambiguous"
+    },
+    {
+      "source": "build logs",
+      "examples": ["pnpm build", "npm run build", "next build", "docker compose build"],
+      "enters_context_at": ["Bash/PostToolUse", "CI simulation workflow"],
+      "approx_token_cost": "1000-20000",
+      "full_fidelity": "optional; preserve errors and artifact paths"
+    },
+    {
+      "source": "lint/typecheck",
+      "examples": ["tsc", "eslint", "ruff", "basedpyright"],
+      "enters_context_at": ["Bash/PostToolUse", "quality gates"],
+      "approx_token_cost": "300-8000",
+      "full_fidelity": "optional; preserve file, rule, location, message"
+    },
+    {
+      "source": "diffs",
+      "examples": ["git diff", "git show"],
+      "enters_context_at": ["Bash/PostToolUse", "review workflows"],
+      "approx_token_cost": "500-30000",
+      "full_fidelity": "adaptive; raw required for final review or patch application"
+    },
+    {
+      "source": "runtime logs",
+      "examples": ["docker logs", "tail logs/*.log", "journal streams"],
+      "enters_context_at": ["Bash/PostToolUse", "debugging workflows"],
+      "approx_token_cost": "1000-50000",
+      "full_fidelity": "optional; preserve errors, timestamps, repeated-line counts"
+    },
+    {
+      "source": "exploration output",
+      "examples": ["rg", "find", "ls", "tree", "cat large files"],
+      "enters_context_at": ["Bash/PostToolUse", "session packet assembly"],
+      "approx_token_cost": "200-15000",
+      "full_fidelity": "optional; preserve file paths and matched lines"
+    }
+  ],
+  "fallbacks": {
+    "ambiguous_failure": "adaptive",
+    "explicit_expansion_request": "raw",
+    "critical_information_hidden": "raw"
+  }
+}

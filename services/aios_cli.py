@@ -12,6 +12,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from services.rtk_integration import ensure_rtk_schema, load_compression_rules, rtk_metrics_log
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG_ROOT = REPO_ROOT / "config"
 DEFAULT_DB_PATH = Path.home() / "AIOS" / "data" / "aios.db"
@@ -712,6 +714,9 @@ def _metadata_payload(
     latest_criteria_eval = _latest_success_criteria_evaluation(conn)
     latest_workflow_report = _latest_workflow_execution_report(conn)
     latest_standards_snapshot = _latest_standards_snapshot(conn)
+    ensure_rtk_schema(conn)
+    rtk_metrics = rtk_metrics_log(conn)
+    rtk_rules = load_compression_rules()
 
     return {
         "system": {
@@ -744,6 +749,15 @@ def _metadata_payload(
             "registry": _standards_registry_summary(config_root),
             "latest_snapshot": latest_standards_snapshot,
         },
+        "rtk": {
+            "default_mode": rtk_rules.get("default_mode", "compressed"),
+            "rules_version": rtk_rules.get("version"),
+            "metrics": rtk_metrics,
+            "interface": rtk_rules.get(
+                "interface",
+                'rtk_run(command: string, mode: "compressed" | "raw" | "adaptive")',
+            ),
+        },
         "health": _health_payload(conn, logs_dir),
         "recent_failures_preview": _recent_failures_payload(conn, logs_dir, last=5),
         "available_commands": [
@@ -752,9 +766,47 @@ def _metadata_payload(
             "aios metadata --json",
             "aios logs --json --last 50",
             "aios recent-failures --json --last 20",
+            "aios rtk --json",
             "aios skills status --json",
             "aios skills refresh --json --apply",
         ],
+    }
+
+
+def _rtk_payload(conn: sqlite3.Connection) -> dict[str, Any]:
+    ensure_rtk_schema(conn)
+    rules = load_compression_rules()
+    rows = conn.execute(
+        """
+        SELECT workflow_key, COUNT(*) AS events,
+               COALESCE(SUM(estimated_raw_tokens), 0) AS raw_tokens,
+               COALESCE(SUM(estimated_compressed_tokens), 0) AS compressed_tokens,
+               COALESCE(SUM(MAX(estimated_raw_tokens - estimated_compressed_tokens, 0)), 0) AS tokens_saved
+        FROM rtk_compression_events
+        GROUP BY workflow_key
+        ORDER BY tokens_saved DESC
+        LIMIT 20
+        """
+    ).fetchall()
+    workflows = []
+    for row in rows:
+        raw_tokens = int(row["raw_tokens"])
+        compressed_tokens = int(row["compressed_tokens"])
+        reduction = round(max(0, raw_tokens - compressed_tokens) / raw_tokens * 100, 2) if raw_tokens else 0.0
+        workflows.append(
+            {
+                "workflow_key": row["workflow_key"] or "unclassified",
+                "events": int(row["events"]),
+                "raw_tokens": raw_tokens,
+                "compressed_tokens": compressed_tokens,
+                "tokens_saved": int(row["tokens_saved"]),
+                "efficiency_score": reduction,
+            }
+        )
+    return {
+        "rules": rules,
+        "metrics": rtk_metrics_log(conn),
+        "workflow_efficiency": workflows,
     }
 
 
@@ -783,6 +835,14 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
         return
     if command == "recent-failures":
         print(f"failures={data['count']}")
+        return
+    if command == "rtk":
+        metrics = data["metrics"]
+        print(
+            f"rtk_events={metrics['event_count']} "
+            f"tokens_saved={metrics['tokens_saved']} "
+            f"reduction={metrics['weighted_reduction_percent']}%"
+        )
         return
     if command == "skills-status":
         summary = data["summary"]
@@ -824,6 +884,8 @@ def create_parser() -> argparse.ArgumentParser:
     failures_parser = subparsers.add_parser("recent-failures", help="Recent failures across control-plane surfaces")
     failures_parser.add_argument("--last", type=int, default=20, help="Max failures to return")
 
+    subparsers.add_parser("rtk", help="RTK compression rules and metrics")
+
     skills_parser = subparsers.add_parser("skills", help="Instruction/skills registry surfaces")
     skills_subparsers = skills_parser.add_subparsers(dest="skills_command", required=True)
 
@@ -848,7 +910,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
     command = _command_name(args)
 
     try:
-        if args.command in {"status", "health", "metadata", "recent-failures"}:
+        if args.command in {"status", "health", "metadata", "recent-failures", "rtk"}:
             conn = _connect_db(db_path)
         else:
             conn = None
@@ -874,6 +936,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "recent-failures":
             assert conn is not None
             data = _recent_failures_payload(conn, logs_dir, last=max(1, args.last))
+        elif args.command == "rtk":
+            assert conn is not None
+            data = _rtk_payload(conn)
         elif args.command == "skills" and args.skills_command == "status":
             data = _instruction_status(config_root, vault_root, project_id=args.project)
         elif args.command == "skills" and args.skills_command == "refresh":

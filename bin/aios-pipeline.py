@@ -19,12 +19,15 @@ Cron (daily at 06:00):
   0 6 * * * python3 ~/AIOS/bin/aios-pipeline.py >> ~/AIOS/logs/pipeline.log 2>&1
 """
 import argparse
+import shlex
 import subprocess
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
 from aios_paths import get_vault_subpath
+
+from services.rtk_integration import rtk_run
 
 BIN  = Path(__file__).parent
 LOG  = Path.home() / "AIOS/logs/pipeline.log"
@@ -57,19 +60,17 @@ def _log(msg: str, verbose: bool = False) -> None:
 
 
 def _run(cmd: list[str], label: str, verbose: bool) -> tuple[bool, str]:
-    """Run a subprocess, return (success, output)."""
+    """Run a subprocess through RTK, return (success, compressed output)."""
     try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
+        result = rtk_run(
+            shlex.join(cmd),
+            "adaptive",
             timeout=600,
+            source_kind=f"pipeline:{label}",
         )
-        output = result.stdout.strip()
-        if result.returncode != 0:
-            err = result.stderr.strip()
-            return False, f"exit {result.returncode}: {err[:300]}"
-        return True, output
+        if result.exit_code != 0:
+            return False, result.output[:800]
+        return True, result.output
     except subprocess.TimeoutExpired:
         return False, "timeout after 600s"
     except Exception as exc:

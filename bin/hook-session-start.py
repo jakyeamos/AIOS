@@ -24,6 +24,8 @@ from aios_orchestration_runtime import (
 )
 from aios_paths import get_vault_root
 
+from services.rtk_integration import ensure_rtk_schema, load_compression_rules
+
 ROOT = Path(__file__).resolve().parents[1]
 
 DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
@@ -259,6 +261,22 @@ def generate_packet(
     if cts_context:
         parts.append(cts_context)
 
+    # 8. RTK command-output compression policy
+    try:
+        rtk_rules = load_compression_rules()
+        default_mode = rtk_rules.get("default_mode", "compressed")
+        preserve = ", ".join(str(item) for item in rtk_rules.get("preserve", [])[:4])
+        fallback = rtk_rules.get("fallbacks", {}).get("ambiguous_failure", "adaptive")
+        parts.append(
+            "**RTK context compression:**\n"
+            f"- Default command mode: {default_mode}\n"
+            f"- Preserve: {preserve}\n"
+            f"- Ambiguous failures expand via: {fallback}\n"
+            "- Use `python bin/rtk-run.py --mode adaptive -- <command>` for managed command output."
+        )
+    except Exception as e:
+        log(f"rtk rules unavailable: {e}")
+
     if not parts:
         return ""
 
@@ -292,6 +310,7 @@ def main() -> None:
         conn = sqlite3.connect(DB)
         project_id = get_or_create_project(conn, cwd)
         ensure_runtime_schema(conn)
+        ensure_rtk_schema(conn)
 
         # Check if session already exists — /clear re-fires SessionStart with same ID
         existing = conn.execute("SELECT id, status FROM sessions WHERE id=?", (session_id,)).fetchone()

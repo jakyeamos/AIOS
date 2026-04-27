@@ -11,6 +11,17 @@ import sqlite3
 import sys
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from services.rtk_integration import (  # noqa: E402
+    compress_tool_output,
+    load_compression_rules,
+    record_rtk_event,
+)
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
@@ -164,6 +175,21 @@ def format_context_injection(patterns: list[dict], symptom: str) -> str:
     return "\n".join(lines)
 
 
+def format_rtk_context(result) -> str:
+    lines = [
+        "\n[AIOS RTK] compressed command output:",
+        result.output,
+        (
+            f"\n[AIOS RTK] tokens: {result.estimated_raw_tokens} -> "
+            f"{result.estimated_compressed_tokens} "
+            f"({result.token_reduction_percent:.1f}% reduction)"
+        ),
+    ]
+    if result.raw_output_path:
+        lines.append(f"[AIOS RTK] raw output: {result.raw_output_path}")
+    return "\n".join(lines)
+
+
 def get_project_id(conn: sqlite3.Connection, session_id: str) -> str:
     try:
         cur = conn.execute("SELECT project_id FROM sessions WHERE id = ?", (session_id,))
@@ -200,6 +226,7 @@ def main() -> None:
 
     try:
         conn = sqlite3.connect(DB)
+        conn.row_factory = sqlite3.Row
         cur = conn.execute("SELECT id FROM sessions WHERE id = ?", (session_id,))
         if not cur.fetchone():
             conn.close()
@@ -241,6 +268,31 @@ def main() -> None:
 
         # Auto-capture bugs from Bash failures
         tool_response = data.get("tool_response")
+        rtk_result = None
+        if tool_name == "Bash":
+            command = (data.get("tool_input") or {}).get("command", "")
+            raw_text, exit_code = parse_tool_response(tool_response)
+            if raw_text:
+                rules = load_compression_rules()
+                mode = rules.get("default_mode", "compressed")
+                if exit_code is not None and exit_code != 0:
+                    mode = "adaptive"
+                if mode not in {"compressed", "raw", "adaptive"}:
+                    mode = "compressed"
+                rtk_result = compress_tool_output(
+                    command=command,
+                    raw_output=raw_text,
+                    exit_code=exit_code,
+                    mode=mode,
+                )
+                record_rtk_event(
+                    conn,
+                    result=rtk_result,
+                    session_id=session_id,
+                    source_kind="PostToolUse",
+                    metadata={"hook": "post-tool-use", "tool_name": tool_name},
+                )
+
         symptom = detect_bug(tool_name, data.get("tool_input") or {}, tool_response)
         if symptom:
             project_id = get_project_id(conn, session_id)
@@ -308,6 +360,13 @@ def main() -> None:
                     print(format_context_injection(matches, symptom))
             except Exception:
                 pass  # never let context injection block the hook
+
+        if rtk_result and (
+            rtk_result.estimated_raw_tokens >= 200
+            or rtk_result.exit_code != 0
+            or rtk_result.ambiguous_failure
+        ):
+            print(format_rtk_context(rtk_result))
 
         conn.commit()
         conn.close()

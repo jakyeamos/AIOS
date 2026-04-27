@@ -353,6 +353,26 @@ def test_metadata_and_skills_refresh_flow(tmp_path: Path, capsys) -> None:
     assert metadata_output["data"]["standards_delta"]["registry"]["profile_id"] == "aios-core"
     assert metadata_output["data"]["standards_delta"]["registry"]["standard_count"] == 2
     assert metadata_output["data"]["standards_delta"]["latest_snapshot"]["id"] == "health-1"
+    assert metadata_output["data"]["rtk"]["default_mode"] == "compressed"
+
+    rtk_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "--config-root",
+            str(config_root),
+            "--vault-root",
+            str(vault_root),
+            "rtk",
+        ]
+    )
+    assert rtk_exit == EXIT_OK
+    rtk_output = json.loads(capsys.readouterr().out)
+    assert rtk_output["ok"] is True
+    assert rtk_output["data"]["metrics"]["event_count"] == 0
 
     dry_run_exit = run_cli(
         [

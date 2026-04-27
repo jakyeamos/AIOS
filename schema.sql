@@ -141,6 +141,28 @@ CREATE TABLE experiments (
 );
 CREATE INDEX idx_metrics_session ON workflow_metrics(session_id);
 CREATE INDEX idx_metrics_name ON workflow_metrics(metric_name);
+CREATE TABLE rtk_compression_events (
+  id TEXT PRIMARY KEY,
+  session_id TEXT REFERENCES sessions(id),
+  run_id TEXT REFERENCES orchestration_runs(id),
+  workflow_key TEXT,
+  source_kind TEXT NOT NULL,
+  command TEXT,
+  mode TEXT NOT NULL,
+  effective_mode TEXT NOT NULL,
+  exit_code INTEGER,
+  raw_chars INTEGER NOT NULL,
+  compressed_chars INTEGER NOT NULL,
+  estimated_raw_tokens INTEGER NOT NULL,
+  estimated_compressed_tokens INTEGER NOT NULL,
+  token_reduction_percent REAL NOT NULL,
+  ambiguous_failure INTEGER NOT NULL DEFAULT 0,
+  raw_output_path TEXT,
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX idx_rtk_compression_events_session ON rtk_compression_events(session_id, created_at DESC);
+CREATE INDEX idx_rtk_compression_events_workflow ON rtk_compression_events(workflow_key, created_at DESC);
 CREATE INDEX idx_prompts_retrieval ON prompts_used(retrieval_fired);
 CREATE TABLE orchestration_runs (
   id TEXT PRIMARY KEY,

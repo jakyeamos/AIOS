@@ -17,6 +17,11 @@ export default async function CostsPage(): Promise<React.JSX.Element> {
         <StatCard label="Abandoned Session Tokens" value={formatTokens(summary.abandonedSessionTokens)} />
         <StatCard label="Failed Run Tokens" value={formatTokens(summary.failedRunTokens)} status="warning" />
       </div>
+      <div className="grid grid-3">
+        <StatCard label="RTK Tokens Saved" value={formatTokens(summary.rtk.tokensSaved)} />
+        <StatCard label="RTK Reduction" value={`${summary.rtk.reductionPercent.toFixed(1)}%`} />
+        <StatCard label="RTK Ambiguous Failures" value={summary.rtk.ambiguousFailures} status="warning" />
+      </div>
       <div className="grid grid-2">
         <BarChart
           data={summary.byProject.map((point) => ({ label: point.label, value: point.tokens }))}
@@ -31,6 +36,9 @@ export default async function CostsPage(): Promise<React.JSX.Element> {
         <CostBreakdown title="By Project" rows={summary.byProject} />
         <CostBreakdown title="By Classification" rows={summary.byClassification} />
         <CostBreakdown title="By Tool" rows={summary.byTool} />
+      </div>
+      <div className="grid grid-2">
+        <CostBreakdown title="RTK Savings By Workflow" rows={summary.rtk.byWorkflow} />
       </div>
     </PageShell>
   );

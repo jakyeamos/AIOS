@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from services.execution_strategy import StrategySelectionError, compile_execution_strategy
+from services.rtk_integration import load_compression_rules
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_WORKFLOW_REGISTRY = ROOT / "config" / "workflows" / "registry.json"
@@ -492,10 +493,19 @@ def execute_workflow(
     workflow = workflows.get(context.workflow_key)
     if workflow is None:
         raise ValueError(f"Unknown workflow key: {context.workflow_key}")
+    rtk_rules = load_compression_rules()
+    workflow_modes = rtk_rules.get("workflow_modes", {})
+    workflow_rtk_mode = "compressed"
+    if isinstance(workflow_modes, dict):
+        if context.workflow_key == "failure-recovery":
+            workflow_rtk_mode = str(workflow_modes.get("debugging", "adaptive"))
+        elif context.workflow_key == "implementation-delivery":
+            workflow_rtk_mode = str(workflow_modes.get("code_generation", "compressed"))
 
     run_state: dict[str, Any] = {
         "objective": context.objective,
         "workflow_key": workflow.key,
+        "rtk_mode": workflow_rtk_mode,
     }
     stages_report: list[dict[str, Any]] = []
     validations: list[dict[str, Any]] = []
@@ -536,6 +546,7 @@ def execute_workflow(
                 "stage_key": stage.key,
                 "kind": stage.kind,
                 "status": stage_status,
+                "rtk_mode": workflow_rtk_mode if stage.kind in {"generate", "validate", "finalize"} else "compressed",
                 "skills": skill_reports,
                 "issues": stage_issues,
                 "started_at": stage_started,
@@ -585,6 +596,16 @@ def execute_workflow(
             "evidence_notes": run_state.get("evidence_notes", []),
             "draft_text": run_state.get("draft_text"),
             "humanized_text": run_state.get("humanized_text"),
+        },
+        "rtk": {
+            "interface": rtk_rules.get(
+                "interface",
+                'rtk_run(command: string, mode: "compressed" | "raw" | "adaptive")',
+            ),
+            "default_mode": rtk_rules.get("default_mode", "compressed"),
+            "workflow_mode": workflow_rtk_mode,
+            "preserve": rtk_rules.get("preserve", []),
+            "fallbacks": rtk_rules.get("fallbacks", {}),
         },
         "created_at": _now_iso(),
         "started_at": started_at,

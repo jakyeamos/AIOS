@@ -20,6 +20,15 @@ export const seededCostSummary: CostSummary = {
   ],
   abandonedSessionTokens: 48_330,
   failedRunTokens: 25_920,
+  rtk: {
+    eventCount: 0,
+    rawTokens: 0,
+    compressedTokens: 0,
+    tokensSaved: 0,
+    reductionPercent: 0,
+    ambiguousFailures: 0,
+    byWorkflow: [],
+  },
 };
 
 export const seededAnomalies: AnomalyAlert[] = [

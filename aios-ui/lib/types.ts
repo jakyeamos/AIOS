@@ -116,6 +116,15 @@ export type CostSummary = {
   byTool: CostBreakdownPoint[];
   abandonedSessionTokens: number;
   failedRunTokens: number;
+  rtk: {
+    eventCount: number;
+    rawTokens: number;
+    compressedTokens: number;
+    tokensSaved: number;
+    reductionPercent: number;
+    ambiguousFailures: number;
+    byWorkflow: CostBreakdownPoint[];
+  };
 };
 
 export type AnomalyAlertType =

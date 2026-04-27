@@ -131,6 +131,20 @@ Dry-run without lab report generation:
 UV_CACHE_DIR=/tmp/uv-cache uv run python bin/aios-pipeline.py --dry-run --skip-lab
 ```
 
+## RTK Context Compression
+
+AIOS routes managed command output through the RTK compression layer:
+
+```bash
+cd /Users/jakyeamos/AIOS
+python3 bin/rtk-run.py --mode adaptive -- pytest -q
+python3 bin/rtk-run.py --metrics --json
+python3 bin/aios.py --json rtk
+```
+
+Rules live in `config/rtk/rules.json`; architecture details live in
+`docs/architecture/2026-04-27-aios-rtk-context-compression.md`.
+
 ## Important Files
 
 - `PROJECT.md` - project truth and current implementation state

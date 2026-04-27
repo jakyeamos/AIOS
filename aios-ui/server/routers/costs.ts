@@ -16,6 +16,19 @@ type ClassificationCountRow = {
   count: number;
 };
 
+type RtkAggregateRow = {
+  eventCount: number;
+  rawTokens: number;
+  compressedTokens: number;
+  tokensSaved: number;
+  ambiguousFailures: number;
+};
+
+type RtkWorkflowRow = {
+  key: string | null;
+  tokens: number;
+};
+
 const normalizePeriod = (period: string | undefined): CostSummary["period"] => {
   if (period === "day" || period === "week" || period === "month") {
     return period;
@@ -132,6 +145,56 @@ const readClassificationCounts = (
     .all() as ClassificationCountRow[];
 };
 
+const readRtkSummary = (ctxDb: ReturnType<typeof import("@/server/db").getDb>): CostSummary["rtk"] => {
+  if (!tableExists("rtk_compression_events")) {
+    return seededCostSummary.rtk;
+  }
+
+  const aggregate = ctxDb
+    .prepare(
+      `
+      SELECT
+        COUNT(*) AS eventCount,
+        CAST(COALESCE(SUM(estimated_raw_tokens), 0) AS INTEGER) AS rawTokens,
+        CAST(COALESCE(SUM(estimated_compressed_tokens), 0) AS INTEGER) AS compressedTokens,
+        CAST(COALESCE(SUM(MAX(estimated_raw_tokens - estimated_compressed_tokens, 0)), 0) AS INTEGER) AS tokensSaved,
+        CAST(COALESCE(SUM(ambiguous_failure), 0) AS INTEGER) AS ambiguousFailures
+      FROM rtk_compression_events
+    `,
+    )
+    .get() as RtkAggregateRow;
+
+  const rawTokens = Number(aggregate.rawTokens) || 0;
+  const tokensSaved = Number(aggregate.tokensSaved) || 0;
+  const byWorkflow = ctxDb
+    .prepare(
+      `
+      SELECT
+        COALESCE(workflow_key, 'unclassified') AS key,
+        CAST(COALESCE(SUM(MAX(estimated_raw_tokens - estimated_compressed_tokens, 0)), 0) AS INTEGER) AS tokens
+      FROM rtk_compression_events
+      GROUP BY COALESCE(workflow_key, 'unclassified')
+      ORDER BY tokens DESC
+      LIMIT 8
+    `,
+    )
+    .all() as RtkWorkflowRow[];
+
+  return {
+    eventCount: Number(aggregate.eventCount) || 0,
+    rawTokens,
+    compressedTokens: Number(aggregate.compressedTokens) || 0,
+    tokensSaved,
+    reductionPercent: rawTokens > 0 ? Math.round((tokensSaved / rawTokens) * 1000) / 10 : 0,
+    ambiguousFailures: Number(aggregate.ambiguousFailures) || 0,
+    byWorkflow: byWorkflow.map((row) => ({
+      key: row.key ?? "unclassified",
+      label: row.key ?? "unclassified",
+      tokens: Number(row.tokens) || 0,
+    })),
+  };
+};
+
 export const costsRouter = createTRPCRouter({
   summary: publicProcedure
     .input(z.object({ period: z.enum(["day", "week", "month"]).optional() }).optional())
@@ -142,6 +205,7 @@ export const costsRouter = createTRPCRouter({
         return {
           ...seededCostSummary,
           period: normalizePeriod(input?.period),
+          rtk: readRtkSummary(ctx.db),
         };
       }
 
@@ -157,6 +221,7 @@ export const costsRouter = createTRPCRouter({
         byTool: byTool.length > 0 ? byTool : seededCostSummary.byTool,
         abandonedSessionTokens: Math.round(totalTokens * 0.11),
         failedRunTokens: Math.round(totalTokens * 0.06),
+        rtk: readRtkSummary(ctx.db),
       };
     }),
 });

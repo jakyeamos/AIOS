@@ -24,6 +24,8 @@ from aios_orchestration_runtime import (
     update_invocation,
 )
 
+from services.rtk_integration import ensure_rtk_schema, rtk_metrics_log
+
 ROOT = Path(__file__).resolve().parents[1]
 
 DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
@@ -205,6 +207,7 @@ def main() -> None:
 
         ensure_memory_updates_table(conn)
         ensure_runtime_schema(conn)
+        ensure_rtk_schema(conn)
 
         # Flag reusable insights from this session
         insight_count = 0
@@ -506,6 +509,14 @@ def main() -> None:
             "standards health snapshot recorded: "
             f"{standards_eval['snapshot_id']} ({standards_eval['summary']})"
         )
+        rtk_metrics = rtk_metrics_log(conn, session_id=session_id)
+        log(
+            "rtk compression metrics: "
+            f"events={rtk_metrics['event_count']} "
+            f"tokens={rtk_metrics['raw_tokens']}->{rtk_metrics['compressed_tokens']} "
+            f"saved={rtk_metrics['tokens_saved']} "
+            f"reduction={rtk_metrics['weighted_reduction_percent']}%"
+        )
 
         # Log Stop event
         conn.execute(
@@ -513,12 +524,20 @@ def main() -> None:
             INSERT INTO tool_events (id, session_id, source_tool, event_type, event_time, payload_json)
             VALUES (?, ?, 'claude-code', 'Stop', ?, ?)
             """,
-            (str(uuid.uuid4()), session_id, now, json.dumps({"summary_candidate": candidate_path})),
+            (
+                str(uuid.uuid4()),
+                session_id,
+                now,
+                json.dumps({"summary_candidate": candidate_path, "rtk_metrics": rtk_metrics}),
+            ),
         )
 
         conn.commit()
         conn.close()
-        msg = f"{len(prompts)} prompts · {len(artifacts)} artifacts captured · {insight_count} insights flagged"
+        msg = (
+            f"{len(prompts)} prompts · {len(artifacts)} artifacts captured · "
+            f"{insight_count} insights flagged · RTK saved {rtk_metrics['tokens_saved']} tokens"
+        )
         log(f"session {session_id} closed. summary: {candidate_path}. handoff: {handoff_path or 'none'}")
         print(f"AIOS · session closed · {msg}")
         subprocess.run(

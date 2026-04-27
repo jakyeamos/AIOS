@@ -468,6 +468,33 @@ export const ensureControlPlaneSchema = (db: Database.Database): void => {
     CREATE INDEX IF NOT EXISTS idx_quality_pipeline_runs_project_gate
       ON quality_pipeline_runs(project_id, gate_key, completed_at DESC, created_at DESC);
 
+    CREATE TABLE IF NOT EXISTS rtk_compression_events (
+      id TEXT PRIMARY KEY,
+      session_id TEXT REFERENCES sessions(id),
+      run_id TEXT REFERENCES orchestration_runs(id),
+      workflow_key TEXT,
+      source_kind TEXT NOT NULL,
+      command TEXT,
+      mode TEXT NOT NULL,
+      effective_mode TEXT NOT NULL,
+      exit_code INTEGER,
+      raw_chars INTEGER NOT NULL,
+      compressed_chars INTEGER NOT NULL,
+      estimated_raw_tokens INTEGER NOT NULL,
+      estimated_compressed_tokens INTEGER NOT NULL,
+      token_reduction_percent REAL NOT NULL,
+      ambiguous_failure INTEGER NOT NULL DEFAULT 0,
+      raw_output_path TEXT,
+      metadata_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_rtk_compression_events_session
+      ON rtk_compression_events(session_id, created_at DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_rtk_compression_events_workflow
+      ON rtk_compression_events(workflow_key, created_at DESC);
+
     CREATE TABLE IF NOT EXISTS project_aios_component_settings (
       project_id TEXT NOT NULL REFERENCES projects(id),
       component_key TEXT NOT NULL,
