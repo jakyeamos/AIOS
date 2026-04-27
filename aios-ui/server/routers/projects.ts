@@ -1,7 +1,11 @@
 import { z } from "zod";
 import type Database from "better-sqlite3";
 
-import type { TaskiProjectSummary } from "@/lib/control-plane";
+import type { AiosProjectComponentKey, TaskiProjectSummary } from "@/lib/control-plane";
+import {
+  isAiosProjectComponentKey,
+  setAiosProjectComponentEnabled,
+} from "@/server/aios/project-components";
 import type { Project, ProjectStatus, Session } from "@/lib/types";
 import { getProjectQualityPipeline } from "@/server/aios/quality-pipeline";
 import { ensureControlPlaneSchema } from "@/server/aios/schema";
@@ -58,6 +62,11 @@ const normalizeTool = (tool: string): Session["tool"] => {
 
   return "codex";
 };
+
+const aiosProjectComponentKeySchema = z.string().refine(
+  (key): key is AiosProjectComponentKey => isAiosProjectComponentKey(key),
+  "Unknown AIOS project component key.",
+);
 
 const mapProject = (db: Database.Database, row: ProjectRow): Project => {
   const qualityPipeline = getProjectQualityPipeline(db, row.id);
@@ -253,6 +262,22 @@ export const projectsRouter = createTRPCRouter({
   taskiSummary: publicProcedure
     .input(z.object({ projectId: z.string().min(1) }))
     .query(({ ctx, input }): TaskiProjectSummary | null => getTaskiProjectSummary(ctx.db, input.projectId)),
+
+  setAiosComponentEnabled: publicProcedure
+    .input(
+      z.object({
+        projectId: z.string().min(1),
+        componentKey: aiosProjectComponentKeySchema,
+        enabled: z.boolean(),
+      }),
+    )
+    .mutation(({ ctx, input }) =>
+      setAiosProjectComponentEnabled(ctx.db, {
+        projectId: input.projectId,
+        componentKey: input.componentKey,
+        enabled: input.enabled,
+      }),
+    ),
 
   updateBackfillTask: publicProcedure
     .input(

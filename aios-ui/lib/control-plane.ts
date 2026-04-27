@@ -522,6 +522,22 @@ export type QualityPipelineSummary = {
   gates: QualityPipelineGate[];
 };
 
+export type AiosProjectComponentKey =
+  | "taski_summary"
+  | "knowledge_dossier"
+  | "standards_health"
+  | "quality_pipeline"
+  | "learning_writebacks"
+  | "active_runs";
+
+export type AiosProjectComponentSetting = {
+  key: AiosProjectComponentKey;
+  label: string;
+  summary: string;
+  enabled: boolean;
+  updatedAt: string | null;
+};
+
 export type TaskiProjectSummary = {
   projectId: string;
   projectTitle: string;
@@ -540,4 +556,5 @@ export type TaskiProjectSummary = {
   suggestedNextActions: string[];
   standardsHealth: StandardsHealthSummary | null;
   qualityPipeline: QualityPipelineSummary;
+  aiosComponents: AiosProjectComponentSetting[];
 };

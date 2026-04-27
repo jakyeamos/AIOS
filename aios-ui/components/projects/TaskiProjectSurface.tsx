@@ -1,8 +1,14 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import type { KnowledgePageDetail, TaskiProjectSummary } from "@/lib/control-plane";
+import type {
+  AiosProjectComponentKey,
+  AiosProjectComponentSetting,
+  KnowledgePageDetail,
+  TaskiProjectSummary,
+} from "@/lib/control-plane";
 import { KnowledgePageView } from "@/components/knowledge/KnowledgePageView";
 import { StatusBadge } from "@/components/primitives/StatusBadge";
 import { trpc } from "@/lib/trpc";
@@ -54,13 +60,34 @@ export function TaskiProjectSurface({
   summary: TaskiProjectSummary;
   dossier: KnowledgePageDetail;
 }): React.JSX.Element {
+  const router = useRouter();
   const [tab, setTab] = useState<"taski" | "dossier">("taski");
+  const [componentSettings, setComponentSettings] = useState<AiosProjectComponentSetting[]>(summary.aiosComponents);
+  const [selectedComponentKey, setSelectedComponentKey] = useState<AiosProjectComponentKey>(
+    summary.aiosComponents[0]?.key ?? "taski_summary",
+  );
   const utils = trpc.useUtils();
+  const componentUpdater = trpc.projects.setAiosComponentEnabled.useMutation({
+    onSuccess: async (settings) => {
+      setComponentSettings(settings);
+      await utils.projects.taskiSummary.invalidate({ projectId: summary.projectId });
+      router.refresh();
+    },
+  });
   const backfillUpdater = trpc.projects.updateBackfillTask.useMutation({
     onSuccess: async () => {
       await utils.projects.taskiSummary.invalidate({ projectId: summary.projectId });
     },
   });
+  const selectedComponent = componentSettings.find((component) => component.key === selectedComponentKey) ?? componentSettings[0];
+  const componentEnabled = (key: AiosProjectComponentKey): boolean =>
+    componentSettings.find((component) => component.key === key)?.enabled ?? true;
+  const taskiSummaryEnabled = componentEnabled("taski_summary");
+  const dossierEnabled = componentEnabled("knowledge_dossier");
+  const standardsHealthEnabled = componentEnabled("standards_health");
+  const qualityPipelineEnabled = componentEnabled("quality_pipeline");
+  const learningWritebacksEnabled = componentEnabled("learning_writebacks");
+  const activeRunsEnabled = componentEnabled("active_runs");
 
   return (
     <div className="page-content">
@@ -74,16 +101,88 @@ export function TaskiProjectSurface({
           <StatusBadge status={summary.status} label={summary.freshness} />
         </div>
         <div className="panel-row" style={{ gap: "0.75rem", marginTop: "1rem" }}>
-          <button type="button" className={tab === "taski" ? "button-primary" : "button-secondary"} onClick={() => setTab("taski")}>
+          <button
+            type="button"
+            className={tab === "taski" ? "button-primary" : "button-secondary"}
+            disabled={!taskiSummaryEnabled}
+            onClick={() => setTab("taski")}
+          >
             Taski Summary
           </button>
-          <button type="button" className={tab === "dossier" ? "button-primary" : "button-secondary"} onClick={() => setTab("dossier")}>
+          <button
+            type="button"
+            className={tab === "dossier" ? "button-primary" : "button-secondary"}
+            disabled={!dossierEnabled}
+            onClick={() => setTab("dossier")}
+          >
             Knowledge Dossier
           </button>
         </div>
       </section>
 
-      {tab === "taski" ? (
+      <section className="panel-card">
+        <div className="panel-row project-scope-row">
+          <div>
+            <h3 className="section-title">AIOS Project Scope</h3>
+            <p className="panel-subtitle">
+              Disable noisy AIOS surfaces for this project without changing other project dossiers.
+            </p>
+          </div>
+          <div className="project-scope-control">
+            <label className="field">
+              Part
+              <select
+                value={selectedComponentKey}
+                onChange={(event) => setSelectedComponentKey(event.target.value as AiosProjectComponentKey)}
+              >
+                {componentSettings.map((component) => (
+                  <option key={component.key} value={component.key}>
+                    {component.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              Mode
+              <select
+                value={selectedComponent?.enabled ? "enabled" : "disabled"}
+                disabled={!selectedComponent || componentUpdater.isPending}
+                onChange={(event) => {
+                  if (!selectedComponent) {
+                    return;
+                  }
+                  const nextEnabled = event.target.value === "enabled";
+                  setComponentSettings((currentSettings) =>
+                    currentSettings.map((component) =>
+                      component.key === selectedComponent.key ? { ...component, enabled: nextEnabled } : component,
+                    ),
+                  );
+                  componentUpdater.mutate({
+                    projectId: summary.projectId,
+                    componentKey: selectedComponent.key,
+                    enabled: nextEnabled,
+                  });
+                }}
+              >
+                <option value="enabled">enabled</option>
+                <option value="disabled">off for this project</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        {selectedComponent ? <p className="entity-meta">{selectedComponent.summary}</p> : null}
+        <div className="badge-row" style={{ marginTop: "0.75rem" }}>
+          {componentSettings.map((component) => (
+            <StatusBadge
+              key={component.key}
+              status={component.enabled ? "healthy" : "warning"}
+              label={`${component.label}: ${component.enabled ? "on" : "off"}`}
+            />
+          ))}
+        </div>
+      </section>
+
+      {tab === "taski" && taskiSummaryEnabled ? (
         <div className="detail-grid">
           <section className="panel-card">
             <h3 className="section-title">Operating Summary</h3>
@@ -117,79 +216,82 @@ export function TaskiProjectSurface({
             </div>
           </section>
 
-          <section className="panel-card">
-            <h3 className="section-title">Knowledge + Learning</h3>
-            <div className="stack">
-              <article className="entity-card">
-                <p className="panel-title">Top Topics</p>
-                <ul className="detail-list">
-                  {summary.topTopics.map((topic) => (
-                    <li key={topic.id}>
-                      {topic.title}: {topic.summary}
-                    </li>
-                  ))}
-                </ul>
-              </article>
-              <article className="entity-card">
-                <p className="panel-title">Learned Policies</p>
-                <ul className="detail-list">
-                  {summary.learnedPolicies.length > 0 ? (
-                    summary.learnedPolicies.map((policy) => (
-                      <li key={policy.id}>
-                        {policy.title}: {policy.summary}
-                        {policy.requiresApproval ? " (approval required)" : ""}
+          {learningWritebacksEnabled ? (
+            <section className="panel-card">
+              <h3 className="section-title">Knowledge + Learning</h3>
+              <div className="stack">
+                <article className="entity-card">
+                  <p className="panel-title">Top Topics</p>
+                  <ul className="detail-list">
+                    {summary.topTopics.map((topic) => (
+                      <li key={topic.id}>
+                        {topic.title}: {topic.summary}
                       </li>
-                    ))
-                  ) : (
-                    <li>No learning writebacks have been proposed yet.</li>
-                  )}
-                </ul>
-              </article>
-              <article className="entity-card">
-                <p className="panel-title">Drift Markers</p>
-                <ul className="detail-list">
-                  {summary.driftMarkers.length > 0 ? (
-                    summary.driftMarkers.map((marker) => (
-                      <li key={`${marker.kind}-${marker.summary}`}>
-                        {marker.kind}: {marker.summary}
-                      </li>
-                    ))
-                  ) : (
-                    <li>No drift or contradiction markers were surfaced for the top topics.</li>
-                  )}
-                </ul>
-              </article>
-              <article className="entity-card">
-                <p className="panel-title">Structured Findings</p>
-                <ul className="detail-list">
-                  {summary.consistencyFindings.length > 0 ? (
-                    summary.consistencyFindings.map((finding) => (
-                      <li key={finding.id}>
-                        {finding.findingKind}: {finding.summary}
-                      </li>
-                    ))
-                  ) : (
-                    <li>No structured evaluator findings are attached to this project yet.</li>
-                  )}
-                </ul>
-              </article>
-              <article className="entity-card">
-                <p className="panel-title">Approval Queue</p>
-                <ul className="detail-list">
-                  {summary.pendingApprovals.length > 0 ? (
-                    summary.pendingApprovals.map((proposal) => (
-                      <li key={proposal.id}>
-                        {proposal.title}: {proposal.approvalReason ?? proposal.summary}
-                      </li>
-                    ))
-                  ) : (
-                    <li>No pending approval proposals are blocking this project right now.</li>
-                  )}
-                </ul>
-              </article>
-            </div>
-          </section>
+                    ))}
+                  </ul>
+                </article>
+                <article className="entity-card">
+                  <p className="panel-title">Learned Policies</p>
+                  <ul className="detail-list">
+                    {summary.learnedPolicies.length > 0 ? (
+                      summary.learnedPolicies.map((policy) => (
+                        <li key={policy.id}>
+                          {policy.title}: {policy.summary}
+                          {policy.requiresApproval ? " (approval required)" : ""}
+                        </li>
+                      ))
+                    ) : (
+                      <li>No learning writebacks have been proposed yet.</li>
+                    )}
+                  </ul>
+                </article>
+                <article className="entity-card">
+                  <p className="panel-title">Drift Markers</p>
+                  <ul className="detail-list">
+                    {summary.driftMarkers.length > 0 ? (
+                      summary.driftMarkers.map((marker) => (
+                        <li key={`${marker.kind}-${marker.summary}`}>
+                          {marker.kind}: {marker.summary}
+                        </li>
+                      ))
+                    ) : (
+                      <li>No drift or contradiction markers were surfaced for the top topics.</li>
+                    )}
+                  </ul>
+                </article>
+                <article className="entity-card">
+                  <p className="panel-title">Structured Findings</p>
+                  <ul className="detail-list">
+                    {summary.consistencyFindings.length > 0 ? (
+                      summary.consistencyFindings.map((finding) => (
+                        <li key={finding.id}>
+                          {finding.findingKind}: {finding.summary}
+                        </li>
+                      ))
+                    ) : (
+                      <li>No structured evaluator findings are attached to this project yet.</li>
+                    )}
+                  </ul>
+                </article>
+                <article className="entity-card">
+                  <p className="panel-title">Approval Queue</p>
+                  <ul className="detail-list">
+                    {summary.pendingApprovals.length > 0 ? (
+                      summary.pendingApprovals.map((proposal) => (
+                        <li key={proposal.id}>
+                          {proposal.title}: {proposal.approvalReason ?? proposal.summary}
+                        </li>
+                      ))
+                    ) : (
+                      <li>No pending approval proposals are blocking this project right now.</li>
+                    )}
+                  </ul>
+                </article>
+              </div>
+            </section>
+          ) : null}
 
+          {standardsHealthEnabled ? (
           <section className="panel-card">
             <h3 className="section-title">Standards Delta / Health</h3>
             {summary.standardsHealth ? (
@@ -332,7 +434,9 @@ export function TaskiProjectSurface({
               </article>
             )}
           </section>
+          ) : null}
 
+          {qualityPipelineEnabled ? (
           <section className="panel-card">
             <h3 className="section-title">Quality Pipeline</h3>
             <div className="stack">
@@ -390,7 +494,9 @@ export function TaskiProjectSurface({
               </article>
             </div>
           </section>
+          ) : null}
 
+          {activeRunsEnabled ? (
           <section className="panel-card">
             <h3 className="section-title">Active Runs</h3>
             <div className="stack">
@@ -419,9 +525,15 @@ export function TaskiProjectSurface({
               ))}
             </div>
           </section>
+          ) : null}
         </div>
-      ) : (
+      ) : tab === "dossier" && dossierEnabled ? (
         <KnowledgePageView page={dossier} />
+      ) : (
+        <section className="panel-card">
+          <h3 className="section-title">Project Surface Disabled</h3>
+          <p className="panel-subtitle">This AIOS part is off for {summary.projectTitle}. Re-enable it from the project scope selector.</p>
+        </section>
       )}
     </div>
   );

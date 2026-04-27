@@ -1,12 +1,12 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active infra project powering Claude Code agent workflows with committed CTS backend, command-center UI, standalone query/audit utilities, and design specs; repo hygiene is normalized, but quality gates still fail on the Python baseline.
+summary: Active infra project powering Claude Code agent workflows with committed CTS backend, command-center UI, standalone query/audit utilities, and design specs; the project UI now supports per-project AIOS component scope controls, but quality gates still fail on the Python baseline.
 healthScore: 66
 statusLabel: needs_attention
-nextStep: Resume Ruff and BasedPyright remediation, starting with hook-adjacent scripts and dynamic import helpers, with the repo now back to a clean committed baseline.
+nextStep: Resume Ruff and BasedPyright remediation starting with hook-adjacent scripts and dynamic import helpers.
 blockers: []
-lastUpdated: 2026-04-12
+lastUpdated: 2026-04-27
 tags: [infra, ai-os, hooks, automation]
 areas: [engineering]
 goals: []
@@ -35,7 +35,7 @@ agentExpectationsVersion: 1
 
 AIOS is an active, git-versioned Python/shell infrastructure project (first commit 2026-04-01, latest normalization commits on 2026-04-12). It runs continuously as the backbone of all Claude Code sessions: lifecycle hooks fire on session start, stop, prompt submit, and tool events, writing structured data to a SQLite ops database at `~/AIOS/data/aios.db`.
 
-The codebase is large — roughly 60 scripts in `bin/`, one committed test file, growing docs, and now a committed `aios-ui/` Next.js command-center app. `pyproject.toml` is now part of the repo, so Ruff, BasedPyright, and Vulture configuration live in source control instead of only existing locally. The Code Topology Service (CTS) backend is committed: `services/cts/` provides graph storage, parsing, search, impact analysis, incremental updates, and MCP/CLI entrypoints, and `hook-session-start.py` can inject CTS context when an index is current. The command-center UI is also committed and lintable, with only anti-slop empty-state warnings on its first pass. Two standalone operational utilities are now committed as well: `bin/aios-query.py` exposes agent-friendly JSON views into the ops database, and `bin/token-audit.py` audits Claude transcript token usage and estimated spend. The anti-slop ESLint design spec is committed under `docs/superpowers/specs/`, so the repo is back to a clean committed baseline. The Python quality pass from 2026-04-12 still shows 20 Ruff issues and 22 BasedPyright errors plus 60 warnings.
+The codebase is large — roughly 60 scripts in `bin/`, one committed test file, growing docs, and now a committed `aios-ui/` Next.js command-center app. `pyproject.toml` is now part of the repo, so Ruff, BasedPyright, and Vulture configuration live in source control instead of only existing locally. The Code Topology Service (CTS) backend is committed: `services/cts/` provides graph storage, parsing, search, impact analysis, incremental updates, and MCP/CLI entrypoints, and `hook-session-start.py` can inject CTS context when an index is current. The command-center UI is also committed and lintable, with project detail pages now exposing persisted per-project AIOS component scope controls for Taski summary, knowledge dossier, standards health, quality pipeline, learning writebacks, and active runs. Two standalone operational utilities are now committed as well: `bin/aios-query.py` exposes agent-friendly JSON views into the ops database, and `bin/token-audit.py` audits Claude transcript token usage and estimated spend. The anti-slop ESLint design spec is committed under `docs/superpowers/specs/`. The Python quality pass from 2026-04-12 still shows 20 Ruff issues and 22 BasedPyright errors plus 60 warnings.
 
 ## Why This Matters / Intended Outcome
 
@@ -51,6 +51,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-04-12: Committed the `aios-ui/` command-center app scaffold; `npm run lint` passes with 5 anti-slop warnings and no errors
 - 2026-04-12: Committed `bin/aios-query.py` and `bin/token-audit.py`; targeted `ruff check` and `python3 -m compileall` pass on both files
 - 2026-04-12: Committed the anti-slop ESLint design spec; AIOS returned to a clean committed working tree
+- 2026-04-27: Added persisted per-project AIOS component scope controls to the command-center project surface, including a dropdown selector and UI suppression for disabled sections
 
 ## Open Problems
 

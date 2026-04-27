@@ -4,6 +4,7 @@ import type { TaskiProjectSummary, TopicGraphMarker } from "@/lib/control-plane"
 import { listControlPlaneRuns } from "@/server/aios/control-plane";
 import { getProjectDossier } from "@/server/aios/knowledge";
 import { proposeRunWritebacks } from "@/server/aios/learning";
+import { listAiosProjectComponentSettings } from "@/server/aios/project-components";
 import { getProjectQualityPipeline } from "@/server/aios/quality-pipeline";
 import { listConsistencyFindings } from "@/server/aios/runtime";
 import { getProjectStandardsHealth } from "@/server/aios/standards-health";
@@ -53,6 +54,7 @@ export const getTaskiProjectSummary = (db: Database.Database, projectId: string)
   const pendingApprovals = learnedPolicies.filter((policy) => policy.requiresApproval).slice(0, 6);
   const standardsHealth = getProjectStandardsHealth(db, projectId);
   const qualityPipeline = getProjectQualityPipeline(db, projectId);
+  const aiosComponents = listAiosProjectComponentSettings(db, projectId);
   const suggestedNextActions = [
     "Use compact ranked packets before delegation.",
     ...(qualityPipeline.overallStatus === "error"
@@ -91,5 +93,6 @@ export const getTaskiProjectSummary = (db: Database.Database, projectId: string)
     suggestedNextActions,
     standardsHealth,
     qualityPipeline,
+    aiosComponents,
   };
 };

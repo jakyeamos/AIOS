@@ -467,6 +467,17 @@ export const ensureControlPlaneSchema = (db: Database.Database): void => {
 
     CREATE INDEX IF NOT EXISTS idx_quality_pipeline_runs_project_gate
       ON quality_pipeline_runs(project_id, gate_key, completed_at DESC, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS project_aios_component_settings (
+      project_id TEXT NOT NULL REFERENCES projects(id),
+      component_key TEXT NOT NULL,
+      enabled INTEGER NOT NULL DEFAULT 1,
+      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+      PRIMARY KEY (project_id, component_key)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_project_aios_component_settings_project
+      ON project_aios_component_settings(project_id, updated_at DESC);
   `);
 
   ensureColumn(db, "sessions", "run_id", "TEXT REFERENCES orchestration_runs(id)");

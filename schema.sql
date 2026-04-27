@@ -7,6 +7,15 @@ CREATE TABLE projects (
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
+CREATE TABLE project_aios_component_settings (
+  project_id TEXT NOT NULL REFERENCES projects(id),
+  component_key TEXT NOT NULL,
+  enabled INTEGER NOT NULL DEFAULT 1,
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  PRIMARY KEY (project_id, component_key)
+);
+CREATE INDEX idx_project_aios_component_settings_project
+  ON project_aios_component_settings(project_id, updated_at DESC);
 CREATE TABLE sessions (
   id                     TEXT PRIMARY KEY,
   project_id             TEXT NOT NULL,

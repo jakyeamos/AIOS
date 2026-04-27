@@ -263,6 +263,17 @@ a:hover {
   gap: 12px;
 }
 
+.project-scope-row {
+  align-items: end;
+}
+
+.project-scope-control {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(150px, 0.8fr);
+  gap: 10px;
+  min-width: min(100%, 420px);
+}
+
 .panel-title {
   margin: 0;
   font-size: 14px;
@@ -669,6 +680,15 @@ a:hover {
   }
 
   .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .project-scope-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .project-scope-control {
     grid-template-columns: 1fr;
   }
 
