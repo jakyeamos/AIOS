@@ -238,6 +238,21 @@ Phase 0c success criteria control-plane baseline is now live:
 
 ## Implemented On 2026-04-27
 
+Execution-first verification is now mechanically represented in the success criteria system:
+
+- new blocker-level criterion:
+  - `execution-first-verification`
+  - `spec/success-criteria/execution-first-verification.md`
+- registry and discovery updates:
+  - `config/success-criteria/registry.json`
+  - `config/success-criteria/skill-map.json`
+  - `spec/success-criteria/index.md`
+- evaluator enforcement:
+  - `services/success_criteria.py` infers runtime-risk triggers and blocks triggered changes with no execution evidence
+  - `hook-stop.py` passes recorded Bash/RTK command evidence into success criteria evaluation
+- repo agent contract:
+  - `AGENTS.md` now includes the Execution-First Verification rule
+
 The `aios-ui` root layout now suppresses hydration warnings on the root `<html>` element so browser-extension-injected root attributes do not surface as app hydration errors during local development.
 
 The knowledge and topic-graph freshness labels now share one formatter. Routine 8-44 day-old records display as `Updated N days ago`; the stronger `Stale for N days` label is reserved for records 45+ days old.

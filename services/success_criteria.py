@@ -33,6 +33,18 @@ TEST_PATH_MARKERS = ("test", "__tests__", "spec", "pytest", "integration")
 DOC_PATH_MARKERS = ("/docs/", "/.planning/", "/spec/")
 SENSITIVE_PATH_MARKERS = ("auth", "security", "secret", "token", "permission", "crypto")
 OBSERVABILITY_MARKERS = ("log", "metric", "trace", "telemetry", "observability", "monitor")
+EXECUTION_FIRST_PATH_MARKERS = (
+    "/services/",
+    "/bin/",
+    "/server/",
+    "/lib/",
+    "schema.sql",
+    "schema.ts",
+    "types.ts",
+    "model",
+    "orchestration",
+    "workflow",
+)
 
 
 @dataclass(frozen=True)
@@ -258,6 +270,36 @@ def infer_context(
     if any(_contains_any(path.lower(), SENSITIVE_PATH_MARKERS) for path in changed):
         domains.add("security")
 
+    execution_first_triggers: set[str] = set()
+    code_changes = [path for path in changed if _is_code_path(path)]
+    test_changes = [path for path in changed if _is_test_path(path)]
+    if code_changes and (
+        _contains_any(objective_lower, ("side effect", "state", "database", "db", "sqlite"))
+        or any(Path(path).suffix.lower() == ".sql" for path in changed)
+    ):
+        execution_first_triggers.add("non-trivial side effects or state")
+    if code_changes and (
+        _contains_any(objective_lower, ("api", "http", "workflow", "orchestration", "cross-system"))
+        or bool({"workflow", "observability", "security"} & domains)
+    ):
+        execution_first_triggers.add("cross-system interactions")
+    if code_changes and any(
+        _contains_any(f"/{path.lower()}", EXECUTION_FIRST_PATH_MARKERS) for path in changed
+    ):
+        execution_first_triggers.add("core/shared logic modification")
+    if "bugfix" in task_types or _contains_any(
+        objective_lower,
+        ("debug", "inconsistent behavior", "inconsistent"),
+    ):
+        execution_first_triggers.add("debugging inconsistent behavior")
+    if code_changes and not test_changes:
+        execution_first_triggers.add("low trust in tests")
+    if code_changes and (
+        _contains_any(objective_lower, ("complex domain", "domain model"))
+        or any(_contains_any(path.lower(), ("schema", "types", "model", "orchestration")) for path in changed)
+    ):
+        execution_first_triggers.add("complex domain models")
+
     return {
         "task_types": sorted(task_types),
         "domains": sorted(domains),
@@ -266,6 +308,7 @@ def infer_context(
         "prompt_classifications": classifications,
         "objective": objective_text,
         "explicit_security_focus": explicit_security_focus,
+        "execution_first_triggers": sorted(execution_first_triggers),
     }
 
 
@@ -568,6 +611,43 @@ def _evaluate_workflow_state_integrity(
     )
 
 
+def _evaluate_execution_first_verification(
+    context: dict[str, Any],
+    criterion: CriterionRecord,
+) -> CriterionFinding:
+    triggers = [str(item) for item in context.get("execution_first_triggers", []) if item]
+    evidence = [str(item) for item in context.get("execution_evidence", []) if item]
+    if not triggers:
+        return CriterionFinding(
+            criterion.id,
+            criterion.title,
+            criterion.scope,
+            "pass",
+            "Execution-first verification was not triggered for the observed change set.",
+            [],
+            {"triggers": []},
+        )
+    if evidence:
+        return CriterionFinding(
+            criterion.id,
+            criterion.title,
+            criterion.scope,
+            "pass",
+            "Execution-first verification evidence was recorded for the triggered change set.",
+            evidence[:8],
+            {"triggers": triggers, "evidence_count": len(evidence)},
+        )
+    return CriterionFinding(
+        criterion.id,
+        criterion.title,
+        criterion.scope,
+        "blocker",
+        "Execution-first verification was triggered but no direct execution evidence was recorded.",
+        triggers[:8],
+        {"triggers": triggers},
+    )
+
+
 def evaluate_criterion(
     criterion: CriterionRecord,
     context: dict[str, Any],
@@ -580,6 +660,7 @@ def evaluate_criterion(
         "truth-file-consistency": _evaluate_truth_file_consistency,
         "repo-boundary-discipline": _evaluate_repo_boundary_discipline,
         "workflow-state-integrity": _evaluate_workflow_state_integrity,
+        "execution-first-verification": _evaluate_execution_first_verification,
     }
     evaluator = evaluators.get(criterion.id)
     if evaluator is None:
@@ -802,6 +883,7 @@ def evaluate_and_record(
     prompt_classifications: Sequence[str],
     changed_files: Sequence[str],
     skills: Sequence[str] | None = None,
+    execution_evidence: Sequence[str] | None = None,
     used_legacy_link: bool = False,
     accepted_tradeoffs: Sequence[str] | None = None,
 ) -> dict[str, Any]:
@@ -818,6 +900,7 @@ def evaluate_and_record(
     context["run_id"] = run_id
     context["used_legacy_link"] = used_legacy_link
     context["trigger_kind"] = trigger_kind
+    context["execution_evidence"] = [str(item) for item in (execution_evidence or []) if item]
 
     evaluated = evaluate_context(
         registry=registry,

@@ -35,6 +35,7 @@ def test_preview_applicable_criteria_includes_project_and_domain_rules() -> None
     )
     criterion_ids = {item["id"] for item in preview["criteria"]}
     assert "code-simplicity" in criterion_ids
+    assert "execution-first-verification" in criterion_ids
     assert "truth-file-consistency" in criterion_ids
     assert "workflow-state-integrity" in criterion_ids
     assert "observability" in criterion_ids
@@ -53,6 +54,41 @@ def test_security_review_warns_without_explicit_security_focus() -> None:
     finding = success_criteria.evaluate_criterion(security_criterion, context)
     assert finding.level == "blocker"
     assert "Sensitive paths changed" in finding.summary
+
+
+def test_execution_first_blocks_triggered_change_without_execution_evidence() -> None:
+    context = success_criteria.infer_context(
+        objective="Debug inconsistent workflow state",
+        prompt_classifications=["debug"],
+        changed_files=["services/workflow_orchestration.py"],
+        skills=[],
+    )
+    context["execution_evidence"] = []
+    registry = success_criteria.load_registry()
+    criterion = next(item for item in registry if item.id == "execution-first-verification")
+
+    finding = success_criteria.evaluate_criterion(criterion, context)
+
+    assert finding.level == "blocker"
+    assert "no direct execution evidence" in finding.summary
+    assert "debugging inconsistent behavior" in finding.metadata["triggers"]
+
+
+def test_execution_first_passes_triggered_change_with_execution_evidence() -> None:
+    context = success_criteria.infer_context(
+        objective="Update workflow state persistence",
+        prompt_classifications=["implement"],
+        changed_files=["services/workflow_orchestration.py"],
+        skills=[],
+    )
+    context["execution_evidence"] = ["command: uv run pytest tests/test_workflow.py"]
+    registry = success_criteria.load_registry()
+    criterion = next(item for item in registry if item.id == "execution-first-verification")
+
+    finding = success_criteria.evaluate_criterion(criterion, context)
+
+    assert finding.level == "pass"
+    assert finding.evidence == ["command: uv run pytest tests/test_workflow.py"]
 
 
 def test_evaluate_and_record_persists_rows_and_artifact(tmp_path: Path) -> None:

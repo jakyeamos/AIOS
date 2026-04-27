@@ -1,6 +1,6 @@
 # Success Criteria Index
 
-Last updated: 2026-04-23
+Last updated: 2026-04-27
 
 This index is the canonical discovery point for all AIOS-managed success criteria.
 
@@ -20,6 +20,7 @@ This index is the canonical discovery point for all AIOS-managed success criteri
 |---|---|---|---|---|---|
 | `code-simplicity` | Protect Simplicity and Comprehension | global | yes | implementation, bugfix, refactor, review | `spec/success-criteria/code-simplicity.md` |
 | `testing-trust` | Do Not Treat Test Volume as Trust | task-type | no | implementation, bugfix, refactor, testing, review | `spec/success-criteria/testing-trust.md` |
+| `execution-first-verification` | Execution-First Verification | global | yes | implementation, bugfix, refactor, testing, review with runtime-risk triggers | `spec/success-criteria/execution-first-verification.md` |
 | `security-review` | Security Review Before Sensitive Change Acceptance | domain-specific | yes | security-sensitive implementation, bugfix, review | `spec/success-criteria/security-review.md` |
 | `observability` | Observability Completeness for Operational Changes | domain-specific | no | observability/workflow/reliability-impacting changes | `spec/success-criteria/observability.md` |
 | `truth-file-consistency` | Project Truth File Consistency | project-domain-specific | yes | AIOS implementation, bugfix, refactor | `spec/success-criteria/truth-file-consistency.md` |

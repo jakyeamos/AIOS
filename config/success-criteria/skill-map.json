@@ -3,10 +3,12 @@
   "skill_to_criteria": {
     "simplifier": [
       "code-simplicity",
+      "execution-first-verification",
       "testing-trust"
     ],
     "refactor": [
       "code-simplicity",
+      "execution-first-verification",
       "truth-file-consistency"
     ],
     "security": [
@@ -18,6 +20,7 @@
       "testing-trust"
     ],
     "workflow": [
+      "execution-first-verification",
       "workflow-state-integrity",
       "truth-file-consistency"
     ]

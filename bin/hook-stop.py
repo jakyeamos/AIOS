@@ -90,6 +90,59 @@ def ensure_memory_updates_table(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE memory_updates ADD COLUMN packet_id TEXT")
 
 
+def execution_evidence_for_session(conn: sqlite3.Connection, session_id: str) -> list[str]:
+    evidence: list[str] = []
+    try:
+        rows = conn.execute(
+            """
+            SELECT metadata_json
+            FROM artifacts
+            WHERE session_id = ? AND artifact_type = 'patch' AND metadata_json IS NOT NULL
+            ORDER BY created_at
+            """,
+            (session_id,),
+        ).fetchall()
+        for row in rows:
+            try:
+                metadata = json.loads(row[0] or "{}")
+            except json.JSONDecodeError:
+                continue
+            command = str(metadata.get("command", "")).strip()
+            if command:
+                evidence.append(f"command: {command[:200]}")
+    except sqlite3.Error:
+        pass
+
+    try:
+        rows = conn.execute(
+            """
+            SELECT command, exit_code
+            FROM rtk_compression_events
+            WHERE session_id = ? AND command IS NOT NULL
+            ORDER BY created_at
+            """,
+            (session_id,),
+        ).fetchall()
+        for row in rows:
+            command = str(row[0] or "").strip()
+            if not command:
+                continue
+            exit_code = row[1]
+            suffix = f" exit_code={exit_code}" if exit_code is not None else ""
+            evidence.append(f"rtk-command: {command[:180]}{suffix}")
+    except sqlite3.Error:
+        pass
+
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for item in evidence:
+        if item in seen:
+            continue
+        seen.add(item)
+        deduped.append(item)
+    return deduped
+
+
 def _tokenize(text: str | None) -> set[str]:
     if not text:
         return set()
@@ -477,6 +530,7 @@ def main() -> None:
         accepted_tradeoffs = reason_json.get("accepted_tradeoffs", [])
         if not isinstance(accepted_tradeoffs, list):
             accepted_tradeoffs = [str(accepted_tradeoffs)]
+        execution_evidence = execution_evidence_for_session(conn, session_id)
         criteria_eval = evaluate_and_record(
             conn,
             project_id=row[1],
@@ -490,6 +544,7 @@ def main() -> None:
             cwd=row[3],
             prompt_classifications=prompt_classifications,
             changed_files=criteria_changed_paths,
+            execution_evidence=execution_evidence,
             used_legacy_link=used_legacy_link,
             accepted_tradeoffs=accepted_tradeoffs,
         )

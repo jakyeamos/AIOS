@@ -50,6 +50,30 @@
       ]
     },
     {
+      "id": "execution-first-verification",
+      "title": "Execution-First Verification",
+      "path": "spec/success-criteria/execution-first-verification.md",
+      "scope": "global",
+      "blocking": true,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "implementation",
+          "refactor",
+          "bugfix",
+          "testing",
+          "review"
+        ],
+        "domains": [
+          "*"
+        ]
+      },
+      "related": [
+        "testing-trust",
+        "workflow-state-integrity"
+      ]
+    },
+    {
       "id": "security-review",
       "title": "Security Review Before Sensitive Change Acceptance",
       "path": "spec/success-criteria/security-review.md",
