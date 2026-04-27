@@ -11,6 +11,34 @@ from typing import Any, TypedDict
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_WORKFLOW_REGISTRY = REPO_ROOT / "config" / "workflows" / "registry.json"
 DEFAULT_SKILL_REGISTRY = REPO_ROOT / "config" / "workflows" / "skills.json"
+WORKFLOW_SIGNAL_WEIGHTS = {
+    "workflow": 3,
+    "playbook": 3,
+    "protocol": 3,
+    "checklist": 2,
+    "steps": 2,
+    "pipeline": 2,
+    "quality gate": 2,
+    "validation": 2,
+    "acceptance": 2,
+    "agent": 2,
+    "pattern": 2,
+    "repeat": 2,
+    "recurring": 2,
+    "template": 1,
+    "runbook": 3,
+    "taski": 2,
+    "aios": 2,
+}
+VAULT_SKIP_PARTS = {".git", ".obsidian", ".trash"}
+VAULT_SKIP_PREFIXES = {
+    ("Personal-Corpus", "Calendar"),
+    ("02 AI OS", "02 Session Handoffs"),
+    ("09 Archive", "AI History", "ChatGPT"),
+    ("09 Archive", "AI History", "Claude"),
+    ("09 Archive", "AI History", "Claude Code"),
+    ("09 Archive", "AI History", "Codex"),
+}
 
 
 class WorkflowProposal(TypedDict):
@@ -232,6 +260,154 @@ def _eligible_patterns(conn: sqlite3.Connection, min_confidence: float, limit: i
     ]
 
 
+def _strip_frontmatter(text: str) -> str:
+    if not text.startswith("---"):
+        return text
+    end = text.find("\n---", 3)
+    if end == -1:
+        return text
+    return text[end + 4 :].lstrip()
+
+
+def _markdown_title(path: Path, text: str) -> str:
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("# "):
+            return stripped.removeprefix("# ").strip() or path.stem
+    return path.stem.replace("-", " ").replace("_", " ").strip() or "Vault workflow"
+
+
+def _path_is_skipped(path: Path, vault_root: Path) -> bool:
+    try:
+        relative = path.relative_to(vault_root)
+    except ValueError:
+        relative = path
+    parts = relative.parts
+    if path.name.startswith("."):
+        return True
+    if any(part in VAULT_SKIP_PARTS for part in parts):
+        return True
+    return any(parts[: len(prefix)] == prefix for prefix in VAULT_SKIP_PREFIXES)
+
+
+def _vault_signal_score(title: str, text: str) -> int:
+    haystack = f"{title}\n{text}".lower()
+    score = 0
+    for term, weight in WORKFLOW_SIGNAL_WEIGHTS.items():
+        occurrences = haystack.count(term)
+        if occurrences:
+            score += min(occurrences, 4) * weight
+    heading_or_list_lines = 0
+    for line in text.splitlines():
+        stripped = line.lstrip()
+        if stripped.startswith(("#", "- ", "* ", "1. ", "2. ", "3. ")):
+            heading_or_list_lines += 1
+    return score + min(heading_or_list_lines, 8)
+
+
+def _vault_evidence(path: Path, vault_root: Path, text: str) -> list[str]:
+    relative = str(path.relative_to(vault_root))
+    evidence = [f"vault:{relative}"]
+    for line in text.splitlines():
+        stripped = re.sub(r"\s+", " ", line.strip())
+        if not stripped:
+            continue
+        lower = stripped.lower()
+        if stripped.startswith("#") or any(term in lower for term in WORKFLOW_SIGNAL_WEIGHTS):
+            evidence.append(f"{relative}: {stripped[:220]}")
+        if len(evidence) >= 8:
+            break
+    return evidence
+
+
+def _vault_candidates(vault_root: Path, min_confidence: float, limit: int) -> list[dict[str, Any]]:
+    if limit <= 0 or not vault_root.is_dir():
+        return []
+    candidates: list[dict[str, Any]] = []
+    for path in sorted(vault_root.rglob("*.md")):
+        if _path_is_skipped(path, vault_root):
+            continue
+        try:
+            if path.stat().st_size > 350_000:
+                continue
+            text = _strip_frontmatter(path.read_text(encoding="utf-8", errors="ignore"))
+        except OSError:
+            continue
+        title = _markdown_title(path, text)
+        score = _vault_signal_score(title, text)
+        confidence = min(0.96, 0.58 + (score * 0.025))
+        if confidence < min_confidence:
+            continue
+        relative = str(path.relative_to(vault_root))
+        candidates.append(
+            {
+                "id": f"vault:{relative}",
+                "class": "vault_workflow",
+                "title": f"Vault workflow candidate: {title}",
+                "evidence": _vault_evidence(path, vault_root, text),
+                "confidence": confidence,
+                "score": score,
+                "relative_path": relative,
+            }
+        )
+    candidates.sort(key=lambda item: (-float(item["confidence"]), str(item["relative_path"])))
+    return candidates[:limit]
+
+
+def _insert_synthesis_proposal(
+    conn: sqlite3.Connection,
+    *,
+    proposal_key: str,
+    title: str,
+    summary: str,
+    source_ids: list[str],
+    evidence: list[str],
+) -> WorkflowProposal | None:
+    existing = conn.execute(
+        "SELECT id FROM workflow_synthesis_proposals WHERE proposal_key = ? LIMIT 1",
+        (proposal_key,),
+    ).fetchone()
+    if existing:
+        return None
+    workflow_spec = _workflow_spec(proposal_key, title, evidence)
+    skill_specs = [_skill_spec(proposal_key, title)]
+    validation_plan = _validation_plan(proposal_key, evidence)
+    proposal_id = f"workflow-proposal-{uuid.uuid4()}"
+    timestamp = _now_iso()
+    conn.execute(
+        """
+        INSERT INTO workflow_synthesis_proposals (
+          id, proposal_key, title, summary, source_pattern_ids_json, workflow_spec_json,
+          skill_specs_json, validation_plan_json, evidence_json, status, created_at, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_approval', ?, ?)
+        """,
+        (
+            proposal_id,
+            proposal_key,
+            f"Workflow synthesis proposal: {workflow_spec['name']}",
+            summary,
+            _json(source_ids),
+            _json(workflow_spec),
+            _json(skill_specs),
+            _json(validation_plan),
+            _json(evidence),
+            timestamp,
+            timestamp,
+        ),
+    )
+    row = conn.execute(
+        """
+        SELECT id, proposal_key, title, summary, source_pattern_ids_json, workflow_spec_json,
+               skill_specs_json, validation_plan_json, evidence_json, status
+        FROM workflow_synthesis_proposals
+        WHERE id = ?
+        """,
+        (proposal_id,),
+    ).fetchone()
+    return _proposal_from_row(row)
+
+
 def _insert_writeback(conn: sqlite3.Connection, proposal: WorkflowProposal) -> None:
     if not _table_exists(conn, "improvement_writebacks"):
         return
@@ -283,62 +459,54 @@ def synthesize_workflow_proposals(
     *,
     min_confidence: float = 0.75,
     limit: int = 20,
+    vault_root: Path | None = None,
     queue_writebacks: bool = True,
 ) -> list[WorkflowProposal]:
     ensure_workflow_synthesis_schema(conn)
     proposals: list[WorkflowProposal] = []
     for pattern in _eligible_patterns(conn, min_confidence, limit):
         proposal_key = _proposal_key(pattern["title"])
-        existing = conn.execute(
-            "SELECT id FROM workflow_synthesis_proposals WHERE proposal_key = ? LIMIT 1",
-            (proposal_key,),
-        ).fetchone()
-        if existing:
-            continue
         evidence = pattern["evidence"] or [pattern["title"]]
-        workflow_spec = _workflow_spec(proposal_key, pattern["title"], evidence)
-        skill_specs = [_skill_spec(proposal_key, pattern["title"])]
-        validation_plan = _validation_plan(proposal_key, evidence)
-        proposal_id = f"workflow-proposal-{uuid.uuid4()}"
         summary = (
             f"Synthesized from {pattern['class']} pattern with confidence "
             f"{pattern['confidence']:.2f}; review before adding to workflow registry."
         )
-        conn.execute(
-            """
-            INSERT INTO workflow_synthesis_proposals (
-              id, proposal_key, title, summary, source_pattern_ids_json, workflow_spec_json,
-              skill_specs_json, validation_plan_json, evidence_json, status, created_at, updated_at
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_approval', ?, ?)
-            """,
-            (
-                proposal_id,
-                proposal_key,
-                f"Workflow synthesis proposal: {workflow_spec['name']}",
-                summary,
-                _json([pattern["id"]]),
-                _json(workflow_spec),
-                _json(skill_specs),
-                _json(validation_plan),
-                _json(evidence),
-                _now_iso(),
-                _now_iso(),
-            ),
+        proposal = _insert_synthesis_proposal(
+            conn,
+            proposal_key=proposal_key,
+            title=pattern["title"],
+            summary=summary,
+            source_ids=[pattern["id"]],
+            evidence=evidence,
         )
-        row = conn.execute(
-            """
-            SELECT id, proposal_key, title, summary, source_pattern_ids_json, workflow_spec_json,
-                   skill_specs_json, validation_plan_json, evidence_json, status
-            FROM workflow_synthesis_proposals
-            WHERE id = ?
-            """,
-            (proposal_id,),
-        ).fetchone()
-        proposal = _proposal_from_row(row)
+        if proposal is None:
+            continue
         if queue_writebacks:
             _insert_writeback(conn, proposal)
         proposals.append(proposal)
+
+    remaining = max(0, limit - len(proposals))
+    if vault_root is not None and remaining:
+        for candidate in _vault_candidates(vault_root, min_confidence, remaining):
+            source_key = f"{candidate['title']} {candidate['relative_path']}"
+            proposal_key = _proposal_key(source_key)
+            summary = (
+                f"Backfilled from Obsidian vault note {candidate['relative_path']} "
+                f"with workflow signal confidence {candidate['confidence']:.2f}; review before registry mutation."
+            )
+            proposal = _insert_synthesis_proposal(
+                conn,
+                proposal_key=proposal_key,
+                title=candidate["title"],
+                summary=summary,
+                source_ids=[candidate["id"]],
+                evidence=candidate["evidence"],
+            )
+            if proposal is None:
+                continue
+            if queue_writebacks:
+                _insert_writeback(conn, proposal)
+            proposals.append(proposal)
     return proposals
 
 

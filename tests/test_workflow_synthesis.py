@@ -69,6 +69,46 @@ def test_synthesizes_workflow_proposal_from_high_confidence_pattern() -> None:
     assert row[0] == 1
 
 
+def test_synthesizes_workflow_proposal_from_vault_note(tmp_path: Path) -> None:
+    conn = _conn()
+    vault = tmp_path / "Command-Center"
+    note = vault / "02 AI OS" / "Academic Writing Workflow.md"
+    note.parent.mkdir(parents=True)
+    note.write_text(
+        """# Academic Writing Workflow
+
+## Workflow
+- Capture the research question and source constraints.
+- Build an outline checklist before drafting.
+- Run validation against citation evidence and acceptance criteria.
+- Repeat the revision protocol until blocker findings are closed.
+""",
+        encoding="utf-8",
+    )
+
+    proposals = synthesize_workflow_proposals(conn, min_confidence=0.75, vault_root=vault)
+
+    assert len(proposals) == 1
+    proposal = proposals[0]
+    assert proposal["status"] == "pending_approval"
+    assert proposal["proposal_key"].startswith("vault_workflow_candidate_academic_writing_workflow")
+    assert proposal["source_pattern_ids"] == ["vault:02 AI OS/Academic Writing Workflow.md"]
+    assert proposal["evidence"][0] == "vault:02 AI OS/Academic Writing Workflow.md"
+    assert "Academic Writing Workflow" in proposal["title"]
+
+
+def test_vault_synthesis_skips_low_signal_notes(tmp_path: Path) -> None:
+    conn = _conn()
+    vault = tmp_path / "Command-Center"
+    note = vault / "03 Projects" / "Loose Thought.md"
+    note.parent.mkdir(parents=True)
+    note.write_text("# Loose Thought\n\nThis is a plain note without repeatable operating structure.\n", encoding="utf-8")
+
+    proposals = synthesize_workflow_proposals(conn, min_confidence=0.75, vault_root=vault)
+
+    assert proposals == []
+
+
 def test_approval_appends_workflow_and_skills_to_registries(tmp_path: Path) -> None:
     conn = _conn()
     conn.execute(

@@ -8,6 +8,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "bin"))
+
+from aios_paths import get_vault_root  # noqa: E402
 
 from services.workflow_synthesis import (  # noqa: E402
     approve_workflow_proposal,
@@ -21,6 +24,8 @@ def main() -> int:
     parser.add_argument("--min-confidence", type=float, default=0.75)
     parser.add_argument("--limit", type=int, default=20)
     parser.add_argument("--dry-run", action="store_true", help="Preview synthesized proposals without persisting them.")
+    parser.add_argument("--vault-root", default=str(get_vault_root()))
+    parser.add_argument("--no-vault", action="store_true", help="Disable Obsidian vault backfill candidates.")
     parser.add_argument("--approve", help="Approve a proposal id and append it to workflow/skill registries.")
     parser.add_argument("--actor", default="operator")
     parser.add_argument("--note")
@@ -47,6 +52,7 @@ def main() -> int:
             conn,
             min_confidence=args.min_confidence,
             limit=args.limit,
+            vault_root=None if args.no_vault else Path(args.vault_root).expanduser(),
         )
         if args.dry_run:
             conn.rollback()
