@@ -14,6 +14,11 @@ from pathlib import Path
 from typing import Any
 
 from services.capability_truth import capability_truth_payload
+from services.invocation_backends import (
+    INVOCATION_CONTRACT_FIELDS,
+    get_invocation_backend,
+    list_invocation_backends,
+)
 from services.rtk_integration import ensure_rtk_schema, load_compression_rules, rtk_metrics_log
 from services.success_criteria import preview_applicable_criteria
 
@@ -38,7 +43,6 @@ EXIT_RUNTIME = 5
 DEFAULT_START_WORKFLOW_KEY = "implementation-delivery"
 DEFAULT_START_AGENT_KEY = "implementation-lead"
 DEFAULT_START_BACKEND_KEY = "codex-managed-runtime"
-DEFAULT_START_BACKEND_LABEL = "Codex Managed Runtime"
 
 
 class CLIError(Exception):
@@ -981,6 +985,7 @@ def _start_work_payload(
         project_id = project_id or session["project_id"]
 
     project_name = _project_name(conn, project_id)
+    backend = get_invocation_backend(backend_key)
     now = _now_iso()
     run_id = f"run-{uuid.uuid4()}"
     packet_id = f"packet-{uuid.uuid4()}"
@@ -1023,7 +1028,7 @@ def _start_work_payload(
                     {"source": "improvement-writebacks", "reason": "recent improvements added to packet"},
                 ]
             ),
-            backend_key,
+            backend.key,
             invocation_id,
             packet_id,
             json.dumps({"kind": "strict_manual_handshake" if linked_session_id else "packet_ready"}),
@@ -1041,7 +1046,7 @@ def _start_work_payload(
         from_status=None,
         to_status="planned",
         summary="Run record created from AIOS start-work.",
-        metadata={"backendKey": backend_key},
+        metadata={"backendKey": backend.key},
     )
     conn.execute(
         """
@@ -1094,8 +1099,8 @@ def _start_work_payload(
         (
             invocation_id,
             run_id,
-            backend_key,
-            DEFAULT_START_BACKEND_LABEL,
+            backend.key,
+            backend.label,
             invocation_status,
             run_id,
             linked_session_id,
@@ -1120,7 +1125,7 @@ def _start_work_payload(
             (
                 run_id,
                 invocation_id,
-                json.dumps({"backend_key": backend_key, "strict_manual_handshake": True, "packet_id": packet_id}),
+                json.dumps({"backend_key": backend.key, "strict_manual_handshake": True, "packet_id": packet_id}),
                 objective,
                 linked_session_id,
             ),
@@ -1135,7 +1140,7 @@ def _start_work_payload(
             from_status="ready",
             to_status="in_progress",
             summary="Current session linked to AIOS run and invocation.",
-            reason={"kind": "current_session_linked", "backendKey": backend_key},
+            reason={"kind": "current_session_linked", "backendKey": backend.key},
         )
 
     conn.commit()
@@ -1147,7 +1152,7 @@ def _start_work_payload(
             "objective": objective,
             "workflow_key": workflow_key,
             "agent_key": agent_key,
-            "backend_key": backend_key,
+            "backend_key": backend.key,
             "status": status,
             "packet_id": packet_id,
             "active_invocation_id": invocation_id,
@@ -1160,7 +1165,8 @@ def _start_work_payload(
         "invocation": {
             "id": invocation_id,
             "status": invocation_status,
-            "backend_key": backend_key,
+            "backend_key": backend.key,
+            "backend_label": backend.label,
             "session_id": linked_session_id,
         },
         "next_agent_context": {
@@ -1169,6 +1175,28 @@ def _start_work_payload(
             "packet_id": packet_id,
             "session_id": linked_session_id,
         },
+    }
+
+
+def _invocation_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
+    coverage = _handshake_coverage(conn)
+    backends = [backend.to_json() for backend in list_invocation_backends()]
+    invocation_count = _count(conn, "orchestration_invocations")
+    run_count = _count(conn, "orchestration_runs")
+    return {
+        "summary": {
+            "backend_count": len(backends),
+            "run_count": run_count,
+            "invocation_count": invocation_count,
+            "strict_handshake_required": True,
+        },
+        "contract": {
+            "required_fields": INVOCATION_CONTRACT_FIELDS,
+            "legacy_fallback_policy": "disabled_by_default",
+            "legacy_emergency_flag": "AIOS_ALLOW_LEGACY_RUN_LINK",
+        },
+        "handshake_coverage": coverage,
+        "backends": backends,
     }
 
 
@@ -1371,6 +1399,7 @@ def _metadata_payload(
             "aios health --json",
             "aios metadata --json",
             "aios capability-audit --json",
+            "aios invocation-audit --json",
             "aios logs --json --last 50",
             "aios recent-failures --json --last 20",
             "aios rtk --json",
@@ -1456,6 +1485,10 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
         summary = data["summary"]
         print(f"surfaces={summary['surfaces']} findings={summary['findings']}")
         return
+    if command == "invocation-audit":
+        summary = data["summary"]
+        print(f"backends={summary['backend_count']} invocations={summary['invocation_count']}")
+        return
     if command == "start-work":
         print(
             f"run={data['run']['id']} status={data['run']['status']} "
@@ -1504,6 +1537,7 @@ def create_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("rtk", help="RTK compression rules and metrics")
     subparsers.add_parser("capability-audit", help="Trusted-signal audit for core AIOS capability surfaces")
+    subparsers.add_parser("invocation-audit", help="Invocation backend and strict-handshake audit")
 
     start_work = subparsers.add_parser("start-work", help="Create a routed AIOS run packet and session handshake")
     start_work.add_argument("objective", help="Work objective to route through AIOS")
@@ -1537,7 +1571,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
     command = _command_name(args)
 
     try:
-        if args.command in {"status", "health", "metadata", "recent-failures", "rtk", "capability-audit", "start-work"}:
+        if args.command in {"status", "health", "metadata", "recent-failures", "rtk", "capability-audit", "invocation-audit", "start-work"}:
             conn = _connect_db(db_path)
         else:
             conn = None
@@ -1570,6 +1604,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             assert conn is not None
             ensure_rtk_schema(conn)
             data = capability_truth_payload(conn)
+        elif args.command == "invocation-audit":
+            assert conn is not None
+            data = _invocation_audit_payload(conn)
         elif args.command == "start-work":
             assert conn is not None
             data = _start_work_payload(

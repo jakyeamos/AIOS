@@ -277,6 +277,66 @@ def test_capability_audit_reports_missing_and_no_data_signals(tmp_path: Path, ca
     assert failures_output["data"]["count"] >= 2
 
 
+def test_invocation_audit_and_backend_label_contract(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    audit_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "invocation-audit",
+        ]
+    )
+    assert audit_exit == EXIT_OK
+    audit_output = json.loads(capsys.readouterr().out)
+    assert audit_output["command"] == "invocation-audit"
+    assert audit_output["data"]["summary"]["backend_count"] >= 3
+    assert audit_output["data"]["contract"]["required_fields"] == [
+        "run_id",
+        "invocation_id",
+        "backend_key",
+        "objective",
+        "project_id",
+        "workflow_key",
+        "packet_id",
+        "lifecycle_events",
+        "artifacts",
+        "closeout_evaluation",
+    ]
+    assert audit_output["data"]["handshake_coverage"]["legacy_fallback_policy"] == "disabled_by_default"
+
+    start_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "start-work",
+            "verify backend label",
+            "--backend",
+            "claude-managed-runtime",
+        ]
+    )
+    assert start_exit == EXIT_OK
+    start_output = json.loads(capsys.readouterr().out)
+    invocation_id = start_output["data"]["invocation"]["id"]
+
+    conn = sqlite3.connect(db_path)
+    label = conn.execute(
+        "SELECT backend_label FROM orchestration_invocations WHERE id = ?",
+        (invocation_id,),
+    ).fetchone()[0]
+    conn.close()
+    assert label == "Claude Managed Runtime"
+
+
 def test_metadata_and_skills_refresh_flow(tmp_path: Path, capsys) -> None:
     db_path = tmp_path / "aios.db"
     logs_dir = tmp_path / "logs"
