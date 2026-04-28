@@ -6,6 +6,38 @@ import { getProjectDossier, listKnowledgePages } from "@/server/aios/knowledge";
 import { listRecentChanges } from "@/server/aios/changes";
 import { getTopicMarkers, getTopicReferences, searchTopicGraph } from "@/server/aios/topic-graph";
 
+const tableExists = (db: Database.Database, name: string): boolean => {
+  const row = db
+    .prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name = ? LIMIT 1")
+    .get(name) as { "1": number } | undefined;
+  return row !== undefined;
+};
+
+const countRows = (db: Database.Database, table: string): number => {
+  if (!tableExists(db, table)) {
+    return 0;
+  }
+  const row = db.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get() as { count: number };
+  return Number(row.count) || 0;
+};
+
+const isCapabilityQuestion = (question: string): boolean => {
+  const lower = question.toLowerCase();
+  return (
+    (lower.includes("why") || lower.includes("explain") || lower.includes("audit")) &&
+    (
+      lower.includes("capability") ||
+      lower.includes("status") ||
+      lower.includes("health") ||
+      lower.includes("metric") ||
+      lower.includes("rtk") ||
+      lower.includes("automation") ||
+      lower.includes("prompt library") ||
+      lower.includes("knowledge")
+    )
+  );
+};
+
 const classifyIntent = (
   question: string,
 ): GroundedAnswer["intent"] => {
@@ -73,6 +105,93 @@ const loadProjectRepoPath = (db: Database.Database, projectId: string | null): s
   return row?.repoPath ?? null;
 };
 
+const answerCapabilityQuestion = (db: Database.Database, question: string): GroundedAnswer => {
+  const projectCount = countRows(db, "projects");
+  const healthSnapshotCount = countRows(db, "standards_health_snapshots");
+  const rtkEventCount = countRows(db, "rtk_compression_events");
+  const promptLinkCount = countRows(db, "prompt_library_links");
+  const knowledgeTopicCount = countRows(db, "knowledge_topics");
+  const knowledgeReferenceCount = countRows(db, "knowledge_references");
+
+  const missingHealth = projectCount > 0 ? Math.max(projectCount - healthSnapshotCount, 0) : 0;
+  const promptLibraryState = tableExists(db, "prompt_library_links")
+    ? promptLinkCount > 0
+      ? `${promptLinkCount} body-hash-backed template(s)`
+      : "wired but empty"
+    : "missing prompt_library_links";
+  const knowledgeState =
+    knowledgeTopicCount > 0
+      ? `${knowledgeTopicCount} topic(s), ${knowledgeReferenceCount} reference(s)`
+      : "no indexed topics";
+  const rtkState = rtkEventCount > 0 ? `${rtkEventCount} compression event(s)` : "no eligible RTK telemetry events";
+
+  return {
+    question,
+    intent: "system_state",
+    answer:
+      "AIOS capability truth is now represented as source-backed signals. The strongest current gaps are missing project health snapshots, seeded automation health, prompt-library visibility evidence, and knowledge source-reference coverage.",
+    facts: [
+      `Projects: ${projectCount} project(s), ${healthSnapshotCount} standards-health snapshot row(s), ${missingHealth} project(s) without a health snapshot.`,
+      `RTK: ${rtkState}.`,
+      "Automations: schedules are readable, but health and success-rate values are still seeded rather than durable run history.",
+      `Prompt Library: ${promptLibraryState}.`,
+      `Knowledge: ${knowledgeState}.`,
+    ],
+    inferences: [
+      missingHealth > 0
+        ? "Project health is not yet portfolio-trustworthy because many projects lack standards-health evidence."
+        : "Project health has standards-health evidence for all tracked projects.",
+      rtkEventCount === 0
+        ? "RTK zero values mean no eligible telemetry events, not proven compression failure."
+        : "RTK state can be interpreted from persisted compression events.",
+      knowledgeTopicCount > 0 && knowledgeReferenceCount === 0
+        ? "Knowledge can surface topics, but those topics are not yet sufficiently source-grounded."
+        : "Knowledge has at least partial source-reference coverage.",
+    ],
+    recommendations: [
+      "Use `aios capability-audit --json` as the Stage 1 gate before trusting downstream architecture or UI surfaces.",
+    ],
+    assumptions: [
+      "Automation status remains inferred until durable automation run history is implemented.",
+    ],
+    citations: [
+      {
+        label: "Projects",
+        href: "/projects",
+        excerpt: "Project health, unknown coverage, pipeline state, and status signals.",
+      },
+      {
+        label: "Efficiency",
+        href: "/costs",
+        excerpt: "RTK state and token telemetry.",
+      },
+      {
+        label: "Automations",
+        href: "/automations",
+        excerpt: "Automation schedules, success rates, and seeded status signals.",
+      },
+      {
+        label: "Prompt Library",
+        href: "/prompts",
+        excerpt: "Prompt templates visible only when backed by prompt_library_links evidence.",
+      },
+      {
+        label: "Knowledge",
+        href: "/knowledge",
+        excerpt: "Knowledge topics, references, relationships, and source grounding.",
+      },
+    ],
+    retrievalTrace: [
+      {
+        source: "capability-audit",
+        reason: "Loaded Stage 1 trusted-signal counts for Projects, RTK, Automations, Prompt Library, and Knowledge.",
+        freshness: "Live from SQLite at query time",
+        confidence: 0.82,
+      },
+    ],
+  };
+};
+
 export const answerGroundedQuestion = (
   db: Database.Database,
   input: { question: string; projectId?: string | null },
@@ -85,6 +204,10 @@ export const answerGroundedQuestion = (
   const recentChanges = listRecentChanges(db, { projectId: projectId ?? undefined, limit: 5 });
   const decisionPages = listKnowledgePages(db).filter((page) => page.kind === "decision").slice(0, 3);
   const topicMatches = searchTopicGraph(db, { projectId, query: input.question, limit: 4 });
+
+  if (isCapabilityQuestion(input.question)) {
+    return answerCapabilityQuestion(db, input.question);
+  }
 
   if (intent === "what_changed") {
     return {
