@@ -61,4 +61,7 @@ else:
     print("No handoffs to retire")
 PYEOF
 
+# Tune RTK compression thresholds from accumulated event data
+python3 "$HOME/AIOS/bin/rtk-tune-thresholds.py" >> "$LOG" 2>&1
+
 echo "done" >> "$LOG"

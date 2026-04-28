@@ -75,5 +75,9 @@
     "ambiguous_failure": "adaptive",
     "explicit_expansion_request": "raw",
     "critical_information_hidden": "raw"
-  }
+  },
+  "min_chars_to_compress": 200,
+  "_min_chars_note": "Global floor: outputs shorter than this pass through uncompressed on exit_code=0. Header overhead (~40 chars) dominates below ~200 chars. Tuned per-prefix by rtk-tune-thresholds.py.",
+  "min_chars_by_prefix": {},
+  "_min_chars_by_prefix_note": "Per-command-prefix overrides populated by rtk-tune-thresholds.py after sufficient event data."
 }

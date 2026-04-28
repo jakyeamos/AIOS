@@ -346,6 +346,20 @@ def rtk_run(
     return result
 
 
+def _passthrough_threshold(command: str, rules: dict[str, Any]) -> int:
+    """Return the raw-char floor below which compression is skipped.
+
+    Checks per-command-prefix thresholds first (written by rtk-tune-thresholds.py),
+    then falls back to the global default.  A return value of 0 means always compress.
+    """
+    cmd = command.strip()
+    per_prefix: dict[str, int] = rules.get("min_chars_by_prefix", {})
+    for prefix, threshold in per_prefix.items():
+        if cmd.startswith(prefix):
+            return int(threshold)
+    return int(rules.get("min_chars_to_compress", 200))
+
+
 def compress_tool_output(
     *,
     command: str,
@@ -353,6 +367,30 @@ def compress_tool_output(
     exit_code: int | None,
     mode: RTKMode = "compressed",
 ) -> RTKRunResult:
+    rules = load_compression_rules()
+    # Pass-through small outputs: compressor header overhead exceeds savings.
+    # Threshold is tuned by rtk-tune-thresholds.py from empirical event data.
+    if mode != "raw" and exit_code == 0:
+        threshold = _passthrough_threshold(command, rules)
+        if threshold > 0 and len(raw_output) < threshold:
+            raw_tokens = estimate_tokens(raw_output)
+            return RTKRunResult(
+                command=command,
+                mode=mode,
+                effective_mode="raw",
+                exit_code=exit_code or 0,
+                output=raw_output,
+                raw_output=raw_output,
+                raw_chars=len(raw_output),
+                compressed_chars=len(raw_output),
+                estimated_raw_tokens=raw_tokens,
+                estimated_compressed_tokens=raw_tokens,
+                token_reduction_percent=0.0,
+                ambiguous_failure=False,
+                raw_output_path=None,
+                used_upstream_rtk=False,
+            )
+
     compressed, ambiguous_failure = compress_output(raw_output, command=command, exit_code=exit_code)
     raw_output_path = None
     output = raw_output if mode == "raw" else compressed
