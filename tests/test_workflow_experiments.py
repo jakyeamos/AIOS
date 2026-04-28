@@ -80,7 +80,10 @@ def test_run_workflow_skill_experiment_records_candidate_improvement(tmp_path: P
     subprocess.run(["git", "-C", str(repo), "config", "user.email", "test@example.local"], check=True)
     subprocess.run(["git", "-C", str(repo), "config", "user.name", "Test"], check=True)
     (repo / "README.md").write_text("# Repo\n", encoding="utf-8")
-    subprocess.run(["git", "-C", str(repo), "add", "README.md"], check=True)
+    (repo / "pyproject.toml").write_text("[tool.pytest.ini_options]\npythonpath = ['.']\n", encoding="utf-8")
+    (repo / "tests").mkdir()
+    (repo / "tests" / "test_smoke.py").write_text("def test_smoke():\n    assert True\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(repo), "add", "README.md", "pyproject.toml", "tests/test_smoke.py"], check=True)
     subprocess.run(["git", "-C", str(repo), "commit", "-m", "init"], check=True, capture_output=True)
     monkeypatch.setattr(workflow_experiments, "ROOT", tmp_path)
 
@@ -171,6 +174,12 @@ def test_run_workflow_skill_experiment_records_candidate_improvement(tmp_path: P
     assert row["status"] == "completed"
     assert row["outcome"] == "promotion_ready"
     assert row["candidate_score"] > row["baseline_score"]
+    details = json.loads(
+        conn.execute("SELECT details_json FROM workflow_skill_experiments WHERE id='experiment-1'").fetchone()[0]
+    )
+    assert details["baseline_validation_passed"] is True
+    assert details["candidate_validation_passed"] is True
+    assert details["validation_command"][-2:] == ["-m", "pytest"]
     artifact = subprocess.run(
         [
             "git",
@@ -184,3 +193,4 @@ def test_run_workflow_skill_experiment_records_candidate_improvement(tmp_path: P
         text=True,
     )
     assert '"outcome": "promotion_ready"' in artifact.stdout
+    assert '"candidate_validation"' in artifact.stdout

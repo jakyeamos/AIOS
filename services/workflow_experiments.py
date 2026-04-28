@@ -4,6 +4,7 @@ import json
 import subprocess
 import tempfile
 import sqlite3
+import sys
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -333,6 +334,59 @@ def _score_report(report: dict[str, Any], skill_key: str) -> float:
     return round(min(score, 1.0), 4)
 
 
+def _repo_validation_command(repo_path: Path) -> list[str]:
+    if (repo_path / "package.json").exists():
+        package = _load_json(repo_path / "package.json")
+        scripts = package.get("scripts") if isinstance(package.get("scripts"), dict) else {}
+        if "test" in scripts:
+            return ["npm", "test", "--", "--runInBand"]
+        if "lint" in scripts:
+            return ["npm", "run", "lint"]
+    if (repo_path / "pyproject.toml").exists() or (repo_path / "tests").exists():
+        return [sys.executable, "-m", "pytest"]
+    return ["git", "status", "--short"]
+
+
+def _run_repo_validation(repo_path: Path) -> dict[str, Any]:
+    command = _repo_validation_command(repo_path)
+    try:
+        result = subprocess.run(
+            command,
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            timeout=120,
+            check=False,
+        )
+        output = "\n".join(part for part in [result.stdout.strip(), result.stderr.strip()] if part)
+        return {
+            "command": command,
+            "exit_code": result.returncode,
+            "passed": result.returncode == 0,
+            "output_tail": output[-2000:],
+        }
+    except subprocess.TimeoutExpired as exc:
+        return {
+            "command": command,
+            "exit_code": None,
+            "passed": False,
+            "output_tail": f"timeout after {exc.timeout}s",
+        }
+
+
+def _score_candidate(
+    report: dict[str, Any],
+    skill_key: str,
+    validation: dict[str, Any],
+) -> float:
+    score = _score_report(report, skill_key)
+    if validation.get("passed"):
+        score += 0.1
+    else:
+        score -= 0.25
+    return round(max(0.0, min(score, 1.0)), 4)
+
+
 def _run_git(repo_path: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         ["git", "-C", str(repo_path), *args],
@@ -467,15 +521,17 @@ def run_workflow_skill_experiment(
         skill_specs=skill_specs,
         context=context,
     )
+    baseline_validation = _run_repo_validation(repo_path)
     candidate_report = _execute_with_temp_registries(
         workflow_spec=candidate_spec,
         skill_specs=skill_specs,
         context=context,
     )
-    baseline_score = _score_report(baseline_report, skill_key)
-    candidate_score = _score_report(candidate_report, skill_key)
+    candidate_validation = _run_repo_validation(repo_path)
+    baseline_score = _score_candidate(baseline_report, skill_key, baseline_validation)
+    candidate_score = _score_candidate(candidate_report, skill_key, candidate_validation)
     delta = round(candidate_score - baseline_score, 4)
-    outcome = "promotion_ready" if delta >= 0.05 else "no_improvement"
+    outcome = "promotion_ready" if delta >= 0.05 and candidate_validation.get("passed") else "no_improvement"
     artifact_payload = {
         "experiment_id": experiment_id,
         "workflow_key": row["workflow_key"],
@@ -485,6 +541,8 @@ def run_workflow_skill_experiment(
         "candidate_score": candidate_score,
         "score_delta": delta,
         "outcome": outcome,
+        "baseline_validation": baseline_validation,
+        "candidate_validation": candidate_validation,
         "baseline_report": baseline_report,
         "candidate_report": candidate_report,
     }
@@ -501,6 +559,9 @@ def run_workflow_skill_experiment(
         "artifact_path": artifact_path,
         "baseline_status": baseline_report.get("status"),
         "candidate_status": candidate_report.get("status"),
+        "baseline_validation_passed": baseline_validation.get("passed"),
+        "candidate_validation_passed": candidate_validation.get("passed"),
+        "validation_command": candidate_validation.get("command"),
         "dry_run": dry_run,
     }
     conn.execute(
