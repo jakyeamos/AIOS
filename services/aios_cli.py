@@ -1540,6 +1540,71 @@ def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     }
 
 
+def _contracts_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
+    contracts = [
+        {
+            "name": "TrustedSignal",
+            "status": "implemented",
+            "source": "aios-ui/lib/trusted-signals.ts",
+            "storage": "derived per surface",
+            "table_available": True,
+        },
+        {
+            "name": "InvocationBackend",
+            "status": "implemented",
+            "source": "services/invocation_backends.py",
+            "storage": "orchestration_invocations",
+            "table_available": _table_exists(conn, "orchestration_invocations"),
+        },
+        {
+            "name": "RunLifecycleEvent",
+            "status": "implemented",
+            "source": "aios lifecycle-audit",
+            "storage": "orchestration_run_events",
+            "table_available": _table_exists(conn, "orchestration_run_events"),
+        },
+        {
+            "name": "KnowledgeObject",
+            "status": "partial",
+            "source": "aios knowledge-objects",
+            "storage": "knowledge_topics + knowledge_references + knowledge_relationships",
+            "table_available": _table_exists(conn, "knowledge_topics"),
+        },
+        {
+            "name": "RetrievalTrace",
+            "status": "partial",
+            "source": "briefing_packets.selection_trace_json + packet_expansions.trace_json",
+            "storage": "briefing_packets + packet_expansions",
+            "table_available": _table_exists(conn, "briefing_packets"),
+        },
+        {
+            "name": "WorkflowLearningEvent",
+            "status": "partial",
+            "source": "aios workflow-learning-audit",
+            "storage": "improvement_writebacks + improvement_writeback_events",
+            "table_available": _table_exists(conn, "improvement_writebacks"),
+        },
+        {
+            "name": "EvaluationFinding",
+            "status": "partial",
+            "source": "success_criteria_findings + consistency_findings",
+            "storage": "success_criteria_findings + consistency_findings",
+            "table_available": _table_exists(conn, "success_criteria_findings")
+            or _table_exists(conn, "consistency_findings"),
+        },
+    ]
+    implemented_or_partial = [item for item in contracts if item["status"] in {"implemented", "partial"}]
+    return {
+        "summary": {
+            "canonical_contract_count": len(contracts),
+            "implemented_or_partial_count": len(implemented_or_partial),
+            "implemented_count": len([item for item in contracts if item["status"] == "implemented"]),
+            "partial_count": len([item for item in contracts if item["status"] == "partial"]),
+        },
+        "contracts": contracts,
+    }
+
+
 def _status_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     return {
         "projects_active": _count(conn, "projects", "status='active'"),
@@ -1743,6 +1808,7 @@ def _metadata_payload(
             "aios lifecycle-audit --json",
             "aios knowledge-objects --json",
             "aios workflow-learning-audit --json",
+            "aios contracts-audit --json",
             "aios logs --json --last 50",
             "aios recent-failures --json --last 20",
             "aios rtk --json",
@@ -1844,6 +1910,10 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
         summary = data["summary"]
         print(f"terminal_runs={summary['terminal_run_count']} no_learning={summary['no_learning_count']}")
         return
+    if command == "contracts-audit":
+        summary = data["summary"]
+        print(f"contracts={summary['canonical_contract_count']} partial={summary['partial_count']}")
+        return
     if command == "start-work":
         print(
             f"run={data['run']['id']} status={data['run']['status']} "
@@ -1896,6 +1966,7 @@ def create_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("lifecycle-audit", help="Run lifecycle state contract and attention-state audit")
     subparsers.add_parser("knowledge-objects", help="Knowledge object contract and provenance audit")
     subparsers.add_parser("workflow-learning-audit", help="Workflow learning evidence and proposal audit")
+    subparsers.add_parser("contracts-audit", help="Canonical AIOS interface contract audit")
 
     start_work = subparsers.add_parser("start-work", help="Create a routed AIOS run packet and session handshake")
     start_work.add_argument("objective", help="Work objective to route through AIOS")
@@ -1940,6 +2011,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "lifecycle-audit",
             "knowledge-objects",
             "workflow-learning-audit",
+            "contracts-audit",
             "start-work",
         }:
             conn = _connect_db(db_path)
@@ -1986,6 +2058,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "workflow-learning-audit":
             assert conn is not None
             data = _workflow_learning_payload(conn)
+        elif args.command == "contracts-audit":
+            assert conn is not None
+            data = _contracts_audit_payload(conn)
         elif args.command == "start-work":
             assert conn is not None
             data = _start_work_payload(

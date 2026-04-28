@@ -547,6 +547,43 @@ def test_workflow_learning_audit_classifies_run_evidence(tmp_path: Path, capsys)
     assert data["classification_counts"]["no_learning_signal"] == 2
 
 
+def test_contracts_audit_reports_canonical_interfaces(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    contracts_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "contracts-audit",
+        ]
+    )
+
+    assert contracts_exit == EXIT_OK
+    contracts_output = json.loads(capsys.readouterr().out)
+    data = contracts_output["data"]
+    names = {contract["name"] for contract in data["contracts"]}
+    assert data["summary"]["canonical_contract_count"] == 7
+    assert data["summary"]["implemented_or_partial_count"] >= 6
+    assert {
+        "TrustedSignal",
+        "InvocationBackend",
+        "RunLifecycleEvent",
+        "KnowledgeObject",
+        "RetrievalTrace",
+        "WorkflowLearningEvent",
+        "EvaluationFinding",
+    }.issubset(names)
+    invocation = next(contract for contract in data["contracts"] if contract["name"] == "InvocationBackend")
+    assert invocation["status"] == "implemented"
+    assert invocation["source"] == "services/invocation_backends.py"
+
+
 def test_metadata_and_skills_refresh_flow(tmp_path: Path, capsys) -> None:
     db_path = tmp_path / "aios.db"
     logs_dir = tmp_path / "logs"
