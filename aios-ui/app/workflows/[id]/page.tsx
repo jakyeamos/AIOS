@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { GitHubSkillCandidates } from "@/components/workflows/GitHubSkillCandidates";
 import { WorkflowSandbox } from "@/components/workflows/WorkflowSandbox";
 import { PageShell } from "@/components/layout/PageShell";
 import { getCaller } from "@/server/caller";
@@ -11,9 +12,10 @@ export default async function WorkflowDetailPage({
 }): Promise<React.JSX.Element> {
   const { id } = await params;
   const caller = await getCaller();
-  const [proposal, skillKeys] = await Promise.all([
+  const [proposal, skillKeys, candidates] = await Promise.all([
     caller.workflows.detail({ id }),
     caller.workflows.skillKeys(),
+    caller.workflows.skillCandidates({ workflowKey: id }),
   ]);
 
   if (!proposal) {
@@ -21,11 +23,11 @@ export default async function WorkflowDetailPage({
   }
 
   return (
-    <PageShell
-      title={proposal.title}
-      subtitle={proposal.summary}
-    >
+    <PageShell title={proposal.title} subtitle={proposal.summary}>
       <WorkflowSandbox proposal={proposal} skillKeys={skillKeys} />
+      {candidates.length > 0 && (
+        <GitHubSkillCandidates candidates={candidates} />
+      )}
     </PageShell>
   );
 }

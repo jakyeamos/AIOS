@@ -110,6 +110,57 @@ const parseWorkflowSpec = (raw: string): { stages: WorkflowStage[]; spec: Record
   }
 };
 
+export type GitHubSkillCandidate = {
+  id: string;
+  workflowKey: string;
+  skillKey: string;
+  name: string;
+  githubUrl: string;
+  repo: string;
+  path: string | null;
+  summary: string;
+  tags: string[];
+  detail: Record<string, unknown>;
+  status: string;
+  createdAt: string;
+};
+
+type GitHubSkillCandidateRow = {
+  id: string;
+  workflowKey: string;
+  skillKey: string;
+  name: string;
+  githubUrl: string;
+  repo: string;
+  path: string | null;
+  summary: string;
+  tagsJson: string;
+  detailJson: string;
+  status: string;
+  createdAt: string;
+};
+
+const mapCandidate = (row: GitHubSkillCandidateRow): GitHubSkillCandidate => {
+  let tags: string[] = [];
+  let detail: Record<string, unknown> = {};
+  try { tags = JSON.parse(row.tagsJson) as string[]; } catch { /* empty */ }
+  try { detail = JSON.parse(row.detailJson) as Record<string, unknown>; } catch { /* empty */ }
+  return {
+    id: row.id,
+    workflowKey: row.workflowKey,
+    skillKey: row.skillKey,
+    name: row.name,
+    githubUrl: row.githubUrl,
+    repo: row.repo,
+    path: row.path,
+    summary: row.summary,
+    tags,
+    detail,
+    status: row.status,
+    createdAt: row.createdAt,
+  };
+};
+
 const stagesFromSpec = (spec: Record<string, unknown>): WorkflowStage[] => {
   const rawStages = Array.isArray(spec.stages) ? spec.stages : [];
   return rawStages.map((s: unknown) => {
@@ -253,6 +304,94 @@ export const workflowsRouter = createTRPCRouter({
 
       workflow.stages = input.stages;
       writeFileSync(REGISTRY_PATH, `${JSON.stringify(registry, null, 2)}\n`);
+      return { ok: true };
+    }),
+
+  skillCandidates: publicProcedure
+    .input(z.object({ workflowKey: z.string().optional() }).optional())
+    .query(({ ctx, input }): GitHubSkillCandidate[] => {
+      if (!tableExists("github_skill_candidates")) return [];
+      const rows = input?.workflowKey
+        ? (ctx.db
+            .prepare(
+              `SELECT id, workflow_key AS workflowKey, skill_key AS skillKey, name,
+                      github_url AS githubUrl, repo, path, summary, tags_json AS tagsJson,
+                      detail_json AS detailJson, status, created_at AS createdAt
+               FROM github_skill_candidates
+               WHERE status = 'candidate' AND workflow_key = ?
+               ORDER BY created_at DESC LIMIT 40`,
+            )
+            .all(input.workflowKey) as GitHubSkillCandidateRow[])
+        : (ctx.db
+            .prepare(
+              `SELECT id, workflow_key AS workflowKey, skill_key AS skillKey, name,
+                      github_url AS githubUrl, repo, path, summary, tags_json AS tagsJson,
+                      detail_json AS detailJson, status, created_at AS createdAt
+               FROM github_skill_candidates
+               WHERE status = 'candidate'
+               ORDER BY created_at DESC LIMIT 60`,
+            )
+            .all() as GitHubSkillCandidateRow[]);
+      return rows.map(mapCandidate);
+    }),
+
+  promoteSkill: publicProcedure
+    .input(z.object({ id: z.string().min(1) }))
+    .mutation(({ ctx, input }): { ok: boolean; skillKey: string } => {
+      if (!tableExists("github_skill_candidates")) return { ok: false, skillKey: "" };
+      const row = ctx.db
+        .prepare(
+          `SELECT skill_key AS skillKey, name, summary, tags_json AS tagsJson, detail_json AS detailJson
+           FROM github_skill_candidates WHERE id = ? LIMIT 1`,
+        )
+        .get(input.id) as { skillKey: string; name: string; summary: string; tagsJson: string; detailJson: string } | undefined;
+      if (!row) return { ok: false, skillKey: "" };
+
+      let detail: Record<string, unknown> = {};
+      try { detail = JSON.parse(row.detailJson) as Record<string, unknown>; } catch { /* empty */ }
+      let tags: string[] = [];
+      try { tags = JSON.parse(row.tagsJson) as string[]; } catch { /* empty */ }
+
+      const newSkill = {
+        key: row.skillKey,
+        purpose: row.summary,
+        allowed_stages: tags,
+        input_schema: {},
+        output_schema: {},
+        invariants: (detail.invariants as string[] | undefined) ?? [],
+        failure_conditions: (detail.failure_conditions as string[] | undefined) ?? [],
+        side_effects: [],
+        execution_mode: (detail.execution_mode as string | undefined) ?? "heuristic",
+      };
+
+      try {
+        const existing = JSON.parse(readFileSync(SKILLS_PATH, "utf8")) as { skills: unknown[] };
+        const skills = existing.skills ?? [];
+        if (!skills.some((s) => (s as { key?: string }).key === row.skillKey)) {
+          skills.push(newSkill);
+          writeFileSync(SKILLS_PATH, `${JSON.stringify({ ...existing, skills }, null, 2)}\n`);
+        }
+      } catch { /* skills.json missing or malformed — skip file write */ }
+
+      ctx.db
+        .prepare(
+          `UPDATE github_skill_candidates SET status = 'promoted',
+           updated_at = strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE id = ?`,
+        )
+        .run(input.id);
+      return { ok: true, skillKey: row.skillKey };
+    }),
+
+  dismissSkill: publicProcedure
+    .input(z.object({ id: z.string().min(1) }))
+    .mutation(({ ctx, input }): { ok: boolean } => {
+      if (!tableExists("github_skill_candidates")) return { ok: false };
+      ctx.db
+        .prepare(
+          `UPDATE github_skill_candidates SET status = 'dismissed',
+           updated_at = strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE id = ?`,
+        )
+        .run(input.id);
       return { ok: true };
     }),
 
