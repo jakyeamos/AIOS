@@ -211,9 +211,39 @@ def bug_already_logged(conn: sqlite3.Connection, session_id: str, symptom: str) 
         return False
 
 
+def _safe_load_stdin() -> dict:
+    """Read stdin and parse JSON, sanitizing control characters that Claude Code
+    embeds in tool_response output (newlines in strings become literal \n etc.)."""
+    raw = sys.stdin.buffer.read()
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        pass
+    # Attempt recovery: replace unescaped control characters inside string values.
+    # Decode with replacement so we don't crash on bad bytes.
+    text = raw.decode("utf-8", errors="replace")
+    # Replace literal control chars (except \t \n \r which are valid JSON whitespace
+    # outside strings — inside strings they must be escaped).
+    # Strategy: use a regex to find string values and escape control chars within them.
+    import re
+    _CTRL = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f]')
+
+    def _escape_string(m: re.Match) -> str:
+        return _CTRL.sub(lambda c: f"\\u{ord(c.group()):04x}", m.group())
+
+    # Match JSON string tokens and sanitize their contents
+    sanitized = re.sub(r'"(?:[^"\\]|\\.)*"', _escape_string, text)
+    try:
+        return json.loads(sanitized)
+    except json.JSONDecodeError:
+        # Last resort: strip all non-ASCII-printable chars
+        clean = "".join(c if c >= " " or c in "\t\n\r" else " " for c in text)
+        return json.loads(clean)
+
+
 def main() -> None:
     try:
-        data = json.loads(sys.stdin.read())
+        data = _safe_load_stdin()
     except Exception as e:
         log(f"failed to parse stdin: {e}")
         sys.exit(0)
