@@ -121,6 +121,7 @@ Stage 1 capability-truth baseline work has started with a first trusted-signal s
   - `aios invocation-audit --json` now exposes backend count, required invocation contract fields, handshake coverage, and legacy fallback policy
   - `aios start-work --backend ...` now persists the selected backend key and label instead of labeling every invocation as Codex
   - strict handshake fields are now an explicit CLI contract: run id, invocation id, backend key, objective, project id, workflow key, packet id, lifecycle events, artifacts, and closeout evaluation
+  - `aios lifecycle-audit --json` now exposes the canonical run lifecycle contract, observed state counts, unsupported states, and attention-state events for blocked, waiting-for-user, waiting-for-tool, and failed-validation runs
 
 This pass makes milestones 1 and 2 operational for selected work from the local CLI:
 
