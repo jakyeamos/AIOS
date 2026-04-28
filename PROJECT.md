@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-04-27
+Last updated: 2026-04-28
 
 ## What AIOS Is
 
@@ -281,6 +281,24 @@ Phase 1a prompt library baseline is now implemented:
   - fixture set: `tests/fixtures/prompts/*.md`
 - phase architecture note:
   - `docs/architecture/2026-04-23-aios-prompt-library-phase1.md`
+
+Prompt library visibility is now implemented in the UI:
+
+- `/prompts` includes a first-class Prompt Library section backed by `prompts/registry.json`
+- prompt template cards expose template name, classification, tags, required inputs, version, update date, and source file
+- the existing recent prompt history and pattern candidate surfaces remain below the reusable template library
+
+Experiment test repo visibility is now implemented:
+
+- canonical registry:
+  - `config/experiments/test-repos.json`
+- local git repo workspaces:
+  - `staging/experiment-test-repos/clean-small-app`
+  - `staging/experiment-test-repos/messy-monorepo`
+  - `staging/experiment-test-repos/backend-heavy-service`
+  - `staging/experiment-test-repos/weak-tests-ui`
+- `/compare` now shows the registered test repos, readiness, purpose, profile, setup, and path before experiment run history
+- the local repo workspaces live under ignored `staging/` so they can be mutated during experiments without polluting the AIOS control-plane repository
 
 Phase 1b anti-slop ESLint ratchet is now implemented on top of existing plugin wiring:
 

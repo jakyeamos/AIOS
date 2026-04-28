@@ -1,4 +1,7 @@
-import type { Experiment } from "@/lib/types";
+import fs from "node:fs";
+import path from "node:path";
+
+import type { Experiment, ExperimentTestRepo } from "@/lib/types";
 import { tableExists } from "@/server/db";
 import { createTRPCRouter, publicProcedure } from "@/server/trpc";
 
@@ -13,6 +16,22 @@ type ExperimentRow = {
   startedAt: string;
   endedAt: string | null;
   notes: string | null;
+};
+
+type ExperimentTestRepoConfig = {
+  test_repos?: Array<{
+    id?: unknown;
+    name?: unknown;
+    profile?: unknown;
+    repo_path?: unknown;
+    purpose?: unknown;
+    setup?: unknown;
+    experiment_uses?: unknown;
+  }>;
+};
+
+const getAiosRoot = (): string => {
+  return process.env.AIOS_ROOT ?? "/Users/jakyeamos/AIOS";
 };
 
 const mapExperiment = (row: ExperimentRow): Experiment => {
@@ -45,6 +64,33 @@ const mapExperiment = (row: ExperimentRow): Experiment => {
 };
 
 export const experimentsRouter = createTRPCRouter({
+  testRepos: publicProcedure.query((): ExperimentTestRepo[] => {
+    const aiosRoot = getAiosRoot();
+    const configPath = path.join(aiosRoot, "config", "experiments", "test-repos.json");
+    if (!fs.existsSync(configPath)) {
+      return [];
+    }
+
+    const config = JSON.parse(fs.readFileSync(configPath, "utf8")) as ExperimentTestRepoConfig;
+    return (config.test_repos ?? []).map((repo) => {
+      const repoPath = typeof repo.repo_path === "string" ? path.resolve(aiosRoot, repo.repo_path) : "";
+      const status = repoPath.length === 0 ? "missing" : fs.existsSync(path.join(repoPath, ".git")) ? "ready" : "missing";
+
+      return {
+        id: typeof repo.id === "string" ? repo.id : "unknown",
+        name: typeof repo.name === "string" ? repo.name : "Unnamed repo",
+        profile: typeof repo.profile === "string" ? repo.profile : "unknown",
+        repoPath,
+        status,
+        purpose: typeof repo.purpose === "string" ? repo.purpose : "",
+        setup: typeof repo.setup === "string" ? repo.setup : "",
+        experimentUses: Array.isArray(repo.experiment_uses)
+          ? repo.experiment_uses.filter((item): item is string => typeof item === "string")
+          : [],
+      };
+    });
+  }),
+
   list: publicProcedure.query(({ ctx }): Experiment[] => {
     if (!tableExists("experiments")) {
       return [];

@@ -1,6 +1,8 @@
+import fs from "node:fs";
+import path from "node:path";
 import { z } from "zod";
 
-import type { Prompt, PromptClassification } from "@/lib/types";
+import type { Prompt, PromptClassification, PromptTemplate } from "@/lib/types";
 import { tableExists } from "@/server/db";
 import { createTRPCRouter, publicProcedure } from "@/server/trpc";
 
@@ -14,6 +16,48 @@ type PromptRow = {
   reusableCandidate: number;
   retrievalFired: number;
   retrievalSource: string | null;
+};
+
+type PromptTemplateRegistry = {
+  templates?: Array<{
+    id?: unknown;
+    name?: unknown;
+    version?: unknown;
+    classification?: unknown;
+    tags?: unknown;
+    purpose?: unknown;
+    required_inputs?: unknown;
+    optional_inputs?: unknown;
+    last_updated?: unknown;
+    file?: unknown;
+  }>;
+};
+
+const getAiosRoot = (): string => {
+  return process.env.AIOS_ROOT ?? "/Users/jakyeamos/AIOS";
+};
+
+const stringifyInput = (input: unknown): string => {
+  if (typeof input === "string") {
+    return input;
+  }
+
+  if (input && typeof input === "object" && !Array.isArray(input)) {
+    const [key, value] = Object.entries(input as Record<string, unknown>)[0] ?? [];
+    if (key && typeof value === "string") {
+      return `${key}: ${value}`;
+    }
+  }
+
+  return "";
+};
+
+const listFromUnknown = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.map(stringifyInput).filter((item) => item.length > 0);
 };
 
 const normalizeClassification = (classification: string | null): PromptClassification => {
@@ -53,6 +97,33 @@ const mapPrompt = (row: PromptRow): Prompt => ({
 });
 
 export const promptsRouter = createTRPCRouter({
+  templates: publicProcedure.query((): PromptTemplate[] => {
+    const aiosRoot = getAiosRoot();
+    const registryPath = path.join(aiosRoot, "prompts", "registry.json");
+    if (!fs.existsSync(registryPath)) {
+      return [];
+    }
+
+    const registry = JSON.parse(fs.readFileSync(registryPath, "utf8")) as PromptTemplateRegistry;
+    return (registry.templates ?? []).map((template) => {
+      const file = typeof template.file === "string" ? template.file : "";
+
+      return {
+        id: typeof template.id === "string" ? template.id : "unknown",
+        name: typeof template.name === "string" ? template.name : "Unnamed template",
+        version: typeof template.version === "string" ? template.version : "unknown",
+        classification: typeof template.classification === "string" ? template.classification : "other",
+        tags: Array.isArray(template.tags) ? template.tags.filter((tag): tag is string => typeof tag === "string") : [],
+        purpose: typeof template.purpose === "string" ? template.purpose : "",
+        requiredInputs: listFromUnknown(template.required_inputs),
+        optionalInputs: listFromUnknown(template.optional_inputs),
+        lastUpdated: typeof template.last_updated === "string" ? template.last_updated : "",
+        file,
+        path: file ? path.join(aiosRoot, file) : registryPath,
+      };
+    });
+  }),
+
   list: publicProcedure
     .input(z.object({ limit: z.number().int().min(1).max(200).default(50) }).optional())
     .query(({ ctx, input }): Prompt[] => {

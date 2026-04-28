@@ -55,6 +55,20 @@ export type Prompt = {
   retrievalSource: string | null;
 };
 
+export type PromptTemplate = {
+  id: string;
+  name: string;
+  version: string;
+  classification: string;
+  tags: string[];
+  purpose: string;
+  requiredInputs: string[];
+  optionalInputs: string[];
+  lastUpdated: string;
+  file: string;
+  path: string;
+};
+
 export type PatternState = "notice" | "observation" | "hypothesis" | "rule";
 
 export type Pattern = {
@@ -81,6 +95,17 @@ export type Experiment = {
   notes: string | null;
   delta: number | null;
   winner: ExperimentWinner;
+};
+
+export type ExperimentTestRepo = {
+  id: string;
+  name: string;
+  profile: string;
+  repoPath: string;
+  status: "planned" | "ready" | "missing";
+  purpose: string;
+  setup: string;
+  experimentUses: string[];
 };
 
 export type ProjectStatus = "active" | "archived";

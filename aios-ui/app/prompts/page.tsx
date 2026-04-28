@@ -3,7 +3,7 @@ import Link from "next/link";
 import { PageShell } from "@/components/layout/PageShell";
 import { PatternTable } from "@/components/panels/PatternTable";
 import { PromptCard } from "@/components/panels/PromptCard";
-import type { Pattern, Prompt } from "@/lib/types";
+import type { Pattern, Prompt, PromptTemplate } from "@/lib/types";
 import { getCaller } from "@/server/caller";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -58,13 +58,17 @@ const sortPrompts = (rows: Prompt[]): Prompt[] =>
     return rightScore - leftScore;
   });
 
+const sortTemplates = (rows: PromptTemplate[]): PromptTemplate[] =>
+  [...rows].sort((left, right) => left.name.localeCompare(right.name));
+
 export default async function PromptsPage({
   searchParams,
 }: {
   searchParams: Promise<SearchParams>;
 }): Promise<React.JSX.Element> {
   const caller = await getCaller();
-  const [prompts, patterns] = await Promise.all([
+  const [templates, prompts, patterns] = await Promise.all([
+    caller.prompts.templates(),
     caller.prompts.list({ limit: 200 }),
     caller.patterns.list({ limit: 200 }),
   ]);
@@ -73,6 +77,7 @@ export default async function PromptsPage({
 
   const promptClassFilter = getSingleValue(query.promptClass) ?? "all";
   const promptSearch = (getSingleValue(query.promptQ) ?? "").trim().toLowerCase();
+  const templateSearch = (getSingleValue(query.templateQ) ?? "").trim().toLowerCase();
 
   const patternStateFilter = getSingleValue(query.patternState) ?? "all";
   const patternApprovalFilter = getSingleValue(query.patternApproval) ?? "all";
@@ -94,6 +99,22 @@ export default async function PromptsPage({
         prompt.sessionId.toLowerCase().includes(promptSearch) ||
         (prompt.promptHash ?? "").toLowerCase().includes(promptSearch) ||
         (prompt.promptText ?? "").toLowerCase().includes(promptSearch)
+      );
+    }),
+  );
+
+  const filteredTemplates = sortTemplates(
+    templates.filter((template) => {
+      if (templateSearch.length === 0) {
+        return true;
+      }
+
+      return (
+        template.name.toLowerCase().includes(templateSearch) ||
+        template.id.toLowerCase().includes(templateSearch) ||
+        template.classification.toLowerCase().includes(templateSearch) ||
+        template.purpose.toLowerCase().includes(templateSearch) ||
+        template.tags.some((tag) => tag.toLowerCase().includes(templateSearch))
       );
     }),
   );
@@ -123,7 +144,62 @@ export default async function PromptsPage({
   );
 
   return (
-    <PageShell title="Prompts & Rules" subtitle="Pattern candidates, classifications, and promotion status.">
+    <PageShell
+      title="Prompts & Rules"
+      subtitle="Reusable prompt templates, observed prompt history, and promotion status."
+    >
+      <section className="panel-card">
+        <div className="panel-row">
+          <div>
+            <h3 className="section-title">Prompt Library</h3>
+            <p className="panel-subtitle">Versioned templates loaded from <code>/Users/jakyeamos/AIOS/prompts</code>.</p>
+          </div>
+          <span className="mono">{filteredTemplates.length} templates</span>
+        </div>
+        <form className="toolbar" method="get">
+          <label>
+            Search
+            <input name="templateQ" defaultValue={templateSearch} placeholder="name, tag, classification" />
+          </label>
+          <input type="hidden" name="promptClass" value={promptClassFilter} />
+          <input type="hidden" name="promptQ" value={promptSearch} />
+          <input type="hidden" name="patternState" value={patternStateFilter} />
+          <input type="hidden" name="patternApproval" value={patternApprovalFilter} />
+          <input type="hidden" name="patternQ" value={patternSearch} />
+          <input type="hidden" name="patternSort" value={patternSort} />
+          <input type="hidden" name="patternDir" value={patternDir} />
+          <button type="submit">Apply</button>
+        </form>
+        <div className="grid grid-2">
+          {filteredTemplates.map((template) => (
+            <article key={template.id} className="entity-card">
+              <div className="panel-row">
+                <div>
+                  <h4 className="panel-title">{template.name}</h4>
+                  <p className="panel-subtitle">{template.purpose}</p>
+                </div>
+                <span className="status-badge status-healthy">
+                  <span className="status-dot" />
+                  {template.classification}
+                </span>
+              </div>
+              <div className="badge-row">
+                {template.tags.map((tag) => (
+                  <span key={tag} className="provenance-badge">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <p className="entity-meta">
+                v{template.version} · updated {template.lastUpdated} · <code>{template.file}</code>
+              </p>
+              <p className="entity-meta">
+                Required: {template.requiredInputs.join("; ") || "none recorded"}
+              </p>
+            </article>
+          ))}
+        </div>
+      </section>
       <div className="grid grid-2">
         <section>
           <h3 className="section-title">Recent Prompts</h3>
@@ -150,6 +226,7 @@ export default async function PromptsPage({
             <input type="hidden" name="patternQ" value={patternSearch} />
             <input type="hidden" name="patternSort" value={patternSort} />
             <input type="hidden" name="patternDir" value={patternDir} />
+            <input type="hidden" name="templateQ" value={templateSearch} />
             <button type="submit">Apply</button>
           </form>
           <div className="stack">
@@ -202,6 +279,7 @@ export default async function PromptsPage({
             </label>
             <input type="hidden" name="promptClass" value={promptClassFilter} />
             <input type="hidden" name="promptQ" value={promptSearch} />
+            <input type="hidden" name="templateQ" value={templateSearch} />
             <button type="submit">Apply</button>
           </form>
 
