@@ -104,7 +104,11 @@ Stage 1 capability-truth baseline work has started with a first trusted-signal s
   - Projects
   - RTK
   - Automations
+  - Prompt Library
+  - Knowledge
 - The capability audit emits source-backed/missing/inferred states and backend findings such as missing project health snapshots.
+- Prompt Library audit now verifies whether `prompt_library_links` exists and whether body-hash-backed templates are actually visible.
+- Knowledge audit now reports topic count, source-reference coverage, relationship count, and findings for topics without references.
 - This gives later runtime, knowledge, workflow-learning, architecture, and UI phases a concrete Stage 1 gate instead of relying only on dashboard rendering.
 
 This pass makes milestones 1 and 2 operational for selected work from the local CLI:
