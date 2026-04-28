@@ -68,6 +68,13 @@ KNOWLEDGE_OBJECT_CONTRACT_FIELDS = [
     "freshness",
     "confidence",
 ]
+WORKFLOW_LEARNING_EVIDENCE_TYPES = [
+    "workflow_evidence",
+    "prompt_template_evidence",
+    "standards_health_evidence",
+    "bug_quality_evidence",
+    "no_learning_signal",
+]
 
 
 class CLIError(Exception):
@@ -1415,6 +1422,124 @@ def _knowledge_objects_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     }
 
 
+def _workflow_learning_kind(layer_type: str | None) -> str:
+    if layer_type == "workflow":
+        return "workflow_evidence"
+    if layer_type == "prompt":
+        return "prompt_template_evidence"
+    if layer_type in {"standards", "standard", "standards_health"}:
+        return "standards_health_evidence"
+    if layer_type in {"bug", "quality", "quality_pipeline"}:
+        return "bug_quality_evidence"
+    return "workflow_evidence"
+
+
+def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
+    classification_counts = {kind: 0 for kind in WORKFLOW_LEARNING_EVIDENCE_TYPES}
+    if not _table_exists(conn, "orchestration_runs"):
+        return {
+            "summary": {
+                "terminal_run_count": 0,
+                "runs_with_learning": 0,
+                "no_learning_count": 0,
+                "proposal_count": 0,
+                "pending_approval_count": 0,
+            },
+            "contract": {
+                "evidence_types": WORKFLOW_LEARNING_EVIDENCE_TYPES,
+                "run_source": "orchestration_runs",
+                "proposal_source": "improvement_writebacks",
+            },
+            "classification_counts": classification_counts,
+            "no_learning_runs": [],
+            "proposals": [],
+        }
+
+    terminal_placeholders = ", ".join("?" for _ in TERMINAL_RUN_STATUSES)
+    run_rows = conn.execute(
+        f"""
+        SELECT *
+        FROM orchestration_runs
+        WHERE status IN ({terminal_placeholders})
+        ORDER BY updated_at DESC
+        """,
+        tuple(TERMINAL_RUN_STATUSES),
+    ).fetchall()
+
+    proposals: list[dict[str, Any]] = []
+    no_learning_runs: list[dict[str, Any]] = []
+    runs_with_learning = 0
+    pending_approval_count = 0
+    writeback_exists = _table_exists(conn, "improvement_writebacks")
+
+    for run_row in run_rows:
+        run = dict(run_row)
+        writebacks = []
+        if writeback_exists:
+            writebacks = [
+                dict(row)
+                for row in conn.execute(
+                    """
+                    SELECT *
+                    FROM improvement_writebacks
+                    WHERE run_id = ?
+                    ORDER BY created_at DESC
+                    """,
+                    (run["id"],),
+                ).fetchall()
+            ]
+
+        if not writebacks:
+            classification_counts["no_learning_signal"] += 1
+            no_learning_runs.append(
+                {
+                    "run_id": run["id"],
+                    "status": run.get("status"),
+                    "workflow_key": run.get("workflow_key"),
+                }
+            )
+            continue
+
+        runs_with_learning += 1
+        for writeback in writebacks:
+            learning_kind = _workflow_learning_kind(writeback.get("layer_type"))
+            classification_counts[learning_kind] += 1
+            requires_approval = int(writeback.get("requires_approval") or 0) == 1
+            if requires_approval or writeback.get("status") == "pending_approval":
+                pending_approval_count += 1
+            proposals.append(
+                {
+                    "id": writeback.get("id"),
+                    "run_id": writeback.get("run_id"),
+                    "evidence_type": learning_kind,
+                    "layer_type": writeback.get("layer_type"),
+                    "layer_key": writeback.get("layer_key"),
+                    "status": writeback.get("status"),
+                    "requires_approval": requires_approval,
+                    "title": writeback.get("title"),
+                }
+            )
+
+    return {
+        "summary": {
+            "terminal_run_count": len(run_rows),
+            "runs_with_learning": runs_with_learning,
+            "no_learning_count": len(no_learning_runs),
+            "proposal_count": len(proposals),
+            "pending_approval_count": pending_approval_count,
+        },
+        "contract": {
+            "evidence_types": WORKFLOW_LEARNING_EVIDENCE_TYPES,
+            "run_source": "orchestration_runs",
+            "proposal_source": "improvement_writebacks",
+            "promotion_gate": "status + requires_approval on improvement_writebacks",
+        },
+        "classification_counts": classification_counts,
+        "no_learning_runs": no_learning_runs[:20],
+        "proposals": proposals[:50],
+    }
+
+
 def _status_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     return {
         "projects_active": _count(conn, "projects", "status='active'"),
@@ -1617,6 +1742,7 @@ def _metadata_payload(
             "aios invocation-audit --json",
             "aios lifecycle-audit --json",
             "aios knowledge-objects --json",
+            "aios workflow-learning-audit --json",
             "aios logs --json --last 50",
             "aios recent-failures --json --last 20",
             "aios rtk --json",
@@ -1714,6 +1840,10 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
         summary = data["summary"]
         print(f"objects={summary['object_count']} source_ref_coverage={summary['source_ref_coverage']}")
         return
+    if command == "workflow-learning-audit":
+        summary = data["summary"]
+        print(f"terminal_runs={summary['terminal_run_count']} no_learning={summary['no_learning_count']}")
+        return
     if command == "start-work":
         print(
             f"run={data['run']['id']} status={data['run']['status']} "
@@ -1765,6 +1895,7 @@ def create_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("invocation-audit", help="Invocation backend and strict-handshake audit")
     subparsers.add_parser("lifecycle-audit", help="Run lifecycle state contract and attention-state audit")
     subparsers.add_parser("knowledge-objects", help="Knowledge object contract and provenance audit")
+    subparsers.add_parser("workflow-learning-audit", help="Workflow learning evidence and proposal audit")
 
     start_work = subparsers.add_parser("start-work", help="Create a routed AIOS run packet and session handshake")
     start_work.add_argument("objective", help="Work objective to route through AIOS")
@@ -1808,6 +1939,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "invocation-audit",
             "lifecycle-audit",
             "knowledge-objects",
+            "workflow-learning-audit",
             "start-work",
         }:
             conn = _connect_db(db_path)
@@ -1851,6 +1983,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "knowledge-objects":
             assert conn is not None
             data = _knowledge_objects_payload(conn)
+        elif args.command == "workflow-learning-audit":
+            assert conn is not None
+            data = _workflow_learning_payload(conn)
         elif args.command == "start-work":
             assert conn is not None
             data = _start_work_payload(

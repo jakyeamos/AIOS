@@ -473,6 +473,80 @@ def test_knowledge_objects_expose_provenance_contract(tmp_path: Path, capsys) ->
     assert data["objects"][0]["source_refs"][0]["source_kind"] == "project_memory"
 
 
+def test_workflow_learning_audit_classifies_run_evidence(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    conn = sqlite3.connect(db_path)
+    conn.executemany(
+        "INSERT INTO orchestration_runs (id, status, workflow_key) VALUES (?, ?, ?)",
+        [
+            ("run-learning", "completed", "implementation-delivery"),
+            ("run-empty", "completed", "implementation-delivery"),
+        ],
+    )
+    conn.executemany(
+        """
+        INSERT INTO improvement_writebacks (
+            id, run_id, project_id, layer_type, layer_key, title, summary, status, requires_approval, created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        [
+            (
+                "wb-workflow",
+                "run-learning",
+                "p1",
+                "workflow",
+                "implementation-delivery",
+                "Workflow proposal",
+                "Reusable workflow evidence",
+                "proposed",
+                0,
+                "2026-04-23T00:37:00Z",
+            ),
+            (
+                "wb-prompt",
+                "run-learning",
+                "p1",
+                "prompt",
+                "implementation-delivery",
+                "Prompt proposal",
+                "Reusable prompt evidence",
+                "pending_approval",
+                1,
+                "2026-04-23T00:38:00Z",
+            ),
+        ],
+    )
+    conn.commit()
+    conn.close()
+
+    learning_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "workflow-learning-audit",
+        ]
+    )
+
+    assert learning_exit == EXIT_OK
+    learning_output = json.loads(capsys.readouterr().out)
+    data = learning_output["data"]
+    assert data["summary"]["terminal_run_count"] == 3
+    assert data["summary"]["runs_with_learning"] == 1
+    assert data["summary"]["no_learning_count"] == 2
+    assert data["summary"]["pending_approval_count"] == 1
+    assert data["classification_counts"]["workflow_evidence"] == 1
+    assert data["classification_counts"]["prompt_template_evidence"] == 1
+    assert data["classification_counts"]["no_learning_signal"] == 2
+
+
 def test_metadata_and_skills_refresh_flow(tmp_path: Path, capsys) -> None:
     db_path = tmp_path / "aios.db"
     logs_dir = tmp_path / "logs"
