@@ -224,6 +224,13 @@ export type WorkflowValueScore = {
   score: number;
 };
 
+export type SessionEvidenceItem = {
+  sessionId: string;
+  projectName: string;
+  objective: string | null;
+  detail: string;
+};
+
 export type ImprovementRecommendation = {
   id: string;
   title: string;
@@ -233,6 +240,7 @@ export type ImprovementRecommendation = {
   estimatedTokenRoi: number;
   estimatedMinutesRoi: number;
   priority: "high" | "medium" | "low";
+  sessionEvidence: SessionEvidenceItem[];
 };
 
 export type ExplainabilitySnapshot = {

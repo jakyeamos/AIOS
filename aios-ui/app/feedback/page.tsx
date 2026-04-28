@@ -136,6 +136,7 @@ export default async function FeedbackPage(): Promise<React.JSX.Element> {
           <span>Confidence</span>
           <span>Token ROI</span>
           <span>Minute ROI</span>
+          <span>Evidence</span>
         </div>
         {snapshot.recommendations.map((recommendation) => (
           <div key={recommendation.id} className="table-row table-recommendations">
@@ -146,6 +147,22 @@ export default async function FeedbackPage(): Promise<React.JSX.Element> {
             <span>{recommendation.confidence.toFixed(2)}</span>
             <span>{recommendation.estimatedTokenRoi}</span>
             <span>{recommendation.estimatedMinutesRoi}</span>
+            <span>
+              {recommendation.sessionEvidence.slice(0, 2).map((item) => (
+                <span key={item.sessionId} style={{ display: "block", whiteSpace: "nowrap" }}>
+                  <a href={`/runs/${item.sessionId}`} title={item.sessionId}>
+                    {item.sessionId.slice(0, 8)}&hellip;
+                  </a>
+                  {" "}
+                  <span className="text-muted">{item.projectName}</span>
+                  {" · "}
+                  <span className="text-muted">{item.detail}</span>
+                </span>
+              ))}
+              {recommendation.sessionEvidence.length === 0 && (
+                <span className="text-muted">—</span>
+              )}
+            </span>
           </div>
         ))}
       </section>

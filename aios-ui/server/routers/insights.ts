@@ -12,6 +12,7 @@ import type {
   MetricEvaluation,
   ProjectValueScore,
   RunValueScore,
+  SessionEvidenceItem,
   WorkflowValueScore,
 } from "@/lib/types";
 import { tableExists } from "@/server/db";
@@ -636,9 +637,185 @@ const readWorkflowValue = (
   });
 };
 
+type EvidenceRow = {
+  sessionId: string;
+  projectName: string | null;
+  objective: string | null;
+  detail: string;
+};
+
+const fetchSessionEvidence = (
+  db: import("better-sqlite3").Database,
+  metricKey: ExpectationMetricKey | string,
+  limit = 3,
+): SessionEvidenceItem[] => {
+  try {
+    if (metricKey === "abandon_rate") {
+      if (!tableExists("sessions")) return [];
+      const rows = db
+        .prepare(
+          `
+          SELECT s.id AS sessionId,
+                 COALESCE(p.name, 'Unknown') AS projectName,
+                 s.objective
+          FROM sessions s
+          LEFT JOIN projects p ON p.id = s.project_id
+          WHERE s.status = 'abandoned'
+          ORDER BY s.started_at DESC
+          LIMIT ?
+        `,
+        )
+        .all(limit) as EvidenceRow[];
+      return rows.map((r) => ({
+        sessionId: r.sessionId,
+        projectName: r.projectName ?? "Unknown",
+        objective: r.objective ?? null,
+        detail: "abandoned",
+      }));
+    }
+
+    if (metricKey === "open_run_rate") {
+      if (!tableExists("sessions")) return [];
+      const rows = db
+        .prepare(
+          `
+          SELECT s.id AS sessionId,
+                 COALESCE(p.name, 'Unknown') AS projectName,
+                 s.objective
+          FROM sessions s
+          LEFT JOIN projects p ON p.id = s.project_id
+          WHERE s.status = 'open'
+          ORDER BY s.started_at ASC
+          LIMIT ?
+        `,
+        )
+        .all(limit) as EvidenceRow[];
+      return rows.map((r) => ({
+        sessionId: r.sessionId,
+        projectName: r.projectName ?? "Unknown",
+        objective: r.objective ?? null,
+        detail: "stale open",
+      }));
+    }
+
+    if (metricKey === "first_pass_success") {
+      if (!tableExists("sessions") || !tableExists("workflow_metrics")) return [];
+      const rows = db
+        .prepare(
+          `
+          SELECT s.id AS sessionId,
+                 COALESCE(p.name, 'Unknown') AS projectName,
+                 s.objective,
+                 ROUND(wm.metric_value, 2) AS detail
+          FROM workflow_metrics wm
+          JOIN sessions s ON s.id = wm.session_id
+          LEFT JOIN projects p ON p.id = s.project_id
+          WHERE wm.metric_name = 'first_pass_success'
+          ORDER BY wm.metric_value ASC
+          LIMIT ?
+        `,
+        )
+        .all(limit) as (EvidenceRow & { detail: number })[];
+      return rows.map((r) => ({
+        sessionId: r.sessionId,
+        projectName: r.projectName ?? "Unknown",
+        objective: r.objective ?? null,
+        detail: `first_pass_success=${r.detail}`,
+      }));
+    }
+
+    if (metricKey === "follow_up_turns") {
+      if (!tableExists("sessions") || !tableExists("workflow_metrics")) return [];
+      const rows = db
+        .prepare(
+          `
+          SELECT s.id AS sessionId,
+                 COALESCE(p.name, 'Unknown') AS projectName,
+                 s.objective,
+                 ROUND(wm.metric_value, 1) AS detail
+          FROM workflow_metrics wm
+          JOIN sessions s ON s.id = wm.session_id
+          LEFT JOIN projects p ON p.id = s.project_id
+          WHERE wm.metric_name = 'follow_up_turns'
+          ORDER BY wm.metric_value DESC
+          LIMIT ?
+        `,
+        )
+        .all(limit) as (EvidenceRow & { detail: number })[];
+      return rows.map((r) => ({
+        sessionId: r.sessionId,
+        projectName: r.projectName ?? "Unknown",
+        objective: r.objective ?? null,
+        detail: `${r.detail} follow-up turns`,
+      }));
+    }
+
+    if (metricKey === "prompt_reuse_rate") {
+      if (!tableExists("sessions") || !tableExists("prompts_used")) return [];
+      const rows = db
+        .prepare(
+          `
+          SELECT s.id AS sessionId,
+                 COALESCE(p.name, 'Unknown') AS projectName,
+                 s.objective
+          FROM sessions s
+          LEFT JOIN projects p ON p.id = s.project_id
+          WHERE s.id IN (
+            SELECT session_id
+            FROM prompts_used
+            GROUP BY session_id
+            HAVING SUM(CASE WHEN reusable_candidate = 1 THEN 1 ELSE 0 END) = 0
+          )
+          ORDER BY s.started_at DESC
+          LIMIT ?
+        `,
+        )
+        .all(limit) as EvidenceRow[];
+      return rows.map((r) => ({
+        sessionId: r.sessionId,
+        projectName: r.projectName ?? "Unknown",
+        objective: r.objective ?? null,
+        detail: "0 reusable prompts",
+      }));
+    }
+
+    if (metricKey === "error_event_rate") {
+      if (!tableExists("sessions") || !tableExists("tool_events")) return [];
+      const rows = db
+        .prepare(
+          `
+          SELECT s.id AS sessionId,
+                 COALESCE(p.name, 'Unknown') AS projectName,
+                 s.objective,
+                 COUNT(*) AS detail
+          FROM tool_events te
+          JOIN sessions s ON s.id = te.session_id
+          LEFT JOIN projects p ON p.id = s.project_id
+          WHERE te.event_type LIKE '%error%'
+          GROUP BY s.id
+          ORDER BY COUNT(*) DESC
+          LIMIT ?
+        `,
+        )
+        .all(limit) as (EvidenceRow & { detail: number })[];
+      return rows.map((r) => ({
+        sessionId: r.sessionId,
+        projectName: r.projectName ?? "Unknown",
+        objective: r.objective ?? null,
+        detail: `${r.detail} error event(s)`,
+      }));
+    }
+
+    return [];
+  } catch {
+    return [];
+  }
+};
+
 const recommendationFromMetric = (
   evaluation: MetricEvaluation,
   sessionCount: number,
+  evidence: SessionEvidenceItem[],
 ): ImprovementRecommendation | null => {
   if (evaluation.status === "healthy") {
     return null;
@@ -657,6 +834,7 @@ const recommendationFromMetric = (
       estimatedTokenRoi: Math.round(sessionCount * 220),
       estimatedMinutesRoi: Math.round(sessionCount * 5),
       priority: highPriority ? "high" : "medium",
+      sessionEvidence: evidence,
     };
   }
 
@@ -670,6 +848,7 @@ const recommendationFromMetric = (
       estimatedTokenRoi: Math.round(sessionCount * 140),
       estimatedMinutesRoi: Math.round(sessionCount * 4),
       priority: highPriority ? "high" : "medium",
+      sessionEvidence: evidence,
     };
   }
 
@@ -683,6 +862,7 @@ const recommendationFromMetric = (
       estimatedTokenRoi: Math.round(sessionCount * 260),
       estimatedMinutesRoi: Math.round(sessionCount * 8),
       priority: highPriority ? "high" : "medium",
+      sessionEvidence: evidence,
     };
   }
 
@@ -696,6 +876,7 @@ const recommendationFromMetric = (
       estimatedTokenRoi: Math.round(sessionCount * 180),
       estimatedMinutesRoi: Math.round(sessionCount * 6),
       priority: highPriority ? "high" : "medium",
+      sessionEvidence: evidence,
     };
   }
 
@@ -709,6 +890,7 @@ const recommendationFromMetric = (
       estimatedTokenRoi: Math.round(sessionCount * 200),
       estimatedMinutesRoi: Math.round(sessionCount * 7),
       priority: highPriority ? "high" : "medium",
+      sessionEvidence: evidence,
     };
   }
 
@@ -722,6 +904,7 @@ const recommendationFromMetric = (
       estimatedTokenRoi: Math.round(sessionCount * 240),
       estimatedMinutesRoi: Math.round(sessionCount * 9),
       priority: highPriority ? "high" : "medium",
+      sessionEvidence: evidence,
     };
   }
 
@@ -734,6 +917,7 @@ const recommendationFromMetric = (
     estimatedTokenRoi: Math.round(sessionCount * 160),
     estimatedMinutesRoi: Math.round(sessionCount * 6),
     priority: highPriority ? "high" : "medium",
+    sessionEvidence: evidence,
   };
 };
 
@@ -753,7 +937,8 @@ const lowPerformingProjectRecommendations = (
       confidence: 0.7,
       estimatedTokenRoi: Math.round(project.runCount * 190),
       estimatedMinutesRoi: Math.round(project.runCount * 7),
-      priority: "medium",
+      priority: "medium" as const,
+      sessionEvidence: [],
     }));
 
 const workflowRecommendations = (
@@ -770,7 +955,8 @@ const workflowRecommendations = (
       confidence: 0.68,
       estimatedTokenRoi: Math.round(workflow.runCount * 140),
       estimatedMinutesRoi: Math.round(workflow.runCount * 5),
-      priority: "medium",
+      priority: "medium" as const,
+      sessionEvidence: [],
     }));
 
 const rankRecommendations = (
@@ -930,7 +1116,10 @@ export const insightsRouter = createTRPCRouter({
     const recommendations = rankRecommendations(
       [
         ...metrics
-          .map((metric) => recommendationFromMetric(metric, sessionCount))
+          .map((metric) => {
+            const evidence = fetchSessionEvidence(ctx.db, metric.metricKey);
+            return recommendationFromMetric(metric, sessionCount, evidence);
+          })
           .filter((recommendation): recommendation is ImprovementRecommendation => recommendation !== null),
         ...lowPerformingProjectRecommendations(valueByProject),
         ...workflowRecommendations(valueByWorkflow),
