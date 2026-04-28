@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import crypto from "node:crypto";
 import path from "node:path";
 import { z } from "zod";
 
@@ -35,6 +36,40 @@ type PromptTemplateRegistry = {
 
 const getAiosRoot = (): string => {
   return process.env.AIOS_ROOT ?? "/Users/jakyeamos/AIOS";
+};
+
+const extractBody = (markdown: string): string => {
+  if (!markdown.startsWith("---\n")) {
+    return markdown;
+  }
+
+  const lines = markdown.split(/\r?\n/);
+  const endIndex = lines.findIndex((line, index) => index > 0 && line.trim() === "---");
+  if (endIndex === -1) {
+    return markdown;
+  }
+
+  return lines.slice(endIndex + 1).join("\n").replace(/^\n+/, "");
+};
+
+const bodyHash = (markdown: string): string =>
+  crypto.createHash("sha256").update(extractBody(markdown), "utf8").digest("hex");
+
+const templateHash = (aiosRoot: string, template: NonNullable<PromptTemplateRegistry["templates"]>[number]): string | null => {
+  const templateId = typeof template.id === "string" ? template.id : "";
+  const file = typeof template.file === "string" ? template.file : "";
+  const candidates = [
+    file ? path.join(aiosRoot, file) : "",
+    file ? path.join(aiosRoot, "prompts", path.basename(file)) : "",
+    templateId ? path.join(aiosRoot, "prompts", `${templateId}.md`) : "",
+  ].filter((candidate, index, rows) => candidate.length > 0 && rows.indexOf(candidate) === index);
+
+  const templatePath = candidates.find((candidate) => fs.existsSync(candidate));
+  if (!templatePath) {
+    return null;
+  }
+
+  return bodyHash(fs.readFileSync(templatePath, "utf8"));
 };
 
 const stringifyInput = (input: unknown): string => {
@@ -97,18 +132,30 @@ const mapPrompt = (row: PromptRow): Prompt => ({
 });
 
 export const promptsRouter = createTRPCRouter({
-  templates: publicProcedure.query((): PromptTemplate[] => {
+  templates: publicProcedure.query(({ ctx }): PromptTemplate[] => {
     const aiosRoot = getAiosRoot();
     const registryPath = path.join(aiosRoot, "prompts", "registry.json");
-    if (!fs.existsSync(registryPath)) {
+    if (!fs.existsSync(registryPath) || !tableExists("prompt_library_links")) {
       return [];
     }
 
     const registry = JSON.parse(fs.readFileSync(registryPath, "utf8")) as PromptTemplateRegistry;
-    return (registry.templates ?? []).map((template) => {
+    return (registry.templates ?? []).flatMap((template) => {
+      const hash = templateHash(aiosRoot, template);
+      if (!hash) {
+        return [];
+      }
+
+      const linked = ctx.db
+        .prepare("SELECT 1 FROM prompt_library_links WHERE prompt_hash = ? LIMIT 1")
+        .get(hash);
+      if (!linked) {
+        return [];
+      }
+
       const file = typeof template.file === "string" ? template.file : "";
 
-      return {
+      return [{
         id: typeof template.id === "string" ? template.id : "unknown",
         name: typeof template.name === "string" ? template.name : "Unnamed template",
         version: typeof template.version === "string" ? template.version : "unknown",
@@ -120,7 +167,7 @@ export const promptsRouter = createTRPCRouter({
         lastUpdated: typeof template.last_updated === "string" ? template.last_updated : "",
         file,
         path: file ? path.join(aiosRoot, file) : registryPath,
-      };
+      }];
     });
   }),
 

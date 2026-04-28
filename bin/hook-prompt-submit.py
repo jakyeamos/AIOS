@@ -72,6 +72,20 @@ def _input_names(rows: object) -> list[str]:
     return names
 
 
+def _extract_body(markdown: str) -> str:
+    if not markdown.startswith("---\n"):
+        return markdown
+    lines = markdown.splitlines()
+    end_index = None
+    for idx in range(1, len(lines)):
+        if lines[idx].strip() == "---":
+            end_index = idx
+            break
+    if end_index is None:
+        return markdown
+    return "\n".join(lines[end_index + 1 :]).lstrip("\n")
+
+
 def _load_prompt_registry() -> list[dict]:
     try:
         with open(PROMPT_REGISTRY_PATH, encoding="utf-8") as handle:
@@ -82,6 +96,56 @@ def _load_prompt_registry() -> list[dict]:
     except Exception:
         return []
     return []
+
+
+def _template_paths(template: dict) -> list[str]:
+    template_id = str(template.get("id", "")).strip()
+    file_value = str(template.get("file", "")).strip()
+    prompts_parent = os.path.dirname(PROMPTS_ROOT)
+    candidates = []
+    if file_value:
+        if os.path.isabs(file_value):
+            candidates.append(file_value)
+        candidates.append(os.path.join(prompts_parent, file_value))
+        candidates.append(os.path.join(PROMPTS_ROOT, os.path.basename(file_value)))
+    if template_id:
+        candidates.append(os.path.join(PROMPTS_ROOT, f"{template_id}.md"))
+    return list(dict.fromkeys(candidate for candidate in candidates if candidate))
+
+
+def _template_body_hash(template: dict) -> str | None:
+    for path in _template_paths(template):
+        if os.path.exists(path):
+            with open(path, encoding="utf-8") as handle:
+                return hashlib.sha256(_extract_body(handle.read()).encode("utf-8")).hexdigest()
+    return None
+
+
+def _table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
+    row = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name = ?",
+        (table_name,),
+    ).fetchone()
+    return row is not None
+
+
+def _data_backed_prompt_templates(conn: sqlite3.Connection) -> list[dict]:
+    templates = _load_prompt_registry()
+    if not templates or not _table_exists(conn, "prompt_library_links"):
+        return []
+
+    backed = []
+    for template in templates:
+        prompt_hash = _template_body_hash(template)
+        if not prompt_hash:
+            continue
+        linked = conn.execute(
+            "SELECT 1 FROM prompt_library_links WHERE prompt_hash = ? LIMIT 1",
+            (prompt_hash,),
+        ).fetchone()
+        if linked:
+            backed.append(template)
+    return backed
 
 
 def _render_template_hint(template: dict) -> str:
@@ -109,8 +173,8 @@ def _render_template_hint(template: dict) -> str:
     )
 
 
-def _best_prompt_template(classification: str, prompt: str) -> dict | None:
-    templates = _load_prompt_registry()
+def _best_prompt_template(classification: str, prompt: str, templates: list[dict] | None = None) -> dict | None:
+    templates = templates if templates is not None else _load_prompt_registry()
     if not templates:
         return None
 
@@ -203,7 +267,7 @@ def retrieve_context(classification: str, prompt: str, project_name: str, conn: 
     retrieval_cfg = policy.get("prompt_retrieval", {})
     parts = []
     source = ""
-    matched_template = _best_prompt_template(classification, prompt)
+    matched_template = _best_prompt_template(classification, prompt, _data_backed_prompt_templates(conn))
     if matched_template:
         parts.append(_render_template_hint(matched_template))
         source = "prompt_library"

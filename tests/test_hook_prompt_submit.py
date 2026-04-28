@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 import sqlite3
 import sys
@@ -60,7 +61,7 @@ def test_best_prompt_template_scores_classification_and_tags(tmp_path: Path) -> 
     assert match["id"] == "coding_debug"
 
 
-def test_retrieve_context_includes_template_hint_when_retrieval_disabled(tmp_path: Path) -> None:
+def test_retrieve_context_skips_template_hint_without_data_link(tmp_path: Path) -> None:
     module = _load_hook_module()
     registry_path = tmp_path / "registry.json"
     registry_path.write_text(
@@ -86,6 +87,62 @@ def test_retrieve_context_includes_template_hint_when_retrieval_disabled(tmp_pat
     module.PROMPTS_ROOT = str(tmp_path)
 
     conn = sqlite3.connect(":memory:")
+    context, source = module.retrieve_context(
+        "plan",
+        "Need reasoning for a decision under constraints",
+        "AIOS",
+        conn,
+        {"prompt_retrieval": {"enabled": False}, "reusable_prompt_hint": {"enabled": False}},
+    )
+    conn.close()
+
+    assert source == ""
+    assert context == ""
+
+
+def test_retrieve_context_includes_data_backed_template_hint(tmp_path: Path) -> None:
+    module = _load_hook_module()
+    template_body = "Use this decision workflow when constraints and tradeoffs matter.\n"
+    (tmp_path / "reasoning.md").write_text(template_body, encoding="utf-8")
+    registry_path = tmp_path / "registry.json"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "templates": [
+                    {
+                        "id": "reasoning",
+                        "name": "Decision Reasoning",
+                        "version": "1.0",
+                        "classification": "plan",
+                        "tags": ["reasoning", "decision"],
+                        "purpose": "Turn ambiguity into recommendation.",
+                        "required_inputs": [{"question": "desc"}, {"constraints": "desc"}],
+                        "optional_inputs": [{"options": "desc"}],
+                        "file": "reasoning.md",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    module.PROMPT_REGISTRY_PATH = str(registry_path)
+    module.PROMPTS_ROOT = str(tmp_path)
+
+    conn = sqlite3.connect(":memory:")
+    conn.execute(
+        """
+        CREATE TABLE prompt_library_links (
+          id TEXT PRIMARY KEY,
+          prompt_hash TEXT NOT NULL,
+          obsidian_note_path TEXT,
+          promoted_at TEXT
+        )
+        """
+    )
+    conn.execute(
+        "INSERT INTO prompt_library_links (id, prompt_hash) VALUES (?, ?)",
+        ("link-1", hashlib.sha256(template_body.encode("utf-8")).hexdigest()),
+    )
     context, source = module.retrieve_context(
         "plan",
         "Need reasoning for a decision under constraints",

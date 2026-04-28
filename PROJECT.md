@@ -286,6 +286,7 @@ Prompt library visibility is now implemented in the UI:
 
 - `/prompts` includes a first-class Prompt Library section backed by `prompts/registry.json`
 - prompt template cards expose template name, classification, tags, required inputs, version, update date, and source file
+- prompt templates must now be backed by `prompt_library_links` body-hash evidence before the UI or prompt-submit hook surfaces them; registry-only starter templates are hidden
 - raw recent prompt history is intentionally hidden from the main `/prompts` surface
 - mined prompt/pattern rows are intentionally hidden from `/prompts`; repetition alone is not evidence that a prompt is a reusable library asset
 - raw prompt text is no longer written to `patterns`; prompt reuse belongs in the curated prompt library, not the general pattern/rule system
