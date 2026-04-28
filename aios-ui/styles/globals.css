@@ -123,6 +123,7 @@ a:hover {
 .page-shell {
   display: grid;
   gap: 24px;
+  min-width: 0;
 }
 
 .page-header h2 {
@@ -138,6 +139,7 @@ a:hover {
 .page-content {
   display: grid;
   gap: 24px;
+  min-width: 0;
 }
 
 .toolbar {
@@ -1069,20 +1071,45 @@ a:hover {
   border-color: var(--accent);
 }
 
-@media (max-width: 1080px) {
+/* ── 1200px: sidebar collapses to icons ───────────────────────────────────── */
+@media (max-width: 1200px) {
   .app-root {
-    grid-template-columns: 64px minmax(0, 1fr);
+    grid-template-columns: 52px minmax(0, 1fr);
   }
 
-  .sidebar-title,
+  .sidebar {
+    padding: 20px 8px;
+  }
+
+  .sidebar-title {
+    overflow: hidden;
+    text-indent: -9999px;
+    white-space: nowrap;
+    margin-bottom: 16px;
+  }
+
   .sidebar-link {
     overflow: hidden;
     text-indent: -9999px;
     white-space: nowrap;
+    padding: 8px;
+    text-align: center;
   }
 
   .main-content {
-    padding: 0 20px 20px;
+    padding: 0 20px 24px;
+  }
+}
+
+/* ── 900px: single-column layouts, scrollable tables ─────────────────────── */
+@media (max-width: 900px) {
+  .app-root {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+
+  .main-content {
+    padding: 0 12px 20px;
+    min-width: 0;
   }
 
   .grid-2,
@@ -1104,17 +1131,38 @@ a:hover {
     grid-template-columns: 1fr;
   }
 
-  .table-runs,
-  .table-patterns,
-  .table-expectations,
-  .table-metrics,
-  .table-value-project,
-  .table-workflows,
-  .table-runs-value,
-  .table-recommendations,
-  .table-breakdown,
-  .table-artifacts,
-  .table-bugs {
+  /* Make all tables horizontally scrollable instead of collapsing to 1fr */
+  .panel-card {
+    overflow-x: auto;
+  }
+
+  .table-head,
+  .table-row {
+    min-width: 540px;
+  }
+
+  .table-runs          { min-width: 720px; }
+  .table-metrics       { min-width: 680px; }
+  .table-recommendations { min-width: 900px; }
+  .table-runs-value    { min-width: 640px; }
+  .table-value-project { min-width: 480px; }
+
+  /* Workflow sandbox stacks vertically */
+  .wf-sandbox {
     grid-template-columns: 1fr;
+    grid-template-rows: 60vh auto;
+    height: auto;
+  }
+
+  .wf-config-wrap {
+    transform: none !important;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    max-height: 480px;
+  }
+
+  /* Topbar stays readable */
+  .topbar-title {
+    font-size: 18px;
   }
 }
