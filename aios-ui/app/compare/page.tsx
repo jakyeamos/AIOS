@@ -5,7 +5,11 @@ import { getCaller } from "@/server/caller";
 
 export default async function ComparePage(): Promise<React.JSX.Element> {
   const caller = await getCaller();
-  const [experiments, testRepos] = await Promise.all([caller.experiments.list(), caller.experiments.testRepos()]);
+  const [experiments, testRepos, workflowSkillExperiments] = await Promise.all([
+    caller.experiments.list(),
+    caller.experiments.testRepos(),
+    caller.experiments.workflowSkillExperiments(),
+  ]);
 
   return (
     <PageShell title="Diff & Compare" subtitle="Side-by-side comparisons for workflow and prompt changes.">
@@ -35,6 +39,31 @@ export default async function ComparePage(): Promise<React.JSX.Element> {
             <span className="text-muted">{repo.purpose}</span>
             <span>{repo.status}</span>
             <span className="mono">{repo.repoPath}</span>
+          </div>
+        ))}
+      </section>
+      <section className="panel-card" id="workflow-skill-experiments">
+        <div className="panel-row">
+          <div>
+            <h3 className="section-title">Workflow Skill Experiments</h3>
+            <p className="panel-subtitle">Queued branch experiments for generated workflow skills across the registered test repos.</p>
+          </div>
+          <span className="mono">{workflowSkillExperiments.length} queued</span>
+        </div>
+        <div className="table-head">
+          <span>Workflow</span>
+          <span>Skill</span>
+          <span>Repo</span>
+          <span>Status</span>
+          <span>Branch</span>
+        </div>
+        {workflowSkillExperiments.map((experiment) => (
+          <div key={experiment.id} className="table-row">
+            <span>{experiment.workflowKey}</span>
+            <span className="mono">{experiment.skillKey}</span>
+            <span>{experiment.testRepoId}</span>
+            <span>{experiment.outcome ?? experiment.status}</span>
+            <span className="mono">{experiment.branchName}</span>
           </div>
         ))}
       </section>

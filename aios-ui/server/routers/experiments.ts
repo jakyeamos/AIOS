@@ -30,6 +30,28 @@ type ExperimentTestRepoConfig = {
   }>;
 };
 
+type WorkflowSkillExperimentRow = {
+  id: string;
+  workflowKey: string;
+  skillKey: string;
+  testRepoId: string;
+  branchName: string;
+  status: string;
+  outcome: string | null;
+  createdAt: string;
+};
+
+export type WorkflowSkillExperiment = {
+  id: string;
+  workflowKey: string;
+  skillKey: string;
+  testRepoId: string;
+  branchName: string;
+  status: string;
+  outcome: string | null;
+  createdAt: string;
+};
+
 const getAiosRoot = (): string => {
   return process.env.AIOS_ROOT ?? "/Users/jakyeamos/AIOS";
 };
@@ -117,5 +139,40 @@ export const experimentsRouter = createTRPCRouter({
       .all() as ExperimentRow[];
 
     return rows.map(mapExperiment);
+  }),
+
+  workflowSkillExperiments: publicProcedure.query(({ ctx }): WorkflowSkillExperiment[] => {
+    if (!tableExists("workflow_skill_experiments")) {
+      return [];
+    }
+
+    const rows = ctx.db
+      .prepare(
+        `
+        SELECT
+          id,
+          workflow_key AS workflowKey,
+          skill_key AS skillKey,
+          test_repo_id AS testRepoId,
+          branch_name AS branchName,
+          status,
+          outcome,
+          created_at AS createdAt
+        FROM workflow_skill_experiments
+        ORDER BY created_at DESC, workflow_key, test_repo_id
+      `,
+      )
+      .all() as WorkflowSkillExperimentRow[];
+
+    return rows.map((row) => ({
+      id: row.id,
+      workflowKey: row.workflowKey,
+      skillKey: row.skillKey,
+      testRepoId: row.testRepoId,
+      branchName: row.branchName,
+      status: row.status,
+      outcome: row.outcome,
+      createdAt: row.createdAt,
+    }));
   }),
 });

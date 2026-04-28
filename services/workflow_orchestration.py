@@ -418,6 +418,41 @@ def _validate_scope(objective: str, output_text: str) -> dict[str, Any]:
     }
 
 
+def _execute_learned_workflow_skill(
+    skill: SkillSpec,
+    *,
+    state: dict[str, Any],
+    context: WorkflowExecutionContext,
+) -> dict[str, Any]:
+    normalized_prompt = str(state.get("normalized_prompt") or context.objective).strip()
+    evidence = [
+        invariant
+        for invariant in skill.invariants
+        if invariant.lower().startswith("use the learned pattern")
+        or invariant.lower().startswith("return explicit evidence")
+    ]
+    result_text = "\n".join(
+        [
+            f"Objective: {context.objective.strip()}",
+            f"Skill: {skill.key}",
+            f"Purpose: {skill.purpose}",
+            "",
+            "Execution contract:",
+            normalized_prompt,
+            "",
+            "Result:",
+            "Apply the learned workflow pattern to produce an evidence-backed, scope-bounded response.",
+        ]
+    )
+    state["result_text"] = result_text
+    state["learned_workflow_skill"] = skill.key
+    state["learned_workflow_evidence"] = evidence
+    return {
+        "result_text": result_text,
+        "evidence": evidence,
+    }
+
+
 def _execute_skill(
     skill: SkillSpec,
     stage: StageSpec,
@@ -470,9 +505,18 @@ def _execute_skill(
     if skill.key == "scope_check":
         result = _validate_scope(
             context.objective,
-            str(state.get("humanized_text") or state.get("draft_text") or state.get("normalized_prompt") or ""),
+            str(
+                state.get("humanized_text")
+                or state.get("draft_text")
+                or state.get("result_text")
+                or state.get("normalized_prompt")
+                or ""
+            ),
         )
         return {}, {"validation_key": skill.key, **result}
+
+    if skill.key.endswith("_executor"):
+        return _execute_learned_workflow_skill(skill, state=state, context=context), None
 
     return {}, None
 
@@ -596,6 +640,9 @@ def execute_workflow(
             "evidence_notes": run_state.get("evidence_notes", []),
             "draft_text": run_state.get("draft_text"),
             "humanized_text": run_state.get("humanized_text"),
+            "result_text": run_state.get("result_text"),
+            "learned_workflow_skill": run_state.get("learned_workflow_skill"),
+            "learned_workflow_evidence": run_state.get("learned_workflow_evidence", []),
         },
         "rtk": {
             "interface": rtk_rules.get(

@@ -261,7 +261,13 @@ def _workflow_spec(proposal_key: str, title: str, evidence: list[str]) -> dict[s
         "stages": [
             {"key": "parse_request", "kind": "parse_request", "required_skills": []},
             {"key": "normalize_prompt", "kind": "normalize_prompt", "required_skills": ["prompt_library_normalizer"]},
-            {"key": "execute_pattern", "kind": "generate", "required_skills": [_skill_key(proposal_key)]},
+            {
+                "key": "execute_pattern",
+                "kind": "generate",
+                "required_skills": [_skill_key(proposal_key)],
+                "best_practices": [],
+                "best_practices_status": "requires_test_repo_experiment",
+            },
             {"key": "validate", "kind": "validate", "required_skills": ["scope_check"]},
             {"key": "finalize", "kind": "finalize", "required_skills": []},
         ],
@@ -296,6 +302,10 @@ def _skill_spec(proposal_key: str, title: str) -> dict[str, Any]:
         ],
         "side_effects": [],
         "execution_mode": "heuristic",
+        "source": "generated_workflow_executor",
+        "runtime_adapter": "learned_workflow_executor_v1",
+        "executable": True,
+        "promotion_gate": "test_repo_experiment",
     }
 
 
@@ -306,6 +316,7 @@ def _validation_plan(proposal_key: str, evidence: list[str]) -> dict[str, Any]:
             "Workflow registry validates against skill registry.",
             "scope_check passes on generated output.",
             "At least one source evidence item is represented in trigger hints.",
+            "Best practices are promoted only after improving execution across the registered test repos.",
         ],
         "seed_evidence": evidence[:8],
     }
@@ -429,7 +440,8 @@ def _workflow_spec_from_archetype(archetype: dict, proposal_key: str, evidence_c
                 "key": "execute_pattern",
                 "kind": "generate",
                 "required_skills": [_skill_key(proposal_key)],
-                "best_practices": archetype.get("best_practices", []),
+                "best_practices": [],
+                "best_practices_status": "requires_test_repo_experiment",
             },
             {"key": "validate", "kind": "validate", "required_skills": ["scope_check"]},
             {"key": "finalize", "kind": "finalize", "required_skills": []},

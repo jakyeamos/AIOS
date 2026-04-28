@@ -297,6 +297,50 @@ export const ensureControlPlaneSchema = (db: Database.Database): void => {
     CREATE INDEX IF NOT EXISTS idx_workflow_synthesis_proposals_status
       ON workflow_synthesis_proposals(status, created_at DESC);
 
+    CREATE TABLE IF NOT EXISTS github_skill_candidates (
+      id TEXT PRIMARY KEY,
+      workflow_key TEXT NOT NULL,
+      skill_key TEXT NOT NULL,
+      name TEXT NOT NULL,
+      github_url TEXT NOT NULL,
+      repo TEXT NOT NULL,
+      path TEXT,
+      summary TEXT NOT NULL,
+      tags_json TEXT NOT NULL DEFAULT '[]',
+      detail_json TEXT NOT NULL DEFAULT '{}',
+      status TEXT NOT NULL DEFAULT 'candidate',
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS workflow_skill_experiments (
+      id TEXT PRIMARY KEY,
+      workflow_key TEXT NOT NULL,
+      skill_key TEXT NOT NULL,
+      candidate_id TEXT,
+      test_repo_id TEXT NOT NULL,
+      test_repo_path TEXT NOT NULL,
+      branch_name TEXT NOT NULL,
+      experiment_kind TEXT NOT NULL,
+      baseline_score REAL,
+      candidate_score REAL,
+      outcome TEXT,
+      status TEXT NOT NULL DEFAULT 'queued',
+      details_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+      UNIQUE(workflow_key, skill_key, test_repo_id, experiment_kind)
+    );
+
+    CREATE TABLE IF NOT EXISTS workflow_paper_fixtures (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      fixture_path TEXT NOT NULL UNIQUE,
+      purpose TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'active',
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    );
+
     CREATE TABLE IF NOT EXISTS standards_profiles (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
