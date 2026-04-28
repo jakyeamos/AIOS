@@ -11,6 +11,8 @@ Phases (skipped individually on failure, pipeline continues):
   5. Lab experiments   — run Harbor benchmarks (skipped if Docker unavailable)
   6. Personal extract  — mine sessions/prompts for personal patterns
   7. Vault report      — write lab-report summary to Obsidian
+  8. iMessage ingest   — upsert contacts active in last 24h + vault files
+  9. Apple Notes ingest — sync all notes to aios.db + vault markdown
 
 Usage:
   python3 ~/AIOS/bin/aios-pipeline.py [--skip-lab] [--dry-run] [--verbose]
@@ -40,6 +42,8 @@ PHASES = [
     "lab-experiments",
     "personal-extract",
     "vault-report",
+    "ingest-imessage",
+    "ingest-apple-notes",
 ]
 
 
@@ -252,6 +256,37 @@ def main() -> None:
     else:
         results["vault-report"] = f"FAILED: {report_text}"
         _log(f"  lab-report FAILED: {report_text}")
+
+    # ── Phase 8: iMessage ingest ─────────────────────────────────────────────
+    _log("phase 8/9: iMessage ingest")
+    imessage_cmd = ["python3", str(BIN / "ingest-imessage.py"), "--days", "1"]
+    if args.dry_run:
+        imessage_cmd.append("--dry-run")
+    ok, out = _run(imessage_cmd, "ingest-imessage", args.verbose)
+    if ok:
+        summary = out.splitlines()[-1] if out else "ok"
+        results["ingest-imessage"] = f"ok — {summary}"
+        _log(f"  {summary}")
+    else:
+        results["ingest-imessage"] = f"FAILED: {out}"
+        _log(f"  FAILED: {out}")
+
+    # ── Phase 9: Apple Notes ingest ───────────────────────────────────────────
+    _log("phase 9/9: Apple Notes ingest")
+    notes_cmd = ["python3", str(BIN / "ingest-apple-notes.py")]
+    if args.dry_run:
+        notes_cmd.append("--dry-run")
+    ok, out = _run(notes_cmd, "ingest-apple-notes", args.verbose)
+    if ok:
+        summary = next(
+            (line for line in reversed(out.splitlines()) if "Notes processed" in line),
+            out.splitlines()[-1] if out else "ok",
+        )
+        results["ingest-apple-notes"] = f"ok — {summary}"
+        _log(f"  {summary}")
+    else:
+        results["ingest-apple-notes"] = f"FAILED: {out}"
+        _log(f"  FAILED: {out}")
 
     # ── Summary ───────────────────────────────────────────────────────────────
     _log("=== pipeline complete ===")
