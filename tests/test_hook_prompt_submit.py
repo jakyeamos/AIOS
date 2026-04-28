@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import sqlite3
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -10,6 +11,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def _load_hook_module():
     module_path = ROOT / "bin" / "hook-prompt-submit.py"
+    bin_path = str(ROOT / "bin")
+    if bin_path not in sys.path:
+        sys.path.insert(0, bin_path)
     spec = importlib.util.spec_from_file_location("hook_prompt_submit", module_path)
     assert spec is not None
     assert spec.loader is not None

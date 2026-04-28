@@ -79,7 +79,7 @@ function StageNode({ data }: NodeProps) {
       <Handle type="target" position={Position.Top} className="wf-handle" />
       <div className="wf-node-header">
         <span className="wf-node-index">{index + 1}</span>
-        <span className="wf-node-key">{stage.key || <span className="wf-node-placeholder">untitled step</span>}</span>
+        <span className="wf-node-key">{stage.key || <span className="wf-node-empty">untitled step</span>}</span>
         <span className="wf-node-kind">{label}</span>
       </div>
       {stage.required_skills.length > 0 && (

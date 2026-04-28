@@ -740,7 +740,7 @@ a:hover {
   white-space: nowrap;
 }
 
-.wf-node-placeholder {
+.wf-node-empty {
   color: var(--text-muted);
   font-style: italic;
 }

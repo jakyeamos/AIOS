@@ -222,11 +222,10 @@ def _safe_load_stdin() -> dict:
     # Attempt recovery: replace unescaped control characters inside string values.
     # Decode with replacement so we don't crash on bad bytes.
     text = raw.decode("utf-8", errors="replace")
-    # Replace literal control chars (except \t \n \r which are valid JSON whitespace
-    # outside strings — inside strings they must be escaped).
+    # Replace literal control chars inside string tokens.
     # Strategy: use a regex to find string values and escape control chars within them.
     import re
-    _CTRL = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f]')
+    _CTRL = re.compile(r"[\x00-\x1f]")
 
     def _escape_string(m: re.Match) -> str:
         return _CTRL.sub(lambda c: f"\\u{ord(c.group()):04x}", m.group())

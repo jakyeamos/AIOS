@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { trpc } from "@/lib/trpc";
 import type { Pattern } from "@/lib/types";
@@ -24,42 +24,32 @@ const stateFromCount = (sessionCount: number): Pattern["state"] => {
 
 export function PatternTable({ patterns }: PatternTableProps): React.JSX.Element {
   const router = useRouter();
-  const [rows, setRows] = useState<Pattern[]>(patterns);
-
-  useEffect(() => {
-    setRows(patterns);
-  }, [patterns]);
+  const [overrides, setOverrides] = useState<Record<string, Partial<Pattern>>>({});
+  const rows = patterns.map((pattern) => ({ ...pattern, ...overrides[pattern.id] }));
 
   const approveMutation = trpc.patterns.approve.useMutation({
     onSuccess: (_result, variables) => {
-      setRows((currentRows) =>
-        currentRows.map((row) =>
-          row.id === variables.id
-            ? {
-                ...row,
-                humanApproved: true,
-                state: "rule",
-              }
-            : row,
-        ),
-      );
+      setOverrides((currentOverrides) => ({
+        ...currentOverrides,
+        [variables.id]: {
+          humanApproved: true,
+          state: "rule",
+        },
+      }));
       router.refresh();
     },
   });
 
   const rejectMutation = trpc.patterns.reject.useMutation({
     onSuccess: (_result, variables) => {
-      setRows((currentRows) =>
-        currentRows.map((row) =>
-          row.id === variables.id
-            ? {
-                ...row,
-                humanApproved: false,
-                state: stateFromCount(row.sessionCount),
-              }
-            : row,
-        ),
-      );
+      const pattern = rows.find((row) => row.id === variables.id);
+      setOverrides((currentOverrides) => ({
+        ...currentOverrides,
+        [variables.id]: {
+          humanApproved: false,
+          state: stateFromCount(pattern?.sessionCount ?? 0),
+        },
+      }));
       router.refresh();
     },
   });

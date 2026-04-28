@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { KnowledgeIndex } from "@/components/knowledge/KnowledgePageView";
 import { PageShell } from "@/components/layout/PageShell";
 import type { KnowledgePageSummary } from "@/lib/control-plane";
@@ -44,7 +46,7 @@ export default async function KnowledgePage({
           <input name="q" defaultValue={q} placeholder="Search pages by title or summary…" autoComplete="off" />
         </label>
         <button type="submit">Search</button>
-        {q ? <a href="/knowledge" className="button-secondary">Clear</a> : null}
+        {q ? <Link href="/knowledge" className="button-secondary">Clear</Link> : null}
       </form>
       {totalResults !== null ? (
         <p className="panel-subtitle">{totalResults} result{totalResults !== 1 ? "s" : ""} for &ldquo;{q}&rdquo;</p>
