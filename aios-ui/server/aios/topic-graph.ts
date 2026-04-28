@@ -708,6 +708,86 @@ const ingestMemoryReferences = (db: Database.Database, catalog: TopicCatalogEntr
   }
 };
 
+type SessionSourceRow = {
+  id: string;
+  projectId: string | null;
+  objective: string | null;
+  promptText: string | null;
+  startedAt: string;
+};
+
+const ingestSessionReferences = (db: Database.Database, catalog: TopicCatalogEntry[]): void => {
+  let rows: SessionSourceRow[] = [];
+  try {
+    rows = db
+      .prepare(
+        `
+        SELECT
+          s.id,
+          s.project_id AS projectId,
+          s.objective,
+          pu.prompt_text AS promptText,
+          s.started_at AS startedAt
+        FROM sessions s
+        LEFT JOIN (
+          SELECT session_id, MIN(prompt_text) AS prompt_text
+          FROM prompts_used
+          GROUP BY session_id
+        ) pu ON pu.session_id = s.id
+        ORDER BY s.started_at DESC
+        LIMIT 120
+      `,
+      )
+      .all() as SessionSourceRow[];
+  } catch {
+    return;
+  }
+
+  for (const row of rows) {
+    const body = [row.objective ?? "", row.promptText ?? ""].join(" ").trim();
+    if (!body) continue;
+
+    const matches = [
+      ...(row.projectId
+        ? [{ topicId: catalog.find((entry) => entry.slug === `project-${row.projectId}`)?.id, score: 20 }]
+        : []),
+      ...findMatchingTopics(catalog, body, 4),
+    ].filter((match): match is { topicId: string; score: number } => Boolean(match.topicId));
+
+    const uniqueMatches = matches.filter(
+      (match, index, items) => items.findIndex((candidate) => candidate.topicId === match.topicId) === index,
+    );
+
+    for (const match of uniqueMatches) {
+      addReference(db, match.topicId, {
+        sourceKind: "session",
+        sourceId: row.id,
+        projectId: row.projectId,
+        label: row.objective ?? row.promptText?.slice(0, 80) ?? "Session",
+        href: `/runs/${row.id}`,
+        excerpt: body.slice(0, 240),
+        freshness: estimateFreshnessLabel(row.startedAt),
+        confidence: 0.72,
+      });
+    }
+
+    for (const left of uniqueMatches) {
+      for (const right of uniqueMatches) {
+        if (left.topicId === right.topicId) continue;
+        addRelationship(
+          db,
+          left.topicId,
+          right.topicId,
+          "Co-mentioned in session",
+          Math.min(0.9, (left.score + right.score) / 50),
+          "session",
+          row.id,
+        );
+      }
+    }
+  }
+};
+
 const updateTopicFreshness = (db: Database.Database): void => {
   const rows = db
     .prepare(
@@ -812,6 +892,7 @@ export const refreshTopicGraph = (db: Database.Database, force = false): void =>
     ingestRunReferences(db, catalog);
     ingestPacketReferences(db, catalog);
     ingestMemoryReferences(db, catalog);
+    ingestSessionReferences(db, catalog);
     updateTopicFreshness(db);
     addDerivedMarkers(db);
 
@@ -821,7 +902,7 @@ export const refreshTopicGraph = (db: Database.Database, force = false): void =>
       ON CONFLICT(graph_key) DO UPDATE SET
         last_refreshed_at = excluded.last_refreshed_at,
         note = excluded.note
-    `).run(GRAPH_KEY, "Refreshed from wiki, projects, runs, packets, and memory updates.");
+    `).run(GRAPH_KEY, "Refreshed from wiki, projects, runs, packets, memory updates, and sessions.");
   });
 
   runRefresh();
