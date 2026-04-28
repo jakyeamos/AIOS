@@ -219,6 +219,40 @@ def test_status_and_recent_failures_json(tmp_path: Path, capsys) -> None:
     assert status_output["command"] == "status"
     assert status_output["data"]["projects_active"] == 1
 
+
+def test_capability_audit_reports_missing_and_no_data_signals(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "capability-audit",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    output = json.loads(capsys.readouterr().out)
+    assert output["ok"] is True
+    assert output["command"] == "capability-audit"
+
+    data = output["data"]
+    assert data["summary"]["surfaces"] == 3
+    assert data["rtk"]["state"]["value"] == "no_eligible_data"
+    assert data["rtk"]["state"]["provenance"] == "missing"
+    assert data["automations"]["items"][0]["trigger"]["value"] == "Weekdays at 9:00 AM"
+
+    project = data["projects"]["items"][0]
+    assert project["health_score"]["provenance"] == "missing"
+    assert project["status"]["provenance"] == "confirmed"
+    assert any(finding["code"] == "project_health_missing" for finding in data["findings"])
+
     failures_exit = run_cli(
         [
             "--json",

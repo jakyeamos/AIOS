@@ -13,6 +13,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from services.capability_truth import capability_truth_payload
 from services.rtk_integration import ensure_rtk_schema, load_compression_rules, rtk_metrics_log
 from services.success_criteria import preview_applicable_criteria
 
@@ -1369,6 +1370,7 @@ def _metadata_payload(
             "aios status --json",
             "aios health --json",
             "aios metadata --json",
+            "aios capability-audit --json",
             "aios logs --json --last 50",
             "aios recent-failures --json --last 20",
             "aios rtk --json",
@@ -1450,6 +1452,10 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
             f"reduction={metrics['weighted_reduction_percent']}%"
         )
         return
+    if command == "capability-audit":
+        summary = data["summary"]
+        print(f"surfaces={summary['surfaces']} findings={summary['findings']}")
+        return
     if command == "start-work":
         print(
             f"run={data['run']['id']} status={data['run']['status']} "
@@ -1497,6 +1503,7 @@ def create_parser() -> argparse.ArgumentParser:
     failures_parser.add_argument("--last", type=int, default=20, help="Max failures to return")
 
     subparsers.add_parser("rtk", help="RTK compression rules and metrics")
+    subparsers.add_parser("capability-audit", help="Trusted-signal audit for core AIOS capability surfaces")
 
     start_work = subparsers.add_parser("start-work", help="Create a routed AIOS run packet and session handshake")
     start_work.add_argument("objective", help="Work objective to route through AIOS")
@@ -1530,7 +1537,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
     command = _command_name(args)
 
     try:
-        if args.command in {"status", "health", "metadata", "recent-failures", "rtk", "start-work"}:
+        if args.command in {"status", "health", "metadata", "recent-failures", "rtk", "capability-audit", "start-work"}:
             conn = _connect_db(db_path)
         else:
             conn = None
@@ -1559,6 +1566,10 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "rtk":
             assert conn is not None
             data = _rtk_payload(conn)
+        elif args.command == "capability-audit":
+            assert conn is not None
+            ensure_rtk_schema(conn)
+            data = capability_truth_payload(conn)
         elif args.command == "start-work":
             assert conn is not None
             data = _start_work_payload(
