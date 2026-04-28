@@ -1,28 +1,17 @@
-import { randomUUID } from "node:crypto";
-
 import { z } from "zod";
 
 import type { Pattern, PatternState } from "@/lib/types";
-import { tableExists } from "@/server/db";
+import { getDb, tableExists } from "@/server/db";
 import { createTRPCRouter, publicProcedure } from "@/server/trpc";
 
 type PatternRow = {
   id: string;
   label: string | null;
+  state: string | null;
   sessionCount: number;
   lastSeen: string;
   humanApproved: number;
 };
-
-type PatternRef =
-  | {
-      kind: "prompt";
-      value: string;
-    }
-  | {
-      kind: "hash";
-      value: string;
-    };
 
 const stateFromCount = (sessionCount: number, approved: boolean): PatternState => {
   if (approved) {
@@ -42,46 +31,48 @@ const stateFromCount = (sessionCount: number, approved: boolean): PatternState =
 
 const mapPattern = (row: PatternRow): Pattern => {
   const approved = row.humanApproved === 1;
+  const state =
+    row.state === "rule" || row.state === "hypothesis" || row.state === "observation" || row.state === "notice"
+      ? row.state
+      : stateFromCount(row.sessionCount, approved);
 
   return {
     id: row.id,
     label: row.label ?? null,
-    state: stateFromCount(row.sessionCount, approved),
+    state,
     humanApproved: approved,
     sessionCount: row.sessionCount,
     lastSeen: row.lastSeen,
   };
 };
 
-const parsePatternRef = (id: string): PatternRef => {
-  if (id.startsWith("id:")) {
-    return {
-      kind: "prompt",
-      value: id.slice(3),
-    };
-  }
-
-  return {
-    kind: "hash",
-    value: id,
-  };
+const columnExists = (tableName: string, columnName: string): boolean => {
+  const rows = getDb().prepare(`PRAGMA table_info(${tableName})`).all() as Array<{ name: string }>;
+  return rows.some((row) => row.name === columnName);
 };
 
-const ensurePromptLibraryLinks = (ctxDb: ReturnType<typeof import("@/server/db").getDb>): void => {
-  if (tableExists("prompt_library_links")) {
-    return;
-  }
-
-  ctxDb.exec(`
-    CREATE TABLE IF NOT EXISTS prompt_library_links (
-      id TEXT PRIMARY KEY,
-      prompt_hash TEXT NOT NULL,
-      obsidian_note_path TEXT,
-      promoted_at TEXT
-    );
-    CREATE INDEX IF NOT EXISTS idx_prompt_library_links_hash ON prompt_library_links(prompt_hash);
-  `);
+const countExpression = (): string => {
+  const options = ["source_sessions", "frequency_count", "confirmation_count"].filter((column) =>
+    columnExists("patterns", column),
+  );
+  return options.length > 0 ? `COALESCE(${options.join(", ")}, 0)` : "0";
 };
+
+const lastSeenExpression = (): string => {
+  const options = ["last_seen_at", "last_confirmed_at", "created_at"].filter((column) =>
+    columnExists("patterns", column),
+  );
+  if (options.length === 0) {
+    return "created_at";
+  }
+  return options.length === 1 ? options[0] : `COALESCE(${options.join(", ")})`;
+};
+
+const stateExpression = (): string => (columnExists("patterns", "state") ? "state" : "'observation'");
+
+const humanApprovedExpression = (): string => (columnExists("patterns", "human_approved") ? "human_approved" : "0");
+
+const confidenceExpression = (): string => (columnExists("patterns", "confidence") ? "confidence" : "0");
 
 export const patternsRouter = createTRPCRouter({
   list: publicProcedure
@@ -94,70 +85,35 @@ export const patternsRouter = createTRPCRouter({
         .optional(),
     )
     .query(({ ctx, input }): Pattern[] => {
-      if (!tableExists("prompts_used") || !tableExists("sessions")) {
+      if (!tableExists("patterns")) {
         return [];
       }
 
       const limit = input?.limit ?? 40;
       const minSessionCount = input?.minSessionCount ?? 4;
-      const hasLinks = tableExists("prompt_library_links");
-      const rows = hasLinks
-        ? (ctx.db
-            .prepare(
-              `
-              SELECT
-                CASE
-                  WHEN pu.prompt_hash IS NULL THEN 'id:' || pu.id
-                  ELSE pu.prompt_hash
-                END AS id,
-                MIN(pu.prompt_text) AS label,
-                COUNT(*) AS sessionCount,
-                MAX(s.started_at) AS lastSeen,
-                MAX(
-                  CASE
-                    WHEN pu.prompt_hash IS NOT NULL AND pll.promoted_at IS NOT NULL THEN 1
-                    ELSE 0
-                  END
-                ) AS humanApproved
-              FROM prompts_used pu
-              INNER JOIN sessions s ON s.id = pu.session_id
-              LEFT JOIN prompt_library_links pll ON pll.prompt_hash = pu.prompt_hash
-              GROUP BY
-                CASE
-                  WHEN pu.prompt_hash IS NULL THEN 'id:' || pu.id
-                  ELSE pu.prompt_hash
-                END
-              HAVING sessionCount >= ? OR humanApproved = 1
-              ORDER BY sessionCount DESC
-              LIMIT ?
-            `,
-            )
-            .all(minSessionCount, limit) as PatternRow[])
-        : (ctx.db
-            .prepare(
-              `
-              SELECT
-                CASE
-                  WHEN pu.prompt_hash IS NULL THEN 'id:' || pu.id
-                  ELSE pu.prompt_hash
-                END AS id,
-                MIN(pu.prompt_text) AS label,
-                COUNT(*) AS sessionCount,
-                MAX(s.started_at) AS lastSeen,
-                0 AS humanApproved
-              FROM prompts_used pu
-              INNER JOIN sessions s ON s.id = pu.session_id
-              GROUP BY
-                CASE
-                  WHEN pu.prompt_hash IS NULL THEN 'id:' || pu.id
-                  ELSE pu.prompt_hash
-                END
-              HAVING sessionCount >= ? OR humanApproved = 1
-              ORDER BY sessionCount DESC
-              LIMIT ?
-            `,
-            )
-            .all(minSessionCount, limit) as PatternRow[]);
+      const sourceCount = countExpression();
+      const stateValue = stateExpression();
+      const humanApproved = humanApprovedExpression();
+      const confidence = confidenceExpression();
+      const rows = ctx.db
+        .prepare(
+          `
+          SELECT
+            id,
+            title AS label,
+            ${stateValue} AS state,
+            ${sourceCount} AS sessionCount,
+            ${lastSeenExpression()} AS lastSeen,
+            ${humanApproved} AS humanApproved
+          FROM patterns
+          WHERE status != 'discarded'
+            AND class != 'prompt'
+            AND (${stateValue} IN ('hypothesis', 'knowledge', 'rule') OR ${humanApproved} = 1 OR ${sourceCount} >= ?)
+          ORDER BY ${humanApproved} DESC, ${confidence} DESC, sessionCount DESC, lastSeen DESC
+          LIMIT ?
+        `,
+        )
+        .all(minSessionCount, limit) as PatternRow[];
 
       return rows.map(mapPattern);
     }),
@@ -165,61 +121,25 @@ export const patternsRouter = createTRPCRouter({
   approve: publicProcedure
     .input(z.object({ id: z.string().min(1) }))
     .mutation(({ ctx, input }): { ok: boolean; id: string; changedRows: number } => {
-      if (!tableExists("prompts_used")) {
+      if (!tableExists("patterns")) {
         return { ok: false, id: input.id, changedRows: 0 };
       }
-
-      const patternRef = parsePatternRef(input.id);
-
-      if (patternRef.kind === "prompt") {
-        const result = ctx.db
-          .prepare(
-            `
-            UPDATE prompts_used
-            SET reusable_candidate = 1
-            WHERE id = ?
-          `,
-          )
-          .run(patternRef.value);
-
-        return {
-          ok: result.changes > 0,
-          id: input.id,
-          changedRows: result.changes,
-        };
-      }
-
-      ensurePromptLibraryLinks(ctx.db);
-      ctx.db
-        .prepare(
-          `
-          DELETE FROM prompt_library_links
-          WHERE prompt_hash = ?
-        `,
-        )
-        .run(patternRef.value);
-
-      ctx.db
-        .prepare(
-          `
-          INSERT INTO prompt_library_links (id, prompt_hash, promoted_at)
-          VALUES (?, ?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-        `,
-        )
-        .run(`pll-${randomUUID()}`, patternRef.value);
 
       const result = ctx.db
         .prepare(
           `
-          UPDATE prompts_used
-          SET reusable_candidate = 1
-          WHERE prompt_hash = ?
+          UPDATE patterns
+          SET human_approved = 1,
+              state = 'rule',
+              status = 'active',
+              promoted_at = COALESCE(promoted_at, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+          WHERE id = ?
         `,
         )
-        .run(patternRef.value);
+        .run(input.id);
 
       return {
-        ok: true,
+        ok: result.changes > 0,
         id: input.id,
         changedRows: result.changes,
       };
@@ -228,53 +148,23 @@ export const patternsRouter = createTRPCRouter({
   reject: publicProcedure
     .input(z.object({ id: z.string().min(1) }))
     .mutation(({ ctx, input }): { ok: boolean; id: string; changedRows: number } => {
-      if (!tableExists("prompts_used")) {
+      if (!tableExists("patterns")) {
         return { ok: false, id: input.id, changedRows: 0 };
-      }
-
-      const patternRef = parsePatternRef(input.id);
-
-      if (patternRef.kind === "prompt") {
-        const result = ctx.db
-          .prepare(
-            `
-            UPDATE prompts_used
-            SET reusable_candidate = 0
-            WHERE id = ?
-          `,
-          )
-          .run(patternRef.value);
-
-        return {
-          ok: result.changes > 0,
-          id: input.id,
-          changedRows: result.changes,
-        };
-      }
-
-      if (tableExists("prompt_library_links")) {
-        ctx.db
-          .prepare(
-            `
-            DELETE FROM prompt_library_links
-            WHERE prompt_hash = ?
-          `,
-          )
-          .run(patternRef.value);
       }
 
       const result = ctx.db
         .prepare(
           `
-          UPDATE prompts_used
-          SET reusable_candidate = 0
-          WHERE prompt_hash = ?
+          UPDATE patterns
+          SET human_approved = 0,
+              status = 'discarded'
+          WHERE id = ?
         `,
         )
-        .run(patternRef.value);
+        .run(input.id);
 
       return {
-        ok: true,
+        ok: result.changes > 0,
         id: input.id,
         changedRows: result.changes,
       };

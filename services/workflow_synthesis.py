@@ -338,7 +338,7 @@ def _eligible_patterns(conn: sqlite3.Connection, min_confidence: float, limit: i
         """
         SELECT id, class, title, evidence, confidence, domain, state, status, human_approved
         FROM patterns
-        WHERE class IN ('workflow', 'prompt')
+        WHERE class = 'workflow'
           AND COALESCE(status, '') != 'discarded'
           AND confidence >= ?
         ORDER BY human_approved DESC, confidence DESC, created_at DESC

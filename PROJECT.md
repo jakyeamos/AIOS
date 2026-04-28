@@ -288,6 +288,7 @@ Prompt library visibility is now implemented in the UI:
 - prompt template cards expose template name, classification, tags, required inputs, version, update date, and source file
 - raw recent prompt history is intentionally hidden from the main `/prompts` surface
 - mined prompt/pattern rows are intentionally hidden from `/prompts`; repetition alone is not evidence that a prompt is a reusable library asset
+- raw prompt text is no longer written to `patterns`; prompt reuse belongs in the curated prompt library, not the general pattern/rule system
 
 Experiment test repo visibility is now implemented:
 

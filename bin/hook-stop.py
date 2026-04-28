@@ -15,6 +15,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from aios_orchestration_runtime import (
     ensure_runtime_schema,
     evaluate_run_consistency,
@@ -25,8 +29,6 @@ from aios_orchestration_runtime import (
 )
 
 from services.rtk_integration import ensure_rtk_schema, rtk_metrics_log
-
-ROOT = Path(__file__).resolve().parents[1]
 
 DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
@@ -262,35 +264,18 @@ def main() -> None:
         ensure_runtime_schema(conn)
         ensure_rtk_schema(conn)
 
-        # Flag reusable insights from this session
+        # Count reusable prompt candidates from this session. Prompt text is not
+        # inserted into patterns here; library promotion is handled separately.
         insight_count = 0
         try:
             insight_cur = conn.execute(
                 """
-                SELECT prompt_text, classification FROM prompts_used
+                SELECT COUNT(*) FROM prompts_used
                 WHERE session_id = ? AND reusable_candidate = 1
-                ORDER BY rowid
                 """,
                 (session_id,),
             )
-            insight_rows = insight_cur.fetchall()
-            insight_count = len(insight_rows)
-            for prompt_text, classification in insight_rows:
-                conn.execute(
-                    """
-                    INSERT OR IGNORE INTO patterns
-                      (id, class, title, domain, state, confidence, source_type,
-                       first_observed_at, created_at, project_id)
-                    VALUES (?, 'prompt', ?, 'prompting', 'observation', 0.50, 'session-stop', ?, ?, ?)
-                    """,
-                    (
-                        str(uuid.uuid4()),
-                        f"Reusable prompt [{classification}]: {prompt_text[:80]}",
-                        now,
-                        now,
-                        row[1],  # project_id
-                    ),
-                )
+            insight_count = int(insight_cur.fetchone()[0] or 0)
         except Exception as e:
             log(f"insight flagging error: {e}")
 

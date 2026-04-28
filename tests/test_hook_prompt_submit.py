@@ -98,3 +98,18 @@ def test_retrieve_context_includes_template_hint_when_retrieval_disabled(tmp_pat
     assert source == "prompt_library"
     assert "Prompt template match: Decision Reasoning v1.0" in context
     assert "Required: question, constraints" in context
+
+
+def test_reusable_candidate_rejects_control_chatter() -> None:
+    module = _load_hook_module()
+
+    assert module.is_reusable_candidate("continue") == 0
+    assert module.is_reusable_candidate("keep going") == 0
+    assert module.is_reusable_candidate("/gsd-plan-phase 110") == 0
+
+
+def test_reusable_candidate_requires_task_shape() -> None:
+    module = _load_hook_module()
+
+    assert module.is_reusable_candidate("please review this") == 0
+    assert module.is_reusable_candidate("Please review this architecture proposal and identify the main risks") == 1

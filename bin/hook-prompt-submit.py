@@ -31,6 +31,22 @@ REUSABLE_SIGNALS = [
     "create a", "generate", "plan", "debug", "fix", "help me",
 ]
 
+CONTROL_PROMPTS = {
+    "continue",
+    "go on",
+    "keep going",
+    "ok",
+    "okay",
+    "yes",
+    "no",
+    "y",
+    "n",
+    "thanks",
+    "thank you",
+}
+
+COMMAND_PREFIXES = ("/", "!", "cd ", "ls", "pwd", "git ", "npm ", "pnpm ", "python ", "python3 ")
+
 CLASSIFICATIONS = {
     "debug": ["debug", "fix", "error", "bug", "broken", "failing", "crash"],
     "plan": ["plan", "roadmap", "design", "architect", "how should"],
@@ -154,7 +170,15 @@ def classify(text: str) -> str:
 
 
 def is_reusable_candidate(text: str) -> int:
-    lower = text.lower()
+    normalized = re.sub(r"\s+", " ", text.strip().lower())
+    if normalized in CONTROL_PROMPTS:
+        return 0
+    if normalized.startswith(COMMAND_PREFIXES):
+        return 0
+    if len(normalized.split()) < 6:
+        return 0
+
+    lower = normalized
     return 1 if any(s in lower for s in REUSABLE_SIGNALS) else 0
 
 
