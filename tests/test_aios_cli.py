@@ -404,6 +404,75 @@ def test_lifecycle_audit_reports_attention_and_unsupported_states(tmp_path: Path
     assert data["recent_attention_events"][0]["to_status"] == "failed_validation"
 
 
+def test_knowledge_objects_expose_provenance_contract(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        """
+        CREATE TABLE knowledge_references (
+            id TEXT PRIMARY KEY,
+            topic_id TEXT,
+            source_kind TEXT,
+            source_id TEXT,
+            label TEXT,
+            href TEXT,
+            excerpt TEXT,
+            freshness TEXT,
+            confidence REAL,
+            created_at TEXT
+        )
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO knowledge_references (
+            id, topic_id, source_kind, source_id, label, href, excerpt, freshness, confidence, created_at
+        )
+        VALUES (
+            'ref-1', 'topic-1', 'project_memory', 'run-1', 'Run evidence',
+            '/runs/run-1', 'Agent routing evidence', 'fresh', 0.9, '2026-04-23T00:36:00Z'
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    objects_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "knowledge-objects",
+        ]
+    )
+
+    assert objects_exit == EXIT_OK
+    objects_output = json.loads(capsys.readouterr().out)
+    data = objects_output["data"]
+    assert data["summary"]["object_count"] == 1
+    assert data["summary"]["source_ref_coverage"] == 1.0
+    assert data["contract"]["required_fields"] == [
+        "stable_id",
+        "kind",
+        "title",
+        "summary",
+        "source_refs",
+        "backlinks",
+        "freshness",
+        "confidence",
+    ]
+    assert data["objects"][0]["stable_id"] == "topic-1"
+    assert data["objects"][0]["kind"] == "concept"
+    assert data["objects"][0]["source_ref_count"] == 1
+    assert data["objects"][0]["source_refs"][0]["source_kind"] == "project_memory"
+
+
 def test_metadata_and_skills_refresh_flow(tmp_path: Path, capsys) -> None:
     db_path = tmp_path / "aios.db"
     logs_dir = tmp_path / "logs"

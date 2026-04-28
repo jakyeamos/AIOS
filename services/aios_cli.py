@@ -58,6 +58,16 @@ CANONICAL_RUN_STATUSES = [
 ]
 ATTENTION_RUN_STATUSES = ["blocked", "waiting_for_user", "waiting_for_tool", "failed_validation"]
 TERMINAL_RUN_STATUSES = ["completed", "failed", "canceled", "superseded"]
+KNOWLEDGE_OBJECT_CONTRACT_FIELDS = [
+    "stable_id",
+    "kind",
+    "title",
+    "summary",
+    "source_refs",
+    "backlinks",
+    "freshness",
+    "confidence",
+]
 
 
 class CLIError(Exception):
@@ -1273,6 +1283,138 @@ def _lifecycle_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     }
 
 
+def _knowledge_reference_rows(conn: sqlite3.Connection, topic_id: str) -> list[dict[str, Any]]:
+    if not _table_exists(conn, "knowledge_references"):
+        return []
+    rows = conn.execute(
+        """
+        SELECT *
+        FROM knowledge_references
+        WHERE topic_id = ?
+        ORDER BY created_at DESC
+        """,
+        (topic_id,),
+    ).fetchall()
+    references = []
+    for row in rows:
+        item = dict(row)
+        references.append(
+            {
+                "id": item.get("id"),
+                "source_kind": item.get("source_kind") or "unknown",
+                "source_id": item.get("source_id"),
+                "label": item.get("label") or item.get("href") or "Untitled source",
+                "href": item.get("href"),
+                "excerpt": item.get("excerpt"),
+                "freshness": item.get("freshness") or "unknown",
+                "confidence": item.get("confidence"),
+            }
+        )
+    return references
+
+
+def _knowledge_relationship_counts(conn: sqlite3.Connection, topic_id: str) -> tuple[int, int]:
+    if not _table_exists(conn, "knowledge_relationships"):
+        return (0, 0)
+    columns = _table_columns(conn, "knowledge_relationships")
+    if not {"from_topic_id", "to_topic_id"}.issubset(columns):
+        return (0, 0)
+    outgoing = conn.execute(
+        "SELECT COUNT(*) AS count FROM knowledge_relationships WHERE from_topic_id = ?",
+        (topic_id,),
+    ).fetchone()
+    incoming = conn.execute(
+        "SELECT COUNT(*) AS count FROM knowledge_relationships WHERE to_topic_id = ?",
+        (topic_id,),
+    ).fetchone()
+    return (int(outgoing["count"] or 0), int(incoming["count"] or 0))
+
+
+def _knowledge_objects_payload(conn: sqlite3.Connection) -> dict[str, Any]:
+    if not _table_exists(conn, "knowledge_topics"):
+        return {
+            "summary": {
+                "object_count": 0,
+                "source_ref_coverage": 0.0,
+                "objects_without_sources": 0,
+                "relationship_count": 0,
+            },
+            "contract": {
+                "required_fields": KNOWLEDGE_OBJECT_CONTRACT_FIELDS,
+                "source_table": "knowledge_topics",
+                "reference_table": "knowledge_references",
+                "relationship_table": "knowledge_relationships",
+            },
+            "objects": [],
+        }
+
+    topic_columns = _table_columns(conn, "knowledge_topics")
+    kind_expr = "kind" if "kind" in topic_columns else "'concept'"
+    freshness_expr = "freshness" if "freshness" in topic_columns else "updated_at"
+    rows = conn.execute(
+        f"""
+        SELECT
+            id,
+            {kind_expr} AS kind,
+            title,
+            summary,
+            canonical_href,
+            confidence,
+            project_id,
+            {freshness_expr} AS freshness,
+            updated_at
+        FROM knowledge_topics
+        ORDER BY updated_at DESC
+        LIMIT 100
+        """
+    ).fetchall()
+
+    objects: list[dict[str, Any]] = []
+    objects_with_sources = 0
+    relationship_total = 0
+    for row in rows:
+        source_refs = _knowledge_reference_rows(conn, str(row["id"]))
+        outgoing_count, backlink_count = _knowledge_relationship_counts(conn, str(row["id"]))
+        if source_refs:
+            objects_with_sources += 1
+        relationship_total += outgoing_count + backlink_count
+        objects.append(
+            {
+                "stable_id": row["id"],
+                "kind": row["kind"] or "concept",
+                "title": row["title"],
+                "summary": row["summary"],
+                "canonical_href": row["canonical_href"],
+                "project_id": row["project_id"],
+                "freshness": row["freshness"] or row["updated_at"] or "unknown",
+                "confidence": row["confidence"],
+                "source_ref_count": len(source_refs),
+                "source_refs": source_refs,
+                "relationship_count": outgoing_count,
+                "backlinks": {"count": backlink_count},
+            }
+        )
+
+    object_count = len(objects)
+    return {
+        "summary": {
+            "object_count": object_count,
+            "source_ref_coverage": round(objects_with_sources / object_count, 4) if object_count else 0.0,
+            "objects_without_sources": object_count - objects_with_sources,
+            "relationship_count": relationship_total,
+        },
+        "contract": {
+            "required_fields": KNOWLEDGE_OBJECT_CONTRACT_FIELDS,
+            "source_table": "knowledge_topics",
+            "reference_table": "knowledge_references",
+            "relationship_table": "knowledge_relationships",
+            "personal_corpus_source_kind": "personal_corpus",
+            "project_memory_source_kind": "project_memory",
+        },
+        "objects": objects,
+    }
+
+
 def _status_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     return {
         "projects_active": _count(conn, "projects", "status='active'"),
@@ -1474,6 +1616,7 @@ def _metadata_payload(
             "aios capability-audit --json",
             "aios invocation-audit --json",
             "aios lifecycle-audit --json",
+            "aios knowledge-objects --json",
             "aios logs --json --last 50",
             "aios recent-failures --json --last 20",
             "aios rtk --json",
@@ -1567,6 +1710,10 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
         summary = data["summary"]
         print(f"attention={summary['attention_count']} unsupported={summary['unsupported_state_count']}")
         return
+    if command == "knowledge-objects":
+        summary = data["summary"]
+        print(f"objects={summary['object_count']} source_ref_coverage={summary['source_ref_coverage']}")
+        return
     if command == "start-work":
         print(
             f"run={data['run']['id']} status={data['run']['status']} "
@@ -1617,6 +1764,7 @@ def create_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("capability-audit", help="Trusted-signal audit for core AIOS capability surfaces")
     subparsers.add_parser("invocation-audit", help="Invocation backend and strict-handshake audit")
     subparsers.add_parser("lifecycle-audit", help="Run lifecycle state contract and attention-state audit")
+    subparsers.add_parser("knowledge-objects", help="Knowledge object contract and provenance audit")
 
     start_work = subparsers.add_parser("start-work", help="Create a routed AIOS run packet and session handshake")
     start_work.add_argument("objective", help="Work objective to route through AIOS")
@@ -1650,7 +1798,18 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
     command = _command_name(args)
 
     try:
-        if args.command in {"status", "health", "metadata", "recent-failures", "rtk", "capability-audit", "invocation-audit", "lifecycle-audit", "start-work"}:
+        if args.command in {
+            "status",
+            "health",
+            "metadata",
+            "recent-failures",
+            "rtk",
+            "capability-audit",
+            "invocation-audit",
+            "lifecycle-audit",
+            "knowledge-objects",
+            "start-work",
+        }:
             conn = _connect_db(db_path)
         else:
             conn = None
@@ -1689,6 +1848,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "lifecycle-audit":
             assert conn is not None
             data = _lifecycle_audit_payload(conn)
+        elif args.command == "knowledge-objects":
+            assert conn is not None
+            data = _knowledge_objects_payload(conn)
         elif args.command == "start-work":
             assert conn is not None
             data = _start_work_payload(
