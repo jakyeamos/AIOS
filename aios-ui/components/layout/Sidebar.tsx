@@ -14,8 +14,7 @@ export function Sidebar(): React.JSX.Element {
       <nav>
         <ul className="sidebar-nav">
           {PRIMARY_NAV.map((item) => {
-            const activePath = item.activePath ?? item.href.split(/[?#]/, 1)[0];
-            const active = activePath === "/" ? pathname === "/" : pathname.startsWith(activePath);
+            const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
 
             return (
               <li key={item.href}>
