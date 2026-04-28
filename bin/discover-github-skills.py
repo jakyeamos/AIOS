@@ -1,28 +1,27 @@
 #!/usr/bin/env python3
 """
 AIOS: discover-github-skills.py
-Search GitHub for shareable skill definitions and store them as candidates
-in aios.db::github_skill_candidates for review and one-click promotion.
+For each stage in a workflow, understand what the step does, pull its
+experiment performance signals, and search GitHub for repos/tools/prompts
+that would improve that specific step.
 
-Discovery strategy:
-  1. Search GitHub code for files that look like AIOS-compatible skills:
-     - Superpowers plugin skills (.agents/skills/*.md, SKILL.md with frontmatter)
-     - Claude Code custom instruction files with skill-like structure
-     - Prompt library files with purpose/stage metadata
-  2. Parse each file for skill metadata (key, purpose, allowed_stages, invariants).
-  3. Match against current workflow stage needs or a provided --workflow-key.
-  4. Store candidates in github_skill_candidates with status='candidate'.
+This is NOT a format-matcher. It finds real-world resources — starred repos,
+prompt libraries, techniques — and explains why each one is relevant to
+the step it was found for. The user reviews and decides what to adopt.
+
+Examples:
+  - transform_prose step (humanizer) with low first_pass_success
+    → suggests well-reviewed humanizer repos and prompt techniques
+  - validate step (citation_checker) with frequent failures
+    → suggests citation validation tools and LLM-based checkers
+  - enrich_context step with high token cost
+    → suggests efficient RAG patterns or retrieval compression tools
 
 Usage:
-  python3 ~/AIOS/bin/discover-github-skills.py [options]
-
-  --workflow-key   Only find skills relevant to this workflow's stage kinds
-  --query          Custom GitHub code search query (overrides auto-query)
-  --limit          Max candidates to fetch (default 20)
-  --dry-run        Preview without writing to DB
-  --token          GitHub token (defaults to `gh auth token`)
-  --db             Path to aios.db
-  --verbose        Show fetched content and parse details
+  python3 ~/AIOS/bin/discover-github-skills.py --workflow-key academic_paper_v1
+  python3 ~/AIOS/bin/discover-github-skills.py --workflow-key academic_paper_v1 --stage-key transform_prose
+  python3 ~/AIOS/bin/discover-github-skills.py --list-stages academic_paper_v1
+  python3 ~/AIOS/bin/discover-github-skills.py --dry-run --verbose
 """
 
 from __future__ import annotations
@@ -30,7 +29,6 @@ from __future__ import annotations
 import argparse
 import contextlib
 import json
-import re
 import sqlite3
 import subprocess
 import sys
@@ -43,68 +41,227 @@ from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DB = ROOT / "data" / "aios.db"
+REGISTRY_PATH = ROOT / "config" / "workflows" / "registry.json"
 SKILLS_PATH = ROOT / "config" / "workflows" / "skills.json"
 
 GITHUB_API = "https://api.github.com"
-# Rate limit: authenticated = 30 search req/min, unauthenticated = 10
-REQUEST_DELAY = 2.5  # seconds between API calls
+REQUEST_DELAY = 2.0  # seconds between API calls (stay inside rate limits)
+MIN_STARS = 30  # minimum repo stars to surface as a suggestion
 
-# Patterns that suggest a file is a skill definition
-# Must match at least MIN_SIGNAL_SCORE of these to be stored
-SKILL_SIGNALS = [
-    "allowed_stages",
-    "input_schema",
-    "output_schema",
-    "execution_mode",
-    "invariants",
-    "failure_conditions",
-    "execution_mode: deterministic",
-    "execution_mode: heuristic",
-    "side_effects",
+# ─── Stage → search strategy ─────────────────────────────────────────────────
+#
+# Each entry defines how to find GitHub resources for a given stage kind or
+# stage key.  query_templates are formatted with {purpose} from the stage spec.
+# topic_fallbacks are GitHub topic searches used when code search returns nothing.
+
+STAGE_STRATEGIES: list[dict] = [
+    {
+        "match_kinds": ["transform"],
+        "match_keys": ["humanize", "transform_prose", "humanizer"],
+        "label": "Text humanization & prose quality",
+        "query_templates": [
+            '"humanize" "AI writing" prompt',
+            "humanizer prose quality LLM prompt",
+            '"writing style" "AI text" improvement',
+        ],
+        "repo_topics": ["humanizer", "ai-writing", "text-quality", "prose"],
+        "repo_queries": [
+            "AI writing humanizer",
+            "humanizer prose quality LLM",
+        ],
+        "weakness_metric": "first_pass_success",
+        "weakness_direction": "low",
+    },
+    {
+        "match_kinds": ["validate"],
+        "match_keys": ["citation_checker", "validate", "citation"],
+        "label": "Validation & fact-checking",
+        "query_templates": [
+            "citation validation LLM",
+            '"citation checker" prompt AI',
+            "reference validation language model",
+        ],
+        "repo_topics": ["citation", "fact-checking", "validation", "llm-evaluation"],
+        "repo_queries": ["citation checker LLM", "AI fact validation prompt"],
+        "weakness_metric": "error_event_rate",
+        "weakness_direction": "high",
+    },
+    {
+        "match_kinds": ["validate"],
+        "match_keys": ["structure_checker", "meaning_preservation"],
+        "label": "Structure & meaning validation",
+        "query_templates": [
+            "LLM output structure validation prompt",
+            '"semantic similarity" text validation',
+        ],
+        "repo_topics": ["llm-eval", "semantic-similarity", "text-validation"],
+        "repo_queries": ["LLM output evaluation structure"],
+        "weakness_metric": "first_pass_success",
+        "weakness_direction": "low",
+    },
+    {
+        "match_kinds": ["enrich_context"],
+        "match_keys": ["enrich_context", "context", "retrieval"],
+        "label": "Context retrieval & RAG",
+        "query_templates": [
+            "RAG retrieval augmented generation efficient",
+            "context compression LLM prompt",
+            '"personal corpus" retrieval AI writing',
+        ],
+        "repo_topics": ["rag", "retrieval-augmented-generation", "context-compression"],
+        "repo_queries": [
+            "RAG context retrieval efficient",
+            "personal corpus LLM writing",
+        ],
+        "weakness_metric": "rtk.tokens_saved",
+        "weakness_direction": "low",
+    },
+    {
+        "match_kinds": ["generate"],
+        "match_keys": ["draft", "generate", "academic_draft"],
+        "label": "Draft generation quality",
+        "query_templates": [
+            "academic writing prompt AI generation",
+            '"structured draft" LLM generation prompt',
+            "section generation academic paper AI",
+        ],
+        "repo_topics": ["academic-writing", "llm-prompts", "writing-assistant"],
+        "repo_queries": ["academic writing LLM draft generation"],
+        "weakness_metric": "first_pass_success",
+        "weakness_direction": "low",
+    },
+    {
+        "match_kinds": ["normalize_prompt"],
+        "match_keys": ["normalize_prompt", "normalizer"],
+        "label": "Prompt normalization & intent extraction",
+        "query_templates": [
+            "prompt normalization intent extraction LLM",
+            '"prompt template" matching classification',
+        ],
+        "repo_topics": ["prompt-engineering", "intent-classification", "prompt-library"],
+        "repo_queries": ["prompt normalization template matching LLM"],
+        "weakness_metric": "prompt_reuse_rate",
+        "weakness_direction": "low",
+    },
+    {
+        "match_kinds": ["parse_request"],
+        "match_keys": ["parse_request", "parse"],
+        "label": "Request parsing & decomposition",
+        "query_templates": [
+            "task decomposition LLM prompt parsing",
+            '"request parsing" AI agent planning',
+        ],
+        "repo_topics": ["task-decomposition", "ai-planning", "llm-agents"],
+        "repo_queries": ["task decomposition LLM planning"],
+        "weakness_metric": "follow_up_turns",
+        "weakness_direction": "high",
+    },
 ]
-MIN_SIGNAL_SCORE = 2
 
-# Targeted queries — ordered from most to least specific.
-# Superpowers plugin skills and AIOS-compatible JSON skill specs first.
-DEFAULT_QUERIES = [
-    # Skills that explicitly declare allowed_stages AND execution_mode (AIOS format)
-    '"allowed_stages" "execution_mode" "invariants" extension:md',
-    '"allowed_stages" "execution_mode" "failure_conditions" extension:json',
-    # Superpowers skills with stage declarations
-    'filename:SKILL.md "allowed_stages" "execution_mode"',
-    # Claude Code skill files with purpose + invariants
-    'path:.claude/skills "invariants" "execution_mode" extension:md',
-]
+# ─── Registry helpers ─────────────────────────────────────────────────────────
 
 
-# ---------------------------------------------------------------------------
-# GitHub API helpers
-# ---------------------------------------------------------------------------
+def load_registry() -> dict:
+    if not REGISTRY_PATH.exists():
+        return {"workflows": []}
+    return json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
 
 
-def get_token(token_arg: str | None) -> str:
+def load_skills() -> list[dict]:
+    if not SKILLS_PATH.exists():
+        return []
+    data = json.loads(SKILLS_PATH.read_text(encoding="utf-8"))
+    return data.get("skills", [])
+
+
+def get_workflow(key: str) -> dict | None:
+    for wf in load_registry().get("workflows", []):
+        if wf.get("key") == key:
+            return wf
+    return None
+
+
+def get_stage(workflow: dict, stage_key: str) -> dict | None:
+    for stage in workflow.get("stages", []):
+        if stage.get("key") == stage_key:
+            return stage
+    return None
+
+
+# ─── Experiment / metric helpers ─────────────────────────────────────────────
+
+
+def load_stage_metrics(db_path: Path, workflow_key: str) -> dict[str, float]:
+    """Return {metric_name: avg_value} for this workflow from workflow_metrics."""
+    if not db_path.exists():
+        return {}
+    conn = sqlite3.connect(str(db_path))
+    try:
+        rows = conn.execute(
+            """
+            SELECT metric_name, AVG(metric_value)
+            FROM workflow_metrics
+            WHERE session_id IN (
+                SELECT id FROM sessions WHERE status = 'closed'
+            )
+            GROUP BY metric_name
+            """,
+        ).fetchall()
+        return {row[0]: float(row[1]) for row in rows if row[1] is not None}
+    except sqlite3.OperationalError:
+        return {}
+    finally:
+        conn.close()
+
+
+def weakness_signal(stage: dict, strategy: dict, metrics: dict[str, float]) -> str | None:
+    """Return a human-readable weakness string if this stage underperforms, else None."""
+    metric = strategy.get("weakness_metric", "")
+    direction = strategy.get("weakness_direction", "low")
+    value = metrics.get(metric)
+    if value is None:
+        return None
+    if direction == "low" and value < 0.6:
+        return f"{metric}={value:.2f} (below 0.60 threshold)"
+    if direction == "high" and value > 0.3:
+        return f"{metric}={value:.2f} (above 0.30 threshold)"
+    return None
+
+
+def strategy_for_stage(stage: dict) -> dict | None:
+    kind = stage.get("kind", "")
+    key = stage.get("key", "")
+    skills = stage.get("required_skills", [])
+    combined = f"{kind} {key} {' '.join(skills)}".lower()
+    best: dict | None = None
+    best_hits = 0
+    for strategy in STAGE_STRATEGIES:
+        hits = sum(1 for k in strategy["match_kinds"] if k == kind)
+        hits += sum(1 for k in strategy["match_keys"] if k in combined)
+        if hits > best_hits:
+            best_hits = hits
+            best = strategy
+    return best if best_hits > 0 else None
+
+
+# ─── GitHub API ───────────────────────────────────────────────────────────────
+
+
+def get_token(token_arg: str) -> str:
     if token_arg:
         return token_arg
-    try:
-        result = subprocess.run(
-            ["gh", "auth", "token"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
+    with contextlib.suppress(Exception):
+        result = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True, timeout=10)
         if result.returncode == 0:
             return result.stdout.strip()
-    except Exception:
-        pass
     return ""
 
 
-def gh_get(path: str, token: str) -> dict | list:
-    url = f"{GITHUB_API}{path}" if path.startswith("/") else path
+def gh_request(url: str, token: str) -> dict | list | None:
     headers = {
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
-        "User-Agent": "AIOS-skill-discovery/1.0",
+        "User-Agent": "AIOS-skill-discovery/2.0",
     }
     if token:
         headers["Authorization"] = f"Bearer {token}"
@@ -113,194 +270,79 @@ def gh_get(path: str, token: str) -> dict | list:
         with urlopen(req, timeout=15) as resp:
             return json.loads(resp.read())
     except HTTPError as exc:
-        if exc.code == 403:
-            raise RuntimeError(f"GitHub rate limit or auth error: {exc}") from exc
-        if exc.code == 422:
-            return {"items": []}  # Search returned no results
-        raise
+        if exc.code in (403, 429):
+            print("  rate limit hit, sleeping 30s...", file=sys.stderr)
+            time.sleep(30)
+        return None
+    except Exception:
+        return None
 
 
-def search_code(query: str, token: str, per_page: int = 30) -> list[dict]:
+def search_repos(query: str, token: str, per_page: int = 5) -> list[dict]:
     encoded = quote(query)
-    path = f"/search/code?q={encoded}&per_page={per_page}"
-    result = gh_get(path, token)
+    url = f"{GITHUB_API}/search/repositories?q={encoded}&sort=stars&order=desc&per_page={per_page}"
+    result = gh_request(url, token)
     if isinstance(result, dict):
         return result.get("items", [])
     return []
 
 
-def fetch_raw(repo: str, file_path: str, token: str) -> str:
-    url = f"https://raw.githubusercontent.com/{repo}/HEAD/{file_path}"
-    headers = {"User-Agent": "AIOS-skill-discovery/1.0"}
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
-    req = Request(url, headers=headers)
-    try:
-        with urlopen(req, timeout=10) as resp:
-            return resp.read().decode("utf-8", errors="replace")
-    except Exception:
-        return ""
-
-
-# ---------------------------------------------------------------------------
-# Skill parsing
-# ---------------------------------------------------------------------------
-
-_FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---", re.DOTALL)
-_KV_RE = re.compile(r"^(\w+)\s*:\s*(.+)$", re.MULTILINE)
-_LIST_ITEM_RE = re.compile(r"^\s*[-*]\s+(.+)$", re.MULTILINE)
-_JSON_BLOCK_RE = re.compile(r"```(?:json)?\s*\n(\{.*?\})\s*\n```", re.DOTALL)
-
-
-def parse_yaml_simple(text: str) -> dict:
-    """Parse simple flat YAML (no nesting) for skill frontmatter."""
-    result: dict = {}
-    current_key: str | None = None
-    current_list: list[str] = []
-
-    for line in text.splitlines():
-        # List item under current key
-        m_item = re.match(r"^\s+-\s+(.+)$", line)
-        if m_item and current_key:
-            current_list.append(m_item.group(1).strip().strip("\"'"))
-            continue
-
-        m_kv = re.match(r"^(\w[\w_-]*)\s*:\s*(.*)$", line)
-        if m_kv:
-            if current_key and current_list:
-                result[current_key] = current_list
-            current_list = []
-            key = m_kv.group(1)
-            value = m_kv.group(2).strip().strip("\"'")
-            if not value:
-                current_key = key
-            else:
-                current_key = None
-                result[key] = value
-
-    if current_key and current_list:
-        result[current_key] = current_list
-
-    return result
-
-
-def extract_skill_from_markdown(content: str, filename: str) -> dict | None:
-    """Try to extract a skill spec from a markdown file."""
-    fm_match = _FRONTMATTER_RE.match(content)
-    fm: dict = {}
-    if fm_match:
-        fm = parse_yaml_simple(fm_match.group(1))
-
-    # Also look for JSON blocks that might contain schema
-    json_blocks = []
-    for block in _JSON_BLOCK_RE.findall(content):
-        with contextlib.suppress(Exception):
-            json_blocks.append(json.loads(block))
-
-    # Extract key fields
-    key = (
-        fm.get("key")
-        or fm.get("name")
-        or fm.get("skill_key")
-        or Path(filename).stem.replace("-", "_").replace(" ", "_").lower()
-    )
-    purpose = (
-        fm.get("purpose") or fm.get("description") or fm.get("summary") or _first_paragraph(content)
-    )
-    allowed_stages = fm.get("allowed_stages") or fm.get("stages") or []
-    if isinstance(allowed_stages, str):
-        allowed_stages = [s.strip() for s in allowed_stages.split(",")]
-
-    invariants = fm.get("invariants") or []
-    if isinstance(invariants, str):
-        invariants = [invariants]
-
-    failure_conditions = fm.get("failure_conditions") or []
-    execution_mode = fm.get("execution_mode") or "heuristic"
-
-    # Signal score — higher = more likely to be a real skill file
-    signal_score = sum(1 for sig in SKILL_SIGNALS if sig in content.lower())
-    if signal_score < MIN_SIGNAL_SCORE:
-        return None
-
-    return {
-        "key": str(key)[:80],
-        "purpose": str(purpose)[:300],
-        "allowed_stages": allowed_stages if isinstance(allowed_stages, list) else [],
-        "invariants": invariants if isinstance(invariants, list) else [],
-        "failure_conditions": failure_conditions if isinstance(failure_conditions, list) else [],
-        "execution_mode": str(execution_mode),
-        "signal_score": signal_score,
-        "raw_frontmatter": fm,
-    }
-
-
-def extract_skill_from_json(content: str) -> dict | None:
-    """Try to extract a skill spec from a JSON file."""
-    try:
-        data = json.loads(content)
-    except Exception:
-        return None
-
-    if not isinstance(data, dict):
-        return None
-
-    signal_score = sum(1 for sig in SKILL_SIGNALS if sig in content)
-    if signal_score < MIN_SIGNAL_SCORE:
-        return None
-
-    return {
-        "key": str(data.get("key", ""))[:80],
-        "purpose": str(data.get("purpose", ""))[:300],
-        "allowed_stages": data.get("allowed_stages", []),
-        "invariants": data.get("invariants", []),
-        "failure_conditions": data.get("failure_conditions", []),
-        "execution_mode": str(data.get("execution_mode", "heuristic")),
-        "signal_score": signal_score,
-        "raw_frontmatter": data,
-    }
-
-
-def _first_paragraph(text: str) -> str:
-    body = re.sub(r"^---.*?---\s*", "", text, flags=re.DOTALL).strip()
-    for line in body.splitlines():
-        line = line.strip()
-        if line and not line.startswith("#"):
-            return line[:200]
-    return ""
-
-
-# ---------------------------------------------------------------------------
-# Stage relevance matching
-# ---------------------------------------------------------------------------
-
-
-def load_workflow_stage_kinds(workflow_key: str) -> list[str]:
-    """Return the stage kinds used by a workflow from registry.json."""
-    registry_path = ROOT / "config" / "workflows" / "registry.json"
-    if not registry_path.exists():
-        return []
-    try:
-        registry = json.loads(registry_path.read_text(encoding="utf-8"))
-        for wf in registry.get("workflows", []):
-            if wf.get("key") == workflow_key:
-                return [s.get("kind", "") for s in wf.get("stages", [])]
-    except Exception:
-        pass
+def search_code(query: str, token: str, per_page: int = 5) -> list[dict]:
+    encoded = quote(query)
+    url = f"{GITHUB_API}/search/code?q={encoded}&per_page={per_page}"
+    result = gh_request(url, token)
+    if isinstance(result, dict):
+        return result.get("items", [])
     return []
 
 
-def skill_matches_workflow(skill: dict, stage_kinds: list[str]) -> bool:
-    """Return True if the skill's allowed_stages overlap with workflow stage kinds."""
-    if not stage_kinds:
-        return True  # no filter — accept all
-    skill_stages = set(skill.get("allowed_stages", []))
-    return bool(skill_stages & set(stage_kinds))
+# ─── Candidate assembly ───────────────────────────────────────────────────────
 
 
-# ---------------------------------------------------------------------------
-# DB writes
-# ---------------------------------------------------------------------------
+def build_candidate(
+    *,
+    workflow_key: str,
+    stage_key: str,
+    stage_kind: str,
+    strategy: dict,
+    repo: dict,
+    weakness: str | None,
+    source: str,
+) -> dict:
+    stars = repo.get("stargazers_count", 0)
+    description = repo.get("description") or ""
+    full_name = repo.get("full_name", "")
+    html_url = repo.get("html_url", "")
+    topics = repo.get("topics", [])
+
+    relevance = f"Suggested for '{stage_key}' ({stage_kind}) — {strategy['label']}."
+    if weakness:
+        relevance += f" Experiment signal: {weakness}."
+
+    return {
+        "workflow_key": workflow_key,
+        "stage_key": stage_key,
+        "skill_key": f"{stage_key}_inspiration_{full_name.replace('/', '_').replace('-', '_')[:30]}",
+        "name": full_name,
+        "github_url": html_url,
+        "repo": full_name,
+        "path": None,
+        "summary": description[:300] or f"GitHub repo: {full_name}",
+        "tags": topics[:8] + [stage_kind],
+        "detail": {
+            "stars": stars,
+            "stage_key": stage_key,
+            "stage_kind": stage_kind,
+            "strategy_label": strategy["label"],
+            "weakness_signal": weakness,
+            "source": source,
+            "relevance": relevance,
+            "topics": topics,
+        },
+    }
+
+
+# ─── DB ───────────────────────────────────────────────────────────────────────
 
 
 def ensure_table(conn: sqlite3.Connection) -> None:
@@ -323,78 +365,139 @@ def ensure_table(conn: sqlite3.Connection) -> None:
         )
         """
     )
+    # Add stage_key column if it doesn't exist yet
+    existing = {
+        row[1] for row in conn.execute("PRAGMA table_info(github_skill_candidates)").fetchall()
+    }
+    if "stage_key" not in existing:
+        conn.execute(
+            "ALTER TABLE github_skill_candidates ADD COLUMN stage_key TEXT NOT NULL DEFAULT ''"
+        )
     conn.commit()
 
 
-def already_stored(conn: sqlite3.Connection, repo: str, path: str) -> bool:
+def already_stored(conn: sqlite3.Connection, repo: str, workflow_key: str, stage_key: str) -> bool:
     row = conn.execute(
-        "SELECT 1 FROM github_skill_candidates WHERE repo = ? AND path = ? LIMIT 1",
-        (repo, path),
+        "SELECT 1 FROM github_skill_candidates WHERE repo = ? AND workflow_key = ? AND stage_key = ? LIMIT 1",
+        (repo, workflow_key, stage_key),
     ).fetchone()
     return row is not None
 
 
-def upsert_candidate(
-    conn: sqlite3.Connection,
-    *,
-    workflow_key: str,
-    skill: dict,
-    repo: str,
-    file_path: str,
-    html_url: str,
-) -> None:
-    candidate_id = f"ghskill-{uuid.uuid4()}"
-    tags = skill.get("allowed_stages", [])
-    detail = {
-        "invariants": skill.get("invariants", []),
-        "failure_conditions": skill.get("failure_conditions", []),
-        "execution_mode": skill.get("execution_mode", "heuristic"),
-        "signal_score": skill.get("signal_score", 0),
-        "raw_frontmatter": skill.get("raw_frontmatter", {}),
-    }
+def store_candidate(conn: sqlite3.Connection, candidate: dict) -> None:
     conn.execute(
         """
         INSERT INTO github_skill_candidates
             (id, workflow_key, skill_key, name, github_url, repo, path,
-             summary, tags_json, detail_json, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'candidate')
-        ON CONFLICT DO NOTHING
+             summary, tags_json, detail_json, stage_key, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'candidate')
         """,
         (
-            candidate_id,
-            workflow_key,
-            skill["key"],
-            skill["key"].replace("_", " ").title(),
-            html_url,
-            repo,
-            file_path,
-            skill["purpose"] or f"Skill from {repo}",
-            json.dumps(tags),
-            json.dumps(detail),
+            f"ghskill-{uuid.uuid4()}",
+            candidate["workflow_key"],
+            candidate["skill_key"],
+            candidate["name"],
+            candidate["github_url"],
+            candidate["repo"],
+            candidate["path"],
+            candidate["summary"],
+            json.dumps(candidate["tags"]),
+            json.dumps(candidate["detail"]),
+            candidate.get("stage_key", ""),
         ),
     )
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
+# ─── Main ─────────────────────────────────────────────────────────────────────
+
+
+def discover_for_stage(
+    *,
+    workflow_key: str,
+    stage: dict,
+    strategy: dict,
+    metrics: dict[str, float],
+    token: str,
+    db_conn: sqlite3.Connection | None,
+    dry_run: bool,
+    verbose: bool,
+    limit_per_stage: int,
+) -> int:
+    stage_key = stage.get("key", "")
+    stage_kind = stage.get("kind", "")
+    weakness = weakness_signal(stage, strategy, metrics)
+    stored = 0
+
+    print(f"\n  Stage: {stage_key} ({stage_kind})")
+    print(f"  Strategy: {strategy['label']}")
+    if weakness:
+        print(f"  Weakness signal: {weakness}")
+    else:
+        print("  No weakness signal in current data (running discovery anyway)")
+
+    seen_repos: set[str] = set()
+
+    for repo_query in strategy["repo_queries"][:2]:
+        if stored >= limit_per_stage:
+            break
+        if verbose:
+            print(f"    Repo search: {repo_query!r}")
+        repos = search_repos(repo_query, token, per_page=5)
+        time.sleep(REQUEST_DELAY)
+
+        for repo in repos:
+            if stored >= limit_per_stage:
+                break
+            full_name = repo.get("full_name", "")
+            stars = repo.get("stargazers_count", 0)
+            if stars < MIN_STARS or full_name in seen_repos:
+                continue
+            seen_repos.add(full_name)
+
+            if db_conn and already_stored(db_conn, full_name, workflow_key, stage_key):
+                if verbose:
+                    print(f"    skip dupe: {full_name}")
+                continue
+
+            candidate = build_candidate(
+                workflow_key=workflow_key,
+                stage_key=stage_key,
+                stage_kind=stage_kind,
+                strategy=strategy,
+                repo=repo,
+                weakness=weakness,
+                source="repo_search",
+            )
+
+            if dry_run:
+                print(f"    [DRY RUN] {full_name} ★{stars} — {repo.get('description', '')[:60]}")
+            else:
+                store_candidate(db_conn, candidate)
+                db_conn.commit()
+                print(f"    ✓ {full_name} ★{stars} — {repo.get('description', '')[:60]}")
+            stored += 1
+
+    return stored
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Discover GitHub skill candidates for AIOS workflows."
+        description="Discover GitHub improvement suggestions for workflow stages."
     )
     parser.add_argument(
-        "--workflow-key", default="", help="Filter to skills matching this workflow's stages"
+        "--workflow-key", default="", help="Workflow to analyse (e.g. academic_paper_v1)"
     )
     parser.add_argument(
-        "--query", default="", help="Custom GitHub code search query (overrides defaults)"
+        "--stage-key", default="", help="Only analyse this stage (default: all stages)"
     )
     parser.add_argument(
-        "--limit", type=int, default=20, help="Max candidates to store (default 20)"
+        "--list-stages", metavar="WORKFLOW_KEY", help="Print stages for a workflow and exit"
+    )
+    parser.add_argument(
+        "--limit", type=int, default=3, help="Max suggestions per stage (default 3)"
     )
     parser.add_argument("--token", default="", help="GitHub token (defaults to `gh auth token`)")
-    parser.add_argument("--db", default=str(DEFAULT_DB), help="Path to aios.db")
+    parser.add_argument("--db", default=str(DEFAULT_DB))
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--verbose", "-v", action="store_true")
     return parser.parse_args()
@@ -402,129 +505,88 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+
+    if args.list_stages:
+        wf = get_workflow(args.list_stages)
+        if not wf:
+            print(f"Workflow not found: {args.list_stages}", file=sys.stderr)
+            sys.exit(1)
+        print(f"Stages in {args.list_stages}:")
+        for stage in wf.get("stages", []):
+            skills = ", ".join(stage.get("required_skills", [])) or "(none)"
+            print(f"  {stage['key']:<30} kind={stage['kind']:<20} skills=[{skills}]")
+        return
+
     token = get_token(args.token)
     if not token:
-        print(
-            "WARNING: No GitHub token found. Rate limits will be strict (10 req/min).",
-            file=sys.stderr,
-        )
+        print("WARNING: No GitHub token. Rate limits will be strict.", file=sys.stderr)
 
-    aios_db = Path(args.db).expanduser()
-    if not aios_db.exists() and not args.dry_run:
-        print(f"ERROR: DB not found: {aios_db}", file=sys.stderr)
+    # Resolve workflow
+    workflow_key = args.workflow_key
+    if not workflow_key:
+        # Default to first registered workflow
+        workflows = load_registry().get("workflows", [])
+        if not workflows:
+            print("No workflows registered. Run synthesize-workflows.py first.", file=sys.stderr)
+            sys.exit(1)
+        workflow_key = workflows[0]["key"]
+        print(f"No --workflow-key given, defaulting to: {workflow_key}")
+
+    workflow = get_workflow(workflow_key)
+    if not workflow:
+        print(f"Workflow not found: {workflow_key}", file=sys.stderr)
         sys.exit(1)
 
-    stage_kinds: list[str] = []
-    if args.workflow_key:
-        stage_kinds = load_workflow_stage_kinds(args.workflow_key)
-        print(f"Filtering to workflow '{args.workflow_key}' stage kinds: {stage_kinds}")
+    stages = workflow.get("stages", [])
+    if args.stage_key:
+        stage = get_stage(workflow, args.stage_key)
+        if not stage:
+            print(f"Stage not found: {args.stage_key}", file=sys.stderr)
+            sys.exit(1)
+        stages = [stage]
 
-    queries = [args.query] if args.query else DEFAULT_QUERIES
-    workflow_key = args.workflow_key or "general"
+    db_path = Path(args.db).expanduser()
+    metrics = load_stage_metrics(db_path, workflow_key)
+    if metrics and args.verbose:
+        print(f"Loaded {len(metrics)} metric(s) for context")
 
-    aios_conn: sqlite3.Connection | None = None
+    db_conn: sqlite3.Connection | None = None
     if not args.dry_run:
-        aios_conn = sqlite3.connect(str(aios_db))
-        ensure_table(aios_conn)
+        if not db_path.exists():
+            print(f"ERROR: DB not found: {db_path}", file=sys.stderr)
+            sys.exit(1)
+        db_conn = sqlite3.connect(str(db_path))
+        ensure_table(db_conn)
 
-    stored = 0
-    skipped_dupe = 0
-    skipped_no_parse = 0
-    skipped_no_match = 0
-    errors: list[str] = []
+    total = 0
+    skipped_no_strategy = []
 
-    for query in queries:
-        if stored >= args.limit:
-            break
-        print(f"\nSearching: {query!r}")
-        try:
-            items = search_code(query, token, per_page=min(30, args.limit * 2))
-        except RuntimeError as exc:
-            print(f"  ERROR: {exc}", file=sys.stderr)
-            break
+    print(f"\nAnalysing workflow: {workflow_key} ({len(stages)} stage(s))")
+    for stage in stages:
+        strategy = strategy_for_stage(stage)
+        if not strategy:
+            skipped_no_strategy.append(stage.get("key", "?"))
+            continue
+        n = discover_for_stage(
+            workflow_key=workflow_key,
+            stage=stage,
+            strategy=strategy,
+            metrics=metrics,
+            token=token,
+            db_conn=db_conn,
+            dry_run=args.dry_run,
+            verbose=args.verbose,
+            limit_per_stage=args.limit,
+        )
+        total += n
 
-        print(f"  {len(items)} results")
-        time.sleep(REQUEST_DELAY)
+    if db_conn:
+        db_conn.close()
 
-        for item in items:
-            if stored >= args.limit:
-                break
-
-            repo = item.get("repository", {}).get("full_name", "")
-            file_path = item.get("path", "")
-            html_url = item.get("html_url", "")
-
-            if not repo or not file_path:
-                continue
-
-            # Skip already-stored
-            if aios_conn and already_stored(aios_conn, repo, file_path):
-                skipped_dupe += 1
-                continue
-
-            # Fetch raw content
-            if args.verbose:
-                print(f"  Fetching {repo}/{file_path}")
-            content = fetch_raw(repo, file_path, token)
-            time.sleep(0.5)
-
-            if not content:
-                skipped_no_parse += 1
-                continue
-
-            # Parse
-            if file_path.endswith(".json"):
-                skill = extract_skill_from_json(content)
-            else:
-                skill = extract_skill_from_markdown(content, Path(file_path).name)
-
-            if not skill or not skill["key"]:
-                skipped_no_parse += 1
-                continue
-
-            # Check stage relevance
-            if stage_kinds and not skill_matches_workflow(skill, stage_kinds):
-                skipped_no_match += 1
-                if args.verbose:
-                    print(f"    skip: stages {skill['allowed_stages']} don't match {stage_kinds}")
-                continue
-
-            if args.dry_run:
-                print(f"  [DRY RUN] would store: {skill['key']!r} from {repo}/{file_path}")
-                print(f"    purpose: {skill['purpose'][:80]}")
-                print(f"    stages:  {skill['allowed_stages']}")
-                stored += 1
-                continue
-
-            try:
-                upsert_candidate(
-                    aios_conn,
-                    workflow_key=workflow_key,
-                    skill=skill,
-                    repo=repo,
-                    file_path=file_path,
-                    html_url=html_url,
-                )
-                aios_conn.commit()
-                stored += 1
-                print(f"  ✓ {skill['key']!r} — {repo}/{file_path}")
-                if args.verbose:
-                    print(f"    purpose: {skill['purpose'][:80]}")
-                    print(f"    stages:  {skill['allowed_stages']}")
-            except Exception as exc:
-                errors.append(f"{repo}/{file_path}: {exc}")
-
-    if aios_conn:
-        aios_conn.close()
-
-    print(f"\n{'DRY RUN — ' if args.dry_run else ''}Summary")
-    print(f"  Stored      : {stored}")
-    print(f"  Dupes skip  : {skipped_dupe}")
-    print(f"  No parse    : {skipped_no_parse}")
-    print(f"  No match    : {skipped_no_match}")
-    print(f"  Errors      : {len(errors)}")
-    for err in errors:
-        print(f"    ERROR: {err}", file=sys.stderr)
+    print(f"\n{'DRY RUN — ' if args.dry_run else ''}Done")
+    print(f"  Suggestions stored: {total}")
+    if skipped_no_strategy:
+        print(f"  No strategy for:  {', '.join(skipped_no_strategy)}")
 
 
 if __name__ == "__main__":
