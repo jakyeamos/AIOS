@@ -110,6 +110,12 @@ Stage 1 capability-truth baseline work has started with a first trusted-signal s
 - Prompt Library audit now verifies whether `prompt_library_links` exists and whether body-hash-backed templates are actually visible.
 - Knowledge audit now reports topic count, source-reference coverage, relationship count, and findings for topics without references.
 - This gives later runtime, knowledge, workflow-learning, architecture, and UI phases a concrete Stage 1 gate instead of relying only on dashboard rendering.
+- Grounded Query now recognizes capability/status audit questions and answers them from live SQLite counts for:
+  - project health snapshot coverage
+  - RTK telemetry events
+  - seeded automation status
+  - prompt library body-hash visibility
+  - knowledge topic/reference coverage
 
 This pass makes milestones 1 and 2 operational for selected work from the local CLI:
 
