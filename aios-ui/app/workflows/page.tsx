@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { PageShell } from "@/components/layout/PageShell";
 import { StatCard } from "@/components/primitives/StatCard";
 import { formatPercent, formatTokens } from "@/lib/format";
@@ -23,7 +25,9 @@ export default async function WorkflowsPage(): Promise<React.JSX.Element> {
           proposals.map((proposal) => (
             <div key={proposal.id} className="table-row">
               <span>
-                <strong>{proposal.title}</strong>
+                <Link href={`/workflows/${proposal.id}`}>
+                  <strong>{proposal.title}</strong>
+                </Link>
                 <br />
                 <span className="text-muted">{proposal.summary}</span>
               </span>
