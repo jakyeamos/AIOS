@@ -128,6 +128,9 @@ Stage 1 capability-truth baseline work has started with a first trusted-signal s
 - Stage 4 workflow-learning capability has started with an evidence classification audit:
   - `aios workflow-learning-audit --json` classifies terminal runs as workflow evidence, prompt-template evidence, standards-health evidence, bug/quality evidence, or no-learning signal
   - the command reports proposal counts, approval-gated proposals, and completed/failed/canceled/superseded runs that produced no durable learning record
+- Stage 5 architecture hardening has started with a canonical contract audit:
+  - `aios contracts-audit --json` reports the current status and storage source for TrustedSignal, InvocationBackend, RunLifecycleEvent, KnowledgeObject, RetrievalTrace, WorkflowLearningEvent, and EvaluationFinding
+  - the contract audit distinguishes implemented contracts from partial contracts so later UI work can avoid exposing unstable abstractions as finished product surfaces
 
 This pass makes milestones 1 and 2 operational for selected work from the local CLI:
 
