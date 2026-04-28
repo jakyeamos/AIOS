@@ -7,6 +7,7 @@ import {
   setAiosProjectComponentEnabled,
 } from "@/server/aios/project-components";
 import type { Project, ProjectStatus, Session } from "@/lib/types";
+import { trustedSignal } from "@/lib/trusted-signals";
 import { getProjectQualityPipeline } from "@/server/aios/quality-pipeline";
 import { ensureControlPlaneSchema } from "@/server/aios/schema";
 import { updateStandardsBackfillTask } from "@/server/aios/standards-health";
@@ -63,6 +64,108 @@ const normalizeTool = (tool: string): Session["tool"] => {
   return "codex";
 };
 
+const healthSource = {
+  label: "Standards health snapshot",
+  table: "standards_health_snapshots",
+  field: "overall_score",
+};
+
+const projectStatusSignal = (status: ProjectStatus, sessionCount: number, lastActiveAt: string | null): Project["statusSignal"] =>
+  trustedSignal({
+    value: status,
+    provenance: lastActiveAt ? "confirmed" : "inferred",
+    confidence: lastActiveAt ? 0.9 : 0.55,
+    source: { label: "Project inventory", table: "projects", field: "status" },
+    freshness: lastActiveAt ?? "no session activity",
+    explanation: lastActiveAt
+      ? `Project status is persisted as ${status} and backed by ${sessionCount} recorded session(s).`
+      : `Project status is persisted as ${status}, but no session activity is available to qualify recency.`,
+    missingReason: lastActiveAt ? null : "No linked session activity has been recorded for this project.",
+    contradiction: null,
+  });
+
+const healthSignal = (value: number | null): Project["healthScoreSignal"] =>
+  trustedSignal({
+    value,
+    provenance: value === null ? "missing" : "confirmed",
+    confidence: value === null ? 0 : 0.9,
+    source: healthSource,
+    freshness: value === null ? "missing" : "latest snapshot",
+    explanation: value === null
+      ? "No standards-health snapshot has been recorded for this project."
+      : "Latest standards-health snapshot score on a 0-100 scale.",
+    missingReason: value === null ? "No standards_health_snapshots row exists for this project." : null,
+    contradiction: null,
+  });
+
+const trendSignal = (value: number | null): Project["healthTrendSignal"] =>
+  trustedSignal({
+    value,
+    provenance: value === null ? "missing" : "confirmed",
+    confidence: value === null ? 0 : 0.85,
+    source: { label: "Standards health snapshot comparison", table: "standards_health_snapshots", field: "overall_score" },
+    freshness: value === null ? "missing" : "latest two snapshots",
+    explanation: value === null
+      ? "No health trend is available because fewer than one standards snapshot exists."
+      : "Difference between the latest health score and the previous snapshot.",
+    missingReason: value === null ? "Insufficient standards-health snapshot history." : null,
+    contradiction: null,
+  });
+
+const criticalDeltaSignal = (value: number): Project["criticalDeltaSignal"] =>
+  trustedSignal({
+    value,
+    provenance: "confirmed",
+    confidence: 0.85,
+    source: { label: "Standards health snapshot", table: "standards_health_snapshots", field: "critical_delta_count" },
+    freshness: "latest snapshot",
+    explanation: "Count of critical standards deltas in the latest project health snapshot.",
+    missingReason: null,
+    contradiction: null,
+  });
+
+const unknownCoverageSignal = (value: number | null): Project["unknownCoverageSignal"] =>
+  trustedSignal({
+    value,
+    provenance: value === null ? "missing" : "confirmed",
+    confidence: value === null ? 0 : 0.85,
+    source: { label: "Standards health snapshot", table: "standards_health_snapshots", field: "unknown_coverage" },
+    freshness: value === null ? "missing" : "latest snapshot",
+    explanation: value === null
+      ? "Unknown coverage is missing because no standards-health snapshot exists."
+      : "Fraction of applicable standards whose current state is unknown.",
+    missingReason: value === null ? "No standards_health_snapshots row exists for this project." : null,
+    contradiction: null,
+  });
+
+const pipelineLabel = (project: Pick<Project, "pipelineConfiguredRequired" | "pipelineRequired" | "pipelineStatus">): string => {
+  if (project.pipelineRequired === 0) {
+    return `${project.pipelineStatus} · no required checks`;
+  }
+  return `${project.pipelineConfiguredRequired}/${project.pipelineRequired} configured · ${project.pipelineStatus}`;
+};
+
+const pipelineSignal = (
+  status: Project["pipelineStatus"],
+  configuredRequired: number,
+  required: number,
+): Project["pipelineSignal"] => {
+  const hasContradiction = status === "error" && configuredRequired === 0;
+  const value = pipelineLabel({ pipelineStatus: status, pipelineConfiguredRequired: configuredRequired, pipelineRequired: required });
+  return trustedSignal({
+    value,
+    provenance: hasContradiction ? "contradictory" : "confirmed",
+    confidence: hasContradiction ? 0.35 : 0.85,
+    source: { label: "Quality pipeline summary", table: "quality_pipeline_runs" },
+    freshness: "latest gate state",
+    explanation: hasContradiction
+      ? "Pipeline status is error, but no required checks are configured. This is a backend finding instead of a silent status badge contradiction."
+      : "Pipeline status is derived from required gate configuration and latest gate run state.",
+    missingReason: required === 0 ? "No applicable required quality-pipeline gates were resolved for this project." : null,
+    contradiction: hasContradiction ? "error status with zero configured required checks" : null,
+  });
+};
+
 const aiosProjectComponentKeySchema = z.string().refine(
   (key): key is AiosProjectComponentKey => isAiosProjectComponentKey(key),
   "Unknown AIOS project component key.",
@@ -70,22 +173,43 @@ const aiosProjectComponentKeySchema = z.string().refine(
 
 const mapProject = (db: Database.Database, row: ProjectRow): Project => {
   const qualityPipeline = getProjectQualityPipeline(db, row.id);
+  const healthScore = row.healthScore === null ? null : Number(row.healthScore);
+  const criticalDeltaCount = Number(row.criticalDeltaCount ?? 0);
+  const unknownCoverage = row.unknownCoverage === null ? null : Number(row.unknownCoverage);
+  const healthTrend = row.healthTrend === null ? null : Number(row.healthTrend);
+  const status = normalizeStatus(row.status);
+  const pipeline = {
+    status: qualityPipeline.overallStatus,
+    configuredRequired: qualityPipeline.coverage.configuredRequired,
+    required: qualityPipeline.coverage.required,
+  };
   return {
     id: row.id,
     name: row.name,
     repoPath: row.repoPath,
-    status: normalizeStatus(row.status),
+    status,
     createdAt: row.createdAt,
     sessionCount: row.sessionCount,
     lastActiveAt: row.lastActiveAt,
     openBugs: row.openBugs,
-    healthScore: row.healthScore === null ? null : Number(row.healthScore),
-    criticalDeltaCount: Number(row.criticalDeltaCount ?? 0),
-    unknownCoverage: row.unknownCoverage === null ? null : Number(row.unknownCoverage),
-    healthTrend: row.healthTrend === null ? null : Number(row.healthTrend),
-    pipelineStatus: qualityPipeline.overallStatus,
-    pipelineConfiguredRequired: qualityPipeline.coverage.configuredRequired,
-    pipelineRequired: qualityPipeline.coverage.required,
+    healthScore,
+    healthScoreSignal: healthSignal(healthScore),
+    criticalDeltaCount,
+    criticalDeltaSignal: criticalDeltaSignal(criticalDeltaCount),
+    unknownCoverage,
+    unknownCoverageSignal: unknownCoverageSignal(unknownCoverage),
+    healthTrend,
+    healthTrendSignal: trendSignal(healthTrend),
+    pipelineStatus: pipeline.status,
+    pipelineConfiguredRequired: pipeline.configuredRequired,
+    pipelineRequired: pipeline.required,
+    pipelineLabel: pipelineLabel({
+      pipelineStatus: pipeline.status,
+      pipelineConfiguredRequired: pipeline.configuredRequired,
+      pipelineRequired: pipeline.required,
+    }),
+    pipelineSignal: pipelineSignal(pipeline.status, pipeline.configuredRequired, pipeline.required),
+    statusSignal: projectStatusSignal(status, row.sessionCount, row.lastActiveAt),
   };
 };
 

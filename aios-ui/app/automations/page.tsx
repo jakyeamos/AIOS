@@ -24,19 +24,29 @@ export default async function AutomationsPage(): Promise<React.JSX.Element> {
         />
       </div>
       <section className="panel-card">
-        <div className="table-head">
+        <div className="table-head table-automations">
           <span>Name</span>
           <span>Trigger</span>
           <span>Success Rate</span>
           <span>Status</span>
         </div>
         {automations.map((automation) => (
-          <div key={automation.id} className="table-row">
+          <div key={automation.id} className="table-row table-automations">
             <span>{automation.name}</span>
-            <span className="mono">{automation.trigger}</span>
-            <span>{formatPercent(automation.successRate)}</span>
+            <span title={automation.triggerSignal.explanation}>
+              {automation.triggerLabel}
+              <br />
+              <span className="signal-note mono">{automation.trigger}</span>
+            </span>
+            <span title={automation.successRateSignal.explanation}>
+              {formatPercent(automation.successRate)}
+              <br />
+              <span className="signal-note">{automation.successRateSignal.provenance}</span>
+            </span>
             <span>
               <StatusBadge status={automation.status} />
+              <br />
+              <span className="signal-note">{automation.statusSignal.provenance}</span>
             </span>
           </div>
         ))}

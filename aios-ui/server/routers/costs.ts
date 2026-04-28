@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { seededCostSummary } from "@/lib/seed";
 import type { CostBreakdownPoint, CostSummary } from "@/lib/types";
+import { trustedSignal } from "@/lib/trusted-signals";
 import { tableExists } from "@/server/db";
 import { createTRPCRouter, publicProcedure } from "@/server/trpc";
 
@@ -147,7 +148,20 @@ const readClassificationCounts = (
 
 const readRtkSummary = (ctxDb: ReturnType<typeof import("@/server/db").getDb>): CostSummary["rtk"] => {
   if (!tableExists("rtk_compression_events")) {
-    return seededCostSummary.rtk;
+    return {
+      ...seededCostSummary.rtk,
+      state: "inactive",
+      stateSignal: trustedSignal({
+        value: "inactive",
+        provenance: "missing",
+        confidence: 0,
+        source: { label: "RTK compression events", table: "rtk_compression_events" },
+        freshness: "missing",
+        explanation: "RTK telemetry is not active because the compression event table does not exist.",
+        missingReason: "rtk_compression_events table does not exist.",
+        contradiction: null,
+      }),
+    };
   }
 
   const aggregate = ctxDb
@@ -180,8 +194,27 @@ const readRtkSummary = (ctxDb: ReturnType<typeof import("@/server/db").getDb>): 
     )
     .all() as RtkWorkflowRow[];
 
+  const eventCount = Number(aggregate.eventCount) || 0;
+  const state: CostSummary["rtk"]["state"] = eventCount === 0 ? "no_eligible_data" : tokensSaved > 0 ? "active" : "inactive";
+
   return {
-    eventCount: Number(aggregate.eventCount) || 0,
+    state,
+    stateSignal: trustedSignal({
+      value: state,
+      provenance: eventCount === 0 ? "missing" : "confirmed",
+      confidence: eventCount === 0 ? 0.45 : 0.9,
+      source: { label: "RTK compression events", table: "rtk_compression_events" },
+      freshness: eventCount === 0 ? "no events" : "all recorded events",
+      explanation:
+        eventCount === 0
+          ? "RTK is wired, but no compression events have been recorded for this period."
+          : tokensSaved > 0
+            ? "RTK has recorded compression events with positive token savings."
+            : "RTK has recorded events, but current events show no net token savings.",
+      missingReason: eventCount === 0 ? "No eligible command output has produced an RTK telemetry event." : null,
+      contradiction: null,
+    }),
+    eventCount,
     rawTokens,
     compressedTokens: Number(aggregate.compressedTokens) || 0,
     tokensSaved,

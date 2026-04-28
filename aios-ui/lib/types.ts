@@ -1,3 +1,5 @@
+import type { TrustedSignal } from "@/lib/trusted-signals";
+
 export type SessionStatus = "open" | "closed" | "abandoned";
 
 export type Session = {
@@ -120,12 +122,19 @@ export type Project = {
   lastActiveAt: string | null;
   openBugs: number;
   healthScore: number | null;
+  healthScoreSignal: TrustedSignal<number | null>;
   criticalDeltaCount: number;
+  criticalDeltaSignal: TrustedSignal<number>;
   unknownCoverage: number | null;
+  unknownCoverageSignal: TrustedSignal<number | null>;
   healthTrend: number | null;
+  healthTrendSignal: TrustedSignal<number | null>;
   pipelineStatus: "healthy" | "warning" | "error" | "blocked" | "unknown";
   pipelineConfiguredRequired: number;
   pipelineRequired: number;
+  pipelineLabel: string;
+  pipelineSignal: TrustedSignal<string>;
+  statusSignal: TrustedSignal<ProjectStatus>;
 };
 
 export type CostBreakdownPoint = {
@@ -143,6 +152,8 @@ export type CostSummary = {
   abandonedSessionTokens: number;
   failedRunTokens: number;
   rtk: {
+    state: "active" | "inactive" | "no_eligible_data";
+    stateSignal: TrustedSignal<"active" | "inactive" | "no_eligible_data">;
     eventCount: number;
     rawTokens: number;
     compressedTokens: number;
@@ -173,8 +184,12 @@ export type AutomationHealth = {
   id: string;
   name: string;
   trigger: string;
+  triggerLabel: string;
+  triggerSignal: TrustedSignal<string>;
   successRate: number;
+  successRateSignal: TrustedSignal<number>;
   status: "healthy" | "warning" | "error";
+  statusSignal: TrustedSignal<"healthy" | "warning" | "error">;
 };
 
 export type WorkflowMetric = {

@@ -18,8 +18,18 @@ export default async function CostsPage(): Promise<React.JSX.Element> {
         <StatCard label="Failed Run Tokens" value={formatTokens(summary.failedRunTokens)} status="warning" />
       </div>
       <div className="grid grid-3">
+        <StatCard label="RTK State" value={summary.rtk.state.replaceAll("_", " ")} />
         <StatCard label="RTK Tokens Saved" value={formatTokens(summary.rtk.tokensSaved)} />
         <StatCard label="RTK Reduction" value={`${summary.rtk.reductionPercent.toFixed(1)}%`} />
+      </div>
+      <section className="panel-card">
+        <p className="panel-title">RTK Signal</p>
+        <p className="panel-subtitle">{summary.rtk.stateSignal.explanation}</p>
+        <p className="entity-meta">
+          {summary.rtk.stateSignal.provenance} · {summary.rtk.eventCount} event(s) · raw {formatTokens(summary.rtk.rawTokens)} · compressed {formatTokens(summary.rtk.compressedTokens)}
+        </p>
+      </section>
+      <div className="grid grid-3">
         <StatCard label="RTK Ambiguous Failures" value={summary.rtk.ambiguousFailures} status="warning" />
       </div>
       <div className="grid grid-2">
