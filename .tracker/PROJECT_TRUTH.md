@@ -1,12 +1,12 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active infra project powering Claude Code agent workflows with committed CTS backend, command-center UI, standalone query/audit utilities, and design specs; the project UI now supports per-project AIOS component scope controls, but quality gates still fail on the Python baseline.
-healthScore: 66
-statusLabel: needs_attention
-nextStep: Resume Ruff and BasedPyright remediation starting with hook-adjacent scripts and dynamic import helpers.
+summary: Active infra project powering Claude Code agent workflows with committed CTS backend, command-center UI, standalone query/audit utilities, design specs, and verified fixes for the latest AIOS UI/backend handoff gaps.
+healthScore: 72
+statusLabel: improving
+nextStep: Triage remaining anti-slop warnings and the Turbopack tracing warning, then resume broader BasedPyright remediation.
 blockers: []
-lastUpdated: 2026-04-27
+lastUpdated: 2026-04-28
 tags: [infra, ai-os, hooks, automation]
 areas: [engineering]
 goals: []
@@ -16,9 +16,9 @@ primaryLanguage: Python
 activeBranch: main
 lastCommitDate: 2026-04-08
 quality:
-  lint: warning
+  lint: pass
   types: fail
-  tests: unknown
+  tests: pass
   deadCode: unknown
   structure: pass
 canonicalCommands:
@@ -52,19 +52,20 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-04-12: Committed `bin/aios-query.py` and `bin/token-audit.py`; targeted `ruff check` and `python3 -m compileall` pass on both files
 - 2026-04-12: Committed the anti-slop ESLint design spec; AIOS returned to a clean committed working tree
 - 2026-04-27: Added persisted per-project AIOS component scope controls to the command-center project surface, including a dropdown selector and UI suppression for disabled sections
+- 2026-04-28: Verified and corrected latest UI/backend handoff gaps: literal-newline hook JSON recovery now has regression coverage, UI lint errors were removed, focused Python tests pass, and the Next.js production build passes after rebuilding `better-sqlite3` for the active Node ABI
 
 ## Open Problems
 
-1. **20 Ruff errors unresolved** — F841 (unused variables), SIM (collapsible-if patterns), B905 (zip-without-strict), plus a few ambiguous-name/context-manager cases
-2. **BasedPyright baseline now fails** — 22 errors and 60 warnings on 2026-04-12, including import-loader optionality, typed dict issues in PDF/DOCX indexers, and unresolved optional dependencies
-3. **No test coverage for hooks** — only `tests/test_import_ai_history.py` exists. Hook failures are silent in production sessions
+1. **BasedPyright baseline still needs a fresh full pass** — earlier baseline had hook-adjacent and dynamic import issues
+2. **Anti-slop warnings remain in the UI** — `pnpm lint` exits 0, but still reports warning-level empty-state/action-copy findings
+3. **Turbopack tracing warning remains** — `pnpm build` succeeds but reports broad NFT tracing through `server/routers/prompts.ts`
 4. **Vulture dead-code scan not yet run** — `bin/` has ~60 scripts; some are likely stale or unused
 ## Next Concrete Steps
 
-1. Fix the 20 remaining Ruff errors manually — F841 (delete or use the variable), SIM (collapse nested ifs), B905 (add `strict=True` to `zip()` calls)
-2. Triage the 22 BasedPyright errors, starting with hook-adjacent scripts and dynamic import helpers
+1. Reduce remaining UI anti-slop warnings in the touched command-center surfaces
+2. Triage BasedPyright errors, starting with hook-adjacent scripts and dynamic import helpers
 3. Run `vulture . --min-confidence 70` and remove or annotate confirmed dead code in `bin/`
-4. Add at least smoke-test coverage for the two highest-risk hooks: `hook-session-start.py` and `hook-stop.py`
+4. Add smoke-test coverage for the remaining high-risk hooks: `hook-session-start.py` and `hook-stop.py`
 
 ## Risks / Blockers
 
@@ -76,10 +77,10 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 | Step | Status | Notes |
 |------|--------|-------|
-| Lint (ruff) | Warning | 20 errors remain on 2026-04-12 after prior auto-fix wave |
+| Lint (ruff) | Pass | Targeted Ruff pass on touched hook/backend files succeeded on 2026-04-28; full-repo Ruff should still be run before broad cleanup claims |
 | Type check (basedpyright) | Fail | 22 errors, 60 warnings on 2026-04-12 |
 | Dead code (vulture) | Unknown | Installed and configured via `pyproject.toml`; not yet run |
-| Tests | Unknown | One committed test file exists; hooks still have no coverage |
+| Tests | Pass | Focused hook/RTK/workflow synthesis tests pass; `hook-post-tool-use.py` now has literal-newline JSON regression coverage |
 | Structure | Pass | `pyproject.toml`, `schema.sql`, `bin/`, `services/`, `aios-ui/`, and `tests/` are organized, and the working tree is back to a clean committed baseline |
 
 ## Agent Notes
