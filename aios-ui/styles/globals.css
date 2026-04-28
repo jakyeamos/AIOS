@@ -1071,45 +1071,73 @@ a:hover {
   border-color: var(--accent);
 }
 
-/* ── 1200px: sidebar collapses to icons ───────────────────────────────────── */
+/* Full-width label shown by default */
+.sidebar-label-short { display: none; }
+.sidebar-label-full  { display: inline; }
+
+/* ── ≤1200px: sidebar flips to horizontal top strip ──────────────────────── */
 @media (max-width: 1200px) {
   .app-root {
-    grid-template-columns: 52px minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
   }
 
   .sidebar {
-    padding: 20px 8px;
+    width: 100%;
+    height: auto;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 0 12px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(90deg, #0d0d10 0%, #0a0a0b 100%);
+    overflow-x: auto;
+    scrollbar-width: none;
+    white-space: nowrap;
   }
 
+  .sidebar::-webkit-scrollbar { display: none; }
+
   .sidebar-title {
-    overflow: hidden;
-    text-indent: -9999px;
-    white-space: nowrap;
-    margin-bottom: 16px;
+    font-size: 12px;
+    margin-bottom: 0;
+    flex-shrink: 0;
+    padding: 10px 0;
+  }
+
+  .sidebar-nav {
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+    flex-shrink: 0;
   }
 
   .sidebar-link {
-    overflow: hidden;
-    text-indent: -9999px;
+    padding: 8px 10px;
+    font-size: 12px;
     white-space: nowrap;
-    padding: 8px;
-    text-align: center;
+    border-radius: 4px;
   }
+
+  .sidebar-label-full { display: none; }
+  .sidebar-label-short { display: inline; }
 
   .main-content {
     padding: 0 20px 24px;
+    flex: 1;
+    min-width: 0;
   }
 }
 
-/* ── 900px: single-column layouts, scrollable tables ─────────────────────── */
+/* ── ≤900px: single-column layouts, tighter padding, scrollable tables ───── */
 @media (max-width: 900px) {
-  .app-root {
-    grid-template-columns: 44px minmax(0, 1fr);
-  }
-
   .main-content {
     padding: 0 12px 20px;
-    min-width: 0;
   }
 
   .grid-2,
@@ -1131,21 +1159,21 @@ a:hover {
     grid-template-columns: 1fr;
   }
 
-  /* Make all tables horizontally scrollable instead of collapsing to 1fr */
+  /* Tables scroll horizontally rather than collapsing */
   .panel-card {
     overflow-x: auto;
   }
 
   .table-head,
   .table-row {
-    min-width: 540px;
+    min-width: 480px;
   }
 
-  .table-runs          { min-width: 720px; }
-  .table-metrics       { min-width: 680px; }
+  .table-runs            { min-width: 720px; }
+  .table-metrics         { min-width: 680px; }
   .table-recommendations { min-width: 900px; }
-  .table-runs-value    { min-width: 640px; }
-  .table-value-project { min-width: 480px; }
+  .table-runs-value      { min-width: 640px; }
+  .table-value-project   { min-width: 480px; }
 
   /* Workflow sandbox stacks vertically */
   .wf-sandbox {
@@ -1161,7 +1189,6 @@ a:hover {
     max-height: 480px;
   }
 
-  /* Topbar stays readable */
   .topbar-title {
     font-size: 18px;
   }

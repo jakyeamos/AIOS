@@ -22,7 +22,8 @@ export function Sidebar(): React.JSX.Element {
                   href={item.href}
                   className={active ? "sidebar-link sidebar-link-active" : "sidebar-link"}
                 >
-                  {item.label}
+                  <span className="sidebar-label-full">{item.label}</span>
+                  <span className="sidebar-label-short">{item.short}</span>
                 </Link>
               </li>
             );
