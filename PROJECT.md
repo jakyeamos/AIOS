@@ -456,6 +456,7 @@ Phase 3b Standards Delta / Project Health is now implemented:
   - `workflow_synthesis_proposals` stores pending/approved workflow candidates with source pattern evidence
   - `bin/synthesize-workflows.py` creates pending proposals from DB patterns plus vault notes by default, supports `--no-vault`, and can explicitly approve a proposal into `config/workflows/registry.json` + `config/workflows/skills.json`
   - `/workflows` now surfaces pending workflow synthesis proposals with status, source evidence, and created timestamp alongside registered workflow metrics
+  - proposal rows are review queue items only; `/workflows/[id]` routes are reserved for approved workflows from `config/workflows/registry.json`
   - `bin/aios-pipeline.py` now runs workflow synthesis as a recurring pipeline phase so repeated successful patterns are continually surfaced for approval
 - phase architecture note:
   - `docs/architecture/2026-04-23-aios-standards-delta-health-phase3b.md`

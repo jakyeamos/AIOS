@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { z } from "zod";
@@ -39,6 +39,15 @@ type WorkflowProposalRow = {
   createdAt: string;
 };
 
+export type ApprovedWorkflowSummary = {
+  id: string;
+  key: string;
+  name: string;
+  purpose: string;
+  stageCount: number;
+  validationCount: number;
+};
+
 export type WorkflowStage = {
   key: string;
   kind: string;
@@ -52,7 +61,20 @@ export type WorkflowProposalDetail = WorkflowProposalSummary & {
   workflowSpec: Record<string, unknown>;
 };
 
+type WorkflowRegistry = {
+  workflows?: Array<Record<string, unknown>>;
+};
+
+const REGISTRY_PATH = join(process.cwd(), "..", "config", "workflows", "registry.json");
 const SKILLS_PATH = join(process.cwd(), "..", "config", "workflows", "skills.json");
+
+const loadWorkflowRegistry = (): WorkflowRegistry => {
+  try {
+    return JSON.parse(readFileSync(REGISTRY_PATH, "utf8")) as WorkflowRegistry;
+  } catch {
+    return { workflows: [] };
+  }
+};
 
 const loadSkillKeys = (): string[] => {
   try {
@@ -86,6 +108,24 @@ const parseWorkflowSpec = (raw: string): { stages: WorkflowStage[]; spec: Record
   } catch {
     return { stages: [], spec: {} };
   }
+};
+
+const stagesFromSpec = (spec: Record<string, unknown>): WorkflowStage[] => {
+  const rawStages = Array.isArray(spec.stages) ? spec.stages : [];
+  return rawStages.map((s: unknown) => {
+    const stage = s as Record<string, unknown>;
+    return {
+      key: String(stage.key ?? ""),
+      kind: String(stage.kind ?? ""),
+      required_skills: Array.isArray(stage.required_skills)
+        ? (stage.required_skills as unknown[]).map(String)
+        : [],
+      best_practices: Array.isArray(stage.best_practices)
+        ? (stage.best_practices as unknown[]).map(String)
+        : undefined,
+      notes: typeof stage.notes === "string" ? stage.notes : undefined,
+    };
+  });
 };
 
 const clamp = (value: number): number => {
@@ -150,44 +190,43 @@ export const workflowsRouter = createTRPCRouter({
   }),
   skillKeys: publicProcedure.query((): string[] => loadSkillKeys()),
 
+  approved: publicProcedure.query((): ApprovedWorkflowSummary[] => {
+    const registry = loadWorkflowRegistry();
+    return (registry.workflows ?? []).map((workflow) => {
+      const key = String(workflow.key ?? "");
+      const stages = Array.isArray(workflow.stages) ? workflow.stages : [];
+      const validations = Array.isArray(workflow.required_validations) ? workflow.required_validations : [];
+
+      return {
+        id: key,
+        key,
+        name: String(workflow.name ?? key),
+        purpose: String(workflow.purpose ?? ""),
+        stageCount: stages.length,
+        validationCount: validations.length,
+      };
+    });
+  }),
+
   detail: publicProcedure
     .input(z.object({ id: z.string().min(1) }))
-    .query(({ ctx, input }): WorkflowProposalDetail | null => {
-      if (!tableExists("workflow_synthesis_proposals")) {
-        return null;
-      }
-      const row = ctx.db
-        .prepare(
-          `
-          SELECT
-            id,
-            proposal_key AS proposalKey,
-            title,
-            summary,
-            status,
-            source_pattern_ids_json AS sourcePatternIdsJson,
-            evidence_json AS evidenceJson,
-            workflow_spec_json AS workflowSpecJson,
-            created_at AS createdAt
-          FROM workflow_synthesis_proposals
-          WHERE id = ?
-          LIMIT 1
-        `,
-        )
-        .get(input.id) as WorkflowProposalRow | undefined;
-      if (!row) return null;
-      const { stages, spec } = parseWorkflowSpec(row.workflowSpecJson);
+    .query(({ input }): WorkflowProposalDetail | null => {
+      const registry = loadWorkflowRegistry();
+      const workflow = (registry.workflows ?? []).find((item) => item.key === input.id);
+      if (!workflow) return null;
+      const key = String(workflow.key ?? input.id);
+
       return {
-        id: row.id,
-        proposalKey: row.proposalKey,
-        title: row.title,
-        summary: row.summary,
-        status: row.status,
-        sourcePatternIds: parseStringArray(row.sourcePatternIdsJson),
-        evidence: parseStringArray(row.evidenceJson),
-        createdAt: row.createdAt,
-        stages,
-        workflowSpec: spec,
+        id: key,
+        proposalKey: key,
+        title: String(workflow.name ?? key),
+        summary: String(workflow.purpose ?? ""),
+        status: "approved",
+        sourcePatternIds: [],
+        evidence: Array.isArray(workflow.trigger_hints) ? (workflow.trigger_hints as unknown[]).map(String) : [],
+        createdAt: "",
+        stages: stagesFromSpec(workflow),
+        workflowSpec: workflow,
       };
     }),
 
@@ -206,29 +245,14 @@ export const workflowsRouter = createTRPCRouter({
         ),
       }),
     )
-    .mutation(({ ctx, input }): { ok: boolean } => {
-      if (!tableExists("workflow_synthesis_proposals")) {
-        return { ok: false };
-      }
-      const row = ctx.db
-        .prepare("SELECT workflow_spec_json FROM workflow_synthesis_proposals WHERE id = ? LIMIT 1")
-        .get(input.id) as { workflow_spec_json: string } | undefined;
-      if (!row) return { ok: false };
-      let spec: Record<string, unknown> = {};
-      try {
-        spec = JSON.parse(row.workflow_spec_json) as Record<string, unknown>;
-      } catch {
-        spec = {};
-      }
-      spec.stages = input.stages;
-      const updated = JSON.stringify(spec);
-      ctx.db
-        .prepare(
-          `UPDATE workflow_synthesis_proposals
-           SET workflow_spec_json = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
-           WHERE id = ?`,
-        )
-        .run(updated, input.id);
+    .mutation(({ input }): { ok: boolean } => {
+      const registry = loadWorkflowRegistry();
+      const workflows = registry.workflows ?? [];
+      const workflow = workflows.find((item) => item.key === input.id);
+      if (!workflow) return { ok: false };
+
+      workflow.stages = input.stages;
+      writeFileSync(REGISTRY_PATH, `${JSON.stringify(registry, null, 2)}\n`);
       return { ok: true };
     }),
 

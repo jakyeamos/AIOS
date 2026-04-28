@@ -7,14 +7,40 @@ import { getCaller } from "@/server/caller";
 
 export default async function WorkflowsPage(): Promise<React.JSX.Element> {
   const caller = await getCaller();
-  const workflows = await caller.workflows.list();
-  const proposals = await caller.workflows.proposals();
+  const [approvedWorkflows, workflows, proposals] = await Promise.all([
+    caller.workflows.approved(),
+    caller.workflows.list(),
+    caller.workflows.proposals(),
+  ]);
   const pendingProposalCount = proposals.filter((proposal) => proposal.status === "pending_approval").length;
 
   return (
     <PageShell title="Workflows" subtitle="Reusable systems ranked by usage, reliability, and pending synthesis review.">
       <section className="panel-card">
-        <h3 className="section-title">Workflow Proposals</h3>
+        <h3 className="section-title">Approved Workflows</h3>
+        <div className="table-head">
+          <span>Workflow</span>
+          <span>Stages</span>
+          <span>Validations</span>
+          <span>Open</span>
+        </div>
+        {approvedWorkflows.map((workflow) => (
+          <div key={workflow.id} className="table-row">
+            <span>
+              <strong>{workflow.name}</strong>
+              <br />
+              <span className="text-muted">{workflow.purpose}</span>
+            </span>
+            <span>{workflow.stageCount}</span>
+            <span>{workflow.validationCount}</span>
+            <span>
+              <Link href={`/workflows/${workflow.key}`}>canvas</Link>
+            </span>
+          </div>
+        ))}
+      </section>
+      <section className="panel-card">
+        <h3 className="section-title">Workflow Proposal Queue</h3>
         <div className="table-head">
           <span>Proposal</span>
           <span>Status</span>
@@ -25,9 +51,7 @@ export default async function WorkflowsPage(): Promise<React.JSX.Element> {
           proposals.map((proposal) => (
             <div key={proposal.id} className="table-row">
               <span>
-                <Link href={`/workflows/${proposal.id}`}>
-                  <strong>{proposal.title}</strong>
-                </Link>
+                <strong>{proposal.title}</strong>
                 <br />
                 <span className="text-muted">{proposal.summary}</span>
               </span>
@@ -63,7 +87,7 @@ export default async function WorkflowsPage(): Promise<React.JSX.Element> {
         ))}
       </section>
       <div className="grid grid-3">
-        <StatCard label="Workflow Count" value={workflows.length} />
+        <StatCard label="Approved Workflows" value={approvedWorkflows.length} />
         <StatCard label="Pending Proposals" value={pendingProposalCount} />
         <StatCard
           label="Avg Success"
