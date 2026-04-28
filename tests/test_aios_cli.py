@@ -243,15 +243,20 @@ def test_capability_audit_reports_missing_and_no_data_signals(tmp_path: Path, ca
     assert output["command"] == "capability-audit"
 
     data = output["data"]
-    assert data["summary"]["surfaces"] == 3
+    assert data["summary"]["surfaces"] == 5
     assert data["rtk"]["state"]["value"] == "no_eligible_data"
     assert data["rtk"]["state"]["provenance"] == "missing"
     assert data["automations"]["items"][0]["trigger"]["value"] == "Weekdays at 9:00 AM"
+    assert data["prompt_library"]["visibility"]["provenance"] == "missing"
+    assert data["knowledge"]["topic_count"]["value"] == 1
+    assert data["knowledge"]["reference_coverage"]["provenance"] == "missing"
 
     project = data["projects"]["items"][0]
     assert project["health_score"]["provenance"] == "missing"
     assert project["status"]["provenance"] == "confirmed"
     assert any(finding["code"] == "project_health_missing" for finding in data["findings"])
+    assert any(finding["code"] == "prompt_library_links_missing" for finding in data["findings"])
+    assert any(finding["code"] == "knowledge_references_missing" for finding in data["findings"])
 
     failures_exit = run_cli(
         [

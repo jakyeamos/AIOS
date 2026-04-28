@@ -264,19 +264,154 @@ def _automation_signals() -> dict[str, Any]:
     return {"items": items, "findings": []}
 
 
+def _prompt_library_signals(conn: sqlite3.Connection) -> dict[str, Any]:
+    findings: list[dict[str, Any]] = []
+    if not _table_exists(conn, "prompt_library_links"):
+        findings.append(
+            {
+                "surface": "prompt_library",
+                "code": "prompt_library_links_missing",
+                "severity": "warning",
+                "summary": "Prompt Library visibility cannot be trusted because prompt_library_links is missing.",
+            }
+        )
+        return {
+            "visibility": TrustedSignal(
+                value="unavailable",
+                provenance="missing",
+                confidence=0,
+                source={"label": "Prompt library links", "table": "prompt_library_links"},
+                freshness="missing",
+                explanation="Prompt Library requires body-hash evidence in prompt_library_links before templates are visible.",
+                missing_reason="prompt_library_links table does not exist.",
+            ).to_json(),
+            "linked_templates": 0,
+            "findings": findings,
+        }
+
+    linked_templates = _count(conn, "prompt_library_links")
+    if linked_templates == 0:
+        findings.append(
+            {
+                "surface": "prompt_library",
+                "code": "prompt_library_empty",
+                "severity": "warning",
+                "summary": "Prompt Library has no body-hash-backed visible templates.",
+            }
+        )
+
+    return {
+        "visibility": TrustedSignal(
+            value="visible" if linked_templates > 0 else "empty",
+            provenance="confirmed" if linked_templates > 0 else "missing",
+            confidence=0.9 if linked_templates > 0 else 0.45,
+            source={"label": "Prompt library links", "table": "prompt_library_links"},
+            freshness=f"{linked_templates} linked template(s)",
+            explanation=(
+                "Prompt Library visibility is backed by prompt_library_links body-hash evidence."
+                if linked_templates > 0
+                else "Prompt Library is wired, but no body-hash-backed templates are currently visible."
+            ),
+            missing_reason=None if linked_templates > 0 else "No rows exist in prompt_library_links.",
+        ).to_json(),
+        "linked_templates": linked_templates,
+        "findings": findings,
+    }
+
+
+def _knowledge_signals(conn: sqlite3.Connection) -> dict[str, Any]:
+    findings: list[dict[str, Any]] = []
+    topic_count = _count(conn, "knowledge_topics")
+    reference_count = _count(conn, "knowledge_references")
+    relationship_count = _count(conn, "knowledge_relationships")
+
+    if topic_count == 0:
+        findings.append(
+            {
+                "surface": "knowledge",
+                "code": "knowledge_topics_missing",
+                "severity": "warning",
+                "summary": "Knowledge has no indexed topics.",
+            }
+        )
+    if topic_count > 0 and reference_count == 0:
+        findings.append(
+            {
+                "surface": "knowledge",
+                "code": "knowledge_references_missing",
+                "severity": "warning",
+                "summary": "Knowledge topics exist without source references.",
+            }
+        )
+
+    reference_ratio = 0 if topic_count == 0 else reference_count / topic_count
+    return {
+        "topic_count": TrustedSignal(
+            value=topic_count,
+            provenance="confirmed" if topic_count > 0 else "missing",
+            confidence=0.9 if topic_count > 0 else 0,
+            source={"label": "Knowledge topics", "table": "knowledge_topics"},
+            freshness=f"{topic_count} topic(s)",
+            explanation=(
+                "Knowledge indexing has persisted topics."
+                if topic_count > 0
+                else "Knowledge indexing has not persisted any topics."
+            ),
+            missing_reason=None if topic_count > 0 else "No rows exist in knowledge_topics.",
+        ).to_json(),
+        "reference_coverage": TrustedSignal(
+            value=round(reference_ratio, 3),
+            provenance="confirmed" if reference_count > 0 else "missing",
+            confidence=0.85 if reference_count > 0 else 0.2,
+            source={"label": "Knowledge references", "table": "knowledge_references"},
+            freshness=f"{reference_count} reference(s) for {topic_count} topic(s)",
+            explanation=(
+                "Knowledge topics have persisted source references."
+                if reference_count > 0
+                else "Knowledge topics currently lack persisted source references."
+            ),
+            missing_reason="No rows exist in knowledge_references." if reference_count == 0 else None,
+        ).to_json(),
+        "relationship_count": TrustedSignal(
+            value=relationship_count,
+            provenance="confirmed" if relationship_count > 0 else "missing",
+            confidence=0.85 if relationship_count > 0 else 0.35,
+            source={"label": "Knowledge relationships", "table": "knowledge_relationships"},
+            freshness=f"{relationship_count} relationship(s)",
+            explanation=(
+                "Knowledge graph has persisted relationships."
+                if relationship_count > 0
+                else "Knowledge graph does not yet have persisted relationships."
+            ),
+            missing_reason="No rows exist in knowledge_relationships." if relationship_count == 0 else None,
+        ).to_json(),
+        "findings": findings,
+    }
+
+
 def capability_truth_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     projects = _project_signals(conn)
     rtk = _rtk_signals(conn)
     automations = _automation_signals()
-    findings = [*projects["findings"], *rtk["findings"], *automations["findings"]]
+    prompt_library = _prompt_library_signals(conn)
+    knowledge = _knowledge_signals(conn)
+    findings = [
+        *projects["findings"],
+        *rtk["findings"],
+        *automations["findings"],
+        *prompt_library["findings"],
+        *knowledge["findings"],
+    ]
     return {
         "summary": {
-            "surfaces": 3,
+            "surfaces": 5,
             "findings": len(findings),
             "contract": "TrustedSignal(value, provenance, confidence, source, freshness, explanation, missing_reason, contradiction)",
         },
         "projects": projects,
         "rtk": rtk,
         "automations": automations,
+        "prompt_library": prompt_library,
+        "knowledge": knowledge,
         "findings": findings,
     }
