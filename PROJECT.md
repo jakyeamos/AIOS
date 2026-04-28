@@ -116,6 +116,11 @@ Stage 1 capability-truth baseline work has started with a first trusted-signal s
   - seeded automation status
   - prompt library body-hash visibility
   - knowledge topic/reference coverage
+- Stage 2 agent-runtime capability has started with an invocation backend contract:
+  - added a shared backend registry in `services/invocation_backends.py` for Codex managed runtime, Claude managed runtime, and the deprecated manual-session legacy path
+  - `aios invocation-audit --json` now exposes backend count, required invocation contract fields, handshake coverage, and legacy fallback policy
+  - `aios start-work --backend ...` now persists the selected backend key and label instead of labeling every invocation as Codex
+  - strict handshake fields are now an explicit CLI contract: run id, invocation id, backend key, objective, project id, workflow key, packet id, lifecycle events, artifacts, and closeout evaluation
 
 This pass makes milestones 1 and 2 operational for selected work from the local CLI:
 
