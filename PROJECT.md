@@ -73,6 +73,34 @@ This implementation pass establishes:
 
 ## Implemented On 2026-04-28
 
+Stage 1 capability-truth baseline work has started with a first trusted-signal slice in `aios-ui`:
+
+- added a shared UI/server `TrustedSignal` contract for capability metrics with:
+  - provenance: `confirmed`, `inferred`, `missing`, `contradictory`
+  - confidence
+  - source label/table/field
+  - freshness
+  - explanation
+  - missing reason
+  - contradiction detail
+- Projects now attach trusted signals to:
+  - health score
+  - health trend
+  - critical delta count
+  - unknown coverage
+  - pipeline state
+  - project status
+- Projects no longer render the confusing health parenthetical as the primary display; health score and trend are separate visible signals.
+- Pipeline badges now render an explicit configured/required label, and an `error` status with zero configured required checks is represented as a contradictory trusted signal instead of silently rendering as `0/5 ERROR`.
+- Efficiency/RTK now exposes an explicit RTK state:
+  - `active`
+  - `inactive`
+  - `no_eligible_data`
+  with source-backed explanation for zero-savings states.
+- Automations now infer readable schedule labels from persisted RRULE triggers and preserve the raw RRULE as secondary evidence instead of the primary trigger display.
+- Automations now attach trusted signals to trigger, success rate, and status while acknowledging seeded automation health until durable run history exists.
+- Projects and Automations tables now have dedicated grid layouts to avoid the screenshot-observed column wrapping/overlap.
+
 This pass makes milestones 1 and 2 operational for selected work from the local CLI:
 
 - `aios start-work "<objective>"` creates a routed work record before implementation:
