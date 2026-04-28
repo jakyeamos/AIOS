@@ -125,6 +125,9 @@ Stage 1 capability-truth baseline work has started with a first trusted-signal s
 - Stage 3 knowledge-memory capability has started with a Knowledge Object contract:
   - `aios knowledge-objects --json` adapts existing `knowledge_topics`, `knowledge_references`, and `knowledge_relationships` rows into stable objects with source refs, backlinks, freshness, and confidence
   - the command reports source-reference coverage and objects without sources so grouped topic summaries can be distinguished from citable memory
+- Stage 4 workflow-learning capability has started with an evidence classification audit:
+  - `aios workflow-learning-audit --json` classifies terminal runs as workflow evidence, prompt-template evidence, standards-health evidence, bug/quality evidence, or no-learning signal
+  - the command reports proposal counts, approval-gated proposals, and completed/failed/canceled/superseded runs that produced no durable learning record
 
 This pass makes milestones 1 and 2 operational for selected work from the local CLI:
 
