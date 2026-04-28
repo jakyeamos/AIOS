@@ -77,6 +77,17 @@ View proposals in the UI:
 http://localhost:3000/workflows
 ```
 
+## Routed Agent Work
+
+Create a compact AIOS packet and strict run/session/invocation handshake before serious agent work:
+
+```bash
+cd /Users/jakyeamos/AIOS
+python3 bin/aios.py --json start-work "Implement the scoped objective" --project <project-id>
+```
+
+When `logs/current_session` points at an open hook-created session, the command links that session to the new run and invocation. If no open session is available, it still creates a ready run and packet for manual handoff.
+
 Approve a proposal into the workflow and skill registries:
 
 ```bash

@@ -6,6 +6,7 @@ import json
 import os
 import sqlite3
 import sys
+import uuid
 from collections import deque
 from collections.abc import Sequence
 from datetime import UTC, datetime
@@ -13,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from services.rtk_integration import ensure_rtk_schema, load_compression_rules, rtk_metrics_log
+from services.success_criteria import preview_applicable_criteria
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG_ROOT = REPO_ROOT / "config"
@@ -31,6 +33,11 @@ EXIT_USAGE = 2
 EXIT_NOT_FOUND = 3
 EXIT_DEPENDENCY = 4
 EXIT_RUNTIME = 5
+
+DEFAULT_START_WORKFLOW_KEY = "implementation-delivery"
+DEFAULT_START_AGENT_KEY = "implementation-lead"
+DEFAULT_START_BACKEND_KEY = "codex-managed-runtime"
+DEFAULT_START_BACKEND_LABEL = "Codex Managed Runtime"
 
 
 class CLIError(Exception):
@@ -53,10 +60,23 @@ def _table_exists(conn: sqlite3.Connection, name: str) -> bool:
     return row is not None
 
 
+def _relation_exists(conn: sqlite3.Connection, name: str) -> bool:
+    row = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type IN ('table', 'view') AND name=? LIMIT 1",
+        (name,),
+    ).fetchone()
+    return row is not None
+
+
 def _table_columns(conn: sqlite3.Connection, name: str) -> set[str]:
     if not _table_exists(conn, name):
         return set()
     return {str(row["name"]) for row in conn.execute(f"PRAGMA table_info({name})").fetchall()}
+
+
+def _ensure_column(conn: sqlite3.Connection, table: str, column: str, definition: str) -> None:
+    if column not in _table_columns(conn, table):
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
 
 def _parse_iso(value: str | None) -> datetime | None:
@@ -566,6 +586,591 @@ def _refresh_instructions(
     }
 
 
+def _ensure_start_work_schema(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS orchestration_runs (
+            id TEXT PRIMARY KEY,
+            project_id TEXT,
+            session_id TEXT,
+            objective TEXT,
+            workflow_key TEXT,
+            agent_key TEXT,
+            status TEXT,
+            rationale TEXT,
+            assumptions_json TEXT DEFAULT '[]',
+            context_trace_json TEXT DEFAULT '[]',
+            backend_key TEXT,
+            active_invocation_id TEXT,
+            packet_id TEXT,
+            status_reason_json TEXT DEFAULT '{}',
+            created_at TEXT,
+            updated_at TEXT
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS orchestration_invocations (
+            id TEXT PRIMARY KEY,
+            run_id TEXT,
+            backend_key TEXT,
+            backend_label TEXT,
+            status TEXT,
+            handshake_token TEXT,
+            session_id TEXT,
+            command_json TEXT DEFAULT '[]',
+            metadata_json TEXT DEFAULT '{}',
+            created_at TEXT,
+            started_at TEXT,
+            updated_at TEXT
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS orchestration_run_events (
+            id TEXT PRIMARY KEY,
+            run_id TEXT,
+            project_id TEXT,
+            session_id TEXT,
+            invocation_id TEXT,
+            event_type TEXT,
+            from_status TEXT,
+            to_status TEXT,
+            summary TEXT,
+            reason_json TEXT DEFAULT '{}',
+            metadata_json TEXT DEFAULT '{}',
+            created_at TEXT
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS briefing_packets (
+            id TEXT PRIMARY KEY,
+            run_id TEXT,
+            project_id TEXT,
+            objective TEXT,
+            workflow_key TEXT,
+            agent_key TEXT,
+            packet_markdown TEXT,
+            sections_json TEXT DEFAULT '[]',
+            policy_mode TEXT DEFAULT 'compact-ranked',
+            token_budget INTEGER DEFAULT 900,
+            selection_trace_json TEXT DEFAULT '[]',
+            omitted_context_json TEXT DEFAULT '[]',
+            created_at TEXT
+        )
+        """
+    )
+    for column, definition in {
+        "project_id": "TEXT",
+        "session_id": "TEXT",
+        "objective": "TEXT",
+        "workflow_key": "TEXT",
+        "agent_key": "TEXT",
+        "rationale": "TEXT",
+        "assumptions_json": "TEXT DEFAULT '[]'",
+        "context_trace_json": "TEXT DEFAULT '[]'",
+        "backend_key": "TEXT",
+        "active_invocation_id": "TEXT",
+        "packet_id": "TEXT",
+        "status_reason_json": "TEXT DEFAULT '{}'",
+        "created_at": "TEXT",
+        "updated_at": "TEXT",
+    }.items():
+        _ensure_column(conn, "orchestration_runs", column, definition)
+    for column, definition in {
+        "backend_key": "TEXT",
+        "backend_label": "TEXT",
+        "status": "TEXT",
+        "handshake_token": "TEXT",
+        "session_id": "TEXT",
+        "command_json": "TEXT DEFAULT '[]'",
+        "metadata_json": "TEXT DEFAULT '{}'",
+        "created_at": "TEXT",
+        "started_at": "TEXT",
+        "updated_at": "TEXT",
+    }.items():
+        _ensure_column(conn, "orchestration_invocations", column, definition)
+    for column, definition in {
+        "project_id": "TEXT",
+        "session_id": "TEXT",
+        "invocation_id": "TEXT",
+        "event_type": "TEXT",
+        "from_status": "TEXT",
+        "metadata_json": "TEXT DEFAULT '{}'",
+    }.items():
+        _ensure_column(conn, "orchestration_run_events", column, definition)
+    for column, definition in {
+        "project_id": "TEXT",
+        "objective": "TEXT",
+        "workflow_key": "TEXT",
+        "agent_key": "TEXT",
+        "packet_markdown": "TEXT",
+        "sections_json": "TEXT DEFAULT '[]'",
+        "policy_mode": "TEXT DEFAULT 'compact-ranked'",
+        "token_budget": "INTEGER DEFAULT 900",
+        "selection_trace_json": "TEXT DEFAULT '[]'",
+        "omitted_context_json": "TEXT DEFAULT '[]'",
+        "created_at": "TEXT",
+    }.items():
+        _ensure_column(conn, "briefing_packets", column, definition)
+    if _table_exists(conn, "sessions"):
+        _ensure_column(conn, "sessions", "objective", "TEXT")
+        _ensure_column(conn, "sessions", "run_id", "TEXT")
+        _ensure_column(conn, "sessions", "invocation_id", "TEXT")
+        _ensure_column(conn, "sessions", "runtime_metadata_json", "TEXT DEFAULT '{}'")
+
+
+def _current_session_id(logs_dir: Path) -> str | None:
+    current_path = logs_dir / "current_session"
+    if not current_path.exists():
+        return None
+    session_id = current_path.read_text(encoding="utf-8", errors="replace").strip()
+    return session_id or None
+
+
+def _project_name(conn: sqlite3.Connection, project_id: str | None) -> str:
+    if not project_id or not _table_exists(conn, "projects"):
+        return "unlinked project"
+    row = conn.execute("SELECT name FROM projects WHERE id = ? LIMIT 1", (project_id,)).fetchone()
+    return str(row["name"]) if row and row["name"] else project_id
+
+
+def _active_rule_rows(conn: sqlite3.Connection, limit: int = 5) -> list[dict[str, Any]]:
+    if not _relation_exists(conn, "active_rules"):
+        return []
+    rows = conn.execute(
+        """
+        SELECT title, body, domain, confidence
+        FROM active_rules
+        ORDER BY confidence DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def _knowledge_topic_rows(
+    conn: sqlite3.Connection,
+    *,
+    project_id: str | None,
+    objective: str,
+    limit: int = 5,
+) -> list[dict[str, Any]]:
+    if not _table_exists(conn, "knowledge_topics"):
+        return []
+    tokens = [token for token in objective.lower().split() if len(token) >= 4]
+    like_terms = [f"%{token}%" for token in tokens[:5]]
+    if not like_terms:
+        return []
+    clauses = " OR ".join(["LOWER(title || ' ' || summary) LIKE ?"] * len(like_terms))
+    rows = conn.execute(
+        f"""
+        SELECT title, summary, canonical_href, confidence, updated_at
+        FROM knowledge_topics
+        WHERE (? IS NULL OR project_id IS NULL OR project_id = ?)
+          AND ({clauses})
+        ORDER BY confidence DESC, updated_at DESC
+        LIMIT ?
+        """,
+        (project_id, project_id, *like_terms, limit),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def _recent_writeback_rows(conn: sqlite3.Connection, project_id: str | None, limit: int = 5) -> list[dict[str, Any]]:
+    if not _table_exists(conn, "improvement_writebacks"):
+        return []
+    where = "WHERE (? IS NULL OR project_id = ?)"
+    rows = conn.execute(
+        f"""
+        SELECT id, title, summary, status, requires_approval, created_at
+        FROM improvement_writebacks
+        {where}
+        ORDER BY created_at DESC
+        LIMIT ?
+        """,
+        (project_id, project_id, limit),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def _packet_sections(
+    conn: sqlite3.Connection,
+    *,
+    objective: str,
+    project_id: str | None,
+    project_name: str,
+    workflow_key: str,
+    agent_key: str,
+) -> list[dict[str, Any]]:
+    sections: list[dict[str, Any]] = [
+        {
+            "title": "Objective",
+            "items": [
+                objective,
+                f"Project: {project_name}",
+                f"Workflow: {workflow_key}",
+                f"Agent profile: {agent_key}",
+            ],
+        }
+    ]
+
+    criteria = preview_applicable_criteria(
+        project_id=project_id,
+        project_name=project_name,
+        objective=objective,
+    )
+    criteria_rows = criteria.get("criteria", [])
+    sections.append(
+        {
+            "title": "Applicable Success Criteria",
+            "items": [
+                f"{row['id']} ({'blocker' if row['blocking'] else 'advisory'})"
+                for row in criteria_rows[:8]
+                if isinstance(row, dict) and row.get("id")
+            ]
+            or ["No success criteria matched this objective."],
+        }
+    )
+
+    rules = _active_rule_rows(conn)
+    sections.append(
+        {
+            "title": "Active Rules",
+            "items": [
+                f"{row['title']}: {row['body'] or row['title']}"
+                for row in rules
+                if row.get("title")
+            ]
+            or ["No active rules were found."],
+        }
+    )
+
+    writebacks = _recent_writeback_rows(conn, project_id)
+    sections.append(
+        {
+            "title": "Recent Improvements",
+            "items": [
+                f"{row['title']} [{row['status']}]: {row['summary']}"
+                for row in writebacks
+                if row.get("title")
+            ]
+            or ["No recent improvement writebacks were found."],
+        }
+    )
+
+    topics = _knowledge_topic_rows(conn, project_id=project_id, objective=objective)
+    sections.append(
+        {
+            "title": "Knowledge Matches",
+            "items": [
+                f"{row['title']}: {row['summary']} ({row['canonical_href']})"
+                for row in topics
+                if row.get("title")
+            ]
+            or ["No indexed knowledge topics matched this objective."],
+        }
+    )
+
+    sections.append(
+        {
+            "title": "Routing Contract",
+            "items": [
+                "Use this packet before implementation.",
+                "Keep the run, invocation, and session identifiers linked through closeout.",
+                "Session stop must evaluate success criteria and record writeback proposals.",
+            ],
+        }
+    )
+    return sections
+
+
+def _packet_markdown(sections: list[dict[str, Any]]) -> str:
+    rendered: list[str] = ["# AIOS Routed Work Packet"]
+    for section in sections:
+        rendered.append("")
+        rendered.append(f"## {section['title']}")
+        for item in section.get("items", []):
+            rendered.append(f"- {item}")
+    return "\n".join(rendered)
+
+
+def _record_run_event(
+    conn: sqlite3.Connection,
+    *,
+    run_id: str,
+    project_id: str | None,
+    session_id: str | None,
+    invocation_id: str | None,
+    event_type: str,
+    from_status: str | None,
+    to_status: str,
+    summary: str,
+    reason: dict[str, Any] | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> None:
+    conn.execute(
+        """
+        INSERT INTO orchestration_run_events (
+            id, run_id, project_id, session_id, invocation_id, event_type, from_status, to_status,
+            summary, reason_json, metadata_json, created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            f"run-event-{uuid.uuid4()}",
+            run_id,
+            project_id,
+            session_id,
+            invocation_id,
+            event_type,
+            from_status,
+            to_status,
+            summary,
+            json.dumps(reason or {}),
+            json.dumps(metadata or {}),
+            _now_iso(),
+        ),
+    )
+
+
+def _start_work_payload(
+    conn: sqlite3.Connection,
+    logs_dir: Path,
+    *,
+    objective: str,
+    project_id: str | None,
+    workflow_key: str,
+    agent_key: str,
+    backend_key: str,
+    session_id: str | None,
+) -> dict[str, Any]:
+    _ensure_start_work_schema(conn)
+    explicit_session_id = session_id is not None
+    linked_session_id = session_id if explicit_session_id else _current_session_id(logs_dir)
+    if linked_session_id and _table_exists(conn, "sessions"):
+        session = conn.execute(
+            "SELECT id, project_id, status FROM sessions WHERE id = ? LIMIT 1",
+            (linked_session_id,),
+        ).fetchone()
+        if session is None:
+            raise CLIError("session-not-found", f"Session not found: {linked_session_id}", EXIT_NOT_FOUND)
+        if session["status"] != "open":
+            if explicit_session_id:
+                raise CLIError(
+                    "session-not-open",
+                    f"Session is not open: {linked_session_id}",
+                    EXIT_RUNTIME,
+                )
+            linked_session_id = None
+        if linked_session_id is None:
+            session = None
+    if linked_session_id and _table_exists(conn, "sessions"):
+        session = conn.execute(
+            "SELECT id, project_id FROM sessions WHERE id = ? LIMIT 1",
+            (linked_session_id,),
+        ).fetchone()
+        if session is None:
+            raise CLIError("session-not-found", f"Session not found: {linked_session_id}", EXIT_NOT_FOUND)
+        project_id = project_id or session["project_id"]
+
+    project_name = _project_name(conn, project_id)
+    now = _now_iso()
+    run_id = f"run-{uuid.uuid4()}"
+    packet_id = f"packet-{uuid.uuid4()}"
+    invocation_id = f"invoke-manual-{uuid.uuid4()}"
+    sections = _packet_sections(
+        conn,
+        objective=objective,
+        project_id=project_id,
+        project_name=project_name,
+        workflow_key=workflow_key,
+        agent_key=agent_key,
+    )
+    packet_markdown = _packet_markdown(sections)
+    status = "in_progress" if linked_session_id else "ready"
+    invocation_status = "running" if linked_session_id else "prepared"
+
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (
+            id, project_id, session_id, objective, workflow_key, agent_key, status, rationale,
+            assumptions_json, context_trace_json, backend_key, active_invocation_id, packet_id,
+            status_reason_json, created_at, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            run_id,
+            project_id,
+            linked_session_id,
+            objective,
+            workflow_key,
+            agent_key,
+            status,
+            "Started from AIOS CLI so rules, improvements, knowledge, and criteria are visible before implementation.",
+            json.dumps(["Current implementation sessions should attach via explicit run/invocation/session handshake."]),
+            json.dumps(
+                [
+                    {"source": "success-criteria", "reason": "criteria preview added to packet"},
+                    {"source": "active-rules", "reason": "approved rules added to packet"},
+                    {"source": "improvement-writebacks", "reason": "recent improvements added to packet"},
+                ]
+            ),
+            backend_key,
+            invocation_id,
+            packet_id,
+            json.dumps({"kind": "strict_manual_handshake" if linked_session_id else "packet_ready"}),
+            now,
+            now,
+        ),
+    )
+    _record_run_event(
+        conn,
+        run_id=run_id,
+        project_id=project_id,
+        session_id=None,
+        invocation_id=None,
+        event_type="planned",
+        from_status=None,
+        to_status="planned",
+        summary="Run record created from AIOS start-work.",
+        metadata={"backendKey": backend_key},
+    )
+    conn.execute(
+        """
+        INSERT INTO briefing_packets (
+            id, run_id, project_id, objective, workflow_key, agent_key, packet_markdown,
+            sections_json, policy_mode, token_budget, selection_trace_json, omitted_context_json, created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'compact-ranked', 900, ?, '[]', ?)
+        """,
+        (
+            packet_id,
+            run_id,
+            project_id,
+            objective,
+            workflow_key,
+            agent_key,
+            packet_markdown,
+            json.dumps(sections),
+            json.dumps(
+                [
+                    {"source": "objective", "reason": "operator supplied"},
+                    {"source": "criteria", "reason": "resolved before implementation"},
+                    {"source": "rules-and-writebacks", "reason": "durable AIOS improvements included"},
+                ]
+            ),
+            now,
+        ),
+    )
+    _record_run_event(
+        conn,
+        run_id=run_id,
+        project_id=project_id,
+        session_id=None,
+        invocation_id=None,
+        event_type="ready",
+        from_status="planned",
+        to_status="ready",
+        summary="Briefing packet persisted for routed work.",
+        reason={"kind": "packet_ready", "policyMode": "compact-ranked"},
+        metadata={"packetId": packet_id},
+    )
+    conn.execute(
+        """
+        INSERT INTO orchestration_invocations (
+            id, run_id, backend_key, backend_label, status, handshake_token, session_id,
+            command_json, metadata_json, created_at, started_at, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            invocation_id,
+            run_id,
+            backend_key,
+            DEFAULT_START_BACKEND_LABEL,
+            invocation_status,
+            run_id,
+            linked_session_id,
+            json.dumps(["aios", "start-work", "strict-handshake"]),
+            json.dumps({"strictHandshake": True, "source": "aios-cli"}),
+            now,
+            now if linked_session_id else None,
+            now,
+        ),
+    )
+
+    if linked_session_id:
+        conn.execute(
+            """
+            UPDATE sessions
+            SET run_id = ?,
+                invocation_id = ?,
+                runtime_metadata_json = ?,
+                objective = COALESCE(objective, ?)
+            WHERE id = ?
+            """,
+            (
+                run_id,
+                invocation_id,
+                json.dumps({"backend_key": backend_key, "strict_manual_handshake": True, "packet_id": packet_id}),
+                objective,
+                linked_session_id,
+            ),
+        )
+        _record_run_event(
+            conn,
+            run_id=run_id,
+            project_id=project_id,
+            session_id=linked_session_id,
+            invocation_id=invocation_id,
+            event_type="strict_manual_invocation_registered",
+            from_status="ready",
+            to_status="in_progress",
+            summary="Current session linked to AIOS run and invocation.",
+            reason={"kind": "current_session_linked", "backendKey": backend_key},
+        )
+
+    conn.commit()
+    return {
+        "run": {
+            "id": run_id,
+            "project_id": project_id,
+            "session_id": linked_session_id,
+            "objective": objective,
+            "workflow_key": workflow_key,
+            "agent_key": agent_key,
+            "backend_key": backend_key,
+            "status": status,
+            "packet_id": packet_id,
+            "active_invocation_id": invocation_id,
+        },
+        "packet": {
+            "id": packet_id,
+            "policy_mode": "compact-ranked",
+            "markdown": packet_markdown,
+        },
+        "invocation": {
+            "id": invocation_id,
+            "status": invocation_status,
+            "backend_key": backend_key,
+            "session_id": linked_session_id,
+        },
+        "next_agent_context": {
+            "run_id": run_id,
+            "invocation_id": invocation_id,
+            "packet_id": packet_id,
+            "session_id": linked_session_id,
+        },
+    }
+
+
 def _status_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     return {
         "projects_active": _count(conn, "projects", "status='active'"),
@@ -767,6 +1372,7 @@ def _metadata_payload(
             "aios logs --json --last 50",
             "aios recent-failures --json --last 20",
             "aios rtk --json",
+            "aios start-work --json \"objective\"",
             "aios skills status --json",
             "aios skills refresh --json --apply",
         ],
@@ -844,6 +1450,12 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
             f"reduction={metrics['weighted_reduction_percent']}%"
         )
         return
+    if command == "start-work":
+        print(
+            f"run={data['run']['id']} status={data['run']['status']} "
+            f"session={data['run']['session_id'] or 'unlinked'} packet={data['packet']['id']}"
+        )
+        return
     if command == "skills-status":
         summary = data["summary"]
         print(
@@ -886,6 +1498,14 @@ def create_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("rtk", help="RTK compression rules and metrics")
 
+    start_work = subparsers.add_parser("start-work", help="Create a routed AIOS run packet and session handshake")
+    start_work.add_argument("objective", help="Work objective to route through AIOS")
+    start_work.add_argument("--project", default=None, help="Project id to link to the run")
+    start_work.add_argument("--session-id", default=None, help="Session id to link; defaults to logs/current_session")
+    start_work.add_argument("--workflow", default=DEFAULT_START_WORKFLOW_KEY, help="Workflow key")
+    start_work.add_argument("--agent", default=DEFAULT_START_AGENT_KEY, help="Agent profile key")
+    start_work.add_argument("--backend", default=DEFAULT_START_BACKEND_KEY, help="Invocation backend key")
+
     skills_parser = subparsers.add_parser("skills", help="Instruction/skills registry surfaces")
     skills_subparsers = skills_parser.add_subparsers(dest="skills_command", required=True)
 
@@ -910,7 +1530,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
     command = _command_name(args)
 
     try:
-        if args.command in {"status", "health", "metadata", "recent-failures", "rtk"}:
+        if args.command in {"status", "health", "metadata", "recent-failures", "rtk", "start-work"}:
             conn = _connect_db(db_path)
         else:
             conn = None
@@ -939,6 +1559,18 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "rtk":
             assert conn is not None
             data = _rtk_payload(conn)
+        elif args.command == "start-work":
+            assert conn is not None
+            data = _start_work_payload(
+                conn,
+                logs_dir,
+                objective=args.objective,
+                project_id=args.project,
+                workflow_key=args.workflow,
+                agent_key=args.agent,
+                backend_key=args.backend,
+                session_id=args.session_id,
+            )
         elif args.command == "skills" and args.skills_command == "status":
             data = _instruction_status(config_root, vault_root, project_id=args.project)
         elif args.command == "skills" and args.skills_command == "refresh":

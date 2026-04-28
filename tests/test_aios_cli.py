@@ -22,7 +22,11 @@ def _seed_db(path: Path) -> None:
             status TEXT,
             started_at TEXT,
             ended_at TEXT,
-            cwd TEXT
+            cwd TEXT,
+            objective TEXT,
+            run_id TEXT,
+            invocation_id TEXT,
+            runtime_metadata_json TEXT DEFAULT '{}'
         );
         CREATE TABLE bug_log (
             id TEXT PRIMARY KEY,
@@ -33,7 +37,79 @@ def _seed_db(path: Path) -> None:
         );
         CREATE TABLE orchestration_runs (
             id TEXT PRIMARY KEY,
-            status TEXT
+            project_id TEXT,
+            session_id TEXT,
+            objective TEXT,
+            workflow_key TEXT,
+            agent_key TEXT,
+            status TEXT,
+            rationale TEXT,
+            assumptions_json TEXT DEFAULT '[]',
+            context_trace_json TEXT DEFAULT '[]',
+            backend_key TEXT,
+            active_invocation_id TEXT,
+            packet_id TEXT,
+            status_reason_json TEXT DEFAULT '{}',
+            created_at TEXT,
+            updated_at TEXT
+        );
+        CREATE TABLE orchestration_invocations (
+            id TEXT PRIMARY KEY,
+            run_id TEXT,
+            backend_key TEXT,
+            backend_label TEXT,
+            status TEXT,
+            handshake_token TEXT,
+            session_id TEXT,
+            command_json TEXT DEFAULT '[]',
+            metadata_json TEXT DEFAULT '{}',
+            created_at TEXT,
+            started_at TEXT,
+            updated_at TEXT
+        );
+        CREATE TABLE briefing_packets (
+            id TEXT PRIMARY KEY,
+            run_id TEXT,
+            project_id TEXT,
+            objective TEXT,
+            workflow_key TEXT,
+            agent_key TEXT,
+            packet_markdown TEXT,
+            sections_json TEXT DEFAULT '[]',
+            policy_mode TEXT DEFAULT 'compact-ranked',
+            token_budget INTEGER DEFAULT 900,
+            selection_trace_json TEXT DEFAULT '[]',
+            omitted_context_json TEXT DEFAULT '[]',
+            created_at TEXT
+        );
+        CREATE TABLE active_rules (
+            title TEXT,
+            body TEXT,
+            domain TEXT,
+            confidence REAL
+        );
+        CREATE TABLE improvement_writebacks (
+            id TEXT PRIMARY KEY,
+            run_id TEXT,
+            project_id TEXT,
+            layer_type TEXT,
+            layer_key TEXT,
+            title TEXT,
+            summary TEXT,
+            evidence_json TEXT DEFAULT '[]',
+            proposed_change_json TEXT DEFAULT '{}',
+            status TEXT,
+            requires_approval INTEGER DEFAULT 0,
+            created_at TEXT
+        );
+        CREATE TABLE knowledge_topics (
+            id TEXT PRIMARY KEY,
+            title TEXT,
+            summary TEXT,
+            canonical_href TEXT,
+            confidence REAL,
+            project_id TEXT,
+            updated_at TEXT
         );
         CREATE TABLE orchestration_run_events (
             id TEXT PRIMARY KEY,
@@ -68,6 +144,34 @@ def _seed_db(path: Path) -> None:
         """
     )
     conn.execute("INSERT INTO orchestration_runs (id, status) VALUES ('run-1', 'failed')")
+    conn.execute(
+        """
+        INSERT INTO active_rules (title, body, domain, confidence)
+        VALUES ('Use explicit handshakes', 'Start serious work with run and invocation linkage.', 'workflow', 0.9)
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO improvement_writebacks (
+            id, project_id, layer_type, layer_key, title, summary, status, requires_approval, created_at
+        )
+        VALUES (
+            'wb-1', 'p1', 'workflow', 'routing', 'Route serious work through AIOS',
+            'Use the control plane packet before implementation work.', 'applied', 0, '2026-04-23T00:25:00Z'
+        )
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO knowledge_topics (
+            id, title, summary, canonical_href, confidence, project_id, updated_at
+        )
+        VALUES (
+            'topic-1', 'Agent routing', 'AIOS should route serious agent work through explicit packets.',
+            '/knowledge/agent-routing', 0.95, 'p1', '2026-04-23T00:26:00Z'
+        )
+        """
+    )
     conn.execute(
         """
         INSERT INTO orchestration_run_events (id, run_id, to_status, summary, reason_json, created_at)
@@ -432,3 +536,67 @@ def test_metadata_and_skills_refresh_flow(tmp_path: Path, capsys) -> None:
     assert status_exit == EXIT_OK
     status_output = json.loads(capsys.readouterr().out)
     assert status_output["data"]["summary"]["in_sync"] == 1
+
+
+def test_start_work_creates_packet_and_links_current_session(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    (logs_dir / "current_session").write_text("s1", encoding="utf-8")
+    _seed_db(db_path)
+    conn = sqlite3.connect(db_path)
+    conn.execute("UPDATE sessions SET status = 'open' WHERE id = 's1'")
+    conn.commit()
+    conn.close()
+
+    start_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "start-work",
+            "Route serious agent work through AIOS",
+            "--project",
+            "p1",
+        ]
+    )
+
+    assert start_exit == EXIT_OK
+    output = json.loads(capsys.readouterr().out)
+    assert output["ok"] is True
+    assert output["command"] == "start-work"
+    data = output["data"]
+    assert data["run"]["status"] == "in_progress"
+    assert data["run"]["session_id"] == "s1"
+    assert data["packet"]["policy_mode"] == "compact-ranked"
+    assert "Route serious agent work through AIOS" in data["packet"]["markdown"]
+    assert "Use explicit handshakes" in data["packet"]["markdown"]
+    assert "Route serious work through AIOS" in data["packet"]["markdown"]
+    assert "Agent routing" in data["packet"]["markdown"]
+    assert data["invocation"]["session_id"] == "s1"
+    assert data["next_agent_context"]["run_id"] == data["run"]["id"]
+    assert data["next_agent_context"]["invocation_id"] == data["invocation"]["id"]
+
+    conn = sqlite3.connect(db_path)
+    linked = conn.execute(
+        "SELECT run_id, invocation_id, objective FROM sessions WHERE id = 's1'"
+    ).fetchone()
+    assert linked == (
+        data["run"]["id"],
+        data["invocation"]["id"],
+        "Route serious agent work through AIOS",
+    )
+    packet_row = conn.execute(
+        "SELECT run_id, packet_markdown FROM briefing_packets WHERE id = ?",
+        (data["packet"]["id"],),
+    ).fetchone()
+    assert packet_row[0] == data["run"]["id"]
+    assert "Applicable Success Criteria" in packet_row[1]
+    event_count = conn.execute(
+        "SELECT COUNT(*) FROM orchestration_run_events WHERE run_id = ?",
+        (data["run"]["id"],),
+    ).fetchone()[0]
+    assert event_count == 3
+    conn.close()

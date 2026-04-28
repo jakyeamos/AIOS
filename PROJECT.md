@@ -39,8 +39,9 @@ Shipped AIOS behavior today is primarily:
 - pattern extraction
 - lightweight startup retrieval
 - dashboard-style visibility into runs, prompts, projects, and costs
+- CLI-started routed work packets for serious agent sessions
 
-It is not yet a real knowledge OS or orchestration control plane.
+AIOS is now partially usable as a preflight and routing layer for selected work, but it is not yet the default launcher for every agent session.
 
 ## Target Architecture Direction
 
@@ -69,6 +70,28 @@ This implementation pass establishes:
 - approval review surfaces for gated writebacks
 - structured evaluator outputs for contradiction, drift, and stale-truth detection
 - a real managed invocation backend path tied to the workflow/agent registry
+
+## Implemented On 2026-04-28
+
+This pass makes milestones 1 and 2 operational for selected work from the local CLI:
+
+- `aios start-work "<objective>"` creates a routed work record before implementation:
+  - `orchestration_runs`
+  - `briefing_packets`
+  - `orchestration_invocations`
+  - `orchestration_run_events`
+- when `logs/current_session` points at a hook-created session, `start-work` links that session through:
+  - `sessions.run_id`
+  - `sessions.invocation_id`
+  - `sessions.runtime_metadata_json`
+- the generated packet now includes:
+  - objective and project context
+  - applicable success criteria preview
+  - active rules
+  - recent improvement writebacks
+  - matching indexed knowledge topics
+  - an explicit routing/closeout contract
+- this makes AIOS useful as a preflight and handshake layer for serious current-session work without pretending the managed runtime is already the full Codex work loop.
 
 ## Implemented On 2026-04-18
 
