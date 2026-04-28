@@ -178,6 +178,9 @@ def test_run_workflow_skill_experiment_records_candidate_improvement(tmp_path: P
         conn.execute("SELECT details_json FROM workflow_skill_experiments WHERE id='experiment-1'").fetchone()[0]
     )
     assert details["baseline_validation_passed"] is True
+    assert details["baseline_kind"] == "loose_workflow"
+    assert details["ablation_validation_passed"] is True
+    assert details["ablation_delta"] > 0
     assert details["candidate_validation_passed"] is True
     assert details["validation_command"][-2:] == ["-m", "pytest"]
     artifact = subprocess.run(
@@ -193,4 +196,6 @@ def test_run_workflow_skill_experiment_records_candidate_improvement(tmp_path: P
         text=True,
     )
     assert '"outcome": "promotion_ready"' in artifact.stdout
+    assert '"baseline_kind": "loose_workflow"' in artifact.stdout
+    assert '"ablation_report"' in artifact.stdout
     assert '"candidate_validation"' in artifact.stdout

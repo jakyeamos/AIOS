@@ -311,6 +311,27 @@ def _without_skill(workflow_spec: dict[str, Any], skill_key: str) -> dict[str, A
     return copied
 
 
+def _loose_workflow_baseline(workflow_key: str) -> dict[str, Any]:
+    return {
+        "key": workflow_key,
+        "name": "Loose Baseline",
+        "purpose": "Loose baseline workflow for measuring structured workflow lift.",
+        "trigger_hints": [],
+        "output_contract": ["scope-bounded response"],
+        "required_validations": ["scope_check"],
+        "stages": [
+            {"key": "parse_request", "kind": "parse_request", "required_skills": []},
+            {
+                "key": "normalize_prompt",
+                "kind": "normalize_prompt",
+                "required_skills": ["prompt_library_normalizer"],
+            },
+            {"key": "validate", "kind": "validate", "required_skills": ["scope_check"]},
+            {"key": "finalize", "kind": "finalize", "required_skills": []},
+        ],
+    }
+
+
 def _score_report(report: dict[str, Any], skill_key: str) -> float:
     score = 0.0
     if report.get("status") == "completed":
@@ -514,14 +535,21 @@ def run_workflow_skill_experiment(
         workflow_key=str(row["workflow_key"]),
         repo_path=str(repo_path),
     )
-    baseline_spec = _without_skill(proposal["workflow_spec"], skill_key)
+    loose_baseline_spec = _loose_workflow_baseline(str(row["workflow_key"]))
+    ablation_spec = _without_skill(proposal["workflow_spec"], skill_key)
     candidate_spec = proposal["workflow_spec"]
     baseline_report = _execute_with_temp_registries(
-        workflow_spec=baseline_spec,
+        workflow_spec=loose_baseline_spec,
         skill_specs=skill_specs,
         context=context,
     )
     baseline_validation = _run_repo_validation(repo_path)
+    ablation_report = _execute_with_temp_registries(
+        workflow_spec=ablation_spec,
+        skill_specs=skill_specs,
+        context=context,
+    )
+    ablation_validation = _run_repo_validation(repo_path)
     candidate_report = _execute_with_temp_registries(
         workflow_spec=candidate_spec,
         skill_specs=skill_specs,
@@ -529,21 +557,28 @@ def run_workflow_skill_experiment(
     )
     candidate_validation = _run_repo_validation(repo_path)
     baseline_score = _score_candidate(baseline_report, skill_key, baseline_validation)
+    ablation_score = _score_candidate(ablation_report, skill_key, ablation_validation)
     candidate_score = _score_candidate(candidate_report, skill_key, candidate_validation)
     delta = round(candidate_score - baseline_score, 4)
+    ablation_delta = round(candidate_score - ablation_score, 4)
     outcome = "promotion_ready" if delta >= 0.05 and candidate_validation.get("passed") else "no_improvement"
     artifact_payload = {
         "experiment_id": experiment_id,
         "workflow_key": row["workflow_key"],
         "skill_key": skill_key,
         "test_repo_id": row["test_repo_id"],
+        "baseline_kind": "loose_workflow",
         "baseline_score": baseline_score,
+        "ablation_score": ablation_score,
         "candidate_score": candidate_score,
         "score_delta": delta,
+        "ablation_delta": ablation_delta,
         "outcome": outcome,
         "baseline_validation": baseline_validation,
+        "ablation_validation": ablation_validation,
         "candidate_validation": candidate_validation,
         "baseline_report": baseline_report,
+        "ablation_report": ablation_report,
         "candidate_report": candidate_report,
     }
     artifact_path: str | None = None
@@ -554,12 +589,17 @@ def run_workflow_skill_experiment(
         _restore_branch(repo_path, original_branch, dry_run)
 
     details = {
+        "baseline_kind": "loose_workflow",
         "score_delta": delta,
+        "ablation_score": ablation_score,
+        "ablation_delta": ablation_delta,
         "branch_name": row["branch_name"],
         "artifact_path": artifact_path,
         "baseline_status": baseline_report.get("status"),
+        "ablation_status": ablation_report.get("status"),
         "candidate_status": candidate_report.get("status"),
         "baseline_validation_passed": baseline_validation.get("passed"),
+        "ablation_validation_passed": ablation_validation.get("passed"),
         "candidate_validation_passed": candidate_validation.get("passed"),
         "validation_command": candidate_validation.get("command"),
         "dry_run": dry_run,
