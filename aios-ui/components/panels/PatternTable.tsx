@@ -70,7 +70,7 @@ export function PatternTable({ patterns }: PatternTableProps): React.JSX.Element
   return (
     <section className="panel-card">
       <div className="table-head table-patterns">
-        <span>ID</span>
+        <span>Pattern</span>
         <span>State</span>
         <span>Sessions</span>
         <span>Last Seen</span>
@@ -78,7 +78,11 @@ export function PatternTable({ patterns }: PatternTableProps): React.JSX.Element
       </div>
       {rows.map((pattern) => (
         <div key={pattern.id} className="table-row table-patterns">
-          <span className="mono">{pattern.id}</span>
+          <span title={pattern.id}>
+            {pattern.label
+              ? pattern.label.slice(0, 80) + (pattern.label.length > 80 ? "…" : "")
+              : <span className="mono">{pattern.id.slice(0, 8)}&hellip;</span>}
+          </span>
           <span>{pattern.state}</span>
           <span>{pattern.sessionCount}</span>
           <span>{new Date(pattern.lastSeen).toLocaleDateString("en-US")}</span>

@@ -8,6 +8,7 @@ import { createTRPCRouter, publicProcedure } from "@/server/trpc";
 
 type PatternRow = {
   id: string;
+  label: string | null;
   sessionCount: number;
   lastSeen: string;
   humanApproved: number;
@@ -44,6 +45,7 @@ const mapPattern = (row: PatternRow): Pattern => {
 
   return {
     id: row.id,
+    label: row.label ?? null,
     state: stateFromCount(row.sessionCount, approved),
     humanApproved: approved,
     sessionCount: row.sessionCount,
@@ -100,6 +102,7 @@ export const patternsRouter = createTRPCRouter({
                   WHEN pu.prompt_hash IS NULL THEN 'id:' || pu.id
                   ELSE pu.prompt_hash
                 END AS id,
+                MIN(pu.prompt_text) AS label,
                 COUNT(*) AS sessionCount,
                 MAX(s.started_at) AS lastSeen,
                 MAX(
@@ -130,6 +133,7 @@ export const patternsRouter = createTRPCRouter({
                   WHEN pu.prompt_hash IS NULL THEN 'id:' || pu.id
                   ELSE pu.prompt_hash
                 END AS id,
+                MIN(pu.prompt_text) AS label,
                 COUNT(*) AS sessionCount,
                 MAX(s.started_at) AS lastSeen,
                 MAX(CASE WHEN pu.reusable_candidate = 1 THEN 1 ELSE 0 END) AS humanApproved

@@ -1,3 +1,4 @@
+import { GroundedQueryStudio } from "@/components/query/GroundedQueryStudio";
 import { PageShell } from "@/components/layout/PageShell";
 import { ProvenanceBadge } from "@/components/primitives/ProvenanceBadge";
 import { StatCard } from "@/components/primitives/StatCard";
@@ -170,6 +171,7 @@ export default async function CommandCenterPage(): Promise<React.JSX.Element> {
 
       <section className="panel-card">
         <h3 className="section-title">Change Timeline</h3>
+        <p className="panel-subtitle">Last 20 events across runs, writebacks, changes, and experiments — newest first.</p>
         <div className="stack">
           {timeline.map((entry) => (
             <article key={entry.id} className="timeline-entry">
@@ -184,6 +186,20 @@ export default async function CommandCenterPage(): Promise<React.JSX.Element> {
             </article>
           ))}
         </div>
+      </section>
+
+      <section className="panel-card">
+        <h3 className="section-title">Ask AIOS</h3>
+        <p className="panel-subtitle">Answers are derived from your AIOS database — facts, inferences, and citations from sessions, changes, and project state.</p>
+        <GroundedQueryStudio
+          projects={Array.from(
+            new Map(
+              overview.runs
+                .filter((run) => run.projectId !== null)
+                .map((run) => [run.projectId, { id: run.projectId as string, name: run.projectName }]),
+            ).values(),
+          )}
+        />
       </section>
     </PageShell>
   );

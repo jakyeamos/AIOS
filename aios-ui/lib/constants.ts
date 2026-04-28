@@ -8,7 +8,7 @@ export const PRIMARY_NAV: NavItem[] = [
   { href: "/knowledge", label: "Knowledge" },
   { href: "/projects", label: "Projects" },
   { href: "/control", label: "Control Plane" },
-  { href: "/query", label: "Grounded Query" },
+
   { href: "/runs", label: "Runs" },
   { href: "/prompts", label: "Prompts & Rules" },
   { href: "/workflows", label: "Workflows" },

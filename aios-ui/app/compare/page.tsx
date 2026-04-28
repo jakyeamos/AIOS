@@ -12,15 +12,19 @@ export default async function ComparePage(): Promise<React.JSX.Element> {
       <section className="panel-card">
         <div className="table-head">
           <span>Experiment</span>
+          <span>Hypothesis</span>
           <span>Surface</span>
           <span>Winner</span>
+          <span>Status</span>
           <span>Open</span>
         </div>
         {experiments.map((experiment) => (
           <div key={experiment.id} className="table-row">
             <span>{experiment.name}</span>
+            <span className="text-muted">{experiment.hypothesis}</span>
             <span>{experiment.surface}</span>
-            <span>{experiment.winner ?? "-"}</span>
+            <span>{experiment.winner ?? "—"}</span>
+            <span>{experiment.endedAt ? "closed" : "running"}</span>
             <span>
               <Link href={`/compare/${experiment.id}/baseline`}>view</Link>
             </span>

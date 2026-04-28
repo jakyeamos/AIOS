@@ -29,10 +29,10 @@ export default async function ProjectsPage(): Promise<React.JSX.Element> {
       <section className="panel-card">
         <div className="table-head">
           <span>Name</span>
-          <span>Health</span>
-          <span>Critical</span>
-          <span>Pipeline</span>
-          <span>Unknown</span>
+          <span title="Composite health score (0–1) with trend delta in parentheses">Health</span>
+          <span title="Number of high-severity changes flagged since last review">Critical Δ</span>
+          <span title="CI/CD pipeline: configured checks / required checks">Pipeline</span>
+          <span title="Fraction of surface area with unknown coverage">Unknown %</span>
           <span>Sessions</span>
           <span>Open Bugs</span>
           <span>Status</span>

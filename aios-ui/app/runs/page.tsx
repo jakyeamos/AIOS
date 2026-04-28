@@ -176,7 +176,7 @@ export default async function RunsPage({
           <span>
             <Link href={buildSortHref("projectName")}>Project</Link>
           </span>
-          <span>Run</span>
+          <span>Objective</span>
           <span>
             <Link href={buildSortHref("status")}>Status</Link>
           </span>
@@ -194,8 +194,10 @@ export default async function RunsPage({
           <div key={session.id} className="table-row table-runs">
             <span>{formatDateTime(session.startedAt)}</span>
             <span>{session.projectName}</span>
-            <span className="mono">
-              <Link href={`/runs/${session.id}`}>{session.id}</Link>
+            <span>
+              <Link href={`/runs/${session.id}`} title={session.id}>
+                {session.objective ?? <span className="text-muted mono">{session.id.slice(0, 8)}&hellip;</span>}
+              </Link>
             </span>
             <span>{session.status}</span>
             <span>{formatDuration(session.durationMs)}</span>

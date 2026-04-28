@@ -442,6 +442,18 @@ def main() -> None:
                 retrieval_source if retrieval_source else None,
             ),
         )
+
+        # Backfill objective from first prompt if session has none
+        obj_row = conn.execute(
+            "SELECT objective FROM sessions WHERE id = ?", (session_id,)
+        ).fetchone()
+        if obj_row and obj_row[0] is None:
+            first_line = prompt.strip().splitlines()[0][:160].strip()
+            if first_line:
+                conn.execute(
+                    "UPDATE sessions SET objective = ? WHERE id = ? AND objective IS NULL",
+                    (first_line, session_id),
+                )
         conn.execute(
             """
             INSERT INTO tool_events (id, session_id, source_tool, event_type, event_time, payload_json)

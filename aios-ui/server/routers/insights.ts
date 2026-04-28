@@ -54,6 +54,7 @@ type SessionValueRow = {
   sessionId: string;
   projectId: string;
   projectName: string;
+  objective: string | null;
   status: "open" | "closed" | "abandoned";
   promptCount: number;
   reusableCount: number;
@@ -455,6 +456,7 @@ const readRunValueScores = (
         s.id AS sessionId,
         s.project_id AS projectId,
         p.name AS projectName,
+        s.objective AS objective,
         s.status,
         COALESCE(prompt.promptCount, 0) AS promptCount,
         COALESCE(prompt.reusableCount, 0) AS reusableCount,
@@ -550,6 +552,7 @@ const readRunValueScores = (
       sessionId: row.sessionId,
       projectId: row.projectId,
       projectName: row.projectName,
+      objective: row.objective,
       status: row.status,
       score: Math.round(score * 10) / 10,
       estimatedTokensSaved,

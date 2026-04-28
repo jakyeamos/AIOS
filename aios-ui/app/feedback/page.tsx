@@ -116,7 +116,7 @@ export default async function FeedbackPage(): Promise<React.JSX.Element> {
         </div>
         {snapshot.topRuns.map((run) => (
           <div key={run.sessionId} className="table-row table-runs-value">
-            <span className="mono">{run.sessionId}</span>
+            <span title={run.sessionId}>{run.objective ?? <span className="mono">{run.sessionId.slice(0, 8)}&hellip;</span>}</span>
             <span>{run.projectName}</span>
             <span>{run.status}</span>
             <span>{run.score.toFixed(1)}</span>

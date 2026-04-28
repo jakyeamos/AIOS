@@ -90,24 +90,24 @@ export function GroundedQueryStudio({ projects }: GroundedQueryStudioProps): Rea
               <article className="entity-card">
                 <p className="panel-title">Facts</p>
                 <ul className="detail-list">
-                  {answer.facts.map((item) => (
-                    <li key={item}>{item}</li>
+                  {answer.facts.map((item, index) => (
+                    <li key={index}>{item}</li>
                   ))}
                 </ul>
               </article>
               <article className="entity-card">
                 <p className="panel-title">Inference</p>
                 <ul className="detail-list">
-                  {answer.inferences.map((item) => (
-                    <li key={item}>{item}</li>
+                  {answer.inferences.map((item, index) => (
+                    <li key={index}>{item}</li>
                   ))}
                 </ul>
               </article>
               <article className="entity-card">
                 <p className="panel-title">Recommendation</p>
                 <ul className="detail-list">
-                  {answer.recommendations.map((item) => (
-                    <li key={item}>{item}</li>
+                  {answer.recommendations.map((item, index) => (
+                    <li key={index}>{item}</li>
                   ))}
                 </ul>
               </article>
@@ -119,8 +119,8 @@ export function GroundedQueryStudio({ projects }: GroundedQueryStudioProps): Rea
             <article className="entity-card">
               <p className="panel-title">Citations</p>
               <ul className="detail-list">
-                {answer.citations.map((citation) => (
-                  <li key={`${citation.label}-${citation.href}`}>
+                {answer.citations.map((citation, index) => (
+                  <li key={index}>
                     <a href={citation.href}>{citation.label}</a>: {citation.excerpt}
                   </li>
                 ))}
@@ -129,8 +129,8 @@ export function GroundedQueryStudio({ projects }: GroundedQueryStudioProps): Rea
             <article className="entity-card">
               <p className="panel-title">Retrieval Trace</p>
               <ul className="detail-list">
-                {answer.retrievalTrace.map((trace) => (
-                  <li key={`${trace.source}-${trace.reason}`}>
+                {answer.retrievalTrace.map((trace, index) => (
+                  <li key={index}>
                     {trace.source}: {trace.reason}
                   </li>
                 ))}
@@ -140,7 +140,7 @@ export function GroundedQueryStudio({ projects }: GroundedQueryStudioProps): Rea
               <p className="panel-title">Assumptions</p>
               <ul className="detail-list">
                 {answer.assumptions.length > 0 ? (
-                  answer.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)
+                  answer.assumptions.map((assumption, index) => <li key={index}>{assumption}</li>)
                 ) : (
                   <li>No additional assumptions were required. Ask a narrower question if you need stricter scoping.</li>
                 )}

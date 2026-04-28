@@ -11,6 +11,108 @@ from typing import Any, TypedDict
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_WORKFLOW_REGISTRY = REPO_ROOT / "config" / "workflows" / "registry.json"
 DEFAULT_SKILL_REGISTRY = REPO_ROOT / "config" / "workflows" / "skills.json"
+# Behavioral archetypes: each entry defines an abstract workflow category with
+# trigger keywords (matched against pattern titles/evidence) and a human name.
+# Patterns are clustered into whichever archetype has the highest keyword overlap.
+WORKFLOW_ARCHETYPES: list[dict] = [
+    {
+        "key": "debug_root_cause",
+        "name": "Debug & Root Cause Investigation",
+        "description": "Systematic investigation of bugs, failures, and unexpected behavior.",
+        "keywords": ["debug", "fix", "error", "bug", "broken", "failing", "crash", "traceback", "root cause", "diagnose"],
+        "best_practices": [
+            "Reproduce the issue in isolation before changing code.",
+            "Form a hypothesis and test it with a minimal reproducer.",
+            "Check logs and stack traces for the first error, not the last.",
+            "Verify the fix didn't introduce regressions.",
+        ],
+    },
+    {
+        "key": "feature_implementation",
+        "name": "Feature Implementation",
+        "description": "End-to-end implementation of a new feature from spec to working code.",
+        "keywords": ["implement", "build", "create", "add", "feature", "write the", "code the", "develop"],
+        "best_practices": [
+            "Clarify acceptance criteria before writing code.",
+            "Write the simplest passing implementation first, then iterate.",
+            "Run type checks and tests after each logical change.",
+            "Commit at atomic boundaries — one concern per commit.",
+        ],
+    },
+    {
+        "key": "code_review_audit",
+        "name": "Code Review & Audit",
+        "description": "Structured review or audit of existing code for quality, correctness, or security.",
+        "keywords": ["review", "audit", "check", "analyze", "evaluate", "assess", "inspect", "security"],
+        "best_practices": [
+            "Read the entire diff before leaving any comments.",
+            "Separate correctness issues from style preferences.",
+            "Verify that tests cover the critical paths being reviewed.",
+            "Note what is done well, not only what needs to change.",
+        ],
+    },
+    {
+        "key": "refactor_cleanup",
+        "name": "Refactoring & Code Cleanup",
+        "description": "Improving structure, clarity, or performance without changing observable behavior.",
+        "keywords": ["refactor", "clean up", "simplify", "improve", "optimize", "extract", "rename", "reorganize"],
+        "best_practices": [
+            "Confirm tests pass before starting — refactors must not change behavior.",
+            "Make one type of change at a time (rename, extract, move).",
+            "Run full lint and typecheck after each refactor step.",
+            "Keep PRs focused; split large refactors across multiple commits.",
+        ],
+    },
+    {
+        "key": "planning_architecture",
+        "name": "Architecture & Planning",
+        "description": "Designing systems, planning implementations, or creating technical roadmaps.",
+        "keywords": ["plan", "design", "architect", "roadmap", "schema", "spec", "proposal", "decision", "tradeoff"],
+        "best_practices": [
+            "Write down constraints before proposing solutions.",
+            "Enumerate at least two alternatives and the key tradeoff for each.",
+            "Separate what must be true now from what can evolve later.",
+            "Record the final decision and why alternatives were rejected.",
+        ],
+    },
+    {
+        "key": "academic_writing",
+        "name": "Academic & Long-form Writing",
+        "description": "Writing, editing, or structuring research papers, reports, or long-form documents.",
+        "keywords": ["paper", "thesis", "essay", "academic", "research", "citation", "bibliography", "abstract", "literature", "journal", "manuscript"],
+        "best_practices": [
+            "Define the argument and audience before drafting.",
+            "Write structure first (outline) before prose.",
+            "Separate writing passes from editing passes — don't edit while drafting.",
+            "Run humanizer pass on AI-assisted sections before submission.",
+        ],
+    },
+    {
+        "key": "data_analysis",
+        "name": "Data Analysis & Reporting",
+        "description": "Querying, transforming, visualizing, or summarizing data for decisions.",
+        "keywords": ["query", "sql", "data", "report", "dashboard", "metric", "analyze", "aggregate", "chart", "visualize", "csv"],
+        "best_practices": [
+            "Validate assumptions about the data before aggregating.",
+            "Check for nulls and outliers that skew summary statistics.",
+            "Document the query and its business interpretation together.",
+            "Version or snapshot the result so it is reproducible.",
+        ],
+    },
+    {
+        "key": "migration_upgrade",
+        "name": "Migration & Upgrade",
+        "description": "Migrating data, upgrading dependencies, or porting code to a new system.",
+        "keywords": ["migrate", "migration", "upgrade", "update", "port", "convert", "move", "replace", "deprecat"],
+        "best_practices": [
+            "Audit the blast radius before starting — list all affected call sites.",
+            "Run the full test suite against both old and new versions before switching.",
+            "Keep a rollback path until the migration is confirmed stable in production.",
+            "Handle data migrations separately from code migrations.",
+        ],
+    },
+]
+
 WORKFLOW_SIGNAL_WEIGHTS = {
     "workflow": 3,
     "playbook": 3,
@@ -260,6 +362,69 @@ def _eligible_patterns(conn: sqlite3.Connection, min_confidence: float, limit: i
     ]
 
 
+def _archetype_score(archetype: dict, text: str) -> int:
+    lower = text.lower()
+    return sum(1 for kw in archetype["keywords"] if kw in lower)
+
+
+def _assign_archetype(pattern: dict[str, Any]) -> str | None:
+    """Return the archetype key with the highest keyword overlap, or None."""
+    haystack = f"{pattern['title']} {' '.join(pattern['evidence'])}"
+    best_key = None
+    best_score = 0
+    for archetype in WORKFLOW_ARCHETYPES:
+        score = _archetype_score(archetype, haystack)
+        if score > best_score:
+            best_score = score
+            best_key = archetype["key"]
+    return best_key if best_score >= 2 else None
+
+
+def _cluster_patterns_by_archetype(
+    patterns: list[dict[str, Any]],
+) -> dict[str, list[dict[str, Any]]]:
+    clusters: dict[str, list[dict[str, Any]]] = {}
+    for pattern in patterns:
+        key = _assign_archetype(pattern)
+        if key is None:
+            continue
+        clusters.setdefault(key, []).append(pattern)
+    return clusters
+
+
+def _workflow_spec_from_archetype(archetype: dict, proposal_key: str, evidence_count: int) -> dict[str, Any]:
+    return {
+        "key": proposal_key,
+        "name": archetype["name"],
+        "purpose": archetype["description"],
+        "trigger_hints": archetype["keywords"][:6],
+        "output_contract": [
+            "normalized objective",
+            "bounded execution plan",
+            "evidence-backed result",
+            "validation summary",
+        ],
+        "required_validations": ["scope_check"],
+        "stages": [
+            {"key": "parse_request", "kind": "parse_request", "required_skills": []},
+            {"key": "normalize_prompt", "kind": "normalize_prompt", "required_skills": ["prompt_library_normalizer"]},
+            {
+                "key": "execute_pattern",
+                "kind": "generate",
+                "required_skills": [_skill_key(proposal_key)],
+                "best_practices": archetype.get("best_practices", []),
+            },
+            {"key": "validate", "kind": "validate", "required_skills": ["scope_check"]},
+            {"key": "finalize", "kind": "finalize", "required_skills": []},
+        ],
+        "synthesis_metadata": {
+            "source": "archetype_clustering",
+            "archetype_key": archetype["key"],
+            "evidence_count": evidence_count,
+        },
+    }
+
+
 def _strip_frontmatter(text: str) -> str:
     if not text.startswith("---"):
         return text
@@ -464,7 +629,97 @@ def synthesize_workflow_proposals(
 ) -> list[WorkflowProposal]:
     ensure_workflow_synthesis_schema(conn)
     proposals: list[WorkflowProposal] = []
-    for pattern in _eligible_patterns(conn, min_confidence, limit):
+
+    # Primary path: cluster patterns into general behavioral archetypes.
+    # This produces one reusable workflow per archetype rather than one per
+    # specific session-level pattern.
+    patterns = _eligible_patterns(conn, min_confidence, limit * 4)
+    clusters = _cluster_patterns_by_archetype(patterns)
+
+    for archetype_key, cluster_patterns in clusters.items():
+        if len(proposals) >= limit:
+            break
+        archetype = next((a for a in WORKFLOW_ARCHETYPES if a["key"] == archetype_key), None)
+        if archetype is None:
+            continue
+        proposal_key = _proposal_key(archetype["name"])
+        all_evidence: list[str] = []
+        source_ids: list[str] = []
+        for p in cluster_patterns:
+            source_ids.append(p["id"])
+            all_evidence.extend(p["evidence"] or [p["title"]])
+        # Deduplicate evidence and cap at 12 items
+        seen: set[str] = set()
+        deduped_evidence: list[str] = []
+        for item in all_evidence:
+            if item not in seen:
+                seen.add(item)
+                deduped_evidence.append(item)
+        evidence = deduped_evidence[:12]
+        avg_confidence = sum(p["confidence"] for p in cluster_patterns) / len(cluster_patterns)
+        summary = (
+            f"{archetype['description']} "
+            f"Synthesized from {len(cluster_patterns)} pattern(s) (avg confidence {avg_confidence:.2f}). "
+            "Review best practices and add project-specific steps before approving."
+        )
+        # Override the workflow spec with the archetype-aware version
+        existing = conn.execute(
+            "SELECT id FROM workflow_synthesis_proposals WHERE proposal_key = ? LIMIT 1",
+            (proposal_key,),
+        ).fetchone()
+        if not existing:
+            workflow_spec = _workflow_spec_from_archetype(archetype, proposal_key, len(evidence))
+            skill_specs = [_skill_spec(proposal_key, archetype["name"])]
+            validation_plan = _validation_plan(proposal_key, evidence)
+            proposal_id = f"workflow-proposal-{uuid.uuid4()}"
+            timestamp = _now_iso()
+            conn.execute(
+                """
+                INSERT INTO workflow_synthesis_proposals (
+                  id, proposal_key, title, summary, source_pattern_ids_json, workflow_spec_json,
+                  skill_specs_json, validation_plan_json, evidence_json, status, created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_approval', ?, ?)
+                """,
+                (
+                    proposal_id,
+                    proposal_key,
+                    f"Workflow: {archetype['name']}",
+                    summary,
+                    _json(source_ids),
+                    _json(workflow_spec),
+                    _json(skill_specs),
+                    _json(validation_plan),
+                    _json(evidence),
+                    timestamp,
+                    timestamp,
+                ),
+            )
+            row = conn.execute(
+                """
+                SELECT id, proposal_key, title, summary, source_pattern_ids_json, workflow_spec_json,
+                       skill_specs_json, validation_plan_json, evidence_json, status
+                FROM workflow_synthesis_proposals WHERE id = ?
+                """,
+                (proposal_id,),
+            ).fetchone()
+            if row:
+                proposal = _proposal_from_row(row)
+                if queue_writebacks:
+                    _insert_writeback(conn, proposal)
+                proposals.append(proposal)
+
+    # Fallback: patterns that didn't cluster into any archetype get individual proposals
+    unclustered_ids = {
+        p["id"]
+        for p in patterns
+        if _assign_archetype(p) is None
+    }
+    for pattern in patterns:
+        if len(proposals) >= limit:
+            break
+        if pattern["id"] not in unclustered_ids:
+            continue
         proposal_key = _proposal_key(pattern["title"])
         evidence = pattern["evidence"] or [pattern["title"]]
         summary = (

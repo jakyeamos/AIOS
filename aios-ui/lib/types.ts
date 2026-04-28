@@ -59,6 +59,7 @@ export type PatternState = "notice" | "observation" | "hypothesis" | "rule";
 
 export type Pattern = {
   id: string;
+  label: string | null;
   state: PatternState;
   humanApproved: boolean;
   sessionCount: number;
@@ -201,6 +202,7 @@ export type RunValueScore = {
   sessionId: string;
   projectId: string;
   projectName: string;
+  objective: string | null;
   status: SessionStatus;
   score: number;
   estimatedTokensSaved: number;
