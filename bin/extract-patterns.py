@@ -6,7 +6,7 @@ Deterministic pattern extraction from ops data → patterns table.
 Sources:
   - prompts_used (classification) → class: prompt
   - bug_log (symptom stems)       → class: bug_fix
-  - session handoffs (Next Actions verbs) → class: workflow
+  - session traces                → class: workflow
 
 Run weekly (or manually). Idempotent — skips titles already in DB.
 Output: JSON summary of what was inserted.
@@ -19,12 +19,8 @@ import sqlite3
 import uuid
 from collections import Counter
 from datetime import UTC, datetime
-from pathlib import Path
-
-from aios_paths import get_vault_subpath
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
-HANDOFFS_DIR = str(get_vault_subpath("02 AI OS", "02 Session Handoffs"))
 MIN_FREQUENCY = 2          # min occurrences before a pattern is worth recording
 MIN_PROMPT_LENGTH = 20     # ignore very short prompts as noise
 TOP_N = 10                 # max patterns extracted per class per run
@@ -37,6 +33,11 @@ TOP_N = 10                 # max patterns extracted per class per run
 def load_existing_titles(conn: sqlite3.Connection) -> set[str]:
     cur = conn.execute("SELECT title FROM patterns")
     return {row[0] for row in cur.fetchall()}
+
+
+def _table_names(conn: sqlite3.Connection) -> set[str]:
+    rows = conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+    return {str(row[0]) for row in rows}
 
 
 CLASS_TO_DOMAIN = {
@@ -197,58 +198,205 @@ def extract_bug_patterns(conn: sqlite3.Connection, existing: set[str]) -> list[d
 
 
 # ---------------------------------------------------------------------------
-# Source 3: handoff Next Actions — class: workflow
+# Source 3: session traces — class: workflow
 # ---------------------------------------------------------------------------
 
-ACTION_VERBS = re.compile(
-    r"^[-*]\s+(?:\[[ x]\]\s+)?([A-Z][a-z]+|[a-z]+)\b",
-    re.MULTILINE,
-)
-NEXT_ACTIONS_SECTION = re.compile(
-    r"## Next Actions\n(.*?)(?=\n## |\Z)",
-    re.DOTALL,
-)
+WORKFLOW_CLASSIFICATION_TITLES = {
+    "debug": "Captured workflow: debug fix failing behavior",
+    "implement": "Captured workflow: implement build feature",
+    "plan": "Captured workflow: plan design architecture decision",
+    "review": "Captured workflow: review pull request audit",
+    "refactor": "Captured workflow: refactor cleanup improve code",
+}
+
+WORKFLOW_CLASSIFICATION_PURPOSES = {
+    "debug": "Use when repeated sessions start from a failure, inspect evidence, change code, and verify the fix.",
+    "implement": "Use when repeated sessions add or change product behavior from an implementation request.",
+    "plan": "Use when repeated sessions turn ambiguous work into a technical plan, decision, or architecture direction.",
+    "review": "Use when repeated sessions inspect existing work, identify risks, and produce review findings or follow-up fixes.",
+    "refactor": "Use when repeated sessions improve structure or clarity while preserving behavior.",
+}
+
+WORKFLOW_MIN_SESSIONS = 3
+WORKFLOW_MIN_TOOL_EVENTS = 3
+
+
+def _prompt_classification_counts(conn: sqlite3.Connection) -> dict[str, Counter]:
+    rows = conn.execute(
+        """
+        SELECT session_id, classification
+        FROM prompts_used
+        WHERE classification IS NOT NULL
+        """
+    ).fetchall()
+    counts: dict[str, Counter] = {}
+    for session_id, classification in rows:
+        normalized = str(classification or "other").strip().lower()
+        counts.setdefault(str(session_id), Counter())[normalized] += 1
+    return counts
+
+
+def _tool_event_counts(conn: sqlite3.Connection) -> dict[str, int]:
+    rows = conn.execute(
+        """
+        SELECT session_id, COUNT(*)
+        FROM tool_events
+        WHERE event_type = 'PostToolUse'
+        GROUP BY session_id
+        """
+    ).fetchall()
+    return {str(session_id): int(count) for session_id, count in rows}
+
+
+def _primary_workflow_classification(counts: Counter) -> str | None:
+    ranked = [
+        (classification, count)
+        for classification, count in counts.items()
+        if classification in WORKFLOW_CLASSIFICATION_TITLES
+    ]
+    if not ranked:
+        return None
+    ranked.sort(key=lambda item: (-item[1], item[0]))
+    return ranked[0][0]
+
+
+def _workflow_body(classification: str, session_count: int, tool_event_count: int) -> str:
+    purpose = WORKFLOW_CLASSIFICATION_PURPOSES[classification]
+    return (
+        f"{purpose}\n\n"
+        f"Evidence: observed across {session_count} sessions with "
+        f"{tool_event_count} post-tool events."
+    )
+
+
+def _insert_workflow_pattern(
+    conn: sqlite3.Connection,
+    title: str,
+    evidence: list[str],
+    confidence: float,
+    body: str,
+    source_sessions: int,
+    frequency_count: int,
+    first_seen: str | None,
+    last_seen: str | None,
+) -> None:
+    now = datetime.now(UTC).isoformat()
+    conn.execute(
+        """
+        INSERT INTO patterns
+            (id, class, title, evidence, confidence, status, domain, state,
+             body, source_type, human_approved, first_observed_at, created_at,
+             frequency_count, source_sessions, last_seen_at)
+        VALUES (?, 'workflow', ?, ?, ?, 'candidate', 'workflow', 'observation',
+                ?, 'session-workflow', 0, ?, ?, ?, ?, ?)
+        """,
+        (
+            str(uuid.uuid4()),
+            title,
+            json.dumps(evidence),
+            confidence,
+            body,
+            first_seen or now,
+            now,
+            frequency_count,
+            source_sessions,
+            last_seen,
+        ),
+    )
 
 
 def extract_workflow_patterns(conn: sqlite3.Connection, existing: set[str]) -> list[dict]:
-    if not os.path.exists(HANDOFFS_DIR):
+    if "sessions" not in _table_names(conn):
         return []
 
-    verb_counter: Counter = Counter()
-    verb_to_files: dict[str, list[str]] = {}
+    classification_counts = _prompt_classification_counts(conn)
+    tool_counts = _tool_event_counts(conn) if "tool_events" in _table_names(conn) else {}
 
-    for fname in os.listdir(HANDOFFS_DIR):
-        if not fname.endswith(".md"):
-            continue
-        path = os.path.join(HANDOFFS_DIR, fname)
-        try:
-            text = Path(path).read_text(encoding="utf-8", errors="ignore")
-        except Exception:
+    rows = conn.execute(
+        """
+        SELECT id, started_at, ended_at, status, objective
+        FROM sessions
+        ORDER BY started_at
+        """
+    ).fetchall()
+
+    grouped: dict[str, dict] = {}
+    for session_id, started_at, ended_at, status, objective in rows:
+        session_key = str(session_id)
+        counts = classification_counts.get(session_key, Counter())
+        primary = _primary_workflow_classification(counts)
+        if primary is None:
             continue
 
-        sec_match = NEXT_ACTIONS_SECTION.search(text)
-        if not sec_match:
+        post_tool_events = tool_counts.get(session_key, 0)
+        if post_tool_events < WORKFLOW_MIN_TOOL_EVENTS and sum(counts.values()) < 2:
             continue
-        section_text = sec_match.group(1)
 
-        verbs = ACTION_VERBS.findall(section_text)
-        unique_verbs = set(v.lower() for v in verbs if len(v) >= 3)
-        verb_counter.update(unique_verbs)
-        for v in unique_verbs:
-            verb_to_files.setdefault(v, []).append(fname)
+        title = WORKFLOW_CLASSIFICATION_TITLES[primary]
+        group = grouped.setdefault(
+            title,
+            {
+                "classification": primary,
+                "sessions": [],
+                "tool_events": 0,
+                "first_seen": started_at,
+                "last_seen": ended_at or started_at,
+            },
+        )
+        group["sessions"].append(
+            {
+                "id": session_key,
+                "started_at": started_at,
+                "status": status,
+                "objective": objective,
+                "classifications": dict(counts),
+                "post_tool_events": post_tool_events,
+            }
+        )
+        group["tool_events"] += post_tool_events
+        if started_at and (group["first_seen"] is None or started_at < group["first_seen"]):
+            group["first_seen"] = started_at
+        seen_at = ended_at or started_at
+        if seen_at and (group["last_seen"] is None or seen_at > group["last_seen"]):
+            group["last_seen"] = seen_at
 
     inserted = []
-    for verb, count in verb_counter.most_common(TOP_N):
-        if count < MIN_FREQUENCY:
+    for title, group in sorted(grouped.items(), key=lambda item: len(item[1]["sessions"]), reverse=True)[:TOP_N]:
+        session_count = len(group["sessions"])
+        if session_count < WORKFLOW_MIN_SESSIONS:
             continue
-        title = f"Recurring next-action verb: '{verb}'"
         if title in existing:
             continue
-        confidence = min(0.25 + (count / 15) * 0.5, 0.75)
-        evidence = verb_to_files.get(verb, [])[:10]
-        inserted.append({"class": "workflow", "title": title, "count": count})
+        tool_event_count = int(group["tool_events"])
+        confidence = min(0.75 + (session_count / 20) * 0.12 + (tool_event_count / 500) * 0.05, 0.92)
+        evidence = [
+            (
+                f"session:{session['id']} classifications:{json.dumps(session['classifications'], sort_keys=True)} "
+                f"post_tool_events:{session['post_tool_events']} status:{session['status'] or 'unknown'}"
+            )
+            for session in group["sessions"][:12]
+        ]
+        body = _workflow_body(group["classification"], session_count, tool_event_count)
+        inserted.append(
+            {
+                "class": "workflow",
+                "title": title,
+                "count": session_count,
+                "tool_events": tool_event_count,
+            }
+        )
         existing.add(title)
-        insert_pattern(conn, "workflow", title, evidence, confidence)
+        _insert_workflow_pattern(
+            conn,
+            title,
+            evidence,
+            confidence,
+            body,
+            session_count,
+            session_count,
+            group["first_seen"],
+            group["last_seen"],
+        )
 
     return inserted
 
@@ -258,6 +406,12 @@ def extract_workflow_patterns(conn: sqlite3.Connection, existing: set[str]) -> l
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--dry-run", action="store_true")
+    args = parser.parse_args()
+
     # Bigram extraction disabled — produces frequency noise, not actionable rules.
     # Errors are now captured directly by hook-post-tool-use.py with full symptom text.
     prompt_inserted: list = []
@@ -265,7 +419,12 @@ def main() -> None:
     workflow_inserted: list = []
 
     conn = sqlite3.connect(DB)
-    existing = load_existing_titles(conn)  # noqa: F841 (kept for future use)
+    existing = load_existing_titles(conn)
+    workflow_inserted = extract_workflow_patterns(conn, existing)
+    if args.dry_run:
+        conn.rollback()
+    else:
+        conn.commit()
 
     conn.close()
 

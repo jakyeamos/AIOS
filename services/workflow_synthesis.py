@@ -636,6 +636,95 @@ def _insert_writeback(conn: sqlite3.Connection, proposal: WorkflowProposal) -> N
     )
 
 
+def _store_archetype_proposal(
+    conn: sqlite3.Connection,
+    *,
+    proposal_key: str,
+    title: str,
+    summary: str,
+    source_ids: list[str],
+    workflow_spec: dict[str, Any],
+    skill_specs: list[dict[str, Any]],
+    validation_plan: dict[str, Any],
+    evidence: list[str],
+) -> WorkflowProposal | None:
+    existing = conn.execute(
+        "SELECT id, status FROM workflow_synthesis_proposals WHERE proposal_key = ? LIMIT 1",
+        (proposal_key,),
+    ).fetchone()
+    if existing and str(existing[1]) != "discarded":
+        return None
+
+    timestamp = _now_iso()
+    if existing:
+        proposal_id = str(existing[0])
+        conn.execute(
+            """
+            UPDATE workflow_synthesis_proposals
+            SET title = ?,
+                summary = ?,
+                source_pattern_ids_json = ?,
+                workflow_spec_json = ?,
+                skill_specs_json = ?,
+                validation_plan_json = ?,
+                evidence_json = ?,
+                status = 'pending_approval',
+                reviewer = NULL,
+                review_note = NULL,
+                reviewed_at = NULL,
+                updated_at = ?
+            WHERE id = ?
+            """,
+            (
+                title,
+                summary,
+                _json(source_ids),
+                _json(workflow_spec),
+                _json(skill_specs),
+                _json(validation_plan),
+                _json(evidence),
+                timestamp,
+                proposal_id,
+            ),
+        )
+    else:
+        proposal_id = f"workflow-proposal-{uuid.uuid4()}"
+        conn.execute(
+            """
+            INSERT INTO workflow_synthesis_proposals (
+              id, proposal_key, title, summary, source_pattern_ids_json, workflow_spec_json,
+              skill_specs_json, validation_plan_json, evidence_json, status, created_at, updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_approval', ?, ?)
+            """,
+            (
+                proposal_id,
+                proposal_key,
+                title,
+                summary,
+                _json(source_ids),
+                _json(workflow_spec),
+                _json(skill_specs),
+                _json(validation_plan),
+                _json(evidence),
+                timestamp,
+                timestamp,
+            ),
+        )
+
+    row = conn.execute(
+        """
+        SELECT id, proposal_key, title, summary, source_pattern_ids_json, workflow_spec_json,
+               skill_specs_json, validation_plan_json, evidence_json, status
+        FROM workflow_synthesis_proposals WHERE id = ?
+        """,
+        (proposal_id,),
+    ).fetchone()
+    if row is None:
+        return None
+    return _proposal_from_row(row)
+
+
 def synthesize_workflow_proposals(
     conn: sqlite3.Connection,
     *,
@@ -679,52 +768,24 @@ def synthesize_workflow_proposals(
             f"Synthesized from {len(cluster_patterns)} pattern(s) (avg confidence {avg_confidence:.2f}). "
             "Review best practices and add project-specific steps before approving."
         )
-        # Override the workflow spec with the archetype-aware version
-        existing = conn.execute(
-            "SELECT id FROM workflow_synthesis_proposals WHERE proposal_key = ? LIMIT 1",
-            (proposal_key,),
-        ).fetchone()
-        if not existing:
-            workflow_spec = _workflow_spec_from_archetype(archetype, proposal_key, len(evidence))
-            skill_specs = [_skill_spec(proposal_key, archetype["name"])]
-            validation_plan = _validation_plan(proposal_key, evidence)
-            proposal_id = f"workflow-proposal-{uuid.uuid4()}"
-            timestamp = _now_iso()
-            conn.execute(
-                """
-                INSERT INTO workflow_synthesis_proposals (
-                  id, proposal_key, title, summary, source_pattern_ids_json, workflow_spec_json,
-                  skill_specs_json, validation_plan_json, evidence_json, status, created_at, updated_at
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_approval', ?, ?)
-                """,
-                (
-                    proposal_id,
-                    proposal_key,
-                    f"Workflow: {archetype['name']}",
-                    summary,
-                    _json(source_ids),
-                    _json(workflow_spec),
-                    _json(skill_specs),
-                    _json(validation_plan),
-                    _json(evidence),
-                    timestamp,
-                    timestamp,
-                ),
-            )
-            row = conn.execute(
-                """
-                SELECT id, proposal_key, title, summary, source_pattern_ids_json, workflow_spec_json,
-                       skill_specs_json, validation_plan_json, evidence_json, status
-                FROM workflow_synthesis_proposals WHERE id = ?
-                """,
-                (proposal_id,),
-            ).fetchone()
-            if row:
-                proposal = _proposal_from_row(row)
-                if queue_writebacks:
-                    _insert_writeback(conn, proposal)
-                proposals.append(proposal)
+        workflow_spec = _workflow_spec_from_archetype(archetype, proposal_key, len(evidence))
+        skill_specs = [_skill_spec(proposal_key, archetype["name"])]
+        validation_plan = _validation_plan(proposal_key, evidence)
+        proposal = _store_archetype_proposal(
+            conn,
+            proposal_key=proposal_key,
+            title=f"Workflow: {archetype['name']}",
+            summary=summary,
+            source_ids=source_ids,
+            workflow_spec=workflow_spec,
+            skill_specs=skill_specs,
+            validation_plan=validation_plan,
+            evidence=evidence,
+        )
+        if proposal is not None:
+            if queue_writebacks:
+                _insert_writeback(conn, proposal)
+            proposals.append(proposal)
 
     remaining = max(0, limit - len(proposals))
     if vault_root is not None and remaining:
@@ -737,12 +798,6 @@ def synthesize_workflow_proposals(
             if archetype is None:
                 continue
             proposal_key = _proposal_key(archetype["name"])
-            existing = conn.execute(
-                "SELECT id FROM workflow_synthesis_proposals WHERE proposal_key = ? LIMIT 1",
-                (proposal_key,),
-            ).fetchone()
-            if existing:
-                continue
             source_ids = [str(candidate["id"]) for candidate in candidates]
             evidence: list[str] = []
             for candidate in candidates:
@@ -757,41 +812,19 @@ def synthesize_workflow_proposals(
             workflow_spec = _workflow_spec_from_archetype(archetype, proposal_key, len(deduped_evidence))
             skill_specs = [_skill_spec(proposal_key, archetype["name"])]
             validation_plan = _validation_plan(proposal_key, deduped_evidence)
-            proposal_id = f"workflow-proposal-{uuid.uuid4()}"
-            timestamp = _now_iso()
-            conn.execute(
-                """
-                INSERT INTO workflow_synthesis_proposals (
-                  id, proposal_key, title, summary, source_pattern_ids_json, workflow_spec_json,
-                  skill_specs_json, validation_plan_json, evidence_json, status, created_at, updated_at
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_approval', ?, ?)
-                """,
-                (
-                    proposal_id,
-                    proposal_key,
-                    f"Workflow: {archetype['name']}",
-                    summary,
-                    _json(source_ids),
-                    _json(workflow_spec),
-                    _json(skill_specs),
-                    _json(validation_plan),
-                    _json(deduped_evidence),
-                    timestamp,
-                    timestamp,
-                ),
+            proposal = _store_archetype_proposal(
+                conn,
+                proposal_key=proposal_key,
+                title=f"Workflow: {archetype['name']}",
+                summary=summary,
+                source_ids=source_ids,
+                workflow_spec=workflow_spec,
+                skill_specs=skill_specs,
+                validation_plan=validation_plan,
+                evidence=deduped_evidence,
             )
-            row = conn.execute(
-                """
-                SELECT id, proposal_key, title, summary, source_pattern_ids_json, workflow_spec_json,
-                       skill_specs_json, validation_plan_json, evidence_json, status
-                FROM workflow_synthesis_proposals WHERE id = ?
-                """,
-                (proposal_id,),
-            ).fetchone()
-            if row is None:
+            if proposal is None:
                 continue
-            proposal = _proposal_from_row(row)
             if queue_writebacks:
                 _insert_writeback(conn, proposal)
             proposals.append(proposal)

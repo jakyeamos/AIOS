@@ -475,6 +475,8 @@ Phase 3b Standards Delta / Project Health is now implemented:
   - `soundscape-app` is the gold-profile implementation with core, production, public-web, telemetry, database, and mobile gates; other projects inherit only applicable gates instead of Soundscape-specific requirements
   - the Projects index now shows per-project pipeline coverage/status, and Taski project detail now includes a first-class Quality Pipeline panel with tier coverage
 - workflow synthesis loop:
+  - `bin/extract-patterns.py` now mines workflow candidates from repeated session traces (prompt classifications + post-tool event counts) instead of low-value handoff verbs
+  - `bin/aios-pipeline.py` runs general pattern extraction before scoring and workflow synthesis so captured sessions can become proposal evidence
   - `services/workflow_synthesis.py` turns high-confidence prompt/workflow patterns into reviewable workflow proposals with generated workflow specs, skill specs, and validation plans
   - synthesis now also backfills reviewable proposals from the resolved Obsidian vault by clustering markdown workflow signals into archetype-level proposals; one-note vault backfill proposals are treated as too granular and are no longer generated
   - `workflow_synthesis_proposals` stores pending/approved workflow candidates with source pattern evidence

@@ -133,6 +133,57 @@ def test_synthesis_skips_unclustered_workflow_patterns() -> None:
     assert proposals == []
 
 
+def test_synthesis_revives_discarded_archetype_proposal() -> None:
+    conn = _conn()
+    conn.execute(
+        """
+        INSERT INTO workflow_synthesis_proposals (
+          id, proposal_key, title, summary, source_pattern_ids_json, workflow_spec_json,
+          skill_specs_json, validation_plan_json, evidence_json, status, review_note
+        )
+        VALUES (
+          'proposal-1',
+          'debug_root_cause_investigation_v1',
+          'Old proposal',
+          'Old summary',
+          '[]',
+          '{}',
+          '[]',
+          '{}',
+          '[]',
+          'discarded',
+          'old evidence was not useful'
+        )
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO patterns (id, class, title, evidence, confidence, status, domain, state, human_approved)
+        VALUES (
+          'pattern-1',
+          'workflow',
+          'Captured workflow: debug fix failing behavior',
+          '["session-a", "session-b", "session-c"]',
+          0.9,
+          'candidate',
+          'workflow',
+          'observation',
+          0
+        )
+        """
+    )
+
+    proposals = synthesize_workflow_proposals(conn, min_confidence=0.75)
+
+    assert len(proposals) == 1
+    assert proposals[0]["id"] == "proposal-1"
+    assert proposals[0]["status"] == "pending_approval"
+    row = conn.execute(
+        "SELECT status, review_note, source_pattern_ids_json FROM workflow_synthesis_proposals WHERE id = 'proposal-1'"
+    ).fetchone()
+    assert row == ("pending_approval", None, '["pattern-1"]')
+
+
 def test_approval_appends_workflow_and_skills_to_registries(tmp_path: Path) -> None:
     conn = _conn()
     conn.execute(
