@@ -64,4 +64,7 @@ PYEOF
 # Tune RTK compression thresholds from accumulated event data
 python3 "$HOME/AIOS/bin/rtk-tune-thresholds.py" >> "$LOG" 2>&1
 
+# Sync installed superpowers skills into workflow skills.json
+python3 "$HOME/AIOS/bin/sync-installed-skills.py" >> "$LOG" 2>&1
+
 echo "done" >> "$LOG"

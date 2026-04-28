@@ -185,6 +185,71 @@
       ],
       "side_effects": [],
       "execution_mode": "deterministic"
+    },
+    {
+      "key": "find_skills",
+      "purpose": "Helps users discover and install agent skills when they ask questions like \"how do I do X\", \"find a skill for X\", \"is there a skill that can...\", or express interest in extending capabilities. This skill should be used when the user is looking for functionality that might exist as an installable ski",
+      "allowed_stages": [
+        "generate"
+      ],
+      "input_schema": {},
+      "output_schema": {},
+      "invariants": [],
+      "failure_conditions": [],
+      "side_effects": [],
+      "execution_mode": "heuristic"
+    },
+    {
+      "key": "humanizer",
+      "purpose": "|",
+      "allowed_stages": [
+        "transform"
+      ],
+      "input_schema": {},
+      "output_schema": {},
+      "invariants": [],
+      "failure_conditions": [],
+      "side_effects": [],
+      "execution_mode": "heuristic"
+    },
+    {
+      "key": "react_components",
+      "purpose": "Converts Stitch designs into modular Vite and React components using system-level networking and AST-based validation.",
+      "allowed_stages": [
+        "validate"
+      ],
+      "input_schema": {},
+      "output_schema": {},
+      "invariants": [],
+      "failure_conditions": [],
+      "side_effects": [],
+      "execution_mode": "heuristic"
+    },
+    {
+      "key": "remotion_best_practices",
+      "purpose": "Best practices for Remotion - Video creation in React",
+      "allowed_stages": [
+        "generate"
+      ],
+      "input_schema": {},
+      "output_schema": {},
+      "invariants": [],
+      "failure_conditions": [],
+      "side_effects": [],
+      "execution_mode": "heuristic"
+    },
+    {
+      "key": "smart_search",
+      "purpose": "基于 opencli 命令的智能搜索路由器。当用户想要搜索、查询、查找或研究信息时，尤其是涉及指定网站、社交媒体、技术资料、新闻、购物、旅游、求职、金融或中文内容时，务必使用此 skill",
+      "allowed_stages": [
+        "enrich_context"
+      ],
+      "input_schema": {},
+      "output_schema": {},
+      "invariants": [],
+      "failure_conditions": [],
+      "side_effects": [],
+      "execution_mode": "heuristic"
     }
   ]
 }
