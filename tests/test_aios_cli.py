@@ -337,6 +337,73 @@ def test_invocation_audit_and_backend_label_contract(tmp_path: Path, capsys) -> 
     assert label == "Claude Managed Runtime"
 
 
+def test_lifecycle_audit_reports_attention_and_unsupported_states(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    conn = sqlite3.connect(db_path)
+    conn.executemany(
+        "INSERT INTO orchestration_runs (id, status) VALUES (?, ?)",
+        [
+            ("run-blocked", "blocked"),
+            ("run-user", "waiting_for_user"),
+            ("run-tool", "waiting_for_tool"),
+            ("run-validation", "failed_validation"),
+            ("run-superseded", "superseded"),
+            ("run-unknown", "mystery_state"),
+        ],
+    )
+    conn.executemany(
+        "INSERT INTO orchestration_run_events (id, run_id, to_status, summary, reason_json, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+        [
+            ("e-blocked", "run-blocked", "blocked", "Waiting on dependency", "{}", "2026-04-23T00:31:00Z"),
+            ("e-user", "run-user", "waiting_for_user", "Needs approval", "{}", "2026-04-23T00:32:00Z"),
+            ("e-tool", "run-tool", "waiting_for_tool", "Tool pending", "{}", "2026-04-23T00:33:00Z"),
+            (
+                "e-validation",
+                "run-validation",
+                "failed_validation",
+                "Criteria failed",
+                "{}",
+                "2026-04-23T00:34:00Z",
+            ),
+            (
+                "e-unknown",
+                "run-unknown",
+                "mystery_state",
+                "Unexpected state",
+                "{}",
+                "2026-04-23T00:35:00Z",
+            ),
+        ],
+    )
+    conn.commit()
+    conn.close()
+
+    lifecycle_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "lifecycle-audit",
+        ]
+    )
+
+    assert lifecycle_exit == EXIT_OK
+    lifecycle_output = json.loads(capsys.readouterr().out)
+    data = lifecycle_output["data"]
+    assert data["summary"]["attention_count"] == 4
+    assert data["summary"]["unsupported_state_count"] == 1
+    assert "waiting_for_user" in data["contract"]["attention_states"]
+    assert data["observed_run_status_counts"]["mystery_state"] == 1
+    assert data["unsupported_states"] == ["mystery_state"]
+    assert data["recent_attention_events"][0]["to_status"] == "failed_validation"
+
+
 def test_metadata_and_skills_refresh_flow(tmp_path: Path, capsys) -> None:
     db_path = tmp_path / "aios.db"
     logs_dir = tmp_path / "logs"

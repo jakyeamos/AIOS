@@ -43,6 +43,21 @@ EXIT_RUNTIME = 5
 DEFAULT_START_WORKFLOW_KEY = "implementation-delivery"
 DEFAULT_START_AGENT_KEY = "implementation-lead"
 DEFAULT_START_BACKEND_KEY = "codex-managed-runtime"
+CANONICAL_RUN_STATUSES = [
+    "planned",
+    "ready",
+    "in_progress",
+    "blocked",
+    "waiting_for_user",
+    "waiting_for_tool",
+    "failed_validation",
+    "completed",
+    "failed",
+    "canceled",
+    "superseded",
+]
+ATTENTION_RUN_STATUSES = ["blocked", "waiting_for_user", "waiting_for_tool", "failed_validation"]
+TERMINAL_RUN_STATUSES = ["completed", "failed", "canceled", "superseded"]
 
 
 class CLIError(Exception):
@@ -1200,6 +1215,64 @@ def _invocation_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     }
 
 
+def _lifecycle_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
+    observed_counts = _run_status_counts(conn)
+    canonical_statuses = set(CANONICAL_RUN_STATUSES)
+    unsupported_states = {status for status in observed_counts if status not in canonical_statuses}
+    attention_count = sum(observed_counts.get(status, 0) for status in ATTENTION_RUN_STATUSES)
+    recent_attention_events: list[dict[str, Any]] = []
+
+    if _table_exists(conn, "orchestration_run_events"):
+        rows = conn.execute(
+            """
+            SELECT run_id, to_status, summary, reason_json, created_at
+            FROM orchestration_run_events
+            WHERE to_status IN ('blocked', 'waiting_for_user', 'waiting_for_tool', 'failed_validation')
+            ORDER BY created_at DESC
+            LIMIT 20
+            """
+        ).fetchall()
+        recent_attention_events = [
+            {
+                "run_id": row["run_id"],
+                "to_status": row["to_status"],
+                "summary": row["summary"],
+                "reason_json": row["reason_json"],
+                "created_at": row["created_at"],
+            }
+            for row in rows
+        ]
+
+        event_rows = conn.execute(
+            """
+            SELECT DISTINCT to_status
+            FROM orchestration_run_events
+            WHERE to_status IS NOT NULL
+            """
+        ).fetchall()
+        event_states = {str(row["to_status"]) for row in event_rows}
+        unsupported_states.update(status for status in event_states if status not in canonical_statuses)
+
+    return {
+        "summary": {
+            "canonical_state_count": len(CANONICAL_RUN_STATUSES),
+            "observed_run_count": sum(observed_counts.values()),
+            "attention_count": attention_count,
+            "unsupported_state_count": len(unsupported_states),
+        },
+        "contract": {
+            "canonical_states": CANONICAL_RUN_STATUSES,
+            "attention_states": ATTENTION_RUN_STATUSES,
+            "terminal_states": TERMINAL_RUN_STATUSES,
+            "authoritative_current_state": "orchestration_runs.status",
+            "authoritative_history": "orchestration_run_events.to_status",
+        },
+        "observed_run_status_counts": observed_counts,
+        "unsupported_states": sorted(unsupported_states),
+        "recent_attention_events": recent_attention_events,
+    }
+
+
 def _status_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     return {
         "projects_active": _count(conn, "projects", "status='active'"),
@@ -1400,6 +1473,7 @@ def _metadata_payload(
             "aios metadata --json",
             "aios capability-audit --json",
             "aios invocation-audit --json",
+            "aios lifecycle-audit --json",
             "aios logs --json --last 50",
             "aios recent-failures --json --last 20",
             "aios rtk --json",
@@ -1489,6 +1563,10 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
         summary = data["summary"]
         print(f"backends={summary['backend_count']} invocations={summary['invocation_count']}")
         return
+    if command == "lifecycle-audit":
+        summary = data["summary"]
+        print(f"attention={summary['attention_count']} unsupported={summary['unsupported_state_count']}")
+        return
     if command == "start-work":
         print(
             f"run={data['run']['id']} status={data['run']['status']} "
@@ -1538,6 +1616,7 @@ def create_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("rtk", help="RTK compression rules and metrics")
     subparsers.add_parser("capability-audit", help="Trusted-signal audit for core AIOS capability surfaces")
     subparsers.add_parser("invocation-audit", help="Invocation backend and strict-handshake audit")
+    subparsers.add_parser("lifecycle-audit", help="Run lifecycle state contract and attention-state audit")
 
     start_work = subparsers.add_parser("start-work", help="Create a routed AIOS run packet and session handshake")
     start_work.add_argument("objective", help="Work objective to route through AIOS")
@@ -1571,7 +1650,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
     command = _command_name(args)
 
     try:
-        if args.command in {"status", "health", "metadata", "recent-failures", "rtk", "capability-audit", "invocation-audit", "start-work"}:
+        if args.command in {"status", "health", "metadata", "recent-failures", "rtk", "capability-audit", "invocation-audit", "lifecycle-audit", "start-work"}:
             conn = _connect_db(db_path)
         else:
             conn = None
@@ -1607,6 +1686,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "invocation-audit":
             assert conn is not None
             data = _invocation_audit_payload(conn)
+        elif args.command == "lifecycle-audit":
+            assert conn is not None
+            data = _lifecycle_audit_payload(conn)
         elif args.command == "start-work":
             assert conn is not None
             data = _start_work_payload(
