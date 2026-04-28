@@ -91,10 +91,10 @@ def test_synthesizes_workflow_proposal_from_vault_note(tmp_path: Path) -> None:
     assert len(proposals) == 1
     proposal = proposals[0]
     assert proposal["status"] == "pending_approval"
-    assert proposal["proposal_key"].startswith("vault_workflow_candidate_academic_writing_workflow")
+    assert proposal["proposal_key"] == "academic_long_form_writing_v1"
     assert proposal["source_pattern_ids"] == ["vault:02 AI OS/Academic Writing Workflow.md"]
     assert proposal["evidence"][0] == "vault:02 AI OS/Academic Writing Workflow.md"
-    assert "Academic Writing Workflow" in proposal["title"]
+    assert proposal["title"] == "Workflow: Academic & Long-form Writing"
 
 
 def test_vault_synthesis_skips_low_signal_notes(tmp_path: Path) -> None:
@@ -105,6 +105,30 @@ def test_vault_synthesis_skips_low_signal_notes(tmp_path: Path) -> None:
     note.write_text("# Loose Thought\n\nThis is a plain note without repeatable operating structure.\n", encoding="utf-8")
 
     proposals = synthesize_workflow_proposals(conn, min_confidence=0.75, vault_root=vault)
+
+    assert proposals == []
+
+
+def test_synthesis_skips_unclustered_workflow_patterns() -> None:
+    conn = _conn()
+    conn.execute(
+        """
+        INSERT INTO patterns (id, class, title, evidence, confidence, status, domain, state, human_approved)
+        VALUES (
+          'pattern-1',
+          'workflow',
+          'Recurring workflow pattern: open the db',
+          '["session-a"]',
+          0.9,
+          'active',
+          'workflow',
+          'rule',
+          1
+        )
+        """
+    )
+
+    proposals = synthesize_workflow_proposals(conn, min_confidence=0.75)
 
     assert proposals == []
 

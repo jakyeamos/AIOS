@@ -19,7 +19,20 @@ WORKFLOW_ARCHETYPES: list[dict] = [
         "key": "debug_root_cause",
         "name": "Debug & Root Cause Investigation",
         "description": "Systematic investigation of bugs, failures, and unexpected behavior.",
-        "keywords": ["debug", "fix", "error", "bug", "broken", "failing", "crash", "traceback", "root cause", "diagnose"],
+        "keywords": [
+            "debug",
+            "fix",
+            "error",
+            "bug",
+            "broken",
+            "failing",
+            "flaky",
+            "triage",
+            "crash",
+            "traceback",
+            "root cause",
+            "diagnose",
+        ],
         "best_practices": [
             "Reproduce the issue in isolation before changing code.",
             "Form a hypothesis and test it with a minimal reproducer.",
@@ -43,7 +56,7 @@ WORKFLOW_ARCHETYPES: list[dict] = [
         "key": "code_review_audit",
         "name": "Code Review & Audit",
         "description": "Structured review or audit of existing code for quality, correctness, or security.",
-        "keywords": ["review", "audit", "check", "analyze", "evaluate", "assess", "inspect", "security"],
+        "keywords": ["review", "pull request", "audit", "check", "analyze", "evaluate", "assess", "inspect", "security"],
         "best_practices": [
             "Read the entire diff before leaving any comments.",
             "Separate correctness issues from style preferences.",
@@ -392,6 +405,10 @@ def _cluster_patterns_by_archetype(
     return clusters
 
 
+def _archetype_by_key(key: str) -> dict[str, Any] | None:
+    return next((item for item in WORKFLOW_ARCHETYPES if item["key"] == key), None)
+
+
 def _workflow_spec_from_archetype(archetype: dict, proposal_key: str, evidence_count: int) -> dict[str, Any]:
     return {
         "key": proposal_key,
@@ -639,7 +656,7 @@ def synthesize_workflow_proposals(
     for archetype_key, cluster_patterns in clusters.items():
         if len(proposals) >= limit:
             break
-        archetype = next((a for a in WORKFLOW_ARCHETYPES if a["key"] == archetype_key), None)
+        archetype = _archetype_by_key(archetype_key)
         if archetype is None:
             continue
         proposal_key = _proposal_key(archetype["name"])
@@ -709,56 +726,72 @@ def synthesize_workflow_proposals(
                     _insert_writeback(conn, proposal)
                 proposals.append(proposal)
 
-    # Fallback: patterns that didn't cluster into any archetype get individual proposals
-    unclustered_ids = {
-        p["id"]
-        for p in patterns
-        if _assign_archetype(p) is None
-    }
-    for pattern in patterns:
-        if len(proposals) >= limit:
-            break
-        if pattern["id"] not in unclustered_ids:
-            continue
-        proposal_key = _proposal_key(pattern["title"])
-        evidence = pattern["evidence"] or [pattern["title"]]
-        summary = (
-            f"Synthesized from {pattern['class']} pattern with confidence "
-            f"{pattern['confidence']:.2f}; review before adding to workflow registry."
-        )
-        proposal = _insert_synthesis_proposal(
-            conn,
-            proposal_key=proposal_key,
-            title=pattern["title"],
-            summary=summary,
-            source_ids=[pattern["id"]],
-            evidence=evidence,
-        )
-        if proposal is None:
-            continue
-        if queue_writebacks:
-            _insert_writeback(conn, proposal)
-        proposals.append(proposal)
-
     remaining = max(0, limit - len(proposals))
     if vault_root is not None and remaining:
-        for candidate in _vault_candidates(vault_root, min_confidence, remaining):
-            source_key = f"{candidate['title']} {candidate['relative_path']}"
-            proposal_key = _proposal_key(source_key)
-            summary = (
-                f"Backfilled from Obsidian vault note {candidate['relative_path']} "
-                f"with workflow signal confidence {candidate['confidence']:.2f}; review before registry mutation."
-            )
-            proposal = _insert_synthesis_proposal(
-                conn,
-                proposal_key=proposal_key,
-                title=candidate["title"],
-                summary=summary,
-                source_ids=[candidate["id"]],
-                evidence=candidate["evidence"],
-            )
-            if proposal is None:
+        vault_candidates = _vault_candidates(vault_root, min_confidence, remaining * 4)
+        vault_clusters = _cluster_patterns_by_archetype(vault_candidates)
+        for archetype_key, candidates in vault_clusters.items():
+            if len(proposals) >= limit:
+                break
+            archetype = _archetype_by_key(archetype_key)
+            if archetype is None:
                 continue
+            proposal_key = _proposal_key(archetype["name"])
+            existing = conn.execute(
+                "SELECT id FROM workflow_synthesis_proposals WHERE proposal_key = ? LIMIT 1",
+                (proposal_key,),
+            ).fetchone()
+            if existing:
+                continue
+            source_ids = [str(candidate["id"]) for candidate in candidates]
+            evidence: list[str] = []
+            for candidate in candidates:
+                evidence.extend(candidate["evidence"])
+            deduped_evidence = list(dict.fromkeys(evidence))[:12]
+            avg_confidence = sum(float(candidate["confidence"]) for candidate in candidates) / len(candidates)
+            summary = (
+                f"{archetype['description']} "
+                f"Synthesized from {len(candidates)} vault workflow signal(s) "
+                f"(avg confidence {avg_confidence:.2f}). Review for general reuse before registry mutation."
+            )
+            workflow_spec = _workflow_spec_from_archetype(archetype, proposal_key, len(deduped_evidence))
+            skill_specs = [_skill_spec(proposal_key, archetype["name"])]
+            validation_plan = _validation_plan(proposal_key, deduped_evidence)
+            proposal_id = f"workflow-proposal-{uuid.uuid4()}"
+            timestamp = _now_iso()
+            conn.execute(
+                """
+                INSERT INTO workflow_synthesis_proposals (
+                  id, proposal_key, title, summary, source_pattern_ids_json, workflow_spec_json,
+                  skill_specs_json, validation_plan_json, evidence_json, status, created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_approval', ?, ?)
+                """,
+                (
+                    proposal_id,
+                    proposal_key,
+                    f"Workflow: {archetype['name']}",
+                    summary,
+                    _json(source_ids),
+                    _json(workflow_spec),
+                    _json(skill_specs),
+                    _json(validation_plan),
+                    _json(deduped_evidence),
+                    timestamp,
+                    timestamp,
+                ),
+            )
+            row = conn.execute(
+                """
+                SELECT id, proposal_key, title, summary, source_pattern_ids_json, workflow_spec_json,
+                       skill_specs_json, validation_plan_json, evidence_json, status
+                FROM workflow_synthesis_proposals WHERE id = ?
+                """,
+                (proposal_id,),
+            ).fetchone()
+            if row is None:
+                continue
+            proposal = _proposal_from_row(row)
             if queue_writebacks:
                 _insert_writeback(conn, proposal)
             proposals.append(proposal)

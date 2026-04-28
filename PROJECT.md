@@ -452,7 +452,7 @@ Phase 3b Standards Delta / Project Health is now implemented:
   - the Projects index now shows per-project pipeline coverage/status, and Taski project detail now includes a first-class Quality Pipeline panel with tier coverage
 - workflow synthesis loop:
   - `services/workflow_synthesis.py` turns high-confidence prompt/workflow patterns into reviewable workflow proposals with generated workflow specs, skill specs, and validation plans
-  - synthesis now also backfills reviewable proposals from the resolved Obsidian vault, using markdown workflow signals and source-note evidence while skipping raw calendar/session-export noise
+  - synthesis now also backfills reviewable proposals from the resolved Obsidian vault by clustering markdown workflow signals into archetype-level proposals; one-note vault backfill proposals are treated as too granular and are no longer generated
   - `workflow_synthesis_proposals` stores pending/approved workflow candidates with source pattern evidence
   - `bin/synthesize-workflows.py` creates pending proposals from DB patterns plus vault notes by default, supports `--no-vault`, and can explicitly approve a proposal into `config/workflows/registry.json` + `config/workflows/skills.json`
   - `/workflows` now surfaces pending workflow synthesis proposals with status, source evidence, and created timestamp alongside registered workflow metrics

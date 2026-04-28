@@ -274,6 +274,7 @@ export const workflowsRouter = createTRPCRouter({
           evidence_json AS evidenceJson,
           created_at AS createdAt
         FROM workflow_synthesis_proposals
+        WHERE status != 'discarded'
         ORDER BY
           CASE status
             WHEN 'pending_approval' THEN 0
