@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import importlib.util
 import subprocess
 import tempfile
 import sqlite3
@@ -335,24 +336,109 @@ def _loose_workflow_baseline(workflow_key: str) -> dict[str, Any]:
 def _score_report(report: dict[str, Any], skill_key: str) -> float:
     score = 0.0
     if report.get("status") == "completed":
-        score += 0.25
+        score += 0.18
     if not report.get("unresolved_issues"):
-        score += 0.15
+        score += 0.12
     failed = report.get("failed_required_validations") or []
     if not failed:
-        score += 0.15
+        score += 0.12
     artifacts = report.get("artifacts") if isinstance(report.get("artifacts"), dict) else {}
     if artifacts.get("normalized_prompt"):
-        score += 0.1
+        score += 0.08
     if artifacts.get("result_text"):
-        score += 0.2
+        score += 0.12
     if artifacts.get("learned_workflow_skill") == skill_key:
-        score += 0.1
+        score += 0.06
     for stage in report.get("stages", []):
         for skill in stage.get("skills", []):
             if skill.get("skill_key") == skill_key and skill.get("output_keys"):
-                score += 0.05
+                score += 0.04
     return round(min(score, 1.0), 4)
+
+
+def _repo_profile(repo_path: Path) -> dict[str, Any]:
+    source_files = [
+        path
+        for path in repo_path.rglob("*")
+        if path.is_file()
+        and ".git" not in path.parts
+        and ".aios" not in path.parts
+        and path.suffix in {".js", ".ts", ".tsx", ".py"}
+    ]
+    test_files = [
+        path
+        for path in source_files
+        if "test" in path.name.lower() or "tests" in {part.lower() for part in path.parts}
+    ]
+    package = _load_json(repo_path / "package.json") if (repo_path / "package.json").exists() else {}
+    workspaces = package.get("workspaces") if isinstance(package.get("workspaces"), list) else []
+    scripts = package.get("scripts") if isinstance(package.get("scripts"), dict) else {}
+    return {
+        "has_package_json": (repo_path / "package.json").exists(),
+        "has_pyproject": (repo_path / "pyproject.toml").exists(),
+        "has_src": (repo_path / "src").exists(),
+        "has_service": (repo_path / "service").exists(),
+        "workspace_count": len(workspaces),
+        "script_count": len(scripts),
+        "source_file_count": len(source_files),
+        "test_file_count": len(test_files),
+        "js_file_count": sum(1 for path in source_files if path.suffix in {".js", ".ts", ".tsx"}),
+        "py_file_count": sum(1 for path in source_files if path.suffix == ".py"),
+    }
+
+
+def _workflow_repo_fit_score(workflow_key: str, repo_path: Path) -> float:
+    profile = _repo_profile(repo_path)
+    score = 0.0
+    if profile["source_file_count"]:
+        score += 0.02
+    if "architecture" in workflow_key:
+        if profile["workspace_count"]:
+            score += 0.14
+        if profile["has_service"]:
+            score += 0.08
+        if profile["source_file_count"] <= 1:
+            score += 0.02
+    elif "debug" in workflow_key:
+        if profile["has_pyproject"] and profile["test_file_count"]:
+            score += 0.16
+        if profile["test_file_count"] and profile["test_file_count"] < max(profile["source_file_count"], 1):
+            score += 0.08
+        if profile["workspace_count"]:
+            score += 0.06
+    elif "review" in workflow_key:
+        if profile["workspace_count"]:
+            score += 0.12
+        if profile["test_file_count"] < max(profile["source_file_count"], 1):
+            score += 0.1
+        if profile["has_service"]:
+            score += 0.06
+    elif "feature" in workflow_key:
+        if profile["has_src"]:
+            score += 0.1
+        if profile["workspace_count"]:
+            score += 0.08
+        if profile["has_service"]:
+            score += 0.06
+        if profile["script_count"] >= 2:
+            score += 0.04
+    elif "refactor" in workflow_key:
+        if profile["workspace_count"]:
+            score += 0.12
+        if profile["has_service"]:
+            score += 0.08
+        if profile["source_file_count"] > 1:
+            score += 0.06
+    return round(min(score, 0.2), 4)
+
+
+def _python_validation_command(repo_path: Path) -> list[str]:
+    if importlib.util.find_spec("pytest") is not None:
+        return [sys.executable, "-m", "pytest"]
+    test_files = sorted((repo_path / "tests").glob("test_*.py"))
+    if test_files:
+        return [sys.executable, "-B", str(test_files[0].relative_to(repo_path))]
+    return [sys.executable, "-m", "unittest", "discover"]
 
 
 def _repo_validation_command(repo_path: Path) -> list[str]:
@@ -364,7 +450,7 @@ def _repo_validation_command(repo_path: Path) -> list[str]:
         if "lint" in scripts:
             return ["npm", "run", "lint"]
     if (repo_path / "pyproject.toml").exists() or (repo_path / "tests").exists():
-        return [sys.executable, "-m", "pytest"]
+        return _python_validation_command(repo_path)
     return ["git", "status", "--short"]
 
 
@@ -399,12 +485,18 @@ def _score_candidate(
     report: dict[str, Any],
     skill_key: str,
     validation: dict[str, Any],
+    *,
+    repo_path: Path,
+    workflow_key: str,
 ) -> float:
     score = _score_report(report, skill_key)
     if validation.get("passed"):
-        score += 0.1
+        score += 0.12
     else:
         score -= 0.25
+    artifacts = report.get("artifacts") if isinstance(report.get("artifacts"), dict) else {}
+    if artifacts.get("learned_workflow_skill") == skill_key:
+        score += _workflow_repo_fit_score(workflow_key, repo_path)
     return round(max(0.0, min(score, 1.0)), 4)
 
 
@@ -556,11 +648,30 @@ def run_workflow_skill_experiment(
         context=context,
     )
     candidate_validation = _run_repo_validation(repo_path)
-    baseline_score = _score_candidate(baseline_report, skill_key, baseline_validation)
-    ablation_score = _score_candidate(ablation_report, skill_key, ablation_validation)
-    candidate_score = _score_candidate(candidate_report, skill_key, candidate_validation)
+    baseline_score = _score_candidate(
+        baseline_report,
+        skill_key,
+        baseline_validation,
+        repo_path=repo_path,
+        workflow_key=str(row["workflow_key"]),
+    )
+    ablation_score = _score_candidate(
+        ablation_report,
+        skill_key,
+        ablation_validation,
+        repo_path=repo_path,
+        workflow_key=str(row["workflow_key"]),
+    )
+    candidate_score = _score_candidate(
+        candidate_report,
+        skill_key,
+        candidate_validation,
+        repo_path=repo_path,
+        workflow_key=str(row["workflow_key"]),
+    )
     delta = round(candidate_score - baseline_score, 4)
     ablation_delta = round(candidate_score - ablation_score, 4)
+    repo_fit_score = _workflow_repo_fit_score(str(row["workflow_key"]), repo_path)
     outcome = "promotion_ready" if delta >= 0.05 and candidate_validation.get("passed") else "no_improvement"
     artifact_payload = {
         "experiment_id": experiment_id,
@@ -571,6 +682,7 @@ def run_workflow_skill_experiment(
         "baseline_score": baseline_score,
         "ablation_score": ablation_score,
         "candidate_score": candidate_score,
+        "repo_fit_score": repo_fit_score,
         "score_delta": delta,
         "ablation_delta": ablation_delta,
         "outcome": outcome,
@@ -593,6 +705,8 @@ def run_workflow_skill_experiment(
         "score_delta": delta,
         "ablation_score": ablation_score,
         "ablation_delta": ablation_delta,
+        "repo_fit_score": repo_fit_score,
+        "repo_profile": _repo_profile(repo_path),
         "branch_name": row["branch_name"],
         "artifact_path": artifact_path,
         "baseline_status": baseline_report.get("status"),

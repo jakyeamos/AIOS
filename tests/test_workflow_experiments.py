@@ -73,6 +73,19 @@ def test_seed_paper_fixtures_registers_generated_papers(tmp_path: Path) -> None:
     assert row[2] == "active"
 
 
+def test_python_validation_falls_back_to_executable_test_file(tmp_path: Path, monkeypatch) -> None:
+    repo = tmp_path / "repo"
+    tests = repo / "tests"
+    tests.mkdir(parents=True)
+    (repo / "pyproject.toml").write_text("[project]\nname = 'repo'\n", encoding="utf-8")
+    (tests / "test_app.py").write_text("def test_app():\n    assert True\n", encoding="utf-8")
+    monkeypatch.setattr(workflow_experiments.importlib.util, "find_spec", lambda name: None)
+
+    command = workflow_experiments._repo_validation_command(repo)
+
+    assert command == [sys.executable, "-B", "tests/test_app.py"]
+
+
 def test_run_workflow_skill_experiment_records_candidate_improvement(tmp_path: Path, monkeypatch) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()
@@ -181,6 +194,8 @@ def test_run_workflow_skill_experiment_records_candidate_improvement(tmp_path: P
     assert details["baseline_kind"] == "loose_workflow"
     assert details["ablation_validation_passed"] is True
     assert details["ablation_delta"] > 0
+    assert details["repo_fit_score"] > 0
+    assert details["repo_profile"]["has_pyproject"] is True
     assert details["candidate_validation_passed"] is True
     assert details["validation_command"][-2:] == ["-m", "pytest"]
     artifact = subprocess.run(
