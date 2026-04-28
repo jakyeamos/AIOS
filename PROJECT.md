@@ -100,6 +100,12 @@ Stage 1 capability-truth baseline work has started with a first trusted-signal s
 - Automations now infer readable schedule labels from persisted RRULE triggers and preserve the raw RRULE as secondary evidence instead of the primary trigger display.
 - Automations now attach trusted signals to trigger, success rate, and status while acknowledging seeded automation health until durable run history exists.
 - Projects and Automations tables now have dedicated grid layouts to avoid the screenshot-observed column wrapping/overlap.
+- `aios capability-audit --json` now exposes the same Stage 1 trusted-signal contract from the CLI for core capability surfaces:
+  - Projects
+  - RTK
+  - Automations
+- The capability audit emits source-backed/missing/inferred states and backend findings such as missing project health snapshots.
+- This gives later runtime, knowledge, workflow-learning, architecture, and UI phases a concrete Stage 1 gate instead of relying only on dashboard rendering.
 
 This pass makes milestones 1 and 2 operational for selected work from the local CLI:
 
