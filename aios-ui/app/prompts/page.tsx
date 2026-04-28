@@ -1,9 +1,6 @@
-import Link from "next/link";
-
 import { PageShell } from "@/components/layout/PageShell";
 import { PatternTable } from "@/components/panels/PatternTable";
-import { PromptCard } from "@/components/panels/PromptCard";
-import type { Pattern, Prompt, PromptTemplate } from "@/lib/types";
+import type { Pattern, PromptTemplate } from "@/lib/types";
 import { getCaller } from "@/server/caller";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -50,14 +47,6 @@ const sortPatterns = (rows: Pattern[], sortKey: PatternSortKey, dir: SortDirecti
   return dir === "asc" ? sorted : sorted.reverse();
 };
 
-const sortPrompts = (rows: Prompt[]): Prompt[] =>
-  [...rows].sort((left, right) => {
-    const leftScore = left.outcomeScore ?? -1;
-    const rightScore = right.outcomeScore ?? -1;
-
-    return rightScore - leftScore;
-  });
-
 const sortTemplates = (rows: PromptTemplate[]): PromptTemplate[] =>
   [...rows].sort((left, right) => left.name.localeCompare(right.name));
 
@@ -67,41 +56,18 @@ export default async function PromptsPage({
   searchParams: Promise<SearchParams>;
 }): Promise<React.JSX.Element> {
   const caller = await getCaller();
-  const [templates, prompts, patterns] = await Promise.all([
+  const [templates, patterns] = await Promise.all([
     caller.prompts.templates(),
-    caller.prompts.list({ limit: 200 }),
-    caller.patterns.list({ limit: 200 }),
+    caller.patterns.list({ limit: 100, minSessionCount: 4 }),
   ]);
 
   const query = await searchParams;
 
-  const promptClassFilter = getSingleValue(query.promptClass) ?? "all";
-  const promptSearch = (getSingleValue(query.promptQ) ?? "").trim().toLowerCase();
   const templateSearch = (getSingleValue(query.templateQ) ?? "").trim().toLowerCase();
 
-  const patternStateFilter = getSingleValue(query.patternState) ?? "all";
-  const patternApprovalFilter = getSingleValue(query.patternApproval) ?? "all";
   const patternSearch = (getSingleValue(query.patternQ) ?? "").trim().toLowerCase();
   const patternSort = parsePatternSortKey(getSingleValue(query.patternSort));
   const patternDir = parseSortDirection(getSingleValue(query.patternDir));
-
-  const filteredPrompts = sortPrompts(
-    prompts.filter((prompt) => {
-      if (promptClassFilter !== "all" && prompt.classification !== promptClassFilter) {
-        return false;
-      }
-
-      if (promptSearch.length === 0) {
-        return true;
-      }
-
-      return (
-        prompt.sessionId.toLowerCase().includes(promptSearch) ||
-        (prompt.promptHash ?? "").toLowerCase().includes(promptSearch) ||
-        (prompt.promptText ?? "").toLowerCase().includes(promptSearch)
-      );
-    }),
-  );
 
   const filteredTemplates = sortTemplates(
     templates.filter((template) => {
@@ -121,23 +87,14 @@ export default async function PromptsPage({
 
   const filteredPatterns = sortPatterns(
     patterns.filter((pattern) => {
-      if (patternStateFilter !== "all" && pattern.state !== patternStateFilter) {
-        return false;
-      }
-
-      if (patternApprovalFilter === "approved" && !pattern.humanApproved) {
-        return false;
-      }
-
-      if (patternApprovalFilter === "unapproved" && pattern.humanApproved) {
-        return false;
-      }
-
       if (patternSearch.length === 0) {
         return true;
       }
 
-      return pattern.id.toLowerCase().includes(patternSearch);
+      return (
+        pattern.id.toLowerCase().includes(patternSearch) ||
+        (pattern.label ?? "").toLowerCase().includes(patternSearch)
+      );
     }),
     patternSort,
     patternDir,
@@ -146,7 +103,7 @@ export default async function PromptsPage({
   return (
     <PageShell
       title="Prompts & Rules"
-      subtitle="Reusable prompt templates, observed prompt history, and promotion status."
+      subtitle="Reusable prompt templates and mature repeated rules."
     >
       <section className="panel-card" id="prompt-library">
         <div className="panel-row">
@@ -161,10 +118,6 @@ export default async function PromptsPage({
             Search
             <input name="templateQ" defaultValue={templateSearch} placeholder="name, tag, classification" />
           </label>
-          <input type="hidden" name="promptClass" value={promptClassFilter} />
-          <input type="hidden" name="promptQ" value={promptSearch} />
-          <input type="hidden" name="patternState" value={patternStateFilter} />
-          <input type="hidden" name="patternApproval" value={patternApprovalFilter} />
           <input type="hidden" name="patternQ" value={patternSearch} />
           <input type="hidden" name="patternSort" value={patternSort} />
           <input type="hidden" name="patternDir" value={patternDir} />
@@ -200,102 +153,41 @@ export default async function PromptsPage({
           ))}
         </div>
       </section>
-      <div className="grid grid-2">
-        <section>
-          <h3 className="section-title">Recent Prompts</h3>
-          <form className="toolbar" method="get">
-            <label>
-              Classification
-              <select name="promptClass" defaultValue={promptClassFilter}>
-                <option value="all">all</option>
-                <option value="debugging">debugging</option>
-                <option value="planning">planning</option>
-                <option value="refactor">refactor</option>
-                <option value="review">review</option>
-                <option value="explain">explain</option>
-                <option value="implement">implement</option>
-                <option value="other">other</option>
-              </select>
-            </label>
-            <label>
-              Search
-              <input name="promptQ" defaultValue={promptSearch} placeholder="hash, session, text" />
-            </label>
-            <input type="hidden" name="patternState" value={patternStateFilter} />
-            <input type="hidden" name="patternApproval" value={patternApprovalFilter} />
-            <input type="hidden" name="patternQ" value={patternSearch} />
-            <input type="hidden" name="patternSort" value={patternSort} />
-            <input type="hidden" name="patternDir" value={patternDir} />
-            <input type="hidden" name="templateQ" value={templateSearch} />
-            <button type="submit">Apply</button>
-          </form>
-          <div className="stack">
-            {filteredPrompts.slice(0, 40).map((prompt) => (
-              <PromptCard key={prompt.id} prompt={prompt} />
-            ))}
+      <section>
+        <div className="panel-row">
+          <div>
+            <h3 className="section-title">Mature Patterns</h3>
+            <p className="panel-subtitle">Only approved rules or repeated prompt patterns seen in 4+ sessions.</p>
           </div>
-        </section>
+          <span className="mono">{filteredPatterns.length} patterns</span>
+        </div>
+        <form className="toolbar" method="get">
+          <label>
+            Sort
+            <select name="patternSort" defaultValue={patternSort}>
+              <option value="sessions">sessions</option>
+              <option value="lastSeen">last seen</option>
+              <option value="state">state</option>
+              <option value="id">id</option>
+            </select>
+          </label>
+          <label>
+            Dir
+            <select name="patternDir" defaultValue={patternDir}>
+              <option value="desc">desc</option>
+              <option value="asc">asc</option>
+            </select>
+          </label>
+          <label>
+            Search
+            <input name="patternQ" defaultValue={patternSearch} placeholder="pattern text or id" />
+          </label>
+          <input type="hidden" name="templateQ" value={templateSearch} />
+          <button type="submit">Apply</button>
+        </form>
 
-        <section>
-          <h3 className="section-title">Pattern Candidates</h3>
-          <form className="toolbar" method="get">
-            <label>
-              State
-              <select name="patternState" defaultValue={patternStateFilter}>
-                <option value="all">all</option>
-                <option value="notice">notice</option>
-                <option value="observation">observation</option>
-                <option value="hypothesis">hypothesis</option>
-                <option value="rule">rule</option>
-              </select>
-            </label>
-            <label>
-              Approval
-              <select name="patternApproval" defaultValue={patternApprovalFilter}>
-                <option value="all">all</option>
-                <option value="approved">approved</option>
-                <option value="unapproved">unapproved</option>
-              </select>
-            </label>
-            <label>
-              Sort
-              <select name="patternSort" defaultValue={patternSort}>
-                <option value="sessions">sessions</option>
-                <option value="lastSeen">last seen</option>
-                <option value="state">state</option>
-                <option value="id">id</option>
-              </select>
-            </label>
-            <label>
-              Dir
-              <select name="patternDir" defaultValue={patternDir}>
-                <option value="desc">desc</option>
-                <option value="asc">asc</option>
-              </select>
-            </label>
-            <label>
-              Search
-              <input name="patternQ" defaultValue={patternSearch} placeholder="pattern id" />
-            </label>
-            <input type="hidden" name="promptClass" value={promptClassFilter} />
-            <input type="hidden" name="promptQ" value={promptSearch} />
-            <input type="hidden" name="templateQ" value={templateSearch} />
-            <button type="submit">Apply</button>
-          </form>
-
-          <PatternTable patterns={filteredPatterns} />
-
-          <p className="panel-subtitle">
-            Tip: pattern IDs prefixed with <code>id:</code> represent single prompt instances with no hash.
-            Hash-based IDs aggregate repeated prompt usage.
-          </p>
-
-          <p className="panel-subtitle">
-            Open hash detail views directly from prompt cards, or use <Link href="/prompts">this page</Link> filters
-            to isolate reusable candidates.
-          </p>
-        </section>
-      </div>
+        <PatternTable patterns={filteredPatterns} />
+      </section>
     </PageShell>
   );
 }

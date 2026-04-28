@@ -85,13 +85,21 @@ const ensurePromptLibraryLinks = (ctxDb: ReturnType<typeof import("@/server/db")
 
 export const patternsRouter = createTRPCRouter({
   list: publicProcedure
-    .input(z.object({ limit: z.number().int().min(1).max(200).default(40) }).optional())
+    .input(
+      z
+        .object({
+          limit: z.number().int().min(1).max(200).default(40),
+          minSessionCount: z.number().int().min(1).max(100).default(4),
+        })
+        .optional(),
+    )
     .query(({ ctx, input }): Pattern[] => {
       if (!tableExists("prompts_used") || !tableExists("sessions")) {
         return [];
       }
 
       const limit = input?.limit ?? 40;
+      const minSessionCount = input?.minSessionCount ?? 4;
       const hasLinks = tableExists("prompt_library_links");
       const rows = hasLinks
         ? (ctx.db
@@ -107,7 +115,6 @@ export const patternsRouter = createTRPCRouter({
                 MAX(s.started_at) AS lastSeen,
                 MAX(
                   CASE
-                    WHEN pu.reusable_candidate = 1 THEN 1
                     WHEN pu.prompt_hash IS NOT NULL AND pll.promoted_at IS NOT NULL THEN 1
                     ELSE 0
                   END
@@ -120,11 +127,12 @@ export const patternsRouter = createTRPCRouter({
                   WHEN pu.prompt_hash IS NULL THEN 'id:' || pu.id
                   ELSE pu.prompt_hash
                 END
+              HAVING sessionCount >= ? OR humanApproved = 1
               ORDER BY sessionCount DESC
               LIMIT ?
             `,
             )
-            .all(limit) as PatternRow[])
+            .all(minSessionCount, limit) as PatternRow[])
         : (ctx.db
             .prepare(
               `
@@ -136,7 +144,7 @@ export const patternsRouter = createTRPCRouter({
                 MIN(pu.prompt_text) AS label,
                 COUNT(*) AS sessionCount,
                 MAX(s.started_at) AS lastSeen,
-                MAX(CASE WHEN pu.reusable_candidate = 1 THEN 1 ELSE 0 END) AS humanApproved
+                0 AS humanApproved
               FROM prompts_used pu
               INNER JOIN sessions s ON s.id = pu.session_id
               GROUP BY
@@ -144,11 +152,12 @@ export const patternsRouter = createTRPCRouter({
                   WHEN pu.prompt_hash IS NULL THEN 'id:' || pu.id
                   ELSE pu.prompt_hash
                 END
+              HAVING sessionCount >= ? OR humanApproved = 1
               ORDER BY sessionCount DESC
               LIMIT ?
             `,
             )
-            .all(limit) as PatternRow[]);
+            .all(minSessionCount, limit) as PatternRow[]);
 
       return rows.map(mapPattern);
     }),
