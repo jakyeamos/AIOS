@@ -9,7 +9,7 @@ export default async function ComparePage(): Promise<React.JSX.Element> {
 
   return (
     <PageShell title="Diff & Compare" subtitle="Side-by-side comparisons for workflow and prompt changes.">
-      <section className="panel-card">
+      <section className="panel-card" id="test-repos">
         <div className="panel-row">
           <div>
             <h3 className="section-title">Experiment Test Repos</h3>

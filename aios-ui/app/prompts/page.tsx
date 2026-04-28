@@ -148,7 +148,7 @@ export default async function PromptsPage({
       title="Prompts & Rules"
       subtitle="Reusable prompt templates, observed prompt history, and promotion status."
     >
-      <section className="panel-card">
+      <section className="panel-card" id="prompt-library">
         <div className="panel-row">
           <div>
             <h3 className="section-title">Prompt Library</h3>

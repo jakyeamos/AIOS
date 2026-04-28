@@ -299,6 +299,7 @@ Experiment test repo visibility is now implemented:
   - `staging/experiment-test-repos/weak-tests-ui`
 - `/compare` now shows the registered test repos, readiness, purpose, profile, setup, and path before experiment run history
 - the local repo workspaces live under ignored `staging/` so they can be mutated during experiments without polluting the AIOS control-plane repository
+- the sidebar now includes direct links for `Prompt Library` and `Test Repos` in addition to their broader parent surfaces
 
 Phase 1b anti-slop ESLint ratchet is now implemented on top of existing plugin wiring:
 
