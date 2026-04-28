@@ -481,6 +481,8 @@ Phase 3b Standards Delta / Project Health is now implemented:
   - generated workflow executor skills now run through `learned_workflow_executor_v1` instead of being display-only registry entries
   - generated workflow best practices are not populated from static archetype text; they are gated on test-repo experiment evidence
   - workflow skill experiments are queued across the four registered test repos before promotion, with generated paper fixtures available for humanizer experiments
+  - `bin/run-workflow-skill-experiments.py` runs queued workflow-skill experiments without an LLM agent, creates test-repo experiment branches, records baseline/candidate scores, and marks improvement outcomes
+  - `bin/aios-pipeline.py` now consumes queued workflow-skill experiments after synthesis as a normal automation phase
   - synthesis now also backfills reviewable proposals from the resolved Obsidian vault by clustering markdown workflow signals into archetype-level proposals; one-note vault backfill proposals are treated as too granular and are no longer generated
   - `workflow_synthesis_proposals` stores pending/approved workflow candidates with source pattern evidence
   - `bin/synthesize-workflows.py` creates pending proposals from DB patterns plus vault notes by default, supports `--no-vault`, and can explicitly approve a proposal into `config/workflows/registry.json` + `config/workflows/skills.json`

@@ -8,12 +8,13 @@ Phases (skipped individually on failure, pipeline continues):
   2. Extract patterns  — mine session traces for workflow candidates
   3. Score patterns    — recompute frequency/impact, auto-promote/demote
   4. Workflow synthesis — propose reusable workflows from recurring patterns
-  5. Bundle new rules  — generate eval bundles for newly promoted rules
-  6. Lab experiments   — run Harbor benchmarks (skipped if Docker unavailable)
-  7. Personal extract  — mine sessions/prompts for personal patterns
-  8. Vault report      — write lab-report summary to Obsidian
-  9. iMessage ingest   — upsert contacts active in last 24h + vault files
-  10. Apple Notes ingest — sync all notes to aios.db + vault markdown
+  5. Workflow skill experiments — run queued test-repo branch experiments
+  6. Bundle new rules  — generate eval bundles for newly promoted rules
+  7. Lab experiments   — run Harbor benchmarks (skipped if Docker unavailable)
+  8. Personal extract  — mine sessions/prompts for personal patterns
+  9. Vault report      — write lab-report summary to Obsidian
+  10. iMessage ingest  — upsert contacts active in last 24h + vault files
+  11. Apple Notes ingest — sync all notes to aios.db + vault markdown
 
 Usage:
   python3 ~/AIOS/bin/aios-pipeline.py [--skip-lab] [--dry-run] [--verbose]
@@ -41,6 +42,7 @@ PHASES = [
     "extract-patterns",
     "score-patterns",
     "synthesize-workflows",
+    "workflow-skill-experiments",
     "bundle-rules",
     "lab-experiments",
     "personal-extract",
@@ -123,7 +125,7 @@ def main() -> None:
     results: dict[str, str] = {}
 
     # ── Phase 1: Codex ingest ─────────────────────────────────────────────────
-    _log("phase 1/10: Codex ingest")
+    _log("phase 1/11: Codex ingest")
     ok, out = _run(
         ["python3", str(BIN / "cron-ingest-codex.py")],
         "codex-ingest",
@@ -139,7 +141,7 @@ def main() -> None:
         _log(f"  FAILED: {out}")
 
     # ── Phase 2: Extract patterns ─────────────────────────────────────────────
-    _log("phase 2/10: extract patterns")
+    _log("phase 2/11: extract patterns")
     extract_cmd = ["python3", str(BIN / "extract-patterns.py")]
     if args.dry_run:
         extract_cmd.append("--dry-run")
@@ -153,7 +155,7 @@ def main() -> None:
         _log(f"  FAILED: {out}")
 
     # ── Phase 3: Score patterns ───────────────────────────────────────────────
-    _log("phase 3/10: score patterns")
+    _log("phase 3/11: score patterns")
     score_cmd = ["python3", str(BIN / "score-patterns.py")]
     if args.dry_run:
         score_cmd.append("--dry-run")
@@ -170,7 +172,7 @@ def main() -> None:
         _log(f"  FAILED: {out}")
 
     # ── Phase 4: Workflow synthesis ───────────────────────────────────────────
-    _log("phase 4/10: workflow synthesis")
+    _log("phase 4/11: workflow synthesis")
     synth_cmd = ["python3", str(BIN / "synthesize-workflows.py")]
     if args.dry_run:
         synth_cmd.append("--dry-run")
@@ -183,8 +185,22 @@ def main() -> None:
         results["synthesize-workflows"] = f"FAILED: {out}"
         _log(f"  FAILED: {out}")
 
-    # ── Phase 5: Bundle new rules ─────────────────────────────────────────────
-    _log("phase 5/10: bundle new rules (lab_status=pending)")
+    # ── Phase 5: Workflow skill experiments ──────────────────────────────────
+    _log("phase 5/11: workflow skill experiments")
+    workflow_exp_cmd = ["python3", str(BIN / "run-workflow-skill-experiments.py"), "--limit", "20"]
+    if args.dry_run:
+        workflow_exp_cmd.append("--dry-run")
+    ok, out = _run(workflow_exp_cmd, "workflow-skill-experiments", args.verbose)
+    if ok:
+        summary = out.splitlines()[-1] if out else "ok"
+        results["workflow-skill-experiments"] = f"ok — {summary}"
+        _log(f"  {summary}")
+    else:
+        results["workflow-skill-experiments"] = f"FAILED: {out}"
+        _log(f"  FAILED: {out}")
+
+    # ── Phase 6: Bundle new rules ─────────────────────────────────────────────
+    _log("phase 6/11: bundle new rules (lab_status=pending)")
     import sqlite3
     DB = Path.home() / "AIOS/data/aios.db"
     try:
@@ -214,8 +230,8 @@ def main() -> None:
         results["bundle-rules"] = f"FAILED: {exc}"
         _log(f"  FAILED: {exc}")
 
-    # ── Phase 6: Lab experiments ──────────────────────────────────────────────
-    _log("phase 6/10: lab experiments")
+    # ── Phase 7: Lab experiments ──────────────────────────────────────────────
+    _log("phase 7/11: lab experiments")
     if args.skip_lab:
         results["lab-experiments"] = "skip — --skip-lab"
         _log("  skipped (--skip-lab)")
@@ -235,8 +251,8 @@ def main() -> None:
             results["lab-experiments"] = f"FAILED: {out}"
             _log(f"  FAILED: {out}")
 
-    # ── Phase 7: Personal pattern extraction ─────────────────────────────────
-    _log("phase 7/10: personal pattern extraction")
+    # ── Phase 8: Personal pattern extraction ─────────────────────────────────
+    _log("phase 8/11: personal pattern extraction")
     extract_bin = BIN / "extract-personal-patterns.py"
     if extract_bin.exists():
         ok, out = _run(
@@ -255,8 +271,8 @@ def main() -> None:
         results["personal-extract"] = "skip — extract-personal-patterns.py not found"
         _log("  skipped (extract-personal-patterns.py not found)")
 
-    # ── Phase 8: Vault report ─────────────────────────────────────────────────
-    _log("phase 8/10: vault report")
+    # ── Phase 9: Vault report ─────────────────────────────────────────────────
+    _log("phase 9/11: vault report")
     ok, report_text = _run(
         ["python3", str(BIN / "lab-report.py"), "--limit", "20"],
         "lab-report",
@@ -274,8 +290,8 @@ def main() -> None:
         results["vault-report"] = f"FAILED: {report_text}"
         _log(f"  lab-report FAILED: {report_text}")
 
-    # ── Phase 9: iMessage ingest ─────────────────────────────────────────────
-    _log("phase 9/10: iMessage ingest")
+    # ── Phase 10: iMessage ingest ────────────────────────────────────────────
+    _log("phase 10/11: iMessage ingest")
     imessage_cmd = ["python3", str(BIN / "ingest-imessage.py"), "--days", "1"]
     if args.dry_run:
         imessage_cmd.append("--dry-run")
@@ -288,8 +304,8 @@ def main() -> None:
         results["ingest-imessage"] = f"FAILED: {out}"
         _log(f"  FAILED: {out}")
 
-    # ── Phase 10: Apple Notes ingest ──────────────────────────────────────────
-    _log("phase 10/10: Apple Notes ingest")
+    # ── Phase 11: Apple Notes ingest ──────────────────────────────────────────
+    _log("phase 11/11: Apple Notes ingest")
     notes_cmd = ["python3", str(BIN / "ingest-apple-notes.py")]
     if args.dry_run:
         notes_cmd.append("--dry-run")
