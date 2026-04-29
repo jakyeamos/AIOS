@@ -91,6 +91,10 @@ The tier-one audit fix pass has started with capability trust gates before UI po
 - workflow learning now persists `workflow_learning_events` from writebacks, durable inferred evidence, and explicit no-learning reasons
 - the live workflow-learning audit backfilled 110 terminal runs into persisted events: 96 learning events and 14 no-learning signals
 - contracts audit now reports `WorkflowLearningEvent` as implemented
+- knowledge objects now enforce valid kinds, report unknown kinds as audit findings, expose source refs/backlinks/freshness/confidence plus retrieval trace counts, and search across topic text plus reference labels/excerpts/source kinds
+- briefing packets now persist retrieval traces with query, matched objects, omitted context count, expansion path, citations, token budget, and ranking reason
+- success-criteria findings now have lifecycle/resolution metadata matching consistency findings
+- the live contracts audit now reports all seven canonical contracts as implemented with zero partial contracts
 - the first critical implementation target is managed runtime closeout and explicit handshake reliability
 - `EXECUTION.md` now routes agents through the plan pack by priority gates, verification commands, stop conditions, parallelization rules, and final tier-one claim checklist
 - Managed runtime closeout now has direct start and closeout guards in `bin/aios-managed-run.py` so hook-side evaluator failures cannot leave authoritative runs stuck in `ready`; `tests/test_orchestration_runtime.py::test_managed_runtime_completes_via_explicit_handshake` and the full Python suite now pass.
