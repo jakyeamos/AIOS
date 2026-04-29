@@ -84,6 +84,7 @@ Tier-one AIOS planning now has a dedicated execution pack under `docs/superpower
 - Workflow learning audit now recognizes inferred durable evidence from workflow reports, memory updates, standards snapshots, success evaluations, and session artifacts linked through runs; the live audit moved from 110 no-learning terminal runs to 96 inferred evidence records and 14 no-learning runs.
 - Priority standards-health snapshots were regenerated for AIOS, Terrace, amos-saas, portfolio, and soundscape-app using `services.standards_health.evaluate_and_record(..., trigger_kind="tier_one_priority_audit")`; the current priority scores are AIOS 64.8, Terrace 63.2, amos-saas 63.2, portfolio 72.8, and soundscape-app 63.2. GitNexus is not present in the current project inventory.
 - Prompt Library visibility is now backed by the existing prompt sync path: `bin/sync-prompts.py` copied 5 prompt templates into the configured vault template directory and created 5 `prompt_library_links` rows, removing the `prompt_library_empty` finding from the live capability audit.
+- RTK telemetry now distinguishes state from benefit: `aios rtk --json` and `aios capability-audit --json` report `benefit_state` values such as `beneficial`, `no_benefit`, `token_regressive`, and `no_eligible_data`; the current live RTK signal is `inactive` with `token_regressive` evidence because 3 events recorded 47 raw tokens and 110 compressed tokens.
 
 Stage 1 capability-truth baseline work has started with a first trusted-signal slice in `aios-ui`:
 
