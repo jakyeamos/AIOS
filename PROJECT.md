@@ -81,6 +81,7 @@ Tier-one AIOS planning now has a dedicated execution pack under `docs/superpower
 - the first critical implementation target is managed runtime closeout and explicit handshake reliability
 - `EXECUTION.md` now routes agents through the plan pack by priority gates, verification commands, stop conditions, parallelization rules, and final tier-one claim checklist
 - Managed runtime closeout now has direct start and closeout guards in `bin/aios-managed-run.py` so hook-side evaluator failures cannot leave authoritative runs stuck in `ready`; `tests/test_orchestration_runtime.py::test_managed_runtime_completes_via_explicit_handshake` and the full Python suite now pass.
+- Workflow learning audit now recognizes inferred durable evidence from workflow reports, memory updates, standards snapshots, success evaluations, and session artifacts linked through runs; the live audit moved from 110 no-learning terminal runs to 96 inferred evidence records and 14 no-learning runs.
 
 Stage 1 capability-truth baseline work has started with a first trusted-signal slice in `aios-ui`:
 
