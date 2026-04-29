@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from services.aios_cli import EXIT_OK, run_cli  # noqa: E402
+from services.rtk_integration import ensure_rtk_schema  # noqa: E402
 
 
 def _seed_db(path: Path) -> None:
@@ -869,6 +870,8 @@ def test_metadata_and_skills_refresh_flow(tmp_path: Path, capsys) -> None:
     assert rtk_exit == EXIT_OK
     rtk_output = json.loads(capsys.readouterr().out)
     assert rtk_output["ok"] is True
+    assert rtk_output["data"]["state"] == "no_eligible_data"
+    assert rtk_output["data"]["benefit_state"] == "no_eligible_data"
     assert rtk_output["data"]["metrics"]["event_count"] == 0
 
     dry_run_exit = run_cli(
@@ -993,3 +996,37 @@ def test_start_work_creates_packet_and_links_current_session(tmp_path: Path, cap
     ).fetchone()[0]
     assert event_count == 3
     conn.close()
+
+
+def test_rtk_cli_reports_token_regressive_events(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    ensure_rtk_schema(conn)
+    conn.execute(
+        """
+        INSERT INTO rtk_compression_events (
+          id, source_kind, command, mode, effective_mode, exit_code,
+          raw_chars, compressed_chars, estimated_raw_tokens, estimated_compressed_tokens,
+          token_reduction_percent, ambiguous_failure, metadata_json
+        )
+        VALUES (
+          'rtk-1', 'test', 'echo ok', 'compressed', 'compressed', 0,
+          40, 64, 10, 16, 0.0, 0, '{}'
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    exit_code = run_cli(["--json", "--db", str(db_path), "--logs-dir", str(logs_dir), "rtk"])
+
+    assert exit_code == EXIT_OK
+    output = json.loads(capsys.readouterr().out)
+    assert output["ok"] is True
+    assert output["data"]["state"] == "inactive"
+    assert output["data"]["benefit_state"] == "token_regressive"
+    assert output["data"]["findings"][0]["code"] == "rtk_token_regressive"

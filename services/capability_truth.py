@@ -4,6 +4,8 @@ import sqlite3
 from dataclasses import asdict, dataclass
 from typing import Any, Literal
 
+from services.rtk_integration import classify_rtk_metrics
+
 Provenance = Literal["confirmed", "inferred", "missing", "contradictory"]
 
 
@@ -196,29 +198,50 @@ def _rtk_signals(conn: sqlite3.Connection) -> dict[str, Any]:
         """
     ).fetchone()
     events = int(row["events"])
-    tokens_saved = int(row["tokens_saved"])
-    state = "no_eligible_data" if events == 0 else "active" if tokens_saved > 0 else "inactive"
+    metrics = {
+        "event_count": events,
+        "raw_tokens": int(row["raw_tokens"]),
+        "compressed_tokens": int(row["compressed_tokens"]),
+        "tokens_saved": int(row["tokens_saved"]),
+    }
+    classification = classify_rtk_metrics(metrics)
+    findings = []
+    if classification["benefit_state"] == "token_regressive":
+        findings.append(
+            {
+                "surface": "rtk",
+                "severity": "warning",
+                "code": "rtk_token_regressive",
+                "summary": "RTK has recorded events, but compressed tokens exceed raw tokens.",
+            }
+        )
+    elif classification["benefit_state"] == "no_benefit":
+        findings.append(
+            {
+                "surface": "rtk",
+                "severity": "info",
+                "code": "rtk_no_benefit",
+                "summary": "RTK has recorded events, but no positive token savings.",
+            }
+        )
     return {
         "state": TrustedSignal(
-            value=state,
+            value=classification["state"],
             provenance="missing" if events == 0 else "confirmed",
             confidence=0.45 if events == 0 else 0.9,
             source={"label": "RTK compression events", "table": "rtk_compression_events"},
             freshness="no events" if events == 0 else "all recorded events",
-            explanation=(
-                "RTK is wired, but no compression events have been recorded."
-                if events == 0
-                else "RTK has recorded compression events."
-            ),
-            missing_reason="No eligible command output has produced an RTK telemetry event." if events == 0 else None,
+            explanation=str(classification["explanation"]),
+            missing_reason=classification["missing_reason"],
         ).to_json(),
+        "benefit_state": classification["benefit_state"],
         "metrics": {
-            "events": events,
-            "raw_tokens": int(row["raw_tokens"]),
-            "compressed_tokens": int(row["compressed_tokens"]),
-            "tokens_saved": tokens_saved,
+            "events": metrics["event_count"],
+            "raw_tokens": metrics["raw_tokens"],
+            "compressed_tokens": metrics["compressed_tokens"],
+            "tokens_saved": metrics["tokens_saved"],
         },
-        "findings": [],
+        "findings": findings,
     }
 
 

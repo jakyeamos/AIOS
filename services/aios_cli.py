@@ -19,7 +19,12 @@ from services.invocation_backends import (
     get_invocation_backend,
     list_invocation_backends,
 )
-from services.rtk_integration import ensure_rtk_schema, load_compression_rules, rtk_metrics_log
+from services.rtk_integration import (
+    classify_rtk_metrics,
+    ensure_rtk_schema,
+    load_compression_rules,
+    rtk_metrics_log,
+)
 from services.success_criteria import preview_applicable_criteria
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -1939,10 +1944,34 @@ def _rtk_payload(conn: sqlite3.Connection) -> dict[str, Any]:
                 "efficiency_score": reduction,
             }
         )
+    metrics = rtk_metrics_log(conn)
+    classification = classify_rtk_metrics(metrics)
+    findings = []
+    if classification["benefit_state"] == "token_regressive":
+        findings.append(
+            {
+                "severity": "warning",
+                "code": "rtk_token_regressive",
+                "summary": "RTK compressed-token totals exceed raw-token totals.",
+            }
+        )
+    elif classification["benefit_state"] == "no_benefit":
+        findings.append(
+            {
+                "severity": "info",
+                "code": "rtk_no_benefit",
+                "summary": "RTK has recorded events but no positive token savings.",
+            }
+        )
     return {
         "rules": rules,
-        "metrics": rtk_metrics_log(conn),
+        "state": classification["state"],
+        "benefit_state": classification["benefit_state"],
+        "explanation": classification["explanation"],
+        "missing_reason": classification["missing_reason"],
+        "metrics": metrics,
         "workflow_efficiency": workflows,
+        "findings": findings,
     }
 
 

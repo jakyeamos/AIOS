@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from services.rtk_integration import (  # noqa: E402
+    classify_rtk_metrics,
     compress_output,
     ensure_rtk_schema,
     record_rtk_event,
@@ -108,3 +109,23 @@ def test_record_rtk_event_without_session(tmp_path: Path) -> None:
     assert row["source_kind"] == "unit"
     assert conn.execute("SELECT COUNT(*) AS c FROM workflow_metrics").fetchone()["c"] == 0
     conn.close()
+
+
+def test_classify_rtk_metrics_distinguishes_no_benefit_states() -> None:
+    no_events = classify_rtk_metrics(
+        {"event_count": 0, "raw_tokens": 0, "compressed_tokens": 0, "tokens_saved": 0}
+    )
+    assert no_events["state"] == "no_eligible_data"
+    assert no_events["benefit_state"] == "no_eligible_data"
+
+    regressive = classify_rtk_metrics(
+        {"event_count": 2, "raw_tokens": 10, "compressed_tokens": 14, "tokens_saved": 0}
+    )
+    assert regressive["state"] == "inactive"
+    assert regressive["benefit_state"] == "token_regressive"
+
+    beneficial = classify_rtk_metrics(
+        {"event_count": 2, "raw_tokens": 20, "compressed_tokens": 12, "tokens_saved": 8}
+    )
+    assert beneficial["state"] == "active"
+    assert beneficial["benefit_state"] == "beneficial"
