@@ -23,6 +23,7 @@ from aios_orchestration_runtime import (
     default_db_path,
     ensure_runtime_schema,
     insert_workflow_execution_report,
+    transition_run,
     update_invocation,
 )
 
@@ -160,6 +161,139 @@ def write_invocation_report(
     return str(report_path)
 
 
+def ensure_managed_start(
+    db_path: str,
+    *,
+    run_id: str,
+    invocation_id: str,
+    session_id: str,
+    backend_key: str,
+) -> None:
+    conn = sqlite3.connect(db_path)
+    ensure_runtime_schema(conn)
+    now = now_iso()
+    row = conn.execute(
+        """
+        SELECT status, session_id, active_invocation_id
+        FROM orchestration_runs
+        WHERE id = ?
+        LIMIT 1
+        """,
+        (run_id,),
+    ).fetchone()
+    if row is None:
+        conn.close()
+        raise RuntimeError(f"Run not found during start: {run_id}")
+
+    has_event = conn.execute(
+        """
+        SELECT 1
+        FROM orchestration_run_events
+        WHERE run_id = ? AND to_status = 'in_progress'
+        LIMIT 1
+        """,
+        (run_id,),
+    ).fetchone()
+    if has_event is None or row[0] in {"planned", "ready"} or row[1] != session_id or row[2] != invocation_id:
+        transition_run(
+            conn,
+            run_id=run_id,
+            to_status="in_progress",
+            event_type="in_progress",
+            summary="Managed runtime session started.",
+            reason={"kind": "managed_runtime_start", "backend_key": backend_key},
+            session_id=session_id,
+            invocation_id=invocation_id,
+            created_at=now,
+        )
+
+    conn.execute(
+        """
+        UPDATE sessions
+        SET run_id = COALESCE(run_id, ?),
+            invocation_id = COALESCE(invocation_id, ?),
+            objective = objective,
+            runtime_metadata_json = ?
+        WHERE id = ?
+        """,
+        (
+            run_id,
+            invocation_id,
+            json.dumps({"backend_key": backend_key, "linked_via": "managed-runtime-start"}),
+            session_id,
+        ),
+    )
+    conn.commit()
+    conn.close()
+
+
+def ensure_managed_closeout(
+    db_path: str,
+    *,
+    run_id: str,
+    invocation_id: str,
+    session_id: str,
+    outcome: str,
+    result_summary: str,
+    reason_json: dict[str, object],
+) -> None:
+    conn = sqlite3.connect(db_path)
+    ensure_runtime_schema(conn)
+    now = now_iso()
+    row = conn.execute(
+        """
+        SELECT status, session_id, active_invocation_id
+        FROM orchestration_runs
+        WHERE id = ?
+        LIMIT 1
+        """,
+        (run_id,),
+    ).fetchone()
+    if row is None:
+        conn.close()
+        raise RuntimeError(f"Run not found during closeout: {run_id}")
+
+    if row[0] != outcome or row[1] != session_id or row[2] != invocation_id:
+        transition_run(
+            conn,
+            run_id=run_id,
+            to_status=outcome,
+            event_type=outcome,
+            summary=result_summary,
+            reason={**reason_json, "linkage": "managed-runtime-closeout"},
+            session_id=session_id,
+            invocation_id=invocation_id,
+            result_summary=result_summary,
+            created_at=now,
+        )
+
+    update_invocation(
+        conn,
+        invocation_id=invocation_id,
+        status=outcome,
+        session_id=session_id,
+        metadata={
+            "result_summary": result_summary,
+            "reason": reason_json,
+            "linked_via": "managed-runtime-closeout",
+        },
+        ended_at=now,
+    )
+    conn.execute(
+        """
+        UPDATE sessions
+        SET status = 'closed',
+            ended_at = COALESCE(ended_at, ?),
+            run_id = COALESCE(run_id, ?),
+            invocation_id = COALESCE(invocation_id, ?)
+        WHERE id = ?
+        """,
+        (now, run_id, invocation_id, session_id),
+    )
+    conn.commit()
+    conn.close()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-id", required=True)
@@ -215,6 +349,13 @@ def main() -> int:
             "backend_key": backend_key,
         },
         env,
+    )
+    ensure_managed_start(
+        db_path,
+        run_id=run_id,
+        invocation_id=invocation_id,
+        session_id=session_id,
+        backend_key=backend_key,
     )
 
     outcome = "completed"
@@ -332,6 +473,15 @@ def main() -> int:
             "reason_json": reason_json,
         },
         env,
+    )
+    ensure_managed_closeout(
+        db_path,
+        run_id=run_id,
+        invocation_id=invocation_id,
+        session_id=session_id,
+        outcome=outcome,
+        result_summary=result_summary,
+        reason_json=reason_json,
     )
 
     return 0 if outcome == "completed" else 1
