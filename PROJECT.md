@@ -97,6 +97,7 @@ The tier-one audit fix pass has started with capability trust gates before UI po
 - the live contracts audit now reports all seven canonical contracts as implemented with zero partial contracts
 - automation reliability now has a durable `automation_run_history` schema shared by Python audits and the UI schema
 - automation audit and UI states now derive success rate, status, urgency, last run, next run, failure summary, approvals, and writeback blockers from run history; empty history is surfaced as unknown/watch instead of seeded health
+- RTK command execution now honors the configured short-output compression threshold for successful runs, passing small outputs through as raw telemetry instead of manufacturing token-regressive compression events
 - the first critical implementation target is managed runtime closeout and explicit handshake reliability
 - `EXECUTION.md` now routes agents through the plan pack by priority gates, verification commands, stop conditions, parallelization rules, and final tier-one claim checklist
 - Managed runtime closeout now has direct start and closeout guards in `bin/aios-managed-run.py` so hook-side evaluator failures cannot leave authoritative runs stuck in `ready`; `tests/test_orchestration_runtime.py::test_managed_runtime_completes_via_explicit_handshake` and the full Python suite now pass.
