@@ -16,7 +16,7 @@ from services.governed_effects import (
 )
 from services.memory_layers import ensure_memory_layer_schema
 
-RUN_STATUSES = {
+CANONICAL_RUN_STATUSES = [
     "planned",
     "ready",
     "in_progress",
@@ -30,6 +30,104 @@ RUN_STATUSES = {
     "failed",
     "canceled",
     "superseded",
+]
+ATTENTION_RUN_STATUSES = [
+    "blocked",
+    "waiting_for_user",
+    "waiting_for_tool",
+    "failed_validation",
+    "partial",
+    "needs_follow_up",
+]
+TERMINAL_RUN_STATUSES = [
+    "partial",
+    "needs_follow_up",
+    "completed",
+    "failed",
+    "canceled",
+    "superseded",
+]
+RUN_STATUSES = set(CANONICAL_RUN_STATUSES)
+VALID_RUN_TRANSITIONS = {
+    "planned": {"ready", "canceled", "superseded"},
+    "ready": {
+        "in_progress",
+        "partial",
+        "needs_follow_up",
+        "completed",
+        "failed",
+        "canceled",
+        "superseded",
+    },
+    "in_progress": {
+        "blocked",
+        "waiting_for_user",
+        "waiting_for_tool",
+        "failed_validation",
+        "partial",
+        "needs_follow_up",
+        "completed",
+        "failed",
+        "canceled",
+        "superseded",
+    },
+    "blocked": {
+        "in_progress",
+        "waiting_for_user",
+        "waiting_for_tool",
+        "partial",
+        "needs_follow_up",
+        "failed",
+        "canceled",
+        "superseded",
+    },
+    "waiting_for_user": {
+        "in_progress",
+        "blocked",
+        "partial",
+        "needs_follow_up",
+        "failed",
+        "canceled",
+        "superseded",
+    },
+    "waiting_for_tool": {
+        "in_progress",
+        "blocked",
+        "partial",
+        "needs_follow_up",
+        "failed",
+        "canceled",
+        "superseded",
+    },
+    "failed_validation": {
+        "in_progress",
+        "blocked",
+        "partial",
+        "needs_follow_up",
+        "failed",
+        "canceled",
+        "superseded",
+    },
+    "partial": {
+        "in_progress",
+        "needs_follow_up",
+        "completed",
+        "failed",
+        "canceled",
+        "superseded",
+    },
+    "needs_follow_up": {
+        "in_progress",
+        "partial",
+        "completed",
+        "failed",
+        "canceled",
+        "superseded",
+    },
+    "completed": set(),
+    "failed": set(),
+    "canceled": set(),
+    "superseded": set(),
 }
 
 
@@ -748,6 +846,9 @@ def transition_run(
     ).fetchone()
     if current is None:
         raise ValueError(f"Unknown run: {run_id}")
+    from_status = str(current[0])
+    if to_status != from_status and to_status not in VALID_RUN_TRANSITIONS.get(from_status, set()):
+        raise ValueError(f"Invalid run transition: {from_status} -> {to_status}")
 
     event_time = created_at or now_iso()
     active_invocation_id = invocation_id or current[3]
@@ -796,7 +897,7 @@ def transition_run(
         conn,
         run_id=run_id,
         event_type=event_type,
-        from_status=current[0],
+        from_status=from_status,
         to_status=to_status,
         summary=summary,
         reason=reason,

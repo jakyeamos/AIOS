@@ -799,6 +799,85 @@ def test_runtime_persists_resume_snapshot(runtime_db: Path, tmp_path: Path) -> N
     assert snapshot["current_stage"] == "awaiting_approval"
     assert snapshot["pending_approval_count"] == 1
     assert snapshot["approval_targets"] == ["workflow-default"]
+
+    conn.close()
+
+def test_runtime_transition_records_attention_states(runtime_db: Path, tmp_path: Path) -> None:
+    from aios_orchestration_runtime import ensure_runtime_schema, transition_run
+
+    repo_path = tmp_path / "repo"
+    repo_path.mkdir()
+
+    conn = sqlite3.connect(runtime_db)
+    project_id = _insert_project(conn, repo_path)
+    ensure_runtime_schema(conn)
+
+    transitions = [
+        ("run-user", "in_progress", "waiting_for_user"),
+        ("run-tool", "in_progress", "waiting_for_tool"),
+        ("run-blocked", "in_progress", "blocked"),
+        ("run-validation", "in_progress", "failed_validation"),
+        ("run-superseded", "ready", "superseded"),
+    ]
+    for run_id, from_status, _to_status in transitions:
+        conn.execute(
+            """
+            INSERT INTO orchestration_runs (
+                id, project_id, objective, workflow_key, agent_key, status, rationale,
+                assumptions_json, context_trace_json, created_at, updated_at
+            )
+            VALUES (?, ?, 'Lifecycle transition', 'implementation-delivery', 'implementation-lead',
+                    ?, 'Test rationale', '[]', '[]', '2026-04-29T00:00:00Z', '2026-04-29T00:00:00Z')
+            """,
+            (run_id, project_id, from_status),
+        )
+
+    for run_id, _from_status, to_status in transitions:
+        transition_run(
+            conn,
+            run_id=run_id,
+            to_status=to_status,
+            event_type=to_status,
+            summary=f"Moved to {to_status}.",
+            reason={"kind": "operator_update", "target": to_status},
+            metadata={"source": "test"},
+            superseded_by_run_id="run-next" if to_status == "superseded" else None,
+        )
+
+    rows = conn.execute(
+        """
+        SELECT id, status, status_reason_json, superseded_by_run_id
+        FROM orchestration_runs
+        WHERE id LIKE 'run-%'
+        ORDER BY id
+        """
+    ).fetchall()
+    by_id = {row[0]: row for row in rows}
+    assert by_id["run-user"][1] == "waiting_for_user"
+    assert by_id["run-tool"][1] == "waiting_for_tool"
+    assert by_id["run-blocked"][1] == "blocked"
+    assert by_id["run-validation"][1] == "failed_validation"
+    assert by_id["run-superseded"][1] == "superseded"
+    assert by_id["run-superseded"][3] == "run-next"
+    assert json.loads(by_id["run-user"][2])["target"] == "waiting_for_user"
+
+    event_rows = conn.execute(
+        """
+        SELECT run_id, from_status, to_status, reason_json, metadata_json
+        FROM orchestration_run_events
+        WHERE run_id LIKE 'run-%'
+        ORDER BY run_id
+        """
+    ).fetchall()
+    assert len(event_rows) == 5
+    assert {row[2] for row in event_rows} == {
+        "waiting_for_user",
+        "waiting_for_tool",
+        "blocked",
+        "failed_validation",
+        "superseded",
+    }
+    assert json.loads(event_rows[0][4])["source"] == "test"
     conn.close()
 
 
