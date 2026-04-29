@@ -90,6 +90,7 @@ Tier-one AIOS planning now has a dedicated execution pack under `docs/superpower
 - Capability truth now separates project health subtypes (`healthy`, `degraded`, `missing_source`, `missing_snapshot`, `unknown`) from broad inventory status, and project findings include source, freshness, confidence, and missing reason. Broad `active` status is qualified as `active_with_sessions`, `active_no_sessions`, or `missing_source`.
 - Automation reliability no longer treats seeded health as confirmed: when `automation_run_history` is absent, automation status and success rate are `missing` with explicit missing-history reasons, readable schedules remain the primary trigger label, and urgency is reported as `watch`.
 - RTK `token_regressive` is now a first-class runtime state in Python and UI types; the live RTK audit reports `state=token_regressive` and `benefit_state=token_regressive` rather than hiding the condition behind a generic inactive zero-savings state.
+- Tier-one release gates now include Python CI for `uv run pytest -q`, UI CI production build, and an ESLint warning ratchet at the current 71-warning baseline via `aios-ui/scripts/assert-eslint-warning-baseline.mjs`; README quality-check docs now mirror the CI command set.
 
 Stage 1 capability-truth baseline work has started with a first trusted-signal slice in `aios-ui`:
 
