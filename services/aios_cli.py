@@ -1434,6 +1434,87 @@ def _workflow_learning_kind(layer_type: str | None) -> str:
     return "workflow_evidence"
 
 
+def _count_run_rows(conn: sqlite3.Connection, table: str, run_id: str) -> int:
+    if not _table_exists(conn, table) or "run_id" not in _table_columns(conn, table):
+        return 0
+    row = conn.execute(f"SELECT COUNT(*) AS count FROM {table} WHERE run_id = ?", (run_id,)).fetchone()
+    return int(row["count"] or 0) if row else 0
+
+
+def _linked_artifact_count(conn: sqlite3.Connection, run_id: str) -> int:
+    if not _table_exists(conn, "artifacts") or not _table_exists(conn, "sessions"):
+        return 0
+    artifact_columns = _table_columns(conn, "artifacts")
+    session_columns = _table_columns(conn, "sessions")
+    if "session_id" not in artifact_columns or "run_id" not in session_columns:
+        return 0
+    row = conn.execute(
+        """
+        SELECT COUNT(*) AS count
+        FROM artifacts a
+        INNER JOIN sessions s ON s.id = a.session_id
+        WHERE s.run_id = ?
+        """,
+        (run_id,),
+    ).fetchone()
+    return int(row["count"] or 0) if row else 0
+
+
+def _inferred_learning_evidence(conn: sqlite3.Connection, run: dict[str, Any]) -> dict[str, Any] | None:
+    run_id = str(run["id"])
+    workflow_reports = _count_run_rows(conn, "workflow_execution_reports", run_id)
+    memory_updates = _count_run_rows(conn, "memory_updates", run_id)
+    standards_snapshots = _count_run_rows(conn, "standards_health_snapshots", run_id)
+    success_evaluations = _count_run_rows(conn, "success_criteria_evaluations", run_id)
+    linked_artifacts = _linked_artifact_count(conn, run_id)
+    if standards_snapshots > 0:
+        return {
+            "run_id": run_id,
+            "evidence_type": "standards_health_evidence",
+            "source": "standards_health_snapshots",
+            "source_count": standards_snapshots,
+            "status": run.get("status"),
+            "workflow_key": run.get("workflow_key"),
+        }
+    if run.get("status") in {"failed", "canceled"} and (linked_artifacts > 0 or success_evaluations > 0):
+        return {
+            "run_id": run_id,
+            "evidence_type": "bug_quality_evidence",
+            "source": "artifacts_or_success_criteria",
+            "source_count": linked_artifacts + success_evaluations,
+            "status": run.get("status"),
+            "workflow_key": run.get("workflow_key"),
+        }
+    if workflow_reports > 0:
+        return {
+            "run_id": run_id,
+            "evidence_type": "workflow_evidence",
+            "source": "workflow_execution_reports",
+            "source_count": workflow_reports,
+            "status": run.get("status"),
+            "workflow_key": run.get("workflow_key"),
+        }
+    if memory_updates > 0:
+        return {
+            "run_id": run_id,
+            "evidence_type": "workflow_evidence",
+            "source": "memory_updates",
+            "source_count": memory_updates,
+            "status": run.get("status"),
+            "workflow_key": run.get("workflow_key"),
+        }
+    if linked_artifacts > 0:
+        return {
+            "run_id": run_id,
+            "evidence_type": "workflow_evidence",
+            "source": "session_artifacts",
+            "source_count": linked_artifacts,
+            "status": run.get("status"),
+            "workflow_key": run.get("workflow_key"),
+        }
+    return None
+
+
 def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     classification_counts = {kind: 0 for kind in WORKFLOW_LEARNING_EVIDENCE_TYPES}
     if not _table_exists(conn, "orchestration_runs"):
@@ -1451,6 +1532,7 @@ def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
                 "proposal_source": "improvement_writebacks",
             },
             "classification_counts": classification_counts,
+            "inferred_evidence": [],
             "no_learning_runs": [],
             "proposals": [],
         }
@@ -1468,6 +1550,7 @@ def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
 
     proposals: list[dict[str, Any]] = []
     no_learning_runs: list[dict[str, Any]] = []
+    inferred_evidence: list[dict[str, Any]] = []
     runs_with_learning = 0
     pending_approval_count = 0
     writeback_exists = _table_exists(conn, "improvement_writebacks")
@@ -1490,6 +1573,11 @@ def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
             ]
 
         if not writebacks:
+            inferred = _inferred_learning_evidence(conn, run)
+            if inferred:
+                classification_counts[str(inferred["evidence_type"])] += 1
+                inferred_evidence.append(inferred)
+                continue
             classification_counts["no_learning_signal"] += 1
             no_learning_runs.append(
                 {
@@ -1525,6 +1613,7 @@ def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
             "terminal_run_count": len(run_rows),
             "runs_with_learning": runs_with_learning,
             "no_learning_count": len(no_learning_runs),
+            "inferred_evidence_count": len(inferred_evidence),
             "proposal_count": len(proposals),
             "pending_approval_count": pending_approval_count,
         },
@@ -1535,6 +1624,7 @@ def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
             "promotion_gate": "status + requires_approval on improvement_writebacks",
         },
         "classification_counts": classification_counts,
+        "inferred_evidence": inferred_evidence[:50],
         "no_learning_runs": no_learning_runs[:20],
         "proposals": proposals[:50],
     }

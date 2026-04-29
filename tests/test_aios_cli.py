@@ -540,11 +540,58 @@ def test_workflow_learning_audit_classifies_run_evidence(tmp_path: Path, capsys)
     data = learning_output["data"]
     assert data["summary"]["terminal_run_count"] == 3
     assert data["summary"]["runs_with_learning"] == 1
-    assert data["summary"]["no_learning_count"] == 2
+    assert data["summary"]["no_learning_count"] == 1
     assert data["summary"]["pending_approval_count"] == 1
-    assert data["classification_counts"]["workflow_evidence"] == 1
+    assert data["classification_counts"]["workflow_evidence"] == 2
     assert data["classification_counts"]["prompt_template_evidence"] == 1
-    assert data["classification_counts"]["no_learning_signal"] == 2
+    assert data["classification_counts"]["no_learning_signal"] == 1
+
+
+def test_workflow_learning_audit_infers_evidence_from_linked_artifacts(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    conn = sqlite3.connect(db_path)
+    conn.execute("CREATE TABLE artifacts (id TEXT PRIMARY KEY, session_id TEXT, artifact_type TEXT, path TEXT, created_at TEXT)")
+    conn.execute(
+        "INSERT INTO orchestration_runs (id, status, workflow_key) VALUES ('run-artifact', 'completed', 'implementation-delivery')"
+    )
+    conn.execute(
+        """
+        INSERT INTO sessions (id, project_id, status, started_at, ended_at, cwd, run_id)
+        VALUES ('s-artifact', 'p1', 'closed', '2026-04-23T00:00:00Z', '2026-04-23T00:10:00Z', '/repo', 'run-artifact')
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO artifacts (id, session_id, artifact_type, path, created_at)
+        VALUES ('artifact-1', 's-artifact', 'patch', '/tmp/change.patch', '2026-04-23T00:11:00Z')
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    learning_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "workflow-learning-audit",
+        ]
+    )
+
+    assert learning_exit == EXIT_OK
+    learning_output = json.loads(capsys.readouterr().out)
+    data = learning_output["data"]
+    assert data["classification_counts"]["workflow_evidence"] >= 1
+    assert data["summary"]["inferred_evidence_count"] >= 1
+    assert data["summary"]["no_learning_count"] == 0
+    inferred_by_run = {item["run_id"]: item for item in data["inferred_evidence"]}
+    assert inferred_by_run["run-artifact"]["evidence_type"] == "workflow_evidence"
 
 
 def test_contracts_audit_reports_canonical_interfaces(tmp_path: Path, capsys) -> None:
