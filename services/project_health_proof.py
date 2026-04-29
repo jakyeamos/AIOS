@@ -55,6 +55,29 @@ def _project_candidates(conn: sqlite3.Connection, name: str) -> list[sqlite3.Row
     ).fetchall()
 
 
+def _inventory_project_targets(conn: sqlite3.Connection) -> list[dict[str, str | None]]:
+    rows = conn.execute(
+        """
+        SELECT id, name
+        FROM projects
+        WHERE name IS NOT NULL AND name != ''
+        ORDER BY lower(name), id
+        """
+    ).fetchall()
+    return [{"name": str(row["name"]), "project_id": str(row["id"])} for row in rows]
+
+
+def _project_by_id(conn: sqlite3.Connection, project_id: str) -> sqlite3.Row | None:
+    return conn.execute(
+        """
+        SELECT id, name, repo_path, status
+        FROM projects
+        WHERE id = ?
+        """,
+        (project_id,),
+    ).fetchone()
+
+
 def _best_candidate(candidates: list[sqlite3.Row]) -> sqlite3.Row | None:
     if not candidates:
         return None
@@ -93,17 +116,36 @@ def prove_project_health(
     *,
     config_root: Path,
     project_names: list[str] | None = None,
+    all_inventory: bool = False,
 ) -> dict[str, Any]:
     ensure_standards_health_schema(conn)
     configured_projects = _load_configured_projects(config_root)
     registry_path = config_root / "standards" / "registry.json"
-    target_names = project_names or list(DEFAULT_PROVING_PROJECTS)
+    if all_inventory:
+        target_entries = _inventory_project_targets(conn)
+        existing_keys = {entry["name"].casefold() for entry in target_entries if entry["name"]}
+        target_entries.extend(
+            {"name": name, "project_id": None}
+            for name in DEFAULT_PROVING_PROJECTS
+            if name.casefold() not in existing_keys
+        )
+    else:
+        target_entries = [
+            {"name": name, "project_id": None}
+            for name in (project_names or list(DEFAULT_PROVING_PROJECTS))
+        ]
 
     results: list[dict[str, Any]] = []
-    for name in target_names:
+    for entry in target_entries:
+        name = str(entry["name"])
         configured = configured_projects.get(name.casefold())
-        candidates = _project_candidates(conn, name)
-        candidate = _best_candidate(candidates)
+        if entry["project_id"]:
+            project_row = _project_by_id(conn, str(entry["project_id"]))
+            candidates = [project_row] if project_row is not None else []
+            candidate = project_row
+        else:
+            candidates = _project_candidates(conn, name)
+            candidate = _best_candidate(candidates)
         if candidate is None:
             results.append(_missing_project_result(name, configured))
             continue
@@ -148,7 +190,7 @@ def prove_project_health(
                 "candidate_count": len(candidates),
                 "missing_reason": None,
             }
-        )
+            )
 
     conn.commit()
     status_counts: dict[str, int] = {}
@@ -158,7 +200,7 @@ def prove_project_health(
 
     return {
         "summary": {
-            "target_count": len(target_names),
+            "target_count": len(target_entries),
             "snapshot_recorded_count": status_counts.get("snapshot_recorded", 0),
             "missing_source_count": status_counts.get("missing_source", 0),
             "missing_inventory_count": status_counts.get("missing_inventory", 0),

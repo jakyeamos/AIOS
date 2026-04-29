@@ -2486,6 +2486,11 @@ def create_parser() -> argparse.ArgumentParser:
         default=[],
         help=f"Project name to prove; defaults to {', '.join(DEFAULT_PROVING_PROJECTS)}",
     )
+    prove_project_health_parser.add_argument(
+        "--all-inventory",
+        action="store_true",
+        help="Prove every project in inventory, plus missing configured proving projects",
+    )
 
     subparsers.add_parser("sync-automation-history", help="Import durable automation history from local logs")
 
@@ -2590,6 +2595,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
                 conn,
                 config_root=config_root,
                 project_names=list(args.project) if args.project else None,
+                all_inventory=bool(args.all_inventory),
             )
         elif args.command == "sync-automation-history":
             assert conn is not None
