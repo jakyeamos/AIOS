@@ -69,6 +69,8 @@ def test_rtk_run_records_metrics(tmp_path: Path) -> None:
     conn.commit()
 
     assert result.exit_code == 0
+    assert result.effective_mode == "raw"
+    assert result.output == "ok"
     metrics = rtk_metrics_log(conn, session_id="s1")
     assert metrics["event_count"] == 1
     assert metrics["raw_tokens"] >= 1
@@ -81,6 +83,14 @@ def test_rtk_run_records_metrics(tmp_path: Path) -> None:
         "rtk.token_reduction_percent",
     }
     conn.close()
+
+
+def test_rtk_run_passes_through_short_success_output() -> None:
+    result = rtk_run(f"{sys.executable} -c 'print(\"tiny\")'", "adaptive")
+
+    assert result.effective_mode == "raw"
+    assert result.output == "tiny"
+    assert result.estimated_raw_tokens == result.estimated_compressed_tokens
 
 
 def test_record_rtk_event_without_session(tmp_path: Path) -> None:

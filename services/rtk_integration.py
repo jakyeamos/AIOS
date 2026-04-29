@@ -293,6 +293,36 @@ def rtk_run(
         used_upstream = True
 
     exit_code, raw_output = _execute(effective_command, cwd, timeout)
+    if not used_upstream and mode != "raw" and exit_code == 0:
+        threshold = _passthrough_threshold(command, load_compression_rules())
+        if threshold > 0 and len(raw_output) < threshold:
+            raw_tokens = estimate_tokens(raw_output)
+            result = RTKRunResult(
+                command=command,
+                mode=mode,
+                effective_mode="raw",
+                exit_code=exit_code,
+                output=raw_output,
+                raw_output=raw_output,
+                raw_chars=len(raw_output),
+                compressed_chars=len(raw_output),
+                estimated_raw_tokens=raw_tokens,
+                estimated_compressed_tokens=raw_tokens,
+                token_reduction_percent=0.0,
+                ambiguous_failure=False,
+                raw_output_path=None,
+                used_upstream_rtk=False,
+            )
+            if conn is not None:
+                record_rtk_event(
+                    conn,
+                    result=result,
+                    session_id=session_id,
+                    run_id=run_id,
+                    workflow_key=workflow_key,
+                    source_kind=source_kind,
+                )
+            return result
     if used_upstream:
         compressed = raw_output
         ambiguous_failure = bool(exit_code != 0 and not ERROR_PATTERNS.search(raw_output))
