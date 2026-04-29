@@ -572,9 +572,60 @@ def test_insert_writeback_derives_approval_policy_for_high_impact_changes(
     assert event_metadata["approval_policy"]["requires_approval"] is True
 
 
-def test_runtime_transition_records_failed_reason_metadata(
-    runtime_db: Path, tmp_path: Path
+def test_hook_stop_records_unrouted_session_finding(
+    runtime_db: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    hook_stop = _load_module("hook_stop_unrouted", "bin/hook-stop.py")
+
+    repo_path = tmp_path / "repo"
+    repo_path.mkdir()
+    conn = sqlite3.connect(runtime_db)
+    project_id = _insert_project(conn, repo_path)
+    session_id = "session-unrouted"
+    conn.execute(
+        """
+        INSERT INTO sessions (id, project_id, tool, started_at, objective, status, cwd)
+        VALUES (?, ?, 'claude-code', '2026-04-29T00:00:00Z', 'Do serious work', 'open', ?)
+        """,
+        (session_id, project_id, str(repo_path)),
+    )
+    conn.commit()
+    conn.close()
+
+    monkeypatch.setattr(hook_stop, "DB", str(runtime_db))
+    monkeypatch.setattr(hook_stop, "LOG", str(tmp_path / "hooks.log"))
+    monkeypatch.setattr(hook_stop, "SUMMARIES_DIR", str(tmp_path / "summaries"))
+    monkeypatch.setattr(hook_stop.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        sys,
+        "stdin",
+        io.StringIO(json.dumps({"session_id": session_id, "run_outcome": "completed"})),
+    )
+
+    hook_stop.main()
+
+    conn = sqlite3.connect(runtime_db)
+    finding = conn.execute(
+        """
+        SELECT finding_kind, severity, summary, metadata_json
+        FROM runtime_findings
+        WHERE session_id = ?
+        """,
+        (session_id,),
+    ).fetchone()
+    conn.close()
+
+    assert finding is not None
+    assert finding[0] == "unrouted_session"
+    assert finding[1] == "warning"
+    assert "explicit run/session/invocation handshake" in finding[2]
+    metadata = json.loads(finding[3])
+    assert metadata["missing_reason"] == "No explicit run_id or invocation_id was linked at closeout."
+
+
+def test_runtime_transition_records_failed_reason_metadata(runtime_db: Path, tmp_path: Path) -> None:
     from aios_orchestration_runtime import ensure_runtime_schema, transition_run
 
     repo_path = tmp_path / "repo"

@@ -525,6 +525,20 @@ def main() -> None:
                     "approval_targets": [],
                 },
             )
+        if objective and not (run_id or invocation_id):
+            link_session_runtime(
+                conn,
+                session_id=session_id,
+                run_id=None,
+                invocation_id=None,
+                runtime_metadata={
+                    "runtime_status": "unrouted",
+                    "missing_reason": "No explicit AIOS_RUN_ID or AIOS_INVOCATION_ID was provided at session start.",
+                    "backend_key": backend_key,
+                    "cwd": cwd,
+                },
+                objective=objective,
+            )
         conn.commit()
 
         # Generate session packet

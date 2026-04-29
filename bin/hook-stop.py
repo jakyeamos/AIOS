@@ -26,6 +26,7 @@ from aios_orchestration_runtime import (  # noqa: E402
     insert_workflow_execution_report,
     insert_writeback,
     link_session_runtime,
+    record_runtime_finding,
     resolve_run_linkage,
     transition_run,
     update_invocation,
@@ -978,6 +979,26 @@ def main() -> None:
             payload_run_id=data.get("run_id"),
             payload_invocation_id=data.get("invocation_id"),
         )
+        if not linked_run_id and row[4]:
+            record_runtime_finding(
+                conn,
+                session_id=session_id,
+                project_id=row[1],
+                invocation_id=linked_invocation_id,
+                finding_kind="unrouted_session",
+                severity="warning",
+                summary=(
+                    "Session closed without an explicit run/session/invocation handshake."
+                ),
+                metadata={
+                    "objective": row[4],
+                    "missing_reason": (
+                        "No explicit run_id or invocation_id was linked at closeout."
+                    ),
+                    "legacy_fallback_enabled": legacy_fallback_enabled,
+                },
+                created_at=now,
+            )
         memory_update_id = str(uuid.uuid4())
 
         # Close session in DB

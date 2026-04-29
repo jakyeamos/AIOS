@@ -1270,6 +1270,14 @@ def test_invocation_audit_and_backend_label_contract(tmp_path: Path, capsys) -> 
     logs_dir = tmp_path / "logs"
     logs_dir.mkdir()
     _seed_db(db_path)
+    recent_session_time = (datetime.now(UTC) - timedelta(days=1)).isoformat()
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "UPDATE sessions SET started_at = ?, ended_at = ? WHERE id = 's1'",
+        (recent_session_time, recent_session_time),
+    )
+    conn.commit()
+    conn.close()
 
     audit_exit = run_cli(
         [
@@ -1301,6 +1309,10 @@ def test_invocation_audit_and_backend_label_contract(tmp_path: Path, capsys) -> 
         audit_output["data"]["handshake_coverage"]["legacy_fallback_policy"]
         == "disabled_by_default"
     )
+    assert audit_output["data"]["handshake_coverage"]["current_period_days"] == 30
+    assert audit_output["data"]["handshake_coverage"]["current_period_sessions"] == 1
+    assert audit_output["data"]["handshake_coverage"]["current_period_linked_sessions"] == 0
+    assert audit_output["data"]["handshake_coverage"]["current_period_coverage"] == 0.0
 
     required = {
         "run_id",

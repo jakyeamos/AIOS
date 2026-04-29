@@ -453,6 +453,29 @@ def ensure_runtime_schema(conn: sqlite3.Connection) -> None:
           ON success_criteria_stage_findings(criterion_id, level)
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS runtime_findings (
+            id TEXT PRIMARY KEY,
+            session_id TEXT REFERENCES sessions(id),
+            project_id TEXT REFERENCES projects(id),
+            run_id TEXT REFERENCES orchestration_runs(id),
+            invocation_id TEXT REFERENCES orchestration_invocations(id),
+            finding_kind TEXT NOT NULL,
+            severity TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            resolution_status TEXT NOT NULL DEFAULT 'open',
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_runtime_findings_session
+          ON runtime_findings(session_id, created_at DESC)
+        """
+    )
 
     ensure_column(conn, "sessions", "run_id", "TEXT REFERENCES orchestration_runs(id)")
     ensure_column(
@@ -536,6 +559,53 @@ def ensure_runtime_schema(conn: sqlite3.Connection) -> None:
         conn, "consistency_findings", "resolution_evidence_json", "TEXT NOT NULL DEFAULT '[]'"
     )
     ensure_column(conn, "consistency_findings", "resolved_at", "TEXT")
+
+
+def record_runtime_finding(
+    conn: sqlite3.Connection,
+    *,
+    session_id: str,
+    finding_kind: str,
+    severity: str,
+    summary: str,
+    project_id: str | None = None,
+    run_id: str | None = None,
+    invocation_id: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    created_at: str | None = None,
+) -> str:
+    ensure_runtime_schema(conn)
+    finding_id = f"runtime-finding-{uuid.uuid4()}"
+    conn.execute(
+        """
+        INSERT INTO runtime_findings (
+            id,
+            session_id,
+            project_id,
+            run_id,
+            invocation_id,
+            finding_kind,
+            severity,
+            summary,
+            metadata_json,
+            created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            finding_id,
+            session_id,
+            project_id,
+            run_id,
+            invocation_id,
+            finding_kind,
+            severity,
+            summary,
+            _json(metadata or {}),
+            created_at or now_iso(),
+        ),
+    )
+    return finding_id
 
 
 def get_run_row(conn: sqlite3.Connection, run_id: str) -> sqlite3.Row | None:

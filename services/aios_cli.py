@@ -819,8 +819,16 @@ def _run_status_counts(conn: sqlite3.Connection) -> dict[str, int]:
 
 
 def _handshake_coverage(conn: sqlite3.Connection) -> dict[str, Any]:
+    current_period_days = 30
+    base = {
+        "current_period_days": current_period_days,
+        "current_period_sessions": 0,
+        "current_period_linked_sessions": 0,
+        "current_period_coverage": 0.0,
+    }
     if not _table_exists(conn, "sessions"):
         return {
+            **base,
             "total_sessions": 0,
             "explicitly_linked_sessions": 0,
             "coverage": 0.0,
@@ -831,6 +839,7 @@ def _handshake_coverage(conn: sqlite3.Connection) -> dict[str, Any]:
     if not {"run_id", "invocation_id"}.issubset(columns):
         total = _count(conn, "sessions")
         return {
+            **base,
             "total_sessions": total,
             "explicitly_linked_sessions": 0,
             "coverage": 0.0,
@@ -850,10 +859,28 @@ def _handshake_coverage(conn: sqlite3.Connection) -> dict[str, Any]:
     total = int(row["total"] or 0) if row else 0
     explicit_count = int(row["explicit_count"] or 0) if row else 0
     coverage = round(explicit_count / total, 4) if total else 0.0
+    threshold = (datetime.now(UTC) - timedelta(days=current_period_days)).isoformat()
+    current_row = conn.execute(
+        """
+        SELECT
+            COUNT(*) AS total,
+            SUM(CASE WHEN run_id IS NOT NULL AND invocation_id IS NOT NULL THEN 1 ELSE 0 END) AS explicit_count
+        FROM sessions
+        WHERE COALESCE(ended_at, started_at) >= ?
+        """,
+        (threshold,),
+    ).fetchone()
+    current_total = int(current_row["total"] or 0) if current_row else 0
+    current_explicit_count = int(current_row["explicit_count"] or 0) if current_row else 0
+    current_coverage = round(current_explicit_count / current_total, 4) if current_total else 0.0
     return {
+        **base,
         "total_sessions": total,
         "explicitly_linked_sessions": explicit_count,
         "coverage": coverage,
+        "current_period_sessions": current_total,
+        "current_period_linked_sessions": current_explicit_count,
+        "current_period_coverage": current_coverage,
         "target_coverage": 0.9,
         "legacy_fallback_policy": "disabled_by_default",
         "emergency_flag": "AIOS_ALLOW_LEGACY_RUN_LINK",
