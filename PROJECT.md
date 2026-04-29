@@ -82,6 +82,7 @@ Tier-one AIOS planning now has a dedicated execution pack under `docs/superpower
 - `EXECUTION.md` now routes agents through the plan pack by priority gates, verification commands, stop conditions, parallelization rules, and final tier-one claim checklist
 - Managed runtime closeout now has direct start and closeout guards in `bin/aios-managed-run.py` so hook-side evaluator failures cannot leave authoritative runs stuck in `ready`; `tests/test_orchestration_runtime.py::test_managed_runtime_completes_via_explicit_handshake` and the full Python suite now pass.
 - Workflow learning audit now recognizes inferred durable evidence from workflow reports, memory updates, standards snapshots, success evaluations, and session artifacts linked through runs; the live audit moved from 110 no-learning terminal runs to 96 inferred evidence records and 14 no-learning runs.
+- Priority standards-health snapshots were regenerated for AIOS, Terrace, amos-saas, portfolio, and soundscape-app using `services.standards_health.evaluate_and_record(..., trigger_kind="tier_one_priority_audit")`; the current priority scores are AIOS 64.8, Terrace 63.2, amos-saas 63.2, portfolio 72.8, and soundscape-app 63.2. GitNexus is not present in the current project inventory.
 
 Stage 1 capability-truth baseline work has started with a first trusted-signal slice in `aios-ui`:
 
