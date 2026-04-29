@@ -79,6 +79,7 @@ Tier-one AIOS planning now has a dedicated execution pack under `docs/superpower
 - section plans cover runtime/invocation reliability, command-center UI, knowledge/personal memory, workflow learning, project standards health, observability/telemetry, integrations/retrieval, testing/release hardening, and rollout governance
 - the pack treats UI polish as the final stage after runtime, knowledge, learning, telemetry, and contract trust are proven
 - the first critical implementation target is managed runtime closeout and explicit handshake reliability
+- `EXECUTION.md` now routes agents through the plan pack by priority gates, verification commands, stop conditions, parallelization rules, and final tier-one claim checklist
 
 Stage 1 capability-truth baseline work has started with a first trusted-signal slice in `aios-ui`:
 
