@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-04-28
+Last updated: 2026-04-29
 
 ## What AIOS Is
 
@@ -78,6 +78,19 @@ Tier-one AIOS planning now has a dedicated execution pack under `docs/superpower
 - `00-index.md` defines the tier-one acceptance gate and execution order
 - section plans cover runtime/invocation reliability, command-center UI, knowledge/personal memory, workflow learning, project standards health, observability/telemetry, integrations/retrieval, testing/release hardening, and rollout governance
 - the pack treats UI polish as the final stage after runtime, knowledge, learning, telemetry, and contract trust are proven
+
+## Implemented On 2026-04-29
+
+The tier-one audit fix pass has started with capability trust gates before UI polish:
+
+- release and regression gates now lock the current audit promises for lifecycle states, canonical contracts, Prompt Library visibility, RTK explanations, readable automation schedules, workflow learning counts, and capability missing-data reasons
+- UI quality CI now runs lint, the 71-warning ESLint ratchet, architecture lint, anti-slop fixture lint, and production build; Python CI now runs `uv run pytest -q`
+- project health audit output now reports explicit states/subtypes such as `healthy`, `degraded`, `missing_source`, `missing_snapshot`, `unknown`, `active_with_sessions`, and `active_no_sessions`
+- automation health now treats missing durable run history as unknown/inferred instead of confirmed seeded reliability
+- RTK audit output now distinguishes `token_regressive` from inactive or beneficial states
+- workflow learning now persists `workflow_learning_events` from writebacks, durable inferred evidence, and explicit no-learning reasons
+- the live workflow-learning audit backfilled 110 terminal runs into persisted events: 96 learning events and 14 no-learning signals
+- contracts audit now reports `WorkflowLearningEvent` as implemented
 - the first critical implementation target is managed runtime closeout and explicit handshake reliability
 - `EXECUTION.md` now routes agents through the plan pack by priority gates, verification commands, stop conditions, parallelization rules, and final tier-one claim checklist
 - Managed runtime closeout now has direct start and closeout guards in `bin/aios-managed-run.py` so hook-side evaluator failures cannot leave authoritative runs stuck in `ready`; `tests/test_orchestration_runtime.py::test_managed_runtime_completes_via_explicit_handshake` and the full Python suite now pass.
