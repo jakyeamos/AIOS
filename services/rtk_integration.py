@@ -525,41 +525,70 @@ def rtk_metrics_log(conn: sqlite3.Connection, *, session_id: str | None = None) 
     ensure_rtk_schema(conn)
     where = "WHERE session_id = ?" if session_id else ""
     params: tuple[str, ...] = (session_id,) if session_id else ()
-    row = conn.execute(
+    rows = conn.execute(
         f"""
         SELECT
-          COUNT(*) AS event_count,
-          COALESCE(SUM(estimated_raw_tokens), 0) AS raw_tokens,
-          COALESCE(SUM(estimated_compressed_tokens), 0) AS compressed_tokens,
-          COALESCE(SUM(MAX(estimated_raw_tokens - estimated_compressed_tokens, 0)), 0) AS tokens_saved,
-          COALESCE(AVG(token_reduction_percent), 0) AS average_reduction_percent,
-          COALESCE(SUM(ambiguous_failure), 0) AS ambiguous_failures
+          command,
+          exit_code,
+          raw_chars,
+          estimated_raw_tokens,
+          estimated_compressed_tokens,
+          token_reduction_percent,
+          ambiguous_failure
         FROM rtk_compression_events
         {where}
         """,
         params,
-    ).fetchone()
-    raw_tokens = int(row["raw_tokens"] if isinstance(row, sqlite3.Row) else row[1])
-    compressed_tokens = int(row["compressed_tokens"] if isinstance(row, sqlite3.Row) else row[2])
+    ).fetchall()
+    rules = load_compression_rules()
+    total_event_count = len(rows)
+    total_raw_tokens = sum(int(row["estimated_raw_tokens"]) for row in rows)
+    total_compressed_tokens = sum(int(row["estimated_compressed_tokens"]) for row in rows)
+    ambiguous_failures = sum(int(row["ambiguous_failure"]) for row in rows)
+
+    eligible_rows = [
+        row
+        for row in rows
+        if int(row["exit_code"] or 0) != 0
+        or int(row["raw_chars"]) >= _passthrough_threshold(str(row["command"] or ""), rules)
+    ]
+    raw_tokens = sum(int(row["estimated_raw_tokens"]) for row in eligible_rows)
+    compressed_tokens = sum(int(row["estimated_compressed_tokens"]) for row in eligible_rows)
+    tokens_saved = sum(
+        max(int(row["estimated_raw_tokens"]) - int(row["estimated_compressed_tokens"]), 0)
+        for row in eligible_rows
+    )
+    regressive_count = sum(
+        1
+        for row in eligible_rows
+        if int(row["estimated_compressed_tokens"]) > int(row["estimated_raw_tokens"])
+    )
+    average_reduction = (
+        round(sum(float(row["token_reduction_percent"]) for row in eligible_rows) / len(eligible_rows), 2)
+        if eligible_rows
+        else 0.0
+    )
     reduction = 0.0
     if raw_tokens:
         reduction = round(max(0, raw_tokens - compressed_tokens) / raw_tokens * 100, 2)
     return {
-        "event_count": int(row["event_count"] if isinstance(row, sqlite3.Row) else row[0]),
+        "event_count": total_event_count,
+        "eligible_event_count": len(eligible_rows),
+        "passthrough_or_ineligible_event_count": total_event_count - len(eligible_rows),
         "raw_tokens": raw_tokens,
         "compressed_tokens": compressed_tokens,
-        "tokens_saved": int(row["tokens_saved"] if isinstance(row, sqlite3.Row) else row[3]),
-        "average_reduction_percent": round(
-            float(row["average_reduction_percent"] if isinstance(row, sqlite3.Row) else row[4]),
-            2,
-        ),
+        "tokens_saved": tokens_saved,
+        "total_raw_tokens": total_raw_tokens,
+        "total_compressed_tokens": total_compressed_tokens,
+        "average_reduction_percent": average_reduction,
         "weighted_reduction_percent": reduction,
-        "ambiguous_failures": int(row["ambiguous_failures"] if isinstance(row, sqlite3.Row) else row[5]),
+        "ambiguous_failures": ambiguous_failures,
+        "regressive_count": regressive_count,
     }
 
 
 def classify_rtk_metrics(metrics: dict[str, Any]) -> dict[str, Any]:
-    event_count = int(metrics.get("event_count", 0))
+    event_count = int(metrics.get("eligible_event_count", metrics.get("event_count", 0)))
     raw_tokens = int(metrics.get("raw_tokens", 0))
     compressed_tokens = int(metrics.get("compressed_tokens", 0))
     tokens_saved = int(metrics.get("tokens_saved", 0))

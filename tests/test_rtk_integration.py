@@ -73,8 +73,9 @@ def test_rtk_run_records_metrics(tmp_path: Path) -> None:
     assert result.output == "ok"
     metrics = rtk_metrics_log(conn, session_id="s1")
     assert metrics["event_count"] == 1
-    assert metrics["raw_tokens"] >= 1
-    assert metrics["compressed_tokens"] >= 1
+    assert metrics["eligible_event_count"] == 0
+    assert metrics["total_raw_tokens"] >= 1
+    assert metrics["total_compressed_tokens"] >= 1
     metric_rows = conn.execute("SELECT metric_name FROM workflow_metrics").fetchall()
     assert {row["metric_name"] for row in metric_rows} >= {
         "rtk.raw_tokens",
@@ -139,3 +140,22 @@ def test_classify_rtk_metrics_distinguishes_no_benefit_states() -> None:
     )
     assert beneficial["state"] == "active"
     assert beneficial["benefit_state"] == "beneficial"
+
+
+def test_short_rtk_events_are_not_eligible_compression_data(tmp_path: Path) -> None:
+    conn = sqlite3.connect(tmp_path / "aios.db")
+    conn.row_factory = sqlite3.Row
+    ensure_rtk_schema(conn)
+    result = rtk_run(f"{sys.executable} -c 'print(\"ok\")'", "compressed")
+    record_rtk_event(conn, result=result, source_kind="unit")
+    conn.commit()
+
+    metrics = rtk_metrics_log(conn)
+    classification = classify_rtk_metrics(metrics)
+
+    assert metrics["event_count"] == 1
+    assert metrics["eligible_event_count"] == 0
+    assert metrics["passthrough_or_ineligible_event_count"] == 1
+    assert classification["state"] == "no_eligible_data"
+    assert classification["benefit_state"] == "no_eligible_data"
+    conn.close()

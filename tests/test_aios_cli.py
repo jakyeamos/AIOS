@@ -1024,7 +1024,7 @@ def test_rtk_cli_reports_token_regressive_events(tmp_path: Path, capsys) -> None
         )
         VALUES (
           'rtk-1', 'test', 'echo ok', 'compressed', 'compressed', 0,
-          40, 64, 10, 16, 0.0, 0, '{}'
+          400, 640, 100, 160, 0.0, 0, '{}'
         )
         """
     )

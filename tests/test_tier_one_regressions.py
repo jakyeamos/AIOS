@@ -123,7 +123,7 @@ def test_tier_one_audits_preserve_core_contracts(tmp_path: Path, capsys) -> None
     assert capability_exit == EXIT_OK
     capability = json.loads(capsys.readouterr().out)["data"]
     assert capability["prompt_library"]["visibility"]["value"] == "visible"
-    assert capability["rtk"]["state"]["value"] == "token_regressive"
+    assert capability["rtk"]["state"]["value"] == "no_eligible_data"
     assert capability["rtk"]["state"]["explanation"]
     assert capability["automations"]["items"][0]["trigger"]["value"] == "Weekdays at 9:00 AM"
     assert capability["automations"]["items"][0]["status"]["value"] == "unknown"

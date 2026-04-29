@@ -5,7 +5,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Literal
 
-from services.rtk_integration import classify_rtk_metrics
+from services.rtk_integration import classify_rtk_metrics, rtk_metrics_log
 
 Provenance = Literal["confirmed", "inferred", "missing", "contradictory"]
 
@@ -285,23 +285,8 @@ def _rtk_signals(conn: sqlite3.Connection) -> dict[str, Any]:
             "findings": [],
         }
 
-    row = conn.execute(
-        """
-        SELECT
-          COUNT(*) AS events,
-          COALESCE(SUM(estimated_raw_tokens), 0) AS raw_tokens,
-          COALESCE(SUM(estimated_compressed_tokens), 0) AS compressed_tokens,
-          COALESCE(SUM(MAX(estimated_raw_tokens - estimated_compressed_tokens, 0)), 0) AS tokens_saved
-        FROM rtk_compression_events
-        """
-    ).fetchone()
-    events = int(row["events"])
-    metrics = {
-        "event_count": events,
-        "raw_tokens": int(row["raw_tokens"]),
-        "compressed_tokens": int(row["compressed_tokens"]),
-        "tokens_saved": int(row["tokens_saved"]),
-    }
+    metrics = rtk_metrics_log(conn)
+    events = int(metrics["event_count"])
     classification = classify_rtk_metrics(metrics)
     findings = []
     if classification["benefit_state"] == "token_regressive":
@@ -335,9 +320,11 @@ def _rtk_signals(conn: sqlite3.Connection) -> dict[str, Any]:
         "benefit_state": classification["benefit_state"],
         "metrics": {
             "events": metrics["event_count"],
+            "eligible_events": metrics["eligible_event_count"],
             "raw_tokens": metrics["raw_tokens"],
             "compressed_tokens": metrics["compressed_tokens"],
             "tokens_saved": metrics["tokens_saved"],
+            "passthrough_or_ineligible_events": metrics["passthrough_or_ineligible_event_count"],
         },
         "findings": findings,
     }
