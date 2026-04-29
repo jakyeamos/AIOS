@@ -19,6 +19,7 @@ from services.invocation_backends import (
     get_invocation_backend,
     list_invocation_backends,
 )
+from services.project_health_proof import DEFAULT_PROVING_PROJECTS, prove_project_health
 from services.rtk_integration import (
     classify_rtk_metrics,
     ensure_rtk_schema,
@@ -2404,6 +2405,14 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
         summary = data["summary"]
         print(f"contracts={summary['canonical_contract_count']} partial={summary['partial_count']}")
         return
+    if command == "prove-project-health":
+        summary = data["summary"]
+        print(
+            f"targets={summary['target_count']} "
+            f"snapshots={summary['snapshot_recorded_count']} "
+            f"missing_source={summary['missing_source_count']}"
+        )
+        return
     if command == "start-work":
         print(
             f"run={data['run']['id']} status={data['run']['status']} "
@@ -2458,6 +2467,17 @@ def create_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("workflow-learning-audit", help="Workflow learning evidence and proposal audit")
     subparsers.add_parser("contracts-audit", help="Canonical AIOS interface contract audit")
 
+    prove_project_health_parser = subparsers.add_parser(
+        "prove-project-health",
+        help="Record standards-health snapshots for tier-one proving projects",
+    )
+    prove_project_health_parser.add_argument(
+        "--project",
+        action="append",
+        default=[],
+        help=f"Project name to prove; defaults to {', '.join(DEFAULT_PROVING_PROJECTS)}",
+    )
+
     start_work = subparsers.add_parser("start-work", help="Create a routed AIOS run packet and session handshake")
     start_work.add_argument("objective", help="Work objective to route through AIOS")
     start_work.add_argument("--project", default=None, help="Project id to link to the run")
@@ -2502,6 +2522,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "knowledge-objects",
             "workflow-learning-audit",
             "contracts-audit",
+            "prove-project-health",
             "start-work",
         }:
             conn = _connect_db(db_path)
@@ -2551,6 +2572,13 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "contracts-audit":
             assert conn is not None
             data = _contracts_audit_payload(conn)
+        elif args.command == "prove-project-health":
+            assert conn is not None
+            data = prove_project_health(
+                conn,
+                config_root=config_root,
+                project_names=list(args.project) if args.project else None,
+            )
         elif args.command == "start-work":
             assert conn is not None
             data = _start_work_payload(

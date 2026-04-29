@@ -138,3 +138,105 @@ def test_tier_one_audits_preserve_core_contracts(tmp_path: Path, capsys) -> None
     learning = json.loads(capsys.readouterr().out)["data"]
     assert "no_learning_count" in learning["summary"]
     assert learning["summary"]["terminal_run_count"] >= 1
+
+
+def test_prove_project_health_records_snapshots_and_reports_missing_sources(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    config_root = tmp_path / "config"
+    repo_path = tmp_path / "repo"
+    missing_repo_path = tmp_path / "missing-gitnexus"
+    logs_dir.mkdir()
+    repo_path.mkdir()
+    standards_dir = config_root / "standards"
+    projects_dir = config_root / "architecture-enforcement"
+    standards_dir.mkdir(parents=True)
+    projects_dir.mkdir(parents=True)
+    (standards_dir / "registry.json").write_text(
+        json.dumps(
+            {
+                "profile": {
+                    "id": "tier-one-test",
+                    "title": "Tier One Test",
+                    "version": "1.0.0",
+                    "default_attached_version": "1.0.0",
+                    "domains": ["testing"],
+                },
+                "standards": [
+                    {
+                        "id": "tier.pass",
+                        "title": "Pass",
+                        "description": "",
+                        "domain": "testing",
+                        "weight": 10,
+                        "severity_if_missing": 3,
+                        "evaluation_method": "manual",
+                        "expected_state": {},
+                        "remediation_playbook": {"effort": 1, "leverage": 1},
+                        "blocking_dependencies": [],
+                        "version": "1.0.0",
+                        "introduced_version": "1.0.0",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (projects_dir / "projects.json").write_text(
+        json.dumps(
+            {
+                "projects": [
+                    {"id": "aios", "name": "AIOS", "path": str(repo_path), "profile_bindings": []},
+                    {
+                        "id": "gitnexus",
+                        "name": "GitNexus",
+                        "path": str(missing_repo_path),
+                        "profile_bindings": [],
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    conn = sqlite3.connect(db_path)
+    conn.executescript((ROOT / "schema.sql").read_text(encoding="utf-8"))
+    conn.execute(
+        """
+        INSERT INTO projects (id, name, repo_path, obsidian_path, status)
+        VALUES ('p1', 'AIOS', ?, ?, 'active')
+        """,
+        (str(repo_path), str(repo_path)),
+    )
+    conn.commit()
+    conn.close()
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "--config-root",
+            str(config_root),
+            "prove-project-health",
+            "--project",
+            "AIOS",
+            "--project",
+            "GitNexus",
+        ]
+    )
+    assert exit_code == EXIT_OK
+    payload = json.loads(capsys.readouterr().out)["data"]
+
+    assert payload["summary"]["snapshot_recorded_count"] == 1
+    assert payload["summary"]["missing_source_count"] == 1
+    status_by_name = {project["name"]: project["status"] for project in payload["projects"]}
+    assert status_by_name["AIOS"] == "snapshot_recorded"
+    assert status_by_name["GitNexus"] == "missing_source"
+
+    conn = sqlite3.connect(db_path)
+    snapshot_count = conn.execute("SELECT COUNT(*) FROM standards_health_snapshots").fetchone()[0]
+    conn.close()
+    assert snapshot_count == 1
