@@ -405,13 +405,25 @@ def _automation_signals(conn: sqlite3.Connection) -> dict[str, Any]:
         has_approval_blockers = approval_blockers not in {"[]", "", "null"}
         has_writeback_blockers = writeback_blockers not in {"[]", "", "null"}
         confirmed_success_rate = round(success_count / run_count, 3) if run_count else None
-        confirmed_status = "unknown" if run_count == 0 else "error" if failure_count else "healthy"
+        last_status = str(last_run["status"]) if last_run and last_run["status"] else None
+        latest_failed = last_status not in {"success", "healthy", "completed", "warning", None}
+        confirmed_status = (
+            "unknown"
+            if run_count == 0
+            else "healthy"
+            if last_status in {"success", "healthy", "completed"}
+            else "warning"
+            if last_status == "warning"
+            else "error"
+        )
         urgency = (
             "watch"
             if run_count == 0
             else "blocked"
             if has_approval_blockers or has_writeback_blockers
             else "action_required"
+            if latest_failed
+            else "watch"
             if failure_count
             else "none"
         )

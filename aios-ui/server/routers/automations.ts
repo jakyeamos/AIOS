@@ -97,15 +97,27 @@ const normalizeRunStatus = (status: string | null): AutomationStatus => {
   return "unknown";
 };
 
-const urgencyFor = (runCount: number, failureCount: number, blockers: string[]): AutomationUrgency => {
+const latestRunFailed = (status: string | null): boolean => {
+  return status !== null && !["success", "healthy", "completed", "warning"].includes(status);
+};
+
+const urgencyFor = (
+  runCount: number,
+  failureCount: number,
+  latestStatus: string | null,
+  blockers: string[],
+): AutomationUrgency => {
   if (runCount === 0) {
     return "watch";
   }
   if (blockers.length > 0) {
     return "blocked";
   }
-  if (failureCount > 0) {
+  if (latestRunFailed(latestStatus)) {
     return "action_required";
+  }
+  if (failureCount > 0) {
+    return "watch";
   }
   return "none";
 };
@@ -127,7 +139,7 @@ const enrichAutomation = (
     triggerLabel,
     successRate,
     status,
-    urgency: urgencyFor(history.runCount, history.failureCount, blockers),
+    urgency: urgencyFor(history.runCount, history.failureCount, lastRun?.status ?? null, blockers),
     lastRunAt: history.lastRunAt,
     nextRunAt: history.nextRunAt,
     lastFailureSummary: lastRun?.failureSummary ?? null,

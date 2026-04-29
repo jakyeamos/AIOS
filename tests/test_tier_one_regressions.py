@@ -240,3 +240,51 @@ def test_prove_project_health_records_snapshots_and_reports_missing_sources(tmp_
     snapshot_count = conn.execute("SELECT COUNT(*) FROM standards_health_snapshots").fetchone()[0]
     conn.close()
     assert snapshot_count == 1
+
+
+def test_sync_automation_history_imports_pipeline_log_evidence(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    repo_path = tmp_path / "repo"
+    logs_dir.mkdir()
+    repo_path.mkdir()
+    (logs_dir / "pipeline.log").write_text(
+        "\n".join(
+            [
+                "2026-04-26T10:40:26.011591+00:00 [pipeline] === AIOS daily pipeline starting ===",
+                "2026-04-26T10:40:41.092379+00:00 [pipeline] === pipeline complete ===",
+                "2026-04-26T10:40:41.092474+00:00 [pipeline]   6 ok, 2 skipped, 1 failed",
+                "2026-04-28T10:40:26.011591+00:00 [pipeline] === AIOS daily pipeline starting ===",
+                "2026-04-28T10:40:41.092379+00:00 [pipeline] === pipeline complete ===",
+                "2026-04-28T10:40:41.092474+00:00 [pipeline]   7 ok, 2 skipped, 0 failed",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    conn = sqlite3.connect(db_path)
+    conn.executescript((ROOT / "schema.sql").read_text(encoding="utf-8"))
+    conn.execute(
+        """
+        INSERT INTO projects (id, name, repo_path, obsidian_path, status)
+        VALUES ('p1', 'AIOS', ?, ?, 'active')
+        """,
+        (str(repo_path), str(repo_path)),
+    )
+    conn.commit()
+    conn.close()
+
+    sync_exit = run_cli(["--json", "--db", str(db_path), "--logs-dir", str(logs_dir), "sync-automation-history"])
+    assert sync_exit == EXIT_OK
+    sync_payload = json.loads(capsys.readouterr().out)["data"]
+    assert sync_payload["summary"]["parsed_run_count"] == 2
+    assert sync_payload["latest_run"]["status"] == "success"
+
+    capability_exit = run_cli(["--json", "--db", str(db_path), "--logs-dir", str(logs_dir), "capability-audit"])
+    assert capability_exit == EXIT_OK
+    capability = json.loads(capsys.readouterr().out)["data"]
+    daily = capability["automations"]["items"][0]
+    assert daily["status"]["value"] == "healthy"
+    assert daily["success_rate"]["value"] == 0.5
+    assert daily["urgency"] == "watch"
+    assert not any(finding["code"] == "automation_history_empty" for finding in capability["findings"])

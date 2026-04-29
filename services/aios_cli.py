@@ -13,6 +13,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from services.automation_history import sync_pipeline_automation_history
 from services.capability_truth import capability_truth_payload
 from services.invocation_backends import (
     INVOCATION_CONTRACT_FIELDS,
@@ -2413,6 +2414,14 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
             f"missing_source={summary['missing_source_count']}"
         )
         return
+    if command == "sync-automation-history":
+        summary = data["summary"]
+        print(
+            f"source={summary['source']} "
+            f"parsed={summary['parsed_run_count']} "
+            f"stored={summary['inserted_or_updated_count']}"
+        )
+        return
     if command == "start-work":
         print(
             f"run={data['run']['id']} status={data['run']['status']} "
@@ -2478,6 +2487,8 @@ def create_parser() -> argparse.ArgumentParser:
         help=f"Project name to prove; defaults to {', '.join(DEFAULT_PROVING_PROJECTS)}",
     )
 
+    subparsers.add_parser("sync-automation-history", help="Import durable automation history from local logs")
+
     start_work = subparsers.add_parser("start-work", help="Create a routed AIOS run packet and session handshake")
     start_work.add_argument("objective", help="Work objective to route through AIOS")
     start_work.add_argument("--project", default=None, help="Project id to link to the run")
@@ -2523,6 +2534,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "workflow-learning-audit",
             "contracts-audit",
             "prove-project-health",
+            "sync-automation-history",
             "start-work",
         }:
             conn = _connect_db(db_path)
@@ -2579,6 +2591,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
                 config_root=config_root,
                 project_names=list(args.project) if args.project else None,
             )
+        elif args.command == "sync-automation-history":
+            assert conn is not None
+            data = sync_pipeline_automation_history(conn, logs_dir=logs_dir)
         elif args.command == "start-work":
             assert conn is not None
             data = _start_work_payload(
