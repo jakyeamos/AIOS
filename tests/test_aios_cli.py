@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT))
 
 import services.aios_cli as aios_cli  # noqa: E402
 from services import standards_health, success_criteria  # noqa: E402
-from services.aios_cli import EXIT_OK, run_cli  # noqa: E402
+from services.aios_cli import EXIT_OK, EXIT_USAGE, run_cli  # noqa: E402
 from services.eval_run_service import (  # noqa: E402
     create_eval_run,
     create_eval_task,
@@ -73,6 +73,7 @@ def _sample_closeout_repo(tmp_path: Path) -> Path:
     (repo / "README.md").write_text("# Sample\n\nChanged.\n", encoding="utf-8")
     (repo / "new.txt").write_text("new\n", encoding="utf-8")
     return repo
+from services.invocation_backends import list_invocation_backends  # noqa: E402
 
 
 def _seed_db(path: Path) -> None:
@@ -1301,22 +1302,39 @@ def test_invocation_audit_and_backend_label_contract(tmp_path: Path, capsys) -> 
         == "disabled_by_default"
     )
 
-    start_exit = run_cli(
-        [
-            "--json",
-            "--db",
-            str(db_path),
-            "--logs-dir",
-            str(logs_dir),
-            "start-work",
-            "Audit AIOS backend labeling and ship a scoped fix",
-            "--backend",
-            "claude-managed-runtime",
-        ]
-    )
-    assert start_exit == EXIT_OK
-    start_output = json.loads(capsys.readouterr().out)
-    invocation_id = start_output["data"]["invocation"]["id"]
+    required = {
+        "run_id",
+        "invocation_id",
+        "backend_key",
+        "objective",
+        "project_id",
+        "workflow_key",
+        "packet_id",
+    }
+    invocation_id = ""
+    for backend in list_invocation_backends():
+        if backend.deprecated:
+            continue
+        start_exit = run_cli(
+            [
+                "--json",
+                "--db",
+                str(db_path),
+                "--logs-dir",
+                str(logs_dir),
+                "start-work",
+                f"Audit AIOS backend labeling and ship a scoped fix for {backend.key}",
+                "--backend",
+                backend.key,
+            ]
+        )
+        assert start_exit == EXIT_OK
+        start_output = json.loads(capsys.readouterr().out)
+        handshake = start_output["data"]["handshake"]
+        assert required <= set(handshake)
+        assert handshake["backend_key"] == backend.key
+        if backend.key == "claude-managed-runtime":
+            invocation_id = start_output["data"]["invocation"]["id"]
 
     conn = sqlite3.connect(db_path)
     label = conn.execute(
@@ -1325,6 +1343,24 @@ def test_invocation_audit_and_backend_label_contract(tmp_path: Path, capsys) -> 
     ).fetchone()[0]
     conn.close()
     assert label == "Claude Managed Runtime"
+
+    unknown_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "start-work",
+            "reject unknown backend",
+            "--backend",
+            "unknown-runtime",
+        ]
+    )
+    assert unknown_exit == EXIT_USAGE
+    unknown_output = json.loads(capsys.readouterr().out)
+    assert unknown_output["ok"] is False
+    assert unknown_output["error"]["code"] == "unknown-invocation-backend"
 
 
 def test_lifecycle_audit_reports_attention_and_unsupported_states(tmp_path: Path, capsys) -> None:

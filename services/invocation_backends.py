@@ -67,6 +67,12 @@ BACKENDS = [
 ]
 
 
+class UnknownInvocationBackendError(ValueError):
+    def __init__(self, key: str) -> None:
+        super().__init__(f"Unknown invocation backend: {key}")
+        self.key = key
+
+
 def list_invocation_backends() -> list[InvocationBackend]:
     return BACKENDS
 
@@ -87,4 +93,4 @@ def get_invocation_backend(key: str) -> InvocationBackend:
     for backend in BACKENDS:
         if backend.key == key:
             return backend
-    return BACKENDS[0]
+    raise UnknownInvocationBackendError(key)

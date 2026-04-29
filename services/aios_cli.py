@@ -71,6 +71,7 @@ from services.harness_eval import (
 )
 from services.invocation_backends import (
     INVOCATION_CONTRACT_FIELDS,
+    UnknownInvocationBackendError,
     get_invocation_backend,
     list_invocation_backends,
 )
@@ -2046,7 +2047,16 @@ def _start_work_payload(
 
     preferred_surface = "codex"
     if backend_key:
-        preferred_surface = get_invocation_backend(backend_key).surface
+        try:
+            preferred_surface_backend = get_invocation_backend(backend_key)
+        except UnknownInvocationBackendError as exc:
+            available = ", ".join(backend.key for backend in list_invocation_backends())
+            raise CLIError(
+                "unknown-invocation-backend",
+                f"Unknown invocation backend: {exc.key}. Available backends: {available}",
+                EXIT_USAGE,
+            ) from exc
+        preferred_surface = preferred_surface_backend.surface
     route = route_objective(
         conn,
         objective=objective,
@@ -2342,7 +2352,17 @@ def _start_work_payload(
             "status": invocation_status,
             "backend_key": backend.key,
             "backend_label": backend.label,
+            "deprecated": backend.deprecated,
             "session_id": linked_session_id,
+        },
+        "handshake": {
+            "run_id": run_id,
+            "invocation_id": invocation_id,
+            "backend_key": backend.key,
+            "objective": objective,
+            "project_id": project_id,
+            "workflow_key": workflow_key,
+            "packet_id": packet_id,
         },
         "next_agent_context": {
             "run_id": run_id,
