@@ -446,6 +446,11 @@ CREATE TABLE success_criteria_findings (
   summary TEXT NOT NULL,
   evidence_json TEXT NOT NULL DEFAULT '[]',
   metadata_json TEXT NOT NULL DEFAULT '{}',
+  resolution_status TEXT NOT NULL DEFAULT 'open',
+  resolution_actor TEXT,
+  resolution_rationale TEXT,
+  resolution_evidence_json TEXT NOT NULL DEFAULT '[]',
+  resolved_at TEXT,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 CREATE INDEX idx_success_criteria_findings_eval ON success_criteria_findings(evaluation_id, created_at DESC);

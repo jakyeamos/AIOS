@@ -47,6 +47,12 @@ EXECUTION_FIRST_PATH_MARKERS = (
 )
 
 
+def _ensure_column(conn: sqlite3.Connection, table: str, column: str, definition: str) -> None:
+    columns = {row[1] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+    if column not in columns:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
+
 @dataclass(frozen=True)
 class CriterionRecord:
     id: str
@@ -191,6 +197,14 @@ def ensure_success_criteria_schema(conn: sqlite3.Connection) -> None:
         )
         """
     )
+    for column, definition in {
+        "resolution_status": "TEXT NOT NULL DEFAULT 'open'",
+        "resolution_actor": "TEXT",
+        "resolution_rationale": "TEXT",
+        "resolution_evidence_json": "TEXT NOT NULL DEFAULT '[]'",
+        "resolved_at": "TEXT",
+    }.items():
+        _ensure_column(conn, "success_criteria_findings", column, definition)
     conn.execute(
         """
         CREATE INDEX IF NOT EXISTS idx_success_criteria_findings_eval

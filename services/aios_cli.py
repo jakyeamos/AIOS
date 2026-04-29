@@ -72,7 +72,24 @@ KNOWLEDGE_OBJECT_CONTRACT_FIELDS = [
     "backlinks",
     "freshness",
     "confidence",
+    "retrieval_trace_count",
 ]
+VALID_KNOWLEDGE_KINDS = [
+    "agent",
+    "agent_behavior_note",
+    "concept",
+    "decision",
+    "external_reference",
+    "hypothesis",
+    "personal_corpus_reference",
+    "policy",
+    "project",
+    "project_memory",
+    "rule",
+    "task_type",
+    "workflow",
+]
+EVALUATION_FINDING_LIFECYCLE_STATES = ["open", "accepted", "resolved", "waived", "stale"]
 WORKFLOW_LEARNING_EVIDENCE_TYPES = [
     "workflow_evidence",
     "prompt_template_evidence",
@@ -809,10 +826,43 @@ def _knowledge_topic_rows(
     like_terms = [f"%{token}%" for token in tokens[:5]]
     if not like_terms:
         return []
+    if _table_exists(conn, "knowledge_references"):
+        clauses = " OR ".join(
+            [
+                """
+                LOWER(
+                    t.title || ' ' || t.summary || ' ' ||
+                    COALESCE(r.label, '') || ' ' || COALESCE(r.excerpt, '') || ' ' || COALESCE(r.source_kind, '')
+                ) LIKE ?
+                """
+            ]
+            * len(like_terms)
+        )
+        rows = conn.execute(
+            f"""
+            SELECT
+                t.id,
+                t.title,
+                t.summary,
+                t.canonical_href,
+                t.confidence,
+                t.updated_at,
+                COUNT(r.id) AS reference_match_count
+            FROM knowledge_topics t
+            LEFT JOIN knowledge_references r ON r.topic_id = t.id
+            WHERE (? IS NULL OR t.project_id IS NULL OR t.project_id = ?)
+              AND ({clauses})
+            GROUP BY t.id
+            ORDER BY t.confidence DESC, t.updated_at DESC
+            LIMIT ?
+            """,
+            (project_id, project_id, *like_terms, limit),
+        ).fetchall()
+        return [dict(row) for row in rows]
     clauses = " OR ".join(["LOWER(title || ' ' || summary) LIKE ?"] * len(like_terms))
     rows = conn.execute(
         f"""
-        SELECT title, summary, canonical_href, confidence, updated_at
+        SELECT id, title, summary, canonical_href, confidence, updated_at, 0 AS reference_match_count
         FROM knowledge_topics
         WHERE (? IS NULL OR project_id IS NULL OR project_id = ?)
           AND ({clauses})
@@ -932,6 +982,43 @@ def _packet_sections(
     return sections
 
 
+def _packet_retrieval_trace(
+    conn: sqlite3.Connection,
+    *,
+    objective: str,
+    project_id: str | None,
+    token_budget: int,
+) -> dict[str, Any]:
+    topic_matches = _knowledge_topic_rows(conn, project_id=project_id, objective=objective, limit=6)
+    matched_objects = [
+        {
+            "stable_id": row.get("id"),
+            "title": row.get("title"),
+            "href": row.get("canonical_href"),
+            "confidence": row.get("confidence"),
+            "ranking_reason": "Matched objective terms across title, summary, reference label, excerpt, or source kind.",
+        }
+        for row in topic_matches
+    ]
+    omitted_context_count = max(0, len(topic_matches) - len(matched_objects))
+    return {
+        "query": objective,
+        "matched_objects": matched_objects,
+        "omitted_context_count": omitted_context_count,
+        "expansion_path": ["objective", "knowledge_topics", "knowledge_references"],
+        "citations": [
+            {
+                "label": row.get("title"),
+                "href": row.get("canonical_href"),
+            }
+            for row in topic_matches
+            if row.get("canonical_href")
+        ],
+        "token_budget": token_budget,
+        "ranking_reason": "Compact-ranked packet assembly prefers project-local matches, confidence, and freshness.",
+    }
+
+
 def _packet_markdown(sections: list[dict[str, Any]]) -> str:
     rendered: list[str] = ["# AIOS Routed Work Packet"]
     for section in sections:
@@ -1036,6 +1123,12 @@ def _start_work_payload(
         agent_key=agent_key,
     )
     packet_markdown = _packet_markdown(sections)
+    retrieval_trace = _packet_retrieval_trace(
+        conn,
+        objective=objective,
+        project_id=project_id,
+        token_budget=900,
+    )
     status = "in_progress" if linked_session_id else "ready"
     invocation_status = "running" if linked_session_id else "prepared"
 
@@ -1102,13 +1195,7 @@ def _start_work_payload(
             agent_key,
             packet_markdown,
             json.dumps(sections),
-            json.dumps(
-                [
-                    {"source": "objective", "reason": "operator supplied"},
-                    {"source": "criteria", "reason": "resolved before implementation"},
-                    {"source": "rules-and-writebacks", "reason": "durable AIOS improvements included"},
-                ]
-            ),
+            json.dumps(retrieval_trace),
             now,
         ),
     )
@@ -1342,6 +1429,35 @@ def _knowledge_relationship_counts(conn: sqlite3.Connection, topic_id: str) -> t
     return (int(outgoing["count"] or 0), int(incoming["count"] or 0))
 
 
+def _knowledge_retrieval_trace_count(conn: sqlite3.Connection, topic_id: str) -> int:
+    total = 0
+    if _table_exists(conn, "briefing_packets"):
+        total += int(
+            conn.execute(
+                """
+                SELECT COUNT(*) AS count
+                FROM briefing_packets
+                WHERE selection_trace_json LIKE ?
+                """,
+                (f"%{topic_id}%",),
+            ).fetchone()["count"]
+            or 0
+        )
+    if _table_exists(conn, "packet_expansions"):
+        total += int(
+            conn.execute(
+                """
+                SELECT COUNT(*) AS count
+                FROM packet_expansions
+                WHERE trace_json LIKE ? OR returned_context_json LIKE ?
+                """,
+                (f"%{topic_id}%", f"%{topic_id}%"),
+            ).fetchone()["count"]
+            or 0
+        )
+    return total
+
+
 def _knowledge_objects_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     if not _table_exists(conn, "knowledge_topics"):
         return {
@@ -1350,13 +1466,16 @@ def _knowledge_objects_payload(conn: sqlite3.Connection) -> dict[str, Any]:
                 "source_ref_coverage": 0.0,
                 "objects_without_sources": 0,
                 "relationship_count": 0,
+                "unknown_kind_count": 0,
             },
             "contract": {
                 "required_fields": KNOWLEDGE_OBJECT_CONTRACT_FIELDS,
+                "valid_kinds": VALID_KNOWLEDGE_KINDS,
                 "source_table": "knowledge_topics",
                 "reference_table": "knowledge_references",
                 "relationship_table": "knowledge_relationships",
             },
+            "findings": [],
             "objects": [],
         }
 
@@ -1382,18 +1501,34 @@ def _knowledge_objects_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     ).fetchall()
 
     objects: list[dict[str, Any]] = []
+    findings: list[dict[str, Any]] = []
     objects_with_sources = 0
     relationship_total = 0
+    unknown_kind_count = 0
     for row in rows:
         source_refs = _knowledge_reference_rows(conn, str(row["id"]))
         outgoing_count, backlink_count = _knowledge_relationship_counts(conn, str(row["id"]))
+        retrieval_trace_count = _knowledge_retrieval_trace_count(conn, str(row["id"]))
+        kind = row["kind"] or "unknown"
+        if kind not in VALID_KNOWLEDGE_KINDS:
+            unknown_kind_count += 1
+            findings.append(
+                {
+                    "code": "knowledge_unknown_kind",
+                    "severity": "warning",
+                    "stable_id": row["id"],
+                    "title": row["title"],
+                    "kind": kind,
+                    "summary": "Knowledge object kind is outside the implemented contract.",
+                }
+            )
         if source_refs:
             objects_with_sources += 1
         relationship_total += outgoing_count + backlink_count
         objects.append(
             {
                 "stable_id": row["id"],
-                "kind": row["kind"] or "concept",
+                "kind": kind,
                 "title": row["title"],
                 "summary": row["summary"],
                 "canonical_href": row["canonical_href"],
@@ -1404,6 +1539,7 @@ def _knowledge_objects_payload(conn: sqlite3.Connection) -> dict[str, Any]:
                 "source_refs": source_refs,
                 "relationship_count": outgoing_count,
                 "backlinks": {"count": backlink_count},
+                "retrieval_trace_count": retrieval_trace_count,
             }
         )
 
@@ -1414,15 +1550,18 @@ def _knowledge_objects_payload(conn: sqlite3.Connection) -> dict[str, Any]:
             "source_ref_coverage": round(objects_with_sources / object_count, 4) if object_count else 0.0,
             "objects_without_sources": object_count - objects_with_sources,
             "relationship_count": relationship_total,
+            "unknown_kind_count": unknown_kind_count,
         },
         "contract": {
             "required_fields": KNOWLEDGE_OBJECT_CONTRACT_FIELDS,
+            "valid_kinds": VALID_KNOWLEDGE_KINDS,
             "source_table": "knowledge_topics",
             "reference_table": "knowledge_references",
             "relationship_table": "knowledge_relationships",
             "personal_corpus_source_kind": "personal_corpus",
             "project_memory_source_kind": "project_memory",
         },
+        "findings": findings,
         "objects": objects,
     }
 
@@ -1789,8 +1928,83 @@ def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     }
 
 
+def _ensure_evaluation_finding_schema(conn: sqlite3.Connection) -> None:
+    if _table_exists(conn, "success_criteria_findings"):
+        for column, definition in {
+            "resolution_status": "TEXT NOT NULL DEFAULT 'open'",
+            "resolution_actor": "TEXT",
+            "resolution_rationale": "TEXT",
+            "resolution_evidence_json": "TEXT NOT NULL DEFAULT '[]'",
+            "resolved_at": "TEXT",
+        }.items():
+            _ensure_column(conn, "success_criteria_findings", column, definition)
+    if _table_exists(conn, "consistency_findings"):
+        for column, definition in {
+            "resolution_status": "TEXT NOT NULL DEFAULT 'open'",
+            "resolution_actor": "TEXT",
+            "resolution_rationale": "TEXT",
+            "resolution_evidence_json": "TEXT NOT NULL DEFAULT '[]'",
+            "resolved_at": "TEXT",
+        }.items():
+            _ensure_column(conn, "consistency_findings", column, definition)
+
+
+def _knowledge_contract_status(conn: sqlite3.Connection) -> str:
+    if not _table_exists(conn, "knowledge_topics"):
+        return "partial"
+    topic_columns = _table_columns(conn, "knowledge_topics")
+    required_columns = {"id", "kind", "title", "summary", "confidence", "freshness", "canonical_href"}
+    if not required_columns.issubset(topic_columns):
+        return "partial"
+    if not _table_exists(conn, "knowledge_references") or not _table_exists(conn, "knowledge_relationships"):
+        return "partial"
+    unknown_kind = conn.execute(
+        """
+        SELECT 1
+        FROM knowledge_topics
+        WHERE kind NOT IN ({})
+        LIMIT 1
+        """.format(",".join("?" for _ in VALID_KNOWLEDGE_KINDS)),
+        tuple(VALID_KNOWLEDGE_KINDS),
+    ).fetchone()
+    return "partial" if unknown_kind else "implemented"
+
+
+def _retrieval_trace_contract_status(conn: sqlite3.Connection) -> str:
+    if not _table_exists(conn, "briefing_packets") or not _table_exists(conn, "packet_expansions"):
+        return "partial"
+    packet_columns = _table_columns(conn, "briefing_packets")
+    expansion_columns = _table_columns(conn, "packet_expansions")
+    packet_required = {"selection_trace_json", "omitted_context_json", "token_budget"}
+    expansion_required = {"trace_json", "returned_context_json", "token_budget"}
+    if packet_required.issubset(packet_columns) and expansion_required.issubset(expansion_columns):
+        return "implemented"
+    return "partial"
+
+
+def _evaluation_finding_contract_status(conn: sqlite3.Connection) -> str:
+    lifecycle_columns = {
+        "resolution_status",
+        "resolution_actor",
+        "resolution_rationale",
+        "resolution_evidence_json",
+        "resolved_at",
+    }
+    available_tables = [
+        table
+        for table in ("success_criteria_findings", "consistency_findings")
+        if _table_exists(conn, table)
+    ]
+    if not available_tables:
+        return "partial"
+    if all(lifecycle_columns.issubset(_table_columns(conn, table)) for table in available_tables):
+        return "implemented"
+    return "partial"
+
+
 def _contracts_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     _ensure_workflow_learning_schema(conn)
+    _ensure_evaluation_finding_schema(conn)
     contracts = [
         {
             "name": "TrustedSignal",
@@ -1815,14 +2029,15 @@ def _contracts_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
         },
         {
             "name": "KnowledgeObject",
-            "status": "partial",
+            "status": _knowledge_contract_status(conn),
             "source": "aios knowledge-objects",
             "storage": "knowledge_topics + knowledge_references + knowledge_relationships",
             "table_available": _table_exists(conn, "knowledge_topics"),
+            "valid_kinds": VALID_KNOWLEDGE_KINDS,
         },
         {
             "name": "RetrievalTrace",
-            "status": "partial",
+            "status": _retrieval_trace_contract_status(conn),
             "source": "briefing_packets.selection_trace_json + packet_expansions.trace_json",
             "storage": "briefing_packets + packet_expansions",
             "table_available": _table_exists(conn, "briefing_packets"),
@@ -1836,11 +2051,12 @@ def _contracts_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
         },
         {
             "name": "EvaluationFinding",
-            "status": "partial",
+            "status": _evaluation_finding_contract_status(conn),
             "source": "success_criteria_findings + consistency_findings",
             "storage": "success_criteria_findings + consistency_findings",
             "table_available": _table_exists(conn, "success_criteria_findings")
             or _table_exists(conn, "consistency_findings"),
+            "lifecycle_states": EVALUATION_FINDING_LIFECYCLE_STATES,
         },
     ]
     implemented_or_partial = [item for item in contracts if item["status"] in {"implemented", "partial"}]

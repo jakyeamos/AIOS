@@ -116,6 +116,8 @@ def test_tier_one_audits_preserve_core_contracts(tmp_path: Path, capsys) -> None
     assert contracts_exit == EXIT_OK
     contracts = json.loads(capsys.readouterr().out)["data"]
     assert contracts["summary"]["canonical_contract_count"] == 7
+    assert contracts["summary"]["implemented_count"] == 7
+    assert contracts["summary"]["partial_count"] == 0
 
     capability_exit = run_cli(["--json", "--db", str(db_path), "--logs-dir", str(logs_dir), "capability-audit"])
     assert capability_exit == EXIT_OK

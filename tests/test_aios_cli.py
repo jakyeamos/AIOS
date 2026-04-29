@@ -467,7 +467,11 @@ def test_knowledge_objects_expose_provenance_contract(tmp_path: Path, capsys) ->
         "backlinks",
         "freshness",
         "confidence",
+        "retrieval_trace_count",
     ]
+    assert data["summary"]["unknown_kind_count"] == 0
+    assert data["findings"] == []
+    assert data["objects"][0]["retrieval_trace_count"] == 0
     assert data["objects"][0]["stable_id"] == "topic-1"
     assert data["objects"][0]["kind"] == "concept"
     assert data["objects"][0]["source_ref_count"] == 1
@@ -986,11 +990,15 @@ def test_start_work_creates_packet_and_links_current_session(tmp_path: Path, cap
         "Route serious agent work through AIOS",
     )
     packet_row = conn.execute(
-        "SELECT run_id, packet_markdown FROM briefing_packets WHERE id = ?",
+        "SELECT run_id, packet_markdown, selection_trace_json FROM briefing_packets WHERE id = ?",
         (data["packet"]["id"],),
     ).fetchone()
     assert packet_row[0] == data["run"]["id"]
     assert "Applicable Success Criteria" in packet_row[1]
+    selection_trace = json.loads(packet_row[2])
+    assert selection_trace["query"] == "Route serious agent work through AIOS"
+    assert selection_trace["matched_objects"][0]["title"] == "Agent routing"
+    assert selection_trace["token_budget"] == 900
     event_count = conn.execute(
         "SELECT COUNT(*) FROM orchestration_run_events WHERE run_id = ?",
         (data["run"]["id"],),
