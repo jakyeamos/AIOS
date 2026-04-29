@@ -186,10 +186,16 @@ export type AutomationHealth = {
   trigger: string;
   triggerLabel: string;
   triggerSignal: TrustedSignal<string>;
-  successRate: number;
-  successRateSignal: TrustedSignal<number>;
-  status: "healthy" | "warning" | "error";
-  statusSignal: TrustedSignal<"healthy" | "warning" | "error">;
+  successRate: number | null;
+  successRateSignal: TrustedSignal<number | null>;
+  status: "healthy" | "warning" | "error" | "unknown";
+  statusSignal: TrustedSignal<"healthy" | "warning" | "error" | "unknown">;
+  urgency: "none" | "watch" | "action_required" | "blocked";
+  lastRunAt: string | null;
+  nextRunAt: string | null;
+  lastFailureSummary: string | null;
+  approvalBlockers: string[];
+  writebackBlockers: string[];
 };
 
 export type WorkflowMetric = {

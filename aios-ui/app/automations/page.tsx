@@ -39,14 +39,19 @@ export default async function AutomationsPage(): Promise<React.JSX.Element> {
               <span className="signal-note mono">{automation.trigger}</span>
             </span>
             <span title={automation.successRateSignal.explanation}>
-              {formatPercent(automation.successRate)}
+              {automation.successRate === null ? "Inspect history table" : formatPercent(automation.successRate)}
               <br />
-              <span className="signal-note">{automation.successRateSignal.provenance}</span>
+              <span className="signal-note">
+                {automation.successRateSignal.missingReason ?? automation.successRateSignal.provenance}
+              </span>
             </span>
             <span>
               <StatusBadge status={automation.status} />
               <br />
-              <span className="signal-note">{automation.statusSignal.provenance}</span>
+              <span className="signal-note">
+                {automation.urgency}
+                {automation.lastFailureSummary ? `: ${automation.lastFailureSummary}` : ""}
+              </span>
             </span>
           </div>
         ))}

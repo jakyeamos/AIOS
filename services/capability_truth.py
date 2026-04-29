@@ -46,6 +46,34 @@ def _count(conn: sqlite3.Connection, table: str, where: str = "1=1") -> int:
     return int(row["count"]) if row else 0
 
 
+def ensure_automation_run_history_schema(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS automation_run_history (
+          id TEXT PRIMARY KEY,
+          automation_id TEXT NOT NULL,
+          automation_name TEXT NOT NULL,
+          scheduled_trigger TEXT NOT NULL,
+          expected_next_run_at TEXT,
+          started_at TEXT,
+          completed_at TEXT,
+          status TEXT NOT NULL,
+          failure_summary TEXT,
+          approval_blockers_json TEXT NOT NULL DEFAULT '[]',
+          writeback_blockers_json TEXT NOT NULL DEFAULT '[]',
+          metadata_json TEXT NOT NULL DEFAULT '{}',
+          created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_automation_run_history_automation
+          ON automation_run_history(automation_id, started_at DESC, created_at DESC)
+        """
+    )
+
+
 def _format_hour(hour: str | None, minute: str | None) -> str:
     parsed_hour = int(hour or "0")
     parsed_minute = int(minute or "0")
@@ -323,43 +351,70 @@ def _automation_signals(conn: sqlite3.Connection) -> dict[str, Any]:
     ]
     items = []
     findings = []
-    has_history = _table_exists(conn, "automation_run_history")
-    if not has_history:
+    had_history_table = _table_exists(conn, "automation_run_history")
+    ensure_automation_run_history_schema(conn)
+    history_count = _count(conn, "automation_run_history")
+    if not had_history_table or history_count == 0:
         findings.append(
             {
                 "surface": "automations",
-                "code": "automation_history_missing",
+                "code": "automation_history_missing" if not had_history_table else "automation_history_empty",
                 "severity": "warning",
-                "summary": "Automation reliability is inferred because durable automation run history is missing.",
+                "summary": "Automation reliability is unknown because durable automation run history has no confirmed runs.",
                 "source": {"label": "Automation run history", "table": "automation_run_history"},
-                "freshness": "missing",
+                "freshness": "table created" if not had_history_table else "no rows",
                 "confidence": 0,
-                "missing_reason": "automation_run_history table does not exist.",
+                "missing_reason": (
+                    "automation_run_history table did not exist and was initialized without historical runs."
+                    if not had_history_table
+                    else "automation_run_history has no durable run rows."
+                ),
             }
         )
 
     for automation_id, name, trigger, _seeded_success_rate, _seeded_status in seeded:
         label = automation_trigger_label(trigger)
-        history = None
-        if has_history:
-            history = conn.execute(
-                """
-                SELECT
-                  COUNT(*) AS run_count,
-                  COALESCE(SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END), 0) AS success_count,
-                  COALESCE(SUM(CASE WHEN status != 'success' THEN 1 ELSE 0 END), 0) AS failure_count,
-                  MAX(started_at) AS last_run_at
-                FROM automation_run_history
-                WHERE automation_id = ?
-                """,
-                (automation_id,),
-            ).fetchone()
+        history = conn.execute(
+            """
+            SELECT
+              COUNT(*) AS run_count,
+              COALESCE(SUM(CASE WHEN status IN ('success', 'healthy', 'completed') THEN 1 ELSE 0 END), 0) AS success_count,
+              COALESCE(SUM(CASE WHEN status NOT IN ('success', 'healthy', 'completed') THEN 1 ELSE 0 END), 0) AS failure_count,
+              MAX(started_at) AS last_run_at,
+              MAX(expected_next_run_at) AS expected_next_run_at
+            FROM automation_run_history
+            WHERE automation_id = ?
+            """,
+            (automation_id,),
+        ).fetchone()
+        last_run = conn.execute(
+            """
+            SELECT status, failure_summary, approval_blockers_json, writeback_blockers_json
+            FROM automation_run_history
+            WHERE automation_id = ?
+            ORDER BY COALESCE(started_at, created_at) DESC
+            LIMIT 1
+            """,
+            (automation_id,),
+        ).fetchone()
         run_count = int(history["run_count"]) if history else 0
         success_count = int(history["success_count"]) if history else 0
         failure_count = int(history["failure_count"]) if history else 0
+        approval_blockers = str(last_run["approval_blockers_json"]) if last_run else "[]"
+        writeback_blockers = str(last_run["writeback_blockers_json"]) if last_run else "[]"
+        has_approval_blockers = approval_blockers not in {"[]", "", "null"}
+        has_writeback_blockers = writeback_blockers not in {"[]", "", "null"}
         confirmed_success_rate = round(success_count / run_count, 3) if run_count else None
         confirmed_status = "unknown" if run_count == 0 else "error" if failure_count else "healthy"
-        urgency = "watch" if run_count == 0 else "action_required" if failure_count else "none"
+        urgency = (
+            "watch"
+            if run_count == 0
+            else "blocked"
+            if has_approval_blockers or has_writeback_blockers
+            else "action_required"
+            if failure_count
+            else "none"
+        )
         missing_history = None if run_count else "No durable automation run history exists for this automation."
         items.append(
             {
@@ -367,8 +422,17 @@ def _automation_signals(conn: sqlite3.Connection) -> dict[str, Any]:
                 "name": name,
                 "raw_trigger": trigger,
                 "last_run_at": str(history["last_run_at"]) if history and history["last_run_at"] else None,
+                "expected_next_run_at": (
+                    str(history["expected_next_run_at"]) if history and history["expected_next_run_at"] else None
+                ),
+                "last_status": str(last_run["status"]) if last_run and last_run["status"] else None,
+                "last_failure_summary": (
+                    str(last_run["failure_summary"]) if last_run and last_run["failure_summary"] else None
+                ),
                 "success_count": success_count,
                 "failure_count": failure_count,
+                "approval_blockers": approval_blockers,
+                "writeback_blockers": writeback_blockers,
                 "urgency": urgency,
                 "trigger": TrustedSignal(
                     value=label,

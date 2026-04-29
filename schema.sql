@@ -320,6 +320,22 @@ CREATE TABLE knowledge_graph_state (
   last_refreshed_at TEXT NOT NULL,
   note TEXT
 );
+CREATE TABLE automation_run_history (
+  id TEXT PRIMARY KEY,
+  automation_id TEXT NOT NULL,
+  automation_name TEXT NOT NULL,
+  scheduled_trigger TEXT NOT NULL,
+  expected_next_run_at TEXT,
+  started_at TEXT,
+  completed_at TEXT,
+  status TEXT NOT NULL,
+  failure_summary TEXT,
+  approval_blockers_json TEXT NOT NULL DEFAULT '[]',
+  writeback_blockers_json TEXT NOT NULL DEFAULT '[]',
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX idx_automation_run_history_automation ON automation_run_history(automation_id, started_at DESC, created_at DESC);
 CREATE TABLE packet_expansions (
   id TEXT PRIMARY KEY,
   run_id TEXT REFERENCES orchestration_runs(id),

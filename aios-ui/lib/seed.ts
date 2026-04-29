@@ -99,6 +99,12 @@ export const seededAutomations: AutomationHealth[] = [
       missingReason: null,
       contradiction: null,
     },
+    urgency: "watch",
+    lastRunAt: null,
+    nextRunAt: null,
+    lastFailureSummary: null,
+    approvalBlockers: [],
+    writebackBlockers: [],
   },
   {
     id: "automation-2",
@@ -137,6 +143,12 @@ export const seededAutomations: AutomationHealth[] = [
       missingReason: null,
       contradiction: null,
     },
+    urgency: "watch",
+    lastRunAt: null,
+    nextRunAt: null,
+    lastFailureSummary: null,
+    approvalBlockers: [],
+    writebackBlockers: [],
   },
   {
     id: "automation-3",
@@ -175,6 +187,12 @@ export const seededAutomations: AutomationHealth[] = [
       missingReason: null,
       contradiction: null,
     },
+    urgency: "watch",
+    lastRunAt: null,
+    nextRunAt: null,
+    lastFailureSummary: null,
+    approvalBlockers: [],
+    writebackBlockers: [],
   },
 ];
 

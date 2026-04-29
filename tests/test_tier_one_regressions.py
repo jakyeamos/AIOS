@@ -128,7 +128,10 @@ def test_tier_one_audits_preserve_core_contracts(tmp_path: Path, capsys) -> None
     assert capability["automations"]["items"][0]["trigger"]["value"] == "Weekdays at 9:00 AM"
     assert capability["automations"]["items"][0]["status"]["value"] == "unknown"
     assert capability["automations"]["items"][0]["status"]["missing_reason"]
-    assert any(finding["code"] == "automation_history_missing" for finding in capability["findings"])
+    assert any(
+        finding["code"] in {"automation_history_missing", "automation_history_empty"}
+        for finding in capability["findings"]
+    )
 
     learning_exit = run_cli(["--json", "--db", str(db_path), "--logs-dir", str(logs_dir), "workflow-learning-audit"])
     assert learning_exit == EXIT_OK
