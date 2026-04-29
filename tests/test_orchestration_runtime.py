@@ -1425,6 +1425,37 @@ def test_managed_runtime_routes_workflow_strategy_comparison_to_planning(
     assert json.loads(tmcp_receipt[1])["entry_node"] == "@task:planning"
 
 
+def test_managed_emit_hook_uses_current_python_and_surfaces_failures(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    managed_runtime = _load_module("managed_runtime_emit_hook", "bin/aios-managed-run.py")
+    calls: list[tuple[list[str], dict[str, object]]] = []
+
+    class Result:
+        def __init__(self, returncode: int, stdout: str = "", stderr: str = "") -> None:
+            self.returncode = returncode
+            self.stdout = stdout
+            self.stderr = stderr
+
+    def fake_run(command: list[str], **kwargs: object) -> Result:
+        calls.append((command, kwargs))
+        if len(calls) == 1:
+            return Result(0)
+        return Result(7, stderr="hook failed")
+
+    monkeypatch.setattr(managed_runtime.subprocess, "run", fake_run)
+    hook = tmp_path / "hook.py"
+    env = {"AIOS_DB": str(tmp_path / "aios.db")}
+
+    managed_runtime.emit_hook(hook, {"session_id": "session-1"}, env)
+
+    assert calls[0][0] == [sys.executable, str(hook)]
+    assert calls[0][1]["env"] == env
+    assert calls[0][1]["cwd"] == str(ROOT)
+    with pytest.raises(RuntimeError, match="hook.py failed: hook failed"):
+        managed_runtime.emit_hook(hook, {"session_id": "session-2"}, env)
+
+
 def test_managed_closeout_repairs_authoritative_run_state(runtime_db: Path, tmp_path: Path) -> None:
     from aios_orchestration_runtime import ensure_runtime_schema
 

@@ -99,8 +99,8 @@ def load_run_context(db_path: str, run_id: str) -> dict[str, str | None]:
 
 
 def emit_hook(script: Path, payload: dict[str, object], env: dict[str, str]) -> None:
-    subprocess.run(
-        ["python3", str(script)],
+    result = subprocess.run(
+        [sys.executable, str(script)],
         input=json.dumps(payload),
         text=True,
         capture_output=True,
@@ -108,6 +108,9 @@ def emit_hook(script: Path, payload: dict[str, object], env: dict[str, str]) -> 
         env=env,
         cwd=str(ROOT),
     )
+    if result.returncode != 0:
+        detail = result.stderr.strip() or result.stdout.strip()
+        raise RuntimeError(f"{script.name} failed: {detail}")
 
 
 def write_invocation_report(
