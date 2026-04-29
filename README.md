@@ -120,11 +120,31 @@ cd /Users/jakyeamos/AIOS/aios-ui
 pnpm build
 ```
 
+UI warning baseline ratchet:
+
+```bash
+cd /Users/jakyeamos/AIOS/aios-ui
+pnpm lint:warning-baseline
+```
+
 Architecture check:
 
 ```bash
 cd /Users/jakyeamos/AIOS/aios-ui
 pnpm lint:architecture
+```
+
+CI mirrors these local gates:
+
+```bash
+cd /Users/jakyeamos/AIOS
+UV_CACHE_DIR=/tmp/uv-cache uv run pytest -q
+cd /Users/jakyeamos/AIOS/aios-ui
+pnpm lint
+pnpm lint:warning-baseline
+pnpm lint:architecture
+pnpm lint:anti-slop:fixtures
+pnpm build
 ```
 
 ## Pipeline

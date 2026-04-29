@@ -30,8 +30,14 @@ jobs:
       - name: ESLint + TypeScript
         run: npm --prefix aios-ui run lint
 
+      - name: ESLint Warning Baseline
+        run: npm --prefix aios-ui run lint:warning-baseline
+
       - name: Architecture Boundaries
         run: npm --prefix aios-ui run lint:architecture
 
       - name: Anti-Slop Fixture Checks
         run: npm --prefix aios-ui run lint:anti-slop:fixtures
+
+      - name: Production Build
+        run: npm --prefix aios-ui run build

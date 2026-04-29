@@ -1,0 +1,39 @@
+name: aios-python-quality
+
+on:
+  push:
+    paths:
+      - "bin/**"
+      - "services/**"
+      - "tests/**"
+      - "schema.sql"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/aios-python-quality.yml"
+  pull_request:
+    paths:
+      - "bin/**"
+      - "services/**"
+      - "tests/**"
+      - "schema.sql"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/aios-python-quality.yml"
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.14
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Python tests
+        run: uv run pytest -q
