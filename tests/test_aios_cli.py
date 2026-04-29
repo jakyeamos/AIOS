@@ -540,8 +540,9 @@ def test_workflow_learning_audit_classifies_run_evidence(tmp_path: Path, capsys)
     learning_output = json.loads(capsys.readouterr().out)
     data = learning_output["data"]
     assert data["summary"]["terminal_run_count"] == 3
-    assert data["summary"]["runs_with_learning"] == 1
+    assert data["summary"]["runs_with_learning"] == 2
     assert data["summary"]["no_learning_count"] == 1
+    assert data["summary"]["persisted_event_count"] == 4
     assert data["summary"]["pending_approval_count"] == 1
     assert data["classification_counts"]["workflow_evidence"] == 2
     assert data["classification_counts"]["prompt_template_evidence"] == 1

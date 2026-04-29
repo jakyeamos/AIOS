@@ -1520,7 +1520,105 @@ def _inferred_learning_evidence(conn: sqlite3.Connection, run: dict[str, Any]) -
     return None
 
 
+def _ensure_workflow_learning_schema(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS workflow_learning_events (
+          id TEXT PRIMARY KEY,
+          run_id TEXT REFERENCES orchestration_runs(id),
+          evidence_type TEXT NOT NULL,
+          proposal_target TEXT,
+          confidence REAL NOT NULL DEFAULT 0.5,
+          approval_state TEXT NOT NULL DEFAULT 'not_required',
+          rationale TEXT NOT NULL,
+          source_json TEXT NOT NULL DEFAULT '{}',
+          created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_workflow_learning_events_run
+          ON workflow_learning_events(run_id, created_at DESC)
+        """
+    )
+
+
+def _workflow_learning_event_exists(
+    conn: sqlite3.Connection,
+    *,
+    run_id: str,
+    evidence_type: str,
+    proposal_target: str | None,
+) -> bool:
+    row = conn.execute(
+        """
+        SELECT 1
+        FROM workflow_learning_events
+        WHERE run_id = ?
+          AND evidence_type = ?
+          AND COALESCE(proposal_target, '') = COALESCE(?, '')
+        LIMIT 1
+        """,
+        (run_id, evidence_type, proposal_target),
+    ).fetchone()
+    return row is not None
+
+
+def _record_workflow_learning_event(
+    conn: sqlite3.Connection,
+    *,
+    run_id: str,
+    evidence_type: str,
+    proposal_target: str | None,
+    confidence: float,
+    approval_state: str,
+    rationale: str,
+    source: dict[str, Any],
+) -> None:
+    if _workflow_learning_event_exists(
+        conn,
+        run_id=run_id,
+        evidence_type=evidence_type,
+        proposal_target=proposal_target,
+    ):
+        return
+    conn.execute(
+        """
+        INSERT INTO workflow_learning_events (
+          id, run_id, evidence_type, proposal_target, confidence,
+          approval_state, rationale, source_json, created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            f"learning-{uuid.uuid4()}",
+            run_id,
+            evidence_type,
+            proposal_target,
+            confidence,
+            approval_state,
+            rationale,
+            json.dumps(source, sort_keys=True),
+            _now_iso(),
+        ),
+    )
+
+
+def _no_learning_reason(conn: sqlite3.Connection, run: dict[str, Any]) -> str:
+    if run.get("status") == "canceled":
+        return "canceled_without_signal"
+    if run.get("status") == "failed":
+        return "failed_before_artifact"
+    if not run.get("result_summary"):
+        return "missing_closeout_summary"
+    if _linked_artifact_count(conn, str(run["id"])) == 0:
+        return "insufficient_evidence"
+    return "one_off_task"
+
+
 def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
+    _ensure_workflow_learning_schema(conn)
     classification_counts = {kind: 0 for kind in WORKFLOW_LEARNING_EVIDENCE_TYPES}
     if not _table_exists(conn, "orchestration_runs"):
         return {
@@ -1537,6 +1635,7 @@ def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
                 "proposal_source": "improvement_writebacks",
             },
             "classification_counts": classification_counts,
+            "persisted_events": [],
             "inferred_evidence": [],
             "no_learning_runs": [],
             "proposals": [],
@@ -1556,7 +1655,6 @@ def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     proposals: list[dict[str, Any]] = []
     no_learning_runs: list[dict[str, Any]] = []
     inferred_evidence: list[dict[str, Any]] = []
-    runs_with_learning = 0
     pending_approval_count = 0
     writeback_exists = _table_exists(conn, "improvement_writebacks")
 
@@ -1580,22 +1678,53 @@ def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
         if not writebacks:
             inferred = _inferred_learning_evidence(conn, run)
             if inferred:
+                _record_workflow_learning_event(
+                    conn,
+                    run_id=str(run["id"]),
+                    evidence_type=str(inferred["evidence_type"]),
+                    proposal_target=str(inferred.get("workflow_key") or ""),
+                    confidence=0.65,
+                    approval_state="not_required",
+                    rationale=f"Inferred from durable {inferred['source']} evidence.",
+                    source=inferred,
+                )
                 classification_counts[str(inferred["evidence_type"])] += 1
                 inferred_evidence.append(inferred)
                 continue
             classification_counts["no_learning_signal"] += 1
+            reason = _no_learning_reason(conn, run)
+            _record_workflow_learning_event(
+                conn,
+                run_id=str(run["id"]),
+                evidence_type="no_learning_signal",
+                proposal_target=str(run.get("workflow_key") or ""),
+                confidence=0.55,
+                approval_state="not_required",
+                rationale=reason,
+                source={"reason": reason, "status": run.get("status"), "workflow_key": run.get("workflow_key")},
+            )
             no_learning_runs.append(
                 {
                     "run_id": run["id"],
                     "status": run.get("status"),
                     "workflow_key": run.get("workflow_key"),
+                    "reason": reason,
                 }
             )
             continue
 
-        runs_with_learning += 1
         for writeback in writebacks:
             learning_kind = _workflow_learning_kind(writeback.get("layer_type"))
+            _record_workflow_learning_event(
+                conn,
+                run_id=str(run["id"]),
+                evidence_type=learning_kind,
+                proposal_target=str(writeback.get("layer_key") or ""),
+                confidence=0.8,
+                approval_state="pending" if writeback.get("status") == "pending_approval" else "not_required",
+                rationale=str(writeback.get("summary") or writeback.get("title") or "Workflow proposal evidence."),
+                source={"source": "improvement_writebacks", "writeback_id": writeback.get("id")},
+            )
             classification_counts[learning_kind] += 1
             requires_approval = int(writeback.get("requires_approval") or 0) == 1
             if requires_approval or writeback.get("status") == "pending_approval":
@@ -1613,22 +1742,47 @@ def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
                 }
             )
 
+    persisted_event_rows = [
+        dict(row)
+        for row in conn.execute(
+            """
+            SELECT run_id, evidence_type, proposal_target, confidence, approval_state, rationale, source_json, created_at
+            FROM workflow_learning_events
+            ORDER BY created_at DESC
+            LIMIT 100
+            """
+        ).fetchall()
+    ]
+    persisted_learning_run_count = int(
+        conn.execute(
+            """
+            SELECT COUNT(DISTINCT run_id) AS count
+            FROM workflow_learning_events
+            WHERE evidence_type != 'no_learning_signal'
+            """
+        ).fetchone()["count"]
+        or 0
+    )
+    conn.commit()
     return {
         "summary": {
             "terminal_run_count": len(run_rows),
-            "runs_with_learning": runs_with_learning,
+            "runs_with_learning": persisted_learning_run_count,
             "no_learning_count": len(no_learning_runs),
             "inferred_evidence_count": len(inferred_evidence),
+            "persisted_event_count": _count(conn, "workflow_learning_events"),
             "proposal_count": len(proposals),
             "pending_approval_count": pending_approval_count,
         },
         "contract": {
             "evidence_types": WORKFLOW_LEARNING_EVIDENCE_TYPES,
             "run_source": "orchestration_runs",
+            "event_source": "workflow_learning_events",
             "proposal_source": "improvement_writebacks",
             "promotion_gate": "status + requires_approval on improvement_writebacks",
         },
         "classification_counts": classification_counts,
+        "persisted_events": persisted_event_rows[:50],
         "inferred_evidence": inferred_evidence[:50],
         "no_learning_runs": no_learning_runs[:20],
         "proposals": proposals[:50],
@@ -1636,6 +1790,7 @@ def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
 
 
 def _contracts_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
+    _ensure_workflow_learning_schema(conn)
     contracts = [
         {
             "name": "TrustedSignal",
@@ -1674,10 +1829,10 @@ def _contracts_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
         },
         {
             "name": "WorkflowLearningEvent",
-            "status": "partial",
+            "status": "implemented" if _table_exists(conn, "workflow_learning_events") else "partial",
             "source": "aios workflow-learning-audit",
-            "storage": "improvement_writebacks + improvement_writeback_events",
-            "table_available": _table_exists(conn, "improvement_writebacks"),
+            "storage": "workflow_learning_events + improvement_writebacks + improvement_writeback_events",
+            "table_available": _table_exists(conn, "workflow_learning_events"),
         },
         {
             "name": "EvaluationFinding",

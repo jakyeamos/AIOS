@@ -172,6 +172,27 @@ def ensure_runtime_schema(conn: sqlite3.Connection) -> None:
     )
     conn.execute(
         """
+        CREATE TABLE IF NOT EXISTS workflow_learning_events (
+            id TEXT PRIMARY KEY,
+            run_id TEXT REFERENCES orchestration_runs(id),
+            evidence_type TEXT NOT NULL,
+            proposal_target TEXT,
+            confidence REAL NOT NULL DEFAULT 0.5,
+            approval_state TEXT NOT NULL DEFAULT 'not_required',
+            rationale TEXT NOT NULL,
+            source_json TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_workflow_learning_events_run
+          ON workflow_learning_events(run_id, created_at DESC)
+        """
+    )
+    conn.execute(
+        """
         CREATE TABLE IF NOT EXISTS workflow_execution_reports (
             id TEXT PRIMARY KEY,
             run_id TEXT REFERENCES orchestration_runs(id),

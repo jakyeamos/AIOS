@@ -369,6 +369,18 @@ CREATE TABLE improvement_writeback_events (
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 CREATE INDEX idx_improvement_writeback_events_writeback ON improvement_writeback_events(writeback_id, created_at DESC);
+CREATE TABLE workflow_learning_events (
+  id TEXT PRIMARY KEY,
+  run_id TEXT REFERENCES orchestration_runs(id),
+  evidence_type TEXT NOT NULL,
+  proposal_target TEXT,
+  confidence REAL NOT NULL DEFAULT 0.5,
+  approval_state TEXT NOT NULL DEFAULT 'not_required',
+  rationale TEXT NOT NULL,
+  source_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX idx_workflow_learning_events_run ON workflow_learning_events(run_id, created_at DESC);
 CREATE TABLE consistency_evaluations (
   id TEXT PRIMARY KEY,
   project_id TEXT REFERENCES projects(id),
