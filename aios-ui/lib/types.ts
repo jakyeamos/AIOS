@@ -152,8 +152,8 @@ export type CostSummary = {
   abandonedSessionTokens: number;
   failedRunTokens: number;
   rtk: {
-    state: "active" | "inactive" | "no_eligible_data";
-    stateSignal: TrustedSignal<"active" | "inactive" | "no_eligible_data">;
+    state: "active" | "inactive" | "no_eligible_data" | "token_regressive" | "misconfigured";
+    stateSignal: TrustedSignal<"active" | "inactive" | "no_eligible_data" | "token_regressive" | "misconfigured">;
     eventCount: number;
     rawTokens: number;
     compressedTokens: number;

@@ -179,6 +179,7 @@ const readRtkSummary = (ctxDb: ReturnType<typeof import("@/server/db").getDb>): 
     .get() as RtkAggregateRow;
 
   const rawTokens = Number(aggregate.rawTokens) || 0;
+  const compressedTokens = Number(aggregate.compressedTokens) || 0;
   const tokensSaved = Number(aggregate.tokensSaved) || 0;
   const byWorkflow = ctxDb
     .prepare(
@@ -195,7 +196,13 @@ const readRtkSummary = (ctxDb: ReturnType<typeof import("@/server/db").getDb>): 
     .all() as RtkWorkflowRow[];
 
   const eventCount = Number(aggregate.eventCount) || 0;
-  const state: CostSummary["rtk"]["state"] = eventCount === 0 ? "no_eligible_data" : tokensSaved > 0 ? "active" : "inactive";
+  const state: CostSummary["rtk"]["state"] = eventCount === 0
+    ? "no_eligible_data"
+    : tokensSaved > 0
+      ? "active"
+      : compressedTokens > rawTokens
+        ? "token_regressive"
+        : "inactive";
 
   return {
     state,
@@ -210,13 +217,15 @@ const readRtkSummary = (ctxDb: ReturnType<typeof import("@/server/db").getDb>): 
           ? "RTK is wired, but no compression events have been recorded for this period."
           : tokensSaved > 0
             ? "RTK has recorded compression events with positive token savings."
-            : "RTK has recorded events, but current events show no net token savings.",
+            : compressedTokens > rawTokens
+              ? "RTK has recorded events, but compressed output is larger than raw output."
+              : "RTK has recorded events, but current events show no net token savings.",
       missingReason: eventCount === 0 ? "No eligible command output has produced an RTK telemetry event." : null,
       contradiction: null,
     }),
     eventCount,
     rawTokens,
-    compressedTokens: Number(aggregate.compressedTokens) || 0,
+    compressedTokens,
     tokensSaved,
     reductionPercent: rawTokens > 0 ? Math.round((tokensSaved / rawTokens) * 1000) / 10 : 0,
     ambiguousFailures: Number(aggregate.ambiguousFailures) || 0,

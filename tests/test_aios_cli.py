@@ -1027,6 +1027,6 @@ def test_rtk_cli_reports_token_regressive_events(tmp_path: Path, capsys) -> None
     assert exit_code == EXIT_OK
     output = json.loads(capsys.readouterr().out)
     assert output["ok"] is True
-    assert output["data"]["state"] == "inactive"
+    assert output["data"]["state"] == "token_regressive"
     assert output["data"]["benefit_state"] == "token_regressive"
     assert output["data"]["findings"][0]["code"] == "rtk_token_regressive"

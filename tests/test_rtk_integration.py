@@ -121,7 +121,7 @@ def test_classify_rtk_metrics_distinguishes_no_benefit_states() -> None:
     regressive = classify_rtk_metrics(
         {"event_count": 2, "raw_tokens": 10, "compressed_tokens": 14, "tokens_saved": 0}
     )
-    assert regressive["state"] == "inactive"
+    assert regressive["state"] == "token_regressive"
     assert regressive["benefit_state"] == "token_regressive"
 
     beneficial = classify_rtk_metrics(

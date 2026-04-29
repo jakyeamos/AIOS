@@ -18,7 +18,7 @@ DEFAULT_RULES_PATH = REPO_ROOT / "config" / "rtk" / "rules.json"
 DEFAULT_TEE_DIR = Path.home() / "AIOS" / "logs" / "rtk-raw"
 
 RTKMode = Literal["compressed", "raw", "adaptive"]
-RTKState = Literal["active", "inactive", "no_eligible_data"]
+RTKState = Literal["active", "inactive", "no_eligible_data", "token_regressive", "misconfigured"]
 RTKBenefitState = Literal["beneficial", "no_benefit", "token_regressive", "no_eligible_data"]
 
 ERROR_PATTERNS = re.compile(
@@ -552,7 +552,7 @@ def classify_rtk_metrics(metrics: dict[str, Any]) -> dict[str, Any]:
 
     if compressed_tokens > raw_tokens:
         return {
-            "state": "inactive",
+            "state": "token_regressive",
             "benefit_state": "token_regressive",
             "explanation": "RTK has recorded events, but compressed output is larger than raw output; treat this as no-benefit telemetry.",
             "missing_reason": None,
