@@ -80,6 +80,7 @@ Tier-one AIOS planning now has a dedicated execution pack under `docs/superpower
 - the pack treats UI polish as the final stage after runtime, knowledge, learning, telemetry, and contract trust are proven
 - the first critical implementation target is managed runtime closeout and explicit handshake reliability
 - `EXECUTION.md` now routes agents through the plan pack by priority gates, verification commands, stop conditions, parallelization rules, and final tier-one claim checklist
+- Managed runtime closeout now has direct start and closeout guards in `bin/aios-managed-run.py` so hook-side evaluator failures cannot leave authoritative runs stuck in `ready`; `tests/test_orchestration_runtime.py::test_managed_runtime_completes_via_explicit_handshake` and the full Python suite now pass.
 
 Stage 1 capability-truth baseline work has started with a first trusted-signal slice in `aios-ui`:
 
