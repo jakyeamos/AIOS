@@ -589,3 +589,113 @@ def test_managed_runtime_completes_via_explicit_handshake(runtime_db: Path, tmp_
 
     assert "in_progress" in event_types
     assert "completed" in event_types
+
+
+def test_managed_closeout_repairs_authoritative_run_state(runtime_db: Path, tmp_path: Path) -> None:
+    from aios_orchestration_runtime import ensure_runtime_schema
+
+    managed_runtime = _load_module("managed_runtime_closeout", "bin/aios-managed-run.py")
+
+    repo_path = tmp_path / "repo"
+    repo_path.mkdir()
+    home = tmp_path / "home"
+    (home / "AIOS" / "logs").mkdir(parents=True)
+
+    conn = sqlite3.connect(runtime_db)
+    project_id = _insert_project(conn, repo_path)
+    ensure_runtime_schema(conn)
+    run_id = "run-closeout-repair"
+    invocation_id = "invoke-closeout-repair"
+    session_id = "session-closeout-repair"
+
+    conn.execute(
+        """
+        INSERT INTO sessions (id, project_id, tool, started_at, objective, status, cwd, run_id, invocation_id)
+        VALUES (?, ?, 'codex', '2026-04-29T00:00:00Z', 'Repair closeout state', 'open', ?, ?, ?)
+        """,
+        (session_id, project_id, str(repo_path), run_id, invocation_id),
+    )
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (
+            id, project_id, session_id, objective, workflow_key, agent_key, status, rationale,
+            assumptions_json, context_trace_json, backend_key, active_invocation_id, created_at, updated_at
+        )
+        VALUES (
+            ?, ?, NULL, 'Repair closeout state',
+            'implementation-delivery', 'implementation-lead', 'ready',
+            'Closeout repair test', '[]', '[]', 'aios-managed-runtime', NULL,
+            '2026-04-29T00:00:00Z', '2026-04-29T00:00:00Z'
+        )
+        """,
+        (run_id, project_id),
+    )
+    conn.execute(
+        """
+        INSERT INTO orchestration_invocations (
+            id, run_id, backend_key, backend_label, status, handshake_token,
+            command_json, metadata_json, created_at, updated_at
+        )
+        VALUES (
+            ?, ?, 'aios-managed-runtime', 'AIOS Managed Runtime', 'running', ?,
+            '[]', '{}', '2026-04-29T00:00:00Z', '2026-04-29T00:00:00Z'
+        )
+        """,
+        (invocation_id, run_id, run_id),
+    )
+    conn.commit()
+    conn.close()
+
+    managed_runtime.ensure_managed_closeout(
+        str(runtime_db),
+        run_id=run_id,
+        invocation_id=invocation_id,
+        session_id=session_id,
+        outcome="completed",
+        result_summary="Managed runtime closeout repair completed.",
+        reason_json={"kind": "normal_exit"},
+    )
+
+    conn = sqlite3.connect(runtime_db)
+    run = conn.execute(
+        """
+        SELECT status, session_id, active_invocation_id, result_summary, completed_at
+        FROM orchestration_runs
+        WHERE id = ?
+        """,
+        (run_id,),
+    ).fetchone()
+    assert run is not None
+    assert run[0] == "completed"
+    assert run[1] == session_id
+    assert run[2] == invocation_id
+    assert run[3] == "Managed runtime closeout repair completed."
+    assert run[4] is not None
+
+    invocation = conn.execute(
+        "SELECT status, session_id, ended_at FROM orchestration_invocations WHERE id = ?",
+        (invocation_id,),
+    ).fetchone()
+    assert invocation is not None
+    assert invocation[0] == "completed"
+    assert invocation[1] == session_id
+    assert invocation[2] is not None
+
+    session = conn.execute("SELECT status, ended_at FROM sessions WHERE id = ?", (session_id,)).fetchone()
+    assert session is not None
+    assert session[0] == "closed"
+    assert session[1] is not None
+
+    reason = conn.execute(
+        """
+        SELECT reason_json
+        FROM orchestration_run_events
+        WHERE run_id = ? AND to_status = 'completed'
+        ORDER BY created_at DESC
+        LIMIT 1
+        """,
+        (run_id,),
+    ).fetchone()
+    conn.close()
+    assert reason is not None
+    assert json.loads(reason[0])["linkage"] == "managed-runtime-closeout"
