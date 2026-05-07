@@ -16,17 +16,19 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from aios_orchestration_runtime import (
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from aios_orchestration_runtime import (  # noqa: E402
     ensure_runtime_schema,
     link_session_runtime,
     transition_run,
     update_invocation,
 )
-from aios_paths import get_vault_root
+from aios_paths import get_vault_root  # noqa: E402
 
-from services.rtk_integration import ensure_rtk_schema, load_compression_rules
-
-ROOT = Path(__file__).resolve().parents[1]
+from services.rtk_integration import ensure_rtk_schema, load_compression_rules  # noqa: E402
 
 DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")

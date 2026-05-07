@@ -124,6 +124,7 @@ AIOS now has a repeatable corpus evaluation harness for product-level regression
 - `docs/aios/corpus/config.json` defines the initial migrated, scratch-real, synthetic, dirty, and negative corpus tracks plus CLI, prompt-library, workflow, success-criteria, hook, repo-intelligence, state, and negative command suites.
 - `npm run corpus:evaluate` is the project command, and `aios corpus run` / `aios corpus report` wrap the same harness through the Python CLI.
 - The harness captures stdout, stderr, exit code, duration, parsed JSON, artifacts written, git status/diff summaries, classification, raw evidence paths, JSON reports, Markdown reports, dry-run plans, sample/full filters, suite/repo/mode filters, report-only regeneration, timeouts, and `--keep-worktrees`.
+- Full-mode evaluation now includes explicit oracles for workflow start packets, hook DB/log side effects, CTS build/status behavior, dirty worktree detection, JSON shape, clean negative failures, and SQLite artifact persistence rather than relying on exit codes alone.
 - Corpus harness checks now cover self-test behavior, suite filtering, and Python CLI passthrough in `tests/test_corpus_eval.py`.
 
 Stage 1 capability-truth baseline work has started with a first trusted-signal slice in `aios-ui`:

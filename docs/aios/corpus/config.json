@@ -69,6 +69,9 @@
       "suite": "cli-routing",
       "argv": ["{python}", "{aiosRoot}/bin/aios.py", "--help"],
       "modes": ["migrated", "scratch-real", "synthetic", "negative"],
+      "assertions": {
+        "stdoutIncludes": ["AIOS unified JSON-first CLI"]
+      },
       "sample": true
     },
     {
@@ -88,6 +91,13 @@
       ],
       "modes": ["migrated", "scratch-real", "synthetic"],
       "expectedMutations": [".aios-corpus-state/"],
+      "assertions": {
+        "parsedJson": true,
+        "parsedJsonPaths": [
+          {"path": "ok", "equals": true},
+          {"path": "command", "equals": "status"}
+        ]
+      },
       "sample": true
     },
     {
@@ -107,6 +117,13 @@
       ],
       "modes": ["migrated", "scratch-real", "synthetic"],
       "expectedMutations": [".aios-corpus-state/"],
+      "assertions": {
+        "parsedJson": true,
+        "parsedJsonPaths": [
+          {"path": "ok", "equals": true},
+          {"path": "command", "equals": "health"}
+        ]
+      },
       "sample": true
     },
     {
@@ -126,6 +143,15 @@
       ],
       "modes": ["migrated", "scratch-real", "synthetic"],
       "expectedMutations": [".aios-corpus-state/"],
+      "assertions": {
+        "parsedJson": true,
+        "parsedJsonPaths": [
+          {"path": "ok", "equals": true},
+          {"path": "command", "equals": "metadata"},
+          {"path": "data.success_criteria.catalog.count", "min": 1},
+          {"path": "data.workflow_orchestration.registry.count", "min": 1}
+        ]
+      },
       "sample": true
     },
     {
@@ -135,6 +161,9 @@
       "modes": ["migrated", "scratch-real", "synthetic", "negative"],
       "repoTypes": ["aios-python-workspace"],
       "expectedMutations": ["prompts/registry.json"],
+      "assertions": {
+        "stdoutIncludes": ["validated", "wrote"]
+      },
       "sample": true
     },
     {
@@ -155,6 +184,13 @@
       ],
       "modes": ["migrated", "scratch-real", "synthetic"],
       "expectedMutations": [".aios-corpus-state/"],
+      "assertions": {
+        "parsedJson": true,
+        "parsedJsonPaths": [
+          {"path": "ok", "equals": true},
+          {"path": "command", "equals": "skills-status"}
+        ]
+      },
       "sample": true
     },
     {
@@ -174,14 +210,95 @@
       ],
       "modes": ["migrated", "scratch-real", "synthetic"],
       "expectedMutations": [".aios-corpus-state/"],
+      "assertions": {
+        "parsedJson": true,
+        "parsedJsonPaths": [
+          {"path": "ok", "equals": true},
+          {"path": "command", "equals": "contracts-audit"}
+        ]
+      },
       "sample": true
     },
     {
-      "name": "hook-session-start-help",
-      "suite": "hooks",
-      "argv": ["{python}", "{aiosRoot}/bin/hook-session-start.py", "--help"],
+      "name": "workflow-start-work",
+      "suite": "workflows",
+      "argv": [
+        "{python}",
+        "{aiosRoot}/bin/aios.py",
+        "--json",
+        "--db",
+        "{stateDb}",
+        "--logs-dir",
+        "{stateLogs}",
+        "--config-root",
+        "{aiosRoot}/config",
+        "start-work",
+        "Corpus workflow execution quality probe",
+        "--project",
+        "fixture",
+        "--session-id",
+        "session-fixture"
+      ],
       "modes": ["migrated", "scratch-real", "synthetic"],
-      "expectedFailure": true,
+      "expectedMutations": [".aios-corpus-state/"],
+      "assertions": {
+        "parsedJson": true,
+        "parsedJsonPaths": [
+          {"path": "ok", "equals": true},
+          {"path": "command", "equals": "start-work"},
+          {"path": "data.run.id", "exists": true}
+        ],
+        "dbRows": [
+          {"sql": "SELECT COUNT(*) FROM orchestration_runs WHERE objective='Corpus workflow execution quality probe'", "min": 1}
+        ]
+      },
+      "sample": false
+    },
+    {
+      "name": "hook-session-start-event",
+      "suite": "hooks",
+      "argv": ["{python}", "{aiosRoot}/bin/hook-session-start.py"],
+      "stdin": "{\"session_id\":\"corpus-session-{repoId}-{mode}\",\"cwd\":\"{workspace}\",\"objective\":\"Corpus hook side effect probe\"}",
+      "modes": ["migrated", "scratch-real", "synthetic"],
+      "expectedMutations": [".aios-corpus-state/"],
+      "assertions": {
+        "artifactsExist": ["{stateLogs}/current_session"],
+        "dbRows": [
+          {"sql": "SELECT COUNT(*) FROM sessions WHERE id='corpus-session-{repoId}-{mode}'", "min": 1},
+          {"sql": "SELECT COUNT(*) FROM tool_events WHERE session_id='corpus-session-{repoId}-{mode}' AND event_type='SessionStart'", "min": 1}
+        ]
+      },
+      "sample": false
+    },
+    {
+      "name": "hook-prompt-submit-event",
+      "suite": "hooks",
+      "argv": ["{python}", "{aiosRoot}/bin/hook-prompt-submit.py"],
+      "stdin": "{\"session_id\":\"corpus-session-{repoId}-{mode}\",\"prompt\":\"Debug the synthetic corpus fixture and explain the safest next action\"}",
+      "modes": ["migrated", "scratch-real", "synthetic"],
+      "expectedMutations": [".aios-corpus-state/"],
+      "assertions": {
+        "dbRows": [
+          {"sql": "SELECT COUNT(*) FROM prompts_used WHERE session_id='corpus-session-{repoId}-{mode}'", "min": 1},
+          {"sql": "SELECT COUNT(*) FROM tool_events WHERE session_id='corpus-session-{repoId}-{mode}' AND event_type='UserPromptSubmit'", "min": 1}
+        ]
+      },
+      "sample": false
+    },
+    {
+      "name": "cts-build",
+      "suite": "repo-intelligence",
+      "argv": ["{python}", "{aiosRoot}/bin/cts-build.py", "--repo", "{workspace}"],
+      "modes": ["migrated", "scratch-real", "synthetic"],
+      "expectedMutations": [".aios-corpus-state/"],
+      "assertions": {
+        "parsedJson": true,
+        "parsedJsonPaths": [
+          {"path": "repo_id", "exists": true},
+          {"path": "repo_path", "exists": true},
+          {"path": "total_files", "min": 0}
+        ]
+      },
       "sample": false
     },
     {
@@ -189,6 +306,26 @@
       "suite": "repo-intelligence",
       "argv": ["{python}", "{aiosRoot}/bin/cts-status.py", "--repo", "{workspace}"],
       "modes": ["migrated", "scratch-real", "synthetic"],
+      "expectedMutations": [".aios-corpus-state/"],
+      "assertions": {
+        "parsedJson": true,
+        "parsedJsonPaths": [
+          {"path": "repo_id", "exists": true},
+          {"path": "index_status", "exists": true}
+        ]
+      },
+      "sample": false
+    },
+    {
+      "name": "dirty-worktree-detected",
+      "suite": "dirty-worktree",
+      "argv": ["git", "status", "--short"],
+      "modes": ["synthetic"],
+      "repoTypes": ["dirty-worktree"],
+      "assertions": {
+        "stdoutIncludes": ["dirty-note.txt"],
+        "gitStatusIncludes": ["dirty-note.txt"]
+      },
       "sample": false
     },
     {
@@ -206,6 +343,34 @@
       ],
       "modes": ["negative", "synthetic"],
       "expectedFailure": true,
+      "assertions": {
+        "stderrIncludes": ["invalid choice"],
+        "stderrExcludes": ["Traceback (most recent call last)", "UnhandledPromiseRejection"]
+      },
+      "sample": false
+    },
+    {
+      "name": "missing-db-clean-failure-json",
+      "suite": "negative",
+      "argv": [
+        "{python}",
+        "{aiosRoot}/bin/aios.py",
+        "--json",
+        "--db",
+        "{stateRoot}/missing/aios.db",
+        "--logs-dir",
+        "{stateLogs}",
+        "status"
+      ],
+      "modes": ["negative", "synthetic"],
+      "expectedFailure": true,
+      "assertions": {
+        "parsedJson": true,
+        "parsedJsonPaths": [
+          {"path": "ok", "equals": false},
+          {"path": "error.code", "equals": "db-not-found"}
+        ]
+      },
       "sample": false
     }
   ]

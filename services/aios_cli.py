@@ -2556,6 +2556,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
     config_root = Path(args.config_root).expanduser().resolve()
     vault_root = _resolve_vault_root(args.vault_root)
     command = _command_name(args)
+    conn: sqlite3.Connection | None = None
 
     try:
         if args.command in {

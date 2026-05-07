@@ -212,6 +212,7 @@ function runProcess(argv, options = {}) {
   const spawn = childProcess.spawnSync(argv[0], argv.slice(1), {
     cwd: options.cwd,
     env: { ...process.env, ...(options.env || {}) },
+    input: options.stdin || undefined,
     encoding: "utf8",
     timeout: options.timeoutMs,
     maxBuffer: 20 * 1024 * 1024,
@@ -307,7 +308,11 @@ db = Path(${JSON.stringify(dbPath)})
 conn = sqlite3.connect(db)
 conn.executescript("""
 CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY, name TEXT, status TEXT, repo_path TEXT, obsidian_path TEXT);
-CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, project_id TEXT, status TEXT, started_at TEXT, ended_at TEXT, cwd TEXT, objective TEXT, run_id TEXT, invocation_id TEXT, runtime_metadata_json TEXT DEFAULT '{}');
+CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, project_id TEXT, tool TEXT, status TEXT, started_at TEXT, ended_at TEXT, cwd TEXT, objective TEXT, run_id TEXT, invocation_id TEXT, runtime_metadata_json TEXT DEFAULT '{}');
+CREATE TABLE IF NOT EXISTS tool_events (id TEXT PRIMARY KEY, session_id TEXT, source_tool TEXT, event_type TEXT, event_time TEXT, payload_json TEXT);
+CREATE TABLE IF NOT EXISTS prompts_used (id TEXT PRIMARY KEY, session_id TEXT, prompt_hash TEXT, prompt_text TEXT, classification TEXT, outcome_score INTEGER, reusable_candidate INTEGER NOT NULL DEFAULT 0, retrieval_fired INTEGER NOT NULL DEFAULT 0, retrieval_source TEXT);
+CREATE TABLE IF NOT EXISTS artifacts (id TEXT PRIMARY KEY, session_id TEXT, artifact_type TEXT, path TEXT, metadata_json TEXT, created_at TEXT);
+CREATE TABLE IF NOT EXISTS prompt_library_links (id TEXT PRIMARY KEY, prompt_hash TEXT NOT NULL, obsidian_note_path TEXT, promoted_at TEXT);
 CREATE TABLE IF NOT EXISTS bug_log (id TEXT PRIMARY KEY, project_id TEXT, symptom TEXT, status TEXT, created_at TEXT);
 CREATE TABLE IF NOT EXISTS orchestration_runs (id TEXT PRIMARY KEY, project_id TEXT, session_id TEXT, objective TEXT, workflow_key TEXT, agent_key TEXT, status TEXT, rationale TEXT, assumptions_json TEXT DEFAULT '[]', context_trace_json TEXT DEFAULT '[]', backend_key TEXT, active_invocation_id TEXT, packet_id TEXT, status_reason_json TEXT DEFAULT '{}', created_at TEXT, updated_at TEXT);
 CREATE TABLE IF NOT EXISTS orchestration_invocations (id TEXT PRIMARY KEY, run_id TEXT, backend_key TEXT, backend_label TEXT, status TEXT, handshake_token TEXT, session_id TEXT, command_json TEXT DEFAULT '[]', metadata_json TEXT DEFAULT '{}', created_at TEXT, started_at TEXT, updated_at TEXT);
@@ -319,7 +324,7 @@ CREATE TABLE IF NOT EXISTS orchestration_run_events (id TEXT PRIMARY KEY, run_id
 CREATE TABLE IF NOT EXISTS workflow_execution_reports (id TEXT PRIMARY KEY, run_id TEXT, invocation_id TEXT, workflow_key TEXT, status TEXT, artifact_path TEXT, created_at TEXT);
 """)
 conn.execute("INSERT OR IGNORE INTO projects (id, name, status, repo_path, obsidian_path) VALUES ('fixture', 'Corpus Fixture', 'active', ?, '')", (${JSON.stringify(workspace)},))
-conn.execute("INSERT OR IGNORE INTO sessions (id, project_id, status, started_at, ended_at, cwd) VALUES ('session-fixture', 'fixture', 'closed', '2026-05-07T00:00:00Z', '2026-05-07T00:01:00Z', ?)", (${JSON.stringify(workspace)},))
+conn.execute("INSERT OR IGNORE INTO sessions (id, project_id, tool, status, started_at, ended_at, cwd) VALUES ('session-fixture', 'fixture', 'corpus-eval', 'open', '2026-05-07T00:00:00Z', '2026-05-07T00:01:00Z', ?)", (${JSON.stringify(workspace)},))
 conn.commit()
 conn.close()
 `;
@@ -328,6 +333,60 @@ conn.close()
     timeoutMs: 10_000,
   });
   if (result.exitCode !== 0) throw new Error(`failed to create sqlite fixture: ${result.stderr}`);
+}
+
+function ensureCorpusProjectRows(dbPath, workspace) {
+  const script = `
+import sqlite3
+from pathlib import Path
+db = Path(${JSON.stringify(dbPath)})
+conn = sqlite3.connect(db)
+def columns(table):
+    return [row[1] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()]
+project_cols = columns("projects")
+if project_cols:
+    values = {
+        "id": "fixture",
+        "name": "Corpus Fixture",
+        "status": "active",
+        "repo_path": ${JSON.stringify(workspace)},
+        "obsidian_path": "",
+    }
+    cols = [col for col in project_cols if col in values]
+    placeholders = ", ".join("?" for _ in cols)
+    updates = ", ".join(f"{col}=excluded.{col}" for col in cols if col != "id")
+    conn.execute(
+        f"INSERT INTO projects ({', '.join(cols)}) VALUES ({placeholders}) ON CONFLICT(id) DO UPDATE SET {updates}",
+        [values[col] for col in cols],
+    )
+session_cols = columns("sessions")
+if session_cols:
+    values = {
+        "id": "session-fixture",
+        "project_id": "fixture",
+        "tool": "corpus-eval",
+        "status": "open",
+        "started_at": "2026-05-07T00:00:00Z",
+        "ended_at": "2026-05-07T00:01:00Z",
+        "cwd": ${JSON.stringify(workspace)},
+        "objective": "Corpus fixture baseline session",
+        "runtime_metadata_json": "{}",
+    }
+    cols = [col for col in session_cols if col in values]
+    placeholders = ", ".join("?" for _ in cols)
+    updates = ", ".join(f"{col}=excluded.{col}" for col in cols if col != "id")
+    conn.execute(
+        f"INSERT INTO sessions ({', '.join(cols)}) VALUES ({placeholders}) ON CONFLICT(id) DO UPDATE SET {updates}",
+        [values[col] for col in cols],
+    )
+conn.commit()
+conn.close()
+`;
+  const result = runProcess([process.env.PYTHON || "python3", "-c", script], {
+    cwd: workspace,
+    timeoutMs: 10_000,
+  });
+  if (result.exitCode !== 0) throw new Error(`failed to seed corpus project rows: ${result.stderr}`);
 }
 
 function prepareWorkspace(repo, mode, runDir) {
@@ -344,8 +403,10 @@ function prepareWorkspace(repo, mode, runDir) {
   }
 
   const stateRoot = path.join(workspace, ".aios-corpus-state");
-  const stateData = path.join(stateRoot, "data");
-  const stateLogs = path.join(stateRoot, "logs");
+  const stateHome = path.join(stateRoot, "home");
+  const stateAios = path.join(stateHome, "AIOS");
+  const stateData = path.join(stateAios, "data");
+  const stateLogs = path.join(stateAios, "logs");
   fs.mkdirSync(stateData, { recursive: true });
   fs.mkdirSync(stateLogs, { recursive: true });
   const stateDb = path.join(stateData, "aios.db");
@@ -355,9 +416,10 @@ function prepareWorkspace(repo, mode, runDir) {
   } else {
     createSqliteDb(stateDb, workspace);
   }
+  ensureCorpusProjectRows(stateDb, workspace);
   fs.writeFileSync(path.join(stateLogs, "hooks.log"), `${nowIso()} corpus fixture log\n`, "utf8");
 
-  return { workspace, stateRoot, stateDb, stateLogs, source };
+  return { workspace, stateRoot, stateHome, stateAios, stateDb, stateLogs, source };
 }
 
 function listFiles(root) {
@@ -424,7 +486,87 @@ function parseJsonFromStdout(stdout) {
   }
 }
 
-function classifyResult(command, execution, mutation) {
+function getJsonPath(value, dottedPath) {
+  if (!dottedPath) return value;
+  let current = value;
+  for (const part of String(dottedPath).split(".")) {
+    if (current === null || current === undefined) return undefined;
+    if (Array.isArray(current) && /^\d+$/.test(part)) current = current[Number(part)];
+    else current = current[part];
+  }
+  return current;
+}
+
+function querySqliteScalar(dbPath, sql) {
+  const script = `
+import json
+import sqlite3
+conn = sqlite3.connect(${JSON.stringify(dbPath)})
+row = conn.execute(${JSON.stringify(sql)}).fetchone()
+conn.close()
+print(json.dumps(row[0] if row else None))
+`;
+  const result = runProcess([process.env.PYTHON || "python3", "-c", script], { timeoutMs: 10_000 });
+  if (result.exitCode !== 0) throw new Error(result.stderr || result.error || "sqlite query failed");
+  return JSON.parse(result.stdout);
+}
+
+function evaluateAssertions(command, context) {
+  const assertions = command.assertions || {};
+  const failures = [];
+  const stdout = context.execution.stdout;
+  const stderr = context.execution.stderr;
+  const parsedJson = context.parsedJson;
+
+  for (const expected of assertions.stdoutIncludes || []) {
+    if (!stdout.includes(expected)) failures.push(`stdout missing ${JSON.stringify(expected)}`);
+  }
+  for (const expected of assertions.stderrIncludes || []) {
+    if (!stderr.includes(expected)) failures.push(`stderr missing ${JSON.stringify(expected)}`);
+  }
+  const stderrExcludes = assertions.stderrExcludes || ["Traceback (most recent call last)"];
+  for (const forbidden of stderrExcludes) {
+    if (stderr.includes(forbidden)) failures.push(`stderr contained ${JSON.stringify(forbidden)}`);
+  }
+  if (assertions.parsedJson === true && parsedJson === null) {
+    failures.push("stdout did not contain parseable JSON");
+  }
+  for (const row of assertions.parsedJsonPaths || []) {
+    const actual = getJsonPath(parsedJson, row.path);
+    if (row.exists === true && actual === undefined) failures.push(`parsed JSON missing ${row.path}`);
+    if (Object.prototype.hasOwnProperty.call(row, "equals") && actual !== row.equals) {
+      failures.push(`parsed JSON ${row.path} expected ${JSON.stringify(row.equals)} got ${JSON.stringify(actual)}`);
+    }
+    if (Object.prototype.hasOwnProperty.call(row, "min") && !(typeof actual === "number" && actual >= row.min)) {
+      failures.push(`parsed JSON ${row.path} expected >= ${row.min} got ${JSON.stringify(actual)}`);
+    }
+  }
+  for (const item of assertions.artifactsExist || []) {
+    const artifactPath = path.resolve(expandTokens(item, context.tokens));
+    if (!fs.existsSync(artifactPath)) failures.push(`artifact missing ${artifactPath}`);
+  }
+  for (const item of assertions.gitStatusIncludes || []) {
+    if (!context.gitAfter.status.stdout.includes(item)) {
+      failures.push(`git status missing ${JSON.stringify(item)}`);
+    }
+  }
+  for (const row of assertions.dbRows || []) {
+    try {
+      const actual = querySqliteScalar(context.prepared.stateDb, expandTokens(row.sql, context.tokens));
+      if (Object.prototype.hasOwnProperty.call(row, "equals") && actual !== row.equals) {
+        failures.push(`db query expected ${JSON.stringify(row.equals)} got ${JSON.stringify(actual)}: ${row.sql}`);
+      }
+      if (Object.prototype.hasOwnProperty.call(row, "min") && !(Number(actual) >= row.min)) {
+        failures.push(`db query expected >= ${row.min} got ${JSON.stringify(actual)}: ${row.sql}`);
+      }
+    } catch (err) {
+      failures.push(`db query failed: ${err && err.message ? err.message : String(err)}`);
+    }
+  }
+  return failures;
+}
+
+function classifyResult(command, execution, mutation, assertionFailures = []) {
   if (!command) return { classification: "not-applicable", reason: "No matching command" };
   if (execution.timedOut) return { classification: "timeout", reason: "Command exceeded timeout" };
   if (execution.error && execution.exitCode === null) {
@@ -434,6 +576,12 @@ function classifyResult(command, execution, mutation) {
     return {
       classification: "product-weakness",
       reason: `Unexpected mutations: ${mutation.unexpected.map((item) => item.path).slice(0, 5).join(", ")}`,
+    };
+  }
+  if (assertionFailures.length > 0) {
+    return {
+      classification: "product-weakness",
+      reason: `Oracle failed: ${assertionFailures.slice(0, 3).join("; ")}`,
     };
   }
   const successExitCodes = Array.isArray(command.successExitCodes) ? command.successExitCodes : [0];
@@ -478,6 +626,8 @@ function commandTokens(prepared, repo, mode, outputDir) {
   return tokenMap({
     workspace: prepared.workspace,
     stateRoot: prepared.stateRoot,
+    stateHome: prepared.stateHome,
+    stateAios: prepared.stateAios,
     stateDb: prepared.stateDb,
     stateLogs: prepared.stateLogs,
     repoId: repo.id,
@@ -511,7 +661,17 @@ function runCommand(planItem, prepared, runDir, args, config) {
   const tokens = commandTokens(prepared, repo, mode, evidenceDir);
   const argv = expandTokens(command.argv, tokens);
   const cwd = path.resolve(expandTokens(command.cwd || "{workspace}", tokens));
-  const env = expandTokens({ ...(config.environment || {}), ...(command.env || {}) }, tokens);
+  const env = expandTokens(
+    {
+      HOME: "{stateHome}",
+      AIOS_DB: "{stateDb}",
+      AIOS_PROMPTS_ROOT: "{workspace}/prompts",
+      ...(config.environment || {}),
+      ...(command.env || {}),
+    },
+    tokens,
+  );
+  const stdin = command.stdin === undefined ? undefined : expandTokens(command.stdin, tokens);
   const timeoutMs = command.timeoutMs || args.timeoutMs || config.defaultTimeoutMs || DEFAULT_TIMEOUT_MS;
 
   const sourceReal = realpathIfExists(prepared.source);
@@ -533,7 +693,7 @@ function runCommand(planItem, prepared, runDir, args, config) {
   const beforeFiles = listFiles(prepared.workspace);
   const beforeStateFiles = listFiles(prepared.stateRoot);
   const gitBefore = gitSnapshot(prepared.workspace);
-  const execution = runProcess(argv, { cwd, env, timeoutMs });
+  const execution = runProcess(argv, { cwd, env, stdin, timeoutMs });
   const gitAfter = gitSnapshot(prepared.workspace);
   const afterFiles = listFiles(prepared.workspace);
   const afterStateFiles = listFiles(prepared.stateRoot);
@@ -544,8 +704,17 @@ function runCommand(planItem, prepared, runDir, args, config) {
   }));
   const allChanges = [...projectChanges, ...stateChanges];
   const mutation = { all: allChanges, unexpected: unexpectedMutations(allChanges, command) };
-  const classification = classifyResult(command, execution, mutation);
   const parsedJson = command.parseJson === false ? null : parseJsonFromStdout(execution.stdout);
+  const assertionFailures = evaluateAssertions(command, {
+    command,
+    execution,
+    parsedJson,
+    mutation,
+    prepared,
+    tokens,
+    gitAfter,
+  });
+  const classification = classifyResult(command, execution, mutation, assertionFailures);
 
   const result = {
     repoId: repo.id,
@@ -564,6 +733,7 @@ function runCommand(planItem, prepared, runDir, args, config) {
     parsedJson,
     artifactsWritten: allChanges,
     unexpectedMutations: mutation.unexpected,
+    assertionFailures,
     gitBefore,
     gitAfter,
     classification: classification.classification,
@@ -846,6 +1016,19 @@ function runSelfTest() {
         suite: "cli-routing",
         argv: ["{node}", "--version"],
         modes: ["synthetic"],
+        assertions: {
+          stdoutIncludes: ["v"],
+        },
+        sample: true,
+      },
+      {
+        name: "oracle-failure",
+        suite: "cli-routing",
+        argv: ["{node}", "--version"],
+        modes: ["synthetic"],
+        assertions: {
+          stdoutIncludes: ["definitely-not-node-version-output"],
+        },
         sample: true,
       },
       {
@@ -862,11 +1045,12 @@ function runSelfTest() {
   const args = parseArgs(["--sample", "--config", configPath, "--output-root", outputRoot]);
   const loaded = loadConfig(configPath);
   const plan = buildPlan(loaded, args);
-  assert(plan.length === 2, "expected two planned commands");
+  assert(plan.length === 3, "expected three planned commands");
   const run = runEvaluation(loaded, plan, args);
   const classes = run.result.results.map((item) => item.classification).sort();
   assert(classes.includes("pass"), "expected one pass");
   assert(classes.includes("expected-blocker"), "expected one expected blocker");
+  assert(classes.includes("product-weakness"), "expected one oracle-driven product weakness");
   const markdownPath = regenerateReport(run.jsonPath);
   assert(fs.existsSync(markdownPath), "expected regenerated report");
   fs.rmSync(tmp, { recursive: true, force: true });
