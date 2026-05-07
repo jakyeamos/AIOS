@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import sqlite3
+import subprocess
 import sys
 import uuid
 from collections import deque
@@ -2442,7 +2443,24 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
 def _command_name(args: argparse.Namespace) -> str:
     if args.command == "skills":
         return f"skills-{args.skills_command}"
+    if args.command == "corpus":
+        return f"corpus-{args.corpus_command}"
     return args.command
+
+
+def _run_corpus_command(command: str, passthrough_args: Sequence[str]) -> int:
+    script = REPO_ROOT / "scripts" / "aios-corpus-eval.cjs"
+    if command == "run":
+        argv = ["node", str(script), *passthrough_args]
+    elif command == "report":
+        argv = ["node", str(script), "--report-only", *passthrough_args]
+    else:
+        raise CLIError("unknown-corpus-command", f"Unsupported corpus command: {command}", EXIT_USAGE)
+    try:
+        completed = subprocess.run(argv, check=False)
+    except FileNotFoundError as exc:
+        raise CLIError("node-not-found", "Node.js is required for corpus evaluation", EXIT_DEPENDENCY) from exc
+    return int(completed.returncode)
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -2512,12 +2530,26 @@ def create_parser() -> argparse.ArgumentParser:
     skills_refresh.add_argument("--project", default=None, help="Optional project id filter")
     skills_refresh.add_argument("--apply", action="store_true", help="Apply updates instead of dry-run")
 
+    corpus_parser = subparsers.add_parser("corpus", help="Corpus evaluation harness")
+    corpus_subparsers = corpus_parser.add_subparsers(dest="corpus_command", required=True)
+    corpus_run = corpus_subparsers.add_parser("run", help="Run the AIOS corpus evaluation harness")
+    corpus_run.add_argument("corpus_args", nargs=argparse.REMAINDER)
+    corpus_report = corpus_subparsers.add_parser("report", help="Regenerate a corpus Markdown report")
+    corpus_report.add_argument("corpus_args", nargs=argparse.REMAINDER)
+
     return parser
 
 
 def run_cli(argv: Sequence[str] | None = None) -> int:
     parser = create_parser()
-    args = parser.parse_args(argv)
+    raw_argv = list(argv) if argv is not None else sys.argv[1:]
+    args, unknown_args = parser.parse_known_args(raw_argv)
+    if unknown_args:
+        if args.command == "corpus":
+            corpus_index = raw_argv.index("corpus")
+            args.corpus_args = raw_argv[corpus_index + 2 :]
+        else:
+            parser.error(f"unrecognized arguments: {' '.join(unknown_args)}")
 
     db_path = Path(args.db).expanduser().resolve()
     logs_dir = Path(args.logs_dir).expanduser().resolve()
@@ -2546,6 +2578,8 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         else:
             conn = None
 
+        if args.command == "corpus":
+            return _run_corpus_command(args.corpus_command, args.corpus_args)
         if args.command == "status":
             assert conn is not None
             data = _status_payload(conn)

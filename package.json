@@ -1,0 +1,8 @@
+{
+  "name": "aios",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "corpus:evaluate": "node scripts/aios-corpus-eval.cjs"
+  }
+}

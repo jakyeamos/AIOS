@@ -116,6 +116,16 @@ The tier-one audit fix pass has started with capability trust gates before UI po
 - RTK `token_regressive` is now a first-class runtime state in Python and UI types; the live RTK audit reports `state=token_regressive` and `benefit_state=token_regressive` rather than hiding the condition behind a generic inactive zero-savings state.
 - Tier-one release gates now include Python CI for `uv run pytest -q`, UI CI production build, and an ESLint warning ratchet at the current 71-warning baseline via `aios-ui/scripts/assert-eslint-warning-baseline.mjs`; README quality-check docs now mirror the CI command set.
 
+## Implemented On 2026-05-07
+
+AIOS now has a repeatable corpus evaluation harness for product-level regression testing:
+
+- `scripts/aios-corpus-eval.cjs` runs configured AIOS commands against disposable copied or synthetic workspaces and defaults evidence output to the system temp directory to avoid live project mutation.
+- `docs/aios/corpus/config.json` defines the initial migrated, scratch-real, synthetic, dirty, and negative corpus tracks plus CLI, prompt-library, workflow, success-criteria, hook, repo-intelligence, state, and negative command suites.
+- `npm run corpus:evaluate` is the project command, and `aios corpus run` / `aios corpus report` wrap the same harness through the Python CLI.
+- The harness captures stdout, stderr, exit code, duration, parsed JSON, artifacts written, git status/diff summaries, classification, raw evidence paths, JSON reports, Markdown reports, dry-run plans, sample/full filters, suite/repo/mode filters, report-only regeneration, timeouts, and `--keep-worktrees`.
+- Corpus harness checks now cover self-test behavior, suite filtering, and Python CLI passthrough in `tests/test_corpus_eval.py`.
+
 Stage 1 capability-truth baseline work has started with a first trusted-signal slice in `aios-ui`:
 
 - added a shared UI/server `TrustedSignal` contract for capability metrics with:

@@ -1,0 +1,212 @@
+{
+  "version": 1,
+  "description": "AIOS corpus evaluation config. Every repo is copied or synthesized before commands run.",
+  "defaultTimeoutMs": 30000,
+  "environment": {
+    "AIOS_CORPUS_EVAL": "1",
+    "PYTHONUNBUFFERED": "1"
+  },
+  "repos": [
+    {
+      "id": "aios-copy",
+      "type": "aios-python-workspace",
+      "strategy": "copy",
+      "source": "{aiosRoot}",
+      "modes": ["migrated", "scratch-real"],
+      "tags": ["real", "aios-state", "python", "workspace"],
+      "sample": true
+    },
+    {
+      "id": "node-typescript-fixture",
+      "type": "node-typescript",
+      "strategy": "synthetic-fixture",
+      "fixture": "node-typescript",
+      "modes": ["synthetic"],
+      "tags": ["synthetic", "node", "typescript"],
+      "sample": true
+    },
+    {
+      "id": "python-fixture",
+      "type": "python",
+      "strategy": "synthetic-fixture",
+      "fixture": "python-basic",
+      "modes": ["synthetic"],
+      "tags": ["synthetic", "python"],
+      "sample": true
+    },
+    {
+      "id": "docs-only-fixture",
+      "type": "docs-only",
+      "strategy": "synthetic-fixture",
+      "fixture": "docs-only",
+      "modes": ["synthetic"],
+      "tags": ["synthetic", "docs"],
+      "sample": true
+    },
+    {
+      "id": "dirty-worktree-fixture",
+      "type": "dirty-worktree",
+      "strategy": "synthetic-fixture",
+      "fixture": "node-typescript",
+      "dirty": true,
+      "modes": ["synthetic"],
+      "tags": ["synthetic", "dirty", "node"],
+      "sample": false
+    },
+    {
+      "id": "malformed-aios-state-fixture",
+      "type": "malformed-aios-state",
+      "strategy": "synthetic-fixture",
+      "fixture": "malformed-aios-state",
+      "modes": ["negative"],
+      "tags": ["synthetic", "negative", "aios-state"],
+      "sample": false
+    }
+  ],
+  "commands": [
+    {
+      "name": "aios-help",
+      "suite": "cli-routing",
+      "argv": ["{python}", "{aiosRoot}/bin/aios.py", "--help"],
+      "modes": ["migrated", "scratch-real", "synthetic", "negative"],
+      "sample": true
+    },
+    {
+      "name": "aios-status-json",
+      "suite": "cli-routing",
+      "argv": [
+        "{python}",
+        "{aiosRoot}/bin/aios.py",
+        "--json",
+        "--db",
+        "{stateDb}",
+        "--logs-dir",
+        "{stateLogs}",
+        "--config-root",
+        "{aiosRoot}/config",
+        "status"
+      ],
+      "modes": ["migrated", "scratch-real", "synthetic"],
+      "expectedMutations": [".aios-corpus-state/"],
+      "sample": true
+    },
+    {
+      "name": "aios-health-json",
+      "suite": "state-persistence",
+      "argv": [
+        "{python}",
+        "{aiosRoot}/bin/aios.py",
+        "--json",
+        "--db",
+        "{stateDb}",
+        "--logs-dir",
+        "{stateLogs}",
+        "--config-root",
+        "{aiosRoot}/config",
+        "health"
+      ],
+      "modes": ["migrated", "scratch-real", "synthetic"],
+      "expectedMutations": [".aios-corpus-state/"],
+      "sample": true
+    },
+    {
+      "name": "aios-metadata-json",
+      "suite": "repo-intelligence",
+      "argv": [
+        "{python}",
+        "{aiosRoot}/bin/aios.py",
+        "--json",
+        "--db",
+        "{stateDb}",
+        "--logs-dir",
+        "{stateLogs}",
+        "--config-root",
+        "{aiosRoot}/config",
+        "metadata"
+      ],
+      "modes": ["migrated", "scratch-real", "synthetic"],
+      "expectedMutations": [".aios-corpus-state/"],
+      "sample": true
+    },
+    {
+      "name": "prompt-library-validate",
+      "suite": "prompt-library",
+      "argv": ["{python}", "{aiosRoot}/bin/validate-prompts.py", "--prompts-root", "{workspace}/prompts"],
+      "modes": ["migrated", "scratch-real", "synthetic", "negative"],
+      "repoTypes": ["aios-python-workspace"],
+      "expectedMutations": ["prompts/registry.json"],
+      "sample": true
+    },
+    {
+      "name": "skills-status-json",
+      "suite": "workflows",
+      "argv": [
+        "{python}",
+        "{aiosRoot}/bin/aios.py",
+        "--json",
+        "--db",
+        "{stateDb}",
+        "--logs-dir",
+        "{stateLogs}",
+        "--config-root",
+        "{aiosRoot}/config",
+        "skills",
+        "status"
+      ],
+      "modes": ["migrated", "scratch-real", "synthetic"],
+      "expectedMutations": [".aios-corpus-state/"],
+      "sample": true
+    },
+    {
+      "name": "criteria-contracts-audit",
+      "suite": "success-criteria",
+      "argv": [
+        "{python}",
+        "{aiosRoot}/bin/aios.py",
+        "--json",
+        "--db",
+        "{stateDb}",
+        "--logs-dir",
+        "{stateLogs}",
+        "--config-root",
+        "{aiosRoot}/config",
+        "contracts-audit"
+      ],
+      "modes": ["migrated", "scratch-real", "synthetic"],
+      "expectedMutations": [".aios-corpus-state/"],
+      "sample": true
+    },
+    {
+      "name": "hook-session-start-help",
+      "suite": "hooks",
+      "argv": ["{python}", "{aiosRoot}/bin/hook-session-start.py", "--help"],
+      "modes": ["migrated", "scratch-real", "synthetic"],
+      "expectedFailure": true,
+      "sample": false
+    },
+    {
+      "name": "cts-status",
+      "suite": "repo-intelligence",
+      "argv": ["{python}", "{aiosRoot}/bin/cts-status.py", "--repo", "{workspace}"],
+      "modes": ["migrated", "scratch-real", "synthetic"],
+      "sample": false
+    },
+    {
+      "name": "unknown-command-clean-failure",
+      "suite": "negative",
+      "argv": [
+        "{python}",
+        "{aiosRoot}/bin/aios.py",
+        "--json",
+        "--db",
+        "{stateDb}",
+        "--logs-dir",
+        "{stateLogs}",
+        "definitely-not-a-command"
+      ],
+      "modes": ["negative", "synthetic"],
+      "expectedFailure": true,
+      "sample": false
+    }
+  ]
+}
