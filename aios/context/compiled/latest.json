@@ -1,0 +1,397 @@
+{
+  "task_summary": "Improve the AIOS UI health score system so standards deltas are clearer and users can drill into critical deltas.",
+  "task_classification": {
+    "task": "Improve the AIOS UI health score system so standards deltas are clearer and users can drill into critical deltas.",
+    "signals": [
+      "all_tasks",
+      "task_changes_core_logic",
+      "task_touches_aios_ui",
+      "task_touches_design",
+      "task_touches_observability",
+      "task_touches_product_design",
+      "task_touches_standards_delta",
+      "task_touches_web_app"
+    ],
+    "domains": [
+      "web-apps",
+      "product-design"
+    ],
+    "matched_terms": [
+      "aios ui",
+      "health",
+      "health score",
+      "standards delta",
+      "ui"
+    ]
+  },
+  "selected_context_files": [
+    {
+      "id": "global.design",
+      "path": "standards/global.design.md",
+      "title": "Global Design Standard",
+      "tier": "global",
+      "priority": "high",
+      "relevance_score": 1,
+      "specificity_score": 0.55,
+      "recency_score": 1,
+      "authority_score": 0.85,
+      "token_cost_estimate": 163,
+      "final_score": 0.8017,
+      "load_decision": "load",
+      "reason": "2 applies_when signal(s) matched; 1 tag(s) matched; 3 title/summary term(s) matched"
+    },
+    {
+      "id": "global.observability",
+      "path": "standards/global.observability.md",
+      "title": "Global Observability Standard",
+      "tier": "global",
+      "priority": "immutable",
+      "relevance_score": 0.92,
+      "specificity_score": 0.55,
+      "recency_score": 1,
+      "authority_score": 1,
+      "token_cost_estimate": 170,
+      "final_score": 0.7994,
+      "load_decision": "load",
+      "reason": "2 applies_when signal(s) matched; 2 title/summary term(s) matched"
+    },
+    {
+      "id": "global.maintainability",
+      "path": "standards/global.maintainability.md",
+      "title": "Global Maintainability Standard",
+      "tier": "global",
+      "priority": "immutable",
+      "relevance_score": 0.92,
+      "specificity_score": 0.55,
+      "recency_score": 1,
+      "authority_score": 1,
+      "token_cost_estimate": 174,
+      "final_score": 0.7993,
+      "load_decision": "load",
+      "reason": "2 applies_when signal(s) matched; 2 title/summary term(s) matched"
+    },
+    {
+      "id": "global.testing",
+      "path": "standards/global.testing.md",
+      "title": "Global Testing Standard",
+      "tier": "global",
+      "priority": "immutable",
+      "relevance_score": 0.46,
+      "specificity_score": 0.55,
+      "recency_score": 1,
+      "authority_score": 1,
+      "token_cost_estimate": 168,
+      "final_score": 0.6155,
+      "load_decision": "load",
+      "reason": "1 applies_when signal(s) matched; 1 title/summary term(s) matched"
+    },
+    {
+      "id": "context.schema",
+      "path": "schema.md",
+      "title": "Context Frontmatter Schema",
+      "tier": "global",
+      "priority": "immutable",
+      "relevance_score": 0.46,
+      "specificity_score": 0.55,
+      "recency_score": 1,
+      "authority_score": 1,
+      "token_cost_estimate": 174,
+      "final_score": 0.6153,
+      "load_decision": "load",
+      "reason": "Bootloader context is always loaded."
+    },
+    {
+      "id": "context.index",
+      "path": "index.md",
+      "title": "AIOS Context Compiler Index",
+      "tier": "global",
+      "priority": "high",
+      "relevance_score": 0.54,
+      "specificity_score": 0.55,
+      "recency_score": 1,
+      "authority_score": 0.85,
+      "token_cost_estimate": 245,
+      "final_score": 0.6148,
+      "load_decision": "load",
+      "reason": "Bootloader context is always loaded."
+    },
+    {
+      "id": "context.router",
+      "path": "router.md",
+      "title": "Agent Bootloader",
+      "tier": "global",
+      "priority": "immutable",
+      "relevance_score": 0.46,
+      "specificity_score": 0.55,
+      "recency_score": 1,
+      "authority_score": 1,
+      "token_cost_estimate": 235,
+      "final_score": 0.6131,
+      "load_decision": "load",
+      "reason": "Bootloader context is always loaded."
+    },
+    {
+      "id": "domains.web-apps",
+      "path": "domains/web-apps.md",
+      "title": "Web Apps Domain Standard",
+      "tier": "domain",
+      "priority": "high",
+      "relevance_score": 0.92,
+      "specificity_score": 0.65,
+      "recency_score": 1,
+      "authority_score": 0.85,
+      "token_cost_estimate": 150,
+      "final_score": 0.7951,
+      "load_decision": "load",
+      "reason": "2 applies_when signal(s) matched; 2 title/summary term(s) matched"
+    },
+    {
+      "id": "domains.product-design",
+      "path": "domains/product-design.md",
+      "title": "Product Design Domain Standard",
+      "tier": "domain",
+      "priority": "normal",
+      "relevance_score": 0.92,
+      "specificity_score": 0.65,
+      "recency_score": 1,
+      "authority_score": 0.65,
+      "token_cost_estimate": 133,
+      "final_score": 0.7558,
+      "load_decision": "load",
+      "reason": "2 applies_when signal(s) matched; 2 title/summary term(s) matched"
+    },
+    {
+      "id": "projects.aios-ui",
+      "path": "projects/aios-ui.md",
+      "title": "AIOS UI Project Context",
+      "tier": "project",
+      "priority": "high",
+      "relevance_score": 1,
+      "specificity_score": 0.8,
+      "recency_score": 1,
+      "authority_score": 0.85,
+      "token_cost_estimate": 162,
+      "final_score": 0.8642,
+      "load_decision": "load",
+      "reason": "4 applies_when signal(s) matched; 2 tag(s) matched; 3 title/summary term(s) matched"
+    },
+    {
+      "id": "features.standards-delta",
+      "path": "features/standards-delta.md",
+      "title": "Standards Delta Health Feature",
+      "tier": "feature",
+      "priority": "high",
+      "relevance_score": 1,
+      "specificity_score": 0.9,
+      "recency_score": 1,
+      "authority_score": 0.85,
+      "token_cost_estimate": 169,
+      "final_score": 0.889,
+      "load_decision": "load",
+      "reason": "3 applies_when signal(s) matched; 3 tag(s) matched; 10 title/summary term(s) matched"
+    },
+    {
+      "id": "packets.ui.command-center",
+      "path": "packets/ui.command-center.md",
+      "title": "AIOS Command Center UI Packet",
+      "tier": "packet",
+      "priority": "high",
+      "relevance_score": 1,
+      "specificity_score": 0.95,
+      "recency_score": 1,
+      "authority_score": 0.85,
+      "token_cost_estimate": 150,
+      "final_score": 0.9021,
+      "load_decision": "load",
+      "reason": "Loaded because features.standards-delta matched and requested this packet."
+    },
+    {
+      "id": "packets.maintainability.architecture-boundaries",
+      "path": "packets/maintainability.architecture-boundaries.md",
+      "title": "Architecture Boundaries Packet",
+      "tier": "packet",
+      "priority": "normal",
+      "relevance_score": 0.46,
+      "specificity_score": 0.95,
+      "recency_score": 1,
+      "authority_score": 0.65,
+      "token_cost_estimate": 114,
+      "final_score": 0.6474,
+      "load_decision": "load",
+      "reason": "1 applies_when signal(s) matched; 1 title/summary term(s) matched"
+    },
+    {
+      "id": "handoffs.latest",
+      "path": "handoffs/latest.md",
+      "title": "Latest Context Compiler Handoff",
+      "tier": "handoff",
+      "priority": "normal",
+      "relevance_score": 0.46,
+      "specificity_score": 0.75,
+      "recency_score": 1,
+      "authority_score": 0.65,
+      "token_cost_estimate": 129,
+      "final_score": 0.5969,
+      "load_decision": "load",
+      "reason": "Bootloader context is always loaded."
+    }
+  ],
+  "relevant_rules": [
+    {
+      "id": "global.design",
+      "title": "Global Design Standard",
+      "tier": "global",
+      "priority": "high",
+      "summary": "AIOS UI should expose system state clearly without decorative or low-density surfaces."
+    },
+    {
+      "id": "global.observability",
+      "title": "Global Observability Standard",
+      "tier": "global",
+      "priority": "immutable",
+      "summary": "AIOS behavior should leave inspectable traces, receipts, and failure evidence."
+    },
+    {
+      "id": "global.maintainability",
+      "title": "Global Maintainability Standard",
+      "tier": "global",
+      "priority": "immutable",
+      "summary": "Keep AIOS changes simple, bounded, readable, and aligned to existing architecture."
+    },
+    {
+      "id": "global.testing",
+      "title": "Global Testing Standard",
+      "tier": "global",
+      "priority": "immutable",
+      "summary": "Behavior must be validated with deterministic tests or equivalent execution evidence."
+    },
+    {
+      "id": "context.schema",
+      "title": "Context Frontmatter Schema",
+      "tier": "global",
+      "priority": "immutable",
+      "summary": "Required schema for AIOS Context Compiler Markdown files."
+    },
+    {
+      "id": "context.index",
+      "title": "AIOS Context Compiler Index",
+      "tier": "global",
+      "priority": "high",
+      "summary": "Thin entrypoint for AIOS context routing and compiled briefing generation."
+    },
+    {
+      "id": "context.router",
+      "title": "Agent Bootloader",
+      "tier": "global",
+      "priority": "immutable",
+      "summary": "Agent bootloader for AIOS-managed projects and context receipts."
+    },
+    {
+      "id": "domains.web-apps",
+      "title": "Web Apps Domain Standard",
+      "tier": "domain",
+      "priority": "high",
+      "summary": "Routing standard for Next.js, React, dashboard, and deployment work."
+    },
+    {
+      "id": "domains.product-design",
+      "title": "Product Design Domain Standard",
+      "tier": "domain",
+      "priority": "normal",
+      "summary": "Routing standard for product UX, operational workflows, and explainable surfaces."
+    },
+    {
+      "id": "projects.aios-ui",
+      "title": "AIOS UI Project Context",
+      "tier": "project",
+      "priority": "high",
+      "summary": "Project truth routing for the local AIOS Next.js command center."
+    },
+    {
+      "id": "features.standards-delta",
+      "title": "Standards Delta Health Feature",
+      "tier": "feature",
+      "priority": "high",
+      "summary": "Feature context for project health scores, standards deltas, and critical-delta drilldowns."
+    },
+    {
+      "id": "packets.ui.command-center",
+      "title": "AIOS Command Center UI Packet",
+      "tier": "packet",
+      "priority": "high",
+      "summary": "UI packet for exposing AIOS operational state, drilldowns, receipts, and warnings."
+    },
+    {
+      "id": "packets.maintainability.architecture-boundaries",
+      "title": "Architecture Boundaries Packet",
+      "tier": "packet",
+      "priority": "normal",
+      "summary": "Packet for preserving AIOS module and ownership boundaries during implementation."
+    },
+    {
+      "id": "handoffs.latest",
+      "title": "Latest Context Compiler Handoff",
+      "tier": "handoff",
+      "priority": "normal",
+      "summary": "Current handoff node for the file-backed AIOS Context Compiler."
+    }
+  ],
+  "project_state": [
+    "AIOS UI Project Context: Project truth routing for the local AIOS Next.js command center.",
+    "Latest Context Compiler Handoff: Current handoff node for the file-backed AIOS Context Compiler."
+  ],
+  "feature_context": [
+    "Standards Delta Health Feature: Feature context for project health scores, standards deltas, and critical-delta drilldowns.",
+    "AIOS Command Center UI Packet: UI packet for exposing AIOS operational state, drilldowns, receipts, and warnings.",
+    "Architecture Boundaries Packet: Packet for preserving AIOS module and ownership boundaries during implementation."
+  ],
+  "known_risks": [
+    "No context-selection risks detected by the compiler."
+  ],
+  "acceptance_criteria": [
+    "global.design: Users can inspect why a score, warning, or packet was produced.",
+    "global.design: Critical states are not collapsed into vague healthy/unhealthy labels.",
+    "global.design: Controls match expected operational workflows.",
+    "global.observability: Generated receipts include loaded and skipped context.",
+    "global.observability: Missing and stale context are visible as warnings.",
+    "global.observability: Scoring decisions are preserved in structured output.",
+    "global.maintainability: New code has a narrow surface and deterministic behavior.",
+    "global.maintainability: Project truth or handoff files reflect meaningful architecture changes.",
+    "global.maintainability: Context routing remains auditable from receipt output.",
+    "global.testing: Schema validation is exercised against real Markdown files.",
+    "global.testing: Routing tests assert selected files and receipt content.",
+    "global.testing: Conflict precedence is covered by executable tests.",
+    "context.schema: `pnpm context:validate` passes before a context file is treated as authoritative.",
+    "context.schema: `load_if_matched` links point to existing files relative to `aios/context/`.",
+    "context.schema: Thin routing files stay below the deep-packet threshold unless they declare a larger `token_budget`.",
+    "context.index: Agents produce a context receipt before treating context selection as complete.",
+    "context.index: Loaded context is explainable by task classification, score, or explicit linked packet.",
+    "context.index: Skipped context remains visible in the receipt.",
+    "context.router: Every non-trivial run has a loaded/skipped context receipt.",
+    "context.router: Missing, stale, and conflicting context are explicit.",
+    "context.router: Writebacks are proposed for missing rules or reusable patterns.",
+    "domains.web-apps: User-facing state is source-backed and inspectable.",
+    "domains.web-apps: UI changes follow the existing component and routing patterns.",
+    "domains.product-design: Important system state can be inspected without reading logs.",
+    "domains.product-design: Warnings and blockers are visually distinct and textually precise.",
+    "projects.aios-ui: Project health and delta UI stays source-backed.",
+    "projects.aios-ui: New UI surfaces can explain missing, inferred, or conflicting signals.",
+    "projects.aios-ui: Meaningful architecture changes update `PROJECT.md`.",
+    "features.standards-delta: Health score explanations point to source-backed delta records.",
+    "features.standards-delta: Unknown and missing states remain visible.",
+    "features.standards-delta: Critical deltas can be inspected by domain, severity, and remediation path.",
+    "packets.ui.command-center: Operators can drill into source-backed evidence.",
+    "packets.ui.command-center: Missing and conflicting state appears as actionable warnings.",
+    "packets.ui.command-center: Receipts can later be attached to run history.",
+    "packets.maintainability.architecture-boundaries: New modules have a clear owner and caller.",
+    "packets.maintainability.architecture-boundaries: Cross-layer changes are deliberate and documented.",
+    "handoffs.latest: Update this handoff when compiler output shape or routing conventions change.",
+    "handoffs.latest: Keep detailed implementation history in docs or project truth, not this routing node."
+  ],
+  "conflicts": [],
+  "stale_context": [],
+  "missing_context": [],
+  "writeback_candidates": [],
+  "context_receipt": "# Context Receipt\n\n## Task\n\nImprove the AIOS UI health score system so standards deltas are clearer and users can drill into critical deltas.\n\n## Loaded Context\n\n- `standards/global.design.md`\n  - Reason: 2 applies_when signal(s) matched; 1 tag(s) matched; 3 title/summary term(s) matched\n- `standards/global.observability.md`\n  - Reason: 2 applies_when signal(s) matched; 2 title/summary term(s) matched\n- `standards/global.maintainability.md`\n  - Reason: 2 applies_when signal(s) matched; 2 title/summary term(s) matched\n- `standards/global.testing.md`\n  - Reason: 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `schema.md`\n  - Reason: Bootloader context is always loaded.\n- `index.md`\n  - Reason: Bootloader context is always loaded.\n- `router.md`\n  - Reason: Bootloader context is always loaded.\n- `domains/web-apps.md`\n  - Reason: 2 applies_when signal(s) matched; 2 title/summary term(s) matched\n- `domains/product-design.md`\n  - Reason: 2 applies_when signal(s) matched; 2 title/summary term(s) matched\n- `projects/aios-ui.md`\n  - Reason: 4 applies_when signal(s) matched; 2 tag(s) matched; 3 title/summary term(s) matched\n- `features/standards-delta.md`\n  - Reason: 3 applies_when signal(s) matched; 3 tag(s) matched; 10 title/summary term(s) matched\n- `packets/ui.command-center.md`\n  - Reason: Loaded because features.standards-delta matched and requested this packet.\n- `packets/maintainability.architecture-boundaries.md`\n  - Reason: 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `handoffs/latest.md`\n  - Reason: Bootloader context is always loaded.\n\n## Skipped Context\n\n- `standards/index.md` — Scored below load threshold for this task.\n- `features/context-compiler.md` — Scored below load threshold for this task.\n- `packets/testing.no-mock-echo.md` — Scored below load threshold for this task.\n- `packets/security.oidc-secrets.md` — Scored below load threshold for this task.\n- `packets/knowledge.obsidian-routing.md` — Scored below load threshold for this task.\n- `standards/global.security.md` — Scored below load threshold for this task.\n- `domains/knowledge-systems.md` — Scored below load threshold for this task.\n- `domains/agent-harnesses.md` — Scored below load threshold for this task.\n- `features/prompt-library.md` — Scored below load threshold for this task.\n- `features/obsidian-search.md` — Scored below load threshold for this task.\n- `packets/workflow.approval-gates.md` — Scored below load threshold for this task.\n- `projects/index.md` — Scored below load threshold for this task.\n- `domains/index.md` — Scored below load threshold for this task.\n- `domains/data-projects.md` — Scored below load threshold for this task.\n- `features/index.md` — Scored below load threshold for this task.\n- `features/skill-registry.md` — Scored below load threshold for this task.\n- `projects/taski.md` — Scored below load threshold for this task.\n- `projects/terrace.md` — Scored below load threshold for this task.\n- `projects/soundscape.md` — Scored below load threshold for this task.\n\n## Conflicts\n\nNone detected.\n\n## Missing Context\n\n- None.\n\n## Writeback Candidates\n\n- None.\n",
+  "briefing_markdown": "# AIOS Context Briefing\n\n## Task Summary\n\nImprove the AIOS UI health score system so standards deltas are clearer and users can drill into critical deltas.\n\n## Task Classification\n\n- Signals: all_tasks, task_changes_core_logic, task_touches_aios_ui, task_touches_design, task_touches_observability, task_touches_product_design, task_touches_standards_delta, task_touches_web_app\n- Domains: web-apps, product-design\n\n## Selected Context Files\n\n- `standards/global.design.md` (global.design) — 2 applies_when signal(s) matched; 1 tag(s) matched; 3 title/summary term(s) matched\n- `standards/global.observability.md` (global.observability) — 2 applies_when signal(s) matched; 2 title/summary term(s) matched\n- `standards/global.maintainability.md` (global.maintainability) — 2 applies_when signal(s) matched; 2 title/summary term(s) matched\n- `standards/global.testing.md` (global.testing) — 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `schema.md` (context.schema) — Bootloader context is always loaded.\n- `index.md` (context.index) — Bootloader context is always loaded.\n- `router.md` (context.router) — Bootloader context is always loaded.\n- `domains/web-apps.md` (domains.web-apps) — 2 applies_when signal(s) matched; 2 title/summary term(s) matched\n- `domains/product-design.md` (domains.product-design) — 2 applies_when signal(s) matched; 2 title/summary term(s) matched\n- `projects/aios-ui.md` (projects.aios-ui) — 4 applies_when signal(s) matched; 2 tag(s) matched; 3 title/summary term(s) matched\n- `features/standards-delta.md` (features.standards-delta) — 3 applies_when signal(s) matched; 3 tag(s) matched; 10 title/summary term(s) matched\n- `packets/ui.command-center.md` (packets.ui.command-center) — Loaded because features.standards-delta matched and requested this packet.\n- `packets/maintainability.architecture-boundaries.md` (packets.maintainability.architecture-boundaries) — 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `handoffs/latest.md` (handoffs.latest) — Bootloader context is always loaded.\n\n## Relevant Rules\n\n- global.design: AIOS UI should expose system state clearly without decorative or low-density surfaces.\n- global.observability: AIOS behavior should leave inspectable traces, receipts, and failure evidence.\n- global.maintainability: Keep AIOS changes simple, bounded, readable, and aligned to existing architecture.\n- global.testing: Behavior must be validated with deterministic tests or equivalent execution evidence.\n- context.schema: Required schema for AIOS Context Compiler Markdown files.\n- context.index: Thin entrypoint for AIOS context routing and compiled briefing generation.\n- context.router: Agent bootloader for AIOS-managed projects and context receipts.\n- domains.web-apps: Routing standard for Next.js, React, dashboard, and deployment work.\n- domains.product-design: Routing standard for product UX, operational workflows, and explainable surfaces.\n- projects.aios-ui: Project truth routing for the local AIOS Next.js command center.\n- features.standards-delta: Feature context for project health scores, standards deltas, and critical-delta drilldowns.\n- packets.ui.command-center: UI packet for exposing AIOS operational state, drilldowns, receipts, and warnings.\n- packets.maintainability.architecture-boundaries: Packet for preserving AIOS module and ownership boundaries during implementation.\n- handoffs.latest: Current handoff node for the file-backed AIOS Context Compiler.\n\n## Project State\n\n- AIOS UI Project Context: Project truth routing for the local AIOS Next.js command center.\n- Latest Context Compiler Handoff: Current handoff node for the file-backed AIOS Context Compiler.\n\n## Feature Context\n\n- Standards Delta Health Feature: Feature context for project health scores, standards deltas, and critical-delta drilldowns.\n- AIOS Command Center UI Packet: UI packet for exposing AIOS operational state, drilldowns, receipts, and warnings.\n- Architecture Boundaries Packet: Packet for preserving AIOS module and ownership boundaries during implementation.\n\n## Known Risks\n\n- No context-selection risks detected by the compiler.\n\n## Acceptance Criteria\n\n- global.design: Users can inspect why a score, warning, or packet was produced.\n- global.design: Critical states are not collapsed into vague healthy/unhealthy labels.\n- global.design: Controls match expected operational workflows.\n- global.observability: Generated receipts include loaded and skipped context.\n- global.observability: Missing and stale context are visible as warnings.\n- global.observability: Scoring decisions are preserved in structured output.\n- global.maintainability: New code has a narrow surface and deterministic behavior.\n- global.maintainability: Project truth or handoff files reflect meaningful architecture changes.\n- global.maintainability: Context routing remains auditable from receipt output.\n- global.testing: Schema validation is exercised against real Markdown files.\n- global.testing: Routing tests assert selected files and receipt content.\n- global.testing: Conflict precedence is covered by executable tests.\n- context.schema: `pnpm context:validate` passes before a context file is treated as authoritative.\n- context.schema: `load_if_matched` links point to existing files relative to `aios/context/`.\n- context.schema: Thin routing files stay below the deep-packet threshold unless they declare a larger `token_budget`.\n- context.index: Agents produce a context receipt before treating context selection as complete.\n- context.index: Loaded context is explainable by task classification, score, or explicit linked packet.\n- context.index: Skipped context remains visible in the receipt.\n- context.router: Every non-trivial run has a loaded/skipped context receipt.\n- context.router: Missing, stale, and conflicting context are explicit.\n- context.router: Writebacks are proposed for missing rules or reusable patterns.\n- domains.web-apps: User-facing state is source-backed and inspectable.\n- domains.web-apps: UI changes follow the existing component and routing patterns.\n- domains.product-design: Important system state can be inspected without reading logs.\n- domains.product-design: Warnings and blockers are visually distinct and textually precise.\n- projects.aios-ui: Project health and delta UI stays source-backed.\n- projects.aios-ui: New UI surfaces can explain missing, inferred, or conflicting signals.\n- projects.aios-ui: Meaningful architecture changes update `PROJECT.md`.\n- features.standards-delta: Health score explanations point to source-backed delta records.\n- features.standards-delta: Unknown and missing states remain visible.\n- features.standards-delta: Critical deltas can be inspected by domain, severity, and remediation path.\n- packets.ui.command-center: Operators can drill into source-backed evidence.\n- packets.ui.command-center: Missing and conflicting state appears as actionable warnings.\n- packets.ui.command-center: Receipts can later be attached to run history.\n- packets.maintainability.architecture-boundaries: New modules have a clear owner and caller.\n- packets.maintainability.architecture-boundaries: Cross-layer changes are deliberate and documented.\n- handoffs.latest: Update this handoff when compiler output shape or routing conventions change.\n- handoffs.latest: Keep detailed implementation history in docs or project truth, not this routing node.\n\n## Missing Context\n\n- None.\n\n## Writeback Candidates\n\n- None.\n"
+}

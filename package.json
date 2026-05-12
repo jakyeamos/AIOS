@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "context:compile": "node tools/context-compile.mjs",
+    "context:validate": "node tools/context-compile.mjs --validate",
+    "test:context": "node --test tests/context-compiler.test.mjs",
     "corpus:evaluate": "node scripts/aios-corpus-eval.cjs"
   }
 }

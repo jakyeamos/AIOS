@@ -2,6 +2,26 @@
 
 This repository uses AIOS-managed success criteria as a first-class completion gate.
 
+## AIOS Context Compiler Bootloader
+
+Before non-trivial execution, compile or follow the smallest sufficient context packet:
+
+1. Classify the task.
+2. Load `PROJECT.md` and the relevant context compiler receipt.
+3. Load relevant global standards from `aios/context/standards/`.
+4. Load relevant domain standards from `aios/context/domains/`.
+5. Load selected feature/task packets from `aios/context/features/` and `aios/context/packets/`.
+6. Produce or inspect a context receipt listing loaded and skipped context with reasons.
+7. Execute against that compiled packet.
+8. Update truth files or propose writebacks when state changes, rules are missing, context is stale, or a reusable pattern appears.
+
+Never load every Markdown file by default. Never weaken global security, privacy, maintainability, testing, or observability standards with narrower project convenience. Never treat broad semantic search as equivalent to authoritative context selection.
+
+Useful commands:
+
+- `pnpm context:compile --task "Describe the concrete task"`
+- `pnpm context:validate`
+
 ## Required Execution Flow
 
 1. Resolve applicable criteria before implementation.
