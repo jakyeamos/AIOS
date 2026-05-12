@@ -3,6 +3,7 @@ import { controlPlaneRouter } from "@/server/routers/control-plane";
 import { createTRPCRouter } from "@/server/trpc";
 import { automationsRouter } from "@/server/routers/automations";
 import { costsRouter } from "@/server/routers/costs";
+import { divergentRouter } from "@/server/routers/divergent";
 import { experimentsRouter } from "@/server/routers/experiments";
 import { insightsRouter } from "@/server/routers/insights";
 import { knowledgeRouter } from "@/server/routers/knowledge";
@@ -19,6 +20,7 @@ export const appRouter = createTRPCRouter({
   sessions: sessionsRouter,
   prompts: promptsRouter,
   costs: costsRouter,
+  divergent: divergentRouter,
   knowledge: knowledgeRouter,
   patterns: patternsRouter,
   projects: projectsRouter,

@@ -537,6 +537,19 @@ a:hover {
   margin: 8px 0 0;
 }
 
+.code-block {
+  margin: 10px 0 0;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  background: #0f1013;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  padding: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .table-head,
 .table-row {
   display: grid;

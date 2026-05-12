@@ -1,0 +1,91 @@
+{
+  "version": "2026-05-12",
+  "judges": [
+    {
+      "key": "operator",
+      "name": "Operator Judge",
+      "role": "execution feasibility evaluator",
+      "rubric": [
+        "concrete next steps",
+        "implementation feasibility",
+        "missing dependencies",
+        "operational complexity",
+        "user visibility"
+      ]
+    },
+    {
+      "key": "skeptic",
+      "name": "Skeptic Judge",
+      "role": "assumption and overreach evaluator",
+      "rubric": [
+        "unsupported claims",
+        "magical thinking",
+        "unclear causal links",
+        "fake certainty",
+        "unnecessary complexity"
+      ]
+    },
+    {
+      "key": "architect",
+      "name": "Architect Judge",
+      "role": "system-fit evaluator",
+      "rubric": [
+        "modularity",
+        "integration with existing architecture",
+        "data model fit",
+        "lifecycle handling",
+        "maintainability"
+      ]
+    },
+    {
+      "key": "codesmell",
+      "name": "Codesmell Judge",
+      "role": "implementation-risk evaluator",
+      "rubric": [
+        "wrapper-class sprawl",
+        "premature abstraction",
+        "fake generic systems",
+        "unused extension points",
+        "fragile glue code"
+      ]
+    },
+    {
+      "key": "humanizer",
+      "name": "Humanizer Judge",
+      "role": "operator comprehension evaluator",
+      "rubric": [
+        "clarity",
+        "useful naming",
+        "non-confusing statuses",
+        "actionable UI language",
+        "jargon avoidance"
+      ]
+    },
+    {
+      "key": "entropy",
+      "name": "Entropy Judge",
+      "role": "convergence-risk evaluator",
+      "rubric": [
+        "same candidate structures",
+        "same judge outcomes",
+        "same recommendation shape",
+        "too little novelty",
+        "too much safe convergence"
+      ]
+    },
+    {
+      "key": "standards",
+      "name": "Standards Judge",
+      "role": "AIOS criteria evaluator",
+      "rubric": [
+        "security",
+        "maintainability",
+        "observability",
+        "code simplicity",
+        "UI/UX quality",
+        "testability",
+        "documentation"
+      ]
+    }
+  ]
+}

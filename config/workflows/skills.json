@@ -187,6 +187,123 @@
       "execution_mode": "deterministic"
     },
     {
+      "key": "divergent_task_classifier",
+      "purpose": "Classify whether a task benefits from divergent strategy exploration and select a mode.",
+      "allowed_stages": [
+        "parse_request"
+      ],
+      "input_schema": {
+        "objective": "string"
+      },
+      "output_schema": {
+        "worthwhile": "boolean",
+        "recommended_mode": "string",
+        "signals": "string[]"
+      },
+      "invariants": [
+        "Simple deterministic tasks should not be escalated to broad exploration.",
+        "Mode selection must be explainable."
+      ],
+      "failure_conditions": [
+        "No classification reason is available."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic"
+    },
+    {
+      "key": "divergent_candidate_generator",
+      "purpose": "Generate role-based candidate strategies from the divergent candidate registry.",
+      "allowed_stages": [
+        "generate"
+      ],
+      "input_schema": {
+        "objective": "string",
+        "mode": "string"
+      },
+      "output_schema": {
+        "candidates": "object[]"
+      },
+      "invariants": [
+        "Candidates must include risks and why they might fail.",
+        "Candidates must represent distinct strategic angles."
+      ],
+      "failure_conditions": [
+        "All candidates converge to the same formulation."
+      ],
+      "side_effects": [],
+      "execution_mode": "heuristic"
+    },
+    {
+      "key": "divergent_judge_panel",
+      "purpose": "Evaluate divergent candidates through reusable judge profiles with structured rationale.",
+      "allowed_stages": [
+        "validate"
+      ],
+      "input_schema": {
+        "candidates": "object[]",
+        "judges": "object[]"
+      },
+      "output_schema": {
+        "judgments": "object[]"
+      },
+      "invariants": [
+        "Every judgment must include a score, verdict, critique, and recommended action.",
+        "Judge results are evidence, not ground truth."
+      ],
+      "failure_conditions": [
+        "A judge emits a score without rationale."
+      ],
+      "side_effects": [],
+      "execution_mode": "heuristic"
+    },
+    {
+      "key": "divergent_portfolio_selector",
+      "purpose": "Select a portfolio of useful candidates instead of collapsing to one winner.",
+      "allowed_stages": [
+        "finalize"
+      ],
+      "input_schema": {
+        "candidates": "object[]",
+        "judgments": "object[]"
+      },
+      "output_schema": {
+        "portfolio": "object"
+      },
+      "invariants": [
+        "Portfolio must include best overall, safest implementation, highest upside, and useful failure slots."
+      ],
+      "failure_conditions": [
+        "Workflow completes without portfolio output."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic"
+    },
+    {
+      "key": "memory_writeback_proposer",
+      "purpose": "Create approval-gated HOW, WHAT, FAILURE, and ENTROPY memory proposals.",
+      "allowed_stages": [
+        "finalize"
+      ],
+      "input_schema": {
+        "portfolio": "object",
+        "entropy": "object"
+      },
+      "output_schema": {
+        "writebacks": "object[]"
+      },
+      "invariants": [
+        "Do not silently mutate global memory.",
+        "Writeback proposals must include rationale and evidence."
+      ],
+      "failure_conditions": [
+        "Memory is promoted without approval evidence."
+      ],
+      "side_effects": [
+        "Writes proposed memory records only."
+      ],
+      "execution_mode": "deterministic"
+    },
+    {
       "key": "find_skills",
       "purpose": "Helps users discover and install agent skills when they ask questions like \"how do I do X\", \"find a skill for X\", \"is there a skill that can...\", or express interest in extending capabilities. This skill should be used when the user is looking for functionality that might exist as an installable ski",
       "allowed_stages": [

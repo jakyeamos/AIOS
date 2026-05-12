@@ -385,6 +385,94 @@ CREATE TABLE improvement_writeback_events (
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 CREATE INDEX idx_improvement_writeback_events_writeback ON improvement_writeback_events(writeback_id, created_at DESC);
+CREATE TABLE divergent_runs (
+  id TEXT PRIMARY KEY,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  user_id TEXT,
+  project_id TEXT REFERENCES projects(id),
+  source_task TEXT NOT NULL,
+  mode TEXT NOT NULL,
+  status TEXT NOT NULL,
+  task_classification TEXT NOT NULL DEFAULT '{}',
+  selected_workflow_profile TEXT NOT NULL DEFAULT '{}',
+  summary TEXT,
+  final_recommendation TEXT,
+  entropy_score REAL,
+  quality_score REAL,
+  cost_estimate REAL,
+  metadata_json TEXT NOT NULL DEFAULT '{}'
+);
+CREATE INDEX idx_divergent_runs_created ON divergent_runs(created_at DESC);
+CREATE TABLE divergent_candidates (
+  id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL REFERENCES divergent_runs(id),
+  candidate_name TEXT NOT NULL,
+  candidate_role TEXT NOT NULL,
+  formulation TEXT NOT NULL,
+  output TEXT NOT NULL,
+  strengths_json TEXT NOT NULL DEFAULT '[]',
+  weaknesses_json TEXT NOT NULL DEFAULT '[]',
+  novelty_score REAL NOT NULL,
+  usefulness_score REAL NOT NULL,
+  feasibility_score REAL NOT NULL,
+  risk_score REAL NOT NULL,
+  selected_status TEXT NOT NULL DEFAULT 'unselected',
+  metadata_json TEXT NOT NULL DEFAULT '{}'
+);
+CREATE INDEX idx_divergent_candidates_run ON divergent_candidates(run_id);
+CREATE TABLE divergent_judgments (
+  id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL REFERENCES divergent_runs(id),
+  candidate_id TEXT REFERENCES divergent_candidates(id),
+  judge_name TEXT NOT NULL,
+  judge_role TEXT NOT NULL,
+  rubric_used TEXT NOT NULL DEFAULT '[]',
+  score REAL NOT NULL,
+  verdict TEXT NOT NULL,
+  critique TEXT NOT NULL,
+  recommended_action TEXT NOT NULL,
+  metadata_json TEXT NOT NULL DEFAULT '{}'
+);
+CREATE INDEX idx_divergent_judgments_run ON divergent_judgments(run_id);
+CREATE TABLE memory_writeback_proposals (
+  id TEXT PRIMARY KEY,
+  source_run_id TEXT NOT NULL REFERENCES divergent_runs(id),
+  target_scope TEXT NOT NULL,
+  proposal_type TEXT NOT NULL,
+  proposed_content TEXT NOT NULL,
+  rationale TEXT NOT NULL,
+  evidence_json TEXT NOT NULL DEFAULT '[]',
+  status TEXT NOT NULL DEFAULT 'proposed',
+  created_at TEXT NOT NULL,
+  reviewed_at TEXT,
+  reviewed_by TEXT
+);
+CREATE INDEX idx_memory_writeback_proposals_run ON memory_writeback_proposals(source_run_id);
+CREATE TABLE entropy_observations (
+  id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL REFERENCES divergent_runs(id),
+  repeated_pattern_detected INTEGER NOT NULL,
+  repeated_judges INTEGER NOT NULL,
+  repeated_candidate_shapes INTEGER NOT NULL,
+  novelty_score REAL NOT NULL,
+  diversity_score REAL NOT NULL,
+  recommendation TEXT NOT NULL,
+  metadata_json TEXT NOT NULL DEFAULT '{}'
+);
+CREATE INDEX idx_entropy_observations_run ON entropy_observations(run_id);
+CREATE TABLE promotion_lifecycle_items (
+  id TEXT PRIMARY KEY,
+  item_kind TEXT NOT NULL,
+  item_key TEXT NOT NULL,
+  source_run_id TEXT,
+  status TEXT NOT NULL,
+  evidence_json TEXT NOT NULL DEFAULT '[]',
+  status_reason TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  metadata_json TEXT NOT NULL DEFAULT '{}'
+);
 CREATE TABLE workflow_learning_events (
   id TEXT PRIMARY KEY,
   run_id TEXT REFERENCES orchestration_runs(id),

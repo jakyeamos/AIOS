@@ -170,6 +170,61 @@
           "required_skills": []
         }
       ]
+    },
+    {
+      "key": "divergent-strategy",
+      "name": "Divergent Strategy Workflow",
+      "purpose": "Explore multiple plausible strategies, judge them with reusable rubrics, preserve useful failures, and propose gated memory writebacks.",
+      "trigger_hints": [
+        "what do you think",
+        "strategy",
+        "architecture decision",
+        "evaluate this workflow",
+        "prompt or skill promotion",
+        "multiple plausible approaches"
+      ],
+      "output_contract": [
+        "task classification",
+        "role-based candidates",
+        "structured judge results",
+        "portfolio selection",
+        "entropy observation",
+        "approval-gated memory writeback proposals"
+      ],
+      "required_validations": [
+        "divergent_judge_panel"
+      ],
+      "stages": [
+        {
+          "key": "classify_task",
+          "kind": "parse_request",
+          "required_skills": [
+            "divergent_task_classifier"
+          ]
+        },
+        {
+          "key": "generate_candidates",
+          "kind": "generate",
+          "required_skills": [
+            "divergent_candidate_generator"
+          ]
+        },
+        {
+          "key": "judge_candidates",
+          "kind": "validate",
+          "required_skills": [
+            "divergent_judge_panel"
+          ]
+        },
+        {
+          "key": "select_portfolio",
+          "kind": "finalize",
+          "required_skills": [
+            "divergent_portfolio_selector",
+            "memory_writeback_proposer"
+          ]
+        }
+      ]
     }
   ]
 }

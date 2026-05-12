@@ -10,6 +10,7 @@ export const PRIMARY_NAV: NavItem[] = [
   { href: "/projects", label: "Projects", short: "Projects" },
   { href: "/control", label: "Control Plane", short: "Control" },
   { href: "/runs", label: "Runs", short: "Runs" },
+  { href: "/runs/divergent", label: "Strategy Runs", short: "Strategy" },
   { href: "/prompts", label: "Prompts & Rules", short: "Prompts" },
   { href: "/workflows", label: "Workflows", short: "Workflows" },
   { href: "/compare", label: "Experiments", short: "Experiments" },

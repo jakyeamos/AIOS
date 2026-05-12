@@ -1,0 +1,133 @@
+{
+  "version": "2026-05-12",
+  "candidates": [
+    {
+      "key": "conservative_integrator",
+      "name": "Conservative Integrator",
+      "role": "minimal-change implementer",
+      "angle": "Use the existing AIOS architecture and add only the workflow pieces required now.",
+      "output_contract": [
+        "proposal",
+        "implementation_shape",
+        "risks",
+        "memory_candidates"
+      ],
+      "default_risks": [
+        "May under-invest in future workflow reuse.",
+        "Can preserve awkward legacy naming too long."
+      ]
+    },
+    {
+      "key": "systems_architect",
+      "name": "Systems Architect",
+      "role": "long-term architecture planner",
+      "angle": "Design the cleanest durable workflow boundary and persistence lifecycle.",
+      "output_contract": [
+        "proposal",
+        "implementation_shape",
+        "risks",
+        "memory_candidates"
+      ],
+      "default_risks": [
+        "May introduce abstraction before multiple workflows prove the need.",
+        "Can delay the smallest shippable implementation."
+      ]
+    },
+    {
+      "key": "workflow_designer",
+      "name": "Workflow Designer",
+      "role": "procedure and agent-flow designer",
+      "angle": "Optimize the step-by-step agent procedure and operator checkpoints.",
+      "output_contract": [
+        "proposal",
+        "implementation_shape",
+        "risks",
+        "memory_candidates"
+      ],
+      "default_risks": [
+        "May over-index on process documents.",
+        "Can miss low-level data integrity issues."
+      ]
+    },
+    {
+      "key": "product_operator",
+      "name": "Product Operator",
+      "role": "visibility and approval-flow designer",
+      "angle": "Make the workflow visible, inspectable, and useful in day-to-day operation.",
+      "output_contract": [
+        "proposal",
+        "implementation_shape",
+        "risks",
+        "memory_candidates"
+      ],
+      "default_risks": [
+        "May prioritize UI before enough backend evidence exists.",
+        "Can create statuses that look more precise than they are."
+      ]
+    },
+    {
+      "key": "skeptical_minimalist",
+      "name": "Skeptical Minimalist",
+      "role": "smallest viable implementation critic",
+      "angle": "Argue for the smallest inspectable version that avoids fake generic systems.",
+      "output_contract": [
+        "proposal",
+        "implementation_shape",
+        "risks",
+        "memory_candidates"
+      ],
+      "default_risks": [
+        "May postpone valuable architecture decisions.",
+        "Can reject useful exploratory evidence as premature."
+      ]
+    },
+    {
+      "key": "researcher",
+      "name": "Researcher",
+      "role": "prior-art extractor",
+      "angle": "Extract reusable patterns from prior art without copying branding or code.",
+      "output_contract": [
+        "proposal",
+        "implementation_shape",
+        "risks",
+        "memory_candidates"
+      ],
+      "default_risks": [
+        "May produce broad comparisons instead of executable next steps.",
+        "Can import terminology that does not fit AIOS."
+      ]
+    },
+    {
+      "key": "chaos_novelty",
+      "name": "Chaos / Novelty Candidate",
+      "role": "high-variance opportunity finder",
+      "angle": "Explore unusual approaches that expose hidden opportunities or failure modes.",
+      "output_contract": [
+        "proposal",
+        "implementation_shape",
+        "risks",
+        "memory_candidates"
+      ],
+      "default_risks": [
+        "May be creative but impractical.",
+        "Can distract from the immediate implementation path."
+      ]
+    },
+    {
+      "key": "standards_enforcer",
+      "name": "Standards Enforcer",
+      "role": "success-criteria optimizer",
+      "angle": "Optimize around measurable criteria, verification, and documented tradeoffs.",
+      "output_contract": [
+        "proposal",
+        "implementation_shape",
+        "risks",
+        "memory_candidates"
+      ],
+      "default_risks": [
+        "May favor measurable safety over novelty.",
+        "Can create too much gatekeeping for lightweight work."
+      ]
+    }
+  ]
+}

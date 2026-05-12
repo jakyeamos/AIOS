@@ -140,6 +140,17 @@ AIOS now has the first file-backed Context Compiler:
 - `AGENTS.md` now includes the Context Compiler bootloader so agents load the smallest sufficient context packet instead of sweeping every Markdown file.
 - `docs/context/context-compiler.md` records the audit, operating model, schema, conflict precedence, Obsidian evolution path, and UI integration follow-up.
 
+AIOS now has a branch-level Divergent Strategy Workflow experiment:
+
+- `services/divergent_strategy.py` creates local deterministic divergent runs with task classification, role-based candidate generation, reusable judges, portfolio selection, entropy tracking, and approval-gated writeback proposals.
+- New SQLite tables store `divergent_runs`, `divergent_candidates`, `divergent_judgments`, `memory_writeback_proposals`, `entropy_observations`, and `promotion_lifecycle_items`.
+- Candidate and judge registries live in `config/divergent-strategy/`, and the workflow is registered as `divergent-strategy` in the AIOS workflow registry.
+- UI read surfaces now expose `/runs/divergent`, `/runs/divergent/:id`, `/writebacks`, and `/skills/candidates`.
+- Memory writebacks are separated into HOW, WHAT, FAILURE, and ENTROPY categories and remain proposals until approved.
+- Prompt/skill/judge/workflow promotion now has a lightweight evidence-gated lifecycle: `draft -> candidate -> tested -> approved -> active -> deprecated`.
+- The skill packet lives at `skills/divergent-strategy/`, with thin `SKILL.md` and tiered reference files.
+- Architecture docs now cover divergent strategy, memory writebacks, prompt/skill promotion, and entropy tracking.
+
 Stage 1 capability-truth baseline work has started with a first trusted-signal slice in `aios-ui`:
 
 - added a shared UI/server `TrustedSignal` contract for capability metrics with:
