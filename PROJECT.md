@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-04-29
+Last updated: 2026-05-12
 
 ## What AIOS Is
 
@@ -15,7 +15,7 @@ It is the orchestration layer for agents across all linked development projects,
 
 ## Current Reality
 
-The repository currently contains three meaningful subsystems:
+The repository currently contains four meaningful subsystems:
 
 1. `aios-ui/`
    A Next.js local dashboard over `~/AIOS/data/aios.db`. It is strongest at session/run observability.
@@ -25,6 +25,9 @@ The repository currently contains three meaningful subsystems:
 
 3. `docs/`
    Design intent for storage, knowledge, CTS, and the current UI, but not yet a single implemented architecture.
+
+4. `aios/context/`
+   The file-backed AIOS Context Compiler: tiered Markdown routing manifests, deterministic task compilation, generated briefings, and context receipts.
 
 Root operator documentation now lives in `README.md`, including local UI launch commands, key UI routes, store paths, workflow proposal backfill, and verification commands.
 
@@ -126,6 +129,16 @@ AIOS now has a repeatable corpus evaluation harness for product-level regression
 - The harness captures stdout, stderr, exit code, duration, parsed JSON, artifacts written, git status/diff summaries, classification, raw evidence paths, JSON reports, Markdown reports, dry-run plans, sample/full filters, suite/repo/mode filters, report-only regeneration, timeouts, and `--keep-worktrees`.
 - Full-mode evaluation now includes explicit oracles for workflow start packets, hook DB/log side effects, CTS build/status behavior, dirty worktree detection, JSON shape, clean negative failures, and SQLite artifact persistence rather than relying on exit codes alone.
 - Corpus harness checks now cover self-test behavior, suite filtering, and Python CLI passthrough in `tests/test_corpus_eval.py`.
+
+## Implemented On 2026-05-12
+
+AIOS now has the first file-backed Context Compiler:
+
+- `aios/context/` defines thin tiered Markdown manifests for global standards, domains, project routers, feature routers, packets, handoffs, generated briefings, and receipts.
+- `tools/context-compile.mjs` scans context Markdown, validates frontmatter, classifies tasks with deterministic signals, scores candidate context, follows `load_if_matched`, resolves immutable-global conflicts, reports missing/stale context, and writes latest briefing/receipt outputs.
+- Root scripts now include `pnpm context:compile --task "..."`, `pnpm context:validate`, and `pnpm test:context`.
+- `AGENTS.md` now includes the Context Compiler bootloader so agents load the smallest sufficient context packet instead of sweeping every Markdown file.
+- `docs/context/context-compiler.md` records the audit, operating model, schema, conflict precedence, Obsidian evolution path, and UI integration follow-up.
 
 Stage 1 capability-truth baseline work has started with a first trusted-signal slice in `aios-ui`:
 
