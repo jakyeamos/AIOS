@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-05-12
+Last updated: 2026-05-13
 
 ## What AIOS Is
 
@@ -129,6 +129,21 @@ AIOS now has a repeatable corpus evaluation harness for product-level regression
 - The harness captures stdout, stderr, exit code, duration, parsed JSON, artifacts written, git status/diff summaries, classification, raw evidence paths, JSON reports, Markdown reports, dry-run plans, sample/full filters, suite/repo/mode filters, report-only regeneration, timeouts, and `--keep-worktrees`.
 - Full-mode evaluation now includes explicit oracles for workflow start packets, hook DB/log side effects, CTS build/status behavior, dirty worktree detection, JSON shape, clean negative failures, and SQLite artifact persistence rather than relying on exit codes alone.
 - Corpus harness checks now cover self-test behavior, suite filtering, and Python CLI passthrough in `tests/test_corpus_eval.py`.
+
+## Implemented On 2026-05-13
+
+AIOS now has a committed GSD codebase map for brownfield planning initialization:
+
+- `.planning/codebase/` now exists with:
+  - `STACK.md`
+  - `INTEGRATIONS.md`
+  - `ARCHITECTURE.md`
+  - `STRUCTURE.md`
+  - `CONVENTIONS.md`
+  - `TESTING.md`
+  - `CONCERNS.md`
+- the codebase map captures the current stack, integrations, architecture, structure, conventions, testing posture, and known concerns for this repository at commit `c8817f21`
+- this gives the repo a concrete GSD planning baseline before `/gsd-new-project` generates requirements, roadmap, and execution phases
 
 ## Implemented On 2026-05-12
 
