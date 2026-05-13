@@ -184,6 +184,15 @@
           "public_web",
           "mobile_app"
         ]
+      },
+      {
+        "key": "divergent_strategy_standard",
+        "label": "Divergent Strategy Standard",
+        "tier": "domain_specific",
+        "required": true,
+        "applicability": [
+          "aios_experiment_surface"
+        ]
       }
     ]
   },
@@ -192,7 +201,8 @@
       "project_id": "aios",
       "applies_to": [
         "python_service",
-        "typescript_app"
+        "typescript_app",
+        "aios_experiment_surface"
       ],
       "full_pipeline": true,
       "gates": {
@@ -222,6 +232,10 @@
         },
         "ci": {
           "command": "local quality gate matrix",
+          "working_directory": "."
+        },
+        "divergent_strategy_standard": {
+          "command": "uv run pytest tests/test_divergent_strategy.py tests/test_workflow_experiments.py tests/test_corpus_eval.py -q",
           "working_directory": "."
         }
       }

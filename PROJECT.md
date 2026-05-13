@@ -151,6 +151,7 @@ AIOS now has a branch-level Divergent Strategy Workflow experiment:
 - Prompt/skill/judge/workflow promotion now has a lightweight evidence-gated lifecycle: `draft -> candidate -> tested -> approved -> active -> deprecated`.
 - The skill packet lives at `skills/divergent-strategy/`, with thin `SKILL.md` and tiered reference files.
 - Architecture docs now cover divergent strategy, memory writebacks, prompt/skill promotion, and entropy tracking.
+- The divergent strategy contract is now appended to preexisting test and experiment surfaces as `experimentation.divergent_strategy_standard`: standards registry, AIOS quality pipeline, corpus eval config, experiment test repos, and workflow skill experiment artifacts.
 
 Stage 1 capability-truth baseline work has started with a first trusted-signal slice in `aios-ui`:
 

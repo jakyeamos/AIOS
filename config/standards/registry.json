@@ -13,7 +13,8 @@
       "documentation",
       "workflow_agent_control",
       "release_ci_discipline",
-      "product_readiness"
+      "product_readiness",
+      "experimentation"
     ],
     "metadata": {
       "owner": "aios",
@@ -290,6 +291,45 @@
       "related_criteria": ["testing-trust", "repo-boundary-discipline"],
       "metadata": {
         "foundational": false
+      }
+    },
+    {
+      "id": "experimentation.divergent_strategy_standard",
+      "title": "Divergent Strategy Experiment Standard",
+      "description": "Test and experiment surfaces preserve candidate portfolios, judge rationale, entropy observations, and approval-gated writeback evidence for multi-path decisions.",
+      "domain": "experimentation",
+      "weight": 6,
+      "severity_if_missing": 4,
+      "evaluation_method": "semi_auto",
+      "expected_state": {
+        "candidate_portfolio": true,
+        "judge_rationale": true,
+        "entropy_observation": true,
+        "approval_gated_writebacks": true,
+        "promotion_requires_evidence": true
+      },
+      "remediation_playbook": {
+        "summary": "Append the divergent strategy standard to corpus, workflow experiment, and quality-pipeline evidence before promoting prompt, skill, judge, or workflow candidates.",
+        "effort": 2,
+        "leverage": 1.3
+      },
+      "blocking_dependencies": ["testing.trust_signal", "workflow_agent_control.explicit_handshake"],
+      "version": "2026.05.0",
+      "introduced_version": "2026.05.0",
+      "applicability": {
+        "projects": ["*"],
+        "domains": ["workflow", "experimentation", "prompt_library", "skill_registry"]
+      },
+      "waiver_policy": {
+        "allowed": true,
+        "requires_owner": true,
+        "requires_review_date": true,
+        "max_days": 14
+      },
+      "related_criteria": ["testing-trust", "workflow-state-integrity"],
+      "metadata": {
+        "foundational": false,
+        "standard_packet": "docs/workflows/divergent-strategy.md"
       }
     },
     {

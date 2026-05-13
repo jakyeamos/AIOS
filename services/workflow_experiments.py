@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import json
 import importlib.util
-import subprocess
-import tempfile
+import json
 import sqlite3
+import subprocess
 import sys
+import tempfile
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -18,6 +18,17 @@ DEFAULT_TEST_REPOS = ROOT / "config" / "experiments" / "test-repos.json"
 DEFAULT_PAPER_FIXTURES = ROOT / "fixtures" / "papers" / "generated"
 DEFAULT_WORKFLOW_REGISTRY = ROOT / "config" / "workflows" / "registry.json"
 DEFAULT_SKILL_REGISTRY = ROOT / "config" / "workflows" / "skills.json"
+DIVERGENT_STRATEGY_STANDARD = {
+    "standard_id": "experimentation.divergent_strategy_standard",
+    "required_evidence": [
+        "candidate_portfolio",
+        "judge_rationale",
+        "entropy_observation",
+        "approval_gated_writebacks",
+        "promotion_requires_evidence",
+    ],
+    "promotion_rule": "Experiment results may become promotion evidence, but not automatic activation.",
+}
 
 
 def _now_iso() -> str:
@@ -692,6 +703,7 @@ def run_workflow_skill_experiment(
         "baseline_report": baseline_report,
         "ablation_report": ablation_report,
         "candidate_report": candidate_report,
+        "divergent_strategy_standard": DIVERGENT_STRATEGY_STANDARD,
     }
     artifact_path: str | None = None
     original_branch = str(branch.get("original_branch") or "")
@@ -716,6 +728,7 @@ def run_workflow_skill_experiment(
         "ablation_validation_passed": ablation_validation.get("passed"),
         "candidate_validation_passed": candidate_validation.get("passed"),
         "validation_command": candidate_validation.get("command"),
+        "divergent_strategy_standard": DIVERGENT_STRATEGY_STANDARD,
         "dry_run": dry_run,
     }
     conn.execute(

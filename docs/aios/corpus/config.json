@@ -51,7 +51,7 @@
       "dirty": true,
       "modes": ["synthetic"],
       "tags": ["synthetic", "dirty", "node"],
-      "sample": false
+      "sample": true
     },
     {
       "id": "malformed-aios-state-fixture",
@@ -252,7 +252,26 @@
           {"sql": "SELECT COUNT(*) FROM orchestration_runs WHERE objective='Corpus workflow execution quality probe'", "min": 1}
         ]
       },
-      "sample": false
+      "sample": true
+    },
+    {
+      "name": "divergent-strategy-standard-smoke",
+      "suite": "divergent-strategy",
+      "argv": [
+        "{python}",
+        "-c",
+        "import sqlite3, sys; sys.path.insert(0, '{aiosRoot}'); from services.divergent_strategy import create_divergent_run, ensure_divergent_schema; conn=sqlite3.connect('{stateDb}'); conn.row_factory=sqlite3.Row; ensure_divergent_schema(conn); result=create_divergent_run(conn, source_task='Corpus divergent strategy standard probe', mode='lightweight', project_id='corpus'); print({'status': result.run.status, 'candidates': len(result.candidates), 'judgments': len(result.judgments), 'writebacks': len(result.writeback_ids), 'portfolio': sorted(result.portfolio)})"
+      ],
+      "modes": ["migrated", "scratch-real", "synthetic"],
+      "expectedMutations": [".aios-corpus-state/"],
+      "assertions": {
+        "stdoutIncludes": ["completed", "best_overall", "most_interesting_failure"],
+        "dbRows": [
+          {"sql": "SELECT COUNT(*) FROM divergent_runs WHERE source_task='Corpus divergent strategy standard probe'", "min": 1},
+          {"sql": "SELECT COUNT(*) FROM memory_writeback_proposals WHERE proposal_type IN ('HOW','WHAT','FAILURE','ENTROPY')", "min": 4}
+        ]
+      },
+      "sample": true
     },
     {
       "name": "hook-session-start-event",

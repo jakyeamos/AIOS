@@ -7,7 +7,7 @@
       "repo_path": "staging/experiment-test-repos/clean-small-app",
       "purpose": "Fast baseline for command templates, prompt normalization, and validation profiles.",
       "setup": "Tiny TypeScript app with predictable scripts and clear structure.",
-      "experiment_uses": ["prompt-template", "command-template", "validation-profile"]
+      "experiment_uses": ["prompt-template", "command-template", "validation-profile", "divergent-strategy-standard"]
     },
     {
       "id": "messy-monorepo",
@@ -16,7 +16,7 @@
       "repo_path": "staging/experiment-test-repos/messy-monorepo",
       "purpose": "Tests repository navigation, package boundary handling, and context profile robustness.",
       "setup": "Workspace-style JavaScript repo with web and API packages plus uneven conventions.",
-      "experiment_uses": ["context-profile", "handoff-behavior", "architecture-drift"]
+      "experiment_uses": ["context-profile", "handoff-behavior", "architecture-drift", "divergent-strategy-standard"]
     },
     {
       "id": "backend-heavy-service",
@@ -25,7 +25,7 @@
       "repo_path": "staging/experiment-test-repos/backend-heavy-service",
       "purpose": "Exercises service logic, test execution, and stateful debugging paths.",
       "setup": "Python service with deterministic unit tests and a small domain module.",
-      "experiment_uses": ["debug-strategy", "test-strategy", "validation-profile"]
+      "experiment_uses": ["debug-strategy", "test-strategy", "validation-profile", "divergent-strategy-standard"]
     },
     {
       "id": "weak-tests-ui",
@@ -34,7 +34,7 @@
       "repo_path": "staging/experiment-test-repos/weak-tests-ui",
       "purpose": "Checks behavior when static confidence is low and UI verification matters.",
       "setup": "Small React-style app with sparse tests and intentionally thin guardrails.",
-      "experiment_uses": ["ui-verification", "low-trust-tests", "model-routing"]
+      "experiment_uses": ["ui-verification", "low-trust-tests", "model-routing", "divergent-strategy-standard"]
     }
   ]
 }

@@ -54,3 +54,21 @@ The first implementation is deterministic and local. It stores durable workflow 
 - `/skills/candidates`
 
 Future work can replace deterministic candidate text with actual agent-generated candidate outputs without changing the storage contract.
+
+## Test And Experiment Standard
+
+The workflow is now a standard for AIOS test and experiment surfaces. Any prompt, skill, judge, workflow, or strategy experiment should preserve:
+
+- candidate portfolio evidence
+- judge rationale
+- entropy observation
+- approval-gated writeback proposals
+- promotion evidence before activation
+
+Registered surfaces:
+
+- `config/standards/registry.json`: `experimentation.divergent_strategy_standard`
+- `config/quality-pipeline.json`: `divergent_strategy_standard` gate for AIOS experiment surfaces
+- `docs/aios/corpus/config.json`: `divergent-strategy-standard-smoke`
+- `config/experiments/test-repos.json`: every existing experiment repo is tagged with `divergent-strategy-standard`
+- `services/workflow_experiments.py`: experiment artifacts include the standard evidence contract

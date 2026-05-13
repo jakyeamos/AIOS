@@ -198,6 +198,11 @@ def test_run_workflow_skill_experiment_records_candidate_improvement(tmp_path: P
     assert details["repo_profile"]["has_pyproject"] is True
     assert details["candidate_validation_passed"] is True
     assert details["validation_command"][-2:] == ["-m", "pytest"]
+    assert (
+        details["divergent_strategy_standard"]["standard_id"]
+        == "experimentation.divergent_strategy_standard"
+    )
+    assert "candidate_portfolio" in details["divergent_strategy_standard"]["required_evidence"]
     artifact = subprocess.run(
         [
             "git",
@@ -214,3 +219,4 @@ def test_run_workflow_skill_experiment_records_candidate_improvement(tmp_path: P
     assert '"baseline_kind": "loose_workflow"' in artifact.stdout
     assert '"ablation_report"' in artifact.stdout
     assert '"candidate_validation"' in artifact.stdout
+    assert '"divergent_strategy_standard"' in artifact.stdout
