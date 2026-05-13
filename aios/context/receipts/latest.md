@@ -2,60 +2,69 @@
 
 ## Task
 
-Improve the AIOS UI health score system so standards deltas are clearer and users can drill into critical deltas.
+Bake harness rules into AIOS standards: durable fixes for common error surfaces, agent-inviting files under 350 lines when context is limited, and machine-readable errors with remediation steps
 
 ## Loaded Context
 
-- `standards/global.design.md`
-  - Reason: 2 applies_when signal(s) matched; 1 tag(s) matched; 3 title/summary term(s) matched
-- `standards/global.observability.md`
-  - Reason: 2 applies_when signal(s) matched; 2 title/summary term(s) matched
-- `standards/global.maintainability.md`
-  - Reason: 2 applies_when signal(s) matched; 2 title/summary term(s) matched
-- `standards/global.testing.md`
-  - Reason: 1 applies_when signal(s) matched; 1 title/summary term(s) matched
-- `schema.md`
+- `router.md`
   - Reason: Bootloader context is always loaded.
 - `index.md`
   - Reason: Bootloader context is always loaded.
-- `router.md`
+- `standards/index.md`
+  - Reason: 1 applies_when signal(s) matched; 1 tag(s) matched; 4 title/summary term(s) matched
+- `schema.md`
   - Reason: Bootloader context is always loaded.
+- `standards/global.observability.md`
+  - Reason: 1 applies_when signal(s) matched; 1 tag(s) matched; 2 title/summary term(s) matched
+- `standards/global.maintainability.md`
+  - Reason: 1 applies_when signal(s) matched; 3 title/summary term(s) matched
+- `standards/global.design.md`
+  - Reason: 1 applies_when signal(s) matched; 3 title/summary term(s) matched
+- `domains/agent-harnesses.md`
+  - Reason: 2 applies_when signal(s) matched; 5 title/summary term(s) matched
+- `domains/knowledge-systems.md`
+  - Reason: 1 applies_when signal(s) matched; 2 title/summary term(s) matched
 - `domains/web-apps.md`
-  - Reason: 2 applies_when signal(s) matched; 2 title/summary term(s) matched
+  - Reason: 1 applies_when signal(s) matched; 2 title/summary term(s) matched
+- `domains/index.md`
+  - Reason: 1 applies_when signal(s) matched; 3 title/summary term(s) matched
 - `domains/product-design.md`
-  - Reason: 2 applies_when signal(s) matched; 2 title/summary term(s) matched
+  - Reason: 1 applies_when signal(s) matched; 3 title/summary term(s) matched
 - `projects/aios-ui.md`
-  - Reason: 4 applies_when signal(s) matched; 2 tag(s) matched; 3 title/summary term(s) matched
-- `features/standards-delta.md`
-  - Reason: 3 applies_when signal(s) matched; 3 tag(s) matched; 10 title/summary term(s) matched
+  - Reason: 1 applies_when signal(s) matched; 4 title/summary term(s) matched
+- `projects/index.md`
+  - Reason: 1 applies_when signal(s) matched; 3 title/summary term(s) matched
+- `features/context-compiler.md`
+  - Reason: 2 applies_when signal(s) matched; 4 title/summary term(s) matched
+- `features/prompt-library.md`
+  - Reason: 1 applies_when signal(s) matched; 1 title/summary term(s) matched
+- `features/obsidian-search.md`
+  - Reason: 1 applies_when signal(s) matched; 1 title/summary term(s) matched
+- `features/skill-registry.md`
+  - Reason: 1 applies_when signal(s) matched; 2 title/summary term(s) matched
+- `features/index.md`
+  - Reason: 1 applies_when signal(s) matched; 1 title/summary term(s) matched
 - `packets/ui.command-center.md`
-  - Reason: Loaded because features.standards-delta matched and requested this packet.
-- `packets/maintainability.architecture-boundaries.md`
+  - Reason: 1 applies_when signal(s) matched; 2 title/summary term(s) matched
+- `packets/knowledge.obsidian-routing.md`
+  - Reason: Loaded because domains.knowledge-systems matched and requested this packet.
+- `packets/workflow.approval-gates.md`
   - Reason: 1 applies_when signal(s) matched; 1 title/summary term(s) matched
 - `handoffs/latest.md`
   - Reason: Bootloader context is always loaded.
 
 ## Skipped Context
 
-- `standards/index.md` — Scored below load threshold for this task.
-- `features/context-compiler.md` — Scored below load threshold for this task.
+- `features/standards-delta.md` — Scored below load threshold for this task.
 - `packets/testing.no-mock-echo.md` — Scored below load threshold for this task.
 - `packets/security.oidc-secrets.md` — Scored below load threshold for this task.
-- `packets/knowledge.obsidian-routing.md` — Scored below load threshold for this task.
+- `standards/global.testing.md` — Scored below load threshold for this task.
+- `packets/maintainability.architecture-boundaries.md` — Scored below load threshold for this task.
 - `standards/global.security.md` — Scored below load threshold for this task.
-- `domains/knowledge-systems.md` — Scored below load threshold for this task.
-- `domains/agent-harnesses.md` — Scored below load threshold for this task.
-- `features/prompt-library.md` — Scored below load threshold for this task.
-- `features/obsidian-search.md` — Scored below load threshold for this task.
-- `packets/workflow.approval-gates.md` — Scored below load threshold for this task.
-- `projects/index.md` — Scored below load threshold for this task.
-- `domains/index.md` — Scored below load threshold for this task.
-- `domains/data-projects.md` — Scored below load threshold for this task.
-- `features/index.md` — Scored below load threshold for this task.
-- `features/skill-registry.md` — Scored below load threshold for this task.
 - `projects/taski.md` — Scored below load threshold for this task.
 - `projects/terrace.md` — Scored below load threshold for this task.
 - `projects/soundscape.md` — Scored below load threshold for this task.
+- `domains/data-projects.md` — Scored below load threshold for this task.
 
 ## Conflicts
 
