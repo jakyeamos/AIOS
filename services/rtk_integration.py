@@ -541,30 +541,57 @@ def rtk_metrics_log(conn: sqlite3.Connection, *, session_id: str | None = None) 
         params,
     ).fetchall()
     rules = load_compression_rules()
+    column_indexes = {
+        "command": 0,
+        "exit_code": 1,
+        "raw_chars": 2,
+        "estimated_raw_tokens": 3,
+        "estimated_compressed_tokens": 4,
+        "token_reduction_percent": 5,
+        "ambiguous_failure": 6,
+    }
+
+    def row_value(row: Any, column: str) -> Any:
+        try:
+            return row[column]
+        except (IndexError, TypeError):
+            return row[column_indexes[column]]
+
     total_event_count = len(rows)
-    total_raw_tokens = sum(int(row["estimated_raw_tokens"]) for row in rows)
-    total_compressed_tokens = sum(int(row["estimated_compressed_tokens"]) for row in rows)
-    ambiguous_failures = sum(int(row["ambiguous_failure"]) for row in rows)
+    total_raw_tokens = sum(int(row_value(row, "estimated_raw_tokens")) for row in rows)
+    total_compressed_tokens = sum(int(row_value(row, "estimated_compressed_tokens")) for row in rows)
+    ambiguous_failures = sum(int(row_value(row, "ambiguous_failure")) for row in rows)
 
     eligible_rows = [
         row
         for row in rows
-        if int(row["exit_code"] or 0) != 0
-        or int(row["raw_chars"]) >= _passthrough_threshold(str(row["command"] or ""), rules)
+        if int(row_value(row, "exit_code") or 0) != 0
+        or int(row_value(row, "raw_chars")) >= _passthrough_threshold(
+            str(row_value(row, "command") or ""), rules
+        )
     ]
-    raw_tokens = sum(int(row["estimated_raw_tokens"]) for row in eligible_rows)
-    compressed_tokens = sum(int(row["estimated_compressed_tokens"]) for row in eligible_rows)
+    raw_tokens = sum(int(row_value(row, "estimated_raw_tokens")) for row in eligible_rows)
+    compressed_tokens = sum(int(row_value(row, "estimated_compressed_tokens")) for row in eligible_rows)
     tokens_saved = sum(
-        max(int(row["estimated_raw_tokens"]) - int(row["estimated_compressed_tokens"]), 0)
+        max(
+            int(row_value(row, "estimated_raw_tokens"))
+            - int(row_value(row, "estimated_compressed_tokens")),
+            0,
+        )
         for row in eligible_rows
     )
     regressive_count = sum(
         1
         for row in eligible_rows
-        if int(row["estimated_compressed_tokens"]) > int(row["estimated_raw_tokens"])
+        if int(row_value(row, "estimated_compressed_tokens"))
+        > int(row_value(row, "estimated_raw_tokens"))
     )
     average_reduction = (
-        round(sum(float(row["token_reduction_percent"]) for row in eligible_rows) / len(eligible_rows), 2)
+        round(
+            sum(float(row_value(row, "token_reduction_percent")) for row in eligible_rows)
+            / len(eligible_rows),
+            2,
+        )
         if eligible_rows
         else 0.0
     )

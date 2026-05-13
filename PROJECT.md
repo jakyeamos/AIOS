@@ -92,6 +92,7 @@ AIOS now has a first-class Pre-PR readiness gate backed by `pre-cr-suite-lsp`:
 - the AIOS-specific wrapper fails fast when the current diff touches unsupported JS/TS or shell surfaces so the gate cannot silently overclaim repo-wide coverage
 - `config/quality-pipeline.json` now exposes `pre_pr_readiness` as a required AIOS quality gate
 - `README.md` now documents the operator command for this gate
+- Stop-hook closeout now supports RTK metrics aggregation on the default SQLite tuple row factory used by `bin/hook-stop.py`; the May 12 post-standards-snapshot crash path now records the Stop event after RTK logging instead of failing with tuple string-index access.
 
 ## Implemented On 2026-04-28
 
