@@ -76,6 +76,15 @@ This implementation pass establishes:
 
 ## Implemented On 2026-05-13
 
+AIOS now treats the requested harness durability rules as first-class context standards:
+
+- common error surfaces should be fixed durably at their recurrence point or captured as explicit follow-up work
+- agent-facing code, packets, prompts, and workflows should stay inviting under limited context, with a practical 350-line file ceiling where responsibility splits are coherent
+- errors surfaced to agents should be machine-readable and include actionable remediation steps
+- the rules live in `global.maintainability`, `global.observability`, and `domains.agent-harnesses` so future context compiler receipts can load them for relevant work
+
+## Implemented On 2026-05-13
+
 AIOS now has a first-class Pre-PR readiness gate backed by `pre-cr-suite-lsp`:
 
 - repo-level `.pre-cr.json` config now defines the current AIOS `pre-cr` contract around Python changed-line coverage using an external temp LCOV artifact

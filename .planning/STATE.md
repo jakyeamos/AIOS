@@ -30,5 +30,11 @@
 
 - Update this file when milestone ownership changes, when the active dependency chain changes, when roadmap sequencing changes, or when project-planning assumptions in [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) materially shift.
 
+## Quick Tasks Completed
+
+| Date | Task | Result |
+| --- | --- | --- |
+| 2026-05-13 | Bake harness durability rules into AIOS standards | Planned in `.planning/quick/260513-ljr-bake-harness-rules-into-aios-standards-d`; context standards now cover durable recurring-error fixes, a practical 350-line ceiling for agent-facing files, and machine-readable remediation-bearing errors. |
+
 ---
 *Last updated: 2026-05-13 during roadmap initialization*
