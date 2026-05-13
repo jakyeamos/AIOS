@@ -34,6 +34,15 @@ def test_quality_pipeline_exposes_divergent_strategy_gate_for_aios() -> None:
     assert "divergent_strategy_standard" in aios["gates"]
 
 
+def test_quality_pipeline_exposes_pre_pr_readiness_gate_for_aios() -> None:
+    config = _load_json(ROOT / "config" / "quality-pipeline.json")
+    gates = {gate["key"]: gate for gate in config["standard"]["gates"]}
+    aios = next(project for project in config["projects"] if project["project_id"] == "aios")
+
+    assert gates["pre_pr_readiness"]["applicability"] == ["aios_experiment_surface"]
+    assert "pre_pr_readiness" in aios["gates"]
+
+
 def test_corpus_and_experiment_repos_include_divergent_strategy_standard() -> None:
     corpus = _load_json(ROOT / "docs" / "aios" / "corpus" / "config.json")
     test_repos = _load_json(ROOT / "config" / "experiments" / "test-repos.json")

@@ -74,6 +74,16 @@ This implementation pass establishes:
 - structured evaluator outputs for contradiction, drift, and stale-truth detection
 - a real managed invocation backend path tied to the workflow/agent registry
 
+## Implemented On 2026-05-13
+
+AIOS now has a first-class Pre-PR readiness gate backed by `pre-cr-suite-lsp`:
+
+- repo-level `.pre-cr.json` config now defines the current AIOS `pre-cr` contract around Python changed-line coverage using an external temp LCOV artifact
+- `uv run python bin/aios.py pre-pr-readiness` now starts the built `pre-cr-suite-lsp` server locally, runs `$/preCr/runPreCrCheck`, and returns a JSON-safe gate result
+- the AIOS-specific wrapper fails fast when the current diff touches unsupported JS/TS or shell surfaces so the gate cannot silently overclaim repo-wide coverage
+- `config/quality-pipeline.json` now exposes `pre_pr_readiness` as a required AIOS quality gate
+- `README.md` now documents the operator command for this gate
+
 ## Implemented On 2026-04-28
 
 Tier-one AIOS planning now has a dedicated execution pack under `docs/superpowers/plans/tier-one-aios/`:

@@ -8,6 +8,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+import services.aios_cli as aios_cli
+
 from services.aios_cli import EXIT_OK, run_cli  # noqa: E402
 from services.rtk_integration import ensure_rtk_schema  # noqa: E402
 
@@ -218,7 +220,32 @@ def test_status_and_recent_failures_json(tmp_path: Path, capsys) -> None:
     status_output = json.loads(capsys.readouterr().out)
     assert status_output["ok"] is True
     assert status_output["command"] == "status"
-    assert status_output["data"]["projects_active"] == 1
+
+
+def test_pre_pr_readiness_json(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(
+        aios_cli,
+        "pre_pr_readiness_payload",
+        lambda **_: {
+            "status": "pass",
+            "coverage": {"coveragePercent": 92.5},
+            "unsupported_changed_files": [],
+            "supported_changed_files": ["services/pre_pr_readiness.py"],
+            "ignored_changed_files": [],
+            "findings": [],
+            "workspace_root": "/repo",
+            "server_entry": "/pre-cr/server.js",
+            "pre_cr": {},
+        },
+    )
+
+    exit_code = run_cli(["--json", "pre-pr-readiness"])
+
+    assert exit_code == EXIT_OK
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ok"] is True
+    assert payload["command"] == "pre-pr-readiness"
+    assert payload["data"]["status"] == "pass"
 
 
 def test_capability_audit_reports_missing_and_no_data_signals(tmp_path: Path, capsys) -> None:

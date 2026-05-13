@@ -22,6 +22,11 @@ from services.invocation_backends import (
     list_invocation_backends,
 )
 from services.project_health_proof import DEFAULT_PROVING_PROJECTS, prove_project_health
+from services.pre_pr_readiness import (
+    DEFAULT_PRE_CR_REPO,
+    DEFAULT_TIMEOUT_SECONDS as DEFAULT_PRE_PR_TIMEOUT_SECONDS,
+    pre_pr_readiness_payload,
+)
 from services.rtk_integration import (
     classify_rtk_metrics,
     ensure_rtk_schema,
@@ -2429,6 +2434,16 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
             f"session={data['run']['session_id'] or 'unlinked'} packet={data['packet']['id']}"
         )
         return
+    if command == "pre-pr-readiness":
+        coverage = data.get("coverage") if isinstance(data.get("coverage"), dict) else None
+        coverage_percent = coverage.get("coveragePercent") if coverage else None
+        coverage_label = f"{coverage_percent}%" if coverage_percent is not None else "n/a"
+        print(
+            f"status={data['status']} "
+            f"coverage={coverage_label} "
+            f"unsupported={len(data['unsupported_changed_files'])}"
+        )
+        return
     if command == "skills-status":
         summary = data["summary"]
         print(
@@ -2519,6 +2534,21 @@ def create_parser() -> argparse.ArgumentParser:
     start_work.add_argument("--workflow", default=DEFAULT_START_WORKFLOW_KEY, help="Workflow key")
     start_work.add_argument("--agent", default=DEFAULT_START_AGENT_KEY, help="Agent profile key")
     start_work.add_argument("--backend", default=DEFAULT_START_BACKEND_KEY, help="Invocation backend key")
+
+    pre_pr = subparsers.add_parser("pre-pr-readiness", help="Run the AIOS Pre-CR readiness gate")
+    pre_pr.add_argument("--workspace-root", default=".", help="Workspace root to evaluate")
+    pre_pr.add_argument(
+        "--pre-cr-repo",
+        default=str(DEFAULT_PRE_CR_REPO),
+        help="Path to the pre-cr-suite-lsp repository",
+    )
+    pre_pr.add_argument("--server-entry", default=None, help="Override the built pre-cr server entrypoint")
+    pre_pr.add_argument(
+        "--timeout-seconds",
+        type=int,
+        default=DEFAULT_PRE_PR_TIMEOUT_SECONDS,
+        help="Timeout for the readiness run",
+    )
 
     skills_parser = subparsers.add_parser("skills", help="Instruction/skills registry surfaces")
     skills_subparsers = skills_parser.add_subparsers(dest="skills_command", required=True)
@@ -2646,6 +2676,13 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
                 agent_key=args.agent,
                 backend_key=args.backend,
                 session_id=args.session_id,
+            )
+        elif args.command == "pre-pr-readiness":
+            data = pre_pr_readiness_payload(
+                workspace_root=args.workspace_root,
+                pre_cr_repo=args.pre_cr_repo,
+                server_entry=args.server_entry,
+                timeout_seconds=max(1, int(args.timeout_seconds)),
             )
         elif args.command == "skills" and args.skills_command == "status":
             data = _instruction_status(config_root, vault_root, project_id=args.project)

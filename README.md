@@ -99,6 +99,15 @@ UV_CACHE_DIR=/tmp/uv-cache uv run python bin/synthesize-workflows.py \
 
 ## Quality Checks
 
+Pre-PR readiness gate for AIOS:
+
+```bash
+cd /Users/jakyeamos/AIOS
+UV_CACHE_DIR=/tmp/uv-cache uv run python bin/aios.py --json pre-pr-readiness
+```
+
+This gate shells into the built `pre-cr-suite-lsp` server at `/Users/jakyeamos/projects/pre-cr-suite-lsp`, runs the repo-level `.pre-cr.json`, and fails if the current diff touches unsupported JS/TS or shell surfaces that AIOS does not yet cover with `pre-cr`.
+
 Python test suite:
 
 ```bash

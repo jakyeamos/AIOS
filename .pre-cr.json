@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "testCommand": "uv run --with pytest python bin/run-pre-cr-python-tests.py",
+  "coveragePaths": [
+    "/private/tmp/aios-pre-cr-python.lcov"
+  ],
+  "coverageFormat": "lcov",
+  "threshold": 80,
+  "excludePatterns": [
+    "**/*.test.*",
+    "**/*.spec.*",
+    "**/__tests__/**",
+    "**/__mocks__/**",
+    "**/*.d.ts",
+    ".planning/**",
+    "aios-ui/**",
+    "docs/**",
+    "logs/**",
+    "tests/fixtures/**"
+  ],
+  "checks": {
+    "coverage": true,
+    "security": false,
+    "checklist": false
+  }
+}

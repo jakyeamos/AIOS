@@ -86,6 +86,15 @@
         ]
       },
       {
+        "key": "pre_pr_readiness",
+        "label": "Pre-PR Readiness",
+        "tier": "domain_specific",
+        "required": true,
+        "applicability": [
+          "aios_experiment_surface"
+        ]
+      },
+      {
         "key": "secret_scan",
         "label": "Secret Scan",
         "tier": "production_app",
@@ -236,6 +245,10 @@
         },
         "divergent_strategy_standard": {
           "command": "uv run pytest tests/test_divergent_strategy.py tests/test_workflow_experiments.py tests/test_corpus_eval.py -q",
+          "working_directory": "."
+        },
+        "pre_pr_readiness": {
+          "command": "uv run python bin/aios.py pre-pr-readiness",
           "working_directory": "."
         }
       }
