@@ -9,6 +9,7 @@ export const PRIMARY_NAV: NavItem[] = [
   { href: "/knowledge", label: "Knowledge", short: "Wiki" },
   { href: "/projects", label: "Projects", short: "Projects" },
   { href: "/control", label: "Control Plane", short: "Control" },
+  { href: "/context", label: "Context Compiler", short: "Context" },
   { href: "/runs", label: "Runs", short: "Runs" },
   { href: "/runs/divergent", label: "Strategy Runs", short: "Strategy" },
   { href: "/prompts", label: "Prompts & Rules", short: "Prompts" },

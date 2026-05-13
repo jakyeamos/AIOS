@@ -618,6 +618,42 @@ a:hover {
   grid-template-columns: 0.6fr 1fr 1.5fr 1.7fr 0.6fr 0.7fr 0.7fr;
 }
 
+.table-context-loaded {
+  grid-template-columns: minmax(220px, 1.3fr) 0.55fr 0.65fr 0.45fr minmax(260px, 1.7fr);
+}
+
+.context-small-stat {
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.context-badge-row {
+  justify-content: flex-end;
+  max-width: 360px;
+}
+
+.context-chip-row {
+  margin-top: 14px;
+}
+
+.context-path {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.context-tier-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.context-receipt {
+  max-height: 520px;
+}
+
 .table-breakdown,
 .table-artifacts,
 .table-bugs {
