@@ -89,52 +89,52 @@ None currently. The full operating-system vision is intentionally being planned 
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ROUT-01 | Unmapped | Pending |
-| ROUT-02 | Unmapped | Pending |
-| ROUT-03 | Unmapped | Pending |
-| ROUT-04 | Unmapped | Pending |
-| CONT-01 | Unmapped | Pending |
-| CONT-02 | Unmapped | Pending |
-| CONT-03 | Unmapped | Pending |
-| CONT-04 | Unmapped | Pending |
-| TRUTH-01 | Unmapped | Pending |
-| TRUTH-02 | Unmapped | Pending |
-| TRUTH-03 | Unmapped | Pending |
-| TRUTH-04 | Unmapped | Pending |
-| RUN-01 | Unmapped | Pending |
-| RUN-02 | Unmapped | Pending |
-| RUN-03 | Unmapped | Pending |
-| RUN-04 | Unmapped | Pending |
-| STND-01 | Unmapped | Pending |
-| STND-02 | Unmapped | Pending |
-| STND-03 | Unmapped | Pending |
-| STND-04 | Unmapped | Pending |
-| DELT-01 | Unmapped | Pending |
-| DELT-02 | Unmapped | Pending |
-| DELT-03 | Unmapped | Pending |
-| DELT-04 | Unmapped | Pending |
-| GOV-01 | Unmapped | Pending |
-| GOV-02 | Unmapped | Pending |
-| GOV-03 | Unmapped | Pending |
-| GOV-04 | Unmapped | Pending |
-| ASSET-01 | Unmapped | Pending |
-| ASSET-02 | Unmapped | Pending |
-| ASSET-03 | Unmapped | Pending |
-| ASSET-04 | Unmapped | Pending |
-| LEARN-01 | Unmapped | Pending |
-| LEARN-02 | Unmapped | Pending |
-| LEARN-03 | Unmapped | Pending |
-| LEARN-04 | Unmapped | Pending |
-| OPER-01 | Unmapped | Pending |
-| OPER-02 | Unmapped | Pending |
-| OPER-03 | Unmapped | Pending |
-| OPER-04 | Unmapped | Pending |
+| ROUT-01 | Phase 1: Project And Intent Routing | Pending |
+| ROUT-02 | Phase 1: Project And Intent Routing | Pending |
+| ROUT-03 | Phase 1: Project And Intent Routing | Pending |
+| ROUT-04 | Phase 1: Project And Intent Routing | Pending |
+| CONT-01 | Phase 2: Context Compilation And Briefing | Pending |
+| CONT-02 | Phase 2: Context Compilation And Briefing | Pending |
+| CONT-03 | Phase 2: Context Compilation And Briefing | Pending |
+| CONT-04 | Phase 2: Context Compilation And Briefing | Pending |
+| TRUTH-01 | Phase 4: Project Truth And Knowledge Grounding | Pending |
+| TRUTH-02 | Phase 4: Project Truth And Knowledge Grounding | Pending |
+| TRUTH-03 | Phase 4: Project Truth And Knowledge Grounding | Pending |
+| TRUTH-04 | Phase 4: Project Truth And Knowledge Grounding | Pending |
+| RUN-01 | Phase 3: Workflow Execution And Run State | Pending |
+| RUN-02 | Phase 3: Workflow Execution And Run State | Pending |
+| RUN-03 | Phase 3: Workflow Execution And Run State | Pending |
+| RUN-04 | Phase 3: Workflow Execution And Run State | Pending |
+| STND-01 | Phase 6: Standards Resolution And Evidence-Based Evaluation | Pending |
+| STND-02 | Phase 6: Standards Resolution And Evidence-Based Evaluation | Pending |
+| STND-03 | Phase 6: Standards Resolution And Evidence-Based Evaluation | Pending |
+| STND-04 | Phase 6: Standards Resolution And Evidence-Based Evaluation | Pending |
+| DELT-01 | Phase 7: Delta Scoring And Health Backfill | Pending |
+| DELT-02 | Phase 7: Delta Scoring And Health Backfill | Pending |
+| DELT-03 | Phase 7: Delta Scoring And Health Backfill | Pending |
+| DELT-04 | Phase 7: Delta Scoring And Health Backfill | Pending |
+| GOV-01 | Phase 5: Governed Writeback And Approval Control | Pending |
+| GOV-02 | Phase 5: Governed Writeback And Approval Control | Pending |
+| GOV-03 | Phase 5: Governed Writeback And Approval Control | Pending |
+| GOV-04 | Phase 5: Governed Writeback And Approval Control | Pending |
+| ASSET-01 | Phase 8: Prompt, Skill, And Workflow Asset Lifecycle | Pending |
+| ASSET-02 | Phase 8: Prompt, Skill, And Workflow Asset Lifecycle | Pending |
+| ASSET-03 | Phase 8: Prompt, Skill, And Workflow Asset Lifecycle | Pending |
+| ASSET-04 | Phase 8: Prompt, Skill, And Workflow Asset Lifecycle | Pending |
+| LEARN-01 | Phase 9: Continuous Learning And Conservative Optimization | Pending |
+| LEARN-02 | Phase 9: Continuous Learning And Conservative Optimization | Pending |
+| LEARN-03 | Phase 9: Continuous Learning And Conservative Optimization | Pending |
+| LEARN-04 | Phase 9: Continuous Learning And Conservative Optimization | Pending |
+| OPER-01 | Phase 10: Operator Surfaces And Daily-Flow Visibility | Pending |
+| OPER-02 | Phase 10: Operator Surfaces And Daily-Flow Visibility | Pending |
+| OPER-03 | Phase 10: Operator Surfaces And Daily-Flow Visibility | Pending |
+| OPER-04 | Phase 10: Operator Surfaces And Daily-Flow Visibility | Pending |
 
 **Coverage:**
 - v1 requirements: 40 total
-- Mapped to phases: 0
-- Unmapped: 40 ⚠️
+- Mapped to phases: 40
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-13*
-*Last updated: 2026-05-13 after initial definition*
+*Last updated: 2026-05-13 after roadmap traceability mapping*
