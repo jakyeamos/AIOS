@@ -139,6 +139,7 @@ AIOS now has the first file-backed Context Compiler:
 - Root scripts now include `pnpm context:compile --task "..."`, `pnpm context:validate`, and `pnpm test:context`.
 - `AGENTS.md` now includes the Context Compiler bootloader so agents load the smallest sufficient context packet instead of sweeping every Markdown file.
 - `docs/context/context-compiler.md` records the audit, operating model, schema, conflict precedence, Obsidian evolution path, and UI integration follow-up.
+- `aios-ui/app/context/page.tsx` now exposes the latest compiled context packet, loaded/skipped files, context inventory, conflicts, missing/stale context, writeback candidates, and the raw receipt from the file-backed compiler.
 
 AIOS now has a branch-level Divergent Strategy Workflow experiment:
 
