@@ -3,6 +3,8 @@
 **Created:** 2026-05-13  
 **Purpose:** Map all major current or planned AIOS functionalities to the current codebase, tier-one expectations, v1 requirements, and roadmap phases so no important capability is orphaned.
 
+Detailed execution planning for each functionality lives in [FUNCTIONALITY_PLAN.md](/Users/jakyeamos/AIOS/.planning/FUNCTIONALITY_PLAN.md).
+
 ## Status Key
 
 - **Current**: implemented in some meaningful form today

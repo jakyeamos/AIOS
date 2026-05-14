@@ -111,15 +111,19 @@ The roadmap follows the research bias and requirement dependencies:
 
 #### Phase 8: Prompt, Skill, And Workflow Asset Lifecycle
 
-**Goal:** Treat reusable prompts, skills, and workflows as governed assets with evidence-backed applicability.
+**Goal:** Treat reusable prompts, skills, and workflows as governed assets and workflow contracts with evidence-backed applicability, stage bindings, and promotion rules.
 
-**Requirements:** ASSET-01, ASSET-02, ASSET-03, ASSET-04
+**Requirements:** ASSET-01, ASSET-02, ASSET-03, ASSET-04, WFLO-01, WFLO-02, WFLO-03, WFLO-04
 
 **Observable Success Criteria:**
 - Prompts, skills, and workflows are tracked with purpose, applicability, status, and usefulness evidence.
 - Asset lifecycle states distinguish draft, candidate, approved, active, and deprecated artifacts.
 - Reusable assets are linked to the workflows and task types where they succeeded or failed.
 - Packet generation and handoff creation can recommend proven reusable assets.
+- Each governed workflow is modeled as a stage-based contract with required inputs, outputs, validations, and expected artifacts.
+- Workflow stages explicitly bind prompts, skills, tools, standards, approval gates, and writeback behavior.
+- Workflow success can be evaluated at both the stage level and the overall run level from durable evidence.
+- Workflow effectiveness can be compared over time to support promotion, revision, or deprecation decisions.
 
 #### Phase 9: Continuous Learning And Conservative Optimization
 
@@ -158,13 +162,13 @@ The roadmap follows the research bias and requirement dependencies:
 | Phase 5 | GOV-01, GOV-02, GOV-03, GOV-04 | 4 |
 | Phase 6 | STND-01, STND-02, STND-03, STND-04 | 4 |
 | Phase 7 | DELT-01, DELT-02, DELT-03, DELT-04 | 4 |
-| Phase 8 | ASSET-01, ASSET-02, ASSET-03, ASSET-04 | 4 |
+| Phase 8 | ASSET-01, ASSET-02, ASSET-03, ASSET-04, WFLO-01, WFLO-02, WFLO-03, WFLO-04 | 8 |
 | Phase 9 | LEARN-01, LEARN-02, LEARN-03, LEARN-04 | 4 |
 | Phase 10 | OPER-01, OPER-02, OPER-03, OPER-04 | 4 |
 
 **Coverage Validation:**
-- v1 requirements: 40
-- Mapped to phases: 40
+- v1 requirements: 44
+- Mapped to phases: 44
 - Unmapped: 0
 - Multi-mapped: 0
 

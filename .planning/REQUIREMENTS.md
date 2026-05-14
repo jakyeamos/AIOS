@@ -61,6 +61,13 @@
 - [ ] **ASSET-03**: AIOS links reusable assets to the workflows and task types where they have succeeded or failed
 - [ ] **ASSET-04**: AIOS can recommend proven prompts, skills, and workflows during packet generation and handoff creation
 
+### Workflow Contracts And Library
+
+- [ ] **WFLO-01**: AIOS defines each governed workflow as a stage-based contract with required inputs, required outputs, validations, and expected artifacts
+- [ ] **WFLO-02**: AIOS can bind prompts, skills, tools, standards, approval gates, and writeback behavior to specific workflow stages
+- [ ] **WFLO-03**: AIOS can evaluate workflow success at both the stage level and the overall run level using durable evidence
+- [ ] **WFLO-04**: AIOS can compare workflow effectiveness over time and promote, revise, or deprecate workflows based on evidence
+
 ### Continuous Improvement
 
 - [ ] **LEARN-01**: AIOS can capture run evidence that informs future prompt, skill, workflow, and packet improvements
@@ -121,6 +128,10 @@ None currently. The full operating-system vision is intentionally being planned 
 | ASSET-02 | Phase 8: Prompt, Skill, And Workflow Asset Lifecycle | Pending |
 | ASSET-03 | Phase 8: Prompt, Skill, And Workflow Asset Lifecycle | Pending |
 | ASSET-04 | Phase 8: Prompt, Skill, And Workflow Asset Lifecycle | Pending |
+| WFLO-01 | Phase 8: Prompt, Skill, And Workflow Asset Lifecycle | Pending |
+| WFLO-02 | Phase 8: Prompt, Skill, And Workflow Asset Lifecycle | Pending |
+| WFLO-03 | Phase 8: Prompt, Skill, And Workflow Asset Lifecycle | Pending |
+| WFLO-04 | Phase 8: Prompt, Skill, And Workflow Asset Lifecycle | Pending |
 | LEARN-01 | Phase 9: Continuous Learning And Conservative Optimization | Pending |
 | LEARN-02 | Phase 9: Continuous Learning And Conservative Optimization | Pending |
 | LEARN-03 | Phase 9: Continuous Learning And Conservative Optimization | Pending |
@@ -131,8 +142,8 @@ None currently. The full operating-system vision is intentionally being planned 
 | OPER-04 | Phase 10: Operator Surfaces And Daily-Flow Visibility | Pending |
 
 **Coverage:**
-- v1 requirements: 40 total
-- Mapped to phases: 40
+- v1 requirements: 44 total
+- Mapped to phases: 44
 - Unmapped: 0
 
 ---
