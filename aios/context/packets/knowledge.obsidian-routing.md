@@ -16,6 +16,21 @@ tags:
   - graph
   - vault
 last_reviewed: 2026-05-12
+wiki_status: planned
+wiki_confidence: medium
+last_validated_at: 2026-05-14
+validated_by: agent
+source_coverage: partial
+source_refs:
+  - doc:docs/specs/2026-04-03-knowledge-layer-design.md|Knowledge layer design and vault layout|2026-05-14
+  - code:bin/hook-prompt-submit.py|Current prompt-time wiki retrieval|2026-05-14
+  - code:aios-ui/server/aios/topic-graph.ts|Topic graph topic/reference assembly|2026-05-14
+  - code:aios-ui/server/aios/filesystem.ts|Vault root and wikilink parsing helpers|2026-05-14
+known_stale_areas:
+  - MOC-first traversal is a target routing pattern; current prompt hook still uses simple filename/term matching.
+related_pages:
+  - domains.knowledge-systems
+  - features.obsidian-search
 ---
 
 Future Obsidian retrieval should classify the task, find relevant note clusters, load Map-of-Content notes first, traverse backlinks/tags/frontmatter, and then compile the smallest sufficient packet.

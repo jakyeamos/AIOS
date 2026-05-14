@@ -786,7 +786,8 @@ The wiki/DeepWiki-style knowledge layer now has a minimum maintenance contract f
 - `config/wiki-maintenance/critical-pages.json` tracks source refs for the built-in system wiki pages that are otherwise assembled from code
 - `pnpm wiki:check` runs `tools/wiki-check.mjs` to validate critical source refs, flag current pages without refs, warn on missing validation timestamps, and check referenced `pnpm` commands against package scripts
 - `docs/wiki-maintenance.md` documents the post-task wiki/project-truth checklist agents should apply after meaningful work
-- remaining gap: most legacy context files and vault wiki pages still need explicit `wiki_status`, `source_refs`, and validation metadata before they can be scored as agent-usable or verified
+- high-risk context routes now have explicit maintenance metadata and source refs: `context.index`, `context.router`, `context.schema`, `handoffs.latest`, `features.context-compiler`, `domains.knowledge-systems`, `packets.knowledge.obsidian-routing`, `packets.workflow.approval-gates`, `packets.ui.command-center`, and `projects.aios-ui`
+- remaining gap: lower-risk legacy context files and vault wiki pages still need explicit `wiki_status`, `source_refs`, and validation metadata before they can be scored as agent-usable or verified
 
 ## Still Missing
 

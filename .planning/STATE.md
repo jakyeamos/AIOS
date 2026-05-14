@@ -39,6 +39,7 @@
 | 2026-05-14 | Implement AIOS harness eval v0 | Planned in `.planning/quick/260513-ss4-implement-aios-harness-eval-v0-determini`; deterministic fixture-backed scoring now covers context routing, gates, success criteria, traces, false completion, recovery evidence, and useful writebacks. |
 | 2026-05-14 | Audit and implement AIOS wiki maintenance layer | Planned in `.planning/quick/260513-spx-audit-and-implement-aios-wiki-maintenanc`; wiki/context pages now expose maintenance metadata, source refs, scoring, agent packets, and `pnpm wiki:check`. |
 | 2026-05-14 | Add machine readability precedence rule | Planned in `.planning/quick/260514-34l-add-agents-md-rule-that-machine-readabil` and corrected in `.planning/quick/260514-37u-move-machine-readability-rule-from-agent`; tiered context standards now require parseable structure, stable identifiers, explicit states, deterministic labels, and actionable remediation fields to take precedence over human-friendly presentation. |
+| 2026-05-14 | Backfill AIOS wiki maintenance metadata | Planned in `.planning/quick/260514-38f-backfill-aios-wiki-maintenance-metadata-`; high-risk context routes now have explicit wiki status, confidence, source refs, validation metadata, stale areas, and related pages. |
 
 ---
-*Last updated: 2026-05-14 during quick task 260514-37u*
+*Last updated: 2026-05-14 during quick task 260514-38f*

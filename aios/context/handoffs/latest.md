@@ -14,6 +14,20 @@ tags:
   - context-compiler
   - continuity
 last_reviewed: 2026-05-12
+wiki_status: current
+wiki_confidence: medium
+last_validated_at: 2026-05-14
+validated_by: agent
+source_coverage: partial
+source_refs:
+  - doc:PROJECT.md|Durable project truth|2026-05-14
+  - doc:docs/wiki-maintenance.md|Wiki maintenance workflow|2026-05-14
+  - code:tools/context-compile.mjs|Compiled packet writer|2026-05-14
+known_stale_areas:
+  - This file is intentionally a routing handoff and should not accumulate detailed implementation history.
+related_pages:
+  - features.context-compiler
+  - context.index
 ---
 
 The first Context Compiler version is file-backed, deterministic, and intended to feed future AIOS UI/run-history integration.

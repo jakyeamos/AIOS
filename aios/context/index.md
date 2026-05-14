@@ -17,6 +17,20 @@ related:
   - router.md
   - schema.md
 last_reviewed: 2026-05-12
+wiki_status: current
+wiki_confidence: high
+last_validated_at: 2026-05-14
+validated_by: agent
+source_coverage: partial
+source_refs:
+  - code:tools/context-compile.mjs|Context compiler implementation|2026-05-14
+  - test:tests/context-compiler.test.mjs|Context compiler regression tests|2026-05-14
+  - doc:PROJECT.md|Project truth for context compiler role|2026-05-14
+known_stale_areas:
+  - Compiled latest artifacts are generated outputs and should not be treated as durable truth.
+related_pages:
+  - context.router
+  - context.schema
 ---
 
 AIOS context is routed through small Markdown manifests, not broad document dumps.

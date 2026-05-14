@@ -17,6 +17,20 @@ conflicts:
   protected_topics:
     - context_selection
 last_reviewed: 2026-05-12
+wiki_status: current
+wiki_confidence: high
+last_validated_at: 2026-05-14
+validated_by: agent
+source_coverage: partial
+source_refs:
+  - doc:AGENTS.md|Repository agent bootloader contract|2026-05-14
+  - code:tools/context-compile.mjs|Context selection and receipt compiler|2026-05-14
+  - test:tests/context-compiler.test.mjs|Context routing tests|2026-05-14
+known_stale_areas:
+  - Agent bootloader expectations also live in runtime prompts and may need revalidation after hook or AGENTS.md changes.
+related_pages:
+  - context.index
+  - context.schema
 ---
 
 You are operating inside an AIOS-managed project.

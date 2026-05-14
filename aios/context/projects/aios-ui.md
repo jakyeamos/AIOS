@@ -22,6 +22,22 @@ related:
   - ../../PROJECT.md
   - ../../docs/architecture/2026-04-23-aios-standards-delta-health-phase3b.md
 last_reviewed: 2026-05-12
+wiki_status: current
+wiki_confidence: medium
+last_validated_at: 2026-05-14
+validated_by: agent
+source_coverage: partial
+source_refs:
+  - doc:PROJECT.md|AIOS project truth and UI summary|2026-05-14
+  - code:aios-ui/package.json|UI scripts and dependencies|2026-05-14
+  - code:aios-ui/app/knowledge/page.tsx|Knowledge UI route|2026-05-14
+  - code:aios-ui/server/aios/knowledge.ts|Knowledge UI backend assembly|2026-05-14
+  - doc:docs/architecture/2026-04-23-aios-standards-delta-health-phase3b.md|Standards delta UI architecture note|2026-05-14
+known_stale_areas:
+  - UI build currently depends on local native `better-sqlite3` bindings and may fail if pnpm build scripts are not approved.
+related_pages:
+  - packets.ui.command-center
+  - features.context-compiler
 ---
 
 AIOS UI is a local Next.js dashboard over `~/AIOS/data/aios.db`.
