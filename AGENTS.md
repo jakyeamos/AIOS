@@ -29,6 +29,10 @@ Useful commands:
 3. Evaluate final changed files against applicable criteria before completion.
 4. Record blockers, warnings, passes, and accepted tradeoffs in durable artifacts.
 
+## Rule: Machine Readability Takes Precedence
+
+Machine readability always takes precedence over human-friendly presentation. Instructions, packets, errors, logs, schemas, receipts, and status surfaces must preserve parseable structure, stable identifiers, explicit states, deterministic labels, and actionable remediation fields before adding prose or visual polish. Human-readable text may clarify machine-readable data, but must not replace, obscure, or contradict it.
+
 ## Rule: Execution-First Verification
 
 Trigger this rule for:

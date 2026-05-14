@@ -76,6 +76,13 @@ This implementation pass establishes:
 
 ## Implemented On 2026-05-14
 
+AIOS agent workflow rules now make machine readability a top-level precedence rule:
+
+- `AGENTS.md` requires instructions, packets, errors, logs, schemas, receipts, and status surfaces to preserve parseable structure, stable identifiers, explicit states, deterministic labels, and actionable remediation fields before human-friendly presentation
+- human-readable text remains allowed as clarification, but must not replace, obscure, or contradict machine-readable data
+
+## Implemented On 2026-05-14
+
 AIOS now has a fixture-backed harness eval v0 contract:
 
 - `docs/evals/aios-harness-eval-v0.md` defines the same-model/same-task/same-budget harness comparison frame and the deterministic v0 fixture/run artifact contract
