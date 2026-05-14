@@ -795,6 +795,8 @@
 
 ## Workflow Library Detail
 
+Detailed per-workflow contract planning now lives in [WORKFLOW_MATRIX.md](/Users/jakyeamos/AIOS/.planning/WORKFLOW_MATRIX.md).
+
 ### Current Governed Workflows In Registry
 
 | Workflow | Current State | Tier-One Need | Planning Ownership |
