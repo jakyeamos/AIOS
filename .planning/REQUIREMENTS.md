@@ -10,20 +10,20 @@
 - [ ] **ROUT-01**: User can submit a vague goal and AIOS can identify the target project or explicitly surface ambiguity requiring clarification
 - [ ] **ROUT-02**: AIOS can classify the requested task type and select the smallest sufficient workflow for it
 - [ ] **ROUT-03**: AIOS can explain why a workflow route was selected over nearby alternatives
-- [ ] **ROUT-04**: AIOS can identify the recommended agent or harness for the selected workflow and include the reasoning
+- [ ] **ROUT-04**: AIOS can identify the recommended agent or harness and the appropriate prompt/handoff family for the selected workflow, with reasoning
 
 ### Context Compilation
 
-- [ ] **CONT-01**: AIOS can compile a task-specific context packet from project truth, standards, packets, and recent evidence without dumping unrelated knowledge
+- [ ] **CONT-01**: AIOS can compile a task-specific context packet from project truth, standards, packets, prompt assets, and recent evidence without dumping unrelated knowledge
 - [ ] **CONT-02**: AIOS records loaded and skipped context with explicit reasons in a durable receipt
 - [ ] **CONT-03**: AIOS can surface missing, stale, or conflicting context needed for a task before execution continues
-- [ ] **CONT-04**: AIOS can produce an agent-ready briefing packet with task objective, constraints, relevant files, workflow steps, and acceptance criteria
+- [ ] **CONT-04**: AIOS can produce an agent-ready briefing packet with task objective, constraints, relevant files, workflow steps, prompt/handoff instructions, and acceptance criteria
 
 ### Truth And Knowledge
 
 - [ ] **TRUTH-01**: AIOS maintains a canonical truth file or equivalent structured record for each major linked project
 - [ ] **TRUTH-02**: Project truth captures current goals, architecture, active risks, completed work, unresolved deltas, important decisions, and recommended next actions
-- [ ] **TRUTH-03**: AIOS can answer what is being built, what changed, and what remains unresolved from its knowledge surfaces before manual assembly
+- [ ] **TRUTH-03**: AIOS can answer what is being built, what changed, what remains unresolved, and what prior decisions or reusable assets are relevant from its knowledge surfaces before manual assembly
 - [ ] **TRUTH-04**: AIOS can link truth entries, decisions, notes, prompts, skills, and workflow artifacts through searchable, inspectable knowledge objects
 
 ### Workflow Execution And Run State
@@ -31,7 +31,7 @@
 - [ ] **RUN-01**: AIOS tracks explicit run lifecycle states including not started, in progress, blocked, failed, completed, needs approval, needs follow-up, and partially completed
 - [ ] **RUN-02**: AIOS durably links runs, invocations, sessions, artifacts, and lifecycle events for every serious workflow execution
 - [ ] **RUN-03**: AIOS can resume a partially completed workflow with the original context packet, current state, and next recommended action intact
-- [ ] **RUN-04**: AIOS surfaces what changed during a run, what checks were executed, and what remains unresolved at closeout
+- [ ] **RUN-04**: AIOS surfaces what changed during a run, what checks were executed, what approvals were involved, and what remains unresolved at closeout
 
 ### Standards And Evaluation
 
@@ -71,7 +71,7 @@
 ### Operator Surfaces
 
 - [ ] **OPER-01**: AIOS provides searchable, inspectable operator views for projects, runs, workflows, knowledge, prompts, deltas, approvals, and recent changes
-- [ ] **OPER-02**: AIOS can answer which project needs attention, what good looks like, which workflow should run, and which context an agent needs before manual prep
+- [ ] **OPER-02**: AIOS can answer which project needs attention, what good looks like, which workflow should run, which prompt/skill assets apply, and which context an agent needs before manual prep
 - [ ] **OPER-03**: AIOS exposes receipts, routing decisions, evidence trails, and drill-down paths for visible metrics and recommendations
 - [ ] **OPER-04**: AIOS can surface the default-layer daily flow end to end: vague goal -> routing -> execution -> evaluation -> writeback -> unresolved deltas
 
