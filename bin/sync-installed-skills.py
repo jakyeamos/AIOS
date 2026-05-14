@@ -37,11 +37,8 @@ SKILL_DIRS = [
 EXCLUDED_PREFIXES = (
     "gsd-", "gsd_",
     "opencli-", "opencli_",
-    "hookify-", "hookify_",
     "claude-mem", "claude_mem",
     "skill-creator", "skill_creator",
-    "superpowers",
-    "frontend-design", "frontend_design",
     "commit-commands", "commit_commands",
     "claude-md", "claude_md",
 )

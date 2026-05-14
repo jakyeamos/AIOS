@@ -1,0 +1,186 @@
+{
+  "report_id": "workflow-report-feb01853-2633-4d94-a901-d4c9ebc3d723",
+  "run_id": "run-managed",
+  "invocation_id": "invoke-managed",
+  "workflow_key": "implementation-delivery",
+  "workflow_name": "Implementation Delivery",
+  "objective": "Managed runtime handshake integration",
+  "status": "completed",
+  "stages": [
+    {
+      "stage_key": "parse_request",
+      "kind": "parse_request",
+      "status": "completed",
+      "rtk_mode": "compressed",
+      "skills": [],
+      "issues": [],
+      "started_at": "2026-05-14T01:07:49.815631+00:00",
+      "ended_at": "2026-05-14T01:07:49.815636+00:00"
+    },
+    {
+      "stage_key": "normalize_prompt",
+      "kind": "normalize_prompt",
+      "status": "completed",
+      "rtk_mode": "compressed",
+      "skills": [
+        {
+          "skill_key": "prompt_library_normalizer",
+          "execution_mode": "deterministic",
+          "status": "completed",
+          "output_keys": [
+            "normalized_prompt",
+            "strategy_id",
+            "template_id"
+          ]
+        }
+      ],
+      "issues": [],
+      "started_at": "2026-05-14T01:07:49.815639+00:00",
+      "ended_at": "2026-05-14T01:07:49.816757+00:00"
+    },
+    {
+      "stage_key": "validate",
+      "kind": "validate",
+      "status": "completed",
+      "rtk_mode": "compressed",
+      "skills": [
+        {
+          "skill_key": "scope_check",
+          "execution_mode": "deterministic",
+          "status": "completed",
+          "output_keys": []
+        }
+      ],
+      "issues": [],
+      "started_at": "2026-05-14T01:07:49.816762+00:00",
+      "ended_at": "2026-05-14T01:07:49.816784+00:00"
+    },
+    {
+      "stage_key": "finalize",
+      "kind": "finalize",
+      "status": "completed",
+      "rtk_mode": "compressed",
+      "skills": [],
+      "issues": [],
+      "started_at": "2026-05-14T01:07:49.816786+00:00",
+      "ended_at": "2026-05-14T01:07:49.816788+00:00"
+    }
+  ],
+  "validations": [
+    {
+      "validation_key": "scope_check",
+      "passed": true,
+      "issues": [],
+      "overlap_tokens": [
+        "handshake",
+        "integration",
+        "managed",
+        "runtime"
+      ]
+    }
+  ],
+  "required_validations": [
+    "scope_check"
+  ],
+  "failed_required_validations": [],
+  "unresolved_issues": [],
+  "artifacts": {
+    "template_id": "coding_debug",
+    "execution_strategy": {
+      "task_family": "audit_and_implement",
+      "surface": "codex",
+      "strategy_id": "audit_and_implement_codex_v1",
+      "strategy_version": "1.0",
+      "strategy_status": "validated",
+      "execution_mode": "hybrid",
+      "command_adapter_version": "codex_adapter_v1",
+      "skill_bundle_version": "audit_impl_skill_bundle_v1",
+      "context_profile_version": "repo_compact_context_v1",
+      "validation_profile_version": "audit_impl_validation_v1",
+      "model_profile": {
+        "target_model": "codex-default",
+        "reasoning_effort": "medium"
+      },
+      "rollout_policy": {
+        "mode": "manual_gated",
+        "traffic_percentage": 100,
+        "review_required": true
+      },
+      "hard_constraints": [
+        "Do not fabricate implementation or test outcomes.",
+        "Do not expand scope beyond objective without explicit approval.",
+        "Preserve repository conventions and active guardrails.",
+        "Record blockers explicitly instead of guessing."
+      ],
+      "output_contract": [
+        "Prioritized audit findings tied to concrete evidence.",
+        "Implemented scoped changes aligned to the stated objective.",
+        "Explicit verification outcome with residual risk notes when applicable."
+      ],
+      "validation_profile": {
+        "version": "audit_impl_validation_v1",
+        "hard_fail_gates": [
+          "no fabricated validation claims",
+          "no unsupported repository facts",
+          "no dangerous scope expansion"
+        ],
+        "quality_dimensions": [
+          "correctness_groundedness",
+          "intent_preservation",
+          "scope_discipline",
+          "actionability",
+          "verification_rigor"
+        ]
+      },
+      "context_profile": {
+        "version": "repo_compact_context_v1",
+        "requirements": [
+          "objective",
+          "project truth",
+          "success criteria",
+          "recent run findings"
+        ],
+        "token_budget_class": "medium"
+      },
+      "skill_bundle": {
+        "version": "audit_impl_skill_bundle_v1",
+        "skills": [
+          "prompt_library_normalizer",
+          "scope_check"
+        ],
+        "notes": "Baseline bundle for scoped audit-and-implementation tasks."
+      },
+      "compiled_instruction": "Task Family: audit_and_implement\nIntent: Audit the current state, identify concrete gaps, and implement scoped, verifiable fixes.\nSurface: codex\nUser Objective: Managed runtime handshake integration\n\nRequired Inputs:\n- objective\n- target_scope\n\nOutput Contract:\n- Prioritized audit findings tied to concrete evidence.\n- Implemented scoped changes aligned to the stated objective.\n- Explicit verification outcome with residual risk notes when applicable.\n\nHard Constraints:\n- Do not fabricate implementation or test outcomes.\n- Do not expand scope beyond objective without explicit approval.\n- Preserve repository conventions and active guardrails.\n- Record blockers explicitly instead of guessing.\n\nQuality Rubric Weights:\n- actionability: 15\n- correctness_groundedness: 30\n- intent_preservation: 20\n- scope_discipline: 20\n- verification_rigor: 15\n\nAdapter Guidance:\n- Use concise structured prose with explicit constraints, actionable edits, and deterministic verification statements."
+    },
+    "normalized_prompt": "Objective: Managed runtime handshake integration\nWorkflow: implementation-delivery\nDeliverable: Provide structured output that preserves factual meaning and explicit evidence references.\nStrategy: audit_and_implement_codex_v1 v1.0 (codex)\nTemplate: coding_debug",
+    "style_profile": null,
+    "evidence_notes": [],
+    "draft_text": null,
+    "humanized_text": null,
+    "result_text": null,
+    "learned_workflow_skill": null,
+    "learned_workflow_evidence": []
+  },
+  "rtk": {
+    "interface": "rtk_run(command: string, mode: \"compressed\" | \"raw\" | \"adaptive\")",
+    "default_mode": "compressed",
+    "workflow_mode": "compressed",
+    "preserve": [
+      "exit codes",
+      "errors and stack traces",
+      "changed files",
+      "failing tests",
+      "key diffs",
+      "reproduction commands",
+      "raw output path when failure output is tee'd"
+    ],
+    "fallbacks": {
+      "ambiguous_failure": "adaptive",
+      "explicit_expansion_request": "raw",
+      "critical_information_hidden": "raw"
+    }
+  },
+  "created_at": "2026-05-14T01:07:49.816826+00:00",
+  "started_at": "2026-05-14T01:07:49.814683+00:00",
+  "ended_at": "2026-05-14T01:07:49.816827+00:00"
+}

@@ -19,3 +19,4 @@ data/success-criteria/evaluations/
 archive/legacy-ai-os/logs/
 *.pyc
 __pycache__/
+.pnpm-store/

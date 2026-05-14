@@ -1,0 +1,2 @@
+/bin/sh: -c: line 0: syntax error near unexpected token `('
+/bin/sh: -c: line 0: `python3 -c print("ok")'
