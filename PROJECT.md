@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-05-13
+Last updated: 2026-05-14
 
 ## What AIOS Is
 
@@ -128,6 +128,10 @@ AIOS planning now has an explicit functionality-to-tier-one mapping layer:
   - dependencies
   - observable success criteria
   - a phase dependency chain and explicit workflow rollout strategy are also recorded
+- three deeper planning control artifacts now sit underneath the roadmap so execution can be traced more concretely:
+  - `.planning/PHASE_01_SUBROADMAP.md` breaks Phase 1 into detailed routing workstreams, deliverables, dependencies, risks, and exit gates
+  - `.planning/REQUIREMENTS_CODE_SURFACE_MATRIX.md` maps every v1 requirement to the concrete code/config/storage surfaces that must evolve to reach tier one
+  - `.planning/TIER_ONE_ACCEPTANCE_CHECKLIST.md` defines per-phase capability gates, evidence gates, and failure conditions for default-layer readiness
 - the map makes prompt-library selection, grounded query, automation observability, CTS/repository intelligence, reusable asset lifecycle, and other current/planned surfaces explicit instead of leaving them implied inside broader requirements
 - `.planning/REQUIREMENTS.md` and `.planning/ROADMAP.md` were tightened so prompt-library selection and prompt/handoff composition are represented in the early execution loop:
   - Phase 1 routing now includes prompt/handoff-family selection
