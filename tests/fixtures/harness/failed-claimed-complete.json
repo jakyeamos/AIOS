@@ -1,0 +1,12 @@
+{
+  "task": "Fix AIOS run lifecycle evaluation for failed tests.",
+  "project_id": "project-aios",
+  "events": [
+    {"type": "task_created", "summary": "Task created."},
+    {"type": "briefing_packet_generated", "summary": "Briefing packet generated."},
+    {"type": "agent_started", "summary": "Fake agent started."},
+    {"type": "file_changed", "path": "services/harness_runtime.py", "summary": "Runtime code changed."},
+    {"type": "tests_failed", "command": "uv run pytest tests/test_agent_harness.py", "summary": "Harness tests failed."},
+    {"type": "run_closed_completed", "summary": "Agent claimed completion despite failed tests."}
+  ]
+}

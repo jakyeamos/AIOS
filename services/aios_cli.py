@@ -16,6 +16,13 @@ from typing import Any
 
 from services.automation_history import sync_pipeline_automation_history
 from services.capability_truth import capability_truth_payload
+from services.harness import (
+    active_readiness,
+    brief_task,
+    replay_session,
+    shadow_evaluate_session,
+    simulate_fixture,
+)
 from services.harness_eval import (
     DEFAULT_CONFIG_PATH as DEFAULT_HARNESS_EVAL_CONFIG_PATH,
     score_suite,
@@ -2543,6 +2550,41 @@ def create_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("sync-automation-history", help="Import durable automation history from local logs")
 
+    harness_brief = subparsers.add_parser("harness-brief", help="Generate a backend-neutral harness briefing")
+    harness_brief.add_argument("--task", required=True, help="Task to classify and brief")
+    harness_brief.add_argument("--project", default=None, help="Optional project id")
+    harness_brief.add_argument(
+        "--context-root",
+        default=str(REPO_ROOT / "aios" / "context"),
+        help="Context compiler root",
+    )
+
+    harness_simulate = subparsers.add_parser("harness-simulate", help="Run a fake-agent harness fixture")
+    harness_simulate.add_argument("--fixture", required=True, help="Harness fixture JSON path")
+    harness_simulate.add_argument(
+        "--context-root",
+        default=str(REPO_ROOT / "aios" / "context"),
+        help="Context compiler root",
+    )
+
+    harness_replay = subparsers.add_parser("harness-replay", help="Replay a historical session as harness events")
+    harness_replay.add_argument("--session-id", required=True, help="Session id to replay")
+
+    harness_shadow = subparsers.add_parser(
+        "harness-shadow-evaluate",
+        help="Read-only harness evaluation for an existing session",
+    )
+    harness_shadow.add_argument(
+        "--session-id",
+        default="latest",
+        help="Session id to shadow evaluate, or latest",
+    )
+
+    subparsers.add_parser(
+        "harness-active-readiness",
+        help="Report readiness for active backend-neutral harness enforcement",
+    )
+
     start_work = subparsers.add_parser("start-work", help="Create a routed AIOS run packet and session handshake")
     start_work.add_argument("objective", help="Work objective to route through AIOS")
     start_work.add_argument("--project", default=None, help="Project id to link to the run")
@@ -2635,6 +2677,10 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "prove-project-health",
             "sync-automation-history",
             "start-work",
+            "harness-brief",
+            "harness-simulate",
+            "harness-replay",
+            "harness-shadow-evaluate",
         }:
             conn = _connect_db(db_path)
         else:
@@ -2698,6 +2744,29 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "sync-automation-history":
             assert conn is not None
             data = sync_pipeline_automation_history(conn, logs_dir=logs_dir)
+        elif args.command == "harness-brief":
+            assert conn is not None
+            data = brief_task(
+                conn,
+                task=args.task,
+                project_id=args.project,
+                context_root=Path(args.context_root).expanduser().resolve(),
+            )
+        elif args.command == "harness-simulate":
+            assert conn is not None
+            data = simulate_fixture(
+                conn,
+                fixture_path=Path(args.fixture).expanduser().resolve(),
+                context_root=Path(args.context_root).expanduser().resolve(),
+            )
+        elif args.command == "harness-replay":
+            assert conn is not None
+            data = replay_session(conn, session_id=args.session_id)
+        elif args.command == "harness-shadow-evaluate":
+            assert conn is not None
+            data = shadow_evaluate_session(conn, session_id=args.session_id)
+        elif args.command == "harness-active-readiness":
+            data = active_readiness()
         elif args.command == "start-work":
             assert conn is not None
             data = _start_work_payload(

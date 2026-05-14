@@ -1,0 +1,14 @@
+{
+  "task": "Add passing AIOS harness lifecycle evaluation.",
+  "project_id": "project-aios",
+  "events": [
+    {"type": "task_created", "summary": "Task created."},
+    {"type": "briefing_packet_generated", "summary": "Briefing packet generated."},
+    {"type": "agent_started", "summary": "Fake agent started."},
+    {"type": "file_changed", "path": "services/harness_runtime.py", "summary": "Runtime code changed."},
+    {"type": "file_changed", "path": "tests/test_agent_harness.py", "summary": "Harness tests changed."},
+    {"type": "file_changed", "path": "PROJECT.md", "summary": "Truth file updated."},
+    {"type": "tests_passed", "command": "uv run pytest tests/test_agent_harness.py", "summary": "Harness tests passed."},
+    {"type": "run_closed_completed", "summary": "Run closed completed."}
+  ]
+}

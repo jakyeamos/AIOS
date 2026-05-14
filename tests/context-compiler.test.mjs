@@ -49,6 +49,23 @@ test("follows load_if_matched links for OIDC secret handling", async () => {
   assert(selectedIds.includes("global.security"));
   assert(selectedIds.includes("packets.security.oidc-secrets"));
   assert(selectedIds.includes("domains.web-apps"));
+  assert(!selectedIds.includes("packets.ui.command-center"));
+  assert(!selectedIds.includes("projects.soundscape"));
+});
+
+test("selects harness context for backend-neutral fake replay and shadow evaluation", async () => {
+  const result = await compileContext({
+    task: "Build a backend-neutral agent harness with fake lifecycle replay shadow evaluation and approval gates.",
+    contextRoot,
+    write: false,
+  });
+
+  const selectedIds = result.selected_context_files.map((file) => file.id);
+  assert(selectedIds.includes("domains.agent-harnesses"));
+  assert(selectedIds.includes("features.context-compiler"));
+  assert(selectedIds.includes("packets.workflow.approval-gates"));
+  assert(selectedIds.includes("packets.testing.no-mock-echo"));
+  assert(!selectedIds.includes("projects.soundscape"));
 });
 
 test("selects agent prompt-library and skill-registry context for reusable prompt evaluation", async () => {
