@@ -76,9 +76,10 @@ This implementation pass establishes:
 
 ## Implemented On 2026-05-14
 
-AIOS agent workflow rules now make machine readability a top-level precedence rule:
+AIOS tiered context standards now make machine readability a top-level precedence rule:
 
-- `AGENTS.md` requires instructions, packets, errors, logs, schemas, receipts, and status surfaces to preserve parseable structure, stable identifiers, explicit states, deterministic labels, and actionable remediation fields before human-friendly presentation
+- `aios/context/standards/global.maintainability.md` requires instructions, packets, errors, logs, schemas, receipts, and status surfaces to preserve parseable structure, stable identifiers, explicit states, deterministic labels, and actionable remediation fields before human-friendly presentation
+- `aios/context/domains/agent-harnesses.md` narrows the rule for packets, prompts, workflows, states, IDs, and remediation steps
 - human-readable text remains allowed as clarification, but must not replace, obscure, or contradict machine-readable data
 
 ## Implemented On 2026-05-14
