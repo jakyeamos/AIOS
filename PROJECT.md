@@ -120,6 +120,14 @@ AIOS planning now has an explicit functionality-to-tier-one mapping layer:
   - learning signals
   - roadmap ownership
   - tier-one gaps
+- `.planning/ROADMAP.md` is now expanded from a short phase summary into a fuller execution contract:
+  - each phase now includes detailed scope
+  - current code surfaces to evolve
+  - workflow ownership
+  - expected outputs
+  - dependencies
+  - observable success criteria
+  - a phase dependency chain and explicit workflow rollout strategy are also recorded
 - the map makes prompt-library selection, grounded query, automation observability, CTS/repository intelligence, reusable asset lifecycle, and other current/planned surfaces explicit instead of leaving them implied inside broader requirements
 - `.planning/REQUIREMENTS.md` and `.planning/ROADMAP.md` were tightened so prompt-library selection and prompt/handoff composition are represented in the early execution loop:
   - Phase 1 routing now includes prompt/handoff-family selection
