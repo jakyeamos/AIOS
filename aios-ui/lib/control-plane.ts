@@ -26,7 +26,22 @@ export type WikiPageStatus =
 export type WikiConfidence = "high" | "medium" | "low" | "unknown";
 
 export type WikiSourceRef = {
-  type: "code" | "doc" | "prd" | "test" | "task" | "agent_summary" | "external";
+  type:
+    | "code"
+    | "doc"
+    | "prd"
+    | "test"
+    | "task"
+    | "agent_summary"
+    | "external"
+    | "pattern"
+    | "session"
+    | "run"
+    | "packet"
+    | "memory_update"
+    | "knowledge_topic"
+    | "vault_note"
+    | "imported_conversation";
   path: string;
   label?: string;
   lineStart?: number;

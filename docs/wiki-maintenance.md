@@ -16,6 +16,23 @@ Wiki/context entries may carry maintenance metadata:
 - `known_stale_areas`: explicit drift risks
 - `related_pages`: related wiki/context page identifiers
 
+Source refs can point to repo files or personal corpus records:
+
+- file-backed refs: `code`, `doc`, `prd`, `test`
+- corpus-backed refs: `pattern`, `session`, `run`, `packet`, `memory_update`, `knowledge_topic`, `vault_note`, `imported_conversation`, `agent_summary`, `task`
+
+Corpus refs validate against `aios.db` when it is present. Examples:
+
+- `pattern:pattern-id|Approved debugging pattern|2026-05-14`
+- `session:session-id|Original agent session|2026-05-14`
+- `packet:briefing-packet-id|Run briefing packet|2026-05-14`
+- `memory_update:memory-id|Post-run memory summary|2026-05-14`
+- `knowledge_topic:topic-slug|Indexed topic graph node|2026-05-14`
+- `vault_note:06 Knowledge/Wiki/AIOS-Hook-Architecture.md|Curated vault note|2026-05-14`
+- `imported_conversation:conversation-slug|Imported personal corpus conversation|2026-05-14`
+- `agent_summary:path/to/summary.md|Agent-written summary artifact|2026-05-14`
+- `task:task-id|Task/backfill/writeback record|2026-05-14`
+
 The UI computes a maintenance score from 0 to 5:
 
 - 0: untrusted
@@ -40,7 +57,7 @@ Run:
 pnpm wiki:check
 ```
 
-The check validates critical wiki source refs, flags current pages without refs, warns on missing validation timestamps, and checks referenced `pnpm` commands against known package scripts.
+The check validates critical wiki source refs, flags current pages without refs, validates corpus-backed refs against `aios.db` when available, warns on missing validation timestamps, and checks referenced `pnpm` commands against known package scripts.
 
 ## Post-Task Checklist
 
