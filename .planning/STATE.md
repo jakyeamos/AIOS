@@ -15,7 +15,7 @@
 ## Current Roadmap Position
 
 - Active milestone: Milestone 1, Governed Entry Loop
-- Active phase: Phase 1, Project And Intent Routing
+- Active phase: Phase 1, Project, Workflow, And Prompt Routing
 - Next dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
 

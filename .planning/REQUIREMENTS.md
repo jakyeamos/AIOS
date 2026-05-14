@@ -96,18 +96,18 @@ None currently. The full operating-system vision is intentionally being planned 
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ROUT-01 | Phase 1: Project And Intent Routing | Pending |
-| ROUT-02 | Phase 1: Project And Intent Routing | Pending |
-| ROUT-03 | Phase 1: Project And Intent Routing | Pending |
-| ROUT-04 | Phase 1: Project And Intent Routing | Pending |
-| CONT-01 | Phase 2: Context Compilation And Briefing | Pending |
-| CONT-02 | Phase 2: Context Compilation And Briefing | Pending |
-| CONT-03 | Phase 2: Context Compilation And Briefing | Pending |
-| CONT-04 | Phase 2: Context Compilation And Briefing | Pending |
-| TRUTH-01 | Phase 4: Project Truth And Knowledge Grounding | Pending |
-| TRUTH-02 | Phase 4: Project Truth And Knowledge Grounding | Pending |
-| TRUTH-03 | Phase 4: Project Truth And Knowledge Grounding | Pending |
-| TRUTH-04 | Phase 4: Project Truth And Knowledge Grounding | Pending |
+| ROUT-01 | Phase 1: Project, Workflow, And Prompt Routing | Pending |
+| ROUT-02 | Phase 1: Project, Workflow, And Prompt Routing | Pending |
+| ROUT-03 | Phase 1: Project, Workflow, And Prompt Routing | Pending |
+| ROUT-04 | Phase 1: Project, Workflow, And Prompt Routing | Pending |
+| CONT-01 | Phase 2: Context, Query, And Briefing Compilation | Pending |
+| CONT-02 | Phase 2: Context, Query, And Briefing Compilation | Pending |
+| CONT-03 | Phase 2: Context, Query, And Briefing Compilation | Pending |
+| CONT-04 | Phase 2: Context, Query, And Briefing Compilation | Pending |
+| TRUTH-01 | Phase 4: Project Truth, Knowledge, And Grounded Query | Pending |
+| TRUTH-02 | Phase 4: Project Truth, Knowledge, And Grounded Query | Pending |
+| TRUTH-03 | Phase 4: Project Truth, Knowledge, And Grounded Query | Pending |
+| TRUTH-04 | Phase 4: Project Truth, Knowledge, And Grounded Query | Pending |
 | RUN-01 | Phase 3: Workflow Execution And Run State | Pending |
 | RUN-02 | Phase 3: Workflow Execution And Run State | Pending |
 | RUN-03 | Phase 3: Workflow Execution And Run State | Pending |
@@ -124,22 +124,22 @@ None currently. The full operating-system vision is intentionally being planned 
 | GOV-02 | Phase 5: Governed Writeback And Approval Control | Pending |
 | GOV-03 | Phase 5: Governed Writeback And Approval Control | Pending |
 | GOV-04 | Phase 5: Governed Writeback And Approval Control | Pending |
-| ASSET-01 | Phase 8: Prompt, Skill, And Workflow Asset Lifecycle | Pending |
-| ASSET-02 | Phase 8: Prompt, Skill, And Workflow Asset Lifecycle | Pending |
-| ASSET-03 | Phase 8: Prompt, Skill, And Workflow Asset Lifecycle | Pending |
-| ASSET-04 | Phase 8: Prompt, Skill, And Workflow Asset Lifecycle | Pending |
-| WFLO-01 | Phase 8: Prompt, Skill, And Workflow Asset Lifecycle | Pending |
-| WFLO-02 | Phase 8: Prompt, Skill, And Workflow Asset Lifecycle | Pending |
-| WFLO-03 | Phase 8: Prompt, Skill, And Workflow Asset Lifecycle | Pending |
-| WFLO-04 | Phase 8: Prompt, Skill, And Workflow Asset Lifecycle | Pending |
+| ASSET-01 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Pending |
+| ASSET-02 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Pending |
+| ASSET-03 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Pending |
+| ASSET-04 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Pending |
+| WFLO-01 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Pending |
+| WFLO-02 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Pending |
+| WFLO-03 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Pending |
+| WFLO-04 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Pending |
 | LEARN-01 | Phase 9: Continuous Learning And Conservative Optimization | Pending |
 | LEARN-02 | Phase 9: Continuous Learning And Conservative Optimization | Pending |
 | LEARN-03 | Phase 9: Continuous Learning And Conservative Optimization | Pending |
 | LEARN-04 | Phase 9: Continuous Learning And Conservative Optimization | Pending |
-| OPER-01 | Phase 10: Operator Surfaces And Daily-Flow Visibility | Pending |
-| OPER-02 | Phase 10: Operator Surfaces And Daily-Flow Visibility | Pending |
-| OPER-03 | Phase 10: Operator Surfaces And Daily-Flow Visibility | Pending |
-| OPER-04 | Phase 10: Operator Surfaces And Daily-Flow Visibility | Pending |
+| OPER-01 | Phase 10: Operator Surfaces, Query, And Daily-Flow Visibility | Pending |
+| OPER-02 | Phase 10: Operator Surfaces, Query, And Daily-Flow Visibility | Pending |
+| OPER-03 | Phase 10: Operator Surfaces, Query, And Daily-Flow Visibility | Pending |
+| OPER-04 | Phase 10: Operator Surfaces, Query, And Daily-Flow Visibility | Pending |
 
 **Coverage:**
 - v1 requirements: 44 total

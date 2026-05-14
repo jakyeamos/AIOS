@@ -18,7 +18,7 @@ The roadmap follows the research bias and requirement dependencies:
 
 ### Milestone 1: Governed Entry Loop
 
-#### Phase 1: Project And Intent Routing
+#### Phase 1: Project, Workflow, And Prompt Routing
 
 **Goal:** Turn vague goals into an explicit project target, workflow route, and recommended agent/harness plus prompt/handoff family with inspectable reasoning.
 
@@ -31,9 +31,9 @@ The roadmap follows the research bias and requirement dependencies:
 - The recommended agent or harness is attached to the route with rationale tied to task type and workflow constraints.
 - The route also identifies the appropriate prompt or handoff family so execution starts from a proven instruction shape rather than an empty shell.
 
-#### Phase 2: Context Compilation And Briefing
+#### Phase 2: Context, Query, And Briefing Compilation
 
-**Goal:** Compile the smallest sufficient task packet and make context inclusion, exclusion, prompt/handoff assets, and gaps inspectable before execution.
+**Goal:** Compile the smallest sufficient task packet, grounded project/query context, and prompt-aware briefing surface before execution.
 
 **Requirements:** CONT-01, CONT-02, CONT-03, CONT-04
 
@@ -57,7 +57,7 @@ The roadmap follows the research bias and requirement dependencies:
 
 ### Milestone 2: Truth, Governance, And Evidence
 
-#### Phase 4: Project Truth And Knowledge Grounding
+#### Phase 4: Project Truth, Knowledge, And Grounded Query
 
 **Goal:** Maintain current project truth and linked operational knowledge as mandatory operating surfaces rather than best-effort documentation byproducts.
 
@@ -109,7 +109,7 @@ The roadmap follows the research bias and requirement dependencies:
 
 ### Milestone 4: Reusable Improvement Loops
 
-#### Phase 8: Prompt, Skill, And Workflow Asset Lifecycle
+#### Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle
 
 **Goal:** Treat reusable prompts, skills, and workflows as governed assets and workflow contracts with evidence-backed applicability, stage bindings, and promotion rules.
 
@@ -139,7 +139,7 @@ The roadmap follows the research bias and requirement dependencies:
 
 ### Milestone 5: Default Operating Layer
 
-#### Phase 10: Operator Surfaces And Daily-Flow Visibility
+#### Phase 10: Operator Surfaces, Query, And Daily-Flow Visibility
 
 **Goal:** Expose the governed operating loop through operator surfaces only after routing, truth, evidence, reusable asset selection, and learning are trustworthy.
 
