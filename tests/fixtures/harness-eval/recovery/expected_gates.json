@@ -1,0 +1,6 @@
+[
+  {
+    "id": "gate.retest-after-fix",
+    "expected_decision": "passed"
+  }
+]

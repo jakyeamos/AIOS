@@ -1,0 +1,38 @@
+{
+  "harness": {
+    "name": "AIOS",
+    "mode": "shadow"
+  },
+  "selected_context_packets": [
+    "domains.agent-harnesses",
+    "global.testing",
+    "packets.testing.no-mock-echo"
+  ],
+  "selected_success_criteria": [
+    "testing-trust",
+    "execution-first-verification",
+    "workflow-state-integrity"
+  ],
+  "approval_events": [
+    {
+      "gate_id": "gate.tests-pass-before-completion",
+      "decision": "blocked"
+    }
+  ],
+  "event_log": [
+    {"event_type": "task_created"},
+    {"event_type": "tests_run"},
+    {"event_type": "tests_failed"},
+    {"event_type": "false_completion_detected"},
+    {"event_type": "final_judgment"}
+  ],
+  "test_results": {
+    "status": "failed"
+  },
+  "final_judgment": {
+    "claimed_complete": true,
+    "status": "failed_validation"
+  },
+  "recovery_events": [],
+  "writeback_proposals": []
+}

@@ -1,0 +1,6 @@
+[
+  {
+    "id": "approval.global-rule-change",
+    "expected_decision": "blocked"
+  }
+]

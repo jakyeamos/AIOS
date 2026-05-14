@@ -1,0 +1,6 @@
+[
+  "global.security",
+  "domains.agent-harnesses",
+  "packets.security.oidc-secrets",
+  "packets.workflow.approval-gates"
+]

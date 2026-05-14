@@ -1,0 +1,48 @@
+{
+  "harness": {
+    "name": "AIOS",
+    "mode": "shadow"
+  },
+  "selected_context_packets": [
+    "domains.agent-harnesses",
+    "global.testing",
+    "global.observability"
+  ],
+  "selected_success_criteria": [
+    "testing-trust",
+    "execution-first-verification",
+    "observability"
+  ],
+  "approval_events": [
+    {
+      "gate_id": "gate.retest-after-fix",
+      "decision": "passed"
+    }
+  ],
+  "event_log": [
+    {"event_type": "task_created"},
+    {"event_type": "tests_failed"},
+    {"event_type": "diagnosis_recorded"},
+    {"event_type": "targeted_fix_applied"},
+    {"event_type": "tests_passed"},
+    {"event_type": "final_judgment"}
+  ],
+  "test_results": {
+    "status": "passed"
+  },
+  "final_judgment": {
+    "claimed_complete": true,
+    "status": "completed"
+  },
+  "recovery_events": [
+    {
+      "kind": "diagnosis",
+      "summary": "CRLF line endings broke fixture comparison."
+    },
+    {
+      "kind": "retest",
+      "summary": "Targeted test passed after normalization."
+    }
+  ],
+  "writeback_proposals": []
+}

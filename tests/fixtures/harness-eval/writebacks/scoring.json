@@ -1,0 +1,12 @@
+{
+  "required_trace_events": [
+    "task_created",
+    "repeated_failure_detected",
+    "writeback_proposed",
+    "approval_gate_evaluated",
+    "final_judgment"
+  ],
+  "false_completion_required": false,
+  "recovery_required": false,
+  "writeback_required": true
+}

@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "eval_name": "aios_harness_eval_v0",
+  "goal": "Compare harness/control-plane quality while holding model, task, and budget constant.",
+  "fixtures": [
+    {
+      "id": "context-routing",
+      "category": "context-routing",
+      "path": "tests/fixtures/harness-eval/context-routing"
+    },
+    {
+      "id": "false-completion",
+      "category": "false-completion",
+      "path": "tests/fixtures/harness-eval/false-completion"
+    },
+    {
+      "id": "approval-gates",
+      "category": "approval-gates",
+      "path": "tests/fixtures/harness-eval/approval-gates"
+    },
+    {
+      "id": "recovery",
+      "category": "recovery",
+      "path": "tests/fixtures/harness-eval/recovery"
+    },
+    {
+      "id": "writebacks",
+      "category": "writebacks",
+      "path": "tests/fixtures/harness-eval/writebacks"
+    }
+  ]
+}

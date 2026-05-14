@@ -1,0 +1,43 @@
+{
+  "harness": {
+    "name": "AIOS",
+    "mode": "shadow"
+  },
+  "selected_context_packets": [
+    "domains.agent-harnesses",
+    "features.skill-registry",
+    "packets.workflow.approval-gates"
+  ],
+  "selected_success_criteria": [
+    "workflow-state-integrity",
+    "repo-boundary-discipline"
+  ],
+  "approval_events": [
+    {
+      "gate_id": "approval.writeback-promotion",
+      "decision": "proposed"
+    }
+  ],
+  "event_log": [
+    {"event_type": "task_created"},
+    {"event_type": "repeated_failure_detected"},
+    {"event_type": "writeback_proposed"},
+    {"event_type": "approval_gate_evaluated"},
+    {"event_type": "final_judgment"}
+  ],
+  "test_results": {
+    "status": "not_run"
+  },
+  "final_judgment": {
+    "claimed_complete": true,
+    "status": "completed"
+  },
+  "recovery_events": [],
+  "writeback_proposals": [
+    {
+      "id": "proposal-skillify-recovery-loop",
+      "target": "skills/recovery-loop/SKILL.md",
+      "usefulness": "useful"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "harness": {
+    "name": "AIOS",
+    "mode": "shadow"
+  },
+  "selected_context_packets": [
+    "global.maintainability",
+    "domains.agent-harnesses",
+    "packets.workflow.approval-gates"
+  ],
+  "selected_success_criteria": [
+    "repo-boundary-discipline",
+    "workflow-state-integrity"
+  ],
+  "approval_events": [
+    {
+      "gate_id": "approval.global-rule-change",
+      "decision": "blocked"
+    }
+  ],
+  "event_log": [
+    {"event_type": "task_created"},
+    {"event_type": "approval_gate_evaluated"},
+    {"event_type": "writeback_proposed"},
+    {"event_type": "final_judgment"}
+  ],
+  "test_results": {
+    "status": "not_run"
+  },
+  "final_judgment": {
+    "claimed_complete": false,
+    "status": "blocked"
+  },
+  "recovery_events": [],
+  "writeback_proposals": [
+    {
+      "id": "proposal-global-rule-change",
+      "target": "config/agent-rules.md",
+      "usefulness": "useful"
+    }
+  ]
+}

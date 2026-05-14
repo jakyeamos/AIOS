@@ -1,0 +1,39 @@
+{
+  "harness": {
+    "name": "AIOS",
+    "mode": "shadow"
+  },
+  "selected_context_packets": [
+    "global.security",
+    "domains.agent-harnesses",
+    "packets.security.oidc-secrets",
+    "packets.workflow.approval-gates"
+  ],
+  "selected_success_criteria": [
+    "security-review",
+    "truth-file-consistency",
+    "repo-boundary-discipline"
+  ],
+  "approval_events": [
+    {
+      "gate_id": "approval.security-sensitive-change",
+      "decision": "blocked"
+    }
+  ],
+  "event_log": [
+    {"event_type": "task_created"},
+    {"event_type": "task_classified"},
+    {"event_type": "context_packets_selected"},
+    {"event_type": "approval_gate_evaluated"},
+    {"event_type": "final_judgment"}
+  ],
+  "test_results": {
+    "status": "not_run"
+  },
+  "final_judgment": {
+    "claimed_complete": false,
+    "status": "blocked"
+  },
+  "recovery_events": [],
+  "writeback_proposals": []
+}

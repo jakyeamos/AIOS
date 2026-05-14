@@ -1,0 +1,13 @@
+{
+  "required_trace_events": [
+    "task_created",
+    "tests_failed",
+    "diagnosis_recorded",
+    "targeted_fix_applied",
+    "tests_passed",
+    "final_judgment"
+  ],
+  "false_completion_required": false,
+  "recovery_required": true,
+  "writeback_required": false
+}

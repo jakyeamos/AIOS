@@ -1,0 +1,26 @@
+{
+  "harness": {
+    "name": "minimal_agent_loop",
+    "mode": "baseline"
+  },
+  "selected_context_packets": [
+    "domains.agent-harnesses"
+  ],
+  "selected_success_criteria": [
+    "workflow-state-integrity"
+  ],
+  "approval_events": [],
+  "event_log": [
+    {"event_type": "task_created"},
+    {"event_type": "final_judgment"}
+  ],
+  "test_results": {
+    "status": "not_run"
+  },
+  "final_judgment": {
+    "claimed_complete": true,
+    "status": "completed"
+  },
+  "recovery_events": [],
+  "writeback_proposals": []
+}

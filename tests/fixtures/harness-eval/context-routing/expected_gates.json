@@ -1,0 +1,6 @@
+[
+  {
+    "id": "approval.security-sensitive-change",
+    "expected_decision": "blocked"
+  }
+]

@@ -1,0 +1,6 @@
+[
+  {
+    "id": "gate.tests-pass-before-completion",
+    "expected_decision": "blocked"
+  }
+]

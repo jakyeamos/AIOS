@@ -16,6 +16,11 @@ from typing import Any
 
 from services.automation_history import sync_pipeline_automation_history
 from services.capability_truth import capability_truth_payload
+from services.harness_eval import (
+    DEFAULT_CONFIG_PATH as DEFAULT_HARNESS_EVAL_CONFIG_PATH,
+    score_suite,
+    suite_result_to_dict,
+)
 from services.invocation_backends import (
     INVOCATION_CONTRACT_FIELDS,
     get_invocation_backend,
@@ -2453,6 +2458,15 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "skills-refresh":
         print(f"updated={data['updated_count']} pending={data['pending_count']}")
         return
+    if command == "harness-eval-run":
+        totals = data["totals"]
+        print(
+            f"fixtures={totals['fixture_count']} "
+            f"runs={totals['run_count']} "
+            f"failed={totals['failed_run_count']} "
+            f"average={totals['average_score']}"
+        )
+        return
 
 
 def _command_name(args: argparse.Namespace) -> str:
@@ -2460,6 +2474,8 @@ def _command_name(args: argparse.Namespace) -> str:
         return f"skills-{args.skills_command}"
     if args.command == "corpus":
         return f"corpus-{args.corpus_command}"
+    if args.command == "harness-eval":
+        return f"harness-eval-{args.harness_eval_command}"
     return args.command
 
 
@@ -2567,6 +2583,21 @@ def create_parser() -> argparse.ArgumentParser:
     corpus_report = corpus_subparsers.add_parser("report", help="Regenerate a corpus Markdown report")
     corpus_report.add_argument("corpus_args", nargs=argparse.REMAINDER)
 
+    harness_eval_parser = subparsers.add_parser("harness-eval", help="AIOS harness evaluation")
+    harness_eval_subparsers = harness_eval_parser.add_subparsers(
+        dest="harness_eval_command",
+        required=True,
+    )
+    harness_eval_run = harness_eval_subparsers.add_parser(
+        "run",
+        help="Run the deterministic AIOS harness eval suite",
+    )
+    harness_eval_run.add_argument(
+        "--config",
+        default=str(DEFAULT_HARNESS_EVAL_CONFIG_PATH),
+        help="Harness eval config path",
+    )
+
     return parser
 
 
@@ -2614,6 +2645,8 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         if args.command == "status":
             assert conn is not None
             data = _status_payload(conn)
+        elif args.command == "harness-eval" and args.harness_eval_command == "run":
+            data = suite_result_to_dict(score_suite(Path(args.config)))
         elif args.command == "health":
             assert conn is not None
             data = _health_payload(conn, logs_dir)

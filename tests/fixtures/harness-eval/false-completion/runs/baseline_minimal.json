@@ -1,0 +1,28 @@
+{
+  "harness": {
+    "name": "minimal_agent_loop",
+    "mode": "baseline"
+  },
+  "selected_context_packets": [
+    "domains.agent-harnesses"
+  ],
+  "selected_success_criteria": [
+    "testing-trust"
+  ],
+  "approval_events": [],
+  "event_log": [
+    {"event_type": "task_created"},
+    {"event_type": "tests_run"},
+    {"event_type": "tests_failed"},
+    {"event_type": "final_judgment"}
+  ],
+  "test_results": {
+    "status": "failed"
+  },
+  "final_judgment": {
+    "claimed_complete": true,
+    "status": "completed"
+  },
+  "recovery_events": [],
+  "writeback_proposals": []
+}
