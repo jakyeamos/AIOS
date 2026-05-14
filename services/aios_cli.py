@@ -25,6 +25,8 @@ from services.harness import (
 )
 from services.harness_eval import (
     DEFAULT_CONFIG_PATH as DEFAULT_HARNESS_EVAL_CONFIG_PATH,
+)
+from services.harness_eval import (
     score_suite,
     suite_result_to_dict,
 )
@@ -33,12 +35,14 @@ from services.invocation_backends import (
     get_invocation_backend,
     list_invocation_backends,
 )
-from services.project_health_proof import DEFAULT_PROVING_PROJECTS, prove_project_health
 from services.pre_pr_readiness import (
     DEFAULT_PRE_CR_REPO,
-    DEFAULT_TIMEOUT_SECONDS as DEFAULT_PRE_PR_TIMEOUT_SECONDS,
     pre_pr_readiness_payload,
 )
+from services.pre_pr_readiness import (
+    DEFAULT_TIMEOUT_SECONDS as DEFAULT_PRE_PR_TIMEOUT_SECONDS,
+)
+from services.project_health_proof import DEFAULT_PROVING_PROJECTS, prove_project_health
 from services.rtk_integration import (
     classify_rtk_metrics,
     ensure_rtk_schema,
