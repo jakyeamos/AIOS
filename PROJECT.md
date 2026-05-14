@@ -109,6 +109,12 @@ AIOS planning now has an explicit functionality-to-tier-one mapping layer:
 - workflow contracts are now first-class planning scope instead of being spread implicitly across routing and asset lifecycle:
   - `.planning/REQUIREMENTS.md` adds `WFLO-01` through `WFLO-04`
   - Phase 8 now covers workflow-stage contracts, prompt/skill/tool bindings, stage-level evaluation, and workflow promotion/revision/deprecation
+- roadmap phase names now carry more explicit product meaning for the runtime loop:
+  - Phase 1 is now `Project, Workflow, And Prompt Routing`
+  - Phase 2 is now `Context, Query, And Briefing Compilation`
+  - Phase 4 is now `Project Truth, Knowledge, And Grounded Query`
+  - Phase 8 is now `Prompt, Skill, Workflow Contracts, And Asset Lifecycle`
+  - Phase 10 is now `Operator Surfaces, Query, And Daily-Flow Visibility`
 - this gives the repo a clearer planning contract for “all current or planned functionality must reach tier one through requirements and roadmap coverage,” not just broad thematic phase buckets
 
 ## Implemented On 2026-05-13
