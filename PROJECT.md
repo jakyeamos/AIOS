@@ -74,6 +74,16 @@ This implementation pass establishes:
 - structured evaluator outputs for contradiction, drift, and stale-truth detection
 - a real managed invocation backend path tied to the workflow/agent registry
 
+## Implemented On 2026-05-14
+
+AIOS now has a fixture-backed harness eval v0 contract:
+
+- `docs/evals/aios-harness-eval-v0.md` defines the same-model/same-task/same-budget harness comparison frame and the deterministic v0 fixture/run artifact contract
+- `docs/aios/harness-eval/config.json` registers five initial categories: context routing, false completion, approval gates, recovery, and writebacks
+- `services/harness_eval.py` scores context precision/recall, gate accuracy, success-criteria recall, trace completeness, false-completion detection, recovery evidence, and useful writeback evidence without live model calls
+- `aios harness-eval run --json` exposes the suite through the normal AIOS CLI JSON envelope
+- `tests/fixtures/harness-eval/` contains baseline and AIOS-shadow sample runs for each v0 category, covered by `tests/test_harness_eval.py`
+
 ## Implemented On 2026-05-13
 
 AIOS planning now has an explicit functionality-to-tier-one mapping layer:
