@@ -26,7 +26,7 @@ Read existing code and truth files before modifying behavior.
 Keep file-backed rules thin and create packets only for repeated needs.
 Architectural changes must update durable project truth.
 Common error surfaces require durable fixes at the source of recurrence, not repeated local workarounds.
-When context is limited, keep agent-facing files below 350 lines where practical; split by responsibility when a file grows beyond that ceiling.
+When context is limited, keep agent-facing files small enough to load, scan, and reason over in one pass; split by responsibility when a file becomes context-heavy.
 
 ## Applicability
 
@@ -37,6 +37,6 @@ When context is limited, keep agent-facing files below 350 lines where practical
 
 - New code has a narrow surface and deterministic behavior.
 - Recurring error surfaces are resolved with durable remediation or captured as explicit follow-up work.
-- Agent-facing files stay under 350 lines where practical, or document why the larger surface remains coherent.
+- Agent-facing files fit a bounded context budget, or document why the larger surface remains coherent.
 - Project truth or handoff files reflect meaningful architecture changes.
 - Context routing remains auditable from receipt output.

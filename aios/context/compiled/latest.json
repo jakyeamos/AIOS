@@ -1,22 +1,24 @@
 {
-  "task_summary": "Bake harness rules into AIOS standards: durable fixes for common error surfaces, agent-inviting files under 350 lines when context is limited, and machine-readable errors with remediation steps",
+  "task_summary": "Replace the fixed line-count harness rule with bounded context-budget guidance for agent-facing files",
   "task_classification": {
-    "task": "Bake harness rules into AIOS standards: durable fixes for common error surfaces, agent-inviting files under 350 lines when context is limited, and machine-readable errors with remediation steps",
+    "task": "Replace the fixed line-count harness rule with bounded context-budget guidance for agent-facing files",
     "signals": [
       "all_tasks",
       "task_touches_agent_harness",
       "task_touches_context_compiler",
       "task_touches_design",
-      "task_touches_knowledge_system"
+      "task_touches_knowledge_system",
+      "task_touches_web_app"
     ],
     "domains": [
+      "web-apps",
       "agent-harnesses",
       "knowledge-systems"
     ],
     "matched_terms": [
       "agent",
       "context",
-      "surface"
+      "ui"
     ]
   },
   "selected_context_files": [
@@ -26,12 +28,12 @@
       "title": "Agent Bootloader",
       "tier": "global",
       "priority": "immutable",
-      "relevance_score": 1,
+      "relevance_score": 0.92,
       "specificity_score": 0.55,
       "recency_score": 1,
       "authority_score": 1,
       "token_cost_estimate": 235,
-      "final_score": 0.8291,
+      "final_score": 0.7971,
       "load_decision": "load",
       "reason": "Bootloader context is always loaded."
     },
@@ -41,29 +43,14 @@
       "title": "AIOS Context Compiler Index",
       "tier": "global",
       "priority": "high",
-      "relevance_score": 1,
+      "relevance_score": 0.84,
       "specificity_score": 0.55,
       "recency_score": 1,
       "authority_score": 0.85,
       "token_cost_estimate": 245,
-      "final_score": 0.7988,
+      "final_score": 0.7348,
       "load_decision": "load",
       "reason": "Bootloader context is always loaded."
-    },
-    {
-      "id": "standards.index",
-      "path": "standards/index.md",
-      "title": "Global Standards Index",
-      "tier": "global",
-      "priority": "high",
-      "relevance_score": 0.92,
-      "specificity_score": 0.55,
-      "recency_score": 1,
-      "authority_score": 0.85,
-      "token_cost_estimate": 147,
-      "final_score": 0.7703,
-      "load_decision": "load",
-      "reason": "1 applies_when signal(s) matched; 1 tag(s) matched; 4 title/summary term(s) matched"
     },
     {
       "id": "context.schema",
@@ -71,44 +58,14 @@
       "title": "Context Frontmatter Schema",
       "tier": "global",
       "priority": "immutable",
-      "relevance_score": 0.78,
+      "relevance_score": 0.7,
       "specificity_score": 0.55,
       "recency_score": 1,
       "authority_score": 1,
       "token_cost_estimate": 174,
-      "final_score": 0.7433,
+      "final_score": 0.7113,
       "load_decision": "load",
       "reason": "Bootloader context is always loaded."
-    },
-    {
-      "id": "global.observability",
-      "path": "standards/global.observability.md",
-      "title": "Global Observability Standard",
-      "tier": "global",
-      "priority": "immutable",
-      "relevance_score": 0.76,
-      "specificity_score": 0.55,
-      "recency_score": 1,
-      "authority_score": 1,
-      "token_cost_estimate": 215,
-      "final_score": 0.7338,
-      "load_decision": "load",
-      "reason": "1 applies_when signal(s) matched; 1 tag(s) matched; 2 title/summary term(s) matched"
-    },
-    {
-      "id": "global.maintainability",
-      "path": "standards/global.maintainability.md",
-      "title": "Global Maintainability Standard",
-      "tier": "global",
-      "priority": "immutable",
-      "relevance_score": 0.62,
-      "specificity_score": 0.55,
-      "recency_score": 1,
-      "authority_score": 1,
-      "token_cost_estimate": 260,
-      "final_score": 0.6762,
-      "load_decision": "load",
-      "reason": "1 applies_when signal(s) matched; 3 title/summary term(s) matched"
     },
     {
       "id": "global.design",
@@ -116,14 +73,59 @@
       "title": "Global Design Standard",
       "tier": "global",
       "priority": "high",
-      "relevance_score": 0.62,
+      "relevance_score": 0.6,
       "specificity_score": 0.55,
       "recency_score": 1,
       "authority_score": 0.85,
       "token_cost_estimate": 163,
-      "final_score": 0.6497,
+      "final_score": 0.6417,
       "load_decision": "load",
-      "reason": "1 applies_when signal(s) matched; 3 title/summary term(s) matched"
+      "reason": "1 applies_when signal(s) matched; 1 tag(s) matched"
+    },
+    {
+      "id": "global.maintainability",
+      "path": "standards/global.maintainability.md",
+      "title": "Global Maintainability Standard",
+      "tier": "global",
+      "priority": "immutable",
+      "relevance_score": 0.46,
+      "specificity_score": 0.55,
+      "recency_score": 1,
+      "authority_score": 1,
+      "token_cost_estimate": 264,
+      "final_score": 0.6121,
+      "load_decision": "load",
+      "reason": "1 applies_when signal(s) matched; 1 title/summary term(s) matched"
+    },
+    {
+      "id": "standards.index",
+      "path": "standards/index.md",
+      "title": "Global Standards Index",
+      "tier": "global",
+      "priority": "high",
+      "relevance_score": 0.46,
+      "specificity_score": 0.55,
+      "recency_score": 1,
+      "authority_score": 0.85,
+      "token_cost_estimate": 147,
+      "final_score": 0.5863,
+      "load_decision": "load",
+      "reason": "1 applies_when signal(s) matched; 1 title/summary term(s) matched"
+    },
+    {
+      "id": "global.observability",
+      "path": "standards/global.observability.md",
+      "title": "Global Observability Standard",
+      "tier": "global",
+      "priority": "immutable",
+      "relevance_score": 0.38,
+      "specificity_score": 0.55,
+      "recency_score": 1,
+      "authority_score": 1,
+      "token_cost_estimate": 215,
+      "final_score": 0.5818,
+      "load_decision": "load",
+      "reason": "1 applies_when signal(s) matched"
     },
     {
       "id": "domains.agent-harnesses",
@@ -135,25 +137,10 @@
       "specificity_score": 0.65,
       "recency_score": 1,
       "authority_score": 0.85,
-      "token_cost_estimate": 247,
-      "final_score": 0.8237,
+      "token_cost_estimate": 257,
+      "final_score": 0.8233,
       "load_decision": "load",
-      "reason": "2 applies_when signal(s) matched; 5 title/summary term(s) matched"
-    },
-    {
-      "id": "domains.knowledge-systems",
-      "path": "domains/knowledge-systems.md",
-      "title": "Knowledge Systems Domain Standard",
-      "tier": "domain",
-      "priority": "high",
-      "relevance_score": 0.54,
-      "specificity_score": 0.65,
-      "recency_score": 1,
-      "authority_score": 0.85,
-      "token_cost_estimate": 127,
-      "final_score": 0.644,
-      "load_decision": "load",
-      "reason": "1 applies_when signal(s) matched; 2 title/summary term(s) matched"
+      "reason": "2 applies_when signal(s) matched; 3 title/summary term(s) matched"
     },
     {
       "id": "domains.web-apps",
@@ -161,14 +148,29 @@
       "title": "Web Apps Domain Standard",
       "tier": "domain",
       "priority": "high",
-      "relevance_score": 0.54,
+      "relevance_score": 0.76,
       "specificity_score": 0.65,
       "recency_score": 1,
       "authority_score": 0.85,
       "token_cost_estimate": 150,
-      "final_score": 0.6431,
+      "final_score": 0.7311,
       "load_decision": "load",
-      "reason": "1 applies_when signal(s) matched; 2 title/summary term(s) matched"
+      "reason": "2 applies_when signal(s) matched"
+    },
+    {
+      "id": "domains.knowledge-systems",
+      "path": "domains/knowledge-systems.md",
+      "title": "Knowledge Systems Domain Standard",
+      "tier": "domain",
+      "priority": "high",
+      "relevance_score": 0.38,
+      "specificity_score": 0.65,
+      "recency_score": 1,
+      "authority_score": 0.85,
+      "token_cost_estimate": 127,
+      "final_score": 0.58,
+      "load_decision": "load",
+      "reason": "1 applies_when signal(s) matched"
     },
     {
       "id": "domains.index",
@@ -176,14 +178,14 @@
       "title": "Domain Standards Index",
       "tier": "domain",
       "priority": "normal",
-      "relevance_score": 0.62,
+      "relevance_score": 0.38,
       "specificity_score": 0.65,
       "recency_score": 1,
       "authority_score": 0.65,
       "token_cost_estimate": 109,
-      "final_score": 0.6366,
+      "final_score": 0.5406,
       "load_decision": "load",
-      "reason": "1 applies_when signal(s) matched; 3 title/summary term(s) matched"
+      "reason": "1 applies_when signal(s) matched"
     },
     {
       "id": "domains.product-design",
@@ -191,14 +193,14 @@
       "title": "Product Design Domain Standard",
       "tier": "domain",
       "priority": "normal",
-      "relevance_score": 0.62,
+      "relevance_score": 0.38,
       "specificity_score": 0.65,
       "recency_score": 1,
       "authority_score": 0.65,
       "token_cost_estimate": 133,
-      "final_score": 0.6357,
+      "final_score": 0.5397,
       "load_decision": "load",
-      "reason": "1 applies_when signal(s) matched; 3 title/summary term(s) matched"
+      "reason": "1 applies_when signal(s) matched"
     },
     {
       "id": "projects.aios-ui",
@@ -206,14 +208,14 @@
       "title": "AIOS UI Project Context",
       "tier": "project",
       "priority": "high",
-      "relevance_score": 0.7,
+      "relevance_score": 0.84,
       "specificity_score": 0.8,
       "recency_score": 1,
       "authority_score": 0.85,
       "token_cost_estimate": 162,
-      "final_score": 0.7442,
+      "final_score": 0.8002,
       "load_decision": "load",
-      "reason": "1 applies_when signal(s) matched; 4 title/summary term(s) matched"
+      "reason": "2 applies_when signal(s) matched; 1 title/summary term(s) matched"
     },
     {
       "id": "projects.index",
@@ -221,14 +223,14 @@
       "title": "Project Context Index",
       "tier": "project",
       "priority": "normal",
-      "relevance_score": 0.62,
+      "relevance_score": 0.54,
       "specificity_score": 0.8,
       "recency_score": 1,
       "authority_score": 0.65,
       "token_cost_estimate": 104,
-      "final_score": 0.6743,
+      "final_score": 0.6423,
       "load_decision": "load",
-      "reason": "1 applies_when signal(s) matched; 3 title/summary term(s) matched"
+      "reason": "1 applies_when signal(s) matched; 2 title/summary term(s) matched"
     },
     {
       "id": "features.context-compiler",
@@ -243,7 +245,7 @@
       "token_cost_estimate": 148,
       "final_score": 0.8897,
       "load_decision": "load",
-      "reason": "2 applies_when signal(s) matched; 4 title/summary term(s) matched"
+      "reason": "2 applies_when signal(s) matched; 3 title/summary term(s) matched"
     },
     {
       "id": "features.prompt-library",
@@ -311,14 +313,14 @@
       "title": "AIOS Command Center UI Packet",
       "tier": "packet",
       "priority": "high",
-      "relevance_score": 0.54,
+      "relevance_score": 0.6,
       "specificity_score": 0.95,
       "recency_score": 1,
       "authority_score": 0.85,
       "token_cost_estimate": 150,
-      "final_score": 0.7181,
+      "final_score": 0.7421,
       "load_decision": "load",
-      "reason": "1 applies_when signal(s) matched; 2 title/summary term(s) matched"
+      "reason": "1 applies_when signal(s) matched; 1 tag(s) matched"
     },
     {
       "id": "packets.knowledge.obsidian-routing",
@@ -356,12 +358,12 @@
       "title": "Latest Context Compiler Handoff",
       "tier": "handoff",
       "priority": "normal",
-      "relevance_score": 0.7,
+      "relevance_score": 0.62,
       "specificity_score": 0.75,
       "recency_score": 1,
       "authority_score": 0.65,
       "token_cost_estimate": 129,
-      "final_score": 0.6929,
+      "final_score": 0.6609,
       "load_decision": "load",
       "reason": "Bootloader context is always loaded."
     }
@@ -382,32 +384,11 @@
       "summary": "Thin entrypoint for AIOS context routing and compiled briefing generation."
     },
     {
-      "id": "standards.index",
-      "title": "Global Standards Index",
-      "tier": "global",
-      "priority": "high",
-      "summary": "Index of global standards available to the Context Compiler."
-    },
-    {
       "id": "context.schema",
       "title": "Context Frontmatter Schema",
       "tier": "global",
       "priority": "immutable",
       "summary": "Required schema for AIOS Context Compiler Markdown files."
-    },
-    {
-      "id": "global.observability",
-      "title": "Global Observability Standard",
-      "tier": "global",
-      "priority": "immutable",
-      "summary": "AIOS behavior should leave inspectable traces, receipts, and failure evidence."
-    },
-    {
-      "id": "global.maintainability",
-      "title": "Global Maintainability Standard",
-      "tier": "global",
-      "priority": "immutable",
-      "summary": "Keep AIOS changes simple, bounded, readable, and aligned to existing architecture."
     },
     {
       "id": "global.design",
@@ -417,6 +398,27 @@
       "summary": "AIOS UI should expose system state clearly without decorative or low-density surfaces."
     },
     {
+      "id": "global.maintainability",
+      "title": "Global Maintainability Standard",
+      "tier": "global",
+      "priority": "immutable",
+      "summary": "Keep AIOS changes simple, bounded, readable, and aligned to existing architecture."
+    },
+    {
+      "id": "standards.index",
+      "title": "Global Standards Index",
+      "tier": "global",
+      "priority": "high",
+      "summary": "Index of global standards available to the Context Compiler."
+    },
+    {
+      "id": "global.observability",
+      "title": "Global Observability Standard",
+      "tier": "global",
+      "priority": "immutable",
+      "summary": "AIOS behavior should leave inspectable traces, receipts, and failure evidence."
+    },
+    {
       "id": "domains.agent-harnesses",
       "title": "Agent Harnesses Domain Standard",
       "tier": "domain",
@@ -424,18 +426,18 @@
       "summary": "Routing standard for agent workflows, prompts, packets, skills, and orchestration."
     },
     {
-      "id": "domains.knowledge-systems",
-      "title": "Knowledge Systems Domain Standard",
-      "tier": "domain",
-      "priority": "high",
-      "summary": "Routing standard for vault, retrieval, topic graph, and second-brain workflows."
-    },
-    {
       "id": "domains.web-apps",
       "title": "Web Apps Domain Standard",
       "tier": "domain",
       "priority": "high",
       "summary": "Routing standard for Next.js, React, dashboard, and deployment work."
+    },
+    {
+      "id": "domains.knowledge-systems",
+      "title": "Knowledge Systems Domain Standard",
+      "tier": "domain",
+      "priority": "high",
+      "summary": "Routing standard for vault, retrieval, topic graph, and second-brain workflows."
     },
     {
       "id": "domains.index",
@@ -554,33 +556,33 @@
     "context.index: Agents produce a context receipt before treating context selection as complete.",
     "context.index: Loaded context is explainable by task classification, score, or explicit linked packet.",
     "context.index: Skipped context remains visible in the receipt.",
-    "standards.index: Every global standard has an owner, tags, and concrete applicability signals.",
-    "standards.index: More specific context can add requirements but not weaken protected topics.",
     "context.schema: `pnpm context:validate` passes before a context file is treated as authoritative.",
     "context.schema: `load_if_matched` links point to existing files relative to `aios/context/`.",
     "context.schema: Thin routing files stay below the deep-packet threshold unless they declare a larger `token_budget`.",
+    "global.design: Users can inspect why a score, warning, or packet was produced.",
+    "global.design: Critical states are not collapsed into vague healthy/unhealthy labels.",
+    "global.design: Controls match expected operational workflows.",
+    "global.maintainability: New code has a narrow surface and deterministic behavior.",
+    "global.maintainability: Recurring error surfaces are resolved with durable remediation or captured as explicit follow-up work.",
+    "global.maintainability: Agent-facing files fit a bounded context budget, or document why the larger surface remains coherent.",
+    "global.maintainability: Project truth or handoff files reflect meaningful architecture changes.",
+    "global.maintainability: Context routing remains auditable from receipt output.",
+    "standards.index: Every global standard has an owner, tags, and concrete applicability signals.",
+    "standards.index: More specific context can add requirements but not weaken protected topics.",
     "global.observability: Generated receipts include loaded and skipped context.",
     "global.observability: Missing and stale context are visible as warnings.",
     "global.observability: Scoring decisions are preserved in structured output.",
     "global.observability: Error output includes remediation guidance that an agent can execute or propose as a follow-up.",
-    "global.maintainability: New code has a narrow surface and deterministic behavior.",
-    "global.maintainability: Recurring error surfaces are resolved with durable remediation or captured as explicit follow-up work.",
-    "global.maintainability: Agent-facing files stay under 350 lines where practical, or document why the larger surface remains coherent.",
-    "global.maintainability: Project truth or handoff files reflect meaningful architecture changes.",
-    "global.maintainability: Context routing remains auditable from receipt output.",
-    "global.design: Users can inspect why a score, warning, or packet was produced.",
-    "global.design: Critical states are not collapsed into vague healthy/unhealthy labels.",
-    "global.design: Controls match expected operational workflows.",
     "domains.agent-harnesses: Routing decisions include reasons and skipped alternatives.",
     "domains.agent-harnesses: Prompt or skill changes include validation paths.",
     "domains.agent-harnesses: Repeated harness failures are promoted into durable standards, checks, or explicit backlog items.",
-    "domains.agent-harnesses: Agent-facing files remain under 350 lines where practical.",
+    "domains.agent-harnesses: Agent-facing files remain small enough for agents to load and reason over without losing local context.",
     "domains.agent-harnesses: Error records include parseable remediation steps.",
     "domains.agent-harnesses: Writebacks are proposed for review rather than silently promoted.",
-    "domains.knowledge-systems: Retrieval starts from routing nodes or explicit source refs.",
-    "domains.knowledge-systems: Broad semantic search does not replace authoritative packet selection.",
     "domains.web-apps: User-facing state is source-backed and inspectable.",
     "domains.web-apps: UI changes follow the existing component and routing patterns.",
+    "domains.knowledge-systems: Retrieval starts from routing nodes or explicit source refs.",
+    "domains.knowledge-systems: Broad semantic search does not replace authoritative packet selection.",
     "domains.index: Domain context adds useful constraints beyond global standards.",
     "domains.index: Domain files remain thin enough to scan quickly.",
     "domains.product-design: Important system state can be inspected without reading logs.",
@@ -617,6 +619,6 @@
   "stale_context": [],
   "missing_context": [],
   "writeback_candidates": [],
-  "context_receipt": "# Context Receipt\n\n## Task\n\nBake harness rules into AIOS standards: durable fixes for common error surfaces, agent-inviting files under 350 lines when context is limited, and machine-readable errors with remediation steps\n\n## Loaded Context\n\n- `router.md`\n  - Reason: Bootloader context is always loaded.\n- `index.md`\n  - Reason: Bootloader context is always loaded.\n- `standards/index.md`\n  - Reason: 1 applies_when signal(s) matched; 1 tag(s) matched; 4 title/summary term(s) matched\n- `schema.md`\n  - Reason: Bootloader context is always loaded.\n- `standards/global.observability.md`\n  - Reason: 1 applies_when signal(s) matched; 1 tag(s) matched; 2 title/summary term(s) matched\n- `standards/global.maintainability.md`\n  - Reason: 1 applies_when signal(s) matched; 3 title/summary term(s) matched\n- `standards/global.design.md`\n  - Reason: 1 applies_when signal(s) matched; 3 title/summary term(s) matched\n- `domains/agent-harnesses.md`\n  - Reason: 2 applies_when signal(s) matched; 5 title/summary term(s) matched\n- `domains/knowledge-systems.md`\n  - Reason: 1 applies_when signal(s) matched; 2 title/summary term(s) matched\n- `domains/web-apps.md`\n  - Reason: 1 applies_when signal(s) matched; 2 title/summary term(s) matched\n- `domains/index.md`\n  - Reason: 1 applies_when signal(s) matched; 3 title/summary term(s) matched\n- `domains/product-design.md`\n  - Reason: 1 applies_when signal(s) matched; 3 title/summary term(s) matched\n- `projects/aios-ui.md`\n  - Reason: 1 applies_when signal(s) matched; 4 title/summary term(s) matched\n- `projects/index.md`\n  - Reason: 1 applies_when signal(s) matched; 3 title/summary term(s) matched\n- `features/context-compiler.md`\n  - Reason: 2 applies_when signal(s) matched; 4 title/summary term(s) matched\n- `features/prompt-library.md`\n  - Reason: 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `features/obsidian-search.md`\n  - Reason: 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `features/skill-registry.md`\n  - Reason: 1 applies_when signal(s) matched; 2 title/summary term(s) matched\n- `features/index.md`\n  - Reason: 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `packets/ui.command-center.md`\n  - Reason: 1 applies_when signal(s) matched; 2 title/summary term(s) matched\n- `packets/knowledge.obsidian-routing.md`\n  - Reason: Loaded because domains.knowledge-systems matched and requested this packet.\n- `packets/workflow.approval-gates.md`\n  - Reason: 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `handoffs/latest.md`\n  - Reason: Bootloader context is always loaded.\n\n## Skipped Context\n\n- `features/standards-delta.md` — Scored below load threshold for this task.\n- `packets/testing.no-mock-echo.md` — Scored below load threshold for this task.\n- `packets/security.oidc-secrets.md` — Scored below load threshold for this task.\n- `standards/global.testing.md` — Scored below load threshold for this task.\n- `packets/maintainability.architecture-boundaries.md` — Scored below load threshold for this task.\n- `standards/global.security.md` — Scored below load threshold for this task.\n- `projects/taski.md` — Scored below load threshold for this task.\n- `projects/terrace.md` — Scored below load threshold for this task.\n- `projects/soundscape.md` — Scored below load threshold for this task.\n- `domains/data-projects.md` — Scored below load threshold for this task.\n\n## Conflicts\n\nNone detected.\n\n## Missing Context\n\n- None.\n\n## Writeback Candidates\n\n- None.\n",
-  "briefing_markdown": "# AIOS Context Briefing\n\n## Task Summary\n\nBake harness rules into AIOS standards: durable fixes for common error surfaces, agent-inviting files under 350 lines when context is limited, and machine-readable errors with remediation steps\n\n## Task Classification\n\n- Signals: all_tasks, task_touches_agent_harness, task_touches_context_compiler, task_touches_design, task_touches_knowledge_system\n- Domains: agent-harnesses, knowledge-systems\n\n## Selected Context Files\n\n- `router.md` (context.router) — Bootloader context is always loaded.\n- `index.md` (context.index) — Bootloader context is always loaded.\n- `standards/index.md` (standards.index) — 1 applies_when signal(s) matched; 1 tag(s) matched; 4 title/summary term(s) matched\n- `schema.md` (context.schema) — Bootloader context is always loaded.\n- `standards/global.observability.md` (global.observability) — 1 applies_when signal(s) matched; 1 tag(s) matched; 2 title/summary term(s) matched\n- `standards/global.maintainability.md` (global.maintainability) — 1 applies_when signal(s) matched; 3 title/summary term(s) matched\n- `standards/global.design.md` (global.design) — 1 applies_when signal(s) matched; 3 title/summary term(s) matched\n- `domains/agent-harnesses.md` (domains.agent-harnesses) — 2 applies_when signal(s) matched; 5 title/summary term(s) matched\n- `domains/knowledge-systems.md` (domains.knowledge-systems) — 1 applies_when signal(s) matched; 2 title/summary term(s) matched\n- `domains/web-apps.md` (domains.web-apps) — 1 applies_when signal(s) matched; 2 title/summary term(s) matched\n- `domains/index.md` (domains.index) — 1 applies_when signal(s) matched; 3 title/summary term(s) matched\n- `domains/product-design.md` (domains.product-design) — 1 applies_when signal(s) matched; 3 title/summary term(s) matched\n- `projects/aios-ui.md` (projects.aios-ui) — 1 applies_when signal(s) matched; 4 title/summary term(s) matched\n- `projects/index.md` (projects.index) — 1 applies_when signal(s) matched; 3 title/summary term(s) matched\n- `features/context-compiler.md` (features.context-compiler) — 2 applies_when signal(s) matched; 4 title/summary term(s) matched\n- `features/prompt-library.md` (features.prompt-library) — 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `features/obsidian-search.md` (features.obsidian-search) — 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `features/skill-registry.md` (features.skill-registry) — 1 applies_when signal(s) matched; 2 title/summary term(s) matched\n- `features/index.md` (features.index) — 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `packets/ui.command-center.md` (packets.ui.command-center) — 1 applies_when signal(s) matched; 2 title/summary term(s) matched\n- `packets/knowledge.obsidian-routing.md` (packets.knowledge.obsidian-routing) — Loaded because domains.knowledge-systems matched and requested this packet.\n- `packets/workflow.approval-gates.md` (packets.workflow.approval-gates) — 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `handoffs/latest.md` (handoffs.latest) — Bootloader context is always loaded.\n\n## Relevant Rules\n\n- context.router: Agent bootloader for AIOS-managed projects and context receipts.\n- context.index: Thin entrypoint for AIOS context routing and compiled briefing generation.\n- standards.index: Index of global standards available to the Context Compiler.\n- context.schema: Required schema for AIOS Context Compiler Markdown files.\n- global.observability: AIOS behavior should leave inspectable traces, receipts, and failure evidence.\n- global.maintainability: Keep AIOS changes simple, bounded, readable, and aligned to existing architecture.\n- global.design: AIOS UI should expose system state clearly without decorative or low-density surfaces.\n- domains.agent-harnesses: Routing standard for agent workflows, prompts, packets, skills, and orchestration.\n- domains.knowledge-systems: Routing standard for vault, retrieval, topic graph, and second-brain workflows.\n- domains.web-apps: Routing standard for Next.js, React, dashboard, and deployment work.\n- domains.index: Index of domain-specific standards that narrow global rules for task categories.\n- domains.product-design: Routing standard for product UX, operational workflows, and explainable surfaces.\n- projects.aios-ui: Project truth routing for the local AIOS Next.js command center.\n- projects.index: Index of project truth routing files for AIOS-managed work.\n- features.context-compiler: Feature context for tiered Markdown routing, scoring, receipts, and writeback candidates.\n- features.prompt-library: Feature context for reusable prompt templates, validation, sync, and evaluation workflows.\n- features.obsidian-search: Feature context for future Obsidian vault retrieval and graph-aware note routing.\n- features.skill-registry: Feature context for installed skill discovery, sync, and agent workflow routing.\n- features.index: Index of feature packets available for task-specific routing.\n- packets.ui.command-center: UI packet for exposing AIOS operational state, drilldowns, receipts, and warnings.\n- packets.knowledge.obsidian-routing: Packet for treating Obsidian notes as graph nodes and loading MOCs before detailed notes.\n- packets.workflow.approval-gates: Packet for approval-gated writebacks, major context changes, and reviewable proposals.\n- handoffs.latest: Current handoff node for the file-backed AIOS Context Compiler.\n\n## Project State\n\n- AIOS UI Project Context: Project truth routing for the local AIOS Next.js command center.\n- Project Context Index: Index of project truth routing files for AIOS-managed work.\n- Latest Context Compiler Handoff: Current handoff node for the file-backed AIOS Context Compiler.\n\n## Feature Context\n\n- AIOS Context Compiler Feature: Feature context for tiered Markdown routing, scoring, receipts, and writeback candidates.\n- Prompt Library Feature: Feature context for reusable prompt templates, validation, sync, and evaluation workflows.\n- Obsidian Search Feature: Feature context for future Obsidian vault retrieval and graph-aware note routing.\n- Skill Registry Feature: Feature context for installed skill discovery, sync, and agent workflow routing.\n- Feature Context Index: Index of feature packets available for task-specific routing.\n- AIOS Command Center UI Packet: UI packet for exposing AIOS operational state, drilldowns, receipts, and warnings.\n- Obsidian Graph Routing Packet: Packet for treating Obsidian notes as graph nodes and loading MOCs before detailed notes.\n- Workflow Approval Gates Packet: Packet for approval-gated writebacks, major context changes, and reviewable proposals.\n\n## Known Risks\n\n- No context-selection risks detected by the compiler.\n\n## Acceptance Criteria\n\n- context.router: Every non-trivial run has a loaded/skipped context receipt.\n- context.router: Missing, stale, and conflicting context are explicit.\n- context.router: Writebacks are proposed for missing rules or reusable patterns.\n- context.index: Agents produce a context receipt before treating context selection as complete.\n- context.index: Loaded context is explainable by task classification, score, or explicit linked packet.\n- context.index: Skipped context remains visible in the receipt.\n- standards.index: Every global standard has an owner, tags, and concrete applicability signals.\n- standards.index: More specific context can add requirements but not weaken protected topics.\n- context.schema: `pnpm context:validate` passes before a context file is treated as authoritative.\n- context.schema: `load_if_matched` links point to existing files relative to `aios/context/`.\n- context.schema: Thin routing files stay below the deep-packet threshold unless they declare a larger `token_budget`.\n- global.observability: Generated receipts include loaded and skipped context.\n- global.observability: Missing and stale context are visible as warnings.\n- global.observability: Scoring decisions are preserved in structured output.\n- global.observability: Error output includes remediation guidance that an agent can execute or propose as a follow-up.\n- global.maintainability: New code has a narrow surface and deterministic behavior.\n- global.maintainability: Recurring error surfaces are resolved with durable remediation or captured as explicit follow-up work.\n- global.maintainability: Agent-facing files stay under 350 lines where practical, or document why the larger surface remains coherent.\n- global.maintainability: Project truth or handoff files reflect meaningful architecture changes.\n- global.maintainability: Context routing remains auditable from receipt output.\n- global.design: Users can inspect why a score, warning, or packet was produced.\n- global.design: Critical states are not collapsed into vague healthy/unhealthy labels.\n- global.design: Controls match expected operational workflows.\n- domains.agent-harnesses: Routing decisions include reasons and skipped alternatives.\n- domains.agent-harnesses: Prompt or skill changes include validation paths.\n- domains.agent-harnesses: Repeated harness failures are promoted into durable standards, checks, or explicit backlog items.\n- domains.agent-harnesses: Agent-facing files remain under 350 lines where practical.\n- domains.agent-harnesses: Error records include parseable remediation steps.\n- domains.agent-harnesses: Writebacks are proposed for review rather than silently promoted.\n- domains.knowledge-systems: Retrieval starts from routing nodes or explicit source refs.\n- domains.knowledge-systems: Broad semantic search does not replace authoritative packet selection.\n- domains.web-apps: User-facing state is source-backed and inspectable.\n- domains.web-apps: UI changes follow the existing component and routing patterns.\n- domains.index: Domain context adds useful constraints beyond global standards.\n- domains.index: Domain files remain thin enough to scan quickly.\n- domains.product-design: Important system state can be inspected without reading logs.\n- domains.product-design: Warnings and blockers are visually distinct and textually precise.\n- projects.aios-ui: Project health and delta UI stays source-backed.\n- projects.aios-ui: New UI surfaces can explain missing, inferred, or conflicting signals.\n- projects.aios-ui: Meaningful architecture changes update `PROJECT.md`.\n- projects.index: Project context links to the durable truth source.\n- projects.index: Missing project truth becomes a writeback candidate.\n- features.context-compiler: Compilation produces structured JSON and agent-readable Markdown.\n- features.context-compiler: Receipts include loaded, skipped, conflicts, missing context, and writebacks.\n- features.context-compiler: Scoring favors specific, recent, authoritative, low-cost context.\n- features.prompt-library: New prompt workflows preserve frontmatter validation and registry generation.\n- features.prompt-library: Evaluation output can be traced to prompt template IDs.\n- features.obsidian-search: MOC notes are preferred as routing nodes.\n- features.obsidian-search: Loaded notes and skipped clusters are auditable.\n- features.obsidian-search: Vault search does not override authoritative project or global standards.\n- features.skill-registry: Skill routing remains inspectable and deterministic where possible.\n- features.skill-registry: Missing skill metadata becomes a writeback candidate.\n- features.index: Feature context loads only when task terms or linked context justify it.\n- features.index: Missing feature files are proposed as writebacks.\n- packets.ui.command-center: Operators can drill into source-backed evidence.\n- packets.ui.command-center: Missing and conflicting state appears as actionable warnings.\n- packets.ui.command-center: Receipts can later be attached to run history.\n- packets.knowledge.obsidian-routing: MOC notes act as routing nodes into deeper context.\n- packets.knowledge.obsidian-routing: Backlink and tag traversal is receipt-backed.\n- packets.knowledge.obsidian-routing: Broad vault search cannot weaken authoritative project or global rules.\n- packets.workflow.approval-gates: Writeback candidates include type, severity, target file, and reason.\n- packets.workflow.approval-gates: Approval needs are visible before promotion to authoritative context.\n- handoffs.latest: Update this handoff when compiler output shape or routing conventions change.\n- handoffs.latest: Keep detailed implementation history in docs or project truth, not this routing node.\n\n## Missing Context\n\n- None.\n\n## Writeback Candidates\n\n- None.\n"
+  "context_receipt": "# Context Receipt\n\n## Task\n\nReplace the fixed line-count harness rule with bounded context-budget guidance for agent-facing files\n\n## Loaded Context\n\n- `router.md`\n  - Reason: Bootloader context is always loaded.\n- `index.md`\n  - Reason: Bootloader context is always loaded.\n- `schema.md`\n  - Reason: Bootloader context is always loaded.\n- `standards/global.design.md`\n  - Reason: 1 applies_when signal(s) matched; 1 tag(s) matched\n- `standards/global.maintainability.md`\n  - Reason: 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `standards/index.md`\n  - Reason: 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `standards/global.observability.md`\n  - Reason: 1 applies_when signal(s) matched\n- `domains/agent-harnesses.md`\n  - Reason: 2 applies_when signal(s) matched; 3 title/summary term(s) matched\n- `domains/web-apps.md`\n  - Reason: 2 applies_when signal(s) matched\n- `domains/knowledge-systems.md`\n  - Reason: 1 applies_when signal(s) matched\n- `domains/index.md`\n  - Reason: 1 applies_when signal(s) matched\n- `domains/product-design.md`\n  - Reason: 1 applies_when signal(s) matched\n- `projects/aios-ui.md`\n  - Reason: 2 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `projects/index.md`\n  - Reason: 1 applies_when signal(s) matched; 2 title/summary term(s) matched\n- `features/context-compiler.md`\n  - Reason: 2 applies_when signal(s) matched; 3 title/summary term(s) matched\n- `features/prompt-library.md`\n  - Reason: 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `features/obsidian-search.md`\n  - Reason: 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `features/skill-registry.md`\n  - Reason: 1 applies_when signal(s) matched; 2 title/summary term(s) matched\n- `features/index.md`\n  - Reason: 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `packets/ui.command-center.md`\n  - Reason: 1 applies_when signal(s) matched; 1 tag(s) matched\n- `packets/knowledge.obsidian-routing.md`\n  - Reason: Loaded because domains.knowledge-systems matched and requested this packet.\n- `packets/workflow.approval-gates.md`\n  - Reason: 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `handoffs/latest.md`\n  - Reason: Bootloader context is always loaded.\n\n## Skipped Context\n\n- `features/standards-delta.md` — Scored below load threshold for this task.\n- `packets/testing.no-mock-echo.md` — Scored below load threshold for this task.\n- `packets/security.oidc-secrets.md` — Scored below load threshold for this task.\n- `projects/taski.md` — Scored below load threshold for this task.\n- `projects/terrace.md` — Scored below load threshold for this task.\n- `projects/soundscape.md` — Scored below load threshold for this task.\n- `standards/global.testing.md` — Scored below load threshold for this task.\n- `packets/maintainability.architecture-boundaries.md` — Scored below load threshold for this task.\n- `standards/global.security.md` — Scored below load threshold for this task.\n- `domains/data-projects.md` — Scored below load threshold for this task.\n\n## Conflicts\n\nNone detected.\n\n## Missing Context\n\n- None.\n\n## Writeback Candidates\n\n- None.\n",
+  "briefing_markdown": "# AIOS Context Briefing\n\n## Task Summary\n\nReplace the fixed line-count harness rule with bounded context-budget guidance for agent-facing files\n\n## Task Classification\n\n- Signals: all_tasks, task_touches_agent_harness, task_touches_context_compiler, task_touches_design, task_touches_knowledge_system, task_touches_web_app\n- Domains: web-apps, agent-harnesses, knowledge-systems\n\n## Selected Context Files\n\n- `router.md` (context.router) — Bootloader context is always loaded.\n- `index.md` (context.index) — Bootloader context is always loaded.\n- `schema.md` (context.schema) — Bootloader context is always loaded.\n- `standards/global.design.md` (global.design) — 1 applies_when signal(s) matched; 1 tag(s) matched\n- `standards/global.maintainability.md` (global.maintainability) — 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `standards/index.md` (standards.index) — 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `standards/global.observability.md` (global.observability) — 1 applies_when signal(s) matched\n- `domains/agent-harnesses.md` (domains.agent-harnesses) — 2 applies_when signal(s) matched; 3 title/summary term(s) matched\n- `domains/web-apps.md` (domains.web-apps) — 2 applies_when signal(s) matched\n- `domains/knowledge-systems.md` (domains.knowledge-systems) — 1 applies_when signal(s) matched\n- `domains/index.md` (domains.index) — 1 applies_when signal(s) matched\n- `domains/product-design.md` (domains.product-design) — 1 applies_when signal(s) matched\n- `projects/aios-ui.md` (projects.aios-ui) — 2 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `projects/index.md` (projects.index) — 1 applies_when signal(s) matched; 2 title/summary term(s) matched\n- `features/context-compiler.md` (features.context-compiler) — 2 applies_when signal(s) matched; 3 title/summary term(s) matched\n- `features/prompt-library.md` (features.prompt-library) — 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `features/obsidian-search.md` (features.obsidian-search) — 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `features/skill-registry.md` (features.skill-registry) — 1 applies_when signal(s) matched; 2 title/summary term(s) matched\n- `features/index.md` (features.index) — 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `packets/ui.command-center.md` (packets.ui.command-center) — 1 applies_when signal(s) matched; 1 tag(s) matched\n- `packets/knowledge.obsidian-routing.md` (packets.knowledge.obsidian-routing) — Loaded because domains.knowledge-systems matched and requested this packet.\n- `packets/workflow.approval-gates.md` (packets.workflow.approval-gates) — 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `handoffs/latest.md` (handoffs.latest) — Bootloader context is always loaded.\n\n## Relevant Rules\n\n- context.router: Agent bootloader for AIOS-managed projects and context receipts.\n- context.index: Thin entrypoint for AIOS context routing and compiled briefing generation.\n- context.schema: Required schema for AIOS Context Compiler Markdown files.\n- global.design: AIOS UI should expose system state clearly without decorative or low-density surfaces.\n- global.maintainability: Keep AIOS changes simple, bounded, readable, and aligned to existing architecture.\n- standards.index: Index of global standards available to the Context Compiler.\n- global.observability: AIOS behavior should leave inspectable traces, receipts, and failure evidence.\n- domains.agent-harnesses: Routing standard for agent workflows, prompts, packets, skills, and orchestration.\n- domains.web-apps: Routing standard for Next.js, React, dashboard, and deployment work.\n- domains.knowledge-systems: Routing standard for vault, retrieval, topic graph, and second-brain workflows.\n- domains.index: Index of domain-specific standards that narrow global rules for task categories.\n- domains.product-design: Routing standard for product UX, operational workflows, and explainable surfaces.\n- projects.aios-ui: Project truth routing for the local AIOS Next.js command center.\n- projects.index: Index of project truth routing files for AIOS-managed work.\n- features.context-compiler: Feature context for tiered Markdown routing, scoring, receipts, and writeback candidates.\n- features.prompt-library: Feature context for reusable prompt templates, validation, sync, and evaluation workflows.\n- features.obsidian-search: Feature context for future Obsidian vault retrieval and graph-aware note routing.\n- features.skill-registry: Feature context for installed skill discovery, sync, and agent workflow routing.\n- features.index: Index of feature packets available for task-specific routing.\n- packets.ui.command-center: UI packet for exposing AIOS operational state, drilldowns, receipts, and warnings.\n- packets.knowledge.obsidian-routing: Packet for treating Obsidian notes as graph nodes and loading MOCs before detailed notes.\n- packets.workflow.approval-gates: Packet for approval-gated writebacks, major context changes, and reviewable proposals.\n- handoffs.latest: Current handoff node for the file-backed AIOS Context Compiler.\n\n## Project State\n\n- AIOS UI Project Context: Project truth routing for the local AIOS Next.js command center.\n- Project Context Index: Index of project truth routing files for AIOS-managed work.\n- Latest Context Compiler Handoff: Current handoff node for the file-backed AIOS Context Compiler.\n\n## Feature Context\n\n- AIOS Context Compiler Feature: Feature context for tiered Markdown routing, scoring, receipts, and writeback candidates.\n- Prompt Library Feature: Feature context for reusable prompt templates, validation, sync, and evaluation workflows.\n- Obsidian Search Feature: Feature context for future Obsidian vault retrieval and graph-aware note routing.\n- Skill Registry Feature: Feature context for installed skill discovery, sync, and agent workflow routing.\n- Feature Context Index: Index of feature packets available for task-specific routing.\n- AIOS Command Center UI Packet: UI packet for exposing AIOS operational state, drilldowns, receipts, and warnings.\n- Obsidian Graph Routing Packet: Packet for treating Obsidian notes as graph nodes and loading MOCs before detailed notes.\n- Workflow Approval Gates Packet: Packet for approval-gated writebacks, major context changes, and reviewable proposals.\n\n## Known Risks\n\n- No context-selection risks detected by the compiler.\n\n## Acceptance Criteria\n\n- context.router: Every non-trivial run has a loaded/skipped context receipt.\n- context.router: Missing, stale, and conflicting context are explicit.\n- context.router: Writebacks are proposed for missing rules or reusable patterns.\n- context.index: Agents produce a context receipt before treating context selection as complete.\n- context.index: Loaded context is explainable by task classification, score, or explicit linked packet.\n- context.index: Skipped context remains visible in the receipt.\n- context.schema: `pnpm context:validate` passes before a context file is treated as authoritative.\n- context.schema: `load_if_matched` links point to existing files relative to `aios/context/`.\n- context.schema: Thin routing files stay below the deep-packet threshold unless they declare a larger `token_budget`.\n- global.design: Users can inspect why a score, warning, or packet was produced.\n- global.design: Critical states are not collapsed into vague healthy/unhealthy labels.\n- global.design: Controls match expected operational workflows.\n- global.maintainability: New code has a narrow surface and deterministic behavior.\n- global.maintainability: Recurring error surfaces are resolved with durable remediation or captured as explicit follow-up work.\n- global.maintainability: Agent-facing files fit a bounded context budget, or document why the larger surface remains coherent.\n- global.maintainability: Project truth or handoff files reflect meaningful architecture changes.\n- global.maintainability: Context routing remains auditable from receipt output.\n- standards.index: Every global standard has an owner, tags, and concrete applicability signals.\n- standards.index: More specific context can add requirements but not weaken protected topics.\n- global.observability: Generated receipts include loaded and skipped context.\n- global.observability: Missing and stale context are visible as warnings.\n- global.observability: Scoring decisions are preserved in structured output.\n- global.observability: Error output includes remediation guidance that an agent can execute or propose as a follow-up.\n- domains.agent-harnesses: Routing decisions include reasons and skipped alternatives.\n- domains.agent-harnesses: Prompt or skill changes include validation paths.\n- domains.agent-harnesses: Repeated harness failures are promoted into durable standards, checks, or explicit backlog items.\n- domains.agent-harnesses: Agent-facing files remain small enough for agents to load and reason over without losing local context.\n- domains.agent-harnesses: Error records include parseable remediation steps.\n- domains.agent-harnesses: Writebacks are proposed for review rather than silently promoted.\n- domains.web-apps: User-facing state is source-backed and inspectable.\n- domains.web-apps: UI changes follow the existing component and routing patterns.\n- domains.knowledge-systems: Retrieval starts from routing nodes or explicit source refs.\n- domains.knowledge-systems: Broad semantic search does not replace authoritative packet selection.\n- domains.index: Domain context adds useful constraints beyond global standards.\n- domains.index: Domain files remain thin enough to scan quickly.\n- domains.product-design: Important system state can be inspected without reading logs.\n- domains.product-design: Warnings and blockers are visually distinct and textually precise.\n- projects.aios-ui: Project health and delta UI stays source-backed.\n- projects.aios-ui: New UI surfaces can explain missing, inferred, or conflicting signals.\n- projects.aios-ui: Meaningful architecture changes update `PROJECT.md`.\n- projects.index: Project context links to the durable truth source.\n- projects.index: Missing project truth becomes a writeback candidate.\n- features.context-compiler: Compilation produces structured JSON and agent-readable Markdown.\n- features.context-compiler: Receipts include loaded, skipped, conflicts, missing context, and writebacks.\n- features.context-compiler: Scoring favors specific, recent, authoritative, low-cost context.\n- features.prompt-library: New prompt workflows preserve frontmatter validation and registry generation.\n- features.prompt-library: Evaluation output can be traced to prompt template IDs.\n- features.obsidian-search: MOC notes are preferred as routing nodes.\n- features.obsidian-search: Loaded notes and skipped clusters are auditable.\n- features.obsidian-search: Vault search does not override authoritative project or global standards.\n- features.skill-registry: Skill routing remains inspectable and deterministic where possible.\n- features.skill-registry: Missing skill metadata becomes a writeback candidate.\n- features.index: Feature context loads only when task terms or linked context justify it.\n- features.index: Missing feature files are proposed as writebacks.\n- packets.ui.command-center: Operators can drill into source-backed evidence.\n- packets.ui.command-center: Missing and conflicting state appears as actionable warnings.\n- packets.ui.command-center: Receipts can later be attached to run history.\n- packets.knowledge.obsidian-routing: MOC notes act as routing nodes into deeper context.\n- packets.knowledge.obsidian-routing: Backlink and tag traversal is receipt-backed.\n- packets.knowledge.obsidian-routing: Broad vault search cannot weaken authoritative project or global rules.\n- packets.workflow.approval-gates: Writeback candidates include type, severity, target file, and reason.\n- packets.workflow.approval-gates: Approval needs are visible before promotion to authoritative context.\n- handoffs.latest: Update this handoff when compiler output shape or routing conventions change.\n- handoffs.latest: Keep detailed implementation history in docs or project truth, not this routing node.\n\n## Missing Context\n\n- None.\n\n## Writeback Candidates\n\n- None.\n"
 }

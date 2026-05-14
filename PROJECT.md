@@ -79,7 +79,7 @@ This implementation pass establishes:
 AIOS now treats the requested harness durability rules as first-class context standards:
 
 - common error surfaces should be fixed durably at their recurrence point or captured as explicit follow-up work
-- agent-facing code, packets, prompts, and workflows should stay inviting under limited context, with a practical 350-line file ceiling where responsibility splits are coherent
+- agent-facing code, packets, prompts, and workflows should stay inviting under limited context, using responsibility-based splits instead of arbitrary line-count ceilings
 - errors surfaced to agents should be machine-readable and include actionable remediation steps
 - the rules live in `global.maintainability`, `global.observability`, and `domains.agent-harnesses` so future context compiler receipts can load them for relevant work
 

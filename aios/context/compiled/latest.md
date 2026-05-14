@@ -2,35 +2,35 @@
 
 ## Task Summary
 
-Bake harness rules into AIOS standards: durable fixes for common error surfaces, agent-inviting files under 350 lines when context is limited, and machine-readable errors with remediation steps
+Replace the fixed line-count harness rule with bounded context-budget guidance for agent-facing files
 
 ## Task Classification
 
-- Signals: all_tasks, task_touches_agent_harness, task_touches_context_compiler, task_touches_design, task_touches_knowledge_system
-- Domains: agent-harnesses, knowledge-systems
+- Signals: all_tasks, task_touches_agent_harness, task_touches_context_compiler, task_touches_design, task_touches_knowledge_system, task_touches_web_app
+- Domains: web-apps, agent-harnesses, knowledge-systems
 
 ## Selected Context Files
 
 - `router.md` (context.router) — Bootloader context is always loaded.
 - `index.md` (context.index) — Bootloader context is always loaded.
-- `standards/index.md` (standards.index) — 1 applies_when signal(s) matched; 1 tag(s) matched; 4 title/summary term(s) matched
 - `schema.md` (context.schema) — Bootloader context is always loaded.
-- `standards/global.observability.md` (global.observability) — 1 applies_when signal(s) matched; 1 tag(s) matched; 2 title/summary term(s) matched
-- `standards/global.maintainability.md` (global.maintainability) — 1 applies_when signal(s) matched; 3 title/summary term(s) matched
-- `standards/global.design.md` (global.design) — 1 applies_when signal(s) matched; 3 title/summary term(s) matched
-- `domains/agent-harnesses.md` (domains.agent-harnesses) — 2 applies_when signal(s) matched; 5 title/summary term(s) matched
-- `domains/knowledge-systems.md` (domains.knowledge-systems) — 1 applies_when signal(s) matched; 2 title/summary term(s) matched
-- `domains/web-apps.md` (domains.web-apps) — 1 applies_when signal(s) matched; 2 title/summary term(s) matched
-- `domains/index.md` (domains.index) — 1 applies_when signal(s) matched; 3 title/summary term(s) matched
-- `domains/product-design.md` (domains.product-design) — 1 applies_when signal(s) matched; 3 title/summary term(s) matched
-- `projects/aios-ui.md` (projects.aios-ui) — 1 applies_when signal(s) matched; 4 title/summary term(s) matched
-- `projects/index.md` (projects.index) — 1 applies_when signal(s) matched; 3 title/summary term(s) matched
-- `features/context-compiler.md` (features.context-compiler) — 2 applies_when signal(s) matched; 4 title/summary term(s) matched
+- `standards/global.design.md` (global.design) — 1 applies_when signal(s) matched; 1 tag(s) matched
+- `standards/global.maintainability.md` (global.maintainability) — 1 applies_when signal(s) matched; 1 title/summary term(s) matched
+- `standards/index.md` (standards.index) — 1 applies_when signal(s) matched; 1 title/summary term(s) matched
+- `standards/global.observability.md` (global.observability) — 1 applies_when signal(s) matched
+- `domains/agent-harnesses.md` (domains.agent-harnesses) — 2 applies_when signal(s) matched; 3 title/summary term(s) matched
+- `domains/web-apps.md` (domains.web-apps) — 2 applies_when signal(s) matched
+- `domains/knowledge-systems.md` (domains.knowledge-systems) — 1 applies_when signal(s) matched
+- `domains/index.md` (domains.index) — 1 applies_when signal(s) matched
+- `domains/product-design.md` (domains.product-design) — 1 applies_when signal(s) matched
+- `projects/aios-ui.md` (projects.aios-ui) — 2 applies_when signal(s) matched; 1 title/summary term(s) matched
+- `projects/index.md` (projects.index) — 1 applies_when signal(s) matched; 2 title/summary term(s) matched
+- `features/context-compiler.md` (features.context-compiler) — 2 applies_when signal(s) matched; 3 title/summary term(s) matched
 - `features/prompt-library.md` (features.prompt-library) — 1 applies_when signal(s) matched; 1 title/summary term(s) matched
 - `features/obsidian-search.md` (features.obsidian-search) — 1 applies_when signal(s) matched; 1 title/summary term(s) matched
 - `features/skill-registry.md` (features.skill-registry) — 1 applies_when signal(s) matched; 2 title/summary term(s) matched
 - `features/index.md` (features.index) — 1 applies_when signal(s) matched; 1 title/summary term(s) matched
-- `packets/ui.command-center.md` (packets.ui.command-center) — 1 applies_when signal(s) matched; 2 title/summary term(s) matched
+- `packets/ui.command-center.md` (packets.ui.command-center) — 1 applies_when signal(s) matched; 1 tag(s) matched
 - `packets/knowledge.obsidian-routing.md` (packets.knowledge.obsidian-routing) — Loaded because domains.knowledge-systems matched and requested this packet.
 - `packets/workflow.approval-gates.md` (packets.workflow.approval-gates) — 1 applies_when signal(s) matched; 1 title/summary term(s) matched
 - `handoffs/latest.md` (handoffs.latest) — Bootloader context is always loaded.
@@ -39,14 +39,14 @@ Bake harness rules into AIOS standards: durable fixes for common error surfaces,
 
 - context.router: Agent bootloader for AIOS-managed projects and context receipts.
 - context.index: Thin entrypoint for AIOS context routing and compiled briefing generation.
-- standards.index: Index of global standards available to the Context Compiler.
 - context.schema: Required schema for AIOS Context Compiler Markdown files.
-- global.observability: AIOS behavior should leave inspectable traces, receipts, and failure evidence.
-- global.maintainability: Keep AIOS changes simple, bounded, readable, and aligned to existing architecture.
 - global.design: AIOS UI should expose system state clearly without decorative or low-density surfaces.
+- global.maintainability: Keep AIOS changes simple, bounded, readable, and aligned to existing architecture.
+- standards.index: Index of global standards available to the Context Compiler.
+- global.observability: AIOS behavior should leave inspectable traces, receipts, and failure evidence.
 - domains.agent-harnesses: Routing standard for agent workflows, prompts, packets, skills, and orchestration.
-- domains.knowledge-systems: Routing standard for vault, retrieval, topic graph, and second-brain workflows.
 - domains.web-apps: Routing standard for Next.js, React, dashboard, and deployment work.
+- domains.knowledge-systems: Routing standard for vault, retrieval, topic graph, and second-brain workflows.
 - domains.index: Index of domain-specific standards that narrow global rules for task categories.
 - domains.product-design: Routing standard for product UX, operational workflows, and explainable surfaces.
 - projects.aios-ui: Project truth routing for the local AIOS Next.js command center.
@@ -90,33 +90,33 @@ Bake harness rules into AIOS standards: durable fixes for common error surfaces,
 - context.index: Agents produce a context receipt before treating context selection as complete.
 - context.index: Loaded context is explainable by task classification, score, or explicit linked packet.
 - context.index: Skipped context remains visible in the receipt.
-- standards.index: Every global standard has an owner, tags, and concrete applicability signals.
-- standards.index: More specific context can add requirements but not weaken protected topics.
 - context.schema: `pnpm context:validate` passes before a context file is treated as authoritative.
 - context.schema: `load_if_matched` links point to existing files relative to `aios/context/`.
 - context.schema: Thin routing files stay below the deep-packet threshold unless they declare a larger `token_budget`.
+- global.design: Users can inspect why a score, warning, or packet was produced.
+- global.design: Critical states are not collapsed into vague healthy/unhealthy labels.
+- global.design: Controls match expected operational workflows.
+- global.maintainability: New code has a narrow surface and deterministic behavior.
+- global.maintainability: Recurring error surfaces are resolved with durable remediation or captured as explicit follow-up work.
+- global.maintainability: Agent-facing files fit a bounded context budget, or document why the larger surface remains coherent.
+- global.maintainability: Project truth or handoff files reflect meaningful architecture changes.
+- global.maintainability: Context routing remains auditable from receipt output.
+- standards.index: Every global standard has an owner, tags, and concrete applicability signals.
+- standards.index: More specific context can add requirements but not weaken protected topics.
 - global.observability: Generated receipts include loaded and skipped context.
 - global.observability: Missing and stale context are visible as warnings.
 - global.observability: Scoring decisions are preserved in structured output.
 - global.observability: Error output includes remediation guidance that an agent can execute or propose as a follow-up.
-- global.maintainability: New code has a narrow surface and deterministic behavior.
-- global.maintainability: Recurring error surfaces are resolved with durable remediation or captured as explicit follow-up work.
-- global.maintainability: Agent-facing files stay under 350 lines where practical, or document why the larger surface remains coherent.
-- global.maintainability: Project truth or handoff files reflect meaningful architecture changes.
-- global.maintainability: Context routing remains auditable from receipt output.
-- global.design: Users can inspect why a score, warning, or packet was produced.
-- global.design: Critical states are not collapsed into vague healthy/unhealthy labels.
-- global.design: Controls match expected operational workflows.
 - domains.agent-harnesses: Routing decisions include reasons and skipped alternatives.
 - domains.agent-harnesses: Prompt or skill changes include validation paths.
 - domains.agent-harnesses: Repeated harness failures are promoted into durable standards, checks, or explicit backlog items.
-- domains.agent-harnesses: Agent-facing files remain under 350 lines where practical.
+- domains.agent-harnesses: Agent-facing files remain small enough for agents to load and reason over without losing local context.
 - domains.agent-harnesses: Error records include parseable remediation steps.
 - domains.agent-harnesses: Writebacks are proposed for review rather than silently promoted.
-- domains.knowledge-systems: Retrieval starts from routing nodes or explicit source refs.
-- domains.knowledge-systems: Broad semantic search does not replace authoritative packet selection.
 - domains.web-apps: User-facing state is source-backed and inspectable.
 - domains.web-apps: UI changes follow the existing component and routing patterns.
+- domains.knowledge-systems: Retrieval starts from routing nodes or explicit source refs.
+- domains.knowledge-systems: Broad semantic search does not replace authoritative packet selection.
 - domains.index: Domain context adds useful constraints beyond global standards.
 - domains.index: Domain files remain thin enough to scan quickly.
 - domains.product-design: Important system state can be inspected without reading logs.

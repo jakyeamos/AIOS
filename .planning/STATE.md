@@ -34,7 +34,8 @@
 
 | Date | Task | Result |
 | --- | --- | --- |
-| 2026-05-13 | Bake harness durability rules into AIOS standards | Planned in `.planning/quick/260513-ljr-bake-harness-rules-into-aios-standards-d`; context standards now cover durable recurring-error fixes, a practical 350-line ceiling for agent-facing files, and machine-readable remediation-bearing errors. |
+| 2026-05-13 | Bake harness durability rules into AIOS standards | Planned in `.planning/quick/260513-ljr-bake-harness-rules-into-aios-standards-d`; context standards now cover durable recurring-error fixes, bounded context for agent-facing files, and machine-readable remediation-bearing errors. |
+| 2026-05-14 | Replace fixed line-count harness rule | Planned in `.planning/quick/260513-si8-replace-fixed-line-count-harness-rule`; standards now use a qualitative bounded-context rule and responsibility-based splits instead of a fixed line count. |
 
 ---
 *Last updated: 2026-05-13 during roadmap initialization*

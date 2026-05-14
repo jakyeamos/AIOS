@@ -25,7 +25,7 @@ Agent harness work should make routing, packet assembly, invocation, and writeba
 Prefer deterministic classification before LLM-based expansion.
 Every agent-facing packet should be auditable after execution.
 Harness rules should make common failures harder to repeat by turning error patterns into durable checks, standards, or writeback candidates.
-Agent-facing files, packets, prompts, and workflows should remain easy to scan under limited context, with a practical 350-line ceiling for individual files.
+Agent-facing files, packets, prompts, and workflows should remain easy to scan under limited context, using responsibility-based splits instead of arbitrary line-count ceilings.
 Failures surfaced to agents should be structured enough to parse and specific enough to include next remediation steps.
 
 ## Acceptance Criteria
@@ -33,6 +33,6 @@ Failures surfaced to agents should be structured enough to parse and specific en
 - Routing decisions include reasons and skipped alternatives.
 - Prompt or skill changes include validation paths.
 - Repeated harness failures are promoted into durable standards, checks, or explicit backlog items.
-- Agent-facing files remain under 350 lines where practical.
+- Agent-facing files remain small enough for agents to load and reason over without losing local context.
 - Error records include parseable remediation steps.
 - Writebacks are proposed for review rather than silently promoted.
