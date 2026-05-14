@@ -4,6 +4,14 @@
 **Scope:** v1 is the full operating-system vision, delivered through sequenced milestones and phases rather than scope cuts.  
 **Source Inputs:** [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md), [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md), [research/SUMMARY.md](/Users/jakyeamos/AIOS/.planning/research/SUMMARY.md), [FUNCTIONALITY_MAP.md](/Users/jakyeamos/AIOS/.planning/FUNCTIONALITY_MAP.md), [FUNCTIONALITY_PLAN.md](/Users/jakyeamos/AIOS/.planning/FUNCTIONALITY_PLAN.md), [WORKFLOW_MATRIX.md](/Users/jakyeamos/AIOS/.planning/WORKFLOW_MATRIX.md)
 
+## Supporting Planning Artifacts
+
+The roadmap is backed by deeper planning contracts:
+
+- [PHASE_01_SUBROADMAP.md](/Users/jakyeamos/AIOS/.planning/PHASE_01_SUBROADMAP.md) for the governed entry-loop implementation sequence
+- [REQUIREMENTS_CODE_SURFACE_MATRIX.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS_CODE_SURFACE_MATRIX.md) for requirement-level code-surface traceability
+- [TIER_ONE_ACCEPTANCE_CHECKLIST.md](/Users/jakyeamos/AIOS/.planning/TIER_ONE_ACCEPTANCE_CHECKLIST.md) for per-phase exit gates and proof expectations
+
 ## Roadmap Intent
 
 This roadmap is the execution contract for turning AIOS from a strong local alpha into the default operating layer for serious AI-assisted work.
