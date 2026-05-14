@@ -16,4 +16,8 @@ export const knowledgeRouter = createTRPCRouter({
   projectDossier: publicProcedure
     .input(z.object({ projectId: z.string().min(1) }))
     .query(({ ctx, input }): KnowledgePageDetail | null => getProjectDossier(ctx.db, input.projectId)),
+
+  agentPacket: publicProcedure
+    .input(z.object({ slug: z.string().min(1) }))
+    .query(({ ctx, input }) => getKnowledgePage(ctx.db, input.slug)?.agentPacket ?? null),
 });

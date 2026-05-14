@@ -10,6 +10,9 @@ import type {
   KnowledgePageSummary,
   KnowledgeReference,
   KnowledgeRelationship,
+  WikiAgentPacket,
+  WikiMaintenanceMetadata,
+  WikiSourceRef,
 } from "@/lib/control-plane";
 import { agentProfiles, workflowTemplates } from "@/server/aios/catalog";
 import { listRecentChanges } from "@/server/aios/changes";
@@ -27,6 +30,11 @@ import {
 import { formatFreshnessLabel } from "@/server/aios/freshness";
 import { ensureControlPlaneSchema } from "@/server/aios/schema";
 import { getTopicMarkers, getTopicReferences, getTopicRelationships } from "@/server/aios/topic-graph";
+import {
+  buildWikiAgentPacket,
+  buildWikiMaintenanceMetadata,
+  parseSourceRef,
+} from "@/server/aios/wiki-maintenance";
 import { tableExists } from "@/server/db";
 
 type ProjectRow = {
@@ -80,6 +88,7 @@ type SystemRecord = {
   sourcePath: string;
   relationships: KnowledgeRelationship[];
   sections: Array<{ title: string; items: string[]; body?: string }>;
+  maintenance: WikiMaintenanceMetadata;
 };
 
 type WikiRecord = {
@@ -92,6 +101,7 @@ type WikiRecord = {
   confidence: number;
   links: string[];
   sections: Array<{ title: string; body?: string; items: string[] }>;
+  maintenance: WikiMaintenanceMetadata;
 };
 
 const makeProjectSlug = (id: string): string => `project-${id}`;
@@ -117,6 +127,20 @@ const inferKindFromSlug = (slug: string): KnowledgePageKind => {
 };
 
 const freshnessLabel = (isoValue: string | null): string => formatFreshnessLabel(isoValue, "No recent activity");
+
+const todayIso = (): string => new Date().toISOString().slice(0, 10);
+
+const sourceRef = (
+  type: WikiSourceRef["type"],
+  sourcePath: string,
+  label: string,
+  lastCheckedAt = todayIso(),
+): WikiSourceRef => ({
+  type,
+  path: path.relative(resolveAiosRoot(), sourcePath).split(path.sep).join("/"),
+  label,
+  lastCheckedAt,
+});
 
 const parseJsonArray = (raw: string): string[] => {
   try {
@@ -213,13 +237,16 @@ const loadDecisions = (): DecisionRecord[] => {
 
 const loadSystems = (): SystemRecord[] => {
   const root = resolveAiosRoot();
+  const storagePath = path.join(root, "docs", "STORES.md");
+  const ctsPath = path.join(root, "docs", "superpowers", "specs", "2026-04-08-aios-code-topology-service-design.md");
+  const controlPlanePath = path.join(root, "docs", "architecture", "2026-04-18-aios-control-plane-audit.md");
 
   return [
     {
       key: "storage",
       title: "Storage Contract",
       summary: "Defines the durable boundary between SQLite, vault, CTS, and staging.",
-      sourcePath: path.join(root, "docs", "STORES.md"),
+      sourcePath: storagePath,
       relationships: [
         {
           label: "Control Plane Architecture",
@@ -239,12 +266,21 @@ const loadSystems = (): SystemRecord[] => {
           ],
         },
       ],
+      maintenance: buildWikiMaintenanceMetadata({
+        status: "current",
+        confidence: "high",
+        lastIndexedAt: todayIso(),
+        lastValidatedAt: todayIso(),
+        validatedBy: "agent",
+        sourceRefs: [sourceRef("doc", storagePath, "Storage contract")],
+        sourceCoverage: "partial",
+      }),
     },
     {
       key: "cts",
       title: "Code Topology Service",
       summary: "Persistent structural context for codebases, with confidence and provenance requirements.",
-      sourcePath: path.join(root, "docs", "superpowers", "specs", "2026-04-08-aios-code-topology-service-design.md"),
+      sourcePath: ctsPath,
       relationships: [
         {
           label: "Storage Contract",
@@ -263,12 +299,26 @@ const loadSystems = (): SystemRecord[] => {
           ],
         },
       ],
+      maintenance: buildWikiMaintenanceMetadata({
+        status: "planned",
+        confidence: "medium",
+        lastIndexedAt: todayIso(),
+        lastValidatedAt: todayIso(),
+        validatedBy: "agent",
+        sourceRefs: [
+          sourceRef("prd", ctsPath, "CTS design spec"),
+          sourceRef("code", path.join(root, "services", "cts", "graph_store.py"), "CTS graph store"),
+          sourceRef("test", path.join(root, "tests", "test_corpus_eval.py"), "CTS-adjacent corpus tests"),
+        ],
+        sourceCoverage: "partial",
+        knownStaleAreas: ["The visible wiki page summarizes a design spec; verify current CTS implementation before acting."],
+      }),
     },
     {
       key: "control-plane",
       title: "AIOS Control Plane",
       summary: "The new orchestration surface that routes tasks, logs packets, and exposes retrieval traces.",
-      sourcePath: path.join(root, "docs", "architecture", "2026-04-18-aios-control-plane-audit.md"),
+      sourcePath: controlPlanePath,
       relationships: [
         {
           label: "Storage Contract",
@@ -293,6 +343,19 @@ const loadSystems = (): SystemRecord[] => {
           ],
         },
       ],
+      maintenance: buildWikiMaintenanceMetadata({
+        status: "current",
+        confidence: "medium",
+        lastIndexedAt: todayIso(),
+        lastValidatedAt: todayIso(),
+        validatedBy: "agent",
+        sourceRefs: [
+          sourceRef("doc", controlPlanePath, "Control plane audit"),
+          sourceRef("code", path.join(root, "aios-ui", "server", "aios", "packet-assembly.ts"), "Packet assembly"),
+          sourceRef("code", path.join(root, "bin", "aios_orchestration_runtime.py"), "Orchestration runtime"),
+        ],
+        sourceCoverage: "partial",
+      }),
     },
   ];
 };
@@ -313,6 +376,11 @@ const loadWikiPages = (): WikiRecord[] => {
       const content = fs.readFileSync(fullPath, "utf8");
       const frontmatter = parseSimpleFrontmatter(content);
       const tags = parseFrontmatterList(content, "tags");
+      const sourceRefs = parseFrontmatterList(content, "source_refs")
+        .map(parseSourceRef)
+        .filter((ref): ref is WikiSourceRef => Boolean(ref));
+      const knownStaleAreas = parseFrontmatterList(content, "known_stale_areas");
+      const relatedPages = parseFrontmatterList(content, "related_pages");
       const reviewStatus = frontmatter["review-status"] ?? "current";
       const provenance = frontmatter.provenance ?? "human";
       const quality = frontmatter.quality ?? "human-curated";
@@ -333,6 +401,17 @@ const loadWikiPages = (): WikiRecord[] => {
         confidence: parseConfidence(frontmatter.confidence, quality === "human-curated" ? 0.88 : 0.72),
         links: extractWikiLinks(content),
         sections: extractWikiSections(content),
+        maintenance: buildWikiMaintenanceMetadata({
+          status: frontmatter.wiki_status ?? reviewStatus,
+          confidence: frontmatter.wiki_confidence ?? frontmatter.confidence,
+          lastIndexedAt: frontmatter.updated ?? frontmatter.created ?? fs.statSync(fullPath).mtime.toISOString(),
+          lastValidatedAt: frontmatter.last_validated_at,
+          validatedBy: frontmatter.validated_by,
+          sourceRefs,
+          sourceCoverage: frontmatter.source_coverage,
+          knownStaleAreas,
+          relatedPages,
+        }),
       } satisfies WikiRecord;
     })
     .filter((record): record is WikiRecord => Boolean(record));
@@ -425,6 +504,23 @@ export const listKnowledgePages = (db: Database.Database): KnowledgePageSummary[
   const projectPages = listProjectRows(db).map((project) => {
     const status: KnowledgePageSummary["status"] =
       project.openBugs > 0 ? "warning" : project.status === "active" ? "healthy" : "unknown";
+    const maintenance = buildWikiMaintenanceMetadata({
+      status: project.status === "active" ? "current" : "unverified",
+      confidence: project.openBugs > 0 ? "medium" : "high",
+      lastIndexedAt: project.lastActiveAt ?? undefined,
+      lastValidatedAt: project.lastActiveAt ?? undefined,
+      validatedBy: "script",
+      sourceRefs: [
+        {
+          type: "code",
+          path: project.repoPath,
+          label: "Project repository",
+          lastCheckedAt: project.lastActiveAt ?? undefined,
+        },
+      ],
+      sourceCoverage: "partial",
+      knownStaleAreas: project.openBugs > 0 ? [`${project.openBugs} open bugs may invalidate current project assumptions.`] : [],
+    });
 
     return {
       slug: makeProjectSlug(project.id),
@@ -435,6 +531,7 @@ export const listKnowledgePages = (db: Database.Database): KnowledgePageSummary[
       freshness: freshnessLabel(project.lastActiveAt),
       confidence: project.openBugs > 0 ? 0.72 : 0.88,
       tags: ["project", project.status],
+      maintenance,
     } satisfies KnowledgePageSummary;
   });
 
@@ -447,6 +544,15 @@ export const listKnowledgePages = (db: Database.Database): KnowledgePageSummary[
     freshness: freshnessLabel(decision.date),
     confidence: 0.94,
     tags: decision.tags,
+    maintenance: buildWikiMaintenanceMetadata({
+      status: decision.status,
+      confidence: "high",
+      lastIndexedAt: decision.date,
+      lastValidatedAt: decision.date,
+      validatedBy: "human",
+      sourceRefs: [sourceRef("doc", decision.sourcePath, "ADR")],
+      sourceCoverage: "partial",
+    }),
   } satisfies KnowledgePageSummary));
 
   const workflowPages = workflowTemplates.map((workflow) => ({
@@ -458,6 +564,15 @@ export const listKnowledgePages = (db: Database.Database): KnowledgePageSummary[
     freshness: "Template",
     confidence: 0.76,
     tags: ["workflow", "control-plane"],
+    maintenance: buildWikiMaintenanceMetadata({
+      status: "current",
+      confidence: "medium",
+      lastIndexedAt: todayIso(),
+      lastValidatedAt: todayIso(),
+      validatedBy: "script",
+      sourceRefs: [sourceRef("code", path.join(resolveAiosRoot(), "aios-ui", "server", "aios", "catalog.ts"), "Workflow registry")],
+      sourceCoverage: "partial",
+    }),
   } satisfies KnowledgePageSummary));
 
   const agentPages = agentProfiles.map((agent) => ({
@@ -469,6 +584,15 @@ export const listKnowledgePages = (db: Database.Database): KnowledgePageSummary[
     freshness: "Registry entry",
     confidence: 0.7,
     tags: ["agent", "delegation"],
+    maintenance: buildWikiMaintenanceMetadata({
+      status: "current",
+      confidence: "medium",
+      lastIndexedAt: todayIso(),
+      lastValidatedAt: todayIso(),
+      validatedBy: "script",
+      sourceRefs: [sourceRef("code", path.join(resolveAiosRoot(), "aios-ui", "server", "aios", "catalog.ts"), "Agent registry")],
+      sourceCoverage: "partial",
+    }),
   } satisfies KnowledgePageSummary));
 
   const systemPages = loadSystems().map((system) => ({
@@ -480,6 +604,7 @@ export const listKnowledgePages = (db: Database.Database): KnowledgePageSummary[
     freshness: "Reference document",
     confidence: 0.92,
     tags: ["system"],
+    maintenance: system.maintenance,
   } satisfies KnowledgePageSummary));
   const conceptPages = loadWikiPages().map((page) => ({
     slug: page.slug,
@@ -490,6 +615,7 @@ export const listKnowledgePages = (db: Database.Database): KnowledgePageSummary[
     freshness: freshnessLabel(page.createdAt),
     confidence: page.confidence,
     tags: page.tags.length > 0 ? page.tags : ["wiki"],
+    maintenance: page.maintenance,
   } satisfies KnowledgePageSummary));
 
   return [...projectPages, ...decisionPages, ...workflowPages, ...agentPages, ...systemPages, ...conceptPages].sort((left, right) =>
@@ -566,6 +692,20 @@ const loadLatestMemory = (db: Database.Database, projectId: string): MemoryRow |
 
   return row ?? null;
 };
+
+const buildAgentPacketForPage = (
+  page: Omit<KnowledgePageDetail, "agentPacket">,
+): WikiAgentPacket =>
+  buildWikiAgentPacket({
+    slug: page.slug,
+    title: page.title,
+    kind: page.kind,
+    summary: page.summary,
+    maintenance: page.maintenance,
+    relationships: page.relationships,
+    sections: page.sections,
+    recentChanges: page.recentChanges,
+  });
 
 const loadProject = (db: Database.Database, projectId: string): ProjectRow | null => {
   return listProjectRows(db).find((project) => project.id === projectId) ?? null;
@@ -646,7 +786,26 @@ const buildProjectDetail = (db: Database.Database, projectId: string): Knowledge
     );
   }
 
-  return {
+  const maintenance = buildWikiMaintenanceMetadata({
+    status: project.status === "active" ? "current" : "unverified",
+    confidence: project.openBugs > 0 ? "medium" : "high",
+    lastIndexedAt: project.lastActiveAt ?? undefined,
+    lastValidatedAt: project.lastActiveAt ?? undefined,
+    validatedBy: "script",
+    sourceRefs: [
+      {
+        type: "code",
+        path: project.repoPath,
+        label: "Project repository",
+        lastCheckedAt: project.lastActiveAt ?? undefined,
+      },
+      ...projectDecisions.map((decision) => sourceRef("doc", decision.sourcePath, decision.title)),
+    ],
+    sourceCoverage: projectDecisions.length > 0 ? "partial" : "weak",
+    knownStaleAreas: project.openBugs > 0 ? [`${project.openBugs} open bugs may invalidate current project assumptions.`] : [],
+  });
+
+  const detail = {
     slug: makeProjectSlug(project.id),
     title: project.name,
     kind: "project",
@@ -655,6 +814,7 @@ const buildProjectDetail = (db: Database.Database, projectId: string): Knowledge
     freshness: freshnessLabel(project.lastActiveAt),
     confidence: project.openBugs > 0 ? 0.72 : 0.88,
     tags: ["project", project.status],
+    maintenance,
     references,
     relationships,
     backlinks: [
@@ -667,6 +827,11 @@ const buildProjectDetail = (db: Database.Database, projectId: string): Knowledge
     ],
     sections,
     recentChanges,
+  } satisfies Omit<KnowledgePageDetail, "agentPacket">;
+
+  return {
+    ...detail,
+    agentPacket: buildAgentPacketForPage(detail),
   };
 };
 
@@ -694,7 +859,17 @@ const buildDecisionDetail = (db: Database.Database, slug: string): KnowledgePage
     },
   ].filter((relationship) => relationship.href !== "#" && relationship.href !== "/projects/");
 
-  return {
+  const maintenance = buildWikiMaintenanceMetadata({
+    status: decision.status,
+    confidence: "high",
+    lastIndexedAt: decision.date,
+    lastValidatedAt: decision.date,
+    validatedBy: "human",
+    sourceRefs: [sourceRef("doc", decision.sourcePath, "ADR")],
+    sourceCoverage: "partial",
+  });
+
+  const detail = {
     slug: decision.slug,
     title: decision.title,
     kind: "decision",
@@ -703,6 +878,7 @@ const buildDecisionDetail = (db: Database.Database, slug: string): KnowledgePage
     freshness: freshnessLabel(decision.date),
     confidence: 0.94,
     tags: decision.tags,
+    maintenance,
     references: [
       {
         label: path.basename(decision.sourcePath),
@@ -722,6 +898,11 @@ const buildDecisionDetail = (db: Database.Database, slug: string): KnowledgePage
       },
     ],
     recentChanges: listRecentChanges(db, { limit: 4 }).filter((item) => item.kind === "decision"),
+  } satisfies Omit<KnowledgePageDetail, "agentPacket">;
+
+  return {
+    ...detail,
+    agentPacket: buildAgentPacketForPage(detail),
   };
 };
 
@@ -736,7 +917,17 @@ const buildWorkflowDetail = (db: Database.Database, key: string): KnowledgePageD
     .prepare("SELECT COUNT(*) AS count FROM orchestration_runs WHERE workflow_key = ?")
     .get(key) as { count: number };
 
-  return {
+  const maintenance = buildWikiMaintenanceMetadata({
+    status: "current",
+    confidence: "medium",
+    lastIndexedAt: todayIso(),
+    lastValidatedAt: todayIso(),
+    validatedBy: "script",
+    sourceRefs: [sourceRef("code", path.join(resolveAiosRoot(), "aios-ui", "server", "aios", "catalog.ts"), "Workflow registry")],
+    sourceCoverage: "partial",
+  });
+
+  const detail = {
     slug: makeWorkflowSlug(key),
     title: workflow.name,
     kind: "workflow",
@@ -745,6 +936,7 @@ const buildWorkflowDetail = (db: Database.Database, key: string): KnowledgePageD
     freshness: runCount.count > 0 ? `${runCount.count} logged planning runs` : "Template not used yet",
     confidence: 0.76,
     tags: ["workflow", "control-plane"],
+    maintenance,
     references: [],
     relationships: workflowRelationships(key),
     backlinks: [],
@@ -763,6 +955,11 @@ const buildWorkflowDetail = (db: Database.Database, key: string): KnowledgePageD
       },
     ],
     recentChanges: listRecentChanges(db, { limit: 4 }).filter((item) => item.kind === "packet"),
+  } satisfies Omit<KnowledgePageDetail, "agentPacket">;
+
+  return {
+    ...detail,
+    agentPacket: buildAgentPacketForPage(detail),
   };
 };
 
@@ -772,7 +969,17 @@ const buildAgentDetail = (db: Database.Database, key: string): KnowledgePageDeta
     return null;
   }
 
-  return {
+  const maintenance = buildWikiMaintenanceMetadata({
+    status: "current",
+    confidence: "medium",
+    lastIndexedAt: todayIso(),
+    lastValidatedAt: todayIso(),
+    validatedBy: "script",
+    sourceRefs: [sourceRef("code", path.join(resolveAiosRoot(), "aios-ui", "server", "aios", "catalog.ts"), "Agent registry")],
+    sourceCoverage: "partial",
+  });
+
+  const detail = {
     slug: makeAgentSlug(key),
     title: agent.name,
     kind: "agent",
@@ -781,6 +988,7 @@ const buildAgentDetail = (db: Database.Database, key: string): KnowledgePageDeta
     freshness: "Static registry entry",
     confidence: 0.7,
     tags: ["agent", "delegation"],
+    maintenance,
     references: [],
     relationships: agentBacklinks(key),
     backlinks: [],
@@ -795,6 +1003,11 @@ const buildAgentDetail = (db: Database.Database, key: string): KnowledgePageDeta
       },
     ],
     recentChanges: listRecentChanges(db, { limit: 4 }),
+  } satisfies Omit<KnowledgePageDetail, "agentPacket">;
+
+  return {
+    ...detail,
+    agentPacket: buildAgentPacketForPage(detail),
   };
 };
 
@@ -804,7 +1017,7 @@ const buildSystemDetail = (db: Database.Database, key: string): KnowledgePageDet
     return null;
   }
 
-  return {
+  const detail = {
     slug: makeSystemSlug(key),
     title: system.title,
     kind: "system",
@@ -813,6 +1026,7 @@ const buildSystemDetail = (db: Database.Database, key: string): KnowledgePageDet
     freshness: "Reference document",
     confidence: 0.92,
     tags: ["system"],
+    maintenance: system.maintenance,
     references: [
       {
         label: path.basename(system.sourcePath),
@@ -824,6 +1038,11 @@ const buildSystemDetail = (db: Database.Database, key: string): KnowledgePageDet
     backlinks: [],
     sections: system.sections,
     recentChanges: listRecentChanges(db, { limit: 5 }),
+  } satisfies Omit<KnowledgePageDetail, "agentPacket">;
+
+  return {
+    ...detail,
+    agentPacket: buildAgentPacketForPage(detail),
   };
 };
 
@@ -876,7 +1095,7 @@ const buildConceptDetail = (db: Database.Database, slug: string): KnowledgePageD
       relation: "Linked from",
     }));
 
-  return {
+  const detail = {
     slug: page.slug,
     title: page.title,
     kind: "concept",
@@ -885,6 +1104,7 @@ const buildConceptDetail = (db: Database.Database, slug: string): KnowledgePageD
     freshness: freshnessLabel(page.createdAt),
     confidence: page.confidence,
     tags: page.tags.length > 0 ? page.tags : ["wiki"],
+    maintenance: page.maintenance,
     references: [
       {
         label: path.basename(page.sourcePath),
@@ -917,6 +1137,11 @@ const buildConceptDetail = (db: Database.Database, slug: string): KnowledgePageD
           ]
         : [{ title: "Overview", body: page.summary, items: [] }],
     recentChanges: listRecentChanges(db, { limit: 5 }).filter((item) => item.kind === "decision" || item.kind === "memory"),
+  } satisfies Omit<KnowledgePageDetail, "agentPacket">;
+
+  return {
+    ...detail,
+    agentPacket: buildAgentPacketForPage(detail),
   };
 };
 

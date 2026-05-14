@@ -3,6 +3,16 @@ import Link from "next/link";
 import type { KnowledgePageDetail, KnowledgePageSummary } from "@/lib/control-plane";
 import { StatusBadge } from "@/components/primitives/StatusBadge";
 
+const maintenanceClass = (score: number): string => {
+  if (score >= 4) {
+    return "healthy";
+  }
+  if (score >= 2) {
+    return "warning";
+  }
+  return "unknown";
+};
+
 export function KnowledgeIndex({
   title,
   pages,
@@ -28,6 +38,9 @@ export function KnowledgeIndex({
             <p className="entity-meta">
               {page.kind} · {page.freshness}
             </p>
+            <p className="entity-meta">
+              {page.maintenance.status} · score {page.maintenance.maintenanceScore}/5 · {page.maintenance.confidence}
+            </p>
           </article>
         ))}
       </div>
@@ -50,6 +63,20 @@ export function KnowledgePageView({ page }: { page: KnowledgePageDetail }): Reac
         <p className="entity-meta">
           {page.freshness} · confidence {(page.confidence * 100).toFixed(0)}%
         </p>
+        <div className="toolbar">
+          <span className={`status-badge status-${maintenanceClass(page.maintenance.maintenanceScore)}`}>
+            <span className="status-dot" aria-hidden="true" />
+            {page.maintenance.status}
+          </span>
+          <span className={`status-badge status-${maintenanceClass(page.maintenance.maintenanceScore)}`}>
+            <span className="status-dot" aria-hidden="true" />
+            score {page.maintenance.maintenanceScore}/5
+          </span>
+          <span className="status-badge status-unknown">
+            <span className="status-dot" aria-hidden="true" />
+            {page.maintenance.confidence} confidence
+          </span>
+        </div>
       </section>
 
       <div className="detail-grid">
@@ -67,6 +94,60 @@ export function KnowledgePageView({ page }: { page: KnowledgePageDetail }): Reac
                 </ul>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section className="panel-card">
+          <h3 className="section-title">Maintenance</h3>
+          <div className="stack">
+            <article className="entity-card">
+              <p className="panel-title">Agent Packet</p>
+              <p className="panel-subtitle">
+                {page.agentPacket.subsystem} · {page.agentPacket.status} · score {page.agentPacket.maintenanceScore}/5 · validated{" "}
+                {page.agentPacket.lastValidated}
+              </p>
+              <ul className="detail-list">
+                {page.agentPacket.verificationChecklist.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </article>
+            <article className="entity-card">
+              <p className="panel-title">Source References</p>
+              <ul className="detail-list">
+                {page.maintenance.sourceRefs.length > 0 ? (
+                  page.maintenance.sourceRefs.map((reference) => (
+                    <li key={`${reference.type}-${reference.path}-${reference.lineStart ?? ""}`}>
+                      {reference.type}: <code>{reference.path}</code>
+                      {reference.label ? ` - ${reference.label}` : ""}
+                      {reference.lastCheckedAt ? ` (checked ${reference.lastCheckedAt})` : ""}
+                    </li>
+                  ))
+                ) : (
+                  <li>No source references are attached.</li>
+                )}
+              </ul>
+            </article>
+            <article className="entity-card">
+              <p className="panel-title">Known Stale Areas</p>
+              <ul className="detail-list">
+                {page.maintenance.knownStaleAreas.length > 0 ? (
+                  page.maintenance.knownStaleAreas.map((area) => <li key={area}>{area}</li>)
+                ) : (
+                  <li>No known stale areas are recorded.</li>
+                )}
+              </ul>
+            </article>
+            <article className="entity-card">
+              <p className="panel-title">Related Pages</p>
+              <ul className="detail-list">
+                {page.maintenance.relatedPages.length > 0 ? (
+                  page.maintenance.relatedPages.map((related) => <li key={related}>{related}</li>)
+                ) : (
+                  <li>No metadata-level related pages are recorded.</li>
+                )}
+              </ul>
+            </article>
           </div>
         </section>
 

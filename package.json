@@ -6,6 +6,8 @@
     "context:compile": "node tools/context-compile.mjs",
     "context:validate": "node tools/context-compile.mjs --validate",
     "test:context": "node --test tests/context-compiler.test.mjs",
+    "test:wiki": "node --test tests/wiki-maintenance.test.mjs",
+    "wiki:check": "node tools/wiki-check.mjs",
     "corpus:evaluate": "node scripts/aios-corpus-eval.cjs"
   }
 }

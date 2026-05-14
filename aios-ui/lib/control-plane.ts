@@ -15,6 +15,40 @@ export type KnowledgeReference = {
   detail: string;
 };
 
+export type WikiPageStatus =
+  | "current"
+  | "planned"
+  | "deprecated"
+  | "historical"
+  | "experimental"
+  | "unverified";
+
+export type WikiConfidence = "high" | "medium" | "low" | "unknown";
+
+export type WikiSourceRef = {
+  type: "code" | "doc" | "prd" | "test" | "task" | "agent_summary" | "external";
+  path: string;
+  label?: string;
+  lineStart?: number;
+  lineEnd?: number;
+  lastCheckedAt?: string;
+};
+
+export type WikiSourceCoverage = "strong" | "partial" | "weak" | "none";
+
+export type WikiMaintenanceMetadata = {
+  status: WikiPageStatus;
+  confidence: WikiConfidence;
+  maintenanceScore: number;
+  lastIndexedAt?: string;
+  lastValidatedAt?: string;
+  validatedBy?: "human" | "agent" | "script" | "unknown";
+  sourceRefs: WikiSourceRef[];
+  sourceCoverage: WikiSourceCoverage;
+  knownStaleAreas: string[];
+  relatedPages: string[];
+};
+
 export type KnowledgeSection = {
   title: string;
   body?: string;
@@ -57,6 +91,7 @@ export type KnowledgePageSummary = {
   freshness: string;
   confidence: number;
   tags: string[];
+  maintenance: WikiMaintenanceMetadata;
 };
 
 export type KnowledgePageDetail = KnowledgePageSummary & {
@@ -65,6 +100,22 @@ export type KnowledgePageDetail = KnowledgePageSummary & {
   backlinks: KnowledgeRelationship[];
   sections: KnowledgeSection[];
   recentChanges: ChangeItem[];
+  agentPacket: WikiAgentPacket;
+};
+
+export type WikiAgentPacket = {
+  subsystem: string;
+  status: WikiPageStatus;
+  confidence: WikiConfidence;
+  maintenanceScore: number;
+  lastValidated: string;
+  knownStaleAreas: string[];
+  relevantWikiPages: Array<{ title: string; href: string; status: WikiPageStatus }>;
+  sourceFilesToInspect: WikiSourceRef[];
+  applicableStandards: string[];
+  knownRisks: string[];
+  currentVsPlannedNotes: string[];
+  verificationChecklist: string[];
 };
 
 export type AgentProfile = {

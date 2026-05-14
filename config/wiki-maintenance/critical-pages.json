@@ -1,0 +1,38 @@
+{
+  "pages": [
+    {
+      "id": "system-storage",
+      "title": "Storage Contract",
+      "status": "current",
+      "lastValidatedAt": "2026-05-14",
+      "sourceRefs": [
+        { "type": "doc", "path": "docs/STORES.md", "label": "Storage contract", "lastCheckedAt": "2026-05-14" }
+      ]
+    },
+    {
+      "id": "system-cts",
+      "title": "Code Topology Service",
+      "status": "planned",
+      "lastValidatedAt": "2026-05-14",
+      "knownStaleAreas": [
+        "The wiki summary is partly design-spec based; verify current services/cts implementation before acting."
+      ],
+      "sourceRefs": [
+        { "type": "prd", "path": "docs/superpowers/specs/2026-04-08-aios-code-topology-service-design.md", "label": "CTS design spec", "lastCheckedAt": "2026-05-14" },
+        { "type": "code", "path": "services/cts/graph_store.py", "label": "CTS graph store", "lastCheckedAt": "2026-05-14" },
+        { "type": "test", "path": "tests/test_corpus_eval.py", "label": "CTS-adjacent corpus tests", "lastCheckedAt": "2026-05-14" }
+      ]
+    },
+    {
+      "id": "system-control-plane",
+      "title": "AIOS Control Plane",
+      "status": "current",
+      "lastValidatedAt": "2026-05-14",
+      "sourceRefs": [
+        { "type": "doc", "path": "docs/architecture/2026-04-18-aios-control-plane-audit.md", "label": "Control plane audit", "lastCheckedAt": "2026-05-14" },
+        { "type": "code", "path": "aios-ui/server/aios/packet-assembly.ts", "label": "Packet assembly", "lastCheckedAt": "2026-05-14" },
+        { "type": "code", "path": "bin/aios_orchestration_runtime.py", "label": "Orchestration runtime", "lastCheckedAt": "2026-05-14" }
+      ]
+    }
+  ]
+}

@@ -38,7 +38,7 @@ export default async function KnowledgePage({
   return (
     <PageShell
       title="Knowledge Index"
-      subtitle="Wikipedia-like pages for projects, decisions, workflows, agents, and system contracts."
+      subtitle="Agent context control plane for source-linked project maps, maintenance state, and task packets."
     >
       <form className="toolbar" method="get">
         <label>

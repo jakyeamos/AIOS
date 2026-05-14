@@ -110,6 +110,24 @@ AIOS now treats the requested harness durability rules as first-class context st
 - errors surfaced to agents should be machine-readable and include actionable remediation steps
 - the rules live in `global.maintainability`, `global.observability`, and `domains.agent-harnesses` so future context compiler receipts can load them for relevant work
 
+## Implemented On 2026-05-14
+
+AIOS now has the first backend-neutral agent harness test ladder slice:
+
+- `aios harness-brief --json` combines deterministic context compiler packet selection with success-criteria preview for a task before any live agent run
+- `aios harness-simulate --json` replays fake-agent fixture events into the existing orchestration run/event/briefing tables and refuses to mark claimed completion complete when tests or gates fail
+- `aios harness-replay --json` converts stored sessions, tool events, and artifacts into stable harness events for deterministic post-hoc evaluation
+- `aios harness-shadow-evaluate --json` evaluates an existing or latest session in read-only shadow mode without blocking tools, creating writebacks, or launching an agent
+- active harness enforcement remains explicitly disabled behind `aios harness-active-readiness --json` until fake lifecycle, replay, shadow, approval, and writeback evidence gates are satisfied
+
+AIOS now has a fixture-backed harness eval v0 contract:
+
+- `docs/evals/aios-harness-eval-v0.md` defines the same-model/same-task/same-budget harness comparison frame and the deterministic v0 fixture/run artifact contract
+- `docs/aios/harness-eval/config.json` registers five initial categories: context routing, false completion, approval gates, recovery, and writebacks
+- `services/harness_eval.py` scores context precision/recall, gate accuracy, success-criteria recall, trace completeness, false-completion detection, recovery evidence, and useful writeback evidence without live model calls
+- `aios harness-eval run --json` exposes the suite through the normal AIOS CLI JSON envelope
+- `tests/fixtures/harness-eval/` contains baseline and AIOS-shadow sample runs for each v0 category, covered by `tests/test_harness_eval.py`
+
 ## Implemented On 2026-05-13
 
 AIOS now has a first-class Pre-PR readiness gate backed by `pre-cr-suite-lsp`:
@@ -714,6 +732,16 @@ RTK context compression is now integrated as an AIOS system primitive:
   - `workflow_metrics` receives RTK token metrics for existing efficiency comparisons
   - `aios metadata --json` and `aios --json rtk` expose RTK rules and metrics
   - `/costs` now surfaces RTK tokens saved, reduction percent, ambiguous failures, and savings by workflow
+
+The wiki/DeepWiki-style knowledge layer now has a minimum maintenance contract for agent use:
+
+- wiki/context pages are treated as compressed maps and task-briefing inputs, not as replacements for repo files, docs, tests, validation scripts, or durable project truth
+- `aios-ui/server/aios/wiki-maintenance.ts` defines maintenance metadata, page status labels, confidence labels, typed source refs, source coverage, stale-area tracking, a 0-5 maintenance score, and compact agent packet generation
+- `/knowledge` pages now expose maintenance status, confidence, score, source references, known stale areas, related pages, and an agent packet checklist next to existing relationships/backlinks
+- `config/wiki-maintenance/critical-pages.json` tracks source refs for the built-in system wiki pages that are otherwise assembled from code
+- `pnpm wiki:check` runs `tools/wiki-check.mjs` to validate critical source refs, flag current pages without refs, warn on missing validation timestamps, and check referenced `pnpm` commands against package scripts
+- `docs/wiki-maintenance.md` documents the post-task wiki/project-truth checklist agents should apply after meaningful work
+- remaining gap: most legacy context files and vault wiki pages still need explicit `wiki_status`, `source_refs`, and validation metadata before they can be scored as agent-usable or verified
 
 ## Still Missing
 
