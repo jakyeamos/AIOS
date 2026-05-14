@@ -84,11 +84,21 @@ AIOS planning now has an explicit functionality-to-tier-one mapping layer:
   - v1 requirements
   - roadmap phases
   - tier-one gaps
+- `.planning/FUNCTIONALITY_PLAN.md` now expands that summary into detailed planning guidance for every major functionality group and the workflow library, including:
+  - current state
+  - tier-one target
+  - detailed scope
+  - implementation tracks
+  - dependencies
+  - exit evidence
 - the map makes prompt-library selection, grounded query, automation observability, CTS/repository intelligence, reusable asset lifecycle, and other current/planned surfaces explicit instead of leaving them implied inside broader requirements
 - `.planning/REQUIREMENTS.md` and `.planning/ROADMAP.md` were tightened so prompt-library selection and prompt/handoff composition are represented in the early execution loop:
   - Phase 1 routing now includes prompt/handoff-family selection
   - Phase 2 packet compilation now includes prompt assets and prompt/handoff instructions
   - operator answers now explicitly include reusable prompt/skill relevance
+- workflow contracts are now first-class planning scope instead of being spread implicitly across routing and asset lifecycle:
+  - `.planning/REQUIREMENTS.md` adds `WFLO-01` through `WFLO-04`
+  - Phase 8 now covers workflow-stage contracts, prompt/skill/tool bindings, stage-level evaluation, and workflow promotion/revision/deprecation
 - this gives the repo a clearer planning contract for “all current or planned functionality must reach tier one through requirements and roadmap coverage,” not just broad thematic phase buckets
 
 ## Implemented On 2026-05-13
