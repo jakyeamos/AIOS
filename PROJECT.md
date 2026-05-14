@@ -129,6 +129,7 @@ AIOS now has the first backend-neutral agent harness test ladder slice:
 - `aios harness-replay --json` converts stored sessions, tool events, and artifacts into stable harness events for deterministic post-hoc evaluation
 - `aios harness-shadow-evaluate --json` evaluates an existing or latest session in read-only shadow mode without blocking tools, creating writebacks, or launching an agent
 - active harness enforcement remains explicitly disabled behind `aios harness-active-readiness --json` until fake lifecycle, replay, shadow, approval, and writeback evidence gates are satisfied
+- the runtime lifecycle vocabulary now accepts blocked, waiting-for-user, waiting-for-tool, and failed-validation states for harness and control-plane tests
 
 AIOS now has a fixture-backed harness eval v0 contract:
 
