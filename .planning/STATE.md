@@ -41,6 +41,7 @@
 | 2026-05-14 | Add machine readability precedence rule | Planned in `.planning/quick/260514-34l-add-agents-md-rule-that-machine-readabil` and corrected in `.planning/quick/260514-37u-move-machine-readability-rule-from-agent`; tiered context standards now require parseable structure, stable identifiers, explicit states, deterministic labels, and actionable remediation fields to take precedence over human-friendly presentation. |
 | 2026-05-14 | Backfill AIOS wiki maintenance metadata | Planned in `.planning/quick/260514-38f-backfill-aios-wiki-maintenance-metadata-`; high-risk context routes now have explicit wiki status, confidence, source refs, validation metadata, stale areas, and related pages. |
 | 2026-05-14 | Extend wiki maintenance checks to personal corpus refs | Planned in `.planning/quick/260514-3hx-extend-wiki-maintenance-checks-to-person`; `pnpm wiki:check` now validates corpus-backed refs against `aios.db` and vault paths when available. |
+| 2026-05-16 | Wire agent rules into runtime behavior | Planned in `.planning/quick/260516-agent-rules-runtime-wiring`; `config/agent-rules.md` now loads into session-start packets, context compiler receipts, workflow execution artifacts, and synced skill source metadata. |
 
 ---
-*Last updated: 2026-05-14 during quick task 260514-3hx*
+*Last updated: 2026-05-16 during quick task 260516-agent-rules-runtime-wiring*

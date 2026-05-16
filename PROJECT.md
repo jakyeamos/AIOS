@@ -82,6 +82,15 @@ AIOS tiered context standards now make machine readability a top-level precedenc
 - `aios/context/domains/agent-harnesses.md` narrows the rule for packets, prompts, workflows, states, IDs, and remediation steps
 - human-readable text remains allowed as clarification, but must not replace, obscure, or contradict machine-readable data
 
+## Implemented On 2026-05-16
+
+AIOS agent rules in `config/agent-rules.md` are now part of runtime behavior:
+
+- session start packets inject the parsed agent-rule summary before learned active rules
+- context compilation treats `config/agent-rules.md` as an immutable global context source and records it in receipts
+- workflow execution loads the same rules into normalized prompts and report artifacts
+- installed skill sync now preserves `source_path` and `installed_name` metadata so workflow skill reports can trace synced skills back to their installed `SKILL.md`
+
 ## Implemented On 2026-05-14
 
 AIOS now has a fixture-backed harness eval v0 contract:
@@ -771,6 +780,8 @@ RTK context compression is now integrated as an AIOS system primitive:
   - `docs/architecture/2026-04-27-aios-rtk-context-compression.md`
 - lifecycle hook integration:
   - `hook-session-start.py` creates RTK schema and injects active compression policy
+  - prompt, focus, and stop hooks now recover a missing session row from the current hook payload when `SessionStart` was not observed, so lifecycle events are captured instead of dropped as unknown sessions
+  - `hook-stop.py` treats empty stdin as a recoverable lifecycle edge by falling back to `logs/current_session` before closing or skipping an already closed session
   - `hook-post-tool-use.py` compresses Bash tool responses, records telemetry, and surfaces compact output
   - `hook-stop.py` logs per-session RTK savings in Stop event metadata
 - workflow/runtime integration:
