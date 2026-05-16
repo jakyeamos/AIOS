@@ -1,0 +1,89 @@
+from __future__ import annotations
+
+import importlib.util
+import sqlite3
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "bin"))
+
+from services.agent_rules import agent_rules_context, load_agent_rules  # noqa: E402
+
+
+def _load_session_start_module():
+    module_path = ROOT / "bin" / "hook-session-start.py"
+    spec = importlib.util.spec_from_file_location("hook_session_start", module_path)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _load_sync_installed_skills_module():
+    module_path = ROOT / "bin" / "sync-installed-skills.py"
+    spec = importlib.util.spec_from_file_location("sync_installed_skills", module_path)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_agent_rules_loader_parses_config_rules() -> None:
+    rules = load_agent_rules()
+
+    assert [rule.title for rule in rules[:2]] == [
+        "Surface conflicts, don't average them",
+        "Read before you write",
+    ]
+    assert "Before adding code in a file" in rules[1].body
+    assert "Fail loud" in agent_rules_context()
+
+
+def test_session_packet_includes_agent_rules(monkeypatch) -> None:
+    module = _load_session_start_module()
+    monkeypatch.setattr(module, "vault_search", lambda _args: {"results": [], "count": 0})
+    monkeypatch.setattr(module, "get_active_rules", lambda _conn, max_rules=3: [])
+    monkeypatch.setattr(module, "get_review_queue_hint", lambda _conn: None)
+    monkeypatch.setattr(module, "get_open_bug", lambda _conn, _project_id: None)
+    monkeypatch.setattr(module, "get_cts_context", lambda _cwd, _objective: None)
+    monkeypatch.setattr(module, "preview_applicable_criteria", lambda **_kwargs: {"criteria": []})
+
+    packet = module.generate_packet(
+        project_name="AIOS",
+        project_id="project-1",
+        conn=sqlite3.connect(":memory:"),
+        cwd=str(ROOT),
+        objective="Wire agent rules into session startup",
+    )
+
+    assert "**AIOS agent rules:**" in packet
+    assert "Read before you write" in packet
+    assert "Fail loud" in packet
+
+
+def test_synced_installed_skill_preserves_source_metadata(tmp_path: Path) -> None:
+    module = _load_sync_installed_skills_module()
+    skill_dir = tmp_path / "example-skill"
+    skill_dir.mkdir()
+    skill_md = skill_dir / "SKILL.md"
+    skill_md.write_text(
+        """---
+name: example-skill
+description: Generate focused implementation output
+---
+
+Body.
+""",
+        encoding="utf-8",
+    )
+
+    spec = module.skill_from_file(skill_dir)
+
+    assert spec is not None
+    assert spec["source_path"] == str(skill_md)
+    assert spec["installed_name"] == "example-skill"
+    assert not any(key.startswith("_") for key in spec)

@@ -168,6 +168,8 @@ def test_generated_executor_skill_affects_execution(tmp_path: Path) -> None:
                         "failure_conditions": [],
                         "side_effects": [],
                         "execution_mode": "heuristic",
+                        "source_path": "/tmp/skills/debug/SKILL.md",
+                        "installed_name": "debug-root-cause",
                     },
                     {
                         "key": "scope_check",
@@ -197,5 +199,9 @@ def test_generated_executor_skill_affects_execution(tmp_path: Path) -> None:
 
     assert report["status"] == "completed"
     assert "Debug failing runtime checks" in report["artifacts"]["result_text"]
+    assert any(rule["title"] == "Read before you write" for rule in report["artifacts"]["agent_rules"])
+    assert "Agent rules:" in report["artifacts"]["normalized_prompt"]
     generate_stage = next(stage for stage in report["stages"] if stage["kind"] == "generate")
     assert generate_stage["skills"][0]["output_keys"] == ["evidence", "result_text"]
+    assert generate_stage["skills"][0]["source_path"] == "/tmp/skills/debug/SKILL.md"
+    assert generate_stage["skills"][0]["installed_name"] == "debug-root-cause"

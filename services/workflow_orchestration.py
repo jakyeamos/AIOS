@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from services.agent_rules import load_agent_rules
 from services.execution_strategy import StrategySelectionError, compile_execution_strategy
 from services.rtk_integration import load_compression_rules
 
@@ -50,6 +51,8 @@ class SkillSpec:
     failure_conditions: tuple[str, ...]
     side_effects: tuple[str, ...]
     execution_mode: str
+    source_path: str | None = None
+    installed_name: str | None = None
 
 
 @dataclass(frozen=True)
@@ -155,6 +158,8 @@ def load_skill_registry(path: Path | None = None) -> dict[str, SkillSpec]:
             ),
             side_effects=tuple(str(row) for row in item.get("side_effects", []) if isinstance(row, str)),
             execution_mode=str(item.get("execution_mode", "deterministic")),
+            source_path=str(item["source_path"]) if item.get("source_path") else None,
+            installed_name=str(item["installed_name"]) if item.get("installed_name") else None,
         )
     return registry
 
@@ -274,6 +279,9 @@ def _normalize_prompt(
         )
     if template_id:
         normalized += f"\nTemplate: {template_id}"
+    agent_rules = state.get("agent_rules") or []
+    if agent_rules:
+        normalized += "\nAgent rules: " + "; ".join(str(rule.get("title")) for rule in agent_rules[:6])
     state["template_id"] = template_id
     state["execution_strategy"] = strategy_bundle
     state["normalized_prompt"] = normalized
@@ -550,6 +558,10 @@ def execute_workflow(
         "objective": context.objective,
         "workflow_key": workflow.key,
         "rtk_mode": workflow_rtk_mode,
+        "agent_rules": [
+            {"title": rule.title, "body": rule.body}
+            for rule in load_agent_rules()
+        ],
     }
     stages_report: list[dict[str, Any]] = []
     validations: list[dict[str, Any]] = []
@@ -574,6 +586,8 @@ def execute_workflow(
                     "execution_mode": spec.execution_mode,
                     "status": "completed",
                     "output_keys": sorted(output.keys()),
+                    "source_path": spec.source_path,
+                    "installed_name": spec.installed_name,
                 }
             )
             if validation is not None:
@@ -638,6 +652,7 @@ def execute_workflow(
             "normalized_prompt": run_state.get("normalized_prompt"),
             "style_profile": run_state.get("style_profile"),
             "evidence_notes": run_state.get("evidence_notes", []),
+            "agent_rules": run_state.get("agent_rules", []),
             "draft_text": run_state.get("draft_text"),
             "humanized_text": run_state.get("humanized_text"),
             "result_text": run_state.get("result_text"),

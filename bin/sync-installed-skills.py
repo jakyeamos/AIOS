@@ -148,8 +148,8 @@ def skill_from_file(skill_dir: Path) -> dict | None:
         "failure_conditions": [],
         "side_effects": [],
         "execution_mode": "heuristic",
-        "_source": str(skill_md),
-        "_installed_name": raw_name,
+        "source_path": str(skill_md),
+        "installed_name": raw_name,
     }
 
 
@@ -190,7 +190,7 @@ def main() -> None:
             if key not in found:
                 found[key] = spec
                 if args.verbose:
-                    print(f"  found: {key!r} ({spec['_source']})")
+                    print(f"  found: {key!r} ({spec['source_path']})")
 
     if not found:
         print("No installed skills found.")
@@ -206,8 +206,7 @@ def main() -> None:
     updated: list[str] = []
 
     for key, spec in found.items():
-        # Strip internal metadata before writing
-        clean = {k: v for k, v in spec.items() if not k.startswith("_")}
+        clean = dict(spec)
 
         if key in existing_keys:
             idx = existing_keys[key]
@@ -215,6 +214,8 @@ def main() -> None:
             if (
                 old.get("purpose") != clean["purpose"]
                 or old.get("allowed_stages") != clean["allowed_stages"]
+                or old.get("source_path") != clean["source_path"]
+                or old.get("installed_name") != clean["installed_name"]
             ):
                 skills[idx] = {**old, **clean}  # preserve any manual fields
                 updated.append(key)

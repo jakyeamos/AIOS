@@ -28,6 +28,7 @@ from aios_orchestration_runtime import (  # noqa: E402
 )
 from aios_paths import get_vault_root  # noqa: E402
 
+from services.agent_rules import agent_rules_context  # noqa: E402
 from services.rtk_integration import ensure_rtk_schema, load_compression_rules  # noqa: E402
 
 DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
@@ -189,6 +190,11 @@ def generate_packet(
 ) -> str:
     """Assemble a compact session context packet."""
     parts = []
+
+    # 0. Repo-level agent rules are the highest-level behavioral contract for AIOS runs.
+    rules_context = agent_rules_context(max_rules=6)
+    if rules_context:
+        parts.append(rules_context)
 
     # 1. Project note — extract Current Focus section only
     note_result = vault_search(["--note", project_name])

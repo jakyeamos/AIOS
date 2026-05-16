@@ -25,6 +25,7 @@ const PRIORITY_AUTHORITY = {
   deprecated: 0.05,
 };
 const ALWAYS_LOAD_IDS = new Set(["context.index", "context.router", "context.schema", "handoffs.latest"]);
+const AGENT_RULES_CONTEXT_ID = "config.agent-rules";
 
 const SIGNALS = [
   {
@@ -264,6 +265,10 @@ export async function compileContext({ task, contextRoot, write = true, outputRo
     throw new Error("--task is required");
   }
   const files = await loadContextFiles(contextRoot);
+  const agentRulesFile = await loadAgentRulesContextFile(contextRoot);
+  if (agentRulesFile) {
+    files.push(agentRulesFile);
+  }
   const classification = classifyTask(task);
   const scored = scoreFiles(files, classification, task);
   const byRelativePath = new Map(files.map((file) => [file.relativePath, file]));
@@ -424,6 +429,35 @@ async function loadContextFiles(contextRoot) {
     });
   }
   return loaded;
+}
+
+async function loadAgentRulesContextFile(contextRoot) {
+  const candidate = path.resolve(contextRoot, "..", "..", "config", "agent-rules.md");
+  let content = "";
+  try {
+    content = await readFile(candidate, "utf8");
+  } catch {
+    return null;
+  }
+  const body = content.replace(/^# .+?\n+/, "").trim();
+  return {
+    filePath: candidate,
+    absolutePath: candidate,
+    relativePath: "config/agent-rules.md",
+    frontmatter: {
+      id: AGENT_RULES_CONTEXT_ID,
+      title: "AIOS Agent Rules",
+      tier: "global",
+      scope: ["all_projects"],
+      priority: "immutable",
+      status: "active",
+      summary: "Behavioral rules loaded for all AIOS agent sessions and workflow execution.",
+      applies_when: ["all_tasks"],
+      tags: ["agent", "rules", "workflow", "session"],
+    },
+    body,
+    token_cost_estimate: estimateTokens(content),
+  };
 }
 
 async function walkMarkdown(root) {

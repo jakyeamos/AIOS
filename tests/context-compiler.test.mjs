@@ -63,8 +63,13 @@ test("selects harness context for backend-neutral fake replay and shadow evaluat
   const selectedIds = result.selected_context_files.map((file) => file.id);
   assert(selectedIds.includes("domains.agent-harnesses"));
   assert(selectedIds.includes("features.context-compiler"));
+  assert(selectedIds.includes("config.agent-rules"));
+  assert(
+    result.selected_context_files.some((file) => file.path === "config/agent-rules.md"),
+  );
   assert(selectedIds.includes("packets.workflow.approval-gates"));
   assert(selectedIds.includes("packets.testing.no-mock-echo"));
+  assert.match(result.context_receipt, /config\/agent-rules\.md/);
   assert(!selectedIds.includes("projects.soundscape"));
 });
 
