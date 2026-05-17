@@ -7,10 +7,10 @@
 
 ### Project And Intent Routing
 
-- [ ] **ROUT-01**: User can submit a vague goal and AIOS can identify the target project or explicitly surface ambiguity requiring clarification
-- [ ] **ROUT-02**: AIOS can classify the requested task type and select the smallest sufficient workflow for it
-- [ ] **ROUT-03**: AIOS can explain why a workflow route was selected over nearby alternatives
-- [ ] **ROUT-04**: AIOS can identify the recommended agent or harness and the appropriate prompt/handoff family for the selected workflow, with reasoning
+- [x] **ROUT-01**: User can submit a vague goal and AIOS can identify the target project or explicitly surface ambiguity requiring clarification
+- [x] **ROUT-02**: AIOS can classify the requested task type and select the smallest sufficient workflow for it
+- [x] **ROUT-03**: AIOS can explain why a workflow route was selected over nearby alternatives
+- [x] **ROUT-04**: AIOS can identify the recommended agent or harness and the appropriate prompt/handoff family for the selected workflow, with reasoning
 
 ### Context Compilation
 
@@ -96,10 +96,10 @@ None currently. The full operating-system vision is intentionally being planned 
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ROUT-01 | Phase 1: Project, Workflow, And Prompt Routing | Pending |
-| ROUT-02 | Phase 1: Project, Workflow, And Prompt Routing | Pending |
-| ROUT-03 | Phase 1: Project, Workflow, And Prompt Routing | Pending |
-| ROUT-04 | Phase 1: Project, Workflow, And Prompt Routing | Pending |
+| ROUT-01 | Phase 1: Project, Workflow, And Prompt Routing | Complete |
+| ROUT-02 | Phase 1: Project, Workflow, And Prompt Routing | Complete |
+| ROUT-03 | Phase 1: Project, Workflow, And Prompt Routing | Complete |
+| ROUT-04 | Phase 1: Project, Workflow, And Prompt Routing | Complete |
 | CONT-01 | Phase 2: Context, Query, And Briefing Compilation | Pending |
 | CONT-02 | Phase 2: Context, Query, And Briefing Compilation | Pending |
 | CONT-03 | Phase 2: Context, Query, And Briefing Compilation | Pending |

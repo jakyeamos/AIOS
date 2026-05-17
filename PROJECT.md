@@ -101,6 +101,13 @@ AIOS now treats orchestrated sub-agent development as the default strategy for m
 - `docs/workflows/orchestrated-subagent-development.md` documents the workflow, eval plan, and follow-up implementation path for persistent telemetry and approval-gated policy updates
 - `docs/evals/aios-harness-eval-v0.md` now includes the model-routing eval extension for learning cheapest reliable model/reasoning defaults over time
 
+AIOS now has a first-class service-layer route contract for serious-work intent:
+
+- `services/project_inventory.py` can now list registered projects across sparse or full project schemas and rank candidate projects from objective text, working-directory evidence, and explicit project overrides
+- `services/task_routing.py` turns a vague objective into a machine-readable route result with project outcome (`exact`, `likely`, `ambiguous`, or `unsupported`), selected workflow, nearby workflow alternatives, prompt-family recommendation, backend recommendation, and blocked-reason semantics
+- `tests/test_project_inventory.py` and `tests/test_task_routing.py` now lock exact-match, ambiguity, unsupported, implementation-route, failure-recovery-route, audit-route, and prompt-fallback behavior
+- this establishes the route contract for Phase 1, but `aios start-work` still needs to adopt and persist it before AIOS can claim routed serious work flows through the main entrypoint by default
+
 ## Implemented On 2026-05-14
 
 AIOS now has a fixture-backed harness eval v0 contract:
