@@ -42,6 +42,7 @@ const parseJsonArray = <T>(raw: string, fallback: T): T => {
 };
 
 const estimateTokens = (value: string): number => Math.max(24, Math.ceil(value.split(/\s+/).filter(Boolean).length * 1.35));
+const GOVERNED_HANDOFF_CONTRACT_VERSION = "governed-handoff-v1";
 
 const selectWithinBudget = (
   candidates: RankedCandidate[],
@@ -313,6 +314,29 @@ export const assembleRankedPacket = (
     .slice(0, 4)
     .map((item) => `Ask for more on ${item.sourceKind}: ${item.label}`)
     .concat("Use explore mode only for ambiguous or research-heavy tasks.");
+  const workflowStageItems = [
+    "1. Parse request into concrete scope, project boundaries, and non-goals.",
+    "2. Normalize the handoff so workflow constraints and reusable policies stay visible.",
+    "3. Validate scope before broadening context or touching code.",
+    `Deliverables: ${workflow.deliverables.join("; ")}`,
+  ];
+  const promptContractItems = [
+    `Use packet contract version ${GOVERNED_HANDOFF_CONTRACT_VERSION} before requesting more context.`,
+    `Default workflow: ${workflow.name}.`,
+    `Agent guardrails: ${agent.guardrails.join(" ")}`,
+    "Summarize intended edits and risks before implementation.",
+    "Request targeted expansion instead of broad corpus search when packet evidence is insufficient.",
+  ];
+  const requiredCheckItems = [
+    `Workflow validation: ${workflow.validation.join("; ")}`,
+    "Run the exact modified path before claiming completion when shared logic or side effects are involved.",
+    "Do not mark the run complete while blocker-level criteria remain unresolved.",
+  ];
+  const closeoutItems = [
+    "Record unresolved risks, follow-up work, and reusable writebacks before closeout.",
+    "Keep packet, run, and invocation artifacts linked so later grounded query can reuse them.",
+    "Treat this packet as the default handoff source and only expand with traceable evidence.",
+  ];
 
   const sections: PacketSection[] = [
     {
@@ -324,6 +348,16 @@ export const assembleRankedPacket = (
         `Workflow: ${workflow.name}`,
         `Agent: ${agent.name}`,
       ],
+    },
+    {
+      title: "Workflow Stages",
+      body: workflow.summary,
+      items: workflowStageItems,
+    },
+    {
+      title: "Prompt And Handoff Contract",
+      body: "The default packet is an execution contract, not a generic context summary.",
+      items: promptContractItems,
     },
     {
       title: "Top Relevant Topics",
@@ -350,6 +384,16 @@ export const assembleRankedPacket = (
         ...likelyFiles.slice(0, 4),
         ...bySection("Likely Files / Code Topology").map((candidate) => candidate.body),
       ],
+    },
+    {
+      title: "Required Checks And Escalations",
+      body: "Verification and escalation are part of the governed packet contract.",
+      items: requiredCheckItems,
+    },
+    {
+      title: "Closeout And Writeback",
+      body: "Completion requires durable writeback and unresolved-risk capture.",
+      items: closeoutItems,
     },
     {
       title: "Expansion Hints",

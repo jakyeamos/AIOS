@@ -431,6 +431,7 @@ export const planTask = (
       backendKey,
       policyMode: assembledPacket.policyMode,
       tokenBudget: assembledPacket.tokenBudget,
+      packetContractVersion: "governed-handoff-v1",
     }),
     runId,
   );

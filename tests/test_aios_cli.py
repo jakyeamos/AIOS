@@ -1014,10 +1014,15 @@ def test_start_work_creates_packet_and_links_current_session(tmp_path: Path, cap
     assert data["run"]["session_id"] == "s1"
     assert data["run"]["project_id"] == "p1"
     assert data["packet"]["policy_mode"] == "compact-ranked"
+    assert data["packet"]["contract_version"] == "governed-handoff-v1"
     assert "Audit AIOS onboarding and ship a scoped fix with tests" in data["packet"]["markdown"]
-    assert "Use explicit handshakes" in data["packet"]["markdown"]
-    assert "Route serious work through AIOS" in data["packet"]["markdown"]
-    assert "Agent routing" in data["packet"]["markdown"]
+    assert "Prompt And Handoff Contract" in data["packet"]["markdown"]
+    assert "Required Checks And Escalations" in data["packet"]["markdown"]
+    assert "Closeout And Writeback" in data["packet"]["markdown"]
+    section_titles = [section["title"] for section in data["packet"]["sections"]]
+    assert "Workflow Stages" in section_titles
+    assert "Prompt And Handoff Contract" in section_titles
+    assert "Required Checks And Escalations" in section_titles
     assert data["invocation"]["session_id"] == "s1"
     assert data["route"]["project"]["selected_project_id"] == "p1"
     assert data["route"]["selected_workflow"]["workflow_key"] == "implementation-delivery"
@@ -1044,6 +1049,8 @@ def test_start_work_creates_packet_and_links_current_session(tmp_path: Path, cap
     selection_trace = json.loads(packet_row[3])
     assert selection_trace["query"] == "Audit AIOS onboarding and ship a scoped fix with tests"
     assert selection_trace["route"]["route_id"] == data["run"]["route_id"]
+    assert selection_trace["packet_contract"]["version"] == "governed-handoff-v1"
+    assert selection_trace["packet_contract"]["workflow_key"] == "implementation-delivery"
     assert selection_trace["matched_objects"][0]["title"] == "Agent routing"
     assert selection_trace["token_budget"] == 900
     event_count = conn.execute(

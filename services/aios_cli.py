@@ -51,6 +51,7 @@ from services.rtk_integration import (
 )
 from services.success_criteria import preview_applicable_criteria
 from services.task_routing import route_objective
+from services.workflow_orchestration import load_workflow_registry
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG_ROOT = REPO_ROOT / "config"
@@ -122,6 +123,7 @@ WORKFLOW_LEARNING_EVIDENCE_TYPES = [
     "bug_quality_evidence",
     "no_learning_signal",
 ]
+GOVERNED_HANDOFF_CONTRACT_VERSION = "governed-handoff-v1"
 
 
 class CLIError(Exception):
@@ -926,6 +928,139 @@ def _recent_writeback_rows(conn: sqlite3.Connection, project_id: str | None, lim
     return [dict(row) for row in rows]
 
 
+def _workflow_contract(workflow_key: str) -> dict[str, Any] | None:
+    try:
+        workflow = load_workflow_registry().get(workflow_key)
+    except ValueError:
+        return None
+    if workflow is None:
+        return None
+    return {
+        "workflow_key": workflow.key,
+        "workflow_family": workflow.workflow_family,
+        "purpose": workflow.purpose,
+        "output_contract": list(workflow.output_contract),
+        "required_validations": list(workflow.required_validations),
+        "stages": [
+            {
+                "key": stage.key,
+                "kind": stage.kind,
+                "required_skills": list(stage.required_skills),
+            }
+            for stage in workflow.stages
+        ],
+    }
+
+
+def _criteria_instruction_lines(criteria_rows: Sequence[dict[str, Any]]) -> list[str]:
+    lines: list[str] = []
+    for row in criteria_rows[:8]:
+        criterion_id = str(row.get("id", "")).strip()
+        if not criterion_id:
+            continue
+        title = str(row.get("title", criterion_id)).strip()
+        severity = "blocker" if row.get("blocking") else "advisory"
+        path = str(row.get("path", "")).strip()
+        detail = f"{criterion_id} [{severity}]: {title}"
+        if path:
+            detail = f"{detail} ({path})"
+        lines.append(detail)
+    return lines or ["No success criteria matched this objective."]
+
+
+def _workflow_stage_lines(workflow_contract: dict[str, Any] | None) -> list[str]:
+    if workflow_contract is None:
+        return ["Workflow stages unavailable; use the routed workflow key as the governing contract."]
+
+    lines: list[str] = []
+    for index, stage in enumerate(workflow_contract.get("stages", []), start=1):
+        if not isinstance(stage, dict):
+            continue
+        stage_key = str(stage.get("key", "")).strip() or f"stage-{index}"
+        stage_kind = str(stage.get("kind", "")).strip() or "unknown"
+        required_skills = stage.get("required_skills") or []
+        if isinstance(required_skills, list) and required_skills:
+            skill_text = ", ".join(str(skill) for skill in required_skills)
+        else:
+            skill_text = "none"
+        lines.append(f"{index}. {stage_key} [{stage_kind}] using skills: {skill_text}.")
+
+    output_contract = workflow_contract.get("output_contract") or []
+    if isinstance(output_contract, list) and output_contract:
+        lines.append("Deliverables: " + "; ".join(str(item) for item in output_contract))
+    return lines or ["Workflow stages unavailable; use the routed workflow key as the governing contract."]
+
+
+def _prompt_contract_lines(route_payload: dict[str, Any], backend_key: str) -> list[str]:
+    prompt = route_payload.get("prompt_recommendation")
+    workflow = route_payload.get("selected_workflow")
+    backend = route_payload.get("backend_recommendation")
+
+    prompt_family = None
+    template_id = None
+    route_status = None
+    prompt_rationale = None
+    if isinstance(prompt, dict):
+        prompt_family = prompt.get("prompt_family")
+        template_id = prompt.get("template_id")
+        route_status = prompt.get("route_status")
+        prompt_rationale = prompt.get("rationale")
+
+    workflow_key = None
+    if isinstance(workflow, dict):
+        workflow_key = workflow.get("workflow_key")
+
+    backend_label = None
+    if isinstance(backend, dict):
+        backend_label = backend.get("selected_backend_label")
+
+    lines = [
+        f"Use packet contract version {GOVERNED_HANDOFF_CONTRACT_VERSION} before opening broad exploration.",
+        (
+            f"Prompt family: {prompt_family or 'unresolved'}"
+            + (f" via template {template_id}" if template_id else "")
+            + (f" [{route_status}]" if route_status else "")
+            + "."
+        ),
+        f"Workflow handoff target: {workflow_key or 'unresolved'} on backend {backend_key}{f' ({backend_label})' if backend_label else ''}.",
+        "Summarize intended edits, non-goals, and risks before making code changes.",
+        "Ask for targeted packet expansion when the current packet lacks a required source, file surface, or policy.",
+    ]
+    if prompt_rationale:
+        lines.append(f"Prompt rationale: {prompt_rationale}")
+    return lines
+
+
+def _required_check_lines(
+    workflow_contract: dict[str, Any] | None,
+    criteria_rows: Sequence[dict[str, Any]],
+) -> list[str]:
+    lines: list[str] = []
+    if workflow_contract is not None:
+        validations = workflow_contract.get("required_validations") or []
+        if isinstance(validations, list) and validations:
+            lines.append("Workflow validations: " + ", ".join(str(item) for item in validations))
+    blocker_ids = [str(row.get("id")) for row in criteria_rows if row.get("blocking") and row.get("id")]
+    if blocker_ids:
+        lines.append("Blocker criteria to satisfy before completion: " + ", ".join(blocker_ids))
+    lines.extend(
+        [
+            "Run the exact modified path before claiming completion when shared logic or side effects are involved.",
+            "Do not mark the run complete while blocker-level criteria are failing without an accepted tradeoff record.",
+            "Escalate when project resolution, workflow fit, or packet evidence becomes ambiguous during execution.",
+        ]
+    )
+    return lines
+
+
+def _closeout_lines() -> list[str]:
+    return [
+        "Update the relevant project truth and memory surfaces after meaningful state changes.",
+        "Record unresolved risks, follow-up work, and approval-gated writeback proposals before closeout.",
+        "Keep run, invocation, and session identifiers linked through verification and stop-hook evaluation.",
+    ]
+
+
 def _packet_sections(
     conn: sqlite3.Connection,
     *,
@@ -934,34 +1069,54 @@ def _packet_sections(
     project_name: str,
     workflow_key: str,
     agent_key: str,
+    route_payload: dict[str, Any],
+    backend_key: str,
 ) -> list[dict[str, Any]]:
-    sections: list[dict[str, Any]] = [
-        {
-            "title": "Objective",
-            "items": [
-                objective,
-                f"Project: {project_name}",
-                f"Workflow: {workflow_key}",
-                f"Agent profile: {agent_key}",
-            ],
-        }
-    ]
-
+    workflow_contract = _workflow_contract(workflow_key)
     criteria = preview_applicable_criteria(
         project_id=project_id,
         project_name=project_name,
         objective=objective,
     )
     criteria_rows = criteria.get("criteria", [])
+    sections: list[dict[str, Any]] = [
+        {
+            "title": "Objective Summary",
+            "body": "Use this governed handoff packet before implementation or broad exploration.",
+            "items": [
+                objective,
+                f"Project: {project_name}",
+                f"Workflow: {workflow_key}",
+                f"Agent profile: {agent_key}",
+                f"Task family: {route_payload.get('task_family') or 'unclassified'}",
+            ],
+        }
+    ]
+
+    sections.append(
+        {
+            "title": "Workflow Stages",
+            "body": (
+                str(workflow_contract.get("purpose"))
+                if workflow_contract is not None and workflow_contract.get("purpose")
+                else "Follow the routed workflow stages in order and preserve artifacts at each gate."
+            ),
+            "items": _workflow_stage_lines(workflow_contract),
+        }
+    )
+
+    sections.append(
+        {
+            "title": "Prompt And Handoff Contract",
+            "body": "The routed prompt family and backend are part of the governed packet contract.",
+            "items": _prompt_contract_lines(route_payload, backend_key),
+        }
+    )
+
     sections.append(
         {
             "title": "Applicable Success Criteria",
-            "items": [
-                f"{row['id']} ({'blocker' if row['blocking'] else 'advisory'})"
-                for row in criteria_rows[:8]
-                if isinstance(row, dict) and row.get("id")
-            ]
-            or ["No success criteria matched this objective."],
+            "items": _criteria_instruction_lines(criteria_rows if isinstance(criteria_rows, list) else []),
         }
     )
 
@@ -1006,12 +1161,20 @@ def _packet_sections(
 
     sections.append(
         {
-            "title": "Routing Contract",
-            "items": [
-                "Use this packet before implementation.",
-                "Keep the run, invocation, and session identifiers linked through closeout.",
-                "Session stop must evaluate success criteria and record writeback proposals.",
-            ],
+            "title": "Required Checks And Escalations",
+            "body": "Verification and escalation conditions are part of the default serious-work contract.",
+            "items": _required_check_lines(
+                workflow_contract,
+                criteria_rows if isinstance(criteria_rows, list) else [],
+            ),
+        }
+    )
+
+    sections.append(
+        {
+            "title": "Closeout And Writeback",
+            "body": "Completion requires governed writeback, not just a passing implementation diff.",
+            "items": _closeout_lines(),
         }
     )
     return sections
@@ -1184,6 +1347,8 @@ def _start_work_payload(
         project_name=project_name,
         workflow_key=workflow_key,
         agent_key=agent_key,
+        route_payload=route_payload,
+        backend_key=backend.key,
     )
     packet_markdown = _packet_markdown(sections)
     retrieval_trace = _packet_retrieval_trace(
@@ -1193,6 +1358,22 @@ def _start_work_payload(
         token_budget=900,
     )
     retrieval_trace["route"] = route_payload
+    retrieval_trace["packet_contract"] = {
+        "version": GOVERNED_HANDOFF_CONTRACT_VERSION,
+        "workflow_key": workflow_key,
+        "prompt_family": (
+            route_payload.get("prompt_recommendation", {}).get("prompt_family")
+            if isinstance(route_payload.get("prompt_recommendation"), dict)
+            else None
+        ),
+        "template_id": (
+            route_payload.get("prompt_recommendation", {}).get("template_id")
+            if isinstance(route_payload.get("prompt_recommendation"), dict)
+            else None
+        ),
+        "stage_count": sum(1 for section in sections if section.get("title") == "Workflow Stages"),
+        "required_check_section": "Required Checks And Escalations",
+    }
     status = "in_progress" if linked_session_id else "ready"
     invocation_status = "running" if linked_session_id else "prepared"
 
@@ -1382,6 +1563,8 @@ def _start_work_payload(
             "id": packet_id,
             "policy_mode": "compact-ranked",
             "markdown": packet_markdown,
+            "sections": sections,
+            "contract_version": GOVERNED_HANDOFF_CONTRACT_VERSION,
         },
         "invocation": {
             "id": invocation_id,
