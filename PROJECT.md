@@ -782,6 +782,7 @@ RTK context compression is now integrated as an AIOS system primitive:
   - `hook-session-start.py` creates RTK schema and injects active compression policy
   - prompt, focus, and stop hooks now recover a missing session row from the current hook payload when `SessionStart` was not observed, so lifecycle events are captured instead of dropped as unknown sessions
   - `hook-stop.py` treats empty stdin as a recoverable lifecycle edge by falling back to `logs/current_session` before closing or skipping an already closed session
+  - hook lifecycle recovery has focused regression coverage for prompt-submit recovery, stop recovery, and empty-stdin stop fallback against real hook entrypoints
   - `hook-post-tool-use.py` compresses Bash tool responses, records telemetry, and surfaces compact output
   - `hook-stop.py` logs per-session RTK savings in Stop event metadata
 - workflow/runtime integration:
