@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "suite_id": "personalized-humanizer-core",
+  "scorecard": {
+    "meaning_preservation": "0-5, higher is better",
+    "voice_match": "0-5, higher is better",
+    "context_fit": "0-5, higher is better",
+    "specificity": "0-5, higher is better",
+    "over_personalization_risk": "0-5, lower is better",
+    "generic_ai_feel": "0-5, lower is better",
+    "verbosity": "0-5, lower is better"
+  },
+  "cases": [
+    {
+      "id": "cold-outreach",
+      "mode": "professional_outreach",
+      "input": "Hi, I am interested in your work and would like to connect. I am building AI tools and would appreciate any advice.",
+      "expectations": ["clear ask", "specific without invented facts", "personable"]
+    },
+    {
+      "id": "linkedin-project-post",
+      "mode": "project_build_in_public",
+      "input": "I built a new evaluation workflow today. It helps agents check their own work before calling something done.",
+      "expectations": ["systems-thinking", "practical", "not promotional"]
+    },
+    {
+      "id": "codex-implementation-prompt",
+      "mode": "prompt_prd",
+      "input": "Implement the feature. Check the current code first. Add tests and docs. Do not delete existing behavior.",
+      "expectations": ["structured", "constraints preserved", "handoff-ready"]
+    },
+    {
+      "id": "academic-reflection",
+      "mode": "academic_reflective",
+      "input": "I think the most important part of the reading was how it showed that tools change what people notice.",
+      "expectations": ["gradual reasoning", "concrete example", "not over-polished"]
+    },
+    {
+      "id": "creative-narrative",
+      "mode": "creative_narrative",
+      "input": "He stood outside the house and realized he did not know whether he wanted to go in or leave forever.",
+      "expectations": ["tone preserved", "emotional realism", "no generic cinematic polish"]
+    },
+    {
+      "id": "technical-project-update",
+      "mode": "project_build_in_public",
+      "input": "The context compiler now records why it selected each packet and what it skipped.",
+      "expectations": ["technical specificity", "workflow framing", "concise"]
+    },
+    {
+      "id": "generic-ai-paragraph",
+      "mode": "project_build_in_public",
+      "input": "This groundbreaking update marks a pivotal step forward, showcasing our commitment to innovation and unlocking new possibilities.",
+      "expectations": ["remove AI phrasing", "specificity preserved where possible", "no startup copy"]
+    },
+    {
+      "id": "do-not-overwrite",
+      "mode": "prompt_prd",
+      "input": "Audit first. Then implement only the smallest scoped fix. Preserve existing behavior unless a test proves it is wrong.",
+      "expectations": ["minimal rewrite", "structure preserved", "constraints preserved"]
+    }
+  ]
+}

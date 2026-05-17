@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "profile_id": "personal-voice-default",
+  "version": "2026-05-17.0",
+  "status": "active",
+  "owner": "local-user",
+  "last_updated": "2026-05-17T00:00:00Z",
+  "privacy_policy": {
+    "learn_style_not_facts": true,
+    "store_excerpts_by_default": false,
+    "max_reference_chars": 900,
+    "require_explicit_cross_mode_corpus_use": true,
+    "sensitive_fact_rule": "Do not add personal facts unless they are present in the input or explicitly requested."
+  },
+  "global_voice": {
+    "confidence": 0.72,
+    "traits": [
+      "Conversational but thoughtful.",
+      "Systems-oriented and interested in workflow, leverage, evaluation, iteration, and implementation.",
+      "Prefers concrete usefulness over vague inspiration.",
+      "Writes detailed, direct, handoff-ready prompts when delegating work.",
+      "Uses exploratory language when thinking through ideas.",
+      "Values preserving original intent and avoiding over-sanitized voice."
+    ],
+    "style_rules": [
+      {
+        "id": "global-concrete-usefulness",
+        "rule": "Prefer concrete stakes, actions, and constraints over vague motivational phrasing.",
+        "confidence": 0.78,
+        "provenance": [
+          {
+            "source_type": "user_supplied_requirement",
+            "source_id": "2026-05-17-humanizer-request",
+            "note": "User explicitly rejected shallow casual rewrites and generic startup copy."
+          }
+        ]
+      },
+      {
+        "id": "global-preserve-structure",
+        "rule": "Keep useful structure when the original text is a prompt, PRD, audit, handoff, or implementation request.",
+        "confidence": 0.82,
+        "provenance": [
+          {
+            "source_type": "user_supplied_requirement",
+            "source_id": "2026-05-17-humanizer-request",
+            "note": "User asked not to over-humanize technical prompts or erase useful structure."
+          }
+        ]
+      }
+    ],
+    "anti_style_rules": [
+      {
+        "id": "global-no-startup-bro",
+        "rule": "Do not convert writing into generic startup, growth, or hustle-coded copy.",
+        "confidence": 0.95,
+        "provenance": [
+          {
+            "source_type": "user_supplied_requirement",
+            "source_id": "2026-05-17-humanizer-request",
+            "note": "Explicit constraint from user."
+          }
+        ]
+      },
+      {
+        "id": "global-no-invented-facts",
+        "rule": "Do not add personal details, credentials, emotions, metrics, or claims not present in the input.",
+        "confidence": 0.96,
+        "provenance": [
+          {
+            "source_type": "user_supplied_requirement",
+            "source_id": "2026-05-17-humanizer-request",
+            "note": "Explicit hallucination and privacy constraint."
+          }
+        ]
+      }
+    ]
+  },
+  "modes": {
+    "professional_outreach": {
+      "label": "Professional Outreach",
+      "confidence": 0.66,
+      "allowed_source_modes": ["professional_outreach"],
+      "tone": "personable, specific, ambitious, grounded",
+      "style_rules": [
+        "Keep the ask clear and low-friction.",
+        "Sound like a real person, not a campaign template.",
+        "Use specificity from the input instead of invented admiration."
+      ],
+      "anti_style_rules": [
+        "No exaggerated flattery.",
+        "No unsupported background claims.",
+        "No over-polished corporate phrasing."
+      ],
+      "examples": {
+        "positive": [],
+        "negative": []
+      }
+    },
+    "project_build_in_public": {
+      "label": "Project / Build-in-Public Voice",
+      "confidence": 0.7,
+      "allowed_source_modes": ["project_build_in_public", "prompt_prd"],
+      "tone": "reflective, practical, slightly conversational, systems-oriented",
+      "style_rules": [
+        "Frame project work through workflow, tooling, evaluation, and leverage.",
+        "Let the thinking show without turning the post into an essay.",
+        "Use concrete implementation details when available."
+      ],
+      "anti_style_rules": [
+        "No vague founder-thread energy.",
+        "No fake certainty about impact.",
+        "No decorative jargon."
+      ],
+      "examples": {
+        "positive": [],
+        "negative": []
+      }
+    },
+    "academic_reflective": {
+      "label": "Academic / Reflective Voice",
+      "confidence": 0.64,
+      "allowed_source_modes": ["academic_reflective"],
+      "tone": "thoughtful, explanatory, concrete, gradual",
+      "style_rules": [
+        "Preserve the reasoning path.",
+        "Use concrete examples to carry abstract points.",
+        "Keep polish without removing first-person reflection when appropriate."
+      ],
+      "anti_style_rules": [
+        "No generic thesis-statement filler.",
+        "No inflated significance claims.",
+        "No flattening into neutral textbook prose."
+      ],
+      "examples": {
+        "positive": [],
+        "negative": []
+      }
+    },
+    "prompt_prd": {
+      "label": "Prompt / PRD Voice",
+      "confidence": 0.82,
+      "allowed_source_modes": ["prompt_prd", "project_build_in_public"],
+      "tone": "direct, structured, execution-oriented, audit-first",
+      "style_rules": [
+        "Keep requirements explicit and handoff-ready.",
+        "Use bullets and numbered constraints when they improve execution.",
+        "Include acceptance criteria and verification expectations when present."
+      ],
+      "anti_style_rules": [
+        "No conversational softening that weakens requirements.",
+        "No silent deletion of constraints.",
+        "No extra implementation scope."
+      ],
+      "examples": {
+        "positive": [],
+        "negative": []
+      }
+    },
+    "creative_narrative": {
+      "label": "Creative / Narrative Voice",
+      "confidence": 0.58,
+      "allowed_source_modes": ["creative_narrative"],
+      "tone": "emotionally specific, continuity-aware, philosophical when earned",
+      "style_rules": [
+        "Preserve tone, continuity, and character intent before polishing sentences.",
+        "Keep emotional realism and texture.",
+        "Let narration keep its rhythm instead of smoothing every edge."
+      ],
+      "anti_style_rules": [
+        "No generic cinematic prose.",
+        "No flattening into summary.",
+        "No professional/outreach style leakage."
+      ],
+      "examples": {
+        "positive": [],
+        "negative": []
+      }
+    }
+  },
+  "candidate_updates": []
+}

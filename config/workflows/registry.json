@@ -229,6 +229,71 @@
           ]
         }
       ]
+    },
+    {
+      "key": "personalized-humanizer",
+      "name": "Personalized Humanizer",
+      "workflow_family": "writing_transformation",
+      "purpose": "Transform writing toward a versioned personal voice profile using bounded corpus evidence, privacy guardrails, and feedback-gated profile learning.",
+      "trigger_hints": [
+        "humanize this",
+        "make this sound like me",
+        "personal voice",
+        "rewrite this outreach",
+        "build in public post",
+        "codex prompt",
+        "creative prose"
+      ],
+      "output_contract": [
+        "task classification",
+        "bounded corpus evidence refs",
+        "compact voice packet",
+        "meaning-preserving rewrite",
+        "style and quality scorecard",
+        "optional debug/audit notes",
+        "feedback-gated profile update proposal"
+      ],
+      "required_validations": [
+        "personalized_humanizer_quality_checker"
+      ],
+      "stages": [
+        {
+          "key": "classify_writing_task",
+          "kind": "parse_request",
+          "required_skills": [
+            "personalized_humanizer_classifier"
+          ]
+        },
+        {
+          "key": "build_voice_context",
+          "kind": "enrich_context",
+          "required_skills": [
+            "personalized_voice_retriever",
+            "personalized_voice_packet_builder"
+          ]
+        },
+        {
+          "key": "transform_text",
+          "kind": "transform",
+          "required_skills": [
+            "personalized_humanizer_transformer"
+          ]
+        },
+        {
+          "key": "validate_rewrite",
+          "kind": "validate",
+          "required_skills": [
+            "personalized_humanizer_quality_checker"
+          ]
+        },
+        {
+          "key": "finalize",
+          "kind": "finalize",
+          "required_skills": [
+            "personalized_humanizer_feedback_collector"
+          ]
+        }
+      ]
     }
   ]
 }

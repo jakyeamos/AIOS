@@ -343,6 +343,153 @@
       "execution_mode": "heuristic"
     },
     {
+      "key": "personalized_humanizer_classifier",
+      "purpose": "Classify writing tasks into personalized voice modes before corpus retrieval or rewriting.",
+      "allowed_stages": [
+        "parse_request"
+      ],
+      "input_schema": {
+        "text": "string",
+        "requested_mode": "string|null"
+      },
+      "output_schema": {
+        "mode": "string"
+      },
+      "invariants": [
+        "Mode selection must be explainable.",
+        "Creative and professional contexts must remain separated unless explicitly allowed."
+      ],
+      "failure_conditions": [
+        "Unknown requested mode."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic"
+    },
+    {
+      "key": "personalized_voice_retriever",
+      "purpose": "Retrieve bounded, mode-compatible personal voice references for the personalized humanizer.",
+      "allowed_stages": [
+        "enrich_context"
+      ],
+      "input_schema": {
+        "mode": "string",
+        "corpus_refs": "object[]"
+      },
+      "output_schema": {
+        "evidence_refs": "object[]"
+      },
+      "invariants": [
+        "Prefer approved user-written examples.",
+        "Do not store sensitive excerpt text by default.",
+        "Do not use creative corpus for professional outreach unless explicitly allowed."
+      ],
+      "failure_conditions": [
+        "Retrieved examples violate mode boundaries."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic"
+    },
+    {
+      "key": "personalized_voice_packet_builder",
+      "purpose": "Build a compact task-specific voice packet from the versioned personal voice profile and evidence refs.",
+      "allowed_stages": [
+        "enrich_context"
+      ],
+      "input_schema": {
+        "mode": "string",
+        "profile": "object",
+        "evidence_refs": "object[]"
+      },
+      "output_schema": {
+        "voice_packet": "object"
+      },
+      "invariants": [
+        "Voice packet must include style rules, anti-style rules, confidence, and provenance.",
+        "Voice packet must be compact enough for agent use."
+      ],
+      "failure_conditions": [
+        "Requested mode is missing from the profile."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic"
+    },
+    {
+      "key": "personalized_humanizer_transformer",
+      "purpose": "Rewrite text toward the selected personal voice mode while preserving meaning, structure, and factual claims.",
+      "allowed_stages": [
+        "transform"
+      ],
+      "input_schema": {
+        "text": "string",
+        "voice_packet": "object"
+      },
+      "output_schema": {
+        "humanized_text": "string"
+      },
+      "invariants": [
+        "Preserve factual meaning and original intent.",
+        "Do not add unsupported personal details.",
+        "Do not over-humanize technical prompts."
+      ],
+      "failure_conditions": [
+        "Meaning drift or unsupported claim introduction."
+      ],
+      "side_effects": [],
+      "execution_mode": "heuristic"
+    },
+    {
+      "key": "personalized_humanizer_quality_checker",
+      "purpose": "Score personalized humanizer output for meaning preservation, voice match, context fit, specificity, and risk.",
+      "allowed_stages": [
+        "validate"
+      ],
+      "input_schema": {
+        "input_text": "string",
+        "output_text": "string",
+        "voice_packet": "object"
+      },
+      "output_schema": {
+        "scorecard": "object",
+        "risks": "string[]"
+      },
+      "invariants": [
+        "Quality checks must include hallucination and over-personalization risk.",
+        "Debug output must explain selected profile and applied rules."
+      ],
+      "failure_conditions": [
+        "Scorecard is missing required dimensions."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic"
+    },
+    {
+      "key": "personalized_humanizer_feedback_collector",
+      "purpose": "Record approved, edited, or rejected outputs as evidence for candidate profile updates.",
+      "allowed_stages": [
+        "finalize"
+      ],
+      "input_schema": {
+        "run_id": "string",
+        "verdict": "string",
+        "notes": "string"
+      },
+      "output_schema": {
+        "feedback_id": "string",
+        "candidate_update": "object|null"
+      },
+      "invariants": [
+        "Do not silently mutate canonical voice profiles.",
+        "Profile update proposals require evidence before approval."
+      ],
+      "failure_conditions": [
+        "Feedback directly changes active profile rules."
+      ],
+      "side_effects": [
+        "Writes feedback and candidate profile update records."
+      ],
+      "execution_mode": "deterministic"
+    },
+    {
       "key": "remotion_best_practices",
       "purpose": "Best practices for Remotion - Video creation in React",
       "allowed_stages": [

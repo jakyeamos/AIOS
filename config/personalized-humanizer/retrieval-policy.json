@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "default_max_examples": 4,
+  "default_max_chars_per_example": 900,
+  "prefer_source_quality": ["approved_final", "user_written", "edited_by_user", "draft"],
+  "disallow_cross_mode_by_default": true,
+  "redaction": {
+    "store_excerpt_text": false,
+    "store_source_paths": true,
+    "store_hashes": true,
+    "strip_email_addresses": true,
+    "strip_phone_numbers": true
+  },
+  "mode_boundaries": {
+    "professional_outreach": {
+      "blocked_source_modes": ["creative_narrative"]
+    },
+    "creative_narrative": {
+      "blocked_source_modes": ["professional_outreach"]
+    }
+  }
+}

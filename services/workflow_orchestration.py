@@ -6,11 +6,21 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from services.agent_rules import load_agent_rules
-from services.execution_strategy import StrategySelectionError, compile_execution_strategy
-from services.execution_strategy import recommend_execution_surface
+from services.execution_strategy import (
+    StrategySelectionError,
+    compile_execution_strategy,
+    recommend_execution_surface,
+)
+from services.personalized_humanizer import (
+    VoiceMode,
+    build_voice_packet,
+    classify_writing_task,
+    score_quality,
+    transform_text,
+)
 from services.rtk_integration import load_compression_rules
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -265,8 +275,22 @@ def rank_workflow_candidates(
             score += 2
             if implementation_tokens & objective_tokens or recovery_tokens & objective_tokens:
                 score -= 2
-        if workflow.workflow_family == "content_generation" and {"paper", "essay", "citations", "academic"} & objective_tokens:
+        if workflow.workflow_family == "content_generation" and {
+            "paper",
+            "essay",
+            "citations",
+            "academic",
+        } & objective_tokens:
             score += 2
+        if workflow.workflow_family == "writing_transformation" and {
+            "humanize",
+            "rewrite",
+            "voice",
+            "outreach",
+            "prompt",
+            "creative",
+        } & objective_tokens:
+            score += 3
         if score <= 0:
             continue
         candidates.append(
@@ -678,6 +702,75 @@ def _execute_skill(
     if skill.key == "personal_corpus_humanizer":
         humanized = _humanize_draft(state)
         return {"humanized_text": humanized}, None
+
+    if skill.key == "personalized_humanizer_classifier":
+        mode = classify_writing_task(context.objective)
+        state["personalized_humanizer_mode"] = mode
+        return {"mode": mode}, None
+
+    if skill.key == "personalized_voice_retriever":
+        state["personalized_humanizer_examples"] = []
+        return {"evidence_refs": []}, None
+
+    if skill.key == "personalized_voice_packet_builder":
+        mode = cast(
+            VoiceMode,
+            state.get("personalized_humanizer_mode") or classify_writing_task(context.objective),
+        )
+        profile_path = ROOT / "config" / "personalized-humanizer" / "profile.json"
+        profile = _load_json(profile_path)
+        packet = build_voice_packet(profile, mode=mode, examples=[])
+        packet_json = {
+            "mode": packet.mode,
+            "profile_version": packet.profile_version,
+            "tone": packet.tone,
+            "rules": list(packet.rules),
+            "anti_rules": list(packet.anti_rules),
+            "evidence_refs": list(packet.evidence_refs),
+            "confidence": packet.confidence,
+        }
+        state["personalized_voice_packet"] = packet
+        state["personalized_voice_packet_json"] = packet_json
+        return {"voice_packet": packet_json}, None
+
+    if skill.key == "personalized_humanizer_transformer":
+        packet = state.get("personalized_voice_packet")
+        if packet is None:
+            profile = _load_json(ROOT / "config" / "personalized-humanizer" / "profile.json")
+            mode = classify_writing_task(context.objective)
+            packet = build_voice_packet(profile, mode=mode, examples=[])
+            state["personalized_voice_packet"] = packet
+        humanized = transform_text(context.objective, packet)
+        state["humanized_text"] = humanized
+        return {"humanized_text": humanized}, None
+
+    if skill.key == "personalized_humanizer_quality_checker":
+        packet = state.get("personalized_voice_packet")
+        if packet is None:
+            profile = _load_json(ROOT / "config" / "personalized-humanizer" / "profile.json")
+            mode = classify_writing_task(context.objective)
+            packet = build_voice_packet(profile, mode=mode, examples=[])
+            state["personalized_voice_packet"] = packet
+        scorecard, risks = score_quality(
+            context.objective,
+            str(state.get("humanized_text") or context.objective),
+            packet,
+        )
+        state["personalized_humanizer_scorecard"] = scorecard
+        state["personalized_humanizer_risks"] = list(risks)
+        return {}, {
+            "validation_key": skill.key,
+            "passed": scorecard["meaning_preservation"] >= 3
+            and scorecard["over_personalization_risk"] <= 1,
+            "issues": list(risks),
+            "scorecard": scorecard,
+        }
+
+    if skill.key == "personalized_humanizer_feedback_collector":
+        return {
+            "feedback_policy": "Collect user approval, edits, or rejection as evidence; do not mutate profile.",
+            "candidate_update_required": False,
+        }, None
 
     if skill.key == "structure_checker":
         result = _validate_structure(str(state.get("humanized_text") or state.get("draft_text") or ""))

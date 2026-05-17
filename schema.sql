@@ -729,3 +729,54 @@ CREATE TABLE workflow_synthesis_proposals (
 );
 CREATE INDEX idx_workflow_synthesis_proposals_status
   ON workflow_synthesis_proposals(status, created_at DESC);
+CREATE TABLE personalized_humanizer_runs (
+  id TEXT PRIMARY KEY,
+  created_at TEXT NOT NULL,
+  profile_id TEXT NOT NULL,
+  profile_version TEXT NOT NULL,
+  mode TEXT NOT NULL,
+  input_hash TEXT NOT NULL,
+  output_hash TEXT NOT NULL,
+  voice_packet_json TEXT NOT NULL DEFAULT '{}',
+  scorecard_json TEXT NOT NULL DEFAULT '{}',
+  risks_json TEXT NOT NULL DEFAULT '[]',
+  debug_json TEXT NOT NULL DEFAULT '{}'
+);
+CREATE INDEX idx_personalized_humanizer_runs_created
+  ON personalized_humanizer_runs(created_at DESC);
+CREATE TABLE personalized_humanizer_feedback (
+  id TEXT PRIMARY KEY,
+  run_id TEXT REFERENCES personalized_humanizer_runs(id),
+  created_at TEXT NOT NULL,
+  verdict TEXT NOT NULL,
+  user_revision_hash TEXT,
+  notes TEXT,
+  evidence_json TEXT NOT NULL DEFAULT '[]'
+);
+CREATE INDEX idx_personalized_humanizer_feedback_run
+  ON personalized_humanizer_feedback(run_id, created_at DESC);
+CREATE TABLE personalized_humanizer_profile_updates (
+  id TEXT PRIMARY KEY,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  profile_id TEXT NOT NULL,
+  profile_version TEXT NOT NULL,
+  mode TEXT,
+  status TEXT NOT NULL,
+  proposed_rule TEXT NOT NULL,
+  rationale TEXT NOT NULL,
+  evidence_json TEXT NOT NULL DEFAULT '[]',
+  decision_note TEXT,
+  decided_at TEXT,
+  decided_by TEXT
+);
+CREATE INDEX idx_personalized_humanizer_updates_status
+  ON personalized_humanizer_profile_updates(status, created_at DESC);
+CREATE TABLE personalized_humanizer_eval_results (
+  id TEXT PRIMARY KEY,
+  created_at TEXT NOT NULL,
+  suite_id TEXT NOT NULL,
+  profile_version TEXT NOT NULL,
+  results_json TEXT NOT NULL DEFAULT '[]',
+  summary_json TEXT NOT NULL DEFAULT '{}'
+);
