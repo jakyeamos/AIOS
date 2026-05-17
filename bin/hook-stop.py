@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from aios_orchestration_runtime import (
+from aios_orchestration_runtime import (  # noqa: E402
     ensure_runtime_schema,
     evaluate_run_consistency,
     insert_writeback,
@@ -27,8 +27,9 @@ from aios_orchestration_runtime import (
     transition_run,
     update_invocation,
 )
+from hook_lifecycle import ensure_session, load_hook_payload  # noqa: E402
 
-from services.rtk_integration import ensure_rtk_schema, rtk_metrics_log
+from services.rtk_integration import ensure_rtk_schema, rtk_metrics_log  # noqa: E402
 
 DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
@@ -220,11 +221,12 @@ def get_project_name(conn: sqlite3.Connection, project_id: str | None) -> str | 
 
 
 def main() -> None:
-    try:
-        data = json.loads(sys.stdin.read())
-    except Exception as e:
-        log(f"failed to parse stdin: {e}")
-        sys.exit(0)
+    data = load_hook_payload(
+        log=log,
+        hook_name="stop",
+        logs_dir=os.path.dirname(LOG),
+        allow_current_session_fallback=True,
+    )
 
     session_id = data.get("session_id", "")
     if not session_id:
@@ -232,6 +234,15 @@ def main() -> None:
 
     try:
         conn = sqlite3.connect(DB)
+        ensure_session(
+            conn,
+            session_id=session_id,
+            cwd=data.get("cwd"),
+            objective=data.get("objective"),
+            source_event="Stop",
+            log=log,
+        )
+        conn.commit()
 
         cur = conn.execute(
             "SELECT id, project_id, started_at, cwd, objective, status FROM sessions WHERE id = ?",

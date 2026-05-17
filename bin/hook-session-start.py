@@ -6,7 +6,6 @@ Generates a compact context packet and injects it into the session.
 Claude Code passes JSON via stdin.
 """
 
-import hashlib
 import json
 import os
 import sqlite3
@@ -27,6 +26,7 @@ from aios_orchestration_runtime import (  # noqa: E402
     update_invocation,
 )
 from aios_paths import get_vault_root  # noqa: E402
+from hook_lifecycle import get_or_create_project, load_hook_payload  # noqa: E402
 
 from services.agent_rules import agent_rules_context  # noqa: E402
 from services.rtk_integration import ensure_rtk_schema, load_compression_rules  # noqa: E402
@@ -56,21 +56,6 @@ def log(msg: str) -> None:
             f.write(f"{ts} [session-start] {msg}\n")
     except Exception:
         pass
-
-
-def get_or_create_project(conn: sqlite3.Connection, cwd: str) -> str:
-    cur = conn.execute("SELECT id FROM projects WHERE repo_path = ?", (cwd,))
-    row = cur.fetchone()
-    if row:
-        return row[0]
-    project_id = hashlib.sha256(cwd.encode()).hexdigest()[:16]
-    name = os.path.basename(cwd.rstrip("/")) or cwd
-    conn.execute(
-        "INSERT OR IGNORE INTO projects (id, name, repo_path, obsidian_path, status) VALUES (?, ?, ?, ?, ?)",
-        (project_id, name, cwd, "", "active"),
-    )
-    conn.commit()
-    return project_id
 
 
 def get_project_name(conn: sqlite3.Connection, project_id: str) -> str:
@@ -295,11 +280,7 @@ def generate_packet(
 
 
 def main() -> None:
-    try:
-        data = json.loads(sys.stdin.read())
-    except Exception as e:
-        log(f"failed to parse stdin: {e}")
-        sys.exit(0)
+    data = load_hook_payload(log=log, hook_name="session-start")
 
     session_id = data.get("session_id", "")
     cwd = data.get("cwd", os.getcwd())

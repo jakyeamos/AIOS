@@ -15,8 +15,9 @@ import uuid
 from datetime import UTC, datetime
 
 from aios_paths import get_vault_root, rewrite_legacy_vault_path
+from hook_lifecycle import ensure_session, load_hook_payload
 
-DB = os.path.expanduser("~/AIOS/data/aios.db")
+DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
 VAULT_SEARCH = os.path.expanduser("~/AIOS/bin/vault-search.py")
 POLICY_PATH = os.path.expanduser("~/AIOS/config/retrieval-policy.json")
@@ -483,11 +484,7 @@ def get_project_name(conn: sqlite3.Connection, session_id: str) -> str:
 
 
 def main() -> None:
-    try:
-        data = json.loads(sys.stdin.read())
-    except Exception as e:
-        log(f"failed to parse stdin: {e}")
-        sys.exit(0)
+    data = load_hook_payload(log=log, hook_name="prompt-submit")
 
     session_id = data.get("session_id", "")
     prompt = data.get("prompt", "")
@@ -501,11 +498,14 @@ def main() -> None:
 
     try:
         conn = sqlite3.connect(DB)
-        cur = conn.execute("SELECT id FROM sessions WHERE id = ?", (session_id,))
-        if not cur.fetchone():
-            log(f"unknown session {session_id}, skipping")
-            conn.close()
-            sys.exit(0)
+        ensure_session(
+            conn,
+            session_id=session_id,
+            cwd=data.get("cwd"),
+            objective=prompt.strip().splitlines()[0][:160].strip() if prompt.strip() else None,
+            source_event="UserPromptSubmit",
+            log=log,
+        )
 
         prompt_hash = hashlib.sha256(prompt.encode()).hexdigest()[:32]
         classification = classify(prompt)

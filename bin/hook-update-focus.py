@@ -14,8 +14,9 @@ import sys
 from datetime import UTC, datetime
 
 from aios_paths import get_vault_subpath
+from hook_lifecycle import ensure_session, load_hook_payload
 
-DB = os.path.expanduser("~/AIOS/data/aios.db")
+DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
 PROJECTS_DIR = str(get_vault_subpath("03 Projects"))
 NAME_MAP_PATH = os.path.expanduser("~/AIOS/config/project-name-map.json")
@@ -72,7 +73,7 @@ def get_git_commits(cwd: str, since: str) -> list[str]:
             text=True,
             timeout=5,
         )
-        lines = [l.strip() for l in result.stdout.strip().splitlines() if l.strip()]
+        lines = [line.strip() for line in result.stdout.strip().splitlines() if line.strip()]
         return lines
     except Exception:
         return []
@@ -123,11 +124,7 @@ def update_note(note_path: str, commits: list[str]) -> None:
 
 
 def main() -> None:
-    try:
-        data = json.loads(sys.stdin.read())
-    except Exception as e:
-        log(f"failed to parse stdin: {e}")
-        sys.exit(0)
+    data = load_hook_payload(log=log, hook_name="update-focus")
 
     session_id = data.get("session_id", "")
     if not session_id:
@@ -135,6 +132,14 @@ def main() -> None:
 
     try:
         conn = sqlite3.connect(DB)
+        ensure_session(
+            conn,
+            session_id=session_id,
+            cwd=data.get("cwd"),
+            source_event="UpdateFocus",
+            log=log,
+        )
+        conn.commit()
         cur = conn.execute(
             "SELECT s.cwd, s.started_at, p.name, p.repo_path FROM sessions s "
             "LEFT JOIN projects p ON s.project_id = p.id WHERE s.id = ?",
