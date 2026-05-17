@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-05-14
+Last updated: 2026-05-17
 
 ## What AIOS Is
 
@@ -90,6 +90,16 @@ AIOS agent rules in `config/agent-rules.md` are now part of runtime behavior:
 - context compilation treats `config/agent-rules.md` as an immutable global context source and records it in receipts
 - workflow execution loads the same rules into normalized prompts and report artifacts
 - installed skill sync now preserves `source_path` and `installed_name` metadata so workflow skill reports can trace synced skills back to their installed `SKILL.md`
+
+## Implemented On 2026-05-17
+
+AIOS now treats orchestrated sub-agent development as the default strategy for most non-trivial work:
+
+- `config/agent-rules.md` and `AGENTS.md` define the durable rule, including direct-execution exceptions for tiny local work
+- `config/execution-strategies/model-routing-policy.json` records the configurable routing table for direct execution, subagent preference signals, agent roles, model tiers, reasoning levels, telemetry fields, benchmark classes, marginal-value learning, and promotion statuses
+- `services/execution_strategy.py` and `bin/validate-execution-strategies.py` validate the routing policy alongside the existing execution-strategy catalog
+- `docs/workflows/orchestrated-subagent-development.md` documents the workflow, eval plan, and follow-up implementation path for persistent telemetry and approval-gated policy updates
+- `docs/evals/aios-harness-eval-v0.md` now includes the model-routing eval extension for learning cheapest reliable model/reasoning defaults over time
 
 ## Implemented On 2026-05-14
 
