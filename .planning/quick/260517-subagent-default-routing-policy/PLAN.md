@@ -24,4 +24,4 @@ Make sub-agent-driven development a durable AIOS default for non-trivial work wh
 3. [x] Extend validation/tests so the policy is machine-checkable.
 4. [x] Update durable agent/context/docs guidance.
 5. [x] Run targeted validation.
-6. [ ] Commit implementation, then update project truth in a follow-up commit.
+6. [x] Commit implementation, then update project truth in a follow-up commit.
