@@ -125,6 +125,16 @@ AIOS now has a first reusable personalized humanizer skill:
 - `docs/architecture/personalized-humanizer.md` documents usage, retrieval, profile versioning, feedback promotion, evals, privacy boundaries, and debug inspection
 - `tests/test_personalized_humanizer.py` covers the five required writing modes, mode-boundary retrieval, privacy-preserving provenance, prompt structure preservation, feedback proposal gating, eval cases, and workflow execution
 
+AIOS now has an `agentize` intent compiler skill:
+
+- `services/agentize.py` defines the `AgentizedTaskPacket` schema and deterministic request transformation pipeline for task classification, execution mode selection, targeted context planning, standards attachment, success criteria attachment, verification planning, output contracts, and prompt-pattern evidence
+- `skills/agentize/SKILL.md` documents the reusable skill contract and reframes prompt templates as supporting evidence instead of the primary routing abstraction
+- `config/workflows/registry.json` and `config/workflows/skills.json` register the `agentize` workflow and `agentize_intent_compiler` skill for AIOS workflow routing
+- `schema.sql` and `data/schema.sql` add `agentize_evaluations` so outcome quality, tests, user correction, follow-up rate, and major-repair signals can improve packet generation over time
+- `docs/architecture/agentize-skill.md` records the audit, architecture decision, packet contract, evaluation loop, compatibility notes, and migration plan
+- `prompts/README.md` now describes the prompt library as a pattern/evidence corpus that `agentize` can use without requiring static request-to-template mapping
+- `tests/test_agentize.py` covers packet structure, classification, execution-mode selection, context planning, standards attachment, verification planning, prompt-library demotion, evaluation logging, and workflow/skill registry binding
+
 ## Implemented On 2026-05-14
 
 AIOS now has a fixture-backed harness eval v0 contract:
