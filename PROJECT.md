@@ -108,6 +108,13 @@ AIOS now has a first-class service-layer route contract for serious-work intent:
 - `tests/test_project_inventory.py` and `tests/test_task_routing.py` now lock exact-match, ambiguity, unsupported, implementation-route, failure-recovery-route, audit-route, and prompt-fallback behavior
 - this establishes the route contract for Phase 1, but `aios start-work` still needs to adopt and persist it before AIOS can claim routed serious work flows through the main entrypoint by default
 
+AIOS `start-work` now uses and persists the Phase 1 route contract:
+
+- `services/aios_cli.py` now routes serious-work objectives before packet creation, deriving project/workflow/agent/backend defaults from the route layer while still allowing explicit overrides
+- blocked project outcomes now stop `start-work` before run or packet creation, returning an explicit `route-blocked` CLI error instead of silently guessing
+- `orchestration_runs` and `briefing_packets` now persist `route_id` plus machine-readable route metadata so later packet/query/operator surfaces can inspect routing decisions without recomputing them
+- `tests/test_aios_cli.py` and `tests/test_orchestration_runtime.py` now cover route-aware packet creation, persisted route metadata, and ambiguity blocking in the main control-plane entrypoint
+
 AIOS now has a first reusable personalized humanizer skill:
 
 - `skills/personalized-humanizer/SKILL.md` defines the local skill contract for voice matching, context modes, privacy boundaries, debug/audit output, and feedback-gated learning
