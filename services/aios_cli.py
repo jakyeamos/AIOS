@@ -82,13 +82,22 @@ CANONICAL_RUN_STATUSES = [
     "waiting_for_user",
     "waiting_for_tool",
     "failed_validation",
+    "partial",
+    "needs_follow_up",
     "completed",
     "failed",
     "canceled",
     "superseded",
 ]
-ATTENTION_RUN_STATUSES = ["blocked", "waiting_for_user", "waiting_for_tool", "failed_validation"]
-TERMINAL_RUN_STATUSES = ["completed", "failed", "canceled", "superseded"]
+ATTENTION_RUN_STATUSES = [
+    "blocked",
+    "waiting_for_user",
+    "waiting_for_tool",
+    "failed_validation",
+    "partial",
+    "needs_follow_up",
+]
+TERMINAL_RUN_STATUSES = ["partial", "needs_follow_up", "completed", "failed", "canceled", "superseded"]
 KNOWLEDGE_OBJECT_CONTRACT_FIELDS = [
     "stable_id",
     "kind",
@@ -1617,7 +1626,14 @@ def _lifecycle_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
             """
             SELECT run_id, to_status, summary, reason_json, created_at
             FROM orchestration_run_events
-            WHERE to_status IN ('blocked', 'waiting_for_user', 'waiting_for_tool', 'failed_validation')
+            WHERE to_status IN (
+                'blocked',
+                'waiting_for_user',
+                'waiting_for_tool',
+                'failed_validation',
+                'partial',
+                'needs_follow_up'
+            )
             ORDER BY created_at DESC
             LIMIT 20
             """

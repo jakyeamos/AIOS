@@ -273,6 +273,66 @@ def test_runtime_transition_records_failed_reason_metadata(runtime_db: Path, tmp
     conn.close()
 
 
+def test_runtime_transition_records_partial_closeout_metadata(runtime_db: Path, tmp_path: Path) -> None:
+    from aios_orchestration_runtime import ensure_runtime_schema, transition_run
+
+    repo_path = tmp_path / "repo"
+    repo_path.mkdir()
+    (repo_path / "PROJECT.md").write_text("# AIOS\n")
+
+    conn = sqlite3.connect(runtime_db)
+    project_id = _insert_project(conn, repo_path)
+    ensure_runtime_schema(conn)
+    run_id = "run-partial"
+
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (
+            id, project_id, objective, workflow_key, agent_key, status, rationale,
+            assumptions_json, context_trace_json, created_at, updated_at
+        )
+        VALUES (?, ?, 'Ship partial workflow progress', 'implementation-delivery', 'implementation-lead',
+                'in_progress', 'Partial path', '[]', '[]', '2026-04-19T00:00:00Z', '2026-04-19T00:00:00Z')
+        """,
+        (run_id, project_id),
+    )
+
+    transition_run(
+        conn,
+        run_id=run_id,
+        to_status="partial",
+        event_type="partial",
+        summary="Scoped implementation shipped; follow-up verification remains.",
+        reason={"kind": "partial_closeout", "remaining": ["broader regression pass"]},
+    )
+    conn.commit()
+
+    run = conn.execute(
+        "SELECT status, status_reason_json, completed_at FROM orchestration_runs WHERE id = ?",
+        (run_id,),
+    ).fetchone()
+    assert run is not None
+    assert run[0] == "partial"
+    assert json.loads(run[1]) == {"kind": "partial_closeout", "remaining": ["broader regression pass"]}
+    assert run[2] is not None
+
+    event = conn.execute(
+        """
+        SELECT event_type, to_status, reason_json
+        FROM orchestration_run_events
+        WHERE run_id = ?
+        ORDER BY created_at DESC
+        LIMIT 1
+        """,
+        (run_id,),
+    ).fetchone()
+    assert event is not None
+    assert event[0] == "partial"
+    assert event[1] == "partial"
+    assert json.loads(event[2]) == {"kind": "partial_closeout", "remaining": ["broader regression pass"]}
+    conn.close()
+
+
 def test_legacy_linkage_requires_explicit_emergency_flag(monkeypatch: pytest.MonkeyPatch) -> None:
     hook_stop = _load_module("hook_stop_fallback", "bin/hook-stop.py")
 

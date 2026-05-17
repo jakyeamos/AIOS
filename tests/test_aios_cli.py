@@ -395,6 +395,8 @@ def test_lifecycle_audit_reports_attention_and_unsupported_states(tmp_path: Path
             ("run-user", "waiting_for_user"),
             ("run-tool", "waiting_for_tool"),
             ("run-validation", "failed_validation"),
+            ("run-partial", "partial"),
+            ("run-follow-up", "needs_follow_up"),
             ("run-superseded", "superseded"),
             ("run-unknown", "mystery_state"),
         ],
@@ -421,6 +423,22 @@ def test_lifecycle_audit_reports_attention_and_unsupported_states(tmp_path: Path
                 "{}",
                 "2026-04-23T00:35:00Z",
             ),
+            (
+                "e-partial",
+                "run-partial",
+                "partial",
+                "Scoped fix shipped; follow-up tests still required",
+                "{}",
+                "2026-04-23T00:36:00Z",
+            ),
+            (
+                "e-follow-up",
+                "run-follow-up",
+                "needs_follow_up",
+                "Implementation landed but approval-driven cleanup remains",
+                "{}",
+                "2026-04-23T00:37:00Z",
+            ),
         ],
     )
     conn.commit()
@@ -440,12 +458,14 @@ def test_lifecycle_audit_reports_attention_and_unsupported_states(tmp_path: Path
     assert lifecycle_exit == EXIT_OK
     lifecycle_output = json.loads(capsys.readouterr().out)
     data = lifecycle_output["data"]
-    assert data["summary"]["attention_count"] == 4
+    assert data["summary"]["attention_count"] == 6
     assert data["summary"]["unsupported_state_count"] == 1
     assert "waiting_for_user" in data["contract"]["attention_states"]
+    assert "partial" in data["contract"]["terminal_states"]
+    assert "needs_follow_up" in data["contract"]["attention_states"]
     assert data["observed_run_status_counts"]["mystery_state"] == 1
     assert data["unsupported_states"] == ["mystery_state"]
-    assert data["recent_attention_events"][0]["to_status"] == "failed_validation"
+    assert data["recent_attention_events"][0]["to_status"] == "needs_follow_up"
 
 
 def test_knowledge_objects_expose_provenance_contract(tmp_path: Path, capsys) -> None:

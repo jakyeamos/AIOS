@@ -17,6 +17,8 @@ RUN_STATUSES = {
     "waiting_for_user",
     "waiting_for_tool",
     "failed_validation",
+    "partial",
+    "needs_follow_up",
     "completed",
     "failed",
     "canceled",
@@ -436,7 +438,7 @@ def transition_run(
 
     if to_status == "in_progress" and not current[4]:
         updates["started_at"] = event_time
-    if to_status == "completed":
+    if to_status in {"completed", "partial", "needs_follow_up"}:
         updates["completed_at"] = event_time
     if to_status == "failed":
         updates["failed_at"] = event_time
