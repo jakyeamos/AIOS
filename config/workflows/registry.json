@@ -13,6 +13,7 @@
     {
       "key": "academic_paper_v1",
       "name": "Academic Paper v1",
+      "workflow_family": "content_generation",
       "purpose": "Route paper-writing requests through deterministic staged execution with explicit validation.",
       "trigger_hints": [
         "write a paper",
@@ -84,6 +85,7 @@
     {
       "key": "implementation-delivery",
       "name": "Implementation Delivery",
+      "workflow_family": "audit_and_implement",
       "purpose": "Default implementation workflow for scoped code changes.",
       "trigger_hints": [
         "implement",
@@ -129,6 +131,7 @@
     {
       "key": "failure-recovery",
       "name": "Failure Recovery",
+      "workflow_family": "failure_recovery",
       "purpose": "Debug-focused workflow for recovering broken runs or regressions.",
       "trigger_hints": [
         "debug",
@@ -174,6 +177,7 @@
     {
       "key": "divergent-strategy",
       "name": "Divergent Strategy Workflow",
+      "workflow_family": "audit_only",
       "purpose": "Explore multiple plausible strategies, judge them with reusable rubrics, preserve useful failures, and propose gated memory writebacks.",
       "trigger_hints": [
         "what do you think",

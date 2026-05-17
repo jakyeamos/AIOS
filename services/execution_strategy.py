@@ -93,6 +93,16 @@ class StrategyBundle:
     created_by: str
 
 
+@dataclass(frozen=True)
+class StrategyCandidate:
+    strategy_id: str
+    task_family: str
+    surface: str
+    status: str
+    strategy_version: str
+    rank: int
+
+
 def _load_json(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as handle:
         loaded = json.load(handle)
@@ -258,6 +268,100 @@ def _strategy_version_key(version: str) -> tuple[int, ...]:
         if token.isdigit():
             parts.append(int(token))
     return tuple(parts) if parts else (0,)
+
+
+def list_strategy_candidates(
+    *,
+    task_family: str,
+    task_specs_path: Path | None = None,
+    strategies_path: Path | None = None,
+) -> list[StrategyCandidate]:
+    specs = load_task_specs(task_specs_path)
+    catalog = load_strategy_catalog(strategies_path)
+    errors = validate_strategy_catalog(specs, catalog)
+    if errors:
+        raise StrategySelectionError("Strategy catalog validation failed: " + "; ".join(errors))
+    if task_family not in specs:
+        raise StrategySelectionError(f"Unknown task family: {task_family}")
+
+    status_order = catalog.get("valid_statuses")
+    if not isinstance(status_order, list):
+        status_order = DEFAULT_STATUS_ORDER
+
+    candidates: list[StrategyCandidate] = []
+    rows = catalog.get("strategies", [])
+    if not isinstance(rows, list):
+        return candidates
+
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        if str(row.get("task_family", "")) != task_family:
+            continue
+        status = str(row.get("status", ""))
+        if status in {"deprecated", "rolled_back"}:
+            continue
+        surface = str(row.get("surface", ""))
+        candidates.append(
+            StrategyCandidate(
+                strategy_id=str(row.get("strategy_id", "")),
+                task_family=task_family,
+                surface=surface,
+                status=status,
+                strategy_version=str(row.get("strategy_version", "0")),
+                rank=_status_rank(status, status_order),
+            )
+        )
+
+    candidates.sort(
+        key=lambda candidate: (
+            candidate.rank,
+            tuple(-value for value in _strategy_version_key(candidate.strategy_version)),
+            candidate.surface,
+        )
+    )
+    return candidates
+
+
+def recommend_execution_surface(
+    *,
+    task_family: str,
+    preferred_surfaces: tuple[str, ...] = ("codex", "claude_code"),
+    task_specs_path: Path | None = None,
+    strategies_path: Path | None = None,
+) -> dict[str, Any]:
+    candidates = list_strategy_candidates(
+        task_family=task_family,
+        task_specs_path=task_specs_path,
+        strategies_path=strategies_path,
+    )
+    if not candidates:
+        raise StrategySelectionError(f"No strategy candidates found for task_family={task_family}")
+
+    ordered: list[StrategyCandidate] = []
+    for surface in preferred_surfaces:
+        ordered.extend(candidate for candidate in candidates if candidate.surface == surface)
+    ordered.extend(candidate for candidate in candidates if candidate not in ordered)
+
+    selected = ordered[0]
+    alternatives = [candidate for candidate in ordered[1:]]
+    return {
+        "task_family": task_family,
+        "selected_surface": selected.surface,
+        "selected_strategy_id": selected.strategy_id,
+        "alternatives": [
+            {
+                "surface": candidate.surface,
+                "strategy_id": candidate.strategy_id,
+                "status": candidate.status,
+            }
+            for candidate in alternatives
+        ],
+        "rationale": (
+            f"Selected {selected.surface} because it is the highest-ranked available surface "
+            f"for task_family={task_family} within the preferred surface order {list(preferred_surfaces)}."
+        ),
+    }
 
 
 def _select_strategy(

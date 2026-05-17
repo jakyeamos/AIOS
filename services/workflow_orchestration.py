@@ -10,6 +10,7 @@ from typing import Any
 
 from services.agent_rules import load_agent_rules
 from services.execution_strategy import StrategySelectionError, compile_execution_strategy
+from services.execution_strategy import recommend_execution_surface
 from services.rtk_integration import load_compression_rules
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,6 +34,7 @@ class StageSpec:
 class WorkflowSpec:
     key: str
     name: str
+    workflow_family: str
     purpose: str
     trigger_hints: tuple[str, ...]
     output_contract: tuple[str, ...]
@@ -53,6 +55,15 @@ class SkillSpec:
     execution_mode: str
     source_path: str | None = None
     installed_name: str | None = None
+
+
+@dataclass(frozen=True)
+class WorkflowRouteCandidate:
+    workflow_key: str
+    workflow_family: str
+    score: int
+    matched_terms: tuple[str, ...]
+    rationale: str
 
 
 @dataclass(frozen=True)
@@ -113,6 +124,7 @@ def load_workflow_registry(path: Path | None = None) -> dict[str, WorkflowSpec]:
         registry[key] = WorkflowSpec(
             key=key,
             name=str(item.get("name", key)),
+            workflow_family=str(item.get("workflow_family", WORKFLOW_TASK_FAMILIES.get(key, key))),
             purpose=str(item.get("purpose", "")),
             trigger_hints=tuple(str(hint) for hint in item.get("trigger_hints", []) if isinstance(hint, str)),
             output_contract=tuple(str(row) for row in item.get("output_contract", []) if isinstance(row, str)),
@@ -222,6 +234,178 @@ def _load_prompt_templates(path: Path) -> list[dict[str, Any]]:
     if not isinstance(templates, list):
         return []
     return [item for item in templates if isinstance(item, dict)]
+
+
+def rank_workflow_candidates(
+    objective: str,
+    *,
+    workflow_registry_path: Path | None = None,
+) -> list[WorkflowRouteCandidate]:
+    workflows = load_workflow_registry(workflow_registry_path)
+    objective_tokens = _tokenize(objective)
+    implementation_tokens = {"implement", "build", "feature", "refactor", "fix", "ship", "tests"}
+    recovery_tokens = {"debug", "broken", "failure", "regression", "crash"}
+    analysis_tokens = {"review", "audit", "analyze", "architecture", "strategy"}
+    candidates: list[WorkflowRouteCandidate] = []
+
+    for workflow in workflows.values():
+        matched_terms = sorted(
+            {
+                hint.lower()
+                for hint in workflow.trigger_hints
+                if hint.lower() in objective.lower() or _tokenize(hint) & objective_tokens
+            }
+        )
+        score = len(matched_terms)
+        if workflow.workflow_family == "audit_and_implement" and implementation_tokens & objective_tokens:
+            score += 3
+        if workflow.workflow_family == "failure_recovery" and recovery_tokens & objective_tokens:
+            score += 3
+        if workflow.workflow_family == "audit_only" and analysis_tokens & objective_tokens:
+            score += 2
+            if implementation_tokens & objective_tokens or recovery_tokens & objective_tokens:
+                score -= 2
+        if workflow.workflow_family == "content_generation" and {"paper", "essay", "citations", "academic"} & objective_tokens:
+            score += 2
+        if score <= 0:
+            continue
+        candidates.append(
+            WorkflowRouteCandidate(
+                workflow_key=workflow.key,
+                workflow_family=workflow.workflow_family,
+                score=score,
+                matched_terms=tuple(matched_terms),
+                rationale=(
+                    f"Matched trigger hints {matched_terms or ['<implicit>']} for workflow_family={workflow.workflow_family}."
+                ),
+            )
+        )
+
+    candidates.sort(key=lambda candidate: (-candidate.score, candidate.workflow_key))
+    return candidates
+
+
+def recommend_prompt_family(
+    *,
+    objective: str,
+    workflow_key: str,
+    prompt_registry_path: Path | None = None,
+    workflow_registry_path: Path | None = None,
+) -> dict[str, Any]:
+    workflows = load_workflow_registry(workflow_registry_path)
+    workflow = workflows.get(workflow_key)
+    if workflow is None:
+        raise ValueError(f"Unknown workflow key: {workflow_key}")
+
+    prompt_path = prompt_registry_path or DEFAULT_PROMPT_REGISTRY
+    templates = _load_prompt_templates(prompt_path)
+    objective_tokens = _tokenize(objective)
+    ranked: list[tuple[int, dict[str, Any]]] = []
+
+    for template in templates:
+        prompt_family = str(template.get("prompt_family", "")).strip()
+        if not prompt_family:
+            continue
+        score = 0
+        applicable = template.get("applicable_workflow_families") or []
+        if isinstance(applicable, list) and workflow.workflow_family in {str(row) for row in applicable}:
+            score += 4
+        classification = str(template.get("classification", "")).lower()
+        if workflow.workflow_family == "failure_recovery" and classification == "debug":
+            score += 2
+        if workflow.workflow_family == "audit_only" and classification == "plan":
+            score += 2
+        tags = template.get("tags") or []
+        if isinstance(tags, list):
+            score += len(objective_tokens & {str(tag).lower() for tag in tags if isinstance(tag, str)})
+        if score > 0:
+            ranked.append((score, template))
+
+    ranked.sort(key=lambda row: (-row[0], str(row[1].get("id", ""))))
+    if not ranked:
+        return {
+            "workflow_key": workflow_key,
+            "workflow_family": workflow.workflow_family,
+            "prompt_family": None,
+            "template_id": None,
+            "route_status": "missing",
+            "rationale": "No prompt family matched the selected workflow family and objective tokens.",
+        }
+
+    _, selected = ranked[0]
+    alternatives = [
+        {
+            "template_id": str(template.get("id", "")),
+            "prompt_family": str(template.get("prompt_family", "")),
+            "route_status": str(template.get("route_status", "candidate")),
+        }
+        for _, template in ranked[1:3]
+    ]
+    return {
+        "workflow_key": workflow_key,
+        "workflow_family": workflow.workflow_family,
+        "prompt_family": str(selected.get("prompt_family", "")),
+        "template_id": str(selected.get("id", "")),
+        "route_status": str(selected.get("route_status", "candidate")),
+        "alternatives": alternatives,
+        "rationale": (
+            f"Selected prompt family {selected.get('prompt_family')} for workflow_family={workflow.workflow_family} "
+            f"using applicable_workflow_families metadata and objective-tag overlap."
+        ),
+    }
+
+
+def recommend_route_primitives(
+    objective: str,
+    *,
+    surface: str = "codex",
+    workflow_registry_path: Path | None = None,
+    prompt_registry_path: Path | None = None,
+) -> dict[str, Any]:
+    candidates = rank_workflow_candidates(objective, workflow_registry_path=workflow_registry_path)
+    if not candidates:
+        return {
+            "objective": objective,
+            "selected_workflow": None,
+            "workflow_candidates": [],
+            "prompt_recommendation": None,
+            "backend_recommendation": None,
+        }
+
+    selected = candidates[0]
+    task_family = WORKFLOW_TASK_FAMILIES.get(selected.workflow_key)
+    prompt_recommendation = recommend_prompt_family(
+        objective=objective,
+        workflow_key=selected.workflow_key,
+        prompt_registry_path=prompt_registry_path,
+        workflow_registry_path=workflow_registry_path,
+    )
+    backend_recommendation = (
+        recommend_execution_surface(task_family=task_family, preferred_surfaces=(surface, "claude_code"))
+        if task_family
+        else None
+    )
+    return {
+        "objective": objective,
+        "selected_workflow": {
+            "workflow_key": selected.workflow_key,
+            "workflow_family": selected.workflow_family,
+            "score": selected.score,
+            "rationale": selected.rationale,
+        },
+        "workflow_candidates": [
+            {
+                "workflow_key": candidate.workflow_key,
+                "workflow_family": candidate.workflow_family,
+                "score": candidate.score,
+                "matched_terms": list(candidate.matched_terms),
+                "rationale": candidate.rationale,
+            }
+            for candidate in candidates
+        ],
+        "prompt_recommendation": prompt_recommendation,
+        "backend_recommendation": backend_recommendation,
+    }
 
 
 def _select_prompt_template(objective: str, workflow_key: str, templates: list[dict[str, Any]]) -> str | None:

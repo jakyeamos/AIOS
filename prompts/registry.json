@@ -6,6 +6,12 @@
       "name": "Coding Debug",
       "version": "1.0",
       "classification": "debug",
+      "prompt_family": "recovery_handoff",
+      "route_status": "approved",
+      "applicable_workflow_families": [
+        "failure_recovery",
+        "audit_and_implement"
+      ],
       "tags": [
         "debug",
         "bug",
@@ -38,6 +44,11 @@
       "name": "Audience-Scoped Content Writing",
       "version": "1.0",
       "classification": "other",
+      "prompt_family": "content_generation",
+      "route_status": "approved",
+      "applicable_workflow_families": [
+        "content_generation"
+      ],
       "tags": [
         "writing",
         "draft",
@@ -68,6 +79,12 @@
       "name": "Decision Reasoning",
       "version": "1.0",
       "classification": "plan",
+      "prompt_family": "reasoning_handoff",
+      "route_status": "approved",
+      "applicable_workflow_families": [
+        "audit_only",
+        "audit_and_implement"
+      ],
       "tags": [
         "reasoning",
         "decision",
@@ -99,6 +116,13 @@
       "name": "Research Synthesis",
       "version": "1.0",
       "classification": "plan",
+      "prompt_family": "research_handoff",
+      "route_status": "approved",
+      "applicable_workflow_families": [
+        "audit_only",
+        "audit_and_implement",
+        "content_generation"
+      ],
       "tags": [
         "research",
         "analysis",
@@ -130,6 +154,11 @@
       "name": "Structured Summarization",
       "version": "1.0",
       "classification": "explain",
+      "prompt_family": "implementation_handoff",
+      "route_status": "candidate",
+      "applicable_workflow_families": [
+        "audit_and_implement"
+      ],
       "tags": [
         "summarize",
         "brief",

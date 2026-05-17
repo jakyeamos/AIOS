@@ -12,8 +12,10 @@ from services.execution_strategy import (  # noqa: E402
     StrategySelectionError,
     build_strategy_registry_snapshot,
     compile_execution_strategy,
+    list_strategy_candidates,
     load_strategy_catalog,
     load_task_specs,
+    recommend_execution_surface,
     validate_strategy_catalog,
 )
 
@@ -55,3 +57,27 @@ def test_compile_unknown_task_family_raises() -> None:
             task_specs_path=ROOT / "config" / "execution-strategies" / "task-specs.json",
             strategies_path=ROOT / "config" / "execution-strategies" / "strategies.json",
         )
+
+
+def test_list_strategy_candidates_prefers_validated_entries() -> None:
+    candidates = list_strategy_candidates(
+        task_family="audit_and_implement",
+        task_specs_path=ROOT / "config" / "execution-strategies" / "task-specs.json",
+        strategies_path=ROOT / "config" / "execution-strategies" / "strategies.json",
+    )
+
+    assert [candidate.surface for candidate in candidates] == ["claude_code", "codex"]
+    assert all(candidate.status == "validated" for candidate in candidates)
+
+
+def test_recommend_execution_surface_prefers_codex_first() -> None:
+    recommendation = recommend_execution_surface(
+        task_family="audit_and_implement",
+        preferred_surfaces=("codex", "claude_code"),
+        task_specs_path=ROOT / "config" / "execution-strategies" / "task-specs.json",
+        strategies_path=ROOT / "config" / "execution-strategies" / "strategies.json",
+    )
+
+    assert recommendation["selected_surface"] == "codex"
+    assert recommendation["selected_strategy_id"] == "audit_and_implement_codex_v1"
+    assert recommendation["alternatives"][0]["surface"] == "claude_code"

@@ -14,6 +14,9 @@ from services.workflow_orchestration import (  # noqa: E402
     execute_workflow,
     load_skill_registry,
     load_workflow_registry,
+    rank_workflow_candidates,
+    recommend_prompt_family,
+    recommend_route_primitives,
     summarize_execution_report,
     validate_workflow_bindings,
 )
@@ -205,3 +208,34 @@ def test_generated_executor_skill_affects_execution(tmp_path: Path) -> None:
     assert generate_stage["skills"][0]["output_keys"] == ["evidence", "result_text"]
     assert generate_stage["skills"][0]["source_path"] == "/tmp/skills/debug/SKILL.md"
     assert generate_stage["skills"][0]["installed_name"] == "debug-root-cause"
+
+
+def test_rank_workflow_candidates_for_recovery_objective() -> None:
+    ranked = rank_workflow_candidates("Debug the failing runtime and fix the regression")
+
+    assert ranked
+    assert ranked[0].workflow_key == "failure-recovery"
+    assert ranked[0].workflow_family == "failure_recovery"
+
+
+def test_recommend_prompt_family_for_implementation_workflow() -> None:
+    recommendation = recommend_prompt_family(
+        objective="Implement a scoped feature with a concise handoff",
+        workflow_key="implementation-delivery",
+    )
+
+    assert recommendation["workflow_family"] == "audit_and_implement"
+    assert recommendation["prompt_family"] in {"implementation_handoff", "reasoning_handoff", "research_handoff", "recovery_handoff"}
+    assert recommendation["template_id"] is not None
+    assert recommendation["route_status"] in {"approved", "candidate"}
+
+
+def test_recommend_route_primitives_for_implementation_objective() -> None:
+    route = recommend_route_primitives(
+        "Audit the current implementation and ship a scoped fix with tests",
+        surface="codex",
+    )
+
+    assert route["selected_workflow"]["workflow_key"] == "implementation-delivery"
+    assert route["prompt_recommendation"]["prompt_family"] is not None
+    assert route["backend_recommendation"]["selected_surface"] == "codex"
