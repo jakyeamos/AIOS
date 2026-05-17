@@ -140,6 +140,14 @@ AIOS serious-work packets now use a governed handoff contract instead of a gener
 - `aios-ui/server/aios/control-plane.ts` now records the packet contract version in the ready-state reason metadata for planned UI runs
 - this closes Phase 2 with an agent-ready packet contract that combines context, workflow, prompt, checks, and governed closeout expectations in one default serious-work handoff
 
+AIOS run lifecycle semantics now distinguish nuanced terminal outcomes instead of overloading clean completion:
+
+- `bin/aios_orchestration_runtime.py` now recognizes `partial` and `needs_follow_up` as first-class runtime statuses and stamps closeout time for those terminal-but-incomplete outcomes
+- `services/aios_cli.py` now treats `partial` and `needs_follow_up` as canonical lifecycle states, includes them in audit attention visibility, and reports them as supported terminal outcomes instead of unsupported noise
+- `tests/test_orchestration_runtime.py` now locks partial closeout transitions and persisted reason metadata
+- `tests/test_aios_cli.py` now verifies lifecycle audits include the widened attention/terminal contract and still isolate truly unsupported states
+- this opens Phase 3 with a stronger lifecycle vocabulary for partial completion and follow-up debt before resume snapshots and closeout summaries are added
+
 AIOS now has a first reusable personalized humanizer skill:
 
 - `skills/personalized-humanizer/SKILL.md` defines the local skill contract for voice matching, context modes, privacy boundaries, debug/audit output, and feedback-gated learning
