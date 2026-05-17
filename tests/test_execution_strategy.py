@@ -13,9 +13,11 @@ from services.execution_strategy import (  # noqa: E402
     build_strategy_registry_snapshot,
     compile_execution_strategy,
     list_strategy_candidates,
+    load_model_routing_policy,
     load_strategy_catalog,
     load_task_specs,
     recommend_execution_surface,
+    validate_model_routing_policy,
     validate_strategy_catalog,
 )
 
@@ -32,6 +34,29 @@ def test_catalog_validation_and_snapshot() -> None:
     assert len(selected) == 2
     surfaces = {row["surface"] for row in selected}
     assert surfaces == {"claude_code", "codex"}
+
+
+def test_model_routing_policy_validation() -> None:
+    policy = load_model_routing_policy(
+        ROOT / "config" / "execution-strategies" / "model-routing-policy.json"
+    )
+
+    errors = validate_model_routing_policy(policy)
+
+    assert errors == []
+    assert policy["policy_id"] == "subagent-default-routing-policy"
+    assert policy["subagent_preference_policy"]["default_execution_mode"] == (
+        "orchestrated_subagents"
+    )
+    assert {role["role"] for role in policy["agent_roles"]} >= {
+        "orchestrator",
+        "explorer",
+        "implementer",
+        "reviewer",
+        "specialist",
+    }
+    telemetry_fields = set(policy["telemetry_schema"]["run_fields"])
+    assert {"model_used", "reasoning_level_used", "model_choice_notes"} <= telemetry_fields
 
 
 def test_compile_execution_strategy_for_codex() -> None:

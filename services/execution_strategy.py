@@ -8,6 +8,9 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_TASK_SPECS_PATH = ROOT / "config" / "execution-strategies" / "task-specs.json"
 DEFAULT_STRATEGIES_PATH = ROOT / "config" / "execution-strategies" / "strategies.json"
+DEFAULT_MODEL_ROUTING_POLICY_PATH = (
+    ROOT / "config" / "execution-strategies" / "model-routing-policy.json"
+)
 
 VALID_SURFACES = {"claude_code", "codex"}
 DEFAULT_STATUS_ORDER = [
@@ -51,6 +54,59 @@ REQUIRED_STRATEGY_FIELDS = {
     "change_hypothesis",
     "created_at",
     "created_by",
+}
+
+REQUIRED_MODEL_ROUTING_FIELDS = {
+    "version",
+    "policy_id",
+    "status",
+    "governing_rule",
+    "valid_statuses",
+    "model_tiers",
+    "reasoning_levels",
+    "direct_execution_policy",
+    "subagent_preference_policy",
+    "agent_roles",
+    "routing_categories",
+    "telemetry_schema",
+    "marginal_value_definition",
+    "benchmark_plan",
+    "learning_policy",
+}
+
+REQUIRED_AGENT_ROLES = {"orchestrator", "explorer", "implementer", "reviewer", "specialist"}
+REQUIRED_BENCHMARK_CLASSES = {
+    "simple_docs_edit",
+    "small_bug_fix",
+    "mechanical_refactor",
+    "test_creation",
+    "repo_mapping",
+    "architecture_audit",
+    "security_sensitive_review",
+    "multi_file_feature_implementation",
+    "ui_polish_task",
+    "prompt_rule_improvement_task",
+}
+REQUIRED_TELEMETRY_FIELDS = {
+    "task_id",
+    "task_category",
+    "subagent_type",
+    "model_used",
+    "reasoning_level_used",
+    "input_tokens",
+    "output_tokens",
+    "tool_calls",
+    "wall_clock_ms",
+    "retry_count",
+    "tests_passed",
+    "lint_typecheck_passed",
+    "reviewer_defects_found",
+    "human_intervention_required",
+    "result_status",
+    "estimated_task_complexity",
+    "final_quality_score",
+    "cost_estimate",
+    "model_choice_notes",
 }
 
 
@@ -111,6 +167,19 @@ def _load_json(path: Path) -> dict[str, Any]:
     return loaded
 
 
+def _as_string_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value if isinstance(item, str)]
+
+
+def _as_int(value: Any, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def load_task_specs(path: Path | None = None) -> dict[str, TaskSpec]:
     catalog = _load_json(path or DEFAULT_TASK_SPECS_PATH)
     rows = catalog.get("task_specs")
@@ -159,6 +228,134 @@ def load_strategy_catalog(path: Path | None = None) -> dict[str, Any]:
     if not isinstance(strategies, list):
         raise StrategySelectionError("Strategy catalog must define a strategies list.")
     return catalog
+
+
+def load_model_routing_policy(path: Path | None = None) -> dict[str, Any]:
+    policy = _load_json(path or DEFAULT_MODEL_ROUTING_POLICY_PATH)
+    return policy
+
+
+def validate_model_routing_policy(policy: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    missing = REQUIRED_MODEL_ROUTING_FIELDS - set(policy)
+    if missing:
+        errors.append(f"Model routing policy missing fields: {', '.join(sorted(missing))}")
+        return errors
+
+    valid_statuses = policy.get("valid_statuses", [])
+    if not isinstance(valid_statuses, list):
+        errors.append("Model routing policy valid_statuses must be a list.")
+        status_set: set[str] = set()
+    else:
+        status_set = {str(status) for status in valid_statuses}
+    required_statuses = {"experimental", "candidate", "approved", "deprecated"}
+    missing_statuses = required_statuses - status_set
+    if missing_statuses:
+        errors.append(
+            "Model routing policy valid_statuses missing: "
+            + ", ".join(sorted(missing_statuses))
+        )
+
+    if str(policy.get("status", "")) not in status_set:
+        errors.append(f"Model routing policy has unsupported status: {policy.get('status')}")
+
+    model_tiers = {
+        str(row.get("tier"))
+        for row in policy.get("model_tiers", [])
+        if isinstance(row, dict) and row.get("tier")
+    }
+    if not {"cheap", "mid", "strong"} <= model_tiers:
+        errors.append("Model routing policy must define cheap, mid, and strong model tiers.")
+
+    reasoning_levels = {
+        str(item) for item in policy.get("reasoning_levels", []) if isinstance(item, str)
+    }
+    if not {"low", "medium", "high"} <= reasoning_levels:
+        errors.append("Model routing policy must define low, medium, and high reasoning levels.")
+
+    agent_roles = {
+        str(row.get("role"))
+        for row in policy.get("agent_roles", [])
+        if isinstance(row, dict) and row.get("role")
+    }
+    missing_roles = REQUIRED_AGENT_ROLES - agent_roles
+    if missing_roles:
+        errors.append("Model routing policy missing agent roles: " + ", ".join(sorted(missing_roles)))
+
+    categories = policy.get("routing_categories", [])
+    if not isinstance(categories, list) or not categories:
+        errors.append("Model routing policy routing_categories must be a non-empty list.")
+    else:
+        for row in categories:
+            if not isinstance(row, dict):
+                errors.append("Model routing category rows must be objects.")
+                continue
+            category = str(row.get("category", "<unknown>"))
+            for field in (
+                "default_model_tier",
+                "default_reasoning",
+                "preferred_agent_role",
+                "execution_bias",
+                "risk_level",
+                "status",
+            ):
+                if field not in row:
+                    errors.append(f"Routing category {category} missing {field}.")
+            if str(row.get("default_model_tier", "")) not in model_tiers:
+                errors.append(f"Routing category {category} references unknown model tier.")
+            if str(row.get("default_reasoning", "")) not in reasoning_levels:
+                errors.append(f"Routing category {category} references unknown reasoning level.")
+            if str(row.get("preferred_agent_role", "")) not in agent_roles:
+                errors.append(f"Routing category {category} references unknown agent role.")
+            if str(row.get("status", "")) not in status_set:
+                errors.append(f"Routing category {category} has unsupported status.")
+
+    direct_policy = policy.get("direct_execution_policy", {})
+    if not isinstance(direct_policy, dict) or not direct_policy.get("allowed_when"):
+        errors.append("Model routing policy must define direct execution exceptions.")
+
+    subagent_policy = policy.get("subagent_preference_policy", {})
+    if not isinstance(subagent_policy, dict) or not subagent_policy.get("prefer_when"):
+        errors.append("Model routing policy must define subagent preference signals.")
+    elif str(subagent_policy.get("default_execution_mode", "")) != "orchestrated_subagents":
+        errors.append("Model routing policy default execution mode must be orchestrated_subagents.")
+
+    telemetry = policy.get("telemetry_schema", {})
+    telemetry_fields = set(_as_string_list(telemetry.get("run_fields") if isinstance(telemetry, dict) else []))
+    missing_telemetry = REQUIRED_TELEMETRY_FIELDS - telemetry_fields
+    if missing_telemetry:
+        errors.append(
+            "Model routing telemetry schema missing fields: "
+            + ", ".join(sorted(missing_telemetry))
+        )
+
+    marginal_value = policy.get("marginal_value_definition", {})
+    if not isinstance(marginal_value, dict) or "additional_cost" not in str(
+        marginal_value.get("formula", "")
+    ):
+        errors.append("Model routing policy must define marginal value against added cost.")
+
+    benchmark = policy.get("benchmark_plan", {})
+    task_classes = set(
+        _as_string_list(benchmark.get("task_classes") if isinstance(benchmark, dict) else [])
+    )
+    missing_benchmarks = REQUIRED_BENCHMARK_CLASSES - task_classes
+    if missing_benchmarks:
+        errors.append(
+            "Model routing benchmark plan missing task classes: "
+            + ", ".join(sorted(missing_benchmarks))
+        )
+    matrix = benchmark.get("model_reasoning_matrix", []) if isinstance(benchmark, dict) else []
+    if not isinstance(matrix, list) or len(matrix) < 5:
+        errors.append("Model routing benchmark plan must define the expected comparison matrix.")
+
+    learning_policy = policy.get("learning_policy", {})
+    if not isinstance(learning_policy, dict):
+        errors.append("Model routing learning_policy must be an object.")
+    elif _as_int(learning_policy.get("minimum_evidence_runs_before_default_change")) < 2:
+        errors.append("Model routing default changes require repeated evidence.")
+
+    return errors
 
 
 def validate_strategy_catalog(

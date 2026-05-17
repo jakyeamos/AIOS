@@ -28,6 +28,9 @@ Harness rules should make common failures harder to repeat by turning error patt
 Agent-facing files, packets, prompts, and workflows should remain easy to scan under limited context, using responsibility-based splits instead of arbitrary line-count ceilings.
 Failures surfaced to agents should be structured enough to parse and specific enough to include next remediation steps.
 Human-readable agent guidance may clarify machine-readable data, but must not replace, obscure, or contradict parseable packet fields, stable IDs, explicit states, deterministic labels, or remediation steps.
+For most non-trivial work, prefer orchestrated sub-agent development: the orchestrator classifies and supervises while explorer, implementer, reviewer, or specialist agents execute bounded work with the cheapest sufficient model tier and reasoning level.
+Direct execution remains appropriate for tiny local tasks where subagent setup costs more than it saves.
+Model and reasoning defaults should come from `config/execution-strategies/model-routing-policy.json`, with approved routing changes gated by repeated evidence rather than one-off results.
 
 ## Acceptance Criteria
 
@@ -38,3 +41,5 @@ Human-readable agent guidance may clarify machine-readable data, but must not re
 - Error records include parseable remediation steps.
 - Packet, prompt, and workflow surfaces preserve stable machine-readable fields when adding human-facing copy.
 - Writebacks are proposed for review rather than silently promoted.
+- Non-trivial execution records whether direct execution or subagent execution was chosen and why.
+- Model or reasoning upgrades track whether extra cost produced meaningful quality improvement.

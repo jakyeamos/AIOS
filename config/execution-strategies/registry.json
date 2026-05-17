@@ -1,7 +1,10 @@
 {
-  "generated_at": "2026-04-23T18:31:55.347201+00:00",
+  "generated_at": "2026-05-17T04:31:58.758615+00:00",
   "task_specs_file": "/Users/jakyeamos/AIOS/config/execution-strategies/task-specs.json",
   "strategies_file": "/Users/jakyeamos/AIOS/config/execution-strategies/strategies.json",
+  "model_routing_policy_file": "/Users/jakyeamos/AIOS/config/execution-strategies/model-routing-policy.json",
+  "model_routing_policy_id": "subagent-default-routing-policy",
+  "model_routing_policy_status": "approved",
   "task_families": [
     "audit_and_implement"
   ],

@@ -29,6 +29,16 @@ Useful commands:
 3. Evaluate final changed files against applicable criteria before completion.
 4. Record blockers, warnings, passes, and accepted tradeoffs in durable artifacts.
 
+## Rule: Orchestrated Sub-Agent Development
+
+Prefer sub-agent-driven development for most non-trivial tasks. Use the orchestrator for task decomposition, routing, context control, supervision, quality gates, and final synthesis. Delegate execution to specialized subagents with the lowest-cost model tier and reasoning level likely to complete the task reliably.
+
+Direct orchestrator execution is allowed when the task is simple and likely under 5-10 minutes, requires no repo-wide context, affects one small file or doc, is a pure explanation, small rewrite, or isolated command, or subagent setup would cost more than it saves.
+
+Prefer sub-agent execution when the task requires repo inspection, multiple phases, architecture, tests, security, migrations, data models, multi-file changes, parallel research, isolated review, protection from context bloat, or would waste premium-model tokens if handled monolithically.
+
+Routing defaults, role definitions, telemetry fields, benchmark classes, and promotion statuses live in `config/execution-strategies/model-routing-policy.json`.
+
 ## Rule: Execution-First Verification
 
 Trigger this rule for:

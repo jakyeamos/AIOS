@@ -14,8 +14,10 @@ if str(ROOT) not in sys.path:
 from services.execution_strategy import (  # noqa: E402
     StrategySelectionError,
     build_strategy_registry_snapshot,
+    load_model_routing_policy,
     load_strategy_catalog,
     load_task_specs,
+    validate_model_routing_policy,
     validate_strategy_catalog,
 )
 
@@ -36,12 +38,17 @@ def main() -> int:
     config_root = Path(args.config_root).expanduser().resolve()
     task_specs_path = config_root / "task-specs.json"
     strategies_path = config_root / "strategies.json"
+    model_routing_policy_path = config_root / "model-routing-policy.json"
     registry_path = config_root / "registry.json"
 
     try:
         task_specs = load_task_specs(task_specs_path)
         strategy_catalog = load_strategy_catalog(strategies_path)
-        errors = validate_strategy_catalog(task_specs, strategy_catalog)
+        model_routing_policy = load_model_routing_policy(model_routing_policy_path)
+        errors = [
+            *validate_strategy_catalog(task_specs, strategy_catalog),
+            *validate_model_routing_policy(model_routing_policy),
+        ]
         if errors:
             print("Execution strategy validation failed:")
             for error in errors:
@@ -53,6 +60,9 @@ def main() -> int:
             "generated_at": _now_iso(),
             "task_specs_file": str(task_specs_path),
             "strategies_file": str(strategies_path),
+            "model_routing_policy_file": str(model_routing_policy_path),
+            "model_routing_policy_id": str(model_routing_policy.get("policy_id", "")),
+            "model_routing_policy_status": str(model_routing_policy.get("status", "")),
             "task_families": sorted(task_specs.keys()),
             "selection": snapshot["strategy_selection"],
         }

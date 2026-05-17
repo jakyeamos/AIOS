@@ -1,0 +1,335 @@
+{
+  "version": "2026-05-17",
+  "policy_id": "subagent-default-routing-policy",
+  "status": "approved",
+  "governing_rule": "Prefer sub-agent-driven development for most non-trivial tasks. Use the orchestrator for task decomposition, routing, context control, supervision, quality gates, and final synthesis. Delegate execution to specialized subagents with the lowest-cost model and reasoning level likely to complete the task reliably.",
+  "valid_statuses": [
+    "experimental",
+    "candidate",
+    "approved",
+    "deprecated"
+  ],
+  "model_tiers": [
+    {
+      "tier": "cheap",
+      "purpose": "Mechanical, local, or read-only tasks with low mistake cost."
+    },
+    {
+      "tier": "mid",
+      "purpose": "Focused implementation, tests, debugging, and repo mapping with moderate integration risk."
+    },
+    {
+      "tier": "strong",
+      "purpose": "Architecture, security, risky review, ambiguous design, and final synthesis when failure cost is high."
+    }
+  ],
+  "reasoning_levels": [
+    "low",
+    "medium",
+    "high"
+  ],
+  "direct_execution_policy": {
+    "allowed_when": [
+      "task_likely_under_10_minutes",
+      "no_repo_wide_context_required",
+      "one_small_file_or_doc",
+      "pure_explanation_small_rewrite_or_isolated_command",
+      "subagent_setup_cost_exceeds_expected_savings"
+    ],
+    "default_model_tier": "mid",
+    "default_reasoning": "medium"
+  },
+  "subagent_preference_policy": {
+    "prefer_when": [
+      "repo_inspection_required",
+      "multiple_phases_required",
+      "architecture_tests_security_migrations_data_models_or_multi_file_changes",
+      "parallel_research_or_isolated_review_is_useful",
+      "context_bloat_risk",
+      "premium_model_monolith_would_waste_tokens"
+    ],
+    "default_execution_mode": "orchestrated_subagents",
+    "orchestrator_responsibilities": [
+      "classify_task",
+      "choose_direct_or_subagent_execution",
+      "build_task_specific_briefing_packets",
+      "assign_model_tier_and_reasoning",
+      "control_context_budget",
+      "supervise_intermediate_outputs",
+      "own_quality_gates",
+      "produce_final_synthesis"
+    ]
+  },
+  "agent_roles": [
+    {
+      "role": "orchestrator",
+      "default_model_tier": "strong",
+      "default_reasoning": "medium",
+      "edit_mode": "supervisory",
+      "responsibilities": [
+        "decompose",
+        "route",
+        "brief",
+        "supervise",
+        "review",
+        "final_synthesis"
+      ]
+    },
+    {
+      "role": "explorer",
+      "default_model_tier": "cheap",
+      "default_reasoning": "medium",
+      "edit_mode": "read_only",
+      "responsibilities": [
+        "find_files",
+        "map_execution_paths",
+        "identify_tests_schemas_dependencies_and_prior_art",
+        "produce_concise_context_packet"
+      ]
+    },
+    {
+      "role": "implementer",
+      "default_model_tier": "mid",
+      "default_reasoning": "medium",
+      "edit_mode": "focused_write",
+      "responsibilities": [
+        "make_scoped_changes",
+        "avoid_unrequested_refactors",
+        "run_assigned_checks",
+        "report_changed_files_commands_and_assumptions"
+      ]
+    },
+    {
+      "role": "reviewer",
+      "default_model_tier": "mid",
+      "risk_escalation_model_tier": "strong",
+      "default_reasoning": "medium",
+      "risk_escalation_reasoning": "high",
+      "edit_mode": "read_only_by_default",
+      "responsibilities": [
+        "check_correctness",
+        "check_maintainability",
+        "check_security_when_applicable",
+        "check_test_coverage",
+        "assess_model_choice_overkill_or_underpowered"
+      ]
+    },
+    {
+      "role": "specialist",
+      "default_model_tier": "mid",
+      "default_reasoning": "medium",
+      "edit_mode": "bounded_by_specialty",
+      "specialties": [
+        "docs",
+        "tests",
+        "security",
+        "ui",
+        "data",
+        "dependency_analysis",
+        "prompt_engineering",
+        "performance"
+      ],
+      "responsibilities": [
+        "handle_bounded_domain_work",
+        "surface_domain_specific_risks",
+        "return_evidence_and_followups"
+      ]
+    }
+  ],
+  "routing_categories": [
+    {
+      "category": "mechanical_cleanup",
+      "default_model_tier": "cheap",
+      "default_reasoning": "low",
+      "preferred_agent_role": "implementer",
+      "execution_bias": "direct_or_single_subagent",
+      "risk_level": "low",
+      "status": "approved"
+    },
+    {
+      "category": "lint_format_rename",
+      "default_model_tier": "cheap",
+      "default_reasoning": "low",
+      "preferred_agent_role": "implementer",
+      "execution_bias": "direct_or_single_subagent",
+      "risk_level": "low",
+      "status": "approved"
+    },
+    {
+      "category": "local_bug_fix",
+      "default_model_tier": "mid",
+      "default_reasoning": "medium",
+      "preferred_agent_role": "implementer",
+      "execution_bias": "explorer_then_implementer_when_context_is_unclear",
+      "risk_level": "medium",
+      "status": "approved"
+    },
+    {
+      "category": "test_writing",
+      "default_model_tier": "mid",
+      "default_reasoning": "medium",
+      "preferred_agent_role": "specialist",
+      "execution_bias": "single_subagent_with_orchestrator_review",
+      "risk_level": "medium",
+      "status": "approved"
+    },
+    {
+      "category": "architecture_change",
+      "default_model_tier": "strong",
+      "default_reasoning": "high",
+      "preferred_agent_role": "orchestrator",
+      "execution_bias": "explorer_implementer_reviewer",
+      "risk_level": "high",
+      "status": "approved"
+    },
+    {
+      "category": "security_sensitive_change",
+      "default_model_tier": "strong",
+      "default_reasoning": "high",
+      "preferred_agent_role": "reviewer",
+      "execution_bias": "specialist_security_review_required",
+      "risk_level": "high",
+      "status": "approved"
+    },
+    {
+      "category": "repo_mapping",
+      "default_model_tier": "cheap",
+      "default_reasoning": "medium",
+      "preferred_agent_role": "explorer",
+      "execution_bias": "read_only_subagent",
+      "risk_level": "low",
+      "status": "approved"
+    },
+    {
+      "category": "final_review",
+      "default_model_tier": "mid",
+      "default_reasoning": "medium",
+      "preferred_agent_role": "reviewer",
+      "execution_bias": "strong_high_only_when_risk_justifies",
+      "risk_level": "medium",
+      "status": "approved"
+    },
+    {
+      "category": "prompt_doc_rewrite",
+      "default_model_tier": "cheap",
+      "default_reasoning": "medium",
+      "preferred_agent_role": "specialist",
+      "execution_bias": "direct_or_single_subagent_by_stakes",
+      "risk_level": "low",
+      "status": "approved"
+    },
+    {
+      "category": "multi_file_feature_implementation",
+      "default_model_tier": "mid",
+      "default_reasoning": "medium",
+      "preferred_agent_role": "implementer",
+      "execution_bias": "explorer_implementer_reviewer",
+      "risk_level": "high",
+      "status": "candidate"
+    },
+    {
+      "category": "ui_polish",
+      "default_model_tier": "mid",
+      "default_reasoning": "medium",
+      "preferred_agent_role": "specialist",
+      "execution_bias": "ui_specialist_with_visual_verification",
+      "risk_level": "medium",
+      "status": "candidate"
+    }
+  ],
+  "telemetry_schema": {
+    "storage_status": "planned",
+    "run_fields": [
+      "task_id",
+      "task_category",
+      "subagent_type",
+      "model_used",
+      "reasoning_level_used",
+      "input_tokens",
+      "output_tokens",
+      "tool_calls",
+      "wall_clock_ms",
+      "retry_count",
+      "tests_passed",
+      "lint_typecheck_passed",
+      "reviewer_defects_found",
+      "human_intervention_required",
+      "result_status",
+      "estimated_task_complexity",
+      "final_quality_score",
+      "cost_estimate",
+      "model_choice_notes"
+    ],
+    "result_status_values": [
+      "accepted",
+      "revised",
+      "rejected"
+    ],
+    "model_choice_note_values": [
+      "overkill",
+      "underpowered",
+      "appropriate",
+      "unknown"
+    ]
+  },
+  "marginal_value_definition": {
+    "name": "marginal_reasoning_model_value",
+    "formula": "quality_improvement - additional_cost - additional_latency - additional_token_usage",
+    "purpose": "Learn where model tier or reasoning upgrades stop producing meaningful outcome gains for each task category."
+  },
+  "benchmark_plan": {
+    "sampling_mode": "intelligent_over_time",
+    "task_classes": [
+      "simple_docs_edit",
+      "small_bug_fix",
+      "mechanical_refactor",
+      "test_creation",
+      "repo_mapping",
+      "architecture_audit",
+      "security_sensitive_review",
+      "multi_file_feature_implementation",
+      "ui_polish_task",
+      "prompt_rule_improvement_task"
+    ],
+    "model_reasoning_matrix": [
+      {
+        "model_tier": "cheap",
+        "reasoning": "low"
+      },
+      {
+        "model_tier": "cheap",
+        "reasoning": "medium"
+      },
+      {
+        "model_tier": "mid",
+        "reasoning": "medium"
+      },
+      {
+        "model_tier": "strong",
+        "reasoning": "medium"
+      },
+      {
+        "model_tier": "strong",
+        "reasoning": "high"
+      }
+    ],
+    "outputs": [
+      "best_default_model_reasoning_per_category",
+      "cheapest_reliable_option_per_category",
+      "failure_prone_combinations_to_avoid",
+      "cases_where_higher_reasoning_helps",
+      "diminishing_returns_cases",
+      "cases_where_stronger_model_tier_helps",
+      "cases_where_orchestration_overhead_is_not_worth_it"
+    ]
+  },
+  "learning_policy": {
+    "minimum_evidence_runs_before_default_change": 5,
+    "avoid_overfitting": true,
+    "approval_required_for_statuses": [
+      "approved",
+      "deprecated"
+    ],
+    "experimental_updates_may_be_recorded_without_default_promotion": true
+  }
+}

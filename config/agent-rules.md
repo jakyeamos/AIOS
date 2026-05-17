@@ -43,3 +43,11 @@ If you can't be sure something worked, say so explicitly.
 "Tests pass" is wrong if you skipped any.
 "Feature works" is wrong if you didn't verify the edge case I asked about.
 Default to surfacing uncertainty, not hiding it.
+
+## Rule 7 — Prefer orchestrated subagents for non-trivial work
+
+For most non-trivial work, the orchestrator should classify the task, decompose it, control context, route execution, supervise quality gates, and own final synthesis.
+Delegate execution to specialized subagents using the lowest-cost model tier and reasoning level likely to complete the task reliably.
+Direct execution is allowed when the task is simple, likely under 5-10 minutes, affects one small file or doc, requires no repo-wide context, is a pure explanation or isolated command, or subagent setup would cost more than it saves.
+Prefer subagents when the task needs repo inspection, multiple phases, architecture, tests, security, migrations, data models, multi-file changes, parallel research, isolated review, or protection from context bloat and premium-model token waste.
+Use `config/execution-strategies/model-routing-policy.json` as the routing table for agent roles, model tiers, reasoning levels, telemetry fields, benchmark classes, and promotion statuses.

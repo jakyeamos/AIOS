@@ -100,3 +100,13 @@ The command returns the normal AIOS JSON envelope:
 ## V0 Boundaries
 
 Deterministic scoring is authoritative for v0. Rubric judges and human review are allowed only for future quality dimensions that cannot be reduced to stable fixture artifacts. External benchmarks should be adapters around this same evidence model, not replacements for it.
+
+## Model Routing Extension
+
+The subagent routing policy in `config/execution-strategies/model-routing-policy.json` adds a second eval track: hold task class and acceptance criteria steady while sampling model tier and reasoning combinations over time.
+
+Representative task classes are simple docs edit, small bug fix, mechanical refactor, test creation, repo mapping, architecture audit, security-sensitive review, multi-file feature implementation, UI polish, and prompt/rule improvement.
+
+The comparison matrix is cheap plus low reasoning, cheap plus medium reasoning, mid plus medium reasoning, strong plus medium reasoning, and strong plus high reasoning. AIOS should sample this matrix intelligently rather than running every combination on every task.
+
+The target output is the cheapest reliable default per task category, failure-prone combinations to avoid, and evidence for where higher model tier or reasoning level has diminishing returns.
