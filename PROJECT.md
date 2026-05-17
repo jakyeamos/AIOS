@@ -108,6 +108,16 @@ AIOS now has a first-class service-layer route contract for serious-work intent:
 - `tests/test_project_inventory.py` and `tests/test_task_routing.py` now lock exact-match, ambiguity, unsupported, implementation-route, failure-recovery-route, audit-route, and prompt-fallback behavior
 - this establishes the route contract for Phase 1, but `aios start-work` still needs to adopt and persist it before AIOS can claim routed serious work flows through the main entrypoint by default
 
+AIOS now has a first reusable personalized humanizer skill:
+
+- `skills/personalized-humanizer/SKILL.md` defines the local skill contract for voice matching, context modes, privacy boundaries, debug/audit output, and feedback-gated learning
+- `config/personalized-humanizer/profile.json` stores the versioned personal voice profile with global voice rules, mode-specific profiles, anti-style rules, confidence, and provenance
+- `services/personalized_humanizer.py` implements task classification, bounded corpus example selection, compact voice packet generation, conservative rewriting, quality scorecards, feedback capture, candidate profile updates, and eval execution
+- `config/workflows/registry.json` and `config/workflows/skills.json` expose the `personalized-humanizer` workflow and its staged skills for AIOS workflow routing
+- `schema.sql` includes durable tables for personalized humanizer runs, feedback, candidate profile updates, and eval results
+- `docs/architecture/personalized-humanizer.md` documents usage, retrieval, profile versioning, feedback promotion, evals, privacy boundaries, and debug inspection
+- `tests/test_personalized_humanizer.py` covers the five required writing modes, mode-boundary retrieval, privacy-preserving provenance, prompt structure preservation, feedback proposal gating, eval cases, and workflow execution
+
 ## Implemented On 2026-05-14
 
 AIOS now has a fixture-backed harness eval v0 contract:
