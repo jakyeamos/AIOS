@@ -123,6 +123,14 @@ AIOS now has a shared route-aware packet contract across the CLI and UI/runtime 
 - `aios-ui/server/aios/packet-assembly.ts` now emits packet objects that conform to the shared route-aware packet contract, even when routing data is not yet attached in the UI-created path
 - this closes the Phase 2 storage/reader drift between CLI and UI packet surfaces, but compiler/query provenance convergence and final governed handoff composition still remain
 
+AIOS context compilation and grounded query now share packet-compatible provenance semantics:
+
+- `tools/context-compile.mjs` now emits `retrieval_trace` and `packet_contract` metadata in the compiler payload and durable receipt JSON so context selection can flow into packet and query surfaces without translation loss
+- `tests/context-compiler.test.mjs` now locks the packet-compatible provenance contract, including deterministic selection policy, route compatibility, loaded-context counts, and populated retrieval reasons
+- `aios-ui/server/aios/query.ts` now loads the latest persisted packet provenance for a project and folds it into grounded `project_state` and `agent_brief` answers instead of relying only on adjacent dossier/topic traces
+- grounded-query retrieval traces can now cite the latest briefing packet with objective, top context, and route-summary evidence, making compiler output and operator answers tell one provenance story
+- this closes the main Phase 2 provenance gap between compiler receipts and query answers, but the final governed handoff packet still needs explicit workflow instructions, checks, and acceptance criteria
+
 AIOS now has a first reusable personalized humanizer skill:
 
 - `skills/personalized-humanizer/SKILL.md` defines the local skill contract for voice matching, context modes, privacy boundaries, debug/audit output, and feedback-gated learning
