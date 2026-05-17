@@ -131,6 +131,15 @@ AIOS context compilation and grounded query now share packet-compatible provenan
 - grounded-query retrieval traces can now cite the latest briefing packet with objective, top context, and route-summary evidence, making compiler output and operator answers tell one provenance story
 - this closes the main Phase 2 provenance gap between compiler receipts and query answers, but the final governed handoff packet still needs explicit workflow instructions, checks, and acceptance criteria
 
+AIOS serious-work packets now use a governed handoff contract instead of a generic context summary:
+
+- `services/aios_cli.py` now builds `start-work` packets with explicit workflow stages, routed prompt-family guidance, required checks, escalation rules, and closeout/writeback instructions
+- the CLI packet response now returns the governed section structure directly and persists packet-contract metadata alongside the routed retrieval trace
+- `tests/test_aios_cli.py` now locks the new packet contract, including section presence and persisted `governed-handoff-v1` metadata
+- `aios-ui/server/aios/packet-assembly.ts` now composes the same contract shape for control-plane planned packets so UI-created work packets are also execution-oriented
+- `aios-ui/server/aios/control-plane.ts` now records the packet contract version in the ready-state reason metadata for planned UI runs
+- this closes Phase 2 with an agent-ready packet contract that combines context, workflow, prompt, checks, and governed closeout expectations in one default serious-work handoff
+
 AIOS now has a first reusable personalized humanizer skill:
 
 - `skills/personalized-humanizer/SKILL.md` defines the local skill contract for voice matching, context modes, privacy boundaries, debug/audit output, and feedback-gated learning
