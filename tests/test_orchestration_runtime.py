@@ -203,6 +203,16 @@ def test_hook_stop_uses_explicit_run_handshake(runtime_db: Path, tmp_path: Path,
     conn.close()
 
 
+def test_base_schema_exposes_route_metadata_columns(runtime_db: Path) -> None:
+    conn = sqlite3.connect(runtime_db)
+    run_columns = {row[1] for row in conn.execute("PRAGMA table_info(orchestration_runs)").fetchall()}
+    packet_columns = {row[1] for row in conn.execute("PRAGMA table_info(briefing_packets)").fetchall()}
+
+    assert {"route_id", "route_status", "route_result_json"} <= run_columns
+    assert {"route_id", "route_result_json"} <= packet_columns
+    conn.close()
+
+
 def test_runtime_transition_records_failed_reason_metadata(runtime_db: Path, tmp_path: Path) -> None:
     from aios_orchestration_runtime import ensure_runtime_schema, transition_run
 

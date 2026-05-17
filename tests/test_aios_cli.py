@@ -18,7 +18,13 @@ def _seed_db(path: Path) -> None:
     conn = sqlite3.connect(path)
     conn.executescript(
         """
-        CREATE TABLE projects (id TEXT PRIMARY KEY, name TEXT, status TEXT);
+        CREATE TABLE projects (
+            id TEXT PRIMARY KEY,
+            name TEXT,
+            repo_path TEXT,
+            obsidian_path TEXT,
+            status TEXT
+        );
         CREATE TABLE sessions (
             id TEXT PRIMARY KEY,
             project_id TEXT,
@@ -50,6 +56,9 @@ def _seed_db(path: Path) -> None:
             assumptions_json TEXT DEFAULT '[]',
             context_trace_json TEXT DEFAULT '[]',
             backend_key TEXT,
+            route_id TEXT,
+            route_status TEXT,
+            route_result_json TEXT DEFAULT '{}',
             active_invocation_id TEXT,
             packet_id TEXT,
             status_reason_json TEXT DEFAULT '{}',
@@ -81,6 +90,8 @@ def _seed_db(path: Path) -> None:
             sections_json TEXT DEFAULT '[]',
             policy_mode TEXT DEFAULT 'compact-ranked',
             token_budget INTEGER DEFAULT 900,
+            route_id TEXT,
+            route_result_json TEXT DEFAULT '{}',
             selection_trace_json TEXT DEFAULT '[]',
             omitted_context_json TEXT DEFAULT '[]',
             created_at TEXT
@@ -133,7 +144,12 @@ def _seed_db(path: Path) -> None:
         );
         """
     )
-    conn.execute("INSERT INTO projects (id, name, status) VALUES ('p1', 'AIOS', 'active')")
+    conn.execute(
+        """
+        INSERT INTO projects (id, name, repo_path, obsidian_path, status)
+        VALUES ('p1', 'AIOS', '/repo', '03 Projects/AIOS', 'active')
+        """
+    )
     conn.execute(
         """
         INSERT INTO sessions (id, project_id, status, started_at, ended_at, cwd)
@@ -282,7 +298,7 @@ def test_capability_audit_reports_missing_and_no_data_signals(tmp_path: Path, ca
     project = data["projects"]["items"][0]
     assert project["health_score"]["provenance"] == "missing"
     assert project["status"]["provenance"] == "confirmed"
-    assert any(finding["code"] == "project_health_missing" for finding in data["findings"])
+    assert any(finding["code"] == "project_missing_source" for finding in data["findings"])
     assert any(finding["code"] == "prompt_library_links_missing" for finding in data["findings"])
     assert any(finding["code"] == "knowledge_references_missing" for finding in data["findings"])
 
@@ -347,7 +363,7 @@ def test_invocation_audit_and_backend_label_contract(tmp_path: Path, capsys) -> 
             "--logs-dir",
             str(logs_dir),
             "start-work",
-            "verify backend label",
+            "Audit AIOS backend labeling and ship a scoped fix",
             "--backend",
             "claude-managed-runtime",
         ]
@@ -985,9 +1001,7 @@ def test_start_work_creates_packet_and_links_current_session(tmp_path: Path, cap
             "--logs-dir",
             str(logs_dir),
             "start-work",
-            "Route serious agent work through AIOS",
-            "--project",
-            "p1",
+            "Audit AIOS onboarding and ship a scoped fix with tests",
         ]
     )
 
@@ -998,12 +1012,15 @@ def test_start_work_creates_packet_and_links_current_session(tmp_path: Path, cap
     data = output["data"]
     assert data["run"]["status"] == "in_progress"
     assert data["run"]["session_id"] == "s1"
+    assert data["run"]["project_id"] == "p1"
     assert data["packet"]["policy_mode"] == "compact-ranked"
-    assert "Route serious agent work through AIOS" in data["packet"]["markdown"]
+    assert "Audit AIOS onboarding and ship a scoped fix with tests" in data["packet"]["markdown"]
     assert "Use explicit handshakes" in data["packet"]["markdown"]
     assert "Route serious work through AIOS" in data["packet"]["markdown"]
     assert "Agent routing" in data["packet"]["markdown"]
     assert data["invocation"]["session_id"] == "s1"
+    assert data["route"]["project"]["selected_project_id"] == "p1"
+    assert data["route"]["selected_workflow"]["workflow_key"] == "implementation-delivery"
     assert data["next_agent_context"]["run_id"] == data["run"]["id"]
     assert data["next_agent_context"]["invocation_id"] == data["invocation"]["id"]
 
@@ -1014,16 +1031,19 @@ def test_start_work_creates_packet_and_links_current_session(tmp_path: Path, cap
     assert linked == (
         data["run"]["id"],
         data["invocation"]["id"],
-        "Route serious agent work through AIOS",
+        "Audit AIOS onboarding and ship a scoped fix with tests",
     )
     packet_row = conn.execute(
-        "SELECT run_id, packet_markdown, selection_trace_json FROM briefing_packets WHERE id = ?",
+        "SELECT run_id, packet_markdown, route_result_json, selection_trace_json FROM briefing_packets WHERE id = ?",
         (data["packet"]["id"],),
     ).fetchone()
     assert packet_row[0] == data["run"]["id"]
     assert "Applicable Success Criteria" in packet_row[1]
-    selection_trace = json.loads(packet_row[2])
-    assert selection_trace["query"] == "Route serious agent work through AIOS"
+    route_result = json.loads(packet_row[2])
+    assert route_result["project"]["selected_project_id"] == "p1"
+    selection_trace = json.loads(packet_row[3])
+    assert selection_trace["query"] == "Audit AIOS onboarding and ship a scoped fix with tests"
+    assert selection_trace["route"]["route_id"] == data["run"]["route_id"]
     assert selection_trace["matched_objects"][0]["title"] == "Agent routing"
     assert selection_trace["token_budget"] == 900
     event_count = conn.execute(
@@ -1031,6 +1051,54 @@ def test_start_work_creates_packet_and_links_current_session(tmp_path: Path, cap
         (data["run"]["id"],),
     ).fetchone()[0]
     assert event_count == 3
+    conn.close()
+
+
+def test_start_work_blocks_ambiguous_route_before_packet_creation(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        """
+        INSERT INTO projects (id, name, repo_path, obsidian_path, status)
+        VALUES ('p2', 'Soundscape App', '/soundscape-app', '03 Projects/Soundscape App', 'active')
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO projects (id, name, repo_path, obsidian_path, status)
+        VALUES ('p3', 'Soundscape Web', '/soundscape-web', '03 Projects/Soundscape Web', 'active')
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    start_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "start-work",
+            "Improve Soundscape onboarding and make it launch ready",
+        ]
+    )
+
+    assert start_exit == aios_cli.EXIT_USAGE
+    output = json.loads(capsys.readouterr().out)
+    assert output["ok"] is False
+    assert output["error"]["code"] == "route-blocked"
+
+    conn = sqlite3.connect(db_path)
+    run_count = conn.execute("SELECT COUNT(*) FROM orchestration_runs WHERE objective = ?", (
+        "Improve Soundscape onboarding and make it launch ready",
+    )).fetchone()[0]
+    packet_count = conn.execute("SELECT COUNT(*) FROM briefing_packets").fetchone()[0]
+    assert run_count == 0
+    assert packet_count == 0
     conn.close()
 
 

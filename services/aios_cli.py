@@ -50,6 +50,7 @@ from services.rtk_integration import (
     rtk_metrics_log,
 )
 from services.success_criteria import preview_applicable_criteria
+from services.task_routing import route_objective
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG_ROOT = REPO_ROOT / "config"
@@ -684,6 +685,9 @@ def _ensure_start_work_schema(conn: sqlite3.Connection) -> None:
             assumptions_json TEXT DEFAULT '[]',
             context_trace_json TEXT DEFAULT '[]',
             backend_key TEXT,
+            route_id TEXT,
+            route_status TEXT,
+            route_result_json TEXT DEFAULT '{}',
             active_invocation_id TEXT,
             packet_id TEXT,
             status_reason_json TEXT DEFAULT '{}',
@@ -741,6 +745,8 @@ def _ensure_start_work_schema(conn: sqlite3.Connection) -> None:
             sections_json TEXT DEFAULT '[]',
             policy_mode TEXT DEFAULT 'compact-ranked',
             token_budget INTEGER DEFAULT 900,
+            route_id TEXT,
+            route_result_json TEXT DEFAULT '{}',
             selection_trace_json TEXT DEFAULT '[]',
             omitted_context_json TEXT DEFAULT '[]',
             created_at TEXT
@@ -757,6 +763,9 @@ def _ensure_start_work_schema(conn: sqlite3.Connection) -> None:
         "assumptions_json": "TEXT DEFAULT '[]'",
         "context_trace_json": "TEXT DEFAULT '[]'",
         "backend_key": "TEXT",
+        "route_id": "TEXT",
+        "route_status": "TEXT",
+        "route_result_json": "TEXT DEFAULT '{}'",
         "active_invocation_id": "TEXT",
         "packet_id": "TEXT",
         "status_reason_json": "TEXT DEFAULT '{}'",
@@ -795,6 +804,8 @@ def _ensure_start_work_schema(conn: sqlite3.Connection) -> None:
         "sections_json": "TEXT DEFAULT '[]'",
         "policy_mode": "TEXT DEFAULT 'compact-ranked'",
         "token_budget": "INTEGER DEFAULT 900",
+        "route_id": "TEXT",
+        "route_result_json": "TEXT DEFAULT '{}'",
         "selection_trace_json": "TEXT DEFAULT '[]'",
         "omitted_context_json": "TEXT DEFAULT '[]'",
         "created_at": "TEXT",
@@ -1098,17 +1109,18 @@ def _start_work_payload(
     *,
     objective: str,
     project_id: str | None,
-    workflow_key: str,
-    agent_key: str,
-    backend_key: str,
+    workflow_key: str | None,
+    agent_key: str | None,
+    backend_key: str | None,
     session_id: str | None,
 ) -> dict[str, Any]:
     _ensure_start_work_schema(conn)
     explicit_session_id = session_id is not None
     linked_session_id = session_id if explicit_session_id else _current_session_id(logs_dir)
+    session_cwd: str | None = None
     if linked_session_id and _table_exists(conn, "sessions"):
         session = conn.execute(
-            "SELECT id, project_id, status FROM sessions WHERE id = ? LIMIT 1",
+            "SELECT id, project_id, status, cwd FROM sessions WHERE id = ? LIMIT 1",
             (linked_session_id,),
         ).fetchone()
         if session is None:
@@ -1123,17 +1135,44 @@ def _start_work_payload(
             linked_session_id = None
         if linked_session_id is None:
             session = None
+        else:
+            session_cwd = str(session["cwd"]) if session["cwd"] else None
     if linked_session_id and _table_exists(conn, "sessions"):
         session = conn.execute(
-            "SELECT id, project_id FROM sessions WHERE id = ? LIMIT 1",
+            "SELECT id, project_id, cwd FROM sessions WHERE id = ? LIMIT 1",
             (linked_session_id,),
         ).fetchone()
         if session is None:
             raise CLIError("session-not-found", f"Session not found: {linked_session_id}", EXIT_NOT_FOUND)
-        project_id = project_id or session["project_id"]
+        session_cwd = str(session["cwd"]) if session["cwd"] else session_cwd
+
+    preferred_surface = "codex"
+    if backend_key:
+        preferred_surface = get_invocation_backend(backend_key).surface
+    route = route_objective(
+        conn,
+        objective=objective,
+        surface=preferred_surface,
+        cwd=session_cwd,
+        explicit_project_id=project_id,
+    )
+    route_payload = route.to_json()
+    if route.status != "ready":
+        raise CLIError("route-blocked", route.blocked_reason or "Routing blocked.", EXIT_USAGE)
+
+    project_id = route.project.selected_project_id
+    workflow_key = workflow_key or str(route.selected_workflow["workflow_key"])
+    agent_key = agent_key or str(route.agent_recommendation["agent_key"])
+    routed_backend_key = (
+        str(route.backend_recommendation["selected_backend_key"])
+        if route.backend_recommendation and route.backend_recommendation.get("selected_backend_key")
+        else DEFAULT_START_BACKEND_KEY
+    )
+    backend = get_invocation_backend(backend_key or routed_backend_key)
+    route_id = f"route-{uuid.uuid4()}"
+    route_payload["route_id"] = route_id
 
     project_name = _project_name(conn, project_id)
-    backend = get_invocation_backend(backend_key)
     now = _now_iso()
     run_id = f"run-{uuid.uuid4()}"
     packet_id = f"packet-{uuid.uuid4()}"
@@ -1153,6 +1192,7 @@ def _start_work_payload(
         project_id=project_id,
         token_budget=900,
     )
+    retrieval_trace["route"] = route_payload
     status = "in_progress" if linked_session_id else "ready"
     invocation_status = "running" if linked_session_id else "prepared"
 
@@ -1160,10 +1200,11 @@ def _start_work_payload(
         """
         INSERT INTO orchestration_runs (
             id, project_id, session_id, objective, workflow_key, agent_key, status, rationale,
-            assumptions_json, context_trace_json, backend_key, active_invocation_id, packet_id,
+            assumptions_json, context_trace_json, backend_key, route_id, route_status,
+            route_result_json, active_invocation_id, packet_id,
             status_reason_json, created_at, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             run_id,
@@ -1183,9 +1224,17 @@ def _start_work_payload(
                 ]
             ),
             backend.key,
+            route_id,
+            route.status,
+            json.dumps(route_payload),
             invocation_id,
             packet_id,
-            json.dumps({"kind": "strict_manual_handshake" if linked_session_id else "packet_ready"}),
+            json.dumps(
+                {
+                    "kind": "strict_manual_handshake" if linked_session_id else "packet_ready",
+                    "route_id": route_id,
+                }
+            ),
             now,
             now,
         ),
@@ -1206,9 +1255,10 @@ def _start_work_payload(
         """
         INSERT INTO briefing_packets (
             id, run_id, project_id, objective, workflow_key, agent_key, packet_markdown,
-            sections_json, policy_mode, token_budget, selection_trace_json, omitted_context_json, created_at
+            sections_json, policy_mode, token_budget, route_id, route_result_json, selection_trace_json,
+            omitted_context_json, created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'compact-ranked', 900, ?, '[]', ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'compact-ranked', 900, ?, ?, ?, '[]', ?)
         """,
         (
             packet_id,
@@ -1219,6 +1269,8 @@ def _start_work_payload(
             agent_key,
             packet_markdown,
             json.dumps(sections),
+            route_id,
+            json.dumps(route_payload),
             json.dumps(retrieval_trace),
             now,
         ),
@@ -1253,7 +1305,19 @@ def _start_work_payload(
             run_id,
             linked_session_id,
             json.dumps(["aios", "start-work", "strict-handshake"]),
-            json.dumps({"strictHandshake": True, "source": "aios-cli"}),
+            json.dumps(
+                {
+                    "strictHandshake": True,
+                    "source": "aios-cli",
+                    "route_id": route_id,
+                    "route_status": route.status,
+                    "prompt_family": (
+                        route.prompt_recommendation.get("prompt_family")
+                        if route.prompt_recommendation
+                        else None
+                    ),
+                }
+            ),
             now,
             now if linked_session_id else None,
             now,
@@ -1273,7 +1337,14 @@ def _start_work_payload(
             (
                 run_id,
                 invocation_id,
-                json.dumps({"backend_key": backend.key, "strict_manual_handshake": True, "packet_id": packet_id}),
+                json.dumps(
+                    {
+                        "backend_key": backend.key,
+                        "strict_manual_handshake": True,
+                        "packet_id": packet_id,
+                        "route_id": route_id,
+                    }
+                ),
                 objective,
                 linked_session_id,
             ),
@@ -1301,6 +1372,8 @@ def _start_work_payload(
             "workflow_key": workflow_key,
             "agent_key": agent_key,
             "backend_key": backend.key,
+            "route_id": route_id,
+            "route_status": route.status,
             "status": status,
             "packet_id": packet_id,
             "active_invocation_id": invocation_id,
@@ -1323,6 +1396,7 @@ def _start_work_payload(
             "packet_id": packet_id,
             "session_id": linked_session_id,
         },
+        "route": route_payload,
     }
 
 
@@ -2593,9 +2667,9 @@ def create_parser() -> argparse.ArgumentParser:
     start_work.add_argument("objective", help="Work objective to route through AIOS")
     start_work.add_argument("--project", default=None, help="Project id to link to the run")
     start_work.add_argument("--session-id", default=None, help="Session id to link; defaults to logs/current_session")
-    start_work.add_argument("--workflow", default=DEFAULT_START_WORKFLOW_KEY, help="Workflow key")
-    start_work.add_argument("--agent", default=DEFAULT_START_AGENT_KEY, help="Agent profile key")
-    start_work.add_argument("--backend", default=DEFAULT_START_BACKEND_KEY, help="Invocation backend key")
+    start_work.add_argument("--workflow", default=None, help="Workflow key override")
+    start_work.add_argument("--agent", default=None, help="Agent profile key override")
+    start_work.add_argument("--backend", default=None, help="Invocation backend key override")
 
     pre_pr = subparsers.add_parser("pre-pr-readiness", help="Run the AIOS Pre-CR readiness gate")
     pre_pr.add_argument("--workspace-root", default=".", help="Workspace root to evaluate")

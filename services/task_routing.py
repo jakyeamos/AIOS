@@ -5,6 +5,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Literal
 
+from services.invocation_backends import get_backend_for_surface
 from services.project_inventory import ProjectCandidate, rank_project_candidates
 from services.workflow_orchestration import recommend_route_primitives
 
@@ -38,6 +39,7 @@ class RouteResult:
     workflow_candidates: list[dict[str, Any]]
     prompt_recommendation: dict[str, Any] | None
     backend_recommendation: dict[str, Any] | None
+    agent_recommendation: dict[str, Any] | None
     task_family: str | None
     blocked_reason: str | None
     rationale: str
@@ -149,6 +151,7 @@ def route_objective(
             workflow_candidates=[],
             prompt_recommendation=None,
             backend_recommendation=None,
+            agent_recommendation=None,
             task_family=None,
             blocked_reason=project.rationale,
             rationale=f"Routing blocked until project resolution is safe: {project.rationale}",
@@ -174,12 +177,28 @@ def route_objective(
             workflow_candidates=workflow_candidates,
             prompt_recommendation=prompt_recommendation,
             backend_recommendation=backend_recommendation,
+            agent_recommendation=None,
             task_family=None,
             blocked_reason="No governed workflow matched the objective strongly enough.",
             rationale="Routing blocked because workflow selection returned no viable governed route.",
         )
 
     workflow_family = str(selected_workflow.get("workflow_family", ""))
+    enriched_backend = backend_recommendation
+    if backend_recommendation and backend_recommendation.get("selected_surface"):
+        backend = get_backend_for_surface(str(backend_recommendation["selected_surface"]))
+        enriched_backend = {
+            **backend_recommendation,
+            "selected_backend_key": backend.key,
+            "selected_backend_label": backend.label,
+        }
+    agent_recommendation = {
+        "agent_key": "implementation-lead",
+        "rationale": (
+            f"Defaulted to implementation-lead because {workflow_family or 'the selected workflow'} "
+            "still executes through the implementation-oriented harness path."
+        ),
+    }
     return RouteResult(
         status="ready",
         objective=objective,
@@ -188,7 +207,8 @@ def route_objective(
         selected_workflow=selected_workflow,
         workflow_candidates=workflow_candidates,
         prompt_recommendation=prompt_recommendation,
-        backend_recommendation=backend_recommendation,
+        backend_recommendation=enriched_backend,
+        agent_recommendation=agent_recommendation,
         task_family=workflow_family,
         blocked_reason=None,
         rationale=(

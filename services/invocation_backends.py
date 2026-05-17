@@ -71,6 +71,16 @@ def list_invocation_backends() -> list[InvocationBackend]:
     return BACKENDS
 
 
+def get_backend_for_surface(surface: Surface, *, include_deprecated: bool = False) -> InvocationBackend:
+    for backend in BACKENDS:
+        if backend.surface != surface:
+            continue
+        if backend.deprecated and not include_deprecated:
+            continue
+        return backend
+    raise ValueError(f"No invocation backend registered for surface={surface}")
+
+
 def get_invocation_backend(key: str) -> InvocationBackend:
     for backend in BACKENDS:
         if backend.key == key:

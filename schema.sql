@@ -176,6 +176,9 @@ CREATE TABLE orchestration_runs (
   assumptions_json TEXT NOT NULL DEFAULT '[]',
   context_trace_json TEXT NOT NULL DEFAULT '[]',
   backend_key TEXT,
+  route_id TEXT,
+  route_status TEXT,
+  route_result_json TEXT NOT NULL DEFAULT '{}',
   active_invocation_id TEXT REFERENCES orchestration_invocations(id),
   packet_id TEXT,
   memory_update_id TEXT,
@@ -244,6 +247,8 @@ CREATE TABLE briefing_packets (
   sections_json TEXT NOT NULL DEFAULT '[]',
   policy_mode TEXT NOT NULL DEFAULT 'compact-ranked',
   token_budget INTEGER NOT NULL DEFAULT 900,
+  route_id TEXT,
+  route_result_json TEXT NOT NULL DEFAULT '{}',
   selection_trace_json TEXT NOT NULL DEFAULT '[]',
   omitted_context_json TEXT NOT NULL DEFAULT '[]',
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
