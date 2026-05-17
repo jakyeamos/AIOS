@@ -345,6 +345,8 @@ export async function compileContext({ task, contextRoot, write = true, outputRo
     stale_context: staleContext,
     missing_context: missingContext,
     writeback_candidates: writebackCandidates,
+    retrieval_trace: buildRetrievalTrace(selectedFiles, missingContext, staleContext, conflicts),
+    packet_contract: buildPacketContract(selectedFiles, skippedFiles, missingContext, writebackCandidates),
   };
 
   const briefingMarkdown = renderBriefing(payload);
@@ -376,6 +378,8 @@ export async function compileContext({ task, contextRoot, write = true, outputRo
           stale_context: payload.stale_context,
           missing_context: payload.missing_context,
           writeback_candidates: payload.writeback_candidates,
+          retrieval_trace: payload.retrieval_trace,
+          packet_contract: payload.packet_contract,
           context_receipt: receiptMarkdown,
         },
         null,
@@ -596,6 +600,46 @@ function buildKnownRisks(conflicts, missingContext, staleContext) {
   if (staleContext.length) risks.push("Some selected context is stale and should be reviewed.");
   if (!risks.length) risks.push("No context-selection risks detected by the compiler.");
   return risks;
+}
+
+function buildRetrievalTrace(selectedFiles, missingContext, staleContext, conflicts) {
+  const loaded = selectedFiles.slice(0, 8).map((file) => ({
+    source: file.frontmatter.id,
+    reason: file.reason,
+    freshness: String(file.frontmatter.last_reviewed ?? file.frontmatter.last_validated_at ?? "unknown"),
+    confidence: Number(Math.max(0.2, Math.min(0.99, file.final_score)).toFixed(2)),
+  }));
+  const missing = missingContext.map((item) => ({
+    source: "missing-context",
+    reason: item.reason,
+    freshness: "missing",
+    confidence: 0.2,
+  }));
+  const stale = staleContext.map((item) => ({
+    source: item.id,
+    reason: `${item.path} is stale and should be reviewed before relying on it heavily.`,
+    freshness: String(item.last_reviewed ?? "stale"),
+    confidence: 0.35,
+  }));
+  const resolvedConflicts = conflicts.map((item) => ({
+    source: "conflict-resolution",
+    reason: `${item.winner} overrides ${item.loser} for ${item.topic}.`,
+    freshness: "compile-time",
+    confidence: 0.82,
+  }));
+  return [...loaded, ...missing, ...stale, ...resolvedConflicts];
+}
+
+function buildPacketContract(selectedFiles, skippedFiles, missingContext, writebackCandidates) {
+  return {
+    version: "phase2-v1",
+    route_compatible: true,
+    selection_policy: "deterministic-context-compiler",
+    loaded_count: selectedFiles.length,
+    skipped_count: skippedFiles.length,
+    missing_context_count: missingContext.length,
+    writeback_candidate_count: writebackCandidates.length,
+  };
 }
 
 function collectAcceptanceCriteria(selectedFiles) {

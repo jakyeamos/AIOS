@@ -220,6 +220,20 @@ Keep implementation simple.
   }
 });
 
+test("emits packet-compatible retrieval trace and contract metadata", async () => {
+  const result = await compileContext({
+    task: "Improve Obsidian search so AIOS can answer questions from my second brain.",
+    contextRoot,
+    write: false,
+  });
+
+  assert.equal(result.packet_contract.route_compatible, true);
+  assert.equal(result.packet_contract.selection_policy, "deterministic-context-compiler");
+  assert(result.packet_contract.loaded_count >= 1);
+  assert(result.retrieval_trace.some((item) => item.source === "domains.knowledge-systems"));
+  assert(result.retrieval_trace.every((item) => typeof item.reason === "string" && item.reason.length > 0));
+});
+
 test("parses arrays, nested conflict keys, and body from frontmatter", async () => {
   const parsed = parseContextFile(
     "example.md",

@@ -21,6 +21,31 @@ const countRows = (db: Database.Database, table: string): number => {
   return Number(row.count) || 0;
 };
 
+const parseJsonArray = <T>(raw: string | null, fallback: T): T => {
+  if (!raw) {
+    return fallback;
+  }
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+};
+
+const parseJsonRecord = (raw: string | null): Record<string, unknown> | null => {
+  if (!raw) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
+};
+
 const isCapabilityQuestion = (question: string): boolean => {
   const lower = question.toLowerCase();
   return (
@@ -103,6 +128,90 @@ const loadProjectRepoPath = (db: Database.Database, projectId: string | null): s
     .get(projectId) as { repoPath: string } | undefined;
 
   return row?.repoPath ?? null;
+};
+
+const loadLatestPacketProvenance = (
+  db: Database.Database,
+  projectId: string | null,
+): {
+  packetId: string;
+  objective: string;
+  workflowKey: string;
+  createdAt: string;
+  routeSummary: string | null;
+  topContext: string[];
+} | null => {
+  if (!projectId || !tableExists(db, "briefing_packets")) {
+    return null;
+  }
+
+  const columns = db.prepare("PRAGMA table_info(briefing_packets)").all() as Array<{ name: string }>;
+  const columnNames = new Set(columns.map((column) => column.name));
+  if (!columnNames.has("selection_trace_json")) {
+    return null;
+  }
+
+  const routeColumn = columnNames.has("route_result_json")
+    ? ", route_result_json AS routeResultJson"
+    : "";
+  const row = db
+    .prepare(
+      `
+      SELECT
+        id,
+        objective,
+        workflow_key AS workflowKey,
+        created_at AS createdAt,
+        ${routeColumn}
+        selection_trace_json AS selectionTraceJson
+      FROM briefing_packets
+      WHERE project_id = ?
+      ORDER BY created_at DESC
+      LIMIT 1
+    `,
+    )
+    .get(projectId) as
+    | {
+        id: string;
+        objective: string;
+        workflowKey: string;
+        createdAt: string;
+        routeResultJson?: string | null;
+        selectionTraceJson: string;
+      }
+    | undefined;
+
+  if (!row) {
+    return null;
+  }
+
+  const selectionTrace = parseJsonArray<Array<{ label?: string; section?: string }>>(row.selectionTraceJson, []);
+  const topContext = selectionTrace
+    .slice(0, 3)
+    .map((item: { label?: string; section?: string }) => `${item.section ?? "Context"}: ${item.label ?? "Unnamed signal"}`);
+  let routeSummary: string | null = null;
+  if (row.routeResultJson) {
+    const route = parseJsonRecord(row.routeResultJson);
+    const selectedWorkflow =
+      route && typeof route === "object" && !Array.isArray(route)
+        ? (route.selected_workflow as { workflow_key?: string } | null)
+        : null;
+    const project = route && typeof route === "object" && !Array.isArray(route)
+      ? (route.project as { outcome?: string } | null)
+      : null;
+    routeSummary = selectedWorkflow?.workflow_key
+      ? `Latest routed packet used ${selectedWorkflow.workflow_key} with project outcome ${project?.outcome ?? "unknown"}.`
+      : null;
+  }
+
+  return {
+    packetId: row.id,
+    objective: row.objective,
+    workflowKey: row.workflowKey,
+    createdAt: row.createdAt,
+    routeSummary,
+    topContext,
+  };
 };
 
 const answerCapabilityQuestion = (db: Database.Database, question: string): GroundedAnswer => {
@@ -204,6 +313,7 @@ export const answerGroundedQuestion = (
   const recentChanges = listRecentChanges(db, { projectId: projectId ?? undefined, limit: 5 });
   const decisionPages = listKnowledgePages(db).filter((page) => page.kind === "decision").slice(0, 3);
   const topicMatches = searchTopicGraph(db, { projectId, query: input.question, limit: 4 });
+  const latestPacket = loadLatestPacketProvenance(db, projectId);
 
   if (isCapabilityQuestion(input.question)) {
     return answerCapabilityQuestion(db, input.question);
@@ -267,6 +377,12 @@ export const answerGroundedQuestion = (
       facts: [
         ...dossier.sections.flatMap((section) => section.items).slice(0, 6),
         ...topicMatches.flatMap((match) => getTopicReferences(db, match.topic.slug, 1).map((reference) => `${match.topic.title}: ${reference.excerpt}`)),
+        ...(latestPacket
+          ? [
+              `Latest packet objective: ${latestPacket.objective}`,
+              ...latestPacket.topContext,
+            ]
+          : []),
         ...(ctsContext && ctsContext.index_status === "current"
           ? [
               `CTS architecture: ${ctsContext.architecture_summary ?? "Unavailable"}`,
@@ -278,6 +394,7 @@ export const answerGroundedQuestion = (
         dossier.status === "warning"
           ? "Open bugs or weak memory signals are making this project operationally noisy."
           : "The project has enough recent state to support task-scoped delegation.",
+        ...(latestPacket?.routeSummary ? [latestPacket.routeSummary] : []),
         ...(topicMatches.length > 0 ? [`Most relevant indexed topic is ${topicMatches[0].topic.title}.`] : []),
         ...(ctsContext && ctsContext.index_status === "current"
           ? ["CTS context suggests the likely implementation surface can be narrowed before delegation."]
@@ -301,6 +418,16 @@ export const answerGroundedQuestion = (
           freshness: match.topic.freshness,
           confidence: match.topic.confidence,
         })),
+        ...(latestPacket
+          ? [
+              {
+                source: "briefing-packet",
+                reason: latestPacket.routeSummary ?? `Loaded latest packet ${latestPacket.packetId}.`,
+                freshness: latestPacket.createdAt,
+                confidence: 0.74,
+              },
+            ]
+          : []),
         ...(ctsContext && ctsContext.index_status === "current"
           ? [
               {
@@ -355,6 +482,12 @@ export const answerGroundedQuestion = (
       facts: [
         dossier.summary,
         ...topicMatches.slice(0, 2).map((match) => `Topic: ${match.topic.title}`),
+        ...(latestPacket
+          ? [
+              `Latest packet objective: ${latestPacket.objective}`,
+              ...latestPacket.topContext,
+            ]
+          : []),
         ...likelyFiles.slice(0, 4).map((filePath) => `Likely file: ${filePath}`),
         ...(ctsContext && ctsContext.index_status === "current"
           ? (ctsContext.directly_relevant_nodes ?? []).slice(0, 4).map((node) => `CTS node: ${node}`)
@@ -362,6 +495,7 @@ export const answerGroundedQuestion = (
       ],
       inferences: [
         "Without a task-specific packet, the agent would receive too much low-signal operational history.",
+        ...(latestPacket?.routeSummary ? [latestPacket.routeSummary] : []),
         ...(topicMatches.length > 0 ? ["Ranked topics indicate which durable context should reach the packet first."] : []),
         ...(ctsContext && ctsContext.index_status === "current"
           ? ["CTS context can further narrow the likely code surface before execution starts."]
@@ -385,6 +519,16 @@ export const answerGroundedQuestion = (
           freshness: match.topic.freshness,
           confidence: match.topic.confidence,
         })),
+        ...(latestPacket
+          ? [
+              {
+                source: "briefing-packet",
+                reason: latestPacket.routeSummary ?? `Loaded latest packet ${latestPacket.packetId}.`,
+                freshness: latestPacket.createdAt,
+                confidence: 0.74,
+              },
+            ]
+          : []),
         ...(ctsContext && ctsContext.index_status === "current"
           ? [
               {
