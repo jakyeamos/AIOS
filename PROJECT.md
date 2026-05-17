@@ -115,6 +115,14 @@ AIOS `start-work` now uses and persists the Phase 1 route contract:
 - `orchestration_runs` and `briefing_packets` now persist `route_id` plus machine-readable route metadata so later packet/query/operator surfaces can inspect routing decisions without recomputing them
 - `tests/test_aios_cli.py` and `tests/test_orchestration_runtime.py` now cover route-aware packet creation, persisted route metadata, and ambiguity blocking in the main control-plane entrypoint
 
+AIOS now has a shared route-aware packet contract across the CLI and UI/runtime packet surfaces:
+
+- `aios-ui/lib/control-plane.ts` now models `routeId`, `routeResult`, and route-aware run metadata in the shared control-plane types
+- `aios-ui/server/aios/schema.ts` now keeps UI/runtime schema upkeep aligned with the route-aware `orchestration_runs` and `briefing_packets` columns already present in `schema.sql` and `services/aios_cli.py`
+- `aios-ui/server/aios/control-plane.ts` now reads and writes route-aware packet/run metadata instead of assuming the older packet-only shape
+- `aios-ui/server/aios/packet-assembly.ts` now emits packet objects that conform to the shared route-aware packet contract, even when routing data is not yet attached in the UI-created path
+- this closes the Phase 2 storage/reader drift between CLI and UI packet surfaces, but compiler/query provenance convergence and final governed handoff composition still remain
+
 AIOS now has a first reusable personalized humanizer skill:
 
 - `skills/personalized-humanizer/SKILL.md` defines the local skill contract for voice matching, context modes, privacy boundaries, debug/audit output, and feedback-gated learning
