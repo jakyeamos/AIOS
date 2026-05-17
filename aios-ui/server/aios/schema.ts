@@ -29,6 +29,10 @@ export const ensureControlPlaneSchema = (db: Database.Database): void => {
       rationale TEXT NOT NULL,
       assumptions_json TEXT NOT NULL DEFAULT '[]',
       context_trace_json TEXT NOT NULL DEFAULT '[]',
+      backend_key TEXT,
+      route_id TEXT,
+      route_status TEXT,
+      route_result_json TEXT NOT NULL DEFAULT '{}',
       packet_id TEXT,
       memory_update_id TEXT,
       result_summary TEXT,
@@ -89,6 +93,8 @@ export const ensureControlPlaneSchema = (db: Database.Database): void => {
       sections_json TEXT NOT NULL DEFAULT '[]',
       policy_mode TEXT NOT NULL DEFAULT 'compact-ranked',
       token_budget INTEGER NOT NULL DEFAULT 900,
+      route_id TEXT,
+      route_result_json TEXT NOT NULL DEFAULT '{}',
       selection_trace_json TEXT NOT NULL DEFAULT '[]',
       omitted_context_json TEXT NOT NULL DEFAULT '[]',
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
@@ -681,6 +687,9 @@ export const ensureControlPlaneSchema = (db: Database.Database): void => {
   ensureColumn(db, "orchestration_runs", "result_summary", "TEXT");
   ensureColumn(db, "orchestration_runs", "completed_at", "TEXT");
   ensureColumn(db, "orchestration_runs", "backend_key", "TEXT");
+  ensureColumn(db, "orchestration_runs", "route_id", "TEXT");
+  ensureColumn(db, "orchestration_runs", "route_status", "TEXT");
+  ensureColumn(db, "orchestration_runs", "route_result_json", "TEXT NOT NULL DEFAULT '{}'");
   ensureColumn(db, "orchestration_runs", "active_invocation_id", "TEXT REFERENCES orchestration_invocations(id)");
   ensureColumn(db, "orchestration_runs", "started_at", "TEXT");
   ensureColumn(db, "orchestration_runs", "failed_at", "TEXT");
@@ -697,6 +706,8 @@ export const ensureControlPlaneSchema = (db: Database.Database): void => {
   ensureColumn(db, "standards_backfill_tasks", "review_at", "TEXT");
   ensureColumn(db, "briefing_packets", "policy_mode", "TEXT NOT NULL DEFAULT 'compact-ranked'");
   ensureColumn(db, "briefing_packets", "token_budget", "INTEGER NOT NULL DEFAULT 900");
+  ensureColumn(db, "briefing_packets", "route_id", "TEXT");
+  ensureColumn(db, "briefing_packets", "route_result_json", "TEXT NOT NULL DEFAULT '{}'");
   ensureColumn(db, "briefing_packets", "selection_trace_json", "TEXT NOT NULL DEFAULT '[]'");
   ensureColumn(db, "briefing_packets", "omitted_context_json", "TEXT NOT NULL DEFAULT '[]'");
   ensureColumn(db, "memory_updates", "run_id", "TEXT");

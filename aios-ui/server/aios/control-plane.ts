@@ -9,6 +9,7 @@ import type {
   ImprovementWriteback,
   OrchestrationRun,
   OrchestrationRunStatus,
+  RouteRecommendation,
 } from "@/lib/control-plane";
 import { agentProfiles, invocationBackends, workflowTemplates } from "@/server/aios/catalog";
 import { assembleRankedPacket, expandPacketContext } from "@/server/aios/packet-assembly";
@@ -50,6 +51,9 @@ type RunRow = {
   resultSummary: string | null;
   memoryUpdateId: string | null;
   packetId: string | null;
+  routeId: string | null;
+  routeStatus: string | null;
+  routeResultJson: string | null;
 };
 
 type PacketRow = {
@@ -63,6 +67,8 @@ type PacketRow = {
   sectionsJson: string;
   policyMode: BriefingPacket["policyMode"];
   tokenBudget: number;
+  routeId: string | null;
+  routeResultJson: string | null;
   selectionTraceJson: string;
   omittedContextJson: string;
   createdAt: string;
@@ -76,16 +82,19 @@ const parseJsonArray = <T>(raw: string, fallback: T): T => {
   }
 };
 
-const parseJsonRecord = (raw: string | null): Record<string, unknown> => {
+const parseJsonRecord = <T extends Record<string, unknown>>(raw: string | null): T | null => {
   if (!raw) {
-    return {};
+    return null;
   }
 
   try {
     const parsed = JSON.parse(raw) as unknown;
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return Object.keys(parsed as Record<string, unknown>).length > 0 ? (parsed as T) : null;
+    }
+    return null;
   } catch {
-    return {};
+    return null;
   }
 };
 
@@ -180,7 +189,10 @@ export const listControlPlaneRuns = (db: Database.Database): OrchestrationRun[] 
         r.status_reason_json AS statusReasonJson,
         r.result_summary AS resultSummary,
         r.memory_update_id AS memoryUpdateId,
-        r.packet_id AS packetId
+        r.packet_id AS packetId,
+        r.route_id AS routeId,
+        r.route_status AS routeStatus,
+        r.route_result_json AS routeResultJson
       FROM orchestration_runs r
       LEFT JOIN projects p ON p.id = r.project_id
       ORDER BY r.created_at DESC
@@ -210,10 +222,13 @@ export const listControlPlaneRuns = (db: Database.Database): OrchestrationRun[] 
     backendKey: row.backendKey,
     activeInvocationId: row.activeInvocationId,
     supersededByRunId: row.supersededByRunId,
-    statusReason: parseJsonRecord(row.statusReasonJson),
+    statusReason: parseJsonRecord<Record<string, unknown>>(row.statusReasonJson) ?? {},
     resultSummary: row.resultSummary,
     memoryUpdateId: row.memoryUpdateId,
     packetId: row.packetId,
+    routeId: row.routeId,
+    routeStatus: row.routeStatus,
+    routeResult: parseJsonRecord<RouteRecommendation>(row.routeResultJson),
   }));
 };
 
@@ -234,6 +249,8 @@ const listPacketRows = (db: Database.Database, limit = 12): BriefingPacket[] => 
         sections_json AS sectionsJson,
         policy_mode AS policyMode,
         token_budget AS tokenBudget,
+        route_id AS routeId,
+        route_result_json AS routeResultJson,
         selection_trace_json AS selectionTraceJson,
         omitted_context_json AS omittedContextJson,
         created_at AS createdAt
@@ -256,6 +273,8 @@ const listPacketRows = (db: Database.Database, limit = 12): BriefingPacket[] => 
     sections: parseJsonArray(row.sectionsJson, []),
     policyMode: row.policyMode,
     tokenBudget: row.tokenBudget,
+    routeId: row.routeId,
+    routeResult: parseJsonRecord<RouteRecommendation>(row.routeResultJson),
     selectionTrace: parseJsonArray(row.selectionTraceJson, []),
     omittedContext: parseJsonArray(row.omittedContextJson, []),
   }));
@@ -312,10 +331,13 @@ export const planTask = (
       assumptions_json,
       context_trace_json,
       backend_key,
+      route_id,
+      route_status,
+      route_result_json,
       status_reason_json,
       packet_id
     )
-    VALUES (?, ?, ?, ?, ?, 'planned', ?, ?, ?, ?, '{}', ?)
+    VALUES (?, ?, ?, ?, ?, 'planned', ?, ?, ?, ?, ?, ?, ?, '{}', ?)
   `,
   ).run(
     runId,
@@ -327,6 +349,9 @@ export const planTask = (
     JSON.stringify(assembledPacket.assumptions),
     JSON.stringify(assembledPacket.contextTrace),
     backendKey,
+    assembledPacket.routeId,
+    assembledPacket.routeResult ? "ready" : null,
+    JSON.stringify(assembledPacket.routeResult ?? {}),
     packetId,
   );
 
@@ -367,10 +392,12 @@ export const planTask = (
       sections_json,
       policy_mode,
       token_budget,
+      route_id,
+      route_result_json,
       selection_trace_json,
       omitted_context_json
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `,
   ).run(
     packetId,
@@ -383,8 +410,10 @@ export const planTask = (
     JSON.stringify(assembledPacket.sections),
     assembledPacket.policyMode,
     assembledPacket.tokenBudget,
-      JSON.stringify(assembledPacket.selectionTrace),
-      JSON.stringify(assembledPacket.omittedContext),
+    assembledPacket.routeId,
+    JSON.stringify(assembledPacket.routeResult ?? {}),
+    JSON.stringify(assembledPacket.selectionTrace),
+    JSON.stringify(assembledPacket.omittedContext),
   );
 
   db.prepare(

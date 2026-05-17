@@ -188,6 +188,40 @@ export type PacketSelectionTraceItem = {
   reason: string;
 };
 
+export type RouteProjectCandidate = {
+  id: string;
+  name: string;
+  repo_path: string;
+  obsidian_path: string;
+  status: string;
+  score: number;
+  match_kind: string;
+  rationale: string;
+};
+
+export type RouteProjectResolution = {
+  outcome: "exact" | "likely" | "ambiguous" | "unsupported";
+  selected_project_id: string | null;
+  rationale: string;
+  candidates: RouteProjectCandidate[];
+};
+
+export type RouteRecommendation = {
+  objective: string;
+  surface: string;
+  project: RouteProjectResolution;
+  selected_workflow: Record<string, unknown> | null;
+  workflow_candidates: Array<Record<string, unknown>>;
+  prompt_recommendation: Record<string, unknown> | null;
+  backend_recommendation: Record<string, unknown> | null;
+  agent_recommendation: Record<string, unknown> | null;
+  task_family: string | null;
+  blocked_reason: string | null;
+  rationale: string;
+  route_id?: string;
+  status?: string;
+};
+
 export type OmittedContextItem = {
   label: string;
   sourceKind: string;
@@ -209,6 +243,8 @@ export type BriefingPacket = {
   tokenBudget: number;
   selectionTrace: PacketSelectionTraceItem[];
   omittedContext: OmittedContextItem[];
+  routeId: string | null;
+  routeResult: RouteRecommendation | null;
 };
 
 export type OrchestrationRun = {
@@ -236,6 +272,9 @@ export type OrchestrationRun = {
   resultSummary: string | null;
   memoryUpdateId: string | null;
   packetId: string | null;
+  routeId: string | null;
+  routeStatus: string | null;
+  routeResult: RouteRecommendation | null;
 };
 
 export type OrchestrationRunEvent = {

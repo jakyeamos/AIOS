@@ -404,6 +404,8 @@ export const assembleRankedPacket = (
     sections,
     policyMode,
     tokenBudget,
+    routeId: null,
+    routeResult: null,
     selectionTrace,
     omittedContext: omitted,
     contextTrace,
