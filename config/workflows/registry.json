@@ -294,6 +294,54 @@
           ]
         }
       ]
+    },
+    {
+      "key": "agentize",
+      "name": "Agentize Skill",
+      "workflow_family": "intent_compilation",
+      "purpose": "Compile messy human requests into execution-ready agent task packets with context, standards, verification, and writeback requirements.",
+      "trigger_hints": [
+        "agentize",
+        "turn this into an agent task",
+        "execution packet",
+        "make this request ready for an agent",
+        "compile this task"
+      ],
+      "output_contract": [
+        "original request",
+        "normalized objective",
+        "task classification",
+        "execution mode reasoning",
+        "targeted context plan",
+        "standards and success criteria",
+        "verification plan",
+        "handoff/update contract",
+        "prompt-pattern evidence"
+      ],
+      "required_validations": [
+        "scope_check"
+      ],
+      "stages": [
+        {
+          "key": "compile_intent",
+          "kind": "parse_request",
+          "required_skills": [
+            "agentize_intent_compiler"
+          ]
+        },
+        {
+          "key": "validate",
+          "kind": "validate",
+          "required_skills": [
+            "scope_check"
+          ]
+        },
+        {
+          "key": "finalize",
+          "kind": "finalize",
+          "required_skills": []
+        }
+      ]
     }
   ]
 }

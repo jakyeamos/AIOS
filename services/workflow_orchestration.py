@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from services.agent_rules import load_agent_rules
+from services.agentize import agentize_request
 from services.execution_strategy import (
     StrategySelectionError,
     compile_execution_strategy,
@@ -687,6 +688,17 @@ def _execute_skill(
         )
         return output, None
 
+    if skill.key == "agentize_intent_compiler":
+        packet = agentize_request(context.objective)
+        packet_json = packet.to_dict()
+        state["agentized_task_packet"] = packet_json
+        state["normalized_prompt"] = packet.to_json()
+        return {
+            "packet_id": packet.packet_id,
+            "execution_mode": packet.execution_mode.mode.value,
+            "classifications": [classification.value for classification in packet.task_classifications],
+        }, None
+
     if skill.key == "obsidian_corpus_retriever":
         vault_candidate = context.vault_root
         vault_path = Path(vault_candidate).expanduser() if vault_candidate else None
@@ -935,6 +947,7 @@ def execute_workflow(
             "result_text": run_state.get("result_text"),
             "learned_workflow_skill": run_state.get("learned_workflow_skill"),
             "learned_workflow_evidence": run_state.get("learned_workflow_evidence", []),
+            "agentized_task_packet": run_state.get("agentized_task_packet"),
         },
         "rtk": {
             "interface": rtk_rules.get(

@@ -75,12 +75,29 @@ CREATE TABLE prompt_library_links (
   obsidian_note_path TEXT,
   promoted_at       TEXT
 );
+CREATE TABLE agentize_evaluations (
+  id                        TEXT PRIMARY KEY,
+  packet_id                 TEXT NOT NULL,
+  original_request          TEXT NOT NULL,
+  transformed_request_json  TEXT NOT NULL,
+  selected_execution_mode   TEXT NOT NULL,
+  selected_skills_json      TEXT NOT NULL DEFAULT '[]',
+  selected_standards_json   TEXT NOT NULL DEFAULT '[]',
+  outcome_quality           INTEGER,
+  tests_passed              INTEGER,
+  user_correction           TEXT,
+  follow_up_required        INTEGER NOT NULL DEFAULT 0,
+  major_repair_required     INTEGER NOT NULL DEFAULT 0,
+  created_at                TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
 CREATE INDEX idx_sessions_project ON sessions(project_id);
 CREATE INDEX idx_sessions_status ON sessions(status);
 CREATE INDEX idx_tool_events_session ON tool_events(session_id);
 CREATE INDEX idx_tool_events_type ON tool_events(event_type);
 CREATE INDEX idx_prompts_session ON prompts_used(session_id);
 CREATE INDEX idx_prompts_reusable ON prompts_used(reusable_candidate);
+CREATE INDEX idx_agentize_eval_packet ON agentize_evaluations(packet_id, created_at DESC);
+CREATE INDEX idx_agentize_eval_mode ON agentize_evaluations(selected_execution_mode, created_at DESC);
 CREATE INDEX idx_artifacts_session ON artifacts(session_id);
 CREATE INDEX idx_next_actions_status ON next_action_candidates(status);
 CREATE TABLE bug_log (

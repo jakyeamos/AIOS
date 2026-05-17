@@ -1,6 +1,7 @@
 # AIOS Prompt Library
 
-Repo source-of-truth for reusable prompt templates used by AIOS hooks.
+Repo source-of-truth for reusable prompt patterns used by AIOS hooks and the
+`agentize` skill.
 Phase 2 extends this into validation-driven execution strategy bundles under
 `config/execution-strategies/`.
 
@@ -8,7 +9,30 @@ Phase 2 extends this into validation-driven execution strategy bundles under
 
 - Capture repeatable high-quality prompting patterns.
 - Keep templates versioned and inspectable.
-- Enable deterministic template suggestions in `hook-prompt-submit`.
+- Provide supporting evidence for `agentize` request compilation.
+- Enable deterministic template suggestions in `hook-prompt-submit` while that
+  legacy path remains active.
+
+## Role in agentized execution
+
+`agentize` is the primary abstraction for turning freeform requests into
+execution-ready agent task packets. The prompt library remains active, but its
+role is pattern memory rather than mandatory one-to-one routing.
+
+Prompt assets should be treated as:
+
+- `prompt template`: a reusable full instruction contract with frontmatter,
+  validation, and eval cases.
+- `prompt fragment`: a reusable instruction section or wording pattern.
+- `agentization pattern`: evidence that a request shape maps well to a task
+  packet structure, execution mode, context plan, or verification plan.
+- `execution packet`: the structured output produced by `agentize`.
+- `skill`: a reusable capability with inputs, outputs, lifecycle, invariants,
+  and validation expectations.
+
+When no template matches a request, `agentize` should still produce a packet
+from the request semantics and record that static template mapping was not
+required.
 
 ## Files
 
@@ -91,3 +115,5 @@ Create a template when a task family is:
 - Changing templates without version/changelog updates.
 - Editing vault copies directly instead of repo source.
 - Accepting a template without testable eval criteria.
+- Treating template selection as more authoritative than the user's current
+  request.

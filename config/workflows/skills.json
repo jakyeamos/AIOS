@@ -26,6 +26,46 @@
       "execution_mode": "deterministic"
     },
     {
+      "key": "agentize_intent_compiler",
+      "purpose": "Compile a freeform user request into a structured AgentizedTaskPacket with classification, execution mode, targeted context, standards, verification, and output contract.",
+      "allowed_stages": [
+        "parse_request"
+      ],
+      "input_schema": {
+        "original_request": "string"
+      },
+      "output_schema": {
+        "packet_id": "string",
+        "original_request": "string",
+        "normalized_objective": "string",
+        "task_classifications": "string[]",
+        "execution_mode": "object",
+        "required_context": "object[]",
+        "relevant_skills": "string[]",
+        "relevant_success_criteria": "string[]",
+        "relevant_standards": "string[]",
+        "verification_plan": "object[]",
+        "output_contract": "object"
+      },
+      "invariants": [
+        "Preserve the original user intent.",
+        "Use prompt-library entries only as supporting evidence, not a mandatory static mapping.",
+        "Context plans must be targeted and explain why each source is needed.",
+        "Every packet must include verification and handoff requirements."
+      ],
+      "failure_conditions": [
+        "Empty request.",
+        "Packet omits execution-mode reasoning.",
+        "Packet requires full-repo context without a concrete reason."
+      ],
+      "side_effects": [
+        "May record agentize outcome evaluations when a run completes."
+      ],
+      "execution_mode": "deterministic",
+      "source_path": "skills/agentize/SKILL.md",
+      "installed_name": "agentize"
+    },
+    {
       "key": "obsidian_corpus_retriever",
       "purpose": "Retrieve bounded style profile context from the personal corpus for writing tasks.",
       "allowed_stages": [
