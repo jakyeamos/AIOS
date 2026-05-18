@@ -98,6 +98,16 @@ ATTENTION_RUN_STATUSES = [
     "needs_follow_up",
 ]
 TERMINAL_RUN_STATUSES = ["partial", "needs_follow_up", "completed", "failed", "canceled", "superseded"]
+RESUMABLE_RUN_STATUSES = [
+    "ready",
+    "in_progress",
+    "blocked",
+    "waiting_for_user",
+    "waiting_for_tool",
+    "failed_validation",
+    "partial",
+    "needs_follow_up",
+]
 KNOWLEDGE_OBJECT_CONTRACT_FIELDS = [
     "stable_id",
     "kind",
@@ -225,6 +235,57 @@ def _count(conn: sqlite3.Connection, table: str, where: str = "1=1") -> int:
         return 0
     row = conn.execute(f"SELECT COUNT(*) AS count FROM {table} WHERE {where}").fetchone()
     return int(row["count"]) if row else 0
+
+
+def _parse_json_object(raw: str | None) -> dict[str, Any]:
+    if not raw:
+        return {}
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def _resumable_runs(conn: sqlite3.Connection, limit: int = 5) -> list[dict[str, Any]]:
+    if not _table_exists(conn, "orchestration_runs"):
+        return []
+    columns = _table_columns(conn, "orchestration_runs")
+    if "resume_snapshot_json" not in columns:
+        return []
+
+    placeholders = ", ".join("?" for _ in RESUMABLE_RUN_STATUSES)
+    rows = conn.execute(
+        f"""
+        SELECT id, project_id, objective, workflow_key, status, packet_id, session_id, resume_snapshot_json, updated_at
+        FROM orchestration_runs
+        WHERE status IN ({placeholders})
+        ORDER BY updated_at DESC, created_at DESC
+        LIMIT ?
+        """,
+        (*RESUMABLE_RUN_STATUSES, limit),
+    ).fetchall()
+
+    resumable: list[dict[str, Any]] = []
+    for row in rows:
+        snapshot = _parse_json_object(row["resume_snapshot_json"])
+        resumable.append(
+            {
+                "run_id": row["id"],
+                "project_id": row["project_id"],
+                "objective": row["objective"],
+                "workflow_key": row["workflow_key"],
+                "status": row["status"],
+                "packet_id": row["packet_id"],
+                "session_id": row["session_id"],
+                "current_stage": snapshot.get("current_stage"),
+                "next_recommended_action": snapshot.get("next_recommended_action"),
+                "pending_approval_count": int(snapshot.get("pending_approval_count") or 0),
+                "approval_targets": snapshot.get("approval_targets") or [],
+                "updated_at": snapshot.get("updated_at") or row["updated_at"],
+            }
+        )
+    return resumable
 
 
 def _tail_lines(path: Path, limit: int) -> list[str]:
@@ -780,6 +841,7 @@ def _ensure_start_work_schema(conn: sqlite3.Connection) -> None:
         "active_invocation_id": "TEXT",
         "packet_id": "TEXT",
         "status_reason_json": "TEXT DEFAULT '{}'",
+        "resume_snapshot_json": "TEXT DEFAULT '{}'",
         "created_at": "TEXT",
         "updated_at": "TEXT",
     }.items():
@@ -1391,10 +1453,10 @@ def _start_work_payload(
         INSERT INTO orchestration_runs (
             id, project_id, session_id, objective, workflow_key, agent_key, status, rationale,
             assumptions_json, context_trace_json, backend_key, route_id, route_status,
-            route_result_json, active_invocation_id, packet_id,
+            route_result_json, active_invocation_id, packet_id, resume_snapshot_json,
             status_reason_json, created_at, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             run_id,
@@ -1419,6 +1481,16 @@ def _start_work_payload(
             json.dumps(route_payload),
             invocation_id,
             packet_id,
+            json.dumps(
+                {
+                    "packet_id": packet_id,
+                    "current_stage": "packet_ready",
+                    "next_recommended_action": "Start the routed runtime with this packet and keep run/invocation/session linkage intact.",
+                    "pending_approval_count": 0,
+                    "approval_targets": [],
+                    "updated_at": now,
+                }
+            ),
             json.dumps(
                 {
                     "kind": "strict_manual_handshake" if linked_session_id else "packet_ready",
@@ -2377,6 +2449,7 @@ def _status_payload(conn: sqlite3.Connection) -> dict[str, Any]:
         "run_status_counts": _run_status_counts(conn),
         "handshake_coverage": _handshake_coverage(conn),
         "last_session": _last_session(conn),
+        "resumable_runs": _resumable_runs(conn),
     }
 
 

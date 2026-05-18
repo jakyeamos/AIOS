@@ -22,6 +22,8 @@ if str(ROOT) not in sys.path:
 from aios_orchestration_runtime import (  # noqa: E402
     ensure_runtime_schema,
     link_session_runtime,
+    load_resume_snapshot,
+    store_resume_snapshot,
     transition_run,
     update_invocation,
 )
@@ -172,6 +174,7 @@ def generate_packet(
     conn: sqlite3.Connection,
     cwd: str,
     objective: str,
+    session_id: str | None = None,
 ) -> str:
     """Assemble a compact session context packet."""
     parts = []
@@ -270,6 +273,22 @@ def generate_packet(
     except Exception as e:
         log(f"rtk rules unavailable: {e}")
 
+    # 9. Linked serious-work resume snapshot
+    if session_id:
+        session_row = conn.execute(
+            "SELECT run_id FROM sessions WHERE id = ? LIMIT 1",
+            (session_id,),
+        ).fetchone()
+        if session_row and session_row[0]:
+            snapshot = load_resume_snapshot(conn, str(session_row[0]))
+            if snapshot:
+                parts.append(
+                    "**Resume snapshot:**\n"
+                    f"- Stage: {snapshot.get('current_stage') or 'unknown'}\n"
+                    f"- Next action: {snapshot.get('next_recommended_action') or 'Continue the linked run.'}\n"
+                    f"- Pending approvals: {int(snapshot.get('pending_approval_count') or 0)}"
+                )
+
     if not parts:
         return ""
 
@@ -326,6 +345,18 @@ def main() -> None:
                         started_at=datetime.now(UTC).isoformat(),
                     )
                 if run_id:
+                    store_resume_snapshot(
+                        conn,
+                        run_id,
+                        {
+                            "packet_id": data.get("packet_id"),
+                            "current_stage": "execution_active",
+                            "next_recommended_action": "Continue execution against the governed packet and request targeted expansion only when needed.",
+                            "pending_approval_count": 0,
+                            "approval_targets": [],
+                            "updated_at": datetime.now(UTC).isoformat(),
+                        },
+                    )
                     transition_run(
                         conn,
                         run_id=run_id,
@@ -335,6 +366,12 @@ def main() -> None:
                         session_id=session_id,
                         invocation_id=invocation_id,
                         reason={"kind": "session_start", "backend_key": backend_key},
+                        resume_snapshot={
+                            "current_stage": "execution_active",
+                            "next_recommended_action": "Continue execution against the governed packet and request targeted expansion only when needed.",
+                            "pending_approval_count": 0,
+                            "approval_targets": [],
+                        },
                     )
                 conn.commit()
             conn.close()
@@ -386,6 +423,18 @@ def main() -> None:
                 started_at=datetime.now(UTC).isoformat(),
             )
         if run_id:
+            store_resume_snapshot(
+                conn,
+                run_id,
+                {
+                    "packet_id": data.get("packet_id"),
+                    "current_stage": "execution_active",
+                    "next_recommended_action": "Continue execution against the governed packet and request targeted expansion only when needed.",
+                    "pending_approval_count": 0,
+                    "approval_targets": [],
+                    "updated_at": datetime.now(UTC).isoformat(),
+                },
+            )
             transition_run(
                 conn,
                 run_id=run_id,
@@ -395,6 +444,12 @@ def main() -> None:
                 session_id=session_id,
                 invocation_id=invocation_id,
                 reason={"kind": "session_start", "backend_key": backend_key},
+                resume_snapshot={
+                    "current_stage": "execution_active",
+                    "next_recommended_action": "Continue execution against the governed packet and request targeted expansion only when needed.",
+                    "pending_approval_count": 0,
+                    "approval_targets": [],
+                },
             )
         conn.commit()
 
@@ -408,6 +463,7 @@ def main() -> None:
                     conn=conn,
                     cwd=cwd,
                     objective=objective,
+                    session_id=session_id,
                 )
                 if context_packet:
                     packet_path = os.path.join(PACKET_DIR, f"session_packet_{session_id}.md")

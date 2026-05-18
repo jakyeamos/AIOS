@@ -333,6 +333,51 @@ def test_runtime_transition_records_partial_closeout_metadata(runtime_db: Path, 
     conn.close()
 
 
+def test_runtime_persists_resume_snapshot(runtime_db: Path, tmp_path: Path) -> None:
+    from aios_orchestration_runtime import ensure_runtime_schema, load_resume_snapshot, store_resume_snapshot
+
+    repo_path = tmp_path / "repo"
+    repo_path.mkdir()
+    (repo_path / "PROJECT.md").write_text("# AIOS\n")
+
+    conn = sqlite3.connect(runtime_db)
+    project_id = _insert_project(conn, repo_path)
+    ensure_runtime_schema(conn)
+    run_id = "run-resume"
+
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (
+            id, project_id, objective, workflow_key, agent_key, status, rationale,
+            assumptions_json, context_trace_json, created_at, updated_at
+        )
+        VALUES (?, ?, 'Resume workflow execution', 'implementation-delivery', 'implementation-lead',
+                'waiting_for_user', 'Resume path', '[]', '[]', '2026-04-19T00:00:00Z', '2026-04-19T00:00:00Z')
+        """,
+        (run_id, project_id),
+    )
+
+    store_resume_snapshot(
+        conn,
+        run_id,
+        {
+            "packet_id": "packet-resume",
+            "current_stage": "awaiting_approval",
+            "next_recommended_action": "Review the pending writeback and resume the run.",
+            "pending_approval_count": 1,
+            "approval_targets": ["workflow-default"],
+        },
+    )
+    conn.commit()
+
+    snapshot = load_resume_snapshot(conn, run_id)
+    assert snapshot["packet_id"] == "packet-resume"
+    assert snapshot["current_stage"] == "awaiting_approval"
+    assert snapshot["pending_approval_count"] == 1
+    assert snapshot["approval_targets"] == ["workflow-default"]
+    conn.close()
+
+
 def test_legacy_linkage_requires_explicit_emergency_flag(monkeypatch: pytest.MonkeyPatch) -> None:
     hook_stop = _load_module("hook_stop_fallback", "bin/hook-stop.py")
 

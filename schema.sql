@@ -206,6 +206,7 @@ CREATE TABLE orchestration_runs (
   canceled_at TEXT,
   superseded_by_run_id TEXT,
   status_reason_json TEXT NOT NULL DEFAULT '{}',
+  resume_snapshot_json TEXT NOT NULL DEFAULT '{}',
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );

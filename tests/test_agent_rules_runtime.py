@@ -65,6 +65,75 @@ def test_session_packet_includes_agent_rules(monkeypatch) -> None:
     assert "Fail loud" in packet
 
 
+def test_session_packet_includes_resume_snapshot(monkeypatch) -> None:
+    module = _load_session_start_module()
+    monkeypatch.setattr(module, "vault_search", lambda _args: {"results": [], "count": 0})
+    monkeypatch.setattr(module, "get_active_rules", lambda _conn, max_rules=3: [])
+    monkeypatch.setattr(module, "get_review_queue_hint", lambda _conn: None)
+    monkeypatch.setattr(module, "get_open_bug", lambda _conn, _project_id: None)
+    monkeypatch.setattr(module, "get_cts_context", lambda _cwd, _objective: None)
+    monkeypatch.setattr(module, "preview_applicable_criteria", lambda **_kwargs: {"criteria": []})
+
+    conn = sqlite3.connect(":memory:")
+    conn.executescript(
+        """
+        CREATE TABLE sessions (
+            id TEXT PRIMARY KEY,
+            project_id TEXT,
+            status TEXT,
+            started_at TEXT,
+            ended_at TEXT,
+            cwd TEXT,
+            objective TEXT,
+            run_id TEXT,
+            invocation_id TEXT,
+            runtime_metadata_json TEXT DEFAULT '{}'
+        );
+        CREATE TABLE orchestration_runs (
+            id TEXT PRIMARY KEY,
+            project_id TEXT,
+            session_id TEXT,
+            objective TEXT,
+            workflow_key TEXT,
+            agent_key TEXT,
+            status TEXT,
+            rationale TEXT,
+            assumptions_json TEXT DEFAULT '[]',
+            context_trace_json TEXT DEFAULT '[]',
+            resume_snapshot_json TEXT DEFAULT '{}'
+        );
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (id, status, resume_snapshot_json)
+        VALUES ('run-1', 'waiting_for_user', ?)
+        """,
+        (
+            "{\"current_stage\":\"awaiting_approval\",\"next_recommended_action\":\"Review pending writeback.\",\"pending_approval_count\":1}",
+        ),
+    )
+    conn.execute(
+        """
+        INSERT INTO sessions (id, run_id, runtime_metadata_json)
+        VALUES ('session-1', 'run-1', '{}')
+        """
+    )
+
+    packet = module.generate_packet(
+        project_name="AIOS",
+        project_id="project-1",
+        conn=conn,
+        cwd=str(ROOT),
+        objective="Resume serious work",
+        session_id="session-1",
+    )
+
+    assert "**Resume snapshot:**" in packet
+    assert "awaiting_approval" in packet
+    assert "Review pending writeback." in packet
+
+
 def test_synced_installed_skill_preserves_source_metadata(tmp_path: Path) -> None:
     module = _load_sync_installed_skills_module()
     skill_dir = tmp_path / "example-skill"

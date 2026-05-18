@@ -53,6 +53,16 @@ def _json(value: Any) -> str:
     return json.dumps(value, sort_keys=True)
 
 
+def _parse_json_object(raw: str | None) -> dict[str, Any]:
+    if not raw:
+        return {}
+    try:
+        parsed = json.loads(raw)
+    except Exception:
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
 def table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
     row = conn.execute(
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name=? LIMIT 1",
@@ -300,6 +310,12 @@ def ensure_runtime_schema(conn: sqlite3.Connection) -> None:
         "status_reason_json",
         "TEXT NOT NULL DEFAULT '{}'",
     )
+    ensure_column(
+        conn,
+        "orchestration_runs",
+        "resume_snapshot_json",
+        "TEXT NOT NULL DEFAULT '{}'",
+    )
 
     ensure_column(conn, "improvement_writebacks", "impact_scope", "TEXT NOT NULL DEFAULT 'scoped'")
     ensure_column(conn, "improvement_writebacks", "decision_note", "TEXT")
@@ -331,6 +347,38 @@ def get_run_row(conn: sqlite3.Connection, run_id: str) -> sqlite3.Row | None:
     ).fetchone()
     conn.row_factory = None
     return row
+
+
+def load_resume_snapshot(conn: sqlite3.Connection, run_id: str) -> dict[str, Any]:
+    ensure_runtime_schema(conn)
+    row = conn.execute(
+        """
+        SELECT resume_snapshot_json
+        FROM orchestration_runs
+        WHERE id = ?
+        LIMIT 1
+        """,
+        (run_id,),
+    ).fetchone()
+    if row is None:
+        return {}
+    return _parse_json_object(row[0] if not isinstance(row, sqlite3.Row) else row["resume_snapshot_json"])
+
+
+def store_resume_snapshot(conn: sqlite3.Connection, run_id: str, snapshot: dict[str, Any]) -> None:
+    ensure_runtime_schema(conn)
+    current = load_resume_snapshot(conn, run_id)
+    merged = {**current, **snapshot}
+    if "updated_at" not in merged:
+        merged["updated_at"] = now_iso()
+    conn.execute(
+        """
+        UPDATE orchestration_runs
+        SET resume_snapshot_json = ?
+        WHERE id = ?
+        """,
+        (_json(merged), run_id),
+    )
 
 
 def record_run_event(
@@ -407,6 +455,7 @@ def transition_run(
     memory_update_id: str | None = None,
     created_at: str | None = None,
     superseded_by_run_id: str | None = None,
+    resume_snapshot: dict[str, Any] | None = None,
 ) -> None:
     ensure_runtime_schema(conn)
     if to_status not in RUN_STATUSES:
@@ -456,6 +505,16 @@ def transition_run(
         f"UPDATE orchestration_runs SET {assignments} WHERE id = ?",
         (*updates.values(), run_id),
     )
+    if resume_snapshot is not None:
+        store_resume_snapshot(
+            conn,
+            run_id,
+            {
+                **resume_snapshot,
+                "status": to_status,
+                "updated_at": event_time,
+            },
+        )
 
     record_run_event(
         conn,

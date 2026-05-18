@@ -62,6 +62,7 @@ def _seed_db(path: Path) -> None:
             active_invocation_id TEXT,
             packet_id TEXT,
             status_reason_json TEXT DEFAULT '{}',
+            resume_snapshot_json TEXT DEFAULT '{}',
             created_at TEXT,
             updated_at TEXT
         );
@@ -236,6 +237,62 @@ def test_status_and_recent_failures_json(tmp_path: Path, capsys) -> None:
     status_output = json.loads(capsys.readouterr().out)
     assert status_output["ok"] is True
     assert status_output["command"] == "status"
+    assert status_output["data"]["resumable_runs"] == []
+
+
+def test_status_reports_resume_snapshot_for_resumable_run(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (
+            id, project_id, objective, workflow_key, agent_key, status, rationale,
+            assumptions_json, context_trace_json, packet_id, resume_snapshot_json, created_at, updated_at
+        )
+        VALUES (
+            'run-resume', 'p1', 'Resume AIOS workflow execution', 'implementation-delivery',
+            'implementation-lead', 'waiting_for_user', 'Resume test', '[]', '[]', 'packet-resume',
+            ?, '2026-04-23T01:00:00Z', '2026-04-23T01:10:00Z'
+        )
+        """,
+        (
+            json.dumps(
+                {
+                    "packet_id": "packet-resume",
+                    "current_stage": "awaiting_approval",
+                    "next_recommended_action": "Review the pending workflow-default writeback before resuming execution.",
+                    "pending_approval_count": 1,
+                    "approval_targets": ["workflow-default"],
+                    "updated_at": "2026-04-23T01:10:00Z",
+                }
+            ),
+        ),
+    )
+    conn.commit()
+    conn.close()
+
+    status_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "status",
+        ]
+    )
+    assert status_exit == EXIT_OK
+    status_output = json.loads(capsys.readouterr().out)
+    resumable = status_output["data"]["resumable_runs"]
+    assert len(resumable) == 1
+    assert resumable[0]["run_id"] == "run-resume"
+    assert resumable[0]["current_stage"] == "awaiting_approval"
+    assert resumable[0]["pending_approval_count"] == 1
+    assert resumable[0]["next_recommended_action"].startswith("Review the pending workflow-default")
 
 
 def test_pre_pr_readiness_json(monkeypatch, capsys) -> None:
@@ -1073,6 +1130,13 @@ def test_start_work_creates_packet_and_links_current_session(tmp_path: Path, cap
     assert selection_trace["packet_contract"]["workflow_key"] == "implementation-delivery"
     assert selection_trace["matched_objects"][0]["title"] == "Agent routing"
     assert selection_trace["token_budget"] == 900
+    snapshot = conn.execute(
+        "SELECT resume_snapshot_json FROM orchestration_runs WHERE id = ?",
+        (data["run"]["id"],),
+    ).fetchone()[0]
+    resume_snapshot = json.loads(snapshot)
+    assert resume_snapshot["current_stage"] == "packet_ready"
+    assert resume_snapshot["packet_id"] == data["packet"]["id"]
     event_count = conn.execute(
         "SELECT COUNT(*) FROM orchestration_run_events WHERE run_id = ?",
         (data["run"]["id"],),
