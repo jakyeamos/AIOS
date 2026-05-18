@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-05-17
+Last updated: 2026-05-18
 
 ## What AIOS Is
 
@@ -158,6 +158,15 @@ AIOS now persists explicit resume snapshots for serious runs:
 - `tests/test_orchestration_runtime.py`, `tests/test_aios_cli.py`, and `tests/test_agent_rules_runtime.py` now lock runtime persistence, status visibility, start-work seeding, and session-start packet injection for the resume contract
 - this closes the main Phase 3 resume gap: AIOS can now preserve packet identity, stage, next action, and approval context without replaying raw run history
 
+AIOS now persists governed closeout evidence for serious runs:
+
+- `bin/hook-stop.py` now compiles a governed closeout summary after runtime completion, combining changed artifacts, checks run, pending approvals, unresolved deltas, and writeback implications in one persisted payload
+- `bin/aios_orchestration_runtime.py` now allows workflow execution reports to attach closeout summaries even when only a run-level linkage is available
+- `services/aios_cli.py status` now exposes recent governed closeouts so operators can inspect serious-run outcomes without manually joining workflow reports, writebacks, criteria evaluations, and memory updates
+- `tests/test_orchestration_runtime.py` now verifies explicit-handshake stop closes with a persisted governed closeout report
+- `tests/test_aios_cli.py` now verifies recent closeout visibility through the status payload
+- this closes Phase 3 with a default serious-work execution contract that covers routing, packets, lifecycle nuance, resumable state, and governed closeout evidence
+
 AIOS now has a first reusable personalized humanizer skill:
 
 - `skills/personalized-humanizer/SKILL.md` defines the local skill contract for voice matching, context modes, privacy boundaries, debug/audit output, and feedback-gated learning
@@ -177,6 +186,14 @@ AIOS now has an `agentize` intent compiler skill:
 - `docs/architecture/agentize-skill.md` records the audit, architecture decision, packet contract, evaluation loop, compatibility notes, and migration plan
 - `prompts/README.md` now describes the prompt library as a pattern/evidence corpus that `agentize` can use without requiring static request-to-template mapping
 - `tests/test_agentize.py` covers packet structure, classification, execution-mode selection, context planning, standards attachment, verification planning, prompt-library demotion, evaluation logging, and workflow/skill registry binding
+
+AIOS vault-root resolution is now centralized:
+
+- `services/path_resolution.py` owns the vault root contract for Python services, preserving explicit overrides and `AIOS_VAULT_ROOT`
+- `bin/aios_paths.py` wraps that resolver for script imports and shell use
+- health checks, maintenance, import, sync, and ingest scripts no longer carry independent `~/projects/Vaults/Command-Center` or legacy `~/Vaults/Command-Center` defaults
+- `bin/health_check.sh` creates the dashboard directory before writing and can skip macOS notification with `AIOS_SKIP_NOTIFICATION=1` for non-interactive validation
+- `tests/test_path_resolution.py` covers override behavior, canonical-vs-legacy fallback, legacy path rewriting, and the script CLI used by shell entrypoints
 
 ## Implemented On 2026-05-14
 
