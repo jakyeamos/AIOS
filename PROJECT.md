@@ -148,6 +148,16 @@ AIOS run lifecycle semantics now distinguish nuanced terminal outcomes instead o
 - `tests/test_aios_cli.py` now verifies lifecycle audits include the widened attention/terminal contract and still isolate truly unsupported states
 - this opens Phase 3 with a stronger lifecycle vocabulary for partial completion and follow-up debt before resume snapshots and closeout summaries are added
 
+AIOS now persists explicit resume snapshots for serious runs:
+
+- `bin/aios_orchestration_runtime.py` now stores and loads `resume_snapshot_json` on `orchestration_runs`, giving each resumable run a durable packet id, current stage, next recommended action, pending approval count, and approval targets
+- `schema.sql` and `services/aios_cli.py` now keep the resume snapshot field in the canonical schema and in the `start-work` bootstrapping path
+- `aios start-work` now seeds a `packet_ready` resume snapshot so serious work is resumable immediately after handoff creation
+- `services/aios_cli.py status` now exposes resumable runs directly instead of forcing manual event reconstruction
+- `bin/hook-session-start.py` now upgrades linked run snapshots to `execution_active` on session launch and surfaces the resume snapshot in the startup packet for resumed serious work
+- `tests/test_orchestration_runtime.py`, `tests/test_aios_cli.py`, and `tests/test_agent_rules_runtime.py` now lock runtime persistence, status visibility, start-work seeding, and session-start packet injection for the resume contract
+- this closes the main Phase 3 resume gap: AIOS can now preserve packet identity, stage, next action, and approval context without replaying raw run history
+
 AIOS now has a first reusable personalized humanizer skill:
 
 - `skills/personalized-humanizer/SKILL.md` defines the local skill contract for voice matching, context modes, privacy boundaries, debug/audit output, and feedback-gated learning
