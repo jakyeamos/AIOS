@@ -42,6 +42,7 @@ from services.pre_pr_readiness import (
 from services.pre_pr_readiness import (
     DEFAULT_TIMEOUT_SECONDS as DEFAULT_PRE_PR_TIMEOUT_SECONDS,
 )
+from services.path_resolution import get_vault_root
 from services.project_health_proof import DEFAULT_PROVING_PROJECTS, prove_project_health
 from services.rtk_integration import (
     classify_rtk_metrics,
@@ -197,18 +198,7 @@ def _parse_iso(value: str | None) -> datetime | None:
 
 
 def _resolve_vault_root(explicit: str | None = None) -> Path:
-    if explicit:
-        return Path(explicit).expanduser().resolve()
-    env_root = os.environ.get("AIOS_VAULT_ROOT")
-    candidates = [
-        Path(env_root).expanduser() if env_root else None,
-        Path.home() / "projects" / "Vaults" / "Command-Center",
-        Path.home() / "Vaults" / "Command-Center",
-    ]
-    for candidate in candidates:
-        if candidate and candidate.is_dir():
-            return candidate.resolve()
-    return (Path.home() / "projects" / "Vaults" / "Command-Center").resolve()
+    return get_vault_root(explicit)
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -286,6 +276,51 @@ def _resumable_runs(conn: sqlite3.Connection, limit: int = 5) -> list[dict[str, 
             }
         )
     return resumable
+
+
+def _recent_closeouts(conn: sqlite3.Connection, limit: int = 5) -> list[dict[str, Any]]:
+    if not _table_exists(conn, "workflow_execution_reports"):
+        return []
+    columns = _table_columns(conn, "workflow_execution_reports")
+    if "report_json" not in columns:
+        return []
+
+    rows = conn.execute(
+        """
+        SELECT run_id, invocation_id, workflow_key, status, report_json, artifact_path, created_at
+        FROM workflow_execution_reports
+        ORDER BY created_at DESC
+        LIMIT 50
+        """
+    ).fetchall()
+
+    closeouts: list[dict[str, Any]] = []
+    for row in rows:
+        report = _parse_json_object(row["report_json"])
+        if report.get("report_type") != "governed_closeout":
+            continue
+        approvals = report.get("approvals") or {}
+        unresolved = report.get("unresolved_deltas") or {}
+        closeouts.append(
+            {
+                "run_id": row["run_id"],
+                "invocation_id": row["invocation_id"],
+                "workflow_key": row["workflow_key"],
+                "status": row["status"],
+                "artifact_path": row["artifact_path"],
+                "created_at": row["created_at"],
+                "outcome": report.get("outcome"),
+                "result_summary": report.get("result_summary"),
+                "pending_approval_count": int(approvals.get("pending_approval_count") or 0),
+                "changed_artifact_count": len(report.get("changed_artifacts") or []),
+                "open_question_count": len(unresolved.get("open_questions") or []),
+                "risk_count": len(unresolved.get("risks") or []),
+                "checks_run": report.get("checks_run") or {},
+            }
+        )
+        if len(closeouts) >= limit:
+            break
+    return closeouts
 
 
 def _tail_lines(path: Path, limit: int) -> list[str]:
@@ -2450,6 +2485,7 @@ def _status_payload(conn: sqlite3.Connection) -> dict[str, Any]:
         "handshake_coverage": _handshake_coverage(conn),
         "last_session": _last_session(conn),
         "resumable_runs": _resumable_runs(conn),
+        "recent_closeouts": _recent_closeouts(conn),
     }
 
 

@@ -22,12 +22,13 @@ if str(ROOT) not in sys.path:
 from aios_orchestration_runtime import (  # noqa: E402
     ensure_runtime_schema,
     evaluate_run_consistency,
+    insert_workflow_execution_report,
     insert_writeback,
     resolve_run_linkage,
     transition_run,
     update_invocation,
 )
-from hook_lifecycle import ensure_session, load_hook_payload  # noqa: E402
+from hook_lifecycle import ensure_session, load_hook_payload, resolve_hook_session_id  # noqa: E402
 
 from services.rtk_integration import ensure_rtk_schema, rtk_metrics_log  # noqa: E402
 
@@ -63,6 +64,24 @@ def log(msg: str) -> None:
             f.write(f"{ts} [stop] {msg}\n")
     except Exception:
         pass
+
+
+def _pending_approval_summary(conn: sqlite3.Connection, run_id: str | None) -> tuple[int, list[str]]:
+    if not run_id:
+        return 0, []
+    rows = conn.execute(
+        """
+        SELECT title
+        FROM improvement_writebacks
+        WHERE run_id = ?
+          AND (requires_approval = 1 OR status = 'pending_approval')
+        ORDER BY created_at DESC
+        LIMIT 10
+        """,
+        (run_id,),
+    ).fetchall()
+    titles = [str(row[0]) for row in rows if row[0]]
+    return len(titles), titles
 
 
 def ensure_memory_updates_table(conn: sqlite3.Connection) -> None:
@@ -234,6 +253,18 @@ def main() -> None:
 
     try:
         conn = sqlite3.connect(DB)
+        resolved_session_id = resolve_hook_session_id(
+            conn,
+            payload_session_id=session_id,
+            payload_cwd=data.get("cwd"),
+            logs_dir=os.path.dirname(LOG),
+            hook_name="stop",
+            log=log,
+        )
+        if not resolved_session_id:
+            conn.close()
+            sys.exit(0)
+        session_id = resolved_session_id
         ensure_session(
             conn,
             session_id=session_id,
@@ -502,7 +533,7 @@ def main() -> None:
                     ),
                     token_regressive=token_regressive,
                 )
-            evaluate_run_consistency(
+            consistency_eval_id = evaluate_run_consistency(
                 conn,
                 linked_run_id,
                 invocation_id=linked_invocation_id,
@@ -568,6 +599,47 @@ def main() -> None:
             f"saved={rtk_metrics['tokens_saved']} "
             f"reduction={rtk_metrics['weighted_reduction_percent']}%"
         )
+        if linked_run_id:
+            pending_approval_count, approval_titles = _pending_approval_summary(conn, linked_run_id)
+            closeout_summary = {
+                "report_type": "governed_closeout",
+                "run_id": linked_run_id,
+                "packet_id": linked_packet_id,
+                "session_id": session_id,
+                "invocation_id": linked_invocation_id,
+                "outcome": run_outcome,
+                "result_summary": explicit_result_summary or memory_summary,
+                "changed_artifacts": criteria_changed_paths,
+                "checks_run": {
+                    "success_criteria_evaluation_id": criteria_eval["evaluation_id"],
+                    "standards_snapshot_id": standards_eval["snapshot_id"],
+                    "consistency_evaluation_id": consistency_eval_id,
+                },
+                "approvals": {
+                    "pending_approval_count": pending_approval_count,
+                    "pending_titles": approval_titles,
+                },
+                "unresolved_deltas": {
+                    "risks": risk_items,
+                    "open_questions": open_questions,
+                    "accepted_tradeoffs": accepted_tradeoffs,
+                },
+                "writeback_implications": {
+                    "memory_update_id": memory_update_id,
+                    "project_writeback_expected": True,
+                    "workflow_learning_writeback_expected": run_row is not None,
+                },
+                "generated_at": now,
+            }
+            insert_workflow_execution_report(
+                conn,
+                run_id=linked_run_id,
+                invocation_id=linked_invocation_id,
+                workflow_key=run_row[0] if run_row else "implementation-delivery",
+                status=run_outcome,
+                report=closeout_summary,
+                artifact_path=str(candidate_path),
+            )
 
         # Log Stop event
         conn.execute(

@@ -661,7 +661,7 @@ def insert_workflow_execution_report(
     conn: sqlite3.Connection,
     *,
     run_id: str,
-    invocation_id: str,
+    invocation_id: str | None,
     workflow_key: str,
     status: str,
     report: dict[str, Any],

@@ -140,6 +140,7 @@ def _seed_db(path: Path) -> None:
             invocation_id TEXT,
             workflow_key TEXT,
             status TEXT,
+            report_json TEXT DEFAULT '{}',
             artifact_path TEXT,
             created_at TEXT
         );
@@ -201,11 +202,11 @@ def _seed_db(path: Path) -> None:
     conn.execute(
         """
         INSERT INTO workflow_execution_reports (
-            id, run_id, invocation_id, workflow_key, status, artifact_path, created_at
+            id, run_id, invocation_id, workflow_key, status, report_json, artifact_path, created_at
         )
         VALUES (
             'wr-1', 'run-1', 'inv-1', 'academic_paper_v1', 'completed',
-            '/tmp/workflow-report.json', '2026-04-23T00:35:00Z'
+            '{}', '/tmp/workflow-report.json', '2026-04-23T00:35:00Z'
         )
         """
     )
@@ -293,6 +294,60 @@ def test_status_reports_resume_snapshot_for_resumable_run(tmp_path: Path, capsys
     assert resumable[0]["current_stage"] == "awaiting_approval"
     assert resumable[0]["pending_approval_count"] == 1
     assert resumable[0]["next_recommended_action"].startswith("Review the pending workflow-default")
+
+
+def test_status_reports_recent_governed_closeout(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        """
+        INSERT INTO workflow_execution_reports (
+            id, run_id, invocation_id, workflow_key, status, report_json, artifact_path, created_at
+        )
+        VALUES (
+            'wr-closeout', 'run-1', 'inv-1', 'implementation-delivery', 'needs_follow_up',
+            ?, '/tmp/closeout.json', '2026-04-23T01:20:00Z'
+        )
+        """,
+        (
+            json.dumps(
+                {
+                    "report_type": "governed_closeout",
+                    "outcome": "needs_follow_up",
+                    "result_summary": "Implementation shipped but cleanup remains.",
+                    "changed_artifacts": ["/repo/services/task_routing.py"],
+                    "checks_run": {"success_criteria_evaluation_id": "eval-1"},
+                    "approvals": {"pending_approval_count": 1},
+                    "unresolved_deltas": {"open_questions": ["Need sign-off"], "risks": ["Follow-up cleanup"]},
+                }
+            ),
+        ),
+    )
+    conn.commit()
+    conn.close()
+
+    status_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "status",
+        ]
+    )
+    assert status_exit == EXIT_OK
+    status_output = json.loads(capsys.readouterr().out)
+    closeouts = status_output["data"]["recent_closeouts"]
+    assert len(closeouts) == 1
+    assert closeouts[0]["run_id"] == "run-1"
+    assert closeouts[0]["outcome"] == "needs_follow_up"
+    assert closeouts[0]["pending_approval_count"] == 1
+    assert closeouts[0]["changed_artifact_count"] == 1
 
 
 def test_pre_pr_readiness_json(monkeypatch, capsys) -> None:

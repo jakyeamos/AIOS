@@ -199,6 +199,23 @@ def test_hook_stop_uses_explicit_run_handshake(runtime_db: Path, tmp_path: Path,
         (run_id,),
     ).fetchall()
     assert ("completed", "completed", "Managed runtime completed successfully.") in event_rows
+    closeout_report = conn.execute(
+        """
+        SELECT status, report_json, artifact_path
+        FROM workflow_execution_reports
+        WHERE run_id = ?
+        ORDER BY created_at DESC
+        LIMIT 1
+        """,
+        (run_id,),
+    ).fetchone()
+    assert closeout_report is not None
+    report_payload = json.loads(closeout_report[1])
+    assert closeout_report[0] == "completed"
+    assert report_payload["report_type"] == "governed_closeout"
+    assert report_payload["checks_run"]["success_criteria_evaluation_id"] == "criteria-eval-test"
+    assert isinstance(report_payload["changed_artifacts"], list)
+    assert closeout_report[2] is not None
     assert captured_criteria_args["changed_files"] == [str(repo_path / "services" / "orchestration.py")]
     conn.close()
 
