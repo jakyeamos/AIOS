@@ -24,6 +24,7 @@ VoiceMode = Literal[
 ]
 FeedbackVerdict = Literal["approved", "edited", "rejected"]
 ProfileUpdateStatus = Literal["draft", "candidate", "approved", "rejected", "deprecated"]
+PipelinePosition = Literal["standalone", "after_generic_humanizer"]
 
 MODE_KEYWORDS: dict[VoiceMode, tuple[str, ...]] = {
     "professional_outreach": (
@@ -113,6 +114,7 @@ class VoicePacket:
 @dataclass(frozen=True)
 class RewriteResult:
     mode: VoiceMode
+    pipeline_position: PipelinePosition
     output: str
     voice_packet: VoicePacket
     scorecard: dict[str, int]
@@ -269,12 +271,20 @@ def _remove_generic_ai_phrases(text: str) -> str:
     return result
 
 
-def transform_text(text: str, packet: VoicePacket) -> str:
+def transform_text(
+    text: str,
+    packet: VoicePacket,
+    *,
+    pipeline_position: PipelinePosition = "standalone",
+) -> str:
+    _validate_pipeline_position(pipeline_position)
     original = text.strip()
     if not original:
         return ""
 
-    cleaned = _remove_generic_ai_phrases(original)
+    cleaned = original
+    if pipeline_position == "standalone":
+        cleaned = _remove_generic_ai_phrases(original)
     if packet.mode == "prompt_prd":
         return _transform_prompt(cleaned)
     if packet.mode == "professional_outreach":
@@ -379,11 +389,13 @@ def humanize_text(
     text: str,
     *,
     requested_mode: str | None = None,
+    pipeline_position: PipelinePosition = "standalone",
     examples: list[CorpusExample] | None = None,
     profile_path: Path | None = None,
     debug: bool = False,
     allow_cross_mode: bool = False,
 ) -> RewriteResult:
+    _validate_pipeline_position(pipeline_position)
     profile = _load_json(profile_path or DEFAULT_PROFILE_PATH)
     mode = classify_writing_task(text, requested_mode)
     selected_examples = retrieve_relevant_examples(
@@ -393,12 +405,14 @@ def humanize_text(
         allow_cross_mode=allow_cross_mode,
     )
     packet = build_voice_packet(profile, mode=mode, examples=selected_examples)
-    output = transform_text(text, packet)
+    output = transform_text(text, packet, pipeline_position=pipeline_position)
     scorecard, risks = score_quality(text, output, packet)
     debug_payload = None
     if debug:
         debug_payload = {
             "selected_voice_profile": mode,
+            "pipeline_position": pipeline_position,
+            "pipeline_contract": _pipeline_contract(pipeline_position),
             "profile_version": packet.profile_version,
             "style_rules_applied": list(packet.rules),
             "anti_style_rules": list(packet.anti_rules),
@@ -409,12 +423,25 @@ def humanize_text(
         }
     return RewriteResult(
         mode=mode,
+        pipeline_position=pipeline_position,
         output=output,
         voice_packet=packet,
         scorecard=scorecard,
         risks=risks,
         debug=debug_payload,
     )
+
+
+def _pipeline_contract(pipeline_position: PipelinePosition) -> str:
+    _validate_pipeline_position(pipeline_position)
+    if pipeline_position == "after_generic_humanizer":
+        return "voice_specific_only"
+    return "generic_cleanup_plus_voice"
+
+
+def _validate_pipeline_position(pipeline_position: str) -> None:
+    if pipeline_position not in {"standalone", "after_generic_humanizer"}:
+        raise ValueError(f"Unknown personalized humanizer pipeline position: {pipeline_position}")
 
 
 def ensure_personalized_humanizer_schema(conn: sqlite3.Connection) -> None:
@@ -490,6 +517,8 @@ def record_rewrite_run(
     run_id = f"phr-{uuid.uuid4().hex[:12]}"
     packet = {
         "mode": result.voice_packet.mode,
+        "pipeline_position": result.pipeline_position,
+        "pipeline_contract": _pipeline_contract(result.pipeline_position),
         "profile_version": result.voice_packet.profile_version,
         "tone": result.voice_packet.tone,
         "rules": list(result.voice_packet.rules),

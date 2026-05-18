@@ -25,6 +25,11 @@ The service exposes deterministic primitives for task classification, bounded
 example retrieval, voice packet generation, conservative transformation,
 quality scoring, feedback capture, profile update proposals, and eval runs.
 
+The personalized humanizer is not intended to displace the generic humanizer.
+It can run as a standalone conservative pass, or as an optional second pass
+after generic AI-writing cleanup when the user specifically wants the result to
+sound closer to the local voice profile.
+
 ## Voice Model
 
 The profile has four layers:
@@ -108,6 +113,7 @@ Each case produces a scorecard:
 `humanize_text(..., debug=True)` returns:
 
 - selected voice profile
+- pipeline position and contract
 - profile version
 - style rules applied
 - anti-style rules
@@ -118,6 +124,25 @@ Each case produces a scorecard:
 
 Normal skill use should return only the rewritten output unless the user asks
 for audit/debug details.
+
+## Pipeline Composition
+
+`humanize_text` accepts `pipeline_position`:
+
+- `standalone` preserves the original behavior: conservative generic cleanup,
+  then mode-specific voice adaptation.
+- `after_generic_humanizer` assumes a previous generic humanizer stage already
+  handled broad AI-writing cleanup. In this position, the personalized
+  humanizer only applies the selected personal voice mode.
+
+Use `after_generic_humanizer` when a workflow is explicitly:
+
+```text
+generic humanizer -> personalized humanizer voice pass
+```
+
+This keeps ownership clear. The generic step handles broad anti-AI prose
+patterns; the personalized step handles voice, context fit, and constraints.
 
 ## Adding A New Mode
 

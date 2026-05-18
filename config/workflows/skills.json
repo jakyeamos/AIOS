@@ -469,7 +469,8 @@
       "invariants": [
         "Preserve factual meaning and original intent.",
         "Do not add unsupported personal details.",
-        "Do not over-humanize technical prompts."
+        "Do not over-humanize technical prompts.",
+        "When running after the generic humanizer, limit the pass to personal voice adaptation."
       ],
       "failure_conditions": [
         "Meaning drift or unsupported claim introduction."

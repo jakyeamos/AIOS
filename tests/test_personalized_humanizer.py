@@ -4,6 +4,8 @@ import sqlite3
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
@@ -98,6 +100,39 @@ def test_humanize_prompt_preserves_constraints_and_structure() -> None:
     assert result.scorecard["over_personalization_risk"] == 0
     assert result.debug is not None
     assert result.debug["selected_voice_profile"] == "prompt_prd"
+    assert result.debug["pipeline_position"] == "standalone"
+    assert result.debug["pipeline_contract"] == "generic_cleanup_plus_voice"
+
+
+def test_after_generic_pipeline_step_applies_voice_without_reowning_generic_cleanup() -> None:
+    text = (
+        "AIOS marks a pivotal step forward. "
+        "It helps agents check their own work before calling something done."
+    )
+
+    standalone = humanize_text(text, requested_mode="project_build_in_public")
+    after_generic = humanize_text(
+        text,
+        requested_mode="project_build_in_public",
+        pipeline_position="after_generic_humanizer",
+        debug=True,
+    )
+
+    assert "pivotal" not in standalone.output
+    assert "pivotal" in after_generic.output
+    assert "The useful part is the gate" in after_generic.output
+    assert after_generic.pipeline_position == "after_generic_humanizer"
+    assert after_generic.debug is not None
+    assert after_generic.debug["pipeline_contract"] == "voice_specific_only"
+
+
+def test_unknown_pipeline_position_fails_explicitly() -> None:
+    with pytest.raises(ValueError, match="Unknown personalized humanizer pipeline position"):
+        humanize_text(
+            "Make this sound like me.",
+            requested_mode="project_build_in_public",
+            pipeline_position="generic_replacement",  # type: ignore[arg-type]
+        )
 
 
 def test_feedback_creates_candidate_update_without_mutating_profile() -> None:

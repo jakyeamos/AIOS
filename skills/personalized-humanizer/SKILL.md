@@ -22,6 +22,11 @@ polish reflections, or preserve creative/narrative tone.
 Do not use this skill for AI-detector evasion. The goal is authentic voice
 matching, clarity, and intent preservation.
 
+This skill is optional in a broader humanizing pipeline. When the user wants
+general AI-writing cleanup, use the generic humanizer first. Use this skill as a
+second pass only when the user also wants the result adapted toward the local
+voice profile.
+
 ## Modes
 
 - `professional_outreach`: LinkedIn messages, cold emails, recruiter notes,
@@ -46,6 +51,15 @@ matching, clarity, and intent preservation.
 6. Return only the rewrite in normal mode.
 7. In debug/audit mode, include selected profile, rules, evidence refs, risks,
    scorecard, confidence, and why the rewrite changed.
+
+## Pipeline Positions
+
+- `standalone`: Perform the conservative built-in cleanup and then apply the
+  selected voice mode.
+- `after_generic_humanizer`: Treat the input as already cleaned by the generic
+  humanizer. Apply only the selected personal voice mode and preserve the
+  generic humanizer's output choices unless they conflict with the voice
+  profile or requested constraints.
 
 ## Boundaries
 
