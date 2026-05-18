@@ -177,6 +177,13 @@ AIOS now has a first reusable personalized humanizer skill:
 - `docs/architecture/personalized-humanizer.md` documents usage, retrieval, profile versioning, feedback promotion, evals, privacy boundaries, and debug inspection
 - `tests/test_personalized_humanizer.py` covers the five required writing modes, mode-boundary retrieval, privacy-preserving provenance, prompt structure preservation, feedback proposal gating, eval cases, and workflow execution
 
+AIOS personalized humanizer now has an explicit optional pipeline-step contract:
+
+- `services/personalized_humanizer.py` supports `pipeline_position="standalone"` for the existing conservative cleanup-plus-voice path and `pipeline_position="after_generic_humanizer"` for a voice-specific pass after the generic humanizer
+- debug output and durable run metadata now record the selected pipeline position and contract so agents can inspect whether a run owned generic cleanup or only personal voice adaptation
+- `skills/personalized-humanizer/SKILL.md`, `config/workflows/skills.json`, and `docs/architecture/personalized-humanizer.md` now describe the intended composition: generic humanizer first for broad AI-writing cleanup, personalized humanizer second only when the user wants the result closer to their voice
+- `tests/test_personalized_humanizer.py` covers the post-generic voice pass, explicit invalid pipeline-position failures, and the existing standalone behavior
+
 AIOS now has an `agentize` intent compiler skill:
 
 - `services/agentize.py` defines the `AgentizedTaskPacket` schema and deterministic request transformation pipeline for task classification, execution mode selection, targeted context planning, standards attachment, success criteria attachment, verification planning, output contracts, and prompt-pattern evidence
