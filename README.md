@@ -37,6 +37,10 @@ Override the vault location when needed:
 export AIOS_VAULT_ROOT=/Users/jakyeamos/projects/Vaults/Command-Center
 ```
 
+All Python entrypoints and bundled shell scripts resolve the vault through
+`services/path_resolution.py` via `bin/aios_paths.py`, so `AIOS_VAULT_ROOT`
+overrides remain honored without hardcoded script defaults drifting.
+
 The UI reads operational state from:
 
 ```text

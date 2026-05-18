@@ -17,6 +17,8 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+from aios_paths import get_vault_root
+
 # ---------------------------------------------------------------------------
 # HTML → plain text
 # ---------------------------------------------------------------------------
@@ -245,8 +247,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--vault",
-        default=str(Path.home() / "Vaults" / "Command-Center"),
-        help="Obsidian vault root",
+        default=str(get_vault_root()),
+        help=f"Obsidian vault root (default: {get_vault_root()})",
     )
     parser.add_argument(
         "--folder",

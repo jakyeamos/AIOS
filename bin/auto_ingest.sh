@@ -5,7 +5,8 @@ set -euo pipefail
 
 DB=~/AIOS/data/aios.db
 SUMMARIES=~/AIOS/logs/summaries
-VAULT="${AIOS_VAULT_ROOT:-$HOME/projects/Vaults/Command-Center}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VAULT="$(python3 "$SCRIPT_DIR/aios_paths.py" vault-root)"
 HANDOFFS="$VAULT/02 AI OS/02 Session Handoffs"
 LOG=~/AIOS/logs/hooks.log
 

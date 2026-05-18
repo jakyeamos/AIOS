@@ -12,7 +12,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="${0:A:h}"
-DEFAULT_VAULT="${AIOS_VAULT_ROOT:-$HOME/projects/Vaults/Command-Center}"
+DEFAULT_VAULT="$(python3 "$SCRIPT_DIR/aios_paths.py" vault-root)"
 VAULT="${VAULT:-$DEFAULT_VAULT}"
 WORK_DIR="/tmp/takeout-ingest-$$"
 SERVICE="all"

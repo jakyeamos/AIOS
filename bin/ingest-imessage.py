@@ -16,6 +16,8 @@ import tempfile
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+from aios_paths import get_vault_root
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -297,8 +299,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--vault",
-        default=str(Path.home() / "Vaults" / "Command-Center"),
-        help="Obsidian vault root (default: ~/Vaults/Command-Center)",
+        default=str(get_vault_root()),
+        help=f"Obsidian vault root (default: {get_vault_root()})",
     )
     parser.add_argument(
         "--days",

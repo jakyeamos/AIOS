@@ -4,7 +4,8 @@
 
 set -euo pipefail
 
-VAULT_ROOT="${AIOS_VAULT_ROOT:-$HOME/projects/Vaults/Command-Center}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VAULT_ROOT="$(python3 "$SCRIPT_DIR/aios_paths.py" vault-root)"
 VAULT="$VAULT_ROOT/06 Knowledge/Claude-Context"
 DRY_RUN=false
 FILTER=""

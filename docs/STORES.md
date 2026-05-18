@@ -11,7 +11,7 @@ and what each store is responsible for. Update this when the architecture change
 |---|---|---|
 | **SQLite** | `~/AIOS/data/aios.db` | All machine-readable operational state |
 | **CTS Graph Store** | `~/AIOS/data/cts/` | Per-repo code topology indexes (local-only) |
-| **Vault** | `AIOS_VAULT_ROOT` (`~/projects/Vaults/Command-Center/` by default) | All human-readable content and human-authored knowledge |
+| **Vault** | `AIOS_VAULT_ROOT` (`~/projects/Vaults/Command-Center/` by default, resolved through `services/path_resolution.py`) | All human-readable content and human-authored knowledge |
 | **Staging** | `~/AIOS/staging/` | All content in transit awaiting review or promotion |
 
 Code truth lives in `~/Projects/*/` git repos. AIOS observes code; it does not own it.
@@ -150,7 +150,10 @@ must never be treated as canonical source-of-truth over the code repository itse
 
 - **Silent vault path change** — if a handoff or project note moves without updating the DB pointer,
   session packets will silently degrade. AIOS resolves `AIOS_VAULT_ROOT` first and defaults to
-  `~/projects/Vaults/Command-Center/`; `vault-lint.py` should detect dead paths and stale pointers.
+  `~/projects/Vaults/Command-Center/` through `services/path_resolution.py` and the
+  `bin/aios_paths.py` CLI wrapper used by shell scripts. The legacy `~/Vaults/Command-Center/`
+  path is only a compatibility fallback when the canonical path is absent; `vault-lint.py`
+  should detect dead paths and stale pointers.
 - **Stale INDEX.md** — domain INDEX files must reflect DB state, not markdown file counts.
   `build-domain-files.py` queries DB directly; do not rely on file-system counts.
 - **Wiki stubs as canonical knowledge** — stubs in `staging/knowledge-drafts/` must never be

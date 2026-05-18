@@ -3,7 +3,8 @@
 set -euo pipefail
 
 DB=~/AIOS/data/aios.db
-VAULT="${AIOS_VAULT_ROOT:-$HOME/projects/Vaults/Command-Center}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VAULT="$(python3 "$SCRIPT_DIR/aios_paths.py" vault-root)"
 REPORT="$VAULT/01 Dashboard/Health Check.md"
 NOW=$(date "+%Y-%m-%d %H:%M")
 WEEK_AGO=$(date -v-7d +"%Y-%m-%dT%H:%M:%SZ")
@@ -38,6 +39,7 @@ OPEN_BUG_LIST=$(sqlite3 "$DB" \
 CANDIDATES=$(find ~/AIOS/logs/summaries/ -maxdepth 1 -type f 2>/dev/null | wc -l | tr -d ' ')
 
 # --- Write report to vault ---
+mkdir -p "$(dirname "$REPORT")"
 cat > "$REPORT" << EOF
 ---
 type: dashboard
@@ -78,6 +80,8 @@ _Source: \`~/AIOS/data/aios.db\` · Candidates: \`~/AIOS/logs/summaries/\`_
 EOF
 
 # --- macOS notification ---
-osascript -e "display notification \"${SESSIONS_WEEK} sessions · ${OPEN_BUGS} bugs · ${CANDIDATES} candidates\" with title \"AI OS Health Check\" subtitle \"${NOW}\""
+if [[ "${AIOS_SKIP_NOTIFICATION:-0}" != "1" ]] && command -v osascript >/dev/null 2>&1; then
+  osascript -e "display notification \"${SESSIONS_WEEK} sessions · ${OPEN_BUGS} bugs · ${CANDIDATES} candidates\" with title \"AI OS Health Check\" subtitle \"${NOW}\""
+fi
 
 echo "Health check complete → $REPORT"

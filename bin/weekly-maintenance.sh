@@ -3,7 +3,8 @@
 # Cron: every Monday at 9am
 set -euo pipefail
 
-export AIOS_VAULT_ROOT="${AIOS_VAULT_ROOT:-$HOME/projects/Vaults/Command-Center}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export AIOS_VAULT_ROOT="$(python3 "$SCRIPT_DIR/aios_paths.py" vault-root)"
 LOG="$HOME/AIOS/logs/maintenance.log"
 echo "=== maintenance run $(date -u +%Y-%m-%dT%H:%M:%SZ) ===" >> "$LOG"
 
@@ -23,7 +24,7 @@ import os, re, shutil
 from datetime import date, datetime
 from pathlib import Path
 
-vault_root = Path(os.environ.get("AIOS_VAULT_ROOT", str(Path.home() / "projects/Vaults/Command-Center"))).expanduser()
+vault_root = Path(os.environ["AIOS_VAULT_ROOT"]).expanduser()
 HANDOFFS = vault_root / "02 AI OS/02 Session Handoffs"
 ARCHIVE  = vault_root / "09 Archive/Session Archive"
 LOG_FILE = Path.home() / "AIOS/logs/handoff-retirement.log"

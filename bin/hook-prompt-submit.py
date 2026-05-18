@@ -14,7 +14,7 @@ import sys
 import uuid
 from datetime import UTC, datetime
 
-from aios_paths import get_vault_root, rewrite_legacy_vault_path
+from aios_paths import get_vault_root, get_vault_subpath, rewrite_legacy_vault_path
 from hook_lifecycle import ensure_session, load_hook_payload
 
 DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
@@ -391,7 +391,10 @@ def retrieve_context(classification: str, prompt: str, project_name: str, conn: 
     # Wiki retrieval (human-curated vault entries only — never staging)
     wiki_cfg = policy.get("wiki_retrieval", {})
     if wiki_cfg.get("enabled", False) and classification in wiki_cfg.get("classifications", []):
-        wiki_dir_raw = wiki_cfg.get("vault_wiki_dir", "~/projects/Vaults/Command-Center/06 Knowledge/Wiki")
+        wiki_dir_raw = wiki_cfg.get(
+            "vault_wiki_dir",
+            str(get_vault_subpath("06 Knowledge", "Wiki")),
+        )
         wiki_dir = os.path.expanduser(rewrite_legacy_vault_path(wiki_dir_raw) or wiki_dir_raw)
         if os.path.isdir(wiki_dir):
             try:

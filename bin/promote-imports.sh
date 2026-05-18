@@ -4,7 +4,8 @@ set -euo pipefail
 
 DB=~/AIOS/data/aios.db
 READY=~/AIOS/staging/ai-history/ready
-VAULT_ROOT="${AIOS_VAULT_ROOT:-$HOME/projects/Vaults/Command-Center}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VAULT_ROOT="$(python3 "$SCRIPT_DIR/aios_paths.py" vault-root)"
 VAULT="$VAULT_ROOT/09 Archive/AI History"
 NOW=$(date "+%Y-%m-%d %H:%M")
 SEP="----------------------------------------------------------------"

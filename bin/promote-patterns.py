@@ -28,10 +28,11 @@ import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 
+from aios_paths import get_vault_subpath
+
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 # Stubs land in staging, not directly in vault.
-# Human must author the body, then manually promote to:
-#   ~/projects/Vaults/Command-Center/06 Knowledge/Wiki/
+# Human must author the body, then manually promote to the resolved vault wiki.
 WIKI_DIR = os.path.expanduser("~/AIOS/staging/knowledge-drafts")
 LOG = os.path.expanduser("~/AIOS/logs/promote-patterns.log")
 
@@ -100,6 +101,7 @@ def generate_wiki_stub(pattern_id: str, class_: str, title: str,
     page_title = wiki_title(title, class_)
     today = datetime.now(UTC).strftime("%Y-%m-%d")
     evidence_str = "\n".join(f"- {e}" for e in evidence[:8]) if evidence else "- (none recorded)"
+    promote_path = get_vault_subpath("06 Knowledge", "Wiki", f"{slug}.md")
 
     content = f"""---
 type: wiki-draft
@@ -109,7 +111,7 @@ quality: staging-draft
 created: {today}
 source_pattern_id: {pattern_id}
 confidence: {confidence:.2f}
-promote_to: "~/projects/Vaults/Command-Center/06 Knowledge/Wiki/{slug}.md"
+promote_to: "{promote_path}"
 tags:
   - wiki-draft
   - pattern/{class_}
@@ -119,7 +121,7 @@ tags:
 
 <!-- STAGING DRAFT — not yet in vault.
      Author the sections below, then move this file to:
-     ~/projects/Vaults/Command-Center/06 Knowledge/Wiki/{slug}.md
+     {promote_path}
      Change type: wiki, quality: human-curated before promoting. -->
 
 ## Pattern
@@ -213,7 +215,7 @@ def promote(dry_run: bool = False) -> None:
 
     mode = "[DRY RUN] " if dry_run else ""
     print(f"{mode}Promoted to knowledge: {len(promoted)}")
-    for title, path, kind in promoted:
+    for _title, path, kind in promoted:
         print(f"  [{kind}] {os.path.basename(path)}")
 
     print(f"\n{mode}Discarded as noise: {len(skipped_noise)}")
