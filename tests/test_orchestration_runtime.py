@@ -214,6 +214,9 @@ def test_hook_stop_uses_explicit_run_handshake(runtime_db: Path, tmp_path: Path,
     assert closeout_report[0] == "completed"
     assert report_payload["report_type"] == "governed_closeout"
     assert report_payload["checks_run"]["success_criteria_evaluation_id"] == "criteria-eval-test"
+    assert report_payload["governance"]["approval_required_count"] >= 1
+    assert "workflow-default_change" in report_payload["governance"]["approval_policy_classes"]
+    assert report_payload["governance"]["requires_review"] is True
     assert isinstance(report_payload["changed_artifacts"], list)
     assert closeout_report[2] is not None
     assert captured_criteria_args["changed_files"] == [str(repo_path / "services" / "orchestration.py")]
@@ -228,6 +231,68 @@ def test_base_schema_exposes_route_metadata_columns(runtime_db: Path) -> None:
     assert {"route_id", "route_status", "route_result_json"} <= run_columns
     assert {"route_id", "route_result_json"} <= packet_columns
     conn.close()
+
+
+def test_insert_writeback_derives_approval_policy_for_high_impact_changes(runtime_db: Path, tmp_path: Path) -> None:
+    from aios_orchestration_runtime import ensure_runtime_schema, insert_writeback
+
+    conn = sqlite3.connect(runtime_db)
+    project_id = _insert_project(conn, tmp_path)
+    ensure_runtime_schema(conn)
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (
+            id, project_id, objective, workflow_key, agent_key, status, rationale,
+            assumptions_json, context_trace_json, created_at, updated_at
+        )
+        VALUES (
+            'run-policy', ?, 'Change workflow defaults', 'implementation-delivery',
+            'implementation-lead', 'completed', 'Policy test', '[]', '[]',
+            '2026-05-19T00:00:00Z', '2026-05-19T00:00:00Z'
+        )
+        """,
+        (project_id,),
+    )
+
+    writeback_id = insert_writeback(
+        conn,
+        run_id="run-policy",
+        project_id=project_id,
+        layer_type="workflow",
+        layer_key="implementation-delivery",
+        title="Workflow default proposal",
+        summary="Change the default workflow behavior.",
+        evidence=["workflow result"],
+        proposed_change={"default_packet_policy": "explore"},
+        impact_scope="workflow-default",
+    )
+    row = conn.execute(
+        """
+        SELECT status, requires_approval, approval_reason, proposed_change_json
+        FROM improvement_writebacks
+        WHERE id = ?
+        """,
+        (writeback_id,),
+    ).fetchone()
+    event = conn.execute(
+        """
+        SELECT metadata_json
+        FROM improvement_writeback_events
+        WHERE writeback_id = ?
+        ORDER BY created_at DESC
+        LIMIT 1
+        """,
+        (writeback_id,),
+    ).fetchone()
+    conn.close()
+
+    proposed_change = json.loads(row[3])
+    event_metadata = json.loads(event[0])
+    assert row[0] == "pending_approval"
+    assert row[1] == 1
+    assert "workflow-default changes require approval" in row[2]
+    assert proposed_change["approval_policy"]["policy_class"] == "workflow-default_change"
+    assert event_metadata["approval_policy"]["requires_approval"] is True
 
 
 def test_runtime_transition_records_failed_reason_metadata(runtime_db: Path, tmp_path: Path) -> None:
@@ -351,7 +416,11 @@ def test_runtime_transition_records_partial_closeout_metadata(runtime_db: Path, 
 
 
 def test_runtime_persists_resume_snapshot(runtime_db: Path, tmp_path: Path) -> None:
-    from aios_orchestration_runtime import ensure_runtime_schema, load_resume_snapshot, store_resume_snapshot
+    from aios_orchestration_runtime import (
+        ensure_runtime_schema,
+        load_resume_snapshot,
+        store_resume_snapshot,
+    )
 
     repo_path = tmp_path / "repo"
     repo_path.mkdir()

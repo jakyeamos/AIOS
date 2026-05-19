@@ -813,6 +813,44 @@ def record_writeback_event(
     )
 
 
+def writeback_approval_policy(
+    *,
+    layer_type: str,
+    impact_scope: str,
+    proposed_change: dict[str, Any] | None,
+    requires_approval: bool = False,
+    approval_reason: str | None = None,
+) -> dict[str, Any]:
+    normalized_layer = layer_type.strip().lower()
+    normalized_scope = impact_scope.strip().lower()
+    change = proposed_change or {}
+    high_impact_layers = {"truth", "standard", "standards", "prompt", "skill", "workflow", "packet"}
+    high_impact_scopes = {"global", "project-truth", "workflow-default", "prompt-default", "skill-default"}
+    destructive = bool(change.get("destructive") or change.get("destructive_action"))
+
+    if requires_approval:
+        policy_class = "explicit_approval_required"
+        reason = approval_reason or "Caller marked this writeback as approval-gated."
+    elif destructive:
+        policy_class = "destructive_action"
+        reason = "Destructive or irreversible changes require approval before promotion."
+    elif normalized_scope in high_impact_scopes:
+        policy_class = f"{normalized_scope}_change"
+        reason = f"{impact_scope} changes require approval before promotion."
+    elif normalized_layer in high_impact_layers:
+        policy_class = f"{normalized_layer}_asset_change"
+        reason = f"{layer_type} changes require approval before promotion."
+    else:
+        policy_class = "scoped_project_memory"
+        reason = approval_reason
+
+    return {
+        "policy_class": policy_class,
+        "requires_approval": policy_class != "scoped_project_memory",
+        "reason": reason,
+    }
+
+
 def insert_writeback(
     conn: sqlite3.Connection,
     *,
@@ -832,7 +870,18 @@ def insert_writeback(
 ) -> str:
     ensure_runtime_schema(conn)
     writeback_id = f"writeback-{uuid.uuid4()}"
-    target_status = status or ("pending_approval" if requires_approval else "proposed")
+    policy = writeback_approval_policy(
+        layer_type=layer_type,
+        impact_scope=impact_scope,
+        proposed_change=proposed_change,
+        requires_approval=requires_approval,
+        approval_reason=approval_reason,
+    )
+    effective_requires_approval = bool(policy["requires_approval"])
+    effective_approval_reason = approval_reason or policy.get("reason")
+    proposed_payload = dict(proposed_change or {})
+    proposed_payload.setdefault("approval_policy", policy)
+    target_status = status or ("pending_approval" if effective_requires_approval else "proposed")
     conn.execute(
         """
         INSERT INTO improvement_writebacks (
@@ -864,11 +913,11 @@ def insert_writeback(
             title,
             summary,
             _json(evidence),
-            _json(proposed_change or {}),
+            _json(proposed_payload),
             impact_scope,
             target_status,
-            1 if requires_approval else 0,
-            approval_reason,
+            1 if effective_requires_approval else 0,
+            effective_approval_reason,
             1 if token_regressive else 0,
             now_iso(),
             now_iso(),
@@ -884,7 +933,8 @@ def insert_writeback(
         actor="system",
         note=summary,
         metadata={
-            "requires_approval": requires_approval,
+            "requires_approval": effective_requires_approval,
+            "approval_policy": policy,
             "impact_scope": impact_scope,
             "token_regressive": token_regressive,
         },

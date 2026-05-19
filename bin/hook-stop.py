@@ -84,6 +84,59 @@ def _pending_approval_summary(conn: sqlite3.Connection, run_id: str | None) -> t
     return len(titles), titles
 
 
+def _writeback_governance_summary(conn: sqlite3.Connection, run_id: str | None) -> dict[str, Any]:
+    if not run_id:
+        return {
+            "writeback_count": 0,
+            "approval_required_count": 0,
+            "approval_policy_classes": [],
+            "writebacks": [],
+        }
+    rows = conn.execute(
+        """
+        SELECT id, layer_type, layer_key, impact_scope, status, requires_approval,
+               approval_reason, proposed_change_json
+        FROM improvement_writebacks
+        WHERE run_id = ?
+        ORDER BY created_at DESC
+        LIMIT 20
+        """,
+        (run_id,),
+    ).fetchall()
+    writebacks: list[dict[str, Any]] = []
+    policy_classes: list[str] = []
+    for row in rows:
+        try:
+            proposed_change = json.loads(row[7] or "{}")
+        except json.JSONDecodeError:
+            proposed_change = {}
+        policy = proposed_change.get("approval_policy") if isinstance(proposed_change, dict) else None
+        policy_class = (
+            str(policy.get("policy_class"))
+            if isinstance(policy, dict) and policy.get("policy_class")
+            else "legacy_or_unclassified"
+        )
+        policy_classes.append(policy_class)
+        writebacks.append(
+            {
+                "id": row[0],
+                "layer_type": row[1],
+                "layer_key": row[2],
+                "impact_scope": row[3],
+                "status": row[4],
+                "requires_approval": bool(row[5]),
+                "approval_reason": row[6],
+                "approval_policy_class": policy_class,
+            }
+        )
+    return {
+        "writeback_count": len(writebacks),
+        "approval_required_count": len([item for item in writebacks if item["requires_approval"]]),
+        "approval_policy_classes": sorted(set(policy_classes)),
+        "writebacks": writebacks,
+    }
+
+
 def ensure_memory_updates_table(conn: sqlite3.Connection) -> None:
     conn.execute(
         """
@@ -601,6 +654,7 @@ def main() -> None:
         )
         if linked_run_id:
             pending_approval_count, approval_titles = _pending_approval_summary(conn, linked_run_id)
+            governance_summary = _writeback_governance_summary(conn, linked_run_id)
             closeout_summary = {
                 "report_type": "governed_closeout",
                 "run_id": linked_run_id,
@@ -628,6 +682,13 @@ def main() -> None:
                     "memory_update_id": memory_update_id,
                     "project_writeback_expected": True,
                     "workflow_learning_writeback_expected": run_row is not None,
+                },
+                "governance": {
+                    **governance_summary,
+                    "unresolved_follow_up_count": len(risk_items) + len(open_questions),
+                    "requires_review": pending_approval_count > 0
+                    or len(risk_items) > 0
+                    or len(open_questions) > 0,
                 },
                 "generated_at": now,
             }
