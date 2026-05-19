@@ -1,8 +1,8 @@
 import type Database from "better-sqlite3";
 
-import type { GroundedAnswer, GroundedCitation } from "@/lib/control-plane";
+import type { GroundedAnswer, GroundedCitation, TruthKnowledgeBoundary } from "@/lib/control-plane";
 import { getCtsContext } from "@/server/aios/cts";
-import { getProjectDossier, listKnowledgePages } from "@/server/aios/knowledge";
+import { getProjectDossier, getTruthKnowledgeBoundary, listKnowledgePages } from "@/server/aios/knowledge";
 import { listRecentChanges } from "@/server/aios/changes";
 import { getTopicMarkers, getTopicReferences, searchTopicGraph } from "@/server/aios/topic-graph";
 
@@ -63,6 +63,17 @@ const isCapabilityQuestion = (question: string): boolean => {
   );
 };
 
+const isTruthOperatorQuestion = (question: string): boolean => {
+  const lower = question.toLowerCase();
+  return (
+    lower.includes("truth") ||
+    lower.includes("unresolved") ||
+    lower.includes("prior knowledge") ||
+    lower.includes("what remains") ||
+    lower.includes("default layer")
+  );
+};
+
 const classifyIntent = (
   question: string,
 ): GroundedAnswer["intent"] => {
@@ -117,6 +128,78 @@ const makeProjectCitations = (
       ]
     : []),
 ];
+
+const makeTruthBoundaryCitations = (boundary: TruthKnowledgeBoundary): GroundedCitation[] => [
+  ...boundary.acceptedTruth.slice(0, 2).map((link) => ({
+    label: link.title,
+    href: link.href,
+    excerpt: `Accepted truth: ${link.summary}`,
+  })),
+  ...boundary.proposedKnowledge.slice(0, 2).map((link) => ({
+    label: link.title,
+    href: link.href,
+    excerpt: `Recent proposal evidence: ${link.summary}`,
+  })),
+  ...boundary.inferredKnowledge.slice(0, 2).map((link) => ({
+    label: link.title,
+    href: link.href,
+    excerpt: `Inferred context: ${link.summary}`,
+  })),
+];
+
+const answerTruthOperatorQuestion = (
+  db: Database.Database,
+  question: string,
+  boundary: TruthKnowledgeBoundary,
+  recentChanges: ReturnType<typeof listRecentChanges>,
+): GroundedAnswer => {
+  const topAccepted = boundary.acceptedTruth[0];
+  const proposedCount = boundary.summary.proposedCount;
+
+  return {
+    question,
+    intent: "system_state",
+    answer:
+      proposedCount > 0
+        ? `AIOS has accepted truth in ${topAccepted?.title ?? "the project truth file"}, plus ${proposedCount} recent proposal signal(s) that still require review before becoming truth.`
+        : `AIOS has accepted truth in ${topAccepted?.title ?? "the project truth file"} and no recent proposal evidence requiring promotion review.`,
+    facts: [
+      ...boundary.acceptedTruth.slice(0, 4).map((link) => `Accepted truth: ${link.title} - ${link.summary}`),
+      ...boundary.proposedKnowledge.slice(0, 4).map((link) => `Recent evidence: ${link.title} - ${link.summary}`),
+      ...recentChanges.slice(0, 3).map((change) => `Runtime change: ${change.title} - ${change.summary}`),
+      ...boundary.inferredKnowledge.slice(0, 4).map((link) => `Prior knowledge: ${link.title} - ${link.summary}`),
+    ],
+    inferences: [
+      boundary.summary.reviewRequired
+        ? "Some runtime evidence is intentionally not accepted truth yet; it needs review or writeback approval."
+        : "No recent proposal evidence is waiting for truth promotion.",
+      "Prompt, skill, workflow, and research links can shape context packets but should not be treated as authoritative project state.",
+    ],
+    recommendations: [
+      "Review proposed knowledge before updating PROJECT.md or durable standards.",
+      "Use accepted truth first, then recent evidence, then inferred context when compiling agent packets.",
+    ],
+    assumptions:
+      boundary.acceptedTruth.length === 0
+        ? ["PROJECT.md was unavailable or not readable from the UI server root."]
+        : [],
+    citations: makeTruthBoundaryCitations(boundary),
+    retrievalTrace: [
+      {
+        source: "truth-boundary",
+        reason: "Loaded accepted truth, proposed runtime evidence, and inferred context links from the knowledge boundary.",
+        freshness: "Live from local files and SQLite at query time",
+        confidence: 0.84,
+      },
+      ...recentChanges.slice(0, 3).map((change) => ({
+        source: change.kind,
+        reason: `Loaded recent ${change.kind} signal to explain what changed.`,
+        freshness: change.timestamp,
+        confidence: change.confidence,
+      })),
+    ],
+  };
+};
 
 const loadProjectRepoPath = (db: Database.Database, projectId: string | null): string | null => {
   if (!projectId) {
@@ -314,9 +397,14 @@ export const answerGroundedQuestion = (
   const decisionPages = listKnowledgePages(db).filter((page) => page.kind === "decision").slice(0, 3);
   const topicMatches = searchTopicGraph(db, { projectId, query: input.question, limit: 4 });
   const latestPacket = loadLatestPacketProvenance(db, projectId);
+  const truthBoundary = getTruthKnowledgeBoundary(db);
 
   if (isCapabilityQuestion(input.question)) {
     return answerCapabilityQuestion(db, input.question);
+  }
+
+  if (isTruthOperatorQuestion(input.question)) {
+    return answerTruthOperatorQuestion(db, input.question, truthBoundary, recentChanges);
   }
 
   if (intent === "what_changed") {
@@ -330,6 +418,9 @@ export const answerGroundedQuestion = (
       facts: recentChanges.map((change) => `${change.title}: ${change.summary}`),
       inferences: [
         "Recent changes are dominated by operational traces, so project memory capture still needs broader adoption.",
+        truthBoundary.summary.reviewRequired
+          ? `${truthBoundary.summary.proposedCount} recent proposal signal(s) still need review before truth promotion.`
+          : "No recent proposal evidence is waiting for truth promotion.",
         ...(topicMatches.length > 0 ? [`Topic graph linked this question to ${topicMatches[0].topic.title}.`] : []),
       ],
       recommendations: [
@@ -340,8 +431,14 @@ export const answerGroundedQuestion = (
         label: change.title,
         href: change.href ?? "/control",
         excerpt: change.summary,
-      })),
+      })).concat(makeTruthBoundaryCitations(truthBoundary).slice(0, 2)),
       retrievalTrace: [
+        {
+          source: "truth-boundary",
+          reason: "Loaded truth boundary to separate accepted truth from recent proposal evidence.",
+          freshness: "Live from local files and SQLite at query time",
+          confidence: 0.84,
+        },
         ...topicMatches.map((match) => ({
           source: "topic-graph",
           reason: `Matched topic ${match.topic.title}. ${match.why}`,
@@ -375,7 +472,9 @@ export const answerGroundedQuestion = (
       intent,
       answer: `${dossier.title} is ${dossier.status} with freshness "${dossier.freshness}". The strongest durable state signal is: ${memorySection?.body ?? dossier.summary}`,
       facts: [
+        ...truthBoundary.acceptedTruth.slice(0, 2).map((link) => `Accepted truth: ${link.title} - ${link.summary}`),
         ...dossier.sections.flatMap((section) => section.items).slice(0, 6),
+        ...truthBoundary.proposedKnowledge.slice(0, 2).map((link) => `Recent evidence: ${link.title} - ${link.summary}`),
         ...topicMatches.flatMap((match) => getTopicReferences(db, match.topic.slug, 1).map((reference) => `${match.topic.title}: ${reference.excerpt}`)),
         ...(latestPacket
           ? [
@@ -394,6 +493,9 @@ export const answerGroundedQuestion = (
         dossier.status === "warning"
           ? "Open bugs or weak memory signals are making this project operationally noisy."
           : "The project has enough recent state to support task-scoped delegation.",
+        truthBoundary.summary.reviewRequired
+          ? "Some recent runtime evidence is still proposed and should not overwrite accepted truth without review."
+          : "No proposed truth updates are currently visible in the knowledge boundary.",
         ...(latestPacket?.routeSummary ? [latestPacket.routeSummary] : []),
         ...(topicMatches.length > 0 ? [`Most relevant indexed topic is ${topicMatches[0].topic.title}.`] : []),
         ...(ctsContext && ctsContext.index_status === "current"
@@ -406,6 +508,12 @@ export const answerGroundedQuestion = (
       assumptions: [],
       citations: makeProjectCitations(projectId, dossier.title, recentChanges, Boolean(ctsContext && ctsContext.index_status === "current")),
       retrievalTrace: [
+        {
+          source: "truth-boundary",
+          reason: "Loaded accepted truth and proposed evidence before composing project state.",
+          freshness: "Live from local files and SQLite at query time",
+          confidence: 0.84,
+        },
         {
           source: "project-dossier",
           reason: `Loaded durable project state for ${dossier.title}.`,
@@ -480,7 +588,10 @@ export const answerGroundedQuestion = (
       intent,
       answer: `An agent working on ${dossier.title} should start from the project dossier, recent change signals, and likely files, then request a control-plane packet for task-specific constraints.`,
       facts: [
+        ...truthBoundary.acceptedTruth.slice(0, 2).map((link) => `Accepted truth: ${link.title}`),
         dossier.summary,
+        ...truthBoundary.proposedKnowledge.slice(0, 2).map((link) => `Review before writeback: ${link.title}`),
+        ...truthBoundary.inferredKnowledge.slice(0, 3).map((link) => `Reusable context: ${link.title}`),
         ...topicMatches.slice(0, 2).map((match) => `Topic: ${match.topic.title}`),
         ...(latestPacket
           ? [
@@ -495,6 +606,7 @@ export const answerGroundedQuestion = (
       ],
       inferences: [
         "Without a task-specific packet, the agent would receive too much low-signal operational history.",
+        "The truth boundary should be used as the ordering rule: accepted truth first, proposal evidence second, inferred context third.",
         ...(latestPacket?.routeSummary ? [latestPacket.routeSummary] : []),
         ...(topicMatches.length > 0 ? ["Ranked topics indicate which durable context should reach the packet first."] : []),
         ...(ctsContext && ctsContext.index_status === "current"
@@ -507,6 +619,12 @@ export const answerGroundedQuestion = (
       assumptions: [],
       citations: makeProjectCitations(projectId, dossier.title, recentChanges, Boolean(ctsContext && ctsContext.index_status === "current")),
       retrievalTrace: [
+        {
+          source: "truth-boundary",
+          reason: "Loaded truth authority boundaries before producing agent briefing guidance.",
+          freshness: "Live from local files and SQLite at query time",
+          confidence: 0.84,
+        },
         {
           source: "project-dossier",
           reason: "Loaded project dossier for briefing context.",
@@ -552,10 +670,15 @@ export const answerGroundedQuestion = (
       "The storage contract separates SQLite, vault, CTS, and staging.",
       "The UI was originally built as an observability dashboard.",
       "Control-plane runs and briefing packets are now tracked separately from durable knowledge.",
+      ...truthBoundary.acceptedTruth.slice(0, 2).map((link) => `Accepted truth: ${link.title}`),
+      ...truthBoundary.proposedKnowledge.slice(0, 2).map((link) => `Recent evidence: ${link.title}`),
       ...topicMatches.slice(0, 2).map((match) => `Matched topic: ${match.topic.title}`),
     ],
     inferences: [
       "The main product risk is still architectural drift between documented intent and shipped surfaces.",
+      truthBoundary.summary.reviewRequired
+        ? "Recent proposal evidence exists and needs review before it becomes accepted project truth."
+        : "The current query did not find proposal evidence waiting for truth promotion.",
       ...(topicMatches.length > 0 ? ["The indexed topic graph is now a live retrieval substrate for grounded answers."] : []),
     ],
     recommendations: [
@@ -573,8 +696,15 @@ export const answerGroundedQuestion = (
         href: "/knowledge",
         excerpt: "Browse projects, decisions, workflows, agents, and systems.",
       },
+      ...makeTruthBoundaryCitations(truthBoundary).slice(0, 3),
     ],
     retrievalTrace: [
+      {
+        source: "truth-boundary",
+        reason: "Loaded accepted truth, proposal evidence, and inferred knowledge links for the system-state answer.",
+        freshness: "Live from local files and SQLite at query time",
+        confidence: 0.84,
+      },
       ...topicMatches.map((match) => ({
         source: "topic-graph",
         reason: `Matched topic ${match.topic.title}. ${match.why}`,
