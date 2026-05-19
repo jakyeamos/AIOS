@@ -244,6 +244,14 @@ AIOS now has a cross-asset governance audit contract:
 - governance findings flag pending approvals and blocker-level terminal runs that have no durable governance evidence
 - `tests/test_aios_cli.py` verifies pending truth approval, unresolved closeout evidence, and silent terminal-run detection through the JSON-first CLI
 
+AIOS writebacks now carry explicit approval policy classes:
+
+- `bin/aios_orchestration_runtime.py` derives approval policy classes for truth, standards, prompt, skill, workflow, packet, workflow-default, global, project-truth, and destructive-action writebacks
+- high-impact writebacks now become `pending_approval` by default unless they are scoped project-memory proposals
+- writeback event metadata and proposed-change payloads include the approval policy so later audits and UI surfaces can explain why a proposal is gated
+- `bin/hook-stop.py` includes a machine-readable governance summary in governed closeout reports, including writeback counts, approval-required counts, policy classes, unresolved follow-up count, and review requirement
+- `tests/test_orchestration_runtime.py` verifies derived workflow-default approval gating and closeout governance policy visibility
+
 ## Implemented On 2026-05-14
 
 AIOS now has a fixture-backed harness eval v0 contract:
