@@ -858,6 +858,78 @@ def test_workflow_learning_audit_classifies_run_evidence(tmp_path: Path, capsys)
     assert data["classification_counts"]["no_learning_signal"] == 1
 
 
+def test_governance_audit_reports_pending_and_missing_terminal_evidence(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    conn = sqlite3.connect(db_path)
+    conn.executemany(
+        "INSERT INTO orchestration_runs (id, status, workflow_key, objective, updated_at) VALUES (?, ?, ?, ?, ?)",
+        [
+            ("run-governed", "completed", "implementation-delivery", "Governed run", "2026-04-23T01:10:00Z"),
+            ("run-silent", "completed", "implementation-delivery", "Silent run", "2026-04-23T01:20:00Z"),
+        ],
+    )
+    conn.execute(
+        """
+        INSERT INTO improvement_writebacks (
+            id, run_id, project_id, layer_type, layer_key, title, summary, status, requires_approval, created_at
+        )
+        VALUES (
+            'wb-governed', 'run-governed', 'p1', 'truth', 'PROJECT.md', 'Truth proposal',
+            'Review before promoting into accepted truth.', 'pending_approval', 1, '2026-04-23T01:30:00Z'
+        )
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO workflow_execution_reports (
+            id, run_id, invocation_id, workflow_key, status, report_json, artifact_path, created_at
+        )
+        VALUES (
+            'wr-governed-closeout', 'run-governed', 'inv-1', 'implementation-delivery', 'needs_follow_up',
+            ?, '/tmp/governed-closeout.json', '2026-04-23T01:35:00Z'
+        )
+        """,
+        (
+            json.dumps(
+                {
+                    "report_type": "governed_closeout",
+                    "approvals": {"pending_approval_count": 1},
+                    "unresolved_deltas": {"risks": ["Approval pending"], "open_questions": []},
+                }
+            ),
+        ),
+    )
+    conn.commit()
+    conn.close()
+
+    audit_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "governance-audit",
+        ]
+    )
+
+    assert audit_exit == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    assert data["summary"]["proposal_count"] == 2
+    assert data["summary"]["pending_approval_count"] == 1
+    assert data["summary"]["terminal_run_count"] == 3
+    assert data["summary"]["terminal_runs_missing_evidence_count"] == 1
+    assert data["summary"]["unresolved_closeout_count"] == 1
+    assert data["missing_evidence_runs"][0]["run_id"] == "run-silent"
+    assert "terminal_runs_missing_governance_evidence" in {
+        finding["code"] for finding in data["findings"]
+    }
+
+
 def test_workflow_learning_audit_infers_evidence_from_linked_artifacts(tmp_path: Path, capsys) -> None:
     db_path = tmp_path / "aios.db"
     logs_dir = tmp_path / "logs"

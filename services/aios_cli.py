@@ -2377,6 +2377,258 @@ def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     }
 
 
+def _json_has_content(raw: Any) -> bool:
+    if raw is None:
+        return False
+    try:
+        parsed = json.loads(str(raw))
+    except json.JSONDecodeError:
+        return bool(str(raw).strip())
+    return parsed not in (None, "", [], {})
+
+
+def _governance_proposal_rows(conn: sqlite3.Connection) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    if _table_exists(conn, "improvement_writebacks"):
+        rows.extend(
+            {
+                "id": row["id"],
+                "source": "improvement_writebacks",
+                "run_id": row["run_id"],
+                "target_type": row["layer_type"],
+                "target_key": row["layer_key"],
+                "title": row["title"],
+                "status": row["status"],
+                "requires_approval": bool(row["requires_approval"]),
+                "created_at": row["created_at"],
+            }
+            for row in conn.execute(
+                """
+                SELECT id, run_id, layer_type, layer_key, title, status, requires_approval, created_at
+                FROM improvement_writebacks
+                ORDER BY created_at DESC
+                LIMIT 100
+                """
+            ).fetchall()
+        )
+    if _table_exists(conn, "memory_writeback_proposals"):
+        rows.extend(
+            {
+                "id": row["id"],
+                "source": "memory_writeback_proposals",
+                "run_id": row["source_run_id"],
+                "target_type": row["target_scope"],
+                "target_key": row["proposal_type"],
+                "title": row["proposal_type"],
+                "status": row["status"],
+                "requires_approval": row["status"] in {"proposed", "pending_approval"},
+                "created_at": row["created_at"],
+            }
+            for row in conn.execute(
+                """
+                SELECT id, source_run_id, target_scope, proposal_type, status, created_at
+                FROM memory_writeback_proposals
+                ORDER BY created_at DESC
+                LIMIT 100
+                """
+            ).fetchall()
+        )
+    if _table_exists(conn, "workflow_synthesis_proposals"):
+        rows.extend(
+            {
+                "id": row["id"],
+                "source": "workflow_synthesis_proposals",
+                "run_id": None,
+                "target_type": "workflow",
+                "target_key": row["proposal_key"],
+                "title": row["title"],
+                "status": row["status"],
+                "requires_approval": row["status"] == "pending_approval",
+                "created_at": row["created_at"],
+            }
+            for row in conn.execute(
+                """
+                SELECT id, proposal_key, title, status, created_at
+                FROM workflow_synthesis_proposals
+                ORDER BY created_at DESC
+                LIMIT 100
+                """
+            ).fetchall()
+        )
+    if _table_exists(conn, "promotion_lifecycle_items"):
+        rows.extend(
+            {
+                "id": row["id"],
+                "source": "promotion_lifecycle_items",
+                "run_id": row["source_run_id"],
+                "target_type": row["item_kind"],
+                "target_key": row["item_key"],
+                "title": f"{row['item_kind']}:{row['item_key']}",
+                "status": row["status"],
+                "requires_approval": row["status"] in {"candidate", "pending_approval", "tested"},
+                "created_at": row["created_at"],
+            }
+            for row in conn.execute(
+                """
+                SELECT id, item_kind, item_key, source_run_id, status, created_at
+                FROM promotion_lifecycle_items
+                ORDER BY created_at DESC
+                LIMIT 100
+                """
+            ).fetchall()
+        )
+    return rows
+
+
+def _run_has_governance_evidence(conn: sqlite3.Connection, run_id: str) -> bool:
+    checks = [
+        ("improvement_writebacks", "run_id"),
+        ("workflow_learning_events", "run_id"),
+        ("workflow_execution_reports", "run_id"),
+    ]
+    for table, column in checks:
+        if _table_exists(conn, table) and column in _table_columns(conn, table):
+            row = conn.execute(f"SELECT 1 FROM {table} WHERE {column} = ? LIMIT 1", (run_id,)).fetchone()
+            if row is not None:
+                return True
+    return False
+
+
+def _governance_closeout_rows(conn: sqlite3.Connection) -> list[dict[str, Any]]:
+    if not _table_exists(conn, "workflow_execution_reports"):
+        return []
+    closeouts: list[dict[str, Any]] = []
+    rows = conn.execute(
+        """
+        SELECT id, run_id, workflow_key, status, report_json, created_at
+        FROM workflow_execution_reports
+        ORDER BY created_at DESC
+        LIMIT 100
+        """
+    ).fetchall()
+    for row in rows:
+        report = _parse_json_object(row["report_json"])
+        if report.get("report_type") != "governed_closeout":
+            continue
+        approvals = report.get("approvals") if isinstance(report.get("approvals"), dict) else {}
+        unresolved = report.get("unresolved_deltas") if isinstance(report.get("unresolved_deltas"), dict) else {}
+        closeouts.append(
+            {
+                "id": row["id"],
+                "run_id": row["run_id"],
+                "workflow_key": row["workflow_key"],
+                "status": row["status"],
+                "pending_approval_count": int(approvals.get("pending_approval_count") or 0),
+                "has_unresolved_deltas": _json_has_content(json.dumps(unresolved, sort_keys=True)),
+                "created_at": row["created_at"],
+            }
+        )
+    return closeouts
+
+
+def _governance_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
+    proposals = _governance_proposal_rows(conn)
+    pending = [
+        proposal
+        for proposal in proposals
+        if proposal["requires_approval"] or proposal["status"] in {"pending", "pending_approval", "proposed"}
+    ]
+    terminal_runs: list[dict[str, Any]] = []
+    if _table_exists(conn, "orchestration_runs"):
+        placeholders = ", ".join("?" for _ in TERMINAL_RUN_STATUSES)
+        terminal_runs = [
+            dict(row)
+            for row in conn.execute(
+                f"""
+                SELECT id, status, workflow_key, objective, updated_at
+                FROM orchestration_runs
+                WHERE status IN ({placeholders})
+                ORDER BY updated_at DESC
+                LIMIT 100
+                """,
+                tuple(TERMINAL_RUN_STATUSES),
+            ).fetchall()
+        ]
+    missing_evidence_runs = [
+        {
+            "run_id": run["id"],
+            "status": run.get("status"),
+            "workflow_key": run.get("workflow_key"),
+            "objective": run.get("objective"),
+        }
+        for run in terminal_runs
+        if not _run_has_governance_evidence(conn, str(run["id"]))
+    ]
+    closeouts = _governance_closeout_rows(conn)
+    unresolved_closeouts = [closeout for closeout in closeouts if closeout["has_unresolved_deltas"]]
+
+    source_counts: dict[str, int] = {}
+    target_counts: dict[str, int] = {}
+    for proposal in proposals:
+        source_counts[proposal["source"]] = source_counts.get(proposal["source"], 0) + 1
+        target_counts[proposal["target_type"]] = target_counts.get(proposal["target_type"], 0) + 1
+
+    findings: list[dict[str, Any]] = []
+    if pending:
+        findings.append(
+            {
+                "severity": "warning",
+                "code": "pending_governance_approvals",
+                "summary": f"{len(pending)} proposal(s) require approval or review.",
+            }
+        )
+    if missing_evidence_runs:
+        findings.append(
+            {
+                "severity": "blocker",
+                "code": "terminal_runs_missing_governance_evidence",
+                "summary": "Terminal run(s) lack writeback, follow-up, closeout, or no-learning evidence.",
+                "run_count": len(missing_evidence_runs),
+            }
+        )
+    if not proposals:
+        findings.append(
+            {
+                "severity": "warning",
+                "code": "no_governance_proposals",
+                "summary": "No cross-asset writeback or promotion proposals were found.",
+            }
+        )
+
+    return {
+        "summary": {
+            "proposal_count": len(proposals),
+            "pending_approval_count": len(pending),
+            "terminal_run_count": len(terminal_runs),
+            "terminal_runs_missing_evidence_count": len(missing_evidence_runs),
+            "governed_closeout_count": len(closeouts),
+            "unresolved_closeout_count": len(unresolved_closeouts),
+            "finding_count": len(findings),
+        },
+        "contract": {
+            "proposal_sources": [
+                "improvement_writebacks",
+                "memory_writeback_proposals",
+                "workflow_synthesis_proposals",
+                "promotion_lifecycle_items",
+            ],
+            "terminal_run_evidence_sources": [
+                "improvement_writebacks",
+                "workflow_learning_events",
+                "workflow_execution_reports",
+            ],
+            "reviewable_target_types": ["truth", "prompt", "skill", "workflow", "standards", "packet", "memory"],
+            "meaningful_terminal_run_rule": "terminal runs need writeback, follow-up, closeout, or no-learning evidence",
+        },
+        "source_counts": source_counts,
+        "target_counts": target_counts,
+        "pending_approvals": pending[:50],
+        "missing_evidence_runs": missing_evidence_runs[:50],
+        "governed_closeouts": closeouts[:50],
+        "findings": findings,
+    }
+
+
 def _ensure_evaluation_finding_schema(conn: sqlite3.Connection) -> None:
     if _table_exists(conn, "success_criteria_findings"):
         for column, definition in {
@@ -2820,6 +3072,7 @@ def _metadata_payload(
             "aios workflow-learning-audit --json",
             "aios contracts-audit --json",
             "aios truth-audit --json",
+            "aios governance-audit --json",
             "aios logs --json --last 50",
             "aios recent-failures --json --last 20",
             "aios rtk --json",
@@ -2957,6 +3210,14 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
             f"findings={summary['finding_count']}"
         )
         return
+    if command == "governance-audit":
+        summary = data["summary"]
+        print(
+            f"proposals={summary['proposal_count']} "
+            f"pending={summary['pending_approval_count']} "
+            f"missing_evidence={summary['terminal_runs_missing_evidence_count']}"
+        )
+        return
     if command == "prove-project-health":
         summary = data["summary"]
         print(
@@ -3064,6 +3325,7 @@ def create_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("knowledge-objects", help="Knowledge object contract and provenance audit")
     subparsers.add_parser("workflow-learning-audit", help="Workflow learning evidence and proposal audit")
     subparsers.add_parser("contracts-audit", help="Canonical AIOS interface contract audit")
+    subparsers.add_parser("governance-audit", help="Governed writeback, approval, and terminal-run evidence audit")
     truth_audit = subparsers.add_parser(
         "truth-audit",
         help="Project truth freshness, facet coverage, and governed update contract audit",
@@ -3216,6 +3478,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "knowledge-objects",
             "workflow-learning-audit",
             "contracts-audit",
+            "governance-audit",
             "truth-audit",
             "prove-project-health",
             "sync-automation-history",
@@ -3276,6 +3539,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "contracts-audit":
             assert conn is not None
             data = _contracts_audit_payload(conn)
+        elif args.command == "governance-audit":
+            assert conn is not None
+            data = _governance_audit_payload(conn)
         elif args.command == "truth-audit":
             assert conn is not None
             data = _truth_audit_payload(conn, Path(args.truth_file).expanduser().resolve())
