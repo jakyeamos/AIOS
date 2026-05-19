@@ -6,6 +6,9 @@ import type {
   BriefingPacket,
   ConsistencyFinding,
   ControlPlaneRunDetail,
+  GovernanceOverview,
+  GovernanceProposalSummary,
+  GovernanceRunGap,
   ImprovementWriteback,
   OrchestrationRun,
   OrchestrationRunStatus,
@@ -98,6 +101,13 @@ const parseJsonRecord = <T extends Record<string, unknown>>(raw: string | null):
   }
 };
 
+const tableExists = (db: Database.Database, tableName: string): boolean => {
+  const row = db
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1")
+    .get(tableName) as { name: string } | undefined;
+  return Boolean(row?.name);
+};
+
 const supersedePendingRuns = (db: Database.Database, projectId: string | null, supersedingRunId: string): void => {
   if (!projectId) {
     return;
@@ -157,6 +167,72 @@ const supersedePendingRuns = (db: Database.Database, projectId: string | null, s
       now,
     );
   }
+};
+
+const approvalPolicyClass = (writeback: ImprovementWriteback): string => {
+  const policy = writeback.proposedChange.approval_policy;
+  if (policy && typeof policy === "object" && !Array.isArray(policy)) {
+    const policyClass = (policy as { policy_class?: unknown }).policy_class;
+    if (typeof policyClass === "string" && policyClass.length > 0) {
+      return policyClass;
+    }
+  }
+  if (writeback.requiresApproval) {
+    return "legacy_approval_required";
+  }
+  return "not_required";
+};
+
+const toGovernanceProposal = (writeback: ImprovementWriteback): GovernanceProposalSummary => ({
+  id: writeback.id,
+  source: "improvement_writebacks",
+  title: writeback.title,
+  targetType: writeback.layerType,
+  targetKey: writeback.layerKey,
+  status: writeback.status,
+  requiresApproval: writeback.requiresApproval,
+  approvalPolicyClass: approvalPolicyClass(writeback),
+  href: writeback.runId ? `/runs/${writeback.runId}` : "/control",
+  createdAt: writeback.createdAt,
+});
+
+const runHasGovernanceEvidence = (db: Database.Database, runId: string): boolean => {
+  const checks = [
+    ["improvement_writebacks", "run_id"],
+    ["workflow_learning_events", "run_id"],
+    ["workflow_execution_reports", "run_id"],
+  ] as const;
+
+  return checks.some(([table, column]) => {
+    if (!tableExists(db, table)) {
+      return false;
+    }
+    const row = db.prepare(`SELECT 1 FROM ${table} WHERE ${column} = ? LIMIT 1`).get(runId);
+    return row !== undefined;
+  });
+};
+
+const terminalRunGaps = (db: Database.Database): { terminalCount: number; gaps: GovernanceRunGap[] } => {
+  if (!tableExists(db, "orchestration_runs")) {
+    return { terminalCount: 0, gaps: [] };
+  }
+
+  const rows = db
+    .prepare(
+      `
+      SELECT id AS runId, objective, workflow_key AS workflowKey, status, updated_at AS updatedAt
+      FROM orchestration_runs
+      WHERE status IN ('partial', 'needs_follow_up', 'completed', 'failed', 'canceled', 'superseded')
+      ORDER BY updated_at DESC
+      LIMIT 100
+    `,
+    )
+    .all() as GovernanceRunGap[];
+
+  return {
+    terminalCount: rows.length,
+    gaps: rows.filter((run) => !runHasGovernanceEvidence(db, run.runId)),
+  };
 };
 
 export const listControlPlaneRuns = (db: Database.Database): OrchestrationRun[] => {
@@ -287,9 +363,11 @@ export const getControlPlaneOverview = (db: Database.Database): {
   runs: OrchestrationRun[];
   packets: BriefingPacket[];
   pendingWritebacks: ImprovementWriteback[];
+  governance: GovernanceOverview;
   recentFindings: ConsistencyFinding[];
 } => {
   const runs = listControlPlaneRuns(db);
+  const governance = getGovernanceOverview(db);
   return {
     workflowTemplates,
     agentProfiles,
@@ -297,7 +375,45 @@ export const getControlPlaneOverview = (db: Database.Database): {
     runs,
     packets: listPacketRows(db),
     pendingWritebacks: listImprovementWritebacks(db, { limit: 12 }).filter((writeback) => writeback.requiresApproval),
+    governance,
     recentFindings: listConsistencyFindings(db, { limit: 12 }),
+  };
+};
+
+export const getGovernanceOverview = (db: Database.Database): GovernanceOverview => {
+  ensureControlPlaneSchema(db);
+  const writebacks = listImprovementWritebacks(db, { limit: 100 });
+  const proposals = writebacks.map(toGovernanceProposal);
+  const pendingApprovals = proposals.filter(
+    (proposal) => proposal.requiresApproval || proposal.status === "pending_approval",
+  );
+  const policyClassCounts = Array.from(
+    proposals.reduce((counts, proposal) => {
+      counts.set(proposal.approvalPolicyClass, (counts.get(proposal.approvalPolicyClass) ?? 0) + 1);
+      return counts;
+    }, new Map<string, number>()),
+  )
+    .map(([policyClass, count]) => ({ policyClass, count }))
+    .sort((left, right) => right.count - left.count || left.policyClass.localeCompare(right.policyClass));
+  const terminal = terminalRunGaps(db);
+
+  return {
+    summary: {
+      proposalCount: proposals.length,
+      pendingApprovalCount: pendingApprovals.length,
+      terminalRunCount: terminal.terminalCount,
+      terminalRunsMissingEvidenceCount: terminal.gaps.length,
+      policyClassCount: policyClassCounts.length,
+    },
+    pendingApprovals,
+    recentProposals: proposals.slice(0, 20),
+    policyClassCounts,
+    terminalRunsMissingEvidence: terminal.gaps,
+    linkRules: [
+      "Approval-sensitive truth, standards, prompt, skill, workflow, packet, global, project-truth, and destructive-action changes must remain pending until reviewed.",
+      "Terminal runs should have writeback, workflow-learning, closeout, or no-learning evidence before being treated as complete.",
+      "Scoped project-memory writebacks may remain proposed, but they do not become accepted truth without a truth update.",
+    ],
   };
 };
 

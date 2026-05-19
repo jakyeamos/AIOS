@@ -4,6 +4,7 @@ import {
   cancelControlPlaneRun,
   getControlPlaneOverview,
   getControlPlaneRunDetail,
+  getGovernanceOverview,
   invokeControlPlaneRun,
   planTask,
   registerControlPlaneManualInvocation,
@@ -15,6 +16,8 @@ import { createTRPCRouter, publicProcedure } from "@/server/trpc";
 
 export const controlPlaneRouter = createTRPCRouter({
   overview: publicProcedure.query(({ ctx }) => getControlPlaneOverview(ctx.db)),
+
+  governance: publicProcedure.query(({ ctx }) => getGovernanceOverview(ctx.db)),
 
   runDetail: publicProcedure
     .input(z.object({ runId: z.string().min(1) }))

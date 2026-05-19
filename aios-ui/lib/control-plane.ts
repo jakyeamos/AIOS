@@ -410,7 +410,18 @@ export type PacketExpansion = {
   createdAt: string;
 };
 
-export type ImprovementLayerType = "topic" | "project" | "workflow" | "task_type" | "global_policy";
+export type ImprovementLayerType =
+  | "topic"
+  | "project"
+  | "workflow"
+  | "task_type"
+  | "global_policy"
+  | "truth"
+  | "prompt"
+  | "skill"
+  | "standards"
+  | "packet"
+  | "memory";
 
 export type ImprovementWriteback = {
   id: string;
@@ -445,6 +456,42 @@ export type ImprovementWritebackEvent = {
   note: string | null;
   metadata: Record<string, unknown>;
   createdAt: string;
+};
+
+export type GovernanceProposalSummary = {
+  id: string;
+  source: string;
+  title: string;
+  targetType: string;
+  targetKey: string;
+  status: string;
+  requiresApproval: boolean;
+  approvalPolicyClass: string;
+  href: string;
+  createdAt: string;
+};
+
+export type GovernanceRunGap = {
+  runId: string;
+  objective: string;
+  workflowKey: string;
+  status: OrchestrationRunStatus;
+  updatedAt: string;
+};
+
+export type GovernanceOverview = {
+  summary: {
+    proposalCount: number;
+    pendingApprovalCount: number;
+    terminalRunCount: number;
+    terminalRunsMissingEvidenceCount: number;
+    policyClassCount: number;
+  };
+  pendingApprovals: GovernanceProposalSummary[];
+  recentProposals: GovernanceProposalSummary[];
+  policyClassCounts: Array<{ policyClass: string; count: number }>;
+  terminalRunsMissingEvidence: GovernanceRunGap[];
+  linkRules: string[];
 };
 
 export type ConsistencyFindingKind =
