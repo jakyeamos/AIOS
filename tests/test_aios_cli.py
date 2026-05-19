@@ -8,8 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-import services.aios_cli as aios_cli
-
+import services.aios_cli as aios_cli  # noqa: E402
 from services.aios_cli import EXIT_OK, run_cli  # noqa: E402
 from services.rtk_integration import ensure_rtk_schema  # noqa: E402
 
@@ -348,6 +347,137 @@ def test_status_reports_recent_governed_closeout(tmp_path: Path, capsys) -> None
     assert closeouts[0]["outcome"] == "needs_follow_up"
     assert closeouts[0]["pending_approval_count"] == 1
     assert closeouts[0]["changed_artifact_count"] == 1
+
+
+def test_truth_audit_reports_governed_truth_contract(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    truth_file = tmp_path / "PROJECT.md"
+    truth_file.write_text(
+        "\n".join(
+            [
+                "# Demo Truth",
+                "Last updated: 2026-05-17",
+                "## Goals",
+                "## Architecture",
+                "## Risks",
+                "## Completed Work",
+                "## Unresolved Deltas",
+                "## Next Actions",
+                "## Decisions",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    _seed_db(db_path)
+
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        """
+        UPDATE orchestration_runs
+        SET
+            project_id = 'p1',
+            objective = 'Complete governed truth update',
+            workflow_key = 'project-truth-update',
+            agent_key = 'implementation-lead',
+            status = 'needs_follow_up',
+            packet_id = 'packet-truth',
+            resume_snapshot_json = ?,
+            updated_at = '2026-05-18T01:10:00Z'
+        WHERE id = 'run-1'
+        """,
+        (
+            json.dumps(
+                {
+                    "packet_id": "packet-truth",
+                    "current_stage": "truth_review",
+                    "next_recommended_action": "Review proposed truth deltas.",
+                    "pending_approval_count": 1,
+                    "approval_targets": ["PROJECT.md"],
+                    "updated_at": "2026-05-18T01:10:00Z",
+                }
+            ),
+        ),
+    )
+    conn.execute(
+        """
+        INSERT INTO workflow_execution_reports (
+            id, run_id, invocation_id, workflow_key, status, report_json, artifact_path, created_at
+        )
+        VALUES (
+            'wr-truth-closeout', 'run-1', 'inv-1', 'project-truth-update', 'needs_follow_up',
+            ?, '/tmp/truth-closeout.json', '2026-05-18T01:20:00Z'
+        )
+        """,
+        (
+            json.dumps(
+                {
+                    "report_type": "governed_closeout",
+                    "outcome": "needs_follow_up",
+                    "result_summary": "Truth update proposal is ready for review.",
+                    "changed_artifacts": [str(truth_file)],
+                    "approvals": {"pending_approval_count": 1},
+                    "unresolved_deltas": {"open_questions": ["Operator approval required"], "risks": []},
+                }
+            ),
+        ),
+    )
+    conn.commit()
+    conn.close()
+
+    status_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "truth-audit",
+            "--truth-file",
+            str(truth_file),
+        ]
+    )
+
+    assert status_exit == EXIT_OK
+    output = json.loads(capsys.readouterr().out)
+    data = output["data"]
+    assert output["command"] == "truth-audit"
+    assert data["summary"]["missing_facet_count"] == 0
+    assert data["summary"]["recent_closeout_count"] == 1
+    assert data["summary"]["resumable_run_count"] == 1
+    assert data["contract"]["important_updates_require_review"] is True
+    assert data["contract"]["proposal_sources"] == [
+        "workflow_execution_reports.report_json",
+        "orchestration_runs.resume_snapshot_json",
+    ]
+
+
+def test_truth_audit_reports_missing_facets(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    truth_file = tmp_path / "PROJECT.md"
+    truth_file.write_text("# Sparse Truth\nLast updated: 2026-05-17\n## Goals\n", encoding="utf-8")
+    _seed_db(db_path)
+
+    status_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "truth-audit",
+            "--truth-file",
+            str(truth_file),
+        ]
+    )
+
+    assert status_exit == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    assert data["summary"]["missing_facet_count"] > 0
+    assert "truth_facets_missing" in {finding["code"] for finding in data["findings"]}
 
 
 def test_pre_pr_readiness_json(monkeypatch, capsys) -> None:
