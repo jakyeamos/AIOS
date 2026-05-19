@@ -236,6 +236,14 @@ AIOS grounded query now answers truth-first operator questions:
 - unresolved proposal evidence is called out as needing review before promotion into `PROJECT.md`, standards, prompts, skills, or workflow defaults
 - this closes Phase 4 by making grounded query usable as the default surface for asking what changed, what remains unresolved, and what prior knowledge matters before manual context assembly
 
+AIOS now has a cross-asset governance audit contract:
+
+- `aios governance-audit --json` normalizes proposal evidence from `improvement_writebacks`, `memory_writeback_proposals`, `workflow_synthesis_proposals`, and `promotion_lifecycle_items`
+- the audit reports proposal counts, pending approval counts, terminal run counts, terminal runs missing governance evidence, governed closeout counts, and unresolved closeout counts
+- terminal meaningful runs are now auditable against the rule that they need writeback, follow-up, closeout, or no-learning evidence before they can be trusted as complete
+- governance findings flag pending approvals and blocker-level terminal runs that have no durable governance evidence
+- `tests/test_aios_cli.py` verifies pending truth approval, unresolved closeout evidence, and silent terminal-run detection through the JSON-first CLI
+
 ## Implemented On 2026-05-14
 
 AIOS now has a fixture-backed harness eval v0 contract:
