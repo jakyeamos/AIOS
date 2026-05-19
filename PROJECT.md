@@ -202,6 +202,14 @@ AIOS vault-root resolution is now centralized:
 - `bin/health_check.sh` creates the dashboard directory before writing and can skip macOS notification with `AIOS_SKIP_NOTIFICATION=1` for non-interactive validation
 - `tests/test_path_resolution.py` covers override behavior, canonical-vs-legacy fallback, legacy path rewriting, and the script CLI used by shell entrypoints
 
+AIOS hook session resolution now repairs stale payload ids:
+
+- `hook_lifecycle.resolve_hook_session_id` prefers the open `logs/current_session` pointer when a hook payload points at a different cwd or an already closed stale session
+- prompt-submit, post-tool-use, and stop hooks use the shared resolver before writing prompt rows, tool events, artifacts, summaries, or closeout state
+- `bin/repair-stale-open-sessions.py` provides a dry-run-first backfill that abandons old open sessions only when they have no prompts, no non-start tool events, and no runtime invocation linkage
+- the live smoke session `codex-agent-rules-live-check-260516` now has a captured prompt row, closeout summary, criteria evaluation, and standards-health snapshot
+- `tests/test_hook_lifecycle.py` covers stale prompt reassignment, stale stop closeout reassignment, and inactive-session backfill filtering
+
 ## Implemented On 2026-05-14
 
 AIOS now has a fixture-backed harness eval v0 contract:
