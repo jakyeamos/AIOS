@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-05-18
+Last updated: 2026-05-19
 
 ## What AIOS Is
 
@@ -209,6 +209,16 @@ AIOS hook session resolution now repairs stale payload ids:
 - `bin/repair-stale-open-sessions.py` provides a dry-run-first backfill that abandons old open sessions only when they have no prompts, no non-start tool events, and no runtime invocation linkage
 - the live smoke session `codex-agent-rules-live-check-260516` now has a captured prompt row, closeout summary, criteria evaluation, and standards-health snapshot
 - `tests/test_hook_lifecycle.py` covers stale prompt reassignment, stale stop closeout reassignment, and inactive-session backfill filtering
+
+## Implemented On 2026-05-19
+
+AIOS now has a governed project truth audit contract:
+
+- `aios truth-audit --json` inspects the canonical truth file, defaults to `PROJECT.md`, and reports freshness, required operating facet coverage, review findings, recent governed closeout evidence, and resumable run evidence
+- `services/aios_cli.py` defines the truth-update contract: accepted truth comes from the selected truth file, proposals come from `workflow_execution_reports.report_json` and `orchestration_runs.resume_snapshot_json`, and important updates require review
+- the truth audit checks for required facets covering goals, architecture, risks, completed work, unresolved deltas, next actions, and decisions
+- `tests/test_aios_cli.py` verifies the governed truth contract, proposal-source linkage, resumable evidence, closeout evidence, and missing-facet warnings
+- this starts Phase 4 by making truth freshness and governed truth updates inspectable through the same JSON-first control-plane CLI used by agents
 
 ## Implemented On 2026-05-14
 
