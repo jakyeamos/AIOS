@@ -220,6 +220,14 @@ AIOS now has a governed project truth audit contract:
 - `tests/test_aios_cli.py` verifies the governed truth contract, proposal-source linkage, resumable evidence, closeout evidence, and missing-facet warnings
 - this starts Phase 4 by making truth freshness and governed truth updates inspectable through the same JSON-first control-plane CLI used by agents
 
+AIOS knowledge surfaces now distinguish accepted truth, proposed evidence, and inferred context assets:
+
+- `aios-ui/lib/control-plane.ts` defines a `TruthKnowledgeBoundary` contract with accepted, proposed, and inferred authority states for agent-readable knowledge linkage
+- `aios-ui/server/aios/knowledge.ts` exposes accepted truth from `PROJECT.md` and accepted decision records, proposed knowledge from workflow closeout reports and resumable run snapshots, and inferred knowledge from workflows, agent/skill profiles, prompt-library context, and research-tagged wiki pages
+- `aios-ui/server/routers/knowledge.ts` adds `knowledge.truthBoundary`, giving agents one typed UI/server surface for truth-vs-proposal boundaries instead of forcing them to infer authority from page names or raw tables
+- runtime closeouts and resume snapshots remain proposal evidence until reviewed; prompts, skills, workflows, and research can shape packets but cannot overwrite truth directly
+- this advances Phase 4 by making truth, decisions, prompts, skills, workflows, and research explicitly linkable while preserving authority boundaries
+
 ## Implemented On 2026-05-14
 
 AIOS now has a fixture-backed harness eval v0 contract:
