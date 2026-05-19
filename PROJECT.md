@@ -228,6 +228,14 @@ AIOS knowledge surfaces now distinguish accepted truth, proposed evidence, and i
 - runtime closeouts and resume snapshots remain proposal evidence until reviewed; prompts, skills, workflows, and research can shape packets but cannot overwrite truth directly
 - this advances Phase 4 by making truth, decisions, prompts, skills, workflows, and research explicitly linkable while preserving authority boundaries
 
+AIOS grounded query now answers truth-first operator questions:
+
+- `aios-ui/server/aios/query.ts` loads the truth boundary before composing default operator answers
+- truth/operator questions now answer from accepted truth, recent proposal evidence, recent runtime changes, and inferred prior knowledge in distinct lanes
+- project-state, agent-brief, what-changed, and system-state answers now cite the truth boundary and explain whether evidence is accepted, proposed, or inferred
+- unresolved proposal evidence is called out as needing review before promotion into `PROJECT.md`, standards, prompts, skills, or workflow defaults
+- this closes Phase 4 by making grounded query usable as the default surface for asking what changed, what remains unresolved, and what prior knowledge matters before manual context assembly
+
 ## Implemented On 2026-05-14
 
 AIOS now has a fixture-backed harness eval v0 contract:
