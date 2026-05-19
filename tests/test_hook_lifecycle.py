@@ -93,6 +93,87 @@ def test_prompt_submit_recovers_missing_session_before_logging_prompt(
     assert "recovered missing session missing-session from UserPromptSubmit" in log_path.read_text()
 
 
+def test_prompt_submit_reassigns_stale_payload_to_current_session(
+    hook_db: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    hook_prompt = _load_module("hook_prompt_stale_pointer", "bin/hook-prompt-submit.py")
+    aios_repo = tmp_path / "AIOS"
+    stale_repo = tmp_path / "other"
+    aios_repo.mkdir()
+    stale_repo.mkdir()
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    log_path = logs_dir / "hooks.log"
+    (logs_dir / "current_session").write_text("current-aios-session", encoding="utf-8")
+
+    conn = sqlite3.connect(hook_db)
+    conn.row_factory = sqlite3.Row
+    conn.execute(
+        "INSERT INTO projects (id, name, repo_path, obsidian_path, status) VALUES ('p-aios', 'AIOS', ?, '', 'active')",
+        (str(aios_repo),),
+    )
+    conn.execute(
+        "INSERT INTO projects (id, name, repo_path, obsidian_path, status) VALUES ('p-other', 'Other', ?, '', 'active')",
+        (str(stale_repo),),
+    )
+    conn.execute(
+        """
+        INSERT INTO sessions (id, project_id, tool, started_at, objective, status, cwd)
+        VALUES ('stale-session', 'p-other', 'claude-code', '2026-05-18T00:00:00Z', 'stale', 'open', ?)
+        """,
+        (str(stale_repo),),
+    )
+    conn.execute(
+        """
+        INSERT INTO sessions (id, project_id, tool, started_at, objective, status, cwd)
+        VALUES ('current-aios-session', 'p-aios', 'claude-code', '2026-05-17T00:00:00Z',
+                'Verify agent rules session injection', 'open', ?)
+        """,
+        (str(aios_repo),),
+    )
+    conn.commit()
+    conn.close()
+
+    monkeypatch.setattr(hook_prompt, "DB", str(hook_db))
+    monkeypatch.setattr(hook_prompt, "LOG", str(log_path))
+    monkeypatch.setattr(
+        hook_prompt,
+        "load_policy",
+        lambda: {"prompt_retrieval": {"enabled": False}, "reusable_prompt_hint": {"enabled": False}},
+    )
+    monkeypatch.setattr(
+        sys,
+        "stdin",
+        io.StringIO(
+            json.dumps(
+                {
+                    "session_id": "stale-session",
+                    "cwd": str(aios_repo),
+                    "prompt": "Audit the live agent-rules smoke test session",
+                }
+            )
+        ),
+    )
+
+    hook_prompt.main()
+
+    conn = sqlite3.connect(hook_db)
+    prompt_rows = conn.execute(
+        "SELECT session_id, prompt_text FROM prompts_used ORDER BY rowid"
+    ).fetchall()
+    conn.close()
+
+    assert prompt_rows == [
+        ("current-aios-session", "Audit the live agent-rules smoke test session")
+    ]
+    assert (
+        "reassigned stale prompt-submit payload session stale-session to current session current-aios-session"
+        in log_path.read_text()
+    )
+
+
 def test_stop_recovers_missing_session_and_closes_it(
     hook_db: Path,
     tmp_path: Path,
@@ -158,6 +239,95 @@ def test_stop_recovers_missing_session_and_closes_it(
     assert "recovered missing session stop-missing-session from Stop" in log_path.read_text()
 
 
+def test_stop_reassigns_stale_payload_and_closes_current_session(
+    hook_db: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    hook_stop = _load_module("hook_stop_stale_pointer", "bin/hook-stop.py")
+    aios_repo = tmp_path / "AIOS"
+    stale_repo = tmp_path / "other"
+    aios_repo.mkdir()
+    stale_repo.mkdir()
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    log_path = logs_dir / "hooks.log"
+    (logs_dir / "current_session").write_text("current-aios-session", encoding="utf-8")
+
+    conn = sqlite3.connect(hook_db)
+    conn.execute(
+        "INSERT INTO projects (id, name, repo_path, obsidian_path, status) VALUES ('p-aios', 'AIOS', ?, '', 'active')",
+        (str(aios_repo),),
+    )
+    conn.execute(
+        "INSERT INTO projects (id, name, repo_path, obsidian_path, status) VALUES ('p-other', 'Other', ?, '', 'active')",
+        (str(stale_repo),),
+    )
+    conn.execute(
+        """
+        INSERT INTO sessions (id, project_id, tool, started_at, objective, status, cwd)
+        VALUES ('stale-session', 'p-other', 'claude-code', '2026-05-18T00:00:00Z', 'stale', 'open', ?)
+        """,
+        (str(stale_repo),),
+    )
+    conn.execute(
+        """
+        INSERT INTO sessions (id, project_id, tool, started_at, objective, status, cwd)
+        VALUES ('current-aios-session', 'p-aios', 'claude-code', '2026-05-17T00:00:00Z',
+                'Verify agent rules session injection', 'open', ?)
+        """,
+        (str(aios_repo),),
+    )
+    conn.commit()
+    conn.close()
+
+    monkeypatch.setattr(hook_stop, "DB", str(hook_db))
+    monkeypatch.setattr(hook_stop, "LOG", str(log_path))
+    monkeypatch.setattr(hook_stop, "SUMMARIES_DIR", str(tmp_path / "summaries"))
+    monkeypatch.setattr(hook_stop.subprocess, "run", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        hook_stop,
+        "evaluate_and_record",
+        lambda *_args, **_kwargs: {
+            "evaluation_id": "criteria-eval",
+            "summary": "ok",
+        },
+    )
+    monkeypatch.setattr(
+        hook_stop,
+        "evaluate_standards_health",
+        lambda *_args, **_kwargs: {
+            "snapshot_id": "standards-eval",
+            "summary": "ok",
+        },
+    )
+    monkeypatch.setattr(
+        sys,
+        "stdin",
+        io.StringIO(json.dumps({"session_id": "stale-session", "cwd": str(aios_repo)})),
+    )
+
+    hook_stop.main()
+
+    conn = sqlite3.connect(hook_db)
+    current = conn.execute(
+        "SELECT status, ended_at FROM sessions WHERE id = 'current-aios-session'"
+    ).fetchone()
+    stale = conn.execute(
+        "SELECT status, ended_at FROM sessions WHERE id = 'stale-session'"
+    ).fetchone()
+    conn.close()
+
+    assert current is not None
+    assert current[0] == "closed"
+    assert current[1] is not None
+    assert stale == ("open", None)
+    assert (
+        "reassigned stale stop payload session stale-session to current session current-aios-session"
+        in log_path.read_text()
+    )
+
+
 def test_stop_empty_stdin_uses_current_session_pointer(
     hook_db: Path,
     tmp_path: Path,
@@ -206,3 +376,54 @@ def test_stop_empty_stdin_uses_current_session_pointer(
     assert log_path.exists()
     assert "empty stdin; using current_session pointer for stop" in log_path.read_text()
     assert "failed to parse stdin" not in log_path.read_text()
+
+
+def test_repair_stale_open_sessions_abandons_only_inactive_non_current(
+    hook_db: Path,
+    tmp_path: Path,
+) -> None:
+    repair = _load_module("repair_stale_open_sessions", "bin/repair-stale-open-sessions.py")
+    repo_path = tmp_path / "repo"
+    repo_path.mkdir()
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    (logs_dir / "current_session").write_text("current-session", encoding="utf-8")
+
+    conn = sqlite3.connect(hook_db)
+    conn.row_factory = sqlite3.Row
+    conn.execute(
+        "INSERT INTO projects (id, name, repo_path, obsidian_path, status) VALUES ('p1', 'Repo', ?, '', 'active')",
+        (str(repo_path),),
+    )
+    for session_id in ("stale-empty", "current-session", "has-prompt"):
+        conn.execute(
+            """
+            INSERT INTO sessions (id, project_id, tool, started_at, objective, status, cwd)
+            VALUES (?, 'p1', 'claude-code', '2026-05-01T00:00:00+00:00', ?, 'open', ?)
+            """,
+            (session_id, session_id, str(repo_path)),
+        )
+    conn.execute(
+        """
+        INSERT INTO prompts_used (id, session_id, prompt_text, reusable_candidate)
+        VALUES ('prompt-1', 'has-prompt', 'Keep active because prompts exist', 0)
+        """
+    )
+    conn.commit()
+
+    rows = repair.stale_sessions(conn, older_than_days=2, current_id="current-session")
+    assert [row["id"] for row in rows] == ["stale-empty"]
+
+    repair.abandon_sessions(conn, rows, reason="unit-test")
+    conn.commit()
+    statuses = dict(conn.execute("SELECT id, status FROM sessions").fetchall())
+    event = conn.execute(
+        "SELECT event_type FROM tool_events WHERE session_id = 'stale-empty'"
+    ).fetchone()
+    conn.close()
+
+    assert statuses["stale-empty"] == "abandoned"
+    assert statuses["current-session"] == "open"
+    assert statuses["has-prompt"] == "open"
+    assert event is not None
+    assert event[0] == "SessionAbandonedBackfill"

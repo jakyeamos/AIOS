@@ -17,13 +17,15 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from hook_lifecycle import resolve_hook_session_id  # noqa: E402
+
 from services.rtk_integration import (  # noqa: E402
     compress_tool_output,
     load_compression_rules,
     record_rtk_event,
 )
 
-DB = os.path.expanduser("~/AIOS/data/aios.db")
+DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
 
 # Tools whose outputs are worth tracking as artifacts
@@ -256,6 +258,18 @@ def main() -> None:
     try:
         conn = sqlite3.connect(DB)
         conn.row_factory = sqlite3.Row
+        resolved_session_id = resolve_hook_session_id(
+            conn,
+            payload_session_id=session_id,
+            payload_cwd=data.get("cwd"),
+            logs_dir=os.path.dirname(LOG),
+            hook_name="post-tool-use",
+            log=log,
+        )
+        if not resolved_session_id:
+            conn.close()
+            sys.exit(0)
+        session_id = resolved_session_id
         cur = conn.execute("SELECT id FROM sessions WHERE id = ?", (session_id,))
         if not cur.fetchone():
             conn.close()

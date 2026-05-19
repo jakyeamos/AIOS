@@ -15,7 +15,7 @@ import uuid
 from datetime import UTC, datetime
 
 from aios_paths import get_vault_root, get_vault_subpath, rewrite_legacy_vault_path
-from hook_lifecycle import ensure_session, load_hook_payload
+from hook_lifecycle import ensure_session, load_hook_payload, resolve_hook_session_id
 
 DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
@@ -501,6 +501,18 @@ def main() -> None:
 
     try:
         conn = sqlite3.connect(DB)
+        resolved_session_id = resolve_hook_session_id(
+            conn,
+            payload_session_id=session_id,
+            payload_cwd=data.get("cwd"),
+            logs_dir=os.path.dirname(LOG),
+            hook_name="prompt-submit",
+            log=log,
+        )
+        if not resolved_session_id:
+            conn.close()
+            sys.exit(0)
+        session_id = resolved_session_id
         ensure_session(
             conn,
             session_id=session_id,

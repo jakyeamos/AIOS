@@ -50,6 +50,99 @@ def current_session_id(logs_dir: str | None = None) -> str | None:
     return session_id or None
 
 
+def _normalize_path(path: str | None) -> str | None:
+    if not path:
+        return None
+    try:
+        return str(Path(path).expanduser().resolve())
+    except OSError:
+        return str(Path(path).expanduser())
+
+
+def _session_row(conn: sqlite3.Connection, session_id: str | None) -> sqlite3.Row | tuple[Any, ...] | None:
+    if not session_id:
+        return None
+    return conn.execute(
+        """
+        SELECT id, status, started_at, cwd
+        FROM sessions
+        WHERE id = ?
+        LIMIT 1
+        """,
+        (session_id,),
+    ).fetchone()
+
+
+def _row_value(row: sqlite3.Row | tuple[Any, ...] | None, key: str, index: int) -> Any:
+    if row is None:
+        return None
+    if isinstance(row, sqlite3.Row):
+        return row[key]
+    return row[index]
+
+
+def _is_newer(candidate: sqlite3.Row | tuple[Any, ...], current: sqlite3.Row | tuple[Any, ...] | None) -> bool:
+    if current is None:
+        return True
+    candidate_started = str(_row_value(candidate, "started_at", 2) or "")
+    current_started = str(_row_value(current, "started_at", 2) or "")
+    return candidate_started > current_started
+
+
+def resolve_hook_session_id(
+    conn: sqlite3.Connection,
+    *,
+    payload_session_id: str | None,
+    payload_cwd: str | None = None,
+    logs_dir: str | None = None,
+    hook_name: str,
+    log,
+) -> str | None:
+    """
+    Resolve hook events away from stale payload ids when SessionStart has already
+    opened a newer local session and updated the current_session pointer.
+    """
+    pointer_session_id = current_session_id(logs_dir)
+    if not payload_session_id:
+        if pointer_session_id:
+            log(f"missing payload session; using current_session pointer for {hook_name}")
+        return pointer_session_id
+
+    if not pointer_session_id or pointer_session_id == payload_session_id:
+        return payload_session_id
+
+    payload_row = _session_row(conn, payload_session_id)
+    pointer_row = _session_row(conn, pointer_session_id)
+    if pointer_row is None:
+        return payload_session_id
+
+    pointer_status = str(_row_value(pointer_row, "status", 1) or "")
+    if pointer_status != "open":
+        return payload_session_id
+
+    effective_cwd = _normalize_path(payload_cwd or os.getcwd())
+    payload_cwd_value = _normalize_path(str(_row_value(payload_row, "cwd", 3) or ""))
+    pointer_cwd_value = _normalize_path(str(_row_value(pointer_row, "cwd", 3) or ""))
+
+    pointer_matches_cwd = bool(effective_cwd and pointer_cwd_value == effective_cwd)
+    payload_mismatches_cwd = bool(effective_cwd and payload_cwd_value and payload_cwd_value != effective_cwd)
+    payload_missing = payload_row is None
+    payload_closed = str(_row_value(payload_row, "status", 1) or "") == "closed"
+
+    should_reassign = pointer_matches_cwd and (payload_closed or payload_mismatches_cwd)
+    if payload_missing and pointer_matches_cwd and _is_newer(pointer_row, payload_row):
+        should_reassign = True
+
+    if should_reassign:
+        log(
+            "reassigned stale "
+            f"{hook_name} payload session {payload_session_id} to current session {pointer_session_id}"
+        )
+        return pointer_session_id
+
+    return payload_session_id
+
+
 def get_or_create_project(conn: sqlite3.Connection, cwd: str) -> str:
     row = conn.execute("SELECT id FROM projects WHERE repo_path = ?", (cwd,)).fetchone()
     if row:
