@@ -14,9 +14,10 @@
 
 ## Current Roadmap Position
 
-- Active milestone: Milestone 1, Governed Entry Loop
-- Active phase: Phase 1, Project, Workflow, And Prompt Routing
-- Next dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10
+- Active milestone: Milestone 2, Truth, Governance, And Evidence
+- Active phase: Phase 5, Governed Writeback And Approval Control
+- Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4
+- Next dependency chain: Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
 
 ## Known Constraints To Preserve
@@ -45,4 +46,4 @@
 | 2026-05-18 | Add optional personalized humanizer voice step | Planned in `.planning/quick/260518-1837-personalized-humanizer-optional-voice-step`; personalized humanizer now distinguishes standalone cleanup-plus-voice runs from post-generic voice-only pipeline runs. |
 
 ---
-*Last updated: 2026-05-18 during quick task 260518-1837-personalized-humanizer-optional-voice-step*
+*Last updated: 2026-05-19 after completing Phase 4 and opening Phase 5 execution plans*
