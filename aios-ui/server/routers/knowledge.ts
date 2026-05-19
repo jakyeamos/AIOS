@@ -1,13 +1,21 @@
 import { z } from "zod";
 
-import type { KnowledgePageDetail, KnowledgePageSummary } from "@/lib/control-plane";
-import { getKnowledgePage, getProjectDossier, listKnowledgeKinds, listKnowledgePages } from "@/server/aios/knowledge";
+import type { KnowledgePageDetail, KnowledgePageSummary, TruthKnowledgeBoundary } from "@/lib/control-plane";
+import {
+  getKnowledgePage,
+  getProjectDossier,
+  getTruthKnowledgeBoundary,
+  listKnowledgeKinds,
+  listKnowledgePages,
+} from "@/server/aios/knowledge";
 import { createTRPCRouter, publicProcedure } from "@/server/trpc";
 
 export const knowledgeRouter = createTRPCRouter({
   index: publicProcedure.query(({ ctx }): KnowledgePageSummary[] => listKnowledgePages(ctx.db)),
 
   grouped: publicProcedure.query(({ ctx }) => listKnowledgeKinds(ctx.db)),
+
+  truthBoundary: publicProcedure.query(({ ctx }): TruthKnowledgeBoundary => getTruthKnowledgeBoundary(ctx.db)),
 
   detail: publicProcedure
     .input(z.object({ slug: z.string().min(1) }))

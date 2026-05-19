@@ -10,6 +10,7 @@ import type {
   KnowledgePageSummary,
   KnowledgeReference,
   KnowledgeRelationship,
+  TruthKnowledgeBoundary,
   WikiAgentPacket,
   WikiMaintenanceMetadata,
   WikiSourceRef,
@@ -65,6 +66,24 @@ type MemoryRow = {
   risksJson: string;
   openQuestionsJson: string;
   createdAt: string;
+};
+
+type ProposalEvidenceRow = {
+  id: string;
+  runId: string | null;
+  workflowKey: string | null;
+  status: string | null;
+  reportJson: string | null;
+  createdAt: string | null;
+};
+
+type ResumableEvidenceRow = {
+  id: string;
+  objective: string | null;
+  workflowKey: string | null;
+  status: string | null;
+  resumeSnapshotJson: string | null;
+  updatedAt: string | null;
 };
 
 type DecisionRecord = {
@@ -155,6 +174,38 @@ const parseJsonArray = (raw: string): string[] => {
   return [];
 };
 
+const parseJsonRecord = (raw: string | null): Record<string, unknown> | null => {
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed as Record<string, unknown>
+      : null;
+  } catch {
+    return null;
+  }
+};
+
+const hasTable = (db: Database.Database, tableName: string): boolean => {
+  const row = db
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1")
+    .get(tableName) as { name: string } | undefined;
+
+  return Boolean(row?.name);
+};
+
+const columnNames = (db: Database.Database, tableName: string): Set<string> => {
+  if (!hasTable(db, tableName)) {
+    return new Set();
+  }
+
+  const rows = db.prepare(`PRAGMA table_info(${tableName})`).all() as Array<{ name: string }>;
+  return new Set(rows.map((row) => row.name));
+};
+
 const parseConfidence = (value: string | undefined, defaultValue = 0.82): number => {
   if (!value) {
     return defaultValue;
@@ -178,6 +229,86 @@ const parseConfidence = (value: string | undefined, defaultValue = 0.82): number
   }
 
   return defaultValue;
+};
+
+const extractTruthFacetHeadings = (content: string): string[] =>
+  content
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("## "))
+    .map((line) => line.replace(/^##\s+/, ""));
+
+const loadTruthFile = (): { path: string; title: string; lastUpdated: string | null; facets: string[] } | null => {
+  const truthPath = path.join(resolveAiosRoot(), "PROJECT.md");
+  if (!fs.existsSync(truthPath)) {
+    return null;
+  }
+
+  const content = fs.readFileSync(truthPath, "utf8");
+  const lastUpdated =
+    content
+      .split("\n")
+      .map((line) => line.trim())
+      .find((line) => line.toLowerCase().startsWith("last updated:"))
+      ?.split(":")
+      .slice(1)
+      .join(":")
+      .trim() ?? null;
+
+  return {
+    path: truthPath,
+    title: extractMarkdownTitle(content, "Project Truth"),
+    lastUpdated,
+    facets: extractTruthFacetHeadings(content),
+  };
+};
+
+const loadProposalEvidence = (db: Database.Database): ProposalEvidenceRow[] => {
+  if (!hasTable(db, "workflow_execution_reports")) {
+    return [];
+  }
+
+  return db
+    .prepare(
+      `
+      SELECT
+        id,
+        run_id AS runId,
+        workflow_key AS workflowKey,
+        status,
+        report_json AS reportJson,
+        created_at AS createdAt
+      FROM workflow_execution_reports
+      ORDER BY created_at DESC
+      LIMIT 6
+    `,
+    )
+    .all() as ProposalEvidenceRow[];
+};
+
+const loadResumableEvidence = (db: Database.Database): ResumableEvidenceRow[] => {
+  const columns = columnNames(db, "orchestration_runs");
+  if (!columns.has("resume_snapshot_json")) {
+    return [];
+  }
+
+  return db
+    .prepare(
+      `
+      SELECT
+        id,
+        objective,
+        workflow_key AS workflowKey,
+        status,
+        resume_snapshot_json AS resumeSnapshotJson,
+        updated_at AS updatedAt
+      FROM orchestration_runs
+      WHERE status IN ('blocked', 'waiting_for_user', 'partial', 'needs_follow_up')
+      ORDER BY updated_at DESC
+      LIMIT 6
+    `,
+    )
+    .all() as ResumableEvidenceRow[];
 };
 
 const extractWikiSections = (content: string): Array<{ title: string; body?: string; items: string[] }> => {
@@ -621,6 +752,133 @@ export const listKnowledgePages = (db: Database.Database): KnowledgePageSummary[
   return [...projectPages, ...decisionPages, ...workflowPages, ...agentPages, ...systemPages, ...conceptPages].sort((left, right) =>
     left.title.localeCompare(right.title),
   );
+};
+
+export const getTruthKnowledgeBoundary = (db: Database.Database): TruthKnowledgeBoundary => {
+  const truth = loadTruthFile();
+  const acceptedTruth: TruthKnowledgeBoundary["acceptedTruth"] = truth
+    ? [
+        {
+          id: "project-truth",
+          title: truth.title,
+          href: "/knowledge/system-control-plane",
+          kind: "truth",
+          authority: "accepted",
+          summary: `Canonical local project truth with ${truth.facets.length} indexed section(s).`,
+          evidence: [
+            path.relative(resolveAiosRoot(), truth.path).split(path.sep).join("/"),
+            truth.lastUpdated ? `Last updated: ${truth.lastUpdated}` : "Last updated field missing",
+            ...truth.facets.slice(0, 8).map((facet) => `Facet: ${facet}`),
+          ],
+        },
+      ]
+    : [];
+
+  const acceptedDecisionLinks = loadDecisions().map((decision) => ({
+    id: `decision-${decision.slug}`,
+    title: decision.title,
+    href: `/knowledge/${decision.slug}`,
+    kind: "decision" as const,
+    authority: "accepted" as const,
+    summary: decision.summary,
+    evidence: [path.relative(resolveAiosRoot(), decision.sourcePath).split(path.sep).join("/"), `Status: ${decision.status}`],
+  }));
+
+  const proposedCloseoutLinks = loadProposalEvidence(db).map((row) => {
+    const report = parseJsonRecord(row.reportJson);
+    const reportType = typeof report?.report_type === "string" ? report.report_type : "workflow_report";
+    const summary = typeof report?.result_summary === "string" ? report.result_summary : `${row.workflowKey ?? "workflow"} ${row.status ?? "reported"}`;
+
+    return {
+      id: `proposal-${row.id}`,
+      title: `${row.workflowKey ?? "Workflow"} proposal evidence`,
+      href: row.runId ? `/runs/${row.runId}` : "/control",
+      kind: "workflow" as const,
+      authority: "proposed" as const,
+      summary,
+      evidence: [`Report type: ${reportType}`, `Status: ${row.status ?? "unknown"}`, `Created: ${row.createdAt ?? "unknown"}`],
+    };
+  });
+
+  const proposedResumeLinks = loadResumableEvidence(db).map((row) => {
+    const snapshot = parseJsonRecord(row.resumeSnapshotJson);
+    const nextAction =
+      typeof snapshot?.next_recommended_action === "string"
+        ? snapshot.next_recommended_action
+        : "Review resumable run state before treating it as project truth.";
+
+    return {
+      id: `resume-${row.id}`,
+      title: row.objective ?? `${row.workflowKey ?? "Run"} resume evidence`,
+      href: `/runs/${row.id}`,
+      kind: "workflow" as const,
+      authority: "proposed" as const,
+      summary: nextAction,
+      evidence: [`Status: ${row.status ?? "unknown"}`, `Updated: ${row.updatedAt ?? "unknown"}`],
+    };
+  });
+
+  const inferredKnowledge: TruthKnowledgeBoundary["inferredKnowledge"] = [
+    ...workflowTemplates.slice(0, 8).map((workflow) => ({
+      id: `workflow-${workflow.key}`,
+      title: workflow.name,
+      href: `/knowledge/${makeWorkflowSlug(workflow.key)}`,
+      kind: "workflow" as const,
+      authority: "inferred" as const,
+      summary: workflow.summary,
+      evidence: ["Workflow registry entry; useful for routing, not accepted project truth by itself."],
+    })),
+    ...agentProfiles.slice(0, 6).map((agent) => ({
+      id: `agent-${agent.key}`,
+      title: agent.name,
+      href: `/knowledge/${makeAgentSlug(agent.key)}`,
+      kind: "skill" as const,
+      authority: "inferred" as const,
+      summary: agent.summary,
+      evidence: ["Agent registry entry; execution suitability must be checked against task context."],
+    })),
+    {
+      id: "prompt-library",
+      title: "Prompt Library",
+      href: "/prompts",
+      kind: "prompt",
+      authority: "inferred",
+      summary: "Prompt templates are reusable evidence for task shaping, not accepted truth unless promoted through review.",
+      evidence: ["Prompt-library links and template usage are supporting context for agent handoffs."],
+    },
+    ...loadWikiPages()
+      .filter((page) => page.tags.some((tag) => tag.toLowerCase().includes("research")))
+      .slice(0, 4)
+      .map((page) => ({
+        id: `research-${page.slug}`,
+        title: page.title,
+        href: `/knowledge/${page.slug}`,
+        kind: "research" as const,
+        authority: "inferred" as const,
+        summary: page.summary,
+        evidence: [path.relative(resolveAiosRoot(), page.sourcePath).split(path.sep).join("/")],
+      })),
+  ];
+
+  const proposedKnowledge = [...proposedCloseoutLinks, ...proposedResumeLinks];
+
+  return {
+    acceptedTruth: [...acceptedTruth, ...acceptedDecisionLinks],
+    proposedKnowledge,
+    inferredKnowledge,
+    linkRules: [
+      "Accepted truth must cite PROJECT.md or accepted decision records.",
+      "Runtime closeouts and resume snapshots are proposal evidence until reviewed.",
+      "Prompts, skills, workflows, and research can shape context packets but cannot overwrite truth directly.",
+      "Important updates to truth, standards, prompts, skills, or workflows require approval before promotion.",
+    ],
+    summary: {
+      acceptedCount: acceptedTruth.length + acceptedDecisionLinks.length,
+      proposedCount: proposedKnowledge.length,
+      inferredCount: inferredKnowledge.length,
+      reviewRequired: proposedKnowledge.length > 0,
+    },
+  };
 };
 
 const loadProjectPatterns = (db: Database.Database, projectId: string): PatternRow[] => {

@@ -9,6 +9,31 @@ export type KnowledgeRelationship = {
   relation: string;
 };
 
+export type KnowledgeAuthorityState = "accepted" | "proposed" | "inferred";
+
+export type KnowledgeAuthorityLink = {
+  id: string;
+  title: string;
+  href: string;
+  kind: KnowledgePageKind | "prompt" | "skill" | "research" | "truth";
+  authority: KnowledgeAuthorityState;
+  summary: string;
+  evidence: string[];
+};
+
+export type TruthKnowledgeBoundary = {
+  acceptedTruth: KnowledgeAuthorityLink[];
+  proposedKnowledge: KnowledgeAuthorityLink[];
+  inferredKnowledge: KnowledgeAuthorityLink[];
+  linkRules: string[];
+  summary: {
+    acceptedCount: number;
+    proposedCount: number;
+    inferredCount: number;
+    reviewRequired: boolean;
+  };
+};
+
 export type KnowledgeReference = {
   label: string;
   href: string;
