@@ -252,6 +252,14 @@ AIOS writebacks now carry explicit approval policy classes:
 - `bin/hook-stop.py` includes a machine-readable governance summary in governed closeout reports, including writeback counts, approval-required counts, policy classes, unresolved follow-up count, and review requirement
 - `tests/test_orchestration_runtime.py` verifies derived workflow-default approval gating and closeout governance policy visibility
 
+AIOS governance state is now visible through the UI/server control-plane contract:
+
+- `aios-ui/lib/control-plane.ts` defines `GovernanceOverview`, `GovernanceProposalSummary`, and terminal-run governance gap types for agent-readable approval visibility
+- `aios-ui/server/aios/control-plane.ts` builds a governance overview with proposal counts, pending approval counts, policy-class counts, terminal-run evidence gaps, pending approval rows, recent proposal rows, and governance link rules
+- `aios-ui/server/routers/control-plane.ts` exposes `controlPlane.governance`, and the existing overview now embeds the same governance summary
+- the UI/server layer can now answer which proposals require review and which terminal runs are missing writeback/closeout/no-learning evidence without raw database inspection
+- this closes Phase 5 by making writebacks, approval policy, pending review, unresolved follow-up, and terminal-run governance gaps visible to agents and operator surfaces
+
 ## Implemented On 2026-05-14
 
 AIOS now has a fixture-backed harness eval v0 contract:
