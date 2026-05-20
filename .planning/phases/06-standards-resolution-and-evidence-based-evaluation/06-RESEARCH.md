@@ -492,7 +492,7 @@ policy = writeback_approval_policy(
 | A3 | Adding `success_criteria_stage_findings` table is cheaper than embedding stage findings into `workflow_execution_reports` JSON. Phase 7 will benefit from a queryable table. | Anti-Patterns | If phase 7 ends up wanting per-stage aggregation only via JSON path queries, the table is over-engineering — but stdlib SQLite supports JSON1 functions, so even then no extra dep is needed. |
 | A4 | Hooks (`hook-session-start.py`, `hook-stop.py`) remain the right enforcement points; no new hook is needed for phase 6. | Architectural Responsibility Map | If the user wants standards resolution wired into a **prompt-submit** moment (before the model is invoked at all), `bin/hook-prompt-submit.py` also needs extension. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should standards resolution include a "current snapshot of standards health" by default?**
    - What we know: `standards_health.py` produces per-project snapshots stored in `standards_health_snapshots`. The latest snapshot is already exposed by `_latest_standards_snapshot(conn)` in `aios_cli.py`.
