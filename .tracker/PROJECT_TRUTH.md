@@ -4,9 +4,9 @@ projectName: AIOS
 summary: Active infra project powering Claude Code agent workflows with committed CTS backend, command-center UI, standalone query/audit utilities, design specs, and verified fixes for the latest AIOS UI/backend handoff gaps.
 healthScore: 72
 statusLabel: improving
-nextStep: Triage remaining anti-slop warnings and the Turbopack tracing warning, then resume broader BasedPyright remediation.
+nextStep: Execute Phase 7 (delta scoring and health backfill) plans 07-01, 07-02, 07-03 in wave order; resume BasedPyright remediation in parallel.
 blockers: []
-lastUpdated: 2026-04-28
+lastUpdated: 2026-05-20
 tags: [infra, ai-os, hooks, automation]
 areas: [engineering]
 goals: []
@@ -53,6 +53,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-04-12: Committed the anti-slop ESLint design spec; AIOS returned to a clean committed working tree
 - 2026-04-27: Added persisted per-project AIOS component scope controls to the command-center project surface, including a dropdown selector and UI suppression for disabled sections
 - 2026-04-28: Verified and corrected latest UI/backend handoff gaps: literal-newline hook JSON recovery now has regression coverage, UI lint errors were removed, focused Python tests pass, and the Next.js production build passes after rebuilding `better-sqlite3` for the active Node ABI
+- 2026-05-20: Committed Phase 7 (delta scoring and health backfill) plans 07-01, 07-02, 07-03 covering DELT-01..DELT-04 — registry extension to 10 DELT-01 domains, explainable DeltaExplanation projection with four-state provenance (confirmed/inferred/missing/contradictory), and workflow-from-health recommender with CLI + UI surfaces.
 
 ## Open Problems
 
