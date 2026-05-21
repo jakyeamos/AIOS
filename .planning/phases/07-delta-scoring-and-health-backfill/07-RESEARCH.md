@@ -700,7 +700,7 @@ result = recommend_route_primitives(
 | A7 | Bumping `profile.version` to `2026.06.0` is acceptable and the existing migration logic handles it without per-project intervention. | Pitfall 1 | Verified: `_ensure_project_binding` updates `latest_version` automatically but leaves `attached_version` pinned, which is the documented "migration_mode = current" behavior. Operators advance via UI/CLI later. **VERIFIED — no risk.** |
 | A8 | `Provenance` literal type from `services/capability_truth.py` can be imported by `services/standards_health.py` without circular import. | Code Examples | Quick check: `capability_truth.py` imports from `services.rtk_integration` only. `standards_health.py` has no current imports from `capability_truth`. **LOW risk** but verify on first task. If circular, move the literal to a shared `services/signal_provenance.py` module. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should new domain standards (maintainability/UX/launch_readiness/agent_readiness/standards_compliance) require explicit operator override for the first cycle, or auto-set to `unknown` with `missing_reason` and stay there until manual override?**
    - What we know: `ManualAssessmentOverride` TypedDict already supports per-standard overrides via `evaluate_and_record(overrides=...)`.
