@@ -58,6 +58,7 @@ progress:
 | 2026-05-14 | Extend wiki maintenance checks to personal corpus refs | Planned in `.planning/quick/260514-3hx-extend-wiki-maintenance-checks-to-person`; `pnpm wiki:check` now validates corpus-backed refs against `aios.db` and vault paths when available. |
 | 2026-05-16 | Wire agent rules into runtime behavior | Planned in `.planning/quick/260516-agent-rules-runtime-wiring`; `config/agent-rules.md` now loads into session-start packets, context compiler receipts, workflow execution artifacts, and synced skill source metadata. |
 | 2026-05-18 | Add optional personalized humanizer voice step | Planned in `.planning/quick/260518-1837-personalized-humanizer-optional-voice-step`; personalized humanizer now distinguishes standalone cleanup-plus-voice runs from post-generic voice-only pipeline runs. |
+| 2026-05-21 | Add truth-first reasoning principle | Planned in `.planning/quick/260521-s13-add-truth-first-reasoning-rules-as-an-ai`; `config/agent-rules.md` now requires agents to prioritize correctness over agreement, verify user claims before accepting them, state clear verdicts for evaluated claims or plans, and reject bad fixes or weak strategies. |
 
 ---
-*Last updated: 2026-05-19 after completing Phase 4 and opening Phase 5 execution plans*
+*Last updated: 2026-05-21 after adding the truth-first reasoning agent principle*

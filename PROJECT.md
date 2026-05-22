@@ -220,6 +220,14 @@ AIOS now has a governed project truth audit contract:
 - `tests/test_aios_cli.py` verifies the governed truth contract, proposal-source linkage, resumable evidence, closeout evidence, and missing-facet warnings
 - this starts Phase 4 by making truth freshness and governed truth updates inspectable through the same JSON-first control-plane CLI used by agents
 
+## Implemented On 2026-05-21
+
+AIOS agent rules now include truth-first reasoning as a core operating principle:
+
+- `config/agent-rules.md` requires agents to prioritize correctness over agreement, treat user claims and plans as unverified until checked, and state clear verdicts when evaluating claims, diagnoses, plans, code paths, or technical decisions
+- the rule requires agents to reject bad or symptom-only fixes, inspect real code paths before accepting diagnoses, challenge weak planning assumptions, distinguish fact from inference or opinion, and say when evidence is unknown or unproven
+- because `config/agent-rules.md` is already injected into session-start packets, context compilation receipts, and workflow execution artifacts, this principle now applies through the existing AIOS runtime rule path
+
 AIOS knowledge surfaces now distinguish accepted truth, proposed evidence, and inferred context assets:
 
 - `aios-ui/lib/control-plane.ts` defines a `TruthKnowledgeBoundary` contract with accepted, proposed, and inferred authority states for agent-readable knowledge linkage
