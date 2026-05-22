@@ -1040,7 +1040,7 @@ packet = AgentizedTaskPacket(
 | A10 | The `applicability` field on assets is a tuple of workflow_family / task_family tags (free strings, not validated against a closed vocabulary). | Pattern 1 | If applicability needs to be schema-validated against a master taxonomy, an additional config file is required. Confirm. |
 | A11 | Sample-size threshold for "exploration mode" recommendation (Pitfall 3) is set at 10 runs. | Pitfall 3 | Tunable. Phase 9 may want a smarter multi-armed-bandit policy; Phase 8's threshold is a deliberate placeholder. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should Phase 8 also register skill implementations (not just stubs) for the four planned workflow contracts?**
    - What we know: The schema work requires that skills referenced by a workflow exist in `config/workflows/skills.json`; stubs satisfy the validator.
