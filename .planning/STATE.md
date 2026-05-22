@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-05-22T00:16:19.063Z"
+last_updated: "2026-05-22T18:29:58.186Z"
 progress:
   total_phases: 10
   completed_phases: 5
-  total_plans: 26
+  total_plans: 32
   completed_plans: 15
-  percent: 58
+  percent: 47
 ---
 
 # AIOS Planning State
