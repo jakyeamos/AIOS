@@ -59,6 +59,7 @@ AIOS should compile messy human intent into the right context, standards, workfl
 - The active v1 roadmap now extends through Phase 15, adding planned tracks for measurable eval/shadow workflows, graph-native memory, multi-provider session ingestion, cross-project complexity standards, and agent skill portfolio integration.
 - The checked-in managed workflow report fixtures now reflect agent-rule-enriched invocation output from the current control-plane runtime.
 - The repository now includes the standalone `research-domain-writing/` skill bundle, Cursor skill shims, and archived package for grounded domain writing workflows.
+- Phase 6 has an execution-ready context artifact defining standards resolution, stage evaluation, execution-first evidence, and operator finding lifecycle boundaries.
 
 ## Constraints
 
@@ -97,4 +98,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-23 after adding the research-domain-writing skill bundle*
+*Last updated: 2026-05-23 after adding Phase 6 standards evaluation context*
