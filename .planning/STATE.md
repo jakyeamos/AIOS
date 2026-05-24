@@ -6,10 +6,10 @@ status: unknown
 last_updated: "2026-05-24T00:00:00.000Z"
 progress:
   total_phases: 15
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 79
-  completed_plans: 18
-  percent: 23
+  completed_plans: 21
+  percent: 27
 ---
 
 # AIOS Planning State
@@ -25,14 +25,14 @@ progress:
 - Canonical planning intent: make AIOS the default operating layer for serious project work by tightening routing, context, lifecycle, truth, governance, evaluation, learning, and operator visibility into one governed loop.
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
-- Latest completed phase: Phase 6, Standards Resolution And Evidence-Based Evaluation, shipped standards resolution, stage findings, execution-first evidence broadening, and criteria finding lifecycle controls.
+- Latest completed phase: Phase 7, Delta Scoring And Health Backfill, shipped ten-domain standards health scoring, delta explanations, provenance-aware contradiction checks, health-derived workflow recommendations, and standards manual overrides.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 2, Truth, Governance, And Evidence
-- Active phase: Phase 7, Delta Scoring And Health Backfill
-- Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6
-- Next dependency chain: Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15
+- Active phase: Phase 8, Prompt, Skill, Workflow Contracts, And Asset Lifecycle
+- Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7
+- Next dependency chain: Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
 
 ## Known Constraints To Preserve
@@ -68,6 +68,7 @@ progress:
 | 2026-05-23 | Add Phase 15 Agent Skill Portfolio Audit And External Library Integration | Phase 15 directory created with 15-RESEARCH.md and plans 15-01 through 15-08 (skill inventory audit + backup, interrogate upgrade with grill-with-docs behaviors, diagnose skill, simplifier upgrade with architecture-first report discipline, to-issues skill with aios.db issues_store, prototype skill, write-a-skill consolidation, handoff skill with aios.db handoff_store). REQUIREMENTS.md extended with SKIL-01 through SKIL-08. ROADMAP.md extended with Milestone 10 and Phase 15 scope. Total phases: 15, total plans: 79. |
 | 2026-05-24 | Add Refero Styles design-reference workflow guidance | Planned in `.planning/quick/260524-refero-styles-design-reference-workflow`; global design standards now allow Refero Styles as an optional cited design-reference source while preserving AIOS operational UI constraints. |
 | 2026-05-24 | Complete Phase 6 Standards Resolution And Evidence-Based Evaluation | Phase 6 shipped registry-backed standards resolution, briefing packet criteria/standards persistence, durable workflow-stage criteria findings, closeout stage evaluation aggregation, broader execution-first evidence ingestion, and CLI lifecycle controls for criteria findings plus standards preview. |
+| 2026-05-24 | Complete Phase 7 Delta Scoring And Health Backfill | Phase 7 shipped ten-domain standards health coverage, read-time delta explanations, provenance and contradiction classification, health-derived workflow recommendations, UI/CLI drill-down surfaces, governance-audit recommendations, and durable standards manual overrides. |
 
 ---
-*Last updated: 2026-05-24 after completing Phase 6 standards evidence work*
+*Last updated: 2026-05-24 after completing Phase 7 delta health work*
