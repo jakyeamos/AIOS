@@ -158,6 +158,28 @@ CREATE TABLE experiments (
 );
 CREATE INDEX idx_metrics_session ON workflow_metrics(session_id);
 CREATE INDEX idx_metrics_name ON workflow_metrics(metric_name);
+CREATE TABLE session_effectiveness_receipts (
+  id TEXT PRIMARY KEY,
+  session_id TEXT NOT NULL REFERENCES sessions(id),
+  project_id TEXT REFERENCES projects(id),
+  run_id TEXT REFERENCES orchestration_runs(id),
+  score REAL NOT NULL,
+  rating TEXT NOT NULL,
+  prompt_count INTEGER NOT NULL,
+  artifact_count INTEGER NOT NULL,
+  tool_event_count INTEGER NOT NULL,
+  bug_count INTEGER NOT NULL,
+  reusable_prompt_count INTEGER NOT NULL,
+  rtk_tokens_saved INTEGER NOT NULL,
+  activity_lights_json TEXT NOT NULL DEFAULT '{}',
+  blockers_json TEXT NOT NULL DEFAULT '[]',
+  warnings_json TEXT NOT NULL DEFAULT '[]',
+  receipt_json TEXT NOT NULL,
+  receipt_path TEXT,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX idx_session_effectiveness_session
+  ON session_effectiveness_receipts(session_id, created_at DESC);
 CREATE TABLE rtk_compression_events (
   id TEXT PRIMARY KEY,
   session_id TEXT REFERENCES sessions(id),

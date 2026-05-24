@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-05-19
+Last updated: 2026-05-24
 
 ## What AIOS Is
 
@@ -30,6 +30,16 @@ The repository currently contains four meaningful subsystems:
    The file-backed AIOS Context Compiler: tiered Markdown routing manifests, deterministic task compilation, generated briefings, and context receipts.
 
 Root operator documentation now lives in `README.md`, including local UI launch commands, key UI routes, store paths, workflow proposal backfill, and verification commands.
+
+## Implemented On 2026-05-24
+
+AIOS now records session effectiveness as a durable receipt and exposes live activity indicators to Claude Code:
+
+- `services/session_effectiveness.py` computes a session effectiveness score, rating, blocker/warning lists, activity lights, and source-backed measures from captured prompts, tool events, artifacts, failures, run linkage, RTK savings, and closeout receipts
+- `hook-stop.py` writes `session_effectiveness_receipts` rows and JSON files under `logs/session-effectiveness/` when sessions close
+- `bin/aios-statusline.py` renders a Claude Code `statusLine` bottom-bar summary with capture, work, quality, governance, prompt, artifact, bug, token-savings, model, and context indicators
+- `.claude/settings.local.json` wires the local project status line to the AIOS renderer with a short refresh interval
+- `tests/test_session_effectiveness.py` locks the receipt score, persistence path, and statusline rendering contract
 
 ## Current Product Boundary
 

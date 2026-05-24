@@ -31,6 +31,7 @@ from aios_orchestration_runtime import (  # noqa: E402
 from hook_lifecycle import ensure_session, load_hook_payload, resolve_hook_session_id  # noqa: E402
 
 from services.rtk_integration import ensure_rtk_schema, rtk_metrics_log  # noqa: E402
+from services.session_effectiveness import write_session_effectiveness_receipt  # noqa: E402
 
 DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
@@ -715,6 +716,13 @@ def main() -> None:
                 json.dumps({"summary_candidate": candidate_path, "rtk_metrics": rtk_metrics}),
             ),
         )
+
+        effectiveness_receipt = write_session_effectiveness_receipt(conn, session_id)
+        if effectiveness_receipt:
+            log(
+                "session effectiveness receipt recorded: "
+                f"{effectiveness_receipt['rating']} ({effectiveness_receipt['score']})"
+            )
 
         conn.commit()
         conn.close()
