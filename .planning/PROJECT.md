@@ -70,6 +70,7 @@ AIOS should compile messy human intent into the right context, standards, workfl
 - Phase 7 Plan 03 shipped CLI and UI surfaces for delta explanations, recommended workflows, governance-audit recommendations, and durable standards manual overrides.
 - Phase 7 is complete with summaries and verification artifacts; GSD now recognizes Phase 8, Prompt, Skill, Workflow Contracts, And Asset Lifecycle, as the active next phase.
 - Phase 8 now has an execution-ready context artifact defining the asset lifecycle vocabulary, registry compatibility, workflow contract, evidence recommendation, and promotion governance boundaries.
+- Phase 8 Plan 01 shipped the canonical five-state lifecycle vocabulary for prompts, skills, and workflows, registry lifecycle metadata backfills, governed active-promotion writebacks, and an idempotent migration for legacy lifecycle statuses.
 
 ## Constraints
 
@@ -108,4 +109,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-24 after adding Phase 8 asset lifecycle execution context*
+*Last updated: 2026-05-24 after shipping Phase 8 Plan 01 asset lifecycle normalization*
