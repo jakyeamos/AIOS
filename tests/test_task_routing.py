@@ -88,6 +88,9 @@ def test_route_objective_selects_implementation_route(tmp_path: Path) -> None:
     assert route["selected_workflow"]["workflow_key"] == "implementation-delivery"
     assert route["prompt_recommendation"]["prompt_family"] is not None
     assert route["workflow_candidates"][0]["rationale"]
+    assert "skill_recommendations" in route
+    assert "workflow_alternatives" in route
+    assert "success_rate=" in route["prompt_recommendation"]["rationale"]
 
 
 def test_route_objective_selects_audit_route(tmp_path: Path) -> None:

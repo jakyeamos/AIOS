@@ -530,6 +530,31 @@ def agentize_request(
         skills.append("smart_search")
     if TaskClassification.UI_UX_IMPROVEMENT in classifications:
         skills.append("react_components")
+    recommendation_source = "fallback"
+    if conn is not None:
+        try:
+            from services.asset_recommendation import recommend_assets_for_packet
+            from services.workflow_orchestration import load_workflow_registry
+
+            workflow_family = None
+            if workflow_key:
+                workflow = load_workflow_registry().get(workflow_key)
+                workflow_family = workflow.workflow_family if workflow else None
+            skill_recommendations = recommend_assets_for_packet(
+                conn,
+                task_classifications=tuple(
+                    classification.value for classification in classifications
+                ),
+                workflow_family=workflow_family,
+                project_id=project_id,
+                asset_kind="skill",
+                limit=5,
+            )
+        except (OSError, ValueError, sqlite3.Error):
+            skill_recommendations = []
+        if skill_recommendations:
+            skills = [recommendation.asset_key for recommendation in skill_recommendations]
+            recommendation_source = "recommender"
 
     implementation_like = {
         TaskClassification.IMPLEMENT,
@@ -625,6 +650,7 @@ def agentize_request(
             "created_at": _now_iso(),
             "requires_static_template_mapping": False,
             "prompt_library_role": "supporting_pattern_corpus",
+            "recommendation_source": recommendation_source,
         },
         prompt_pattern_evidence=_prompt_evidence(normalized, classifications, prompt_path),
     )

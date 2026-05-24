@@ -4,6 +4,7 @@ import json
 import sqlite3
 import sys
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -25,6 +26,28 @@ from services.workflow_orchestration import (  # noqa: E402
     load_workflow_registry,
     validate_workflow_bindings,
 )
+
+
+def _fake_recommendation(asset_key: str) -> Any:
+    from services.asset_recommendation import AssetRecommendation, AssetUsageEvidence
+
+    return AssetRecommendation(
+        asset_kind="skill",
+        asset_key=asset_key,
+        lifecycle_state="active",
+        rationale="active asset; success_rate=1.00 over sample_size=2; per_workflow_top=agentize",
+        evidence=AssetUsageEvidence(
+            "skill",
+            asset_key,
+            2,
+            2,
+            0,
+            None,
+            {"agentize": {"used": 2, "succeeded": 2, "failed": 0}},
+            {},
+        ),
+        rank=1,
+    )
 
 
 def test_basic_transformation_returns_structured_packet() -> None:
@@ -196,6 +219,62 @@ def test_agentize_evaluation_records_outcome_without_promoting_learning() -> Non
         "SELECT selected_execution_mode, outcome_quality, tests_passed FROM agentize_evaluations"
     ).fetchone()
     assert row == ("tdd_first_implementation", 4, 1)
+
+
+def test_agentize_skills_come_from_recommender_when_available(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    conn = sqlite3.connect(":memory:")
+
+    def fake_recommend_assets_for_packet(*args, **kwargs):  # type: ignore[no-untyped-def]
+        if kwargs["asset_kind"] == "skill":
+            return [
+                _fake_recommendation("agentize_intent_compiler"),
+                _fake_recommendation("smart_search"),
+            ]
+        return []
+
+    monkeypatch.setattr(
+        "services.asset_recommendation.recommend_assets_for_packet",
+        fake_recommend_assets_for_packet,
+    )
+    packet = agentize_request(
+        "research the implementation plan", conn=conn, workflow_key="agentize"
+    )
+    assert packet.relevant_skills == ("agentize_intent_compiler", "smart_search")
+    assert packet.experiment_metadata["recommendation_source"] == "recommender"
+
+
+def test_agentize_falls_back_to_heuristic_when_recommender_empty() -> None:
+    conn = sqlite3.connect(":memory:")
+    packet = agentize_request(
+        "build the feature", conn=conn, workflow_key="implementation-delivery"
+    )
+    assert "agentize_intent_compiler" in packet.relevant_skills
+    assert packet.experiment_metadata["recommendation_source"] == "fallback"
+
+
+def test_agentize_evaluations_record_recommendation_source(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    conn = sqlite3.connect(":memory:")
+    monkeypatch.setattr(
+        "services.asset_recommendation.recommend_assets_for_packet",
+        lambda *args, **kwargs: (
+            [_fake_recommendation("agentize_intent_compiler")]
+            if kwargs["asset_kind"] == "skill"
+            else []
+        ),
+    )
+    packet = agentize_request("compile this task", conn=conn, workflow_key="agentize")
+    record_agentize_evaluation(
+        conn,
+        packet=packet,
+        outcome_quality=1,
+        tests_passed=True,
+        user_correction=None,
+        follow_up_required=False,
+        major_repair_required=False,
+    )
+    row = conn.execute("SELECT transformed_request_json FROM agentize_evaluations").fetchone()
+    payload = json.loads(row[0])
+    assert payload["experiment_metadata"]["recommendation_source"] == "recommender"
 
 
 def test_agentize_workflow_and_skill_registry_bindings_are_valid() -> None:
