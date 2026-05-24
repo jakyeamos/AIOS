@@ -6,14 +6,16 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, get_args
+
+from services.asset_lifecycle import AssetLifecycleState
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CANDIDATE_REGISTRY = ROOT / "config" / "divergent-strategy" / "candidates.json"
 DEFAULT_JUDGE_REGISTRY = ROOT / "config" / "divergent-strategy" / "judges.json"
 
 DivergentMode = Literal["lightweight", "standard", "gallery", "audit"]
-PromotionStatus = Literal["draft", "candidate", "tested", "approved", "active", "deprecated"]
+PromotionStatus = AssetLifecycleState
 
 MODE_PROFILES: dict[DivergentMode, dict[str, Any]] = {
     "lightweight": {
@@ -37,6 +39,13 @@ MODE_PROFILES: dict[DivergentMode, dict[str, Any]] = {
         "writeback_requires_approval": True,
     },
 }
+
+
+def _normalize_lifecycle_status(status: str) -> AssetLifecycleState:
+    if status not in get_args(AssetLifecycleState):
+        raise ValueError(f"Unsupported lifecycle status: {status}")
+    return status  # type: ignore[return-value]
+
 
 PORTFOLIO_KEYS = (
     "best_overall",
@@ -267,8 +276,12 @@ def load_candidate_registry(path: Path | None = None) -> dict[str, CandidateProf
             name=str(row.get("name", key)),
             role=str(row.get("role", key)),
             angle=str(row.get("angle", "")),
-            output_contract=tuple(str(item) for item in row.get("output_contract", []) if isinstance(item, str)),
-            default_risks=tuple(str(item) for item in row.get("default_risks", []) if isinstance(item, str)),
+            output_contract=tuple(
+                str(item) for item in row.get("output_contract", []) if isinstance(item, str)
+            ),
+            default_risks=tuple(
+                str(item) for item in row.get("default_risks", []) if isinstance(item, str)
+            ),
         )
     return profiles
 
@@ -321,11 +334,15 @@ def classify_task(source_task: str) -> dict[str, Any]:
         "worthwhile": worthwhile,
         "recommended_mode": mode,
         "signals": signals,
-        "reason": "Task has multiple plausible approaches." if worthwhile else "Task appears deterministic.",
+        "reason": "Task has multiple plausible approaches."
+        if worthwhile
+        else "Task appears deterministic.",
     }
 
 
-def _select_profiles(mode: DivergentMode, profiles: dict[str, CandidateProfile]) -> list[CandidateProfile]:
+def _select_profiles(
+    mode: DivergentMode, profiles: dict[str, CandidateProfile]
+) -> list[CandidateProfile]:
     order = [
         "conservative_integrator",
         "skeptical_minimalist",
@@ -376,7 +393,9 @@ def _generate_candidate(source_task: str, profile: CandidateProfile, index: int)
         ),
         "risks": list(profile.default_risks),
         "best_use_case": f"When {profile.angle.lower()} is the deciding factor.",
-        "why_it_might_fail": profile.default_risks[0] if profile.default_risks else "The angle may not fit the task.",
+        "why_it_might_fail": profile.default_risks[0]
+        if profile.default_risks
+        else "The angle may not fit the task.",
         "memory_candidates": [
             {
                 "category": "HOW",
@@ -397,8 +416,12 @@ def _generate_candidate(source_task: str, profile: CandidateProfile, index: int)
     )
 
 
-def _judge_candidate(candidate: CandidateOutput, judge: JudgeProfile, run_id: str) -> JudgmentOutput:
-    base = (candidate.usefulness_score + candidate.feasibility_score + (1 - candidate.risk_score)) / 3
+def _judge_candidate(
+    candidate: CandidateOutput, judge: JudgeProfile, run_id: str
+) -> JudgmentOutput:
+    base = (
+        candidate.usefulness_score + candidate.feasibility_score + (1 - candidate.risk_score)
+    ) / 3
     if judge.key == "entropy":
         base = candidate.novelty_score
     elif judge.key in {"skeptic", "codesmell"}:
@@ -418,7 +441,9 @@ def _judge_candidate(candidate: CandidateOutput, judge: JudgeProfile, run_id: st
             f"{judge.name} scored {candidate.name} at {score:.2f} using "
             f"{', '.join(judge.rubric[:3])}."
         ),
-        recommended_action="Include in portfolio." if verdict == "adopt" else "Preserve as caveat or failure.",
+        recommended_action="Include in portfolio."
+        if verdict == "adopt"
+        else "Preserve as caveat or failure.",
     )
 
 
@@ -428,7 +453,9 @@ def score_entropy(candidate_shapes: list[str], judge_roles: list[str]) -> Entrop
     shape_count = max(1, len(candidate_shapes))
     judge_count = max(1, len(judge_roles))
     diversity_score = round(unique_shapes / shape_count, 2)
-    novelty_score = round(min(1.0, (diversity_score + min(1.0, unique_judges / judge_count)) / 2), 2)
+    novelty_score = round(
+        min(1.0, (diversity_score + min(1.0, unique_judges / judge_count)) / 2), 2
+    )
     repeated_shapes = unique_shapes < shape_count
     repeated_judges = unique_judges < judge_count
     repeated = repeated_shapes or repeated_judges or diversity_score < 0.5
@@ -453,10 +480,20 @@ def _select_portfolio(
 ) -> dict[str, str | None]:
     score_by_candidate: dict[str, float] = {}
     for candidate in candidates:
-        candidate_judgments = [judgment.score for judgment in judgments if judgment.candidate_id == candidate.id]
-        average_judgment = sum(candidate_judgments) / len(candidate_judgments) if candidate_judgments else 0.0
+        candidate_judgments = [
+            judgment.score for judgment in judgments if judgment.candidate_id == candidate.id
+        ]
+        average_judgment = (
+            sum(candidate_judgments) / len(candidate_judgments) if candidate_judgments else 0.0
+        )
         score_by_candidate[candidate.id] = round(
-            (candidate.usefulness_score + candidate.feasibility_score + average_judgment - candidate.risk_score) / 3,
+            (
+                candidate.usefulness_score
+                + candidate.feasibility_score
+                + average_judgment
+                - candidate.risk_score
+            )
+            / 3,
             3,
         )
 
@@ -472,7 +509,9 @@ def _select_portfolio(
         if key == "safe":
             return min(candidates, key=lambda item: item.risk_score).id
         if key == "architecture":
-            return max(candidates, key=lambda item: item.feasibility_score + item.usefulness_score).id
+            return max(
+                candidates, key=lambda item: item.feasibility_score + item.usefulness_score
+            ).id
         if key == "failure":
             return max(candidates, key=lambda item: item.novelty_score + item.risk_score).id
         if key == "reject":
@@ -593,9 +632,10 @@ def transition_promotion_lifecycle(
     previous = str(existing["status"]) if existing else "draft"
     status = requested_status
     status_reason = "Lifecycle transition accepted."
-    if requested_status in {"tested", "approved", "active"} and not evidence:
+    if requested_status in {"approved", "active"} and not evidence:
         status = previous  # type: ignore[assignment]
         status_reason = f"Promotion to {requested_status} requires evidence."
+    normalized_status = _normalize_lifecycle_status(status)
 
     timestamp = _now_iso()
     conn.execute(
@@ -617,7 +657,7 @@ def transition_promotion_lifecycle(
             item_kind,
             item_key,
             source_run_id,
-            status,
+            normalized_status,
             _json_dump(evidence),
             status_reason,
             timestamp,
@@ -696,7 +736,12 @@ def create_divergent_run(
             final_recommendation,
             entropy.diversity_score,
             quality_score,
-            _json_dump({"portfolio": portfolio, "status_explanation": "Completed means portfolio output exists."}),
+            _json_dump(
+                {
+                    "portfolio": portfolio,
+                    "status_explanation": "Completed means portfolio output exists.",
+                }
+            ),
         ),
     )
     for candidate in candidates:
@@ -727,7 +772,11 @@ def create_divergent_run(
                 candidate.feasibility_score,
                 candidate.risk_score,
                 selected_status,
-                _json_dump({"score_formula": "heuristic: novelty/usefulness/feasibility/risk registry defaults"}),
+                _json_dump(
+                    {
+                        "score_formula": "heuristic: novelty/usefulness/feasibility/risk registry defaults"
+                    }
+                ),
             ),
         )
     for judgment in judgments:
@@ -771,7 +820,9 @@ def create_divergent_run(
             entropy.novelty_score,
             entropy.diversity_score,
             entropy.recommendation,
-            _json_dump({"formula": "unique candidate shapes / total shapes plus judge-role diversity"}),
+            _json_dump(
+                {"formula": "unique candidate shapes / total shapes plus judge-role diversity"}
+            ),
         ),
     )
     writeback_ids = _insert_writebacks(

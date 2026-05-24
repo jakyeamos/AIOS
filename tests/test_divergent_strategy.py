@@ -113,7 +113,7 @@ def test_entropy_scores_convergence_risk_for_repeated_shapes() -> None:
     assert "Rotate" in observation.recommendation
 
 
-def test_promotion_lifecycle_requires_evidence_for_tested_and_approved() -> None:
+def test_promotion_lifecycle_requires_evidence_for_approved_and_active() -> None:
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
     ensure_divergent_schema(conn)
@@ -146,8 +146,8 @@ def test_promotion_lifecycle_requires_evidence_for_tested_and_approved() -> None
         item_id="skill-divergent-strategy",
         item_kind="skill",
         item_key="divergent-strategy",
-        requested_status="tested",
+        requested_status="approved",
         source_run_id="run-1",
         evidence=["pytest tests/test_divergent_strategy.py"],
     )
-    assert approved["status"] == "tested"
+    assert approved["status"] == "approved"

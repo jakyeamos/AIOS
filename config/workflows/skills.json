@@ -1,5 +1,5 @@
 {
-  "version": "2026-04-23",
+  "version": "2026-05-21",
   "skills": [
     {
       "key": "prompt_library_normalizer",
@@ -23,7 +23,12 @@
         "No template match and no fallback prompt."
       ],
       "side_effects": [],
-      "execution_mode": "deterministic"
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "normalize_prompt"
+      ],
+      "purpose_long": "Map loose request wording to a validated prompt template and normalized intent contract."
     },
     {
       "key": "agentize_intent_compiler",
@@ -63,7 +68,12 @@
       ],
       "execution_mode": "deterministic",
       "source_path": "skills/agentize/SKILL.md",
-      "installed_name": "agentize"
+      "installed_name": "agentize",
+      "lifecycle_state": "active",
+      "applicability": [
+        "parse_request"
+      ],
+      "purpose_long": "Compile a freeform user request into a structured AgentizedTaskPacket with classification, execution mode, targeted context, standards, verification, and output contract."
     },
     {
       "key": "obsidian_corpus_retriever",
@@ -87,7 +97,12 @@
         "Vault unavailable and no fallback style profile."
       ],
       "side_effects": [],
-      "execution_mode": "deterministic"
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "enrich_context"
+      ],
+      "purpose_long": "Retrieve bounded style profile context from the personal corpus for writing tasks."
     },
     {
       "key": "academic_draft_generator",
@@ -109,7 +124,12 @@
         "Missing sectioned draft output."
       ],
       "side_effects": [],
-      "execution_mode": "heuristic"
+      "execution_mode": "heuristic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "generate"
+      ],
+      "purpose_long": "Generate structured draft sections from normalized objective and context profile."
     },
     {
       "key": "personal_corpus_humanizer",
@@ -133,7 +153,12 @@
         "Meaning drift beyond configured threshold."
       ],
       "side_effects": [],
-      "execution_mode": "heuristic"
+      "execution_mode": "heuristic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "transform"
+      ],
+      "purpose_long": "Improve prose rhythm/readability while preserving factual meaning, citations, and specificity."
     },
     {
       "key": "structure_checker",
@@ -155,7 +180,12 @@
         "Missing required section headings."
       ],
       "side_effects": [],
-      "execution_mode": "deterministic"
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "validate"
+      ],
+      "purpose_long": "Verify required paper structure is present."
     },
     {
       "key": "citation_checker",
@@ -177,7 +207,12 @@
         "No citation markers in output."
       ],
       "side_effects": [],
-      "execution_mode": "deterministic"
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "validate"
+      ],
+      "purpose_long": "Verify citation coverage is present and non-empty."
     },
     {
       "key": "meaning_preservation_checker",
@@ -201,7 +236,12 @@
         "Keyword overlap below threshold."
       ],
       "side_effects": [],
-      "execution_mode": "deterministic"
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "validate"
+      ],
+      "purpose_long": "Check transformed prose for major keyword/intent drift from draft."
     },
     {
       "key": "scope_check",
@@ -224,7 +264,12 @@
         "Output does not reference objective terms."
       ],
       "side_effects": [],
-      "execution_mode": "deterministic"
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "validate"
+      ],
+      "purpose_long": "Ensure output remains scoped to objective and contract."
     },
     {
       "key": "divergent_task_classifier",
@@ -248,7 +293,12 @@
         "No classification reason is available."
       ],
       "side_effects": [],
-      "execution_mode": "deterministic"
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "parse_request"
+      ],
+      "purpose_long": "Classify whether a task benefits from divergent strategy exploration and select a mode."
     },
     {
       "key": "divergent_candidate_generator",
@@ -271,7 +321,12 @@
         "All candidates converge to the same formulation."
       ],
       "side_effects": [],
-      "execution_mode": "heuristic"
+      "execution_mode": "heuristic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "generate"
+      ],
+      "purpose_long": "Generate role-based candidate strategies from the divergent candidate registry."
     },
     {
       "key": "divergent_judge_panel",
@@ -294,7 +349,12 @@
         "A judge emits a score without rationale."
       ],
       "side_effects": [],
-      "execution_mode": "heuristic"
+      "execution_mode": "heuristic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "validate"
+      ],
+      "purpose_long": "Evaluate divergent candidates through reusable judge profiles with structured rationale."
     },
     {
       "key": "divergent_portfolio_selector",
@@ -316,7 +376,12 @@
         "Workflow completes without portfolio output."
       ],
       "side_effects": [],
-      "execution_mode": "deterministic"
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "finalize"
+      ],
+      "purpose_long": "Select a portfolio of useful candidates instead of collapsing to one winner."
     },
     {
       "key": "memory_writeback_proposer",
@@ -341,7 +406,12 @@
       "side_effects": [
         "Writes proposed memory records only."
       ],
-      "execution_mode": "deterministic"
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "finalize"
+      ],
+      "purpose_long": "Create approval-gated HOW, WHAT, FAILURE, and ENTROPY memory proposals."
     },
     {
       "key": "find_skills",
@@ -354,7 +424,12 @@
       "invariants": [],
       "failure_conditions": [],
       "side_effects": [],
-      "execution_mode": "heuristic"
+      "execution_mode": "heuristic",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "generate"
+      ],
+      "purpose_long": "Helps users discover and install agent skills when they ask questions like \"how do I do X\", \"find a skill for X\", \"is there a skill that can...\", or express interest in extending capabilities. This skill should be used when the user is looking for functionality that might exist as an installable ski"
     },
     {
       "key": "humanizer",
@@ -367,7 +442,12 @@
       "invariants": [],
       "failure_conditions": [],
       "side_effects": [],
-      "execution_mode": "heuristic"
+      "execution_mode": "heuristic",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "transform"
+      ],
+      "purpose_long": "|"
     },
     {
       "key": "react_components",
@@ -380,7 +460,12 @@
       "invariants": [],
       "failure_conditions": [],
       "side_effects": [],
-      "execution_mode": "heuristic"
+      "execution_mode": "heuristic",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "validate"
+      ],
+      "purpose_long": "Converts Stitch designs into modular Vite and React components using system-level networking and AST-based validation."
     },
     {
       "key": "personalized_humanizer_classifier",
@@ -403,7 +488,12 @@
         "Unknown requested mode."
       ],
       "side_effects": [],
-      "execution_mode": "deterministic"
+      "execution_mode": "deterministic",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "parse_request"
+      ],
+      "purpose_long": "Classify writing tasks into personalized voice modes before corpus retrieval or rewriting."
     },
     {
       "key": "personalized_voice_retriever",
@@ -427,7 +517,12 @@
         "Retrieved examples violate mode boundaries."
       ],
       "side_effects": [],
-      "execution_mode": "deterministic"
+      "execution_mode": "deterministic",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "enrich_context"
+      ],
+      "purpose_long": "Retrieve bounded, mode-compatible personal voice references for the personalized humanizer."
     },
     {
       "key": "personalized_voice_packet_builder",
@@ -451,7 +546,12 @@
         "Requested mode is missing from the profile."
       ],
       "side_effects": [],
-      "execution_mode": "deterministic"
+      "execution_mode": "deterministic",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "enrich_context"
+      ],
+      "purpose_long": "Build a compact task-specific voice packet from the versioned personal voice profile and evidence refs."
     },
     {
       "key": "personalized_humanizer_transformer",
@@ -476,7 +576,12 @@
         "Meaning drift or unsupported claim introduction."
       ],
       "side_effects": [],
-      "execution_mode": "heuristic"
+      "execution_mode": "heuristic",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "transform"
+      ],
+      "purpose_long": "Rewrite text toward the selected personal voice mode while preserving meaning, structure, and factual claims."
     },
     {
       "key": "personalized_humanizer_quality_checker",
@@ -501,7 +606,12 @@
         "Scorecard is missing required dimensions."
       ],
       "side_effects": [],
-      "execution_mode": "deterministic"
+      "execution_mode": "deterministic",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "validate"
+      ],
+      "purpose_long": "Score personalized humanizer output for meaning preservation, voice match, context fit, specificity, and risk."
     },
     {
       "key": "personalized_humanizer_feedback_collector",
@@ -528,7 +638,12 @@
       "side_effects": [
         "Writes feedback and candidate profile update records."
       ],
-      "execution_mode": "deterministic"
+      "execution_mode": "deterministic",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "finalize"
+      ],
+      "purpose_long": "Record approved, edited, or rejected outputs as evidence for candidate profile updates."
     },
     {
       "key": "remotion_best_practices",
@@ -541,7 +656,12 @@
       "invariants": [],
       "failure_conditions": [],
       "side_effects": [],
-      "execution_mode": "heuristic"
+      "execution_mode": "heuristic",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "generate"
+      ],
+      "purpose_long": "Best practices for Remotion - Video creation in React"
     },
     {
       "key": "smart_search",
@@ -554,7 +674,12 @@
       "invariants": [],
       "failure_conditions": [],
       "side_effects": [],
-      "execution_mode": "heuristic"
+      "execution_mode": "heuristic",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "enrich_context"
+      ],
+      "purpose_long": "基于 opencli 命令的智能搜索路由器。当用户想要搜索、查询、查找或研究信息时，尤其是涉及指定网站、社交媒体、技术资料、新闻、购物、旅游、求职、金融或中文内容时，务必使用此 skill"
     }
   ]
 }

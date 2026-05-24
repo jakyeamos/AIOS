@@ -8,11 +8,12 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, cast, get_args
 
 from services import success_criteria
 from services.agent_rules import load_agent_rules
 from services.agentize import agentize_request
+from services.asset_lifecycle import AssetLifecycleState
 from services.execution_strategy import (
     StrategySelectionError,
     compile_execution_strategy,
@@ -87,6 +88,9 @@ class WorkflowSpec:
     output_contract: tuple[str, ...]
     required_validations: tuple[str, ...]
     stages: tuple[StageSpec, ...]
+    lifecycle_state: AssetLifecycleState = "candidate"
+    applicability: tuple[str, ...] = ()
+    purpose_long: str = ""
 
 
 @dataclass(frozen=True)
@@ -102,6 +106,9 @@ class SkillSpec:
     execution_mode: str
     source_path: str | None = None
     installed_name: str | None = None
+    lifecycle_state: AssetLifecycleState = "candidate"
+    applicability: tuple[str, ...] = ()
+    purpose_long: str = ""
 
 
 @dataclass(frozen=True)
@@ -135,6 +142,21 @@ def _load_json(path: Path) -> dict[str, Any]:
     if not isinstance(loaded, dict):
         raise ValueError(f"Expected JSON object at {path}")
     return loaded
+
+
+def _lifecycle_state_from_row(
+    row: dict[str, Any], *, default: AssetLifecycleState
+) -> AssetLifecycleState:
+    raw = str(row.get("lifecycle_state", row.get("route_status", default))).strip()
+    if raw == "approved" and "lifecycle_state" not in row:
+        return "active"
+    if raw not in get_args(AssetLifecycleState):
+        raise ValueError(f"Unsupported lifecycle_state: {raw}")
+    return cast(AssetLifecycleState, raw)
+
+
+def _prompt_lifecycle_state(template: dict[str, Any]) -> AssetLifecycleState:
+    return _lifecycle_state_from_row(template, default="candidate")
 
 
 def load_workflow_registry(path: Path | None = None) -> dict[str, WorkflowSpec]:
@@ -185,6 +207,11 @@ def load_workflow_registry(path: Path | None = None) -> dict[str, WorkflowSpec]:
                 str(row) for row in item.get("required_validations", []) if isinstance(row, str)
             ),
             stages=tuple(stages),
+            lifecycle_state=_lifecycle_state_from_row(item, default="candidate"),
+            applicability=tuple(
+                str(row) for row in item.get("applicability", []) if isinstance(row, str)
+            ),
+            purpose_long=str(item.get("purpose_long", "")),
         )
     return registry
 
@@ -231,6 +258,11 @@ def load_skill_registry(path: Path | None = None) -> dict[str, SkillSpec]:
             execution_mode=str(item.get("execution_mode", "deterministic")),
             source_path=str(item["source_path"]) if item.get("source_path") else None,
             installed_name=str(item["installed_name"]) if item.get("installed_name") else None,
+            lifecycle_state=_lifecycle_state_from_row(item, default="candidate"),
+            applicability=tuple(
+                str(row) for row in item.get("applicability", []) if isinstance(row, str)
+            ),
+            purpose_long=str(item.get("purpose_long", "")),
         )
     return registry
 
@@ -499,16 +531,19 @@ def recommend_prompt_family(
         {
             "template_id": str(template.get("id", "")),
             "prompt_family": str(template.get("prompt_family", "")),
-            "route_status": str(template.get("route_status", "candidate")),
+            "route_status": str(template.get("route_status", _prompt_lifecycle_state(template))),
+            "lifecycle_state": _prompt_lifecycle_state(template),
         }
         for _, template in ranked[1:3]
     ]
+    lifecycle_state = _prompt_lifecycle_state(selected)
     return {
         "workflow_key": workflow_key,
         "workflow_family": workflow.workflow_family,
         "prompt_family": str(selected.get("prompt_family", "")),
         "template_id": str(selected.get("id", "")),
-        "route_status": str(selected.get("route_status", "candidate")),
+        "route_status": str(selected.get("route_status", lifecycle_state)),
+        "lifecycle_state": lifecycle_state,
         "alternatives": alternatives,
         "rationale": (
             f"Selected prompt family {selected.get('prompt_family')} for workflow_family={workflow.workflow_family} "

@@ -1,5 +1,5 @@
 {
-  "version": "2026-04-23",
+  "version": "2026-05-21",
   "stage_kinds": [
     "parse_request",
     "normalize_prompt",
@@ -80,7 +80,16 @@
           "kind": "finalize",
           "required_skills": []
         }
-      ]
+      ],
+      "lifecycle_state": "active",
+      "applicability": [
+        "content_generation",
+        "write_a_paper",
+        "academic_paper",
+        "research_paper",
+        "essay_with_citations"
+      ],
+      "purpose_long": "Route paper-writing requests through deterministic staged execution with explicit validation."
     },
     {
       "key": "implementation-delivery",
@@ -126,7 +135,16 @@
           "kind": "finalize",
           "required_skills": []
         }
-      ]
+      ],
+      "lifecycle_state": "active",
+      "applicability": [
+        "audit_and_implement",
+        "implement",
+        "build",
+        "feature",
+        "refactor"
+      ],
+      "purpose_long": "Default implementation workflow for scoped code changes."
     },
     {
       "key": "failure-recovery",
@@ -172,7 +190,16 @@
           "kind": "finalize",
           "required_skills": []
         }
-      ]
+      ],
+      "lifecycle_state": "active",
+      "applicability": [
+        "failure_recovery",
+        "debug",
+        "failure",
+        "broken",
+        "fix_regression"
+      ],
+      "purpose_long": "Debug-focused workflow for recovering broken runs or regressions."
     },
     {
       "key": "divergent-strategy",
@@ -228,7 +255,18 @@
             "memory_writeback_proposer"
           ]
         }
-      ]
+      ],
+      "lifecycle_state": "active",
+      "applicability": [
+        "audit_only",
+        "what_do_you_think",
+        "strategy",
+        "architecture_decision",
+        "evaluate_this_workflow",
+        "prompt_or_skill_promotion",
+        "multiple_plausible_approaches"
+      ],
+      "purpose_long": "Explore multiple plausible strategies, judge them with reusable rubrics, preserve useful failures, and propose gated memory writebacks."
     },
     {
       "key": "personalized-humanizer",
@@ -293,7 +331,19 @@
             "personalized_humanizer_feedback_collector"
           ]
         }
-      ]
+      ],
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "writing_transformation",
+        "humanize_this",
+        "make_this_sound_like_me",
+        "personal_voice",
+        "rewrite_this_outreach",
+        "build_in_public_post",
+        "codex_prompt",
+        "creative_prose"
+      ],
+      "purpose_long": "Transform writing toward a versioned personal voice profile using bounded corpus evidence, privacy guardrails, and feedback-gated profile learning."
     },
     {
       "key": "agentize",
@@ -341,7 +391,17 @@
           "kind": "finalize",
           "required_skills": []
         }
-      ]
+      ],
+      "lifecycle_state": "active",
+      "applicability": [
+        "intent_compilation",
+        "agentize",
+        "turn_this_into_an_agent_task",
+        "execution_packet",
+        "make_this_request_ready_for_an_agent",
+        "compile_this_task"
+      ],
+      "purpose_long": "Compile messy human requests into execution-ready agent task packets with context, standards, verification, and writeback requirements."
     }
   ]
 }

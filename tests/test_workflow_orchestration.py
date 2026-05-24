@@ -3,12 +3,14 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
+from typing import get_args
 
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from services.asset_lifecycle import AssetLifecycleState  # noqa: E402
 from services.workflow_orchestration import (  # noqa: E402
     HEALTH_TO_WORKFLOW_RULES,
     WorkflowExecutionContext,
@@ -30,6 +32,137 @@ def test_registry_bindings_are_valid() -> None:
     errors = validate_workflow_bindings(workflows, skills)
     assert errors == []
     assert "academic_paper_v1" in workflows
+
+
+def test_load_registry_normalizes_lifecycle_fields() -> None:
+    workflows = load_workflow_registry(ROOT / "config" / "workflows" / "registry.json")
+    skills = load_skill_registry(ROOT / "config" / "workflows" / "skills.json")
+    states = set(get_args(AssetLifecycleState))
+
+    assert all(workflow.lifecycle_state in states for workflow in workflows.values())
+    assert all(isinstance(workflow.applicability, tuple) for workflow in workflows.values())
+    assert all(isinstance(workflow.purpose_long, str) for workflow in workflows.values())
+    assert all(skill.lifecycle_state in states for skill in skills.values())
+    assert all(isinstance(skill.applicability, tuple) for skill in skills.values())
+    assert all(isinstance(skill.purpose_long, str) for skill in skills.values())
+
+
+def test_existing_six_workflows_load_with_defaults() -> None:
+    workflows = load_workflow_registry(ROOT / "config" / "workflows" / "registry.json")
+    assert set(workflows) == {
+        "implementation-delivery",
+        "failure-recovery",
+        "academic_paper_v1",
+        "divergent-strategy",
+        "personalized-humanizer",
+        "agentize",
+    }
+    assert workflows["implementation-delivery"].lifecycle_state == "active"
+    assert workflows["failure-recovery"].lifecycle_state == "active"
+
+
+def test_prompt_registry_accepts_legacy_route_status_alias(tmp_path: Path) -> None:
+    workflow_registry = tmp_path / "workflows.json"
+    workflow_registry.write_text(
+        json.dumps(
+            {
+                "workflows": [
+                    {
+                        "key": "audit",
+                        "name": "Audit",
+                        "workflow_family": "audit_only",
+                        "purpose": "Audit",
+                        "trigger_hints": ["audit"],
+                        "output_contract": [],
+                        "required_validations": [],
+                        "stages": [
+                            {"key": "parse", "kind": "parse_request", "required_skills": []}
+                        ],
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    prompt_registry = tmp_path / "prompts.json"
+
+    prompt_registry.write_text(
+        json.dumps(
+            {
+                "templates": [
+                    {
+                        "id": "legacy",
+                        "prompt_family": "research_handoff",
+                        "route_status": "approved",
+                        "classification": "plan",
+                        "applicable_workflow_families": ["audit_only"],
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    result = recommend_prompt_family(
+        objective="audit plan",
+        workflow_key="audit",
+        prompt_registry_path=prompt_registry,
+        workflow_registry_path=workflow_registry,
+    )
+    assert result["lifecycle_state"] == "active"
+
+    prompt_registry.write_text(
+        json.dumps(
+            {
+                "templates": [
+                    {
+                        "id": "new",
+                        "prompt_family": "research_handoff",
+                        "route_status": "approved",
+                        "lifecycle_state": "candidate",
+                        "classification": "plan",
+                        "applicable_workflow_families": ["audit_only"],
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    result = recommend_prompt_family(
+        objective="audit plan",
+        workflow_key="audit",
+        prompt_registry_path=prompt_registry,
+        workflow_registry_path=workflow_registry,
+    )
+    assert result["lifecycle_state"] == "candidate"
+
+    prompt_registry.write_text(
+        json.dumps(
+            {
+                "templates": [
+                    {
+                        "id": "defaulted",
+                        "prompt_family": "research_handoff",
+                        "classification": "plan",
+                        "applicable_workflow_families": ["audit_only"],
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    result = recommend_prompt_family(
+        objective="audit plan",
+        workflow_key="audit",
+        prompt_registry_path=prompt_registry,
+        workflow_registry_path=workflow_registry,
+    )
+    assert result["lifecycle_state"] == "candidate"
+
+
+def test_validate_workflow_bindings_still_passes_for_existing_workflows() -> None:
+    workflows = load_workflow_registry(ROOT / "config" / "workflows" / "registry.json")
+    skills = load_skill_registry(ROOT / "config" / "workflows" / "skills.json")
+    assert validate_workflow_bindings(workflows, skills) == []
 
 
 def test_execute_academic_workflow_with_validations(tmp_path: Path) -> None:

@@ -37,7 +37,18 @@
         }
       ],
       "last_updated": "2026-04-23",
-      "file": "prompts/coding_debug.md"
+      "file": "prompts/coding_debug.md",
+      "lifecycle_state": "active",
+      "applicability": [
+        "failure_recovery",
+        "audit_and_implement"
+      ],
+      "usefulness_evidence": {
+        "sample_size": 0,
+        "success_rate": 0,
+        "last_used_at": null
+      },
+      "last_evaluated_at": "2026-05-21T00:00:00Z"
     },
     {
       "id": "content_writing",
@@ -72,7 +83,17 @@
         }
       ],
       "last_updated": "2026-04-23",
-      "file": "prompts/content_writing.md"
+      "file": "prompts/content_writing.md",
+      "lifecycle_state": "active",
+      "applicability": [
+        "content_generation"
+      ],
+      "usefulness_evidence": {
+        "sample_size": 0,
+        "success_rate": 0,
+        "last_used_at": null
+      },
+      "last_evaluated_at": "2026-05-21T00:00:00Z"
     },
     {
       "id": "reasoning",
@@ -109,7 +130,18 @@
         }
       ],
       "last_updated": "2026-04-23",
-      "file": "prompts/reasoning.md"
+      "file": "prompts/reasoning.md",
+      "lifecycle_state": "active",
+      "applicability": [
+        "audit_only",
+        "audit_and_implement"
+      ],
+      "usefulness_evidence": {
+        "sample_size": 0,
+        "success_rate": 0,
+        "last_used_at": null
+      },
+      "last_evaluated_at": "2026-05-21T00:00:00Z"
     },
     {
       "id": "research",
@@ -147,7 +179,19 @@
         }
       ],
       "last_updated": "2026-04-23",
-      "file": "prompts/research.md"
+      "file": "prompts/research.md",
+      "lifecycle_state": "active",
+      "applicability": [
+        "audit_only",
+        "audit_and_implement",
+        "content_generation"
+      ],
+      "usefulness_evidence": {
+        "sample_size": 0,
+        "success_rate": 0,
+        "last_used_at": null
+      },
+      "last_evaluated_at": "2026-05-21T00:00:00Z"
     },
     {
       "id": "summarization",
@@ -182,7 +226,18 @@
         }
       ],
       "last_updated": "2026-04-23",
-      "file": "prompts/summarization.md"
+      "file": "prompts/summarization.md",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "audit_and_implement"
+      ],
+      "usefulness_evidence": {
+        "sample_size": 0,
+        "success_rate": 0,
+        "last_used_at": null
+      },
+      "last_evaluated_at": "2026-05-21T00:00:00Z"
     }
-  ]
+  ],
+  "version": "2026-05-21"
 }

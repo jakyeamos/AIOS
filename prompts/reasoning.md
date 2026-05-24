@@ -24,6 +24,11 @@ eval_criteria:
   - Alternatives are fairly compared, not dismissed.
 owner: jakyeamos
 last_updated: "2026-04-23"
+lifecycle_state: active
+applicability:
+  - audit_only
+  - audit_and_implement
+last_evaluated_at: "2026-05-21T00:00:00Z"
 changelog:
   - version: "1.0"
     date: "2026-04-23"
