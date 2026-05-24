@@ -301,6 +301,41 @@ def ensure_runtime_schema(conn: sqlite3.Connection) -> None:
           ON consistency_findings(project_id, created_at DESC)
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS success_criteria_stage_findings (
+            id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL REFERENCES orchestration_runs(id),
+            stage_key TEXT NOT NULL,
+            stage_kind TEXT NOT NULL,
+            criterion_id TEXT NOT NULL,
+            criterion_title TEXT NOT NULL,
+            criterion_scope TEXT NOT NULL,
+            level TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            evidence_json TEXT NOT NULL DEFAULT '[]',
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            resolution_status TEXT NOT NULL DEFAULT 'open',
+            resolution_actor TEXT,
+            resolution_rationale TEXT,
+            resolution_evidence_json TEXT NOT NULL DEFAULT '[]',
+            resolved_at TEXT,
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_success_criteria_stage_findings_run
+          ON success_criteria_stage_findings(run_id, stage_key)
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_success_criteria_stage_findings_criterion
+          ON success_criteria_stage_findings(criterion_id, level)
+        """
+    )
 
     ensure_column(conn, "sessions", "run_id", "TEXT REFERENCES orchestration_runs(id)")
     ensure_column(

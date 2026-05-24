@@ -60,7 +60,9 @@ def runtime_db(tmp_path: Path) -> Path:
     return db_path
 
 
-def test_hook_stop_uses_explicit_run_handshake(runtime_db: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_hook_stop_uses_explicit_run_handshake(
+    runtime_db: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     hook_stop = _load_module("hook_stop", "bin/hook-stop.py")
 
     repo_path = tmp_path / "repo"
@@ -146,7 +148,9 @@ def test_hook_stop_uses_explicit_run_handshake(runtime_db: Path, tmp_path: Path,
     monkeypatch.setattr(
         hook_stop,
         "find_matching_orchestration_run",
-        lambda *_args, **_kwargs: pytest.fail("legacy matcher should not run for explicit handshake"),
+        lambda *_args, **_kwargs: pytest.fail(
+            "legacy matcher should not run for explicit handshake"
+        ),
     )
     monkeypatch.setattr(
         sys,
@@ -219,21 +223,71 @@ def test_hook_stop_uses_explicit_run_handshake(runtime_db: Path, tmp_path: Path,
     assert report_payload["governance"]["requires_review"] is True
     assert isinstance(report_payload["changed_artifacts"], list)
     assert closeout_report[2] is not None
-    assert captured_criteria_args["changed_files"] == [str(repo_path / "services" / "orchestration.py")]
+    assert captured_criteria_args["changed_files"] == [
+        str(repo_path / "services" / "orchestration.py")
+    ]
     conn.close()
 
 
 def test_base_schema_exposes_route_metadata_columns(runtime_db: Path) -> None:
     conn = sqlite3.connect(runtime_db)
-    run_columns = {row[1] for row in conn.execute("PRAGMA table_info(orchestration_runs)").fetchall()}
-    packet_columns = {row[1] for row in conn.execute("PRAGMA table_info(briefing_packets)").fetchall()}
+    run_columns = {
+        row[1] for row in conn.execute("PRAGMA table_info(orchestration_runs)").fetchall()
+    }
+    packet_columns = {
+        row[1] for row in conn.execute("PRAGMA table_info(briefing_packets)").fetchall()
+    }
 
     assert {"route_id", "route_status", "route_result_json"} <= run_columns
     assert {"route_id", "route_result_json"} <= packet_columns
     conn.close()
 
 
-def test_insert_writeback_derives_approval_policy_for_high_impact_changes(runtime_db: Path, tmp_path: Path) -> None:
+def test_closeout_governance_includes_stage_evaluations(runtime_db: Path) -> None:
+    hook_stop = _load_module("hook_stop", "bin/hook-stop.py")
+    conn = sqlite3.connect(runtime_db)
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (
+            id, objective, workflow_key, agent_key, status, rationale,
+            assumptions_json, context_trace_json
+        )
+        VALUES ('run-stage', 'Test stage findings', 'agentize', 'agentize', 'completed',
+                'test', '[]', '[]')
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO success_criteria_stage_findings (
+            id, run_id, stage_key, stage_kind, criterion_id, criterion_title,
+            criterion_scope, level, summary
+        )
+        VALUES
+            ('criteria-stage-finding-1', 'run-stage', 'validate', 'validate',
+             'testing-trust', 'Testing Trust', 'global', 'blocker', 'Missing test evidence.'),
+            ('criteria-stage-finding-2', 'run-stage', 'validate', 'validate',
+             'truth-file-consistency', 'Truth File', 'global', 'pass', 'Truth update present.')
+        """
+    )
+
+    stage_evaluations = hook_stop._stage_evaluations_for_run(conn, "run-stage")
+
+    assert stage_evaluations == [
+        {
+            "stage_key": "validate",
+            "stage_kind": "validate",
+            "blocker_count": 1,
+            "warning_count": 0,
+            "pass_count": 1,
+            "finding_ids": ["criteria-stage-finding-1", "criteria-stage-finding-2"],
+        }
+    ]
+    conn.close()
+
+
+def test_insert_writeback_derives_approval_policy_for_high_impact_changes(
+    runtime_db: Path, tmp_path: Path
+) -> None:
     from aios_orchestration_runtime import ensure_runtime_schema, insert_writeback
 
     conn = sqlite3.connect(runtime_db)
@@ -295,7 +349,9 @@ def test_insert_writeback_derives_approval_policy_for_high_impact_changes(runtim
     assert event_metadata["approval_policy"]["requires_approval"] is True
 
 
-def test_runtime_transition_records_failed_reason_metadata(runtime_db: Path, tmp_path: Path) -> None:
+def test_runtime_transition_records_failed_reason_metadata(
+    runtime_db: Path, tmp_path: Path
+) -> None:
     from aios_orchestration_runtime import ensure_runtime_schema, transition_run
 
     repo_path = tmp_path / "repo"
@@ -355,7 +411,9 @@ def test_runtime_transition_records_failed_reason_metadata(runtime_db: Path, tmp
     conn.close()
 
 
-def test_runtime_transition_records_partial_closeout_metadata(runtime_db: Path, tmp_path: Path) -> None:
+def test_runtime_transition_records_partial_closeout_metadata(
+    runtime_db: Path, tmp_path: Path
+) -> None:
     from aios_orchestration_runtime import ensure_runtime_schema, transition_run
 
     repo_path = tmp_path / "repo"
@@ -395,7 +453,10 @@ def test_runtime_transition_records_partial_closeout_metadata(runtime_db: Path, 
     ).fetchone()
     assert run is not None
     assert run[0] == "partial"
-    assert json.loads(run[1]) == {"kind": "partial_closeout", "remaining": ["broader regression pass"]}
+    assert json.loads(run[1]) == {
+        "kind": "partial_closeout",
+        "remaining": ["broader regression pass"],
+    }
     assert run[2] is not None
 
     event = conn.execute(
@@ -411,7 +472,10 @@ def test_runtime_transition_records_partial_closeout_metadata(runtime_db: Path, 
     assert event is not None
     assert event[0] == "partial"
     assert event[1] == "partial"
-    assert json.loads(event[2]) == {"kind": "partial_closeout", "remaining": ["broader regression pass"]}
+    assert json.loads(event[2]) == {
+        "kind": "partial_closeout",
+        "remaining": ["broader regression pass"],
+    }
     conn.close()
 
 
@@ -474,7 +538,9 @@ def test_legacy_linkage_requires_explicit_emergency_flag(monkeypatch: pytest.Mon
     assert hook_stop.legacy_run_link_fallback_enabled() is True
 
 
-def test_structured_evaluator_emits_stale_and_contradiction_findings(runtime_db: Path, tmp_path: Path) -> None:
+def test_structured_evaluator_emits_stale_and_contradiction_findings(
+    runtime_db: Path, tmp_path: Path
+) -> None:
     from aios_orchestration_runtime import ensure_runtime_schema, evaluate_run_consistency
 
     repo_path = tmp_path / "repo"
@@ -536,7 +602,10 @@ def test_structured_evaluator_emits_stale_and_contradiction_findings(runtime_db:
             project_id,
             json.dumps(
                 [
-                    {"title": "Objective", "items": ["explicit run/session handshake", "approval UI"]},
+                    {
+                        "title": "Objective",
+                        "items": ["explicit run/session handshake", "approval UI"],
+                    },
                     {"title": "Policy", "items": ["Use compact ranked output by default."]},
                 ]
             ),
@@ -882,7 +951,9 @@ def test_managed_closeout_repairs_authoritative_run_state(runtime_db: Path, tmp_
     assert invocation[1] == session_id
     assert invocation[2] is not None
 
-    session = conn.execute("SELECT status, ended_at FROM sessions WHERE id = ?", (session_id,)).fetchone()
+    session = conn.execute(
+        "SELECT status, ended_at FROM sessions WHERE id = ?", (session_id,)
+    ).fetchone()
     assert session is not None
     assert session[0] == "closed"
     assert session[1] is not None

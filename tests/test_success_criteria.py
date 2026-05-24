@@ -280,3 +280,157 @@ def test_evaluate_and_record_persists_rows_and_artifact(tmp_path: Path) -> None:
     conn.close()
     assert len(finding_rows) >= 1
     assert any(row[0] == "truth-file-consistency" and row[1] == "blocker" for row in finding_rows)
+
+
+def test_stage_findings_table_exists_after_ensure_schema() -> None:
+    conn = sqlite3.connect(":memory:")
+    _seed_minimal_runtime_tables(conn)
+    success_criteria.ensure_success_criteria_schema(conn)
+
+    columns = {
+        row[1]
+        for row in conn.execute("PRAGMA table_info(success_criteria_stage_findings)").fetchall()
+    }
+
+    assert {
+        "id",
+        "run_id",
+        "stage_key",
+        "stage_kind",
+        "criterion_id",
+        "criterion_title",
+        "criterion_scope",
+        "level",
+        "summary",
+        "evidence_json",
+        "metadata_json",
+        "resolution_status",
+        "resolution_actor",
+        "resolution_rationale",
+        "resolution_evidence_json",
+        "resolved_at",
+        "created_at",
+    } <= columns
+
+
+def test_evaluate_stage_findings_only_fires_for_applicable_criteria() -> None:
+    criterion = success_criteria.CriterionRecord(
+        id="testing-trust",
+        title="Testing Trust",
+        scope="global",
+        blocking=False,
+        applies_when={},
+        path="",
+        related=[],
+        evaluation_method="heuristic",
+        stage_applicability=("validate",),
+    )
+    context = success_criteria.infer_context(
+        objective="Implement service change",
+        prompt_classifications=["implement"],
+        changed_files=["services/example.py"],
+        skills=[],
+    )
+
+    skipped = success_criteria.evaluate_stage_findings(
+        criteria=[criterion],
+        context=context,
+        stage_key="parse",
+        stage_kind="parse_request",
+        run_state={},
+    )
+    evaluated = success_criteria.evaluate_stage_findings(
+        criteria=[criterion],
+        context=context,
+        stage_key="validate",
+        stage_kind="validate",
+        run_state={},
+    )
+
+    assert skipped == []
+    assert len(evaluated) == 1
+    assert evaluated[0]["criterion_id"] == "testing-trust"
+
+
+def test_evaluate_stage_findings_produces_finding_records() -> None:
+    criterion = success_criteria.CriterionRecord(
+        id="testing-trust",
+        title="Testing Trust",
+        scope="global",
+        blocking=True,
+        applies_when={},
+        path="",
+        related=[],
+        evaluation_method="heuristic",
+    )
+    context = success_criteria.infer_context(
+        objective="Implement service change",
+        prompt_classifications=["implement"],
+        changed_files=["services/example.py"],
+        skills=[],
+    )
+
+    findings = success_criteria.evaluate_stage_findings(
+        criteria=[criterion],
+        context=context,
+        stage_key="validate",
+        stage_kind="validate",
+        run_state={},
+    )
+
+    assert findings[0]["criterion_id"] == "testing-trust"
+    assert findings[0]["level"] == "blocker"
+    assert findings[0]["evidence"] == ["services/example.py"]
+
+
+def test_persist_stage_findings_writes_rows_and_json_artifact(tmp_path: Path) -> None:
+    conn = sqlite3.connect(":memory:")
+    _seed_minimal_runtime_tables(conn)
+    finding = {
+        "criterion_id": "testing-trust",
+        "criterion_title": "Testing Trust",
+        "criterion_scope": "global",
+        "level": "warning",
+        "summary": "Missing tests.",
+        "evidence": ["services/example.py"],
+        "metadata": {"code_changes": 1},
+    }
+
+    result = success_criteria.persist_stage_findings(
+        conn,
+        run_id="run-1",
+        stage_key="validate",
+        stage_kind="validate",
+        findings=[finding],
+        artifact_root=tmp_path,
+    )
+
+    rows = conn.execute(
+        "SELECT id, criterion_id, level FROM success_criteria_stage_findings"
+    ).fetchall()
+    assert len(rows) == 1
+    assert rows[0][0] in result["finding_ids"]
+    assert rows[0][1:] == ("testing-trust", "warning")
+    artifact_path = Path(str(result["artifact_path"]))
+    assert artifact_path.exists()
+    payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+    assert payload["stage_key"] == "validate"
+    assert payload["findings"][0]["summary"] == "Missing tests."
+
+
+def test_persist_stage_findings_empty_list_is_noop(tmp_path: Path) -> None:
+    conn = sqlite3.connect(":memory:")
+    _seed_minimal_runtime_tables(conn)
+
+    result = success_criteria.persist_stage_findings(
+        conn,
+        run_id="run-1",
+        stage_key="validate",
+        stage_kind="validate",
+        findings=[],
+        artifact_root=tmp_path,
+    )
+
+    assert result["finding_ids"] == []
+    assert result["artifact_path"] is None
+    assert list(tmp_path.iterdir()) == []

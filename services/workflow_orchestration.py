@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import json
 import re
+import sqlite3
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
+from services import success_criteria
 from services.agent_rules import load_agent_rules
 from services.agentize import agentize_request
 from services.execution_strategy import (
@@ -129,7 +131,9 @@ def load_workflow_registry(path: Path | None = None) -> dict[str, WorkflowSpec]:
                 StageSpec(
                     key=str(row.get("key", "")).strip(),
                     kind=str(row.get("kind", "")).strip(),
-                    required_skills=tuple(str(skill).strip() for skill in required_skills if str(skill).strip()),
+                    required_skills=tuple(
+                        str(skill).strip() for skill in required_skills if str(skill).strip()
+                    ),
                 )
             )
         registry[key] = WorkflowSpec(
@@ -137,8 +141,12 @@ def load_workflow_registry(path: Path | None = None) -> dict[str, WorkflowSpec]:
             name=str(item.get("name", key)),
             workflow_family=str(item.get("workflow_family", WORKFLOW_TASK_FAMILIES.get(key, key))),
             purpose=str(item.get("purpose", "")),
-            trigger_hints=tuple(str(hint) for hint in item.get("trigger_hints", []) if isinstance(hint, str)),
-            output_contract=tuple(str(row) for row in item.get("output_contract", []) if isinstance(row, str)),
+            trigger_hints=tuple(
+                str(hint) for hint in item.get("trigger_hints", []) if isinstance(hint, str)
+            ),
+            output_contract=tuple(
+                str(row) for row in item.get("output_contract", []) if isinstance(row, str)
+            ),
             required_validations=tuple(
                 str(row) for row in item.get("required_validations", []) if isinstance(row, str)
             ),
@@ -164,7 +172,9 @@ def load_skill_registry(path: Path | None = None) -> dict[str, SkillSpec]:
         registry[key] = SkillSpec(
             key=key,
             purpose=str(item.get("purpose", "")),
-            allowed_stages=tuple(str(stage) for stage in item.get("allowed_stages", []) if isinstance(stage, str)),
+            allowed_stages=tuple(
+                str(stage) for stage in item.get("allowed_stages", []) if isinstance(stage, str)
+            ),
             input_schema={
                 str(name): str(kind)
                 for name, kind in (item.get("input_schema") or {}).items()
@@ -175,11 +185,15 @@ def load_skill_registry(path: Path | None = None) -> dict[str, SkillSpec]:
                 for name, kind in (item.get("output_schema") or {}).items()
                 if isinstance(name, str)
             },
-            invariants=tuple(str(row) for row in item.get("invariants", []) if isinstance(row, str)),
+            invariants=tuple(
+                str(row) for row in item.get("invariants", []) if isinstance(row, str)
+            ),
             failure_conditions=tuple(
                 str(row) for row in item.get("failure_conditions", []) if isinstance(row, str)
             ),
-            side_effects=tuple(str(row) for row in item.get("side_effects", []) if isinstance(row, str)),
+            side_effects=tuple(
+                str(row) for row in item.get("side_effects", []) if isinstance(row, str)
+            ),
             execution_mode=str(item.get("execution_mode", "deterministic")),
             source_path=str(item["source_path"]) if item.get("source_path") else None,
             installed_name=str(item["installed_name"]) if item.get("installed_name") else None,
@@ -207,7 +221,9 @@ def validate_workflow_bindings(
             for skill_key in stage.required_skills:
                 spec = skills.get(skill_key)
                 if spec is None:
-                    errors.append(f"Workflow {workflow.key} stage {stage.key} references unknown skill {skill_key}.")
+                    errors.append(
+                        f"Workflow {workflow.key} stage {stage.key} references unknown skill {skill_key}."
+                    )
                     continue
                 if stage.kind not in spec.allowed_stages:
                     errors.append(
@@ -215,9 +231,13 @@ def validate_workflow_bindings(
                     )
 
         if workflow.required_validations:
-            validate_stage = next((stage for stage in workflow.stages if stage.kind == "validate"), None)
+            validate_stage = next(
+                (stage for stage in workflow.stages if stage.kind == "validate"), None
+            )
             if validate_stage is None:
-                errors.append(f"Workflow {workflow.key} declares required validations without a validate stage.")
+                errors.append(
+                    f"Workflow {workflow.key} declares required validations without a validate stage."
+                )
             else:
                 missing = [
                     key
@@ -268,7 +288,10 @@ def rank_workflow_candidates(
             }
         )
         score = len(matched_terms)
-        if workflow.workflow_family == "audit_and_implement" and implementation_tokens & objective_tokens:
+        if (
+            workflow.workflow_family == "audit_and_implement"
+            and implementation_tokens & objective_tokens
+        ):
             score += 3
         if workflow.workflow_family == "failure_recovery" and recovery_tokens & objective_tokens:
             score += 3
@@ -276,21 +299,29 @@ def rank_workflow_candidates(
             score += 2
             if implementation_tokens & objective_tokens or recovery_tokens & objective_tokens:
                 score -= 2
-        if workflow.workflow_family == "content_generation" and {
-            "paper",
-            "essay",
-            "citations",
-            "academic",
-        } & objective_tokens:
+        if (
+            workflow.workflow_family == "content_generation"
+            and {
+                "paper",
+                "essay",
+                "citations",
+                "academic",
+            }
+            & objective_tokens
+        ):
             score += 2
-        if workflow.workflow_family == "writing_transformation" and {
-            "humanize",
-            "rewrite",
-            "voice",
-            "outreach",
-            "prompt",
-            "creative",
-        } & objective_tokens:
+        if (
+            workflow.workflow_family == "writing_transformation"
+            and {
+                "humanize",
+                "rewrite",
+                "voice",
+                "outreach",
+                "prompt",
+                "creative",
+            }
+            & objective_tokens
+        ):
             score += 3
         if score <= 0:
             continue
@@ -333,7 +364,9 @@ def recommend_prompt_family(
             continue
         score = 0
         applicable = template.get("applicable_workflow_families") or []
-        if isinstance(applicable, list) and workflow.workflow_family in {str(row) for row in applicable}:
+        if isinstance(applicable, list) and workflow.workflow_family in {
+            str(row) for row in applicable
+        }:
             score += 4
         classification = str(template.get("classification", "")).lower()
         if workflow.workflow_family == "failure_recovery" and classification == "debug":
@@ -342,7 +375,9 @@ def recommend_prompt_family(
             score += 2
         tags = template.get("tags") or []
         if isinstance(tags, list):
-            score += len(objective_tokens & {str(tag).lower() for tag in tags if isinstance(tag, str)})
+            score += len(
+                objective_tokens & {str(tag).lower() for tag in tags if isinstance(tag, str)}
+            )
         if score > 0:
             ranked.append((score, template))
 
@@ -406,7 +441,9 @@ def recommend_route_primitives(
         workflow_registry_path=workflow_registry_path,
     )
     backend_recommendation = (
-        recommend_execution_surface(task_family=task_family, preferred_surfaces=(surface, "claude_code"))
+        recommend_execution_surface(
+            task_family=task_family, preferred_surfaces=(surface, "claude_code")
+        )
         if task_family
         else None
     )
@@ -433,7 +470,9 @@ def recommend_route_primitives(
     }
 
 
-def _select_prompt_template(objective: str, workflow_key: str, templates: list[dict[str, Any]]) -> str | None:
+def _select_prompt_template(
+    objective: str, workflow_key: str, templates: list[dict[str, Any]]
+) -> str | None:
     objective_tokens = _tokenize(objective)
     best_id: str | None = None
     best_score = -1
@@ -444,11 +483,16 @@ def _select_prompt_template(objective: str, workflow_key: str, templates: list[d
             continue
         score = 0
         classification = str(template.get("classification", "")).lower()
-        if workflow_key == "academic_paper_v1" and classification in {"research", "content_writing"}:
+        if workflow_key == "academic_paper_v1" and classification in {
+            "research",
+            "content_writing",
+        }:
             score += 3
         tags = template.get("tags") or []
         if isinstance(tags, list):
-            score += len(objective_tokens & {str(tag).lower() for tag in tags if isinstance(tag, str)})
+            score += len(
+                objective_tokens & {str(tag).lower() for tag in tags if isinstance(tag, str)}
+            )
         if score > best_score:
             best_score = score
             best_id = template_id
@@ -490,7 +534,9 @@ def _normalize_prompt(
         normalized += f"\nTemplate: {template_id}"
     agent_rules = state.get("agent_rules") or []
     if agent_rules:
-        normalized += "\nAgent rules: " + "; ".join(str(rule.get("title")) for rule in agent_rules[:6])
+        normalized += "\nAgent rules: " + "; ".join(
+            str(rule.get("title")) for rule in agent_rules[:6]
+        )
     state["template_id"] = template_id
     state["execution_strategy"] = strategy_bundle
     state["normalized_prompt"] = normalized
@@ -627,7 +673,9 @@ def _validate_scope(objective: str, output_text: str) -> dict[str, Any]:
     output_tokens = _tokenize(output_text)
     overlap = objective_tokens & output_tokens
     passed = len(overlap) > 0
-    issues = [] if passed else ["Output does not reference objective terms and appears out-of-scope."]
+    issues = (
+        [] if passed else ["Output does not reference objective terms and appears out-of-scope."]
+    )
     return {
         "passed": passed,
         "issues": issues,
@@ -678,7 +726,11 @@ def _execute_skill(
     context: WorkflowExecutionContext,
 ) -> tuple[dict[str, Any], dict[str, Any] | None]:
     if skill.key == "prompt_library_normalizer":
-        prompt_path = Path(context.prompt_registry_path) if context.prompt_registry_path else DEFAULT_PROMPT_REGISTRY
+        prompt_path = (
+            Path(context.prompt_registry_path)
+            if context.prompt_registry_path
+            else DEFAULT_PROMPT_REGISTRY
+        )
         output = _normalize_prompt(
             state,
             objective=context.objective,
@@ -696,7 +748,9 @@ def _execute_skill(
         return {
             "packet_id": packet.packet_id,
             "execution_mode": packet.execution_mode.mode.value,
-            "classifications": [classification.value for classification in packet.task_classifications],
+            "classifications": [
+                classification.value for classification in packet.task_classifications
+            ],
         }, None
 
     if skill.key == "obsidian_corpus_retriever":
@@ -785,11 +839,15 @@ def _execute_skill(
         }, None
 
     if skill.key == "structure_checker":
-        result = _validate_structure(str(state.get("humanized_text") or state.get("draft_text") or ""))
+        result = _validate_structure(
+            str(state.get("humanized_text") or state.get("draft_text") or "")
+        )
         return {}, {"validation_key": skill.key, **result}
 
     if skill.key == "citation_checker":
-        result = _validate_citations(str(state.get("humanized_text") or state.get("draft_text") or ""))
+        result = _validate_citations(
+            str(state.get("humanized_text") or state.get("draft_text") or "")
+        )
         return {}, {"validation_key": skill.key, **result}
 
     if skill.key == "meaning_preservation_checker":
@@ -823,6 +881,8 @@ def execute_workflow(
     *,
     workflow_registry_path: Path | None = None,
     skill_registry_path: Path | None = None,
+    conn: sqlite3.Connection | None = None,
+    stage_artifact_root: Path | None = None,
 ) -> dict[str, Any]:
     started_at = _now_iso()
     workflows = load_workflow_registry(workflow_registry_path)
@@ -847,14 +907,12 @@ def execute_workflow(
         "objective": context.objective,
         "workflow_key": workflow.key,
         "rtk_mode": workflow_rtk_mode,
-        "agent_rules": [
-            {"title": rule.title, "body": rule.body}
-            for rule in load_agent_rules()
-        ],
+        "agent_rules": [{"title": rule.title, "body": rule.body} for rule in load_agent_rules()],
     }
     stages_report: list[dict[str, Any]] = []
     validations: list[dict[str, Any]] = []
     unresolved: list[str] = []
+    stage_evaluations: list[dict[str, Any]] = []
 
     for stage in workflow.stages:
         stage_started = _now_iso()
@@ -885,6 +943,51 @@ def execute_workflow(
                     stage_issues.extend(validation.get("issues", []))
 
         stage_status = "completed" if not stage_issues else "failed"
+        stage_eval_summary = {
+            "stage_key": stage.key,
+            "stage_kind": stage.kind,
+            "finding_ids": [],
+            "blocker_count": 0,
+            "warning_count": 0,
+            "pass_count": 0,
+        }
+        if conn is not None and context.run_id:
+            criteria_context = success_criteria.infer_context(
+                objective=context.objective,
+                prompt_classifications=[workflow.workflow_family, workflow.key],
+                changed_files=[],
+                skills=stage.required_skills,
+            )
+            criteria_context["workflow_key"] = workflow.key
+            criteria_context["stage_key"] = stage.key
+            criteria_context["stage_kind"] = stage.kind
+            criteria = success_criteria.resolve_applicable_criteria(
+                registry=success_criteria.load_registry(),
+                context=criteria_context,
+                skill_map=success_criteria.load_skill_map(),
+            )
+            findings = success_criteria.evaluate_stage_findings(
+                criteria=criteria,
+                context=criteria_context,
+                stage_key=stage.key,
+                stage_kind=stage.kind,
+                run_state=run_state,
+            )
+            stage_eval_summary = success_criteria.persist_stage_findings(
+                conn,
+                run_id=context.run_id,
+                stage_key=stage.key,
+                stage_kind=stage.kind,
+                findings=findings,
+                artifact_root=stage_artifact_root or success_criteria.ARTIFACTS_DIR,
+            )
+            stage_eval_summary["stage_key"] = stage.key
+            stage_eval_summary["stage_kind"] = stage.kind
+            if stage_eval_summary["blocker_count"] > 0:
+                stage_status = "failed"
+            elif stage_eval_summary["warning_count"] > 0 and stage_status == "completed":
+                stage_status = "warning"
+            stage_evaluations.append(stage_eval_summary)
         if stage_issues:
             unresolved.extend(stage_issues)
 
@@ -893,9 +996,12 @@ def execute_workflow(
                 "stage_key": stage.key,
                 "kind": stage.kind,
                 "status": stage_status,
-                "rtk_mode": workflow_rtk_mode if stage.kind in {"generate", "validate", "finalize"} else "compressed",
+                "rtk_mode": workflow_rtk_mode
+                if stage.kind in {"generate", "validate", "finalize"}
+                else "compressed",
                 "skills": skill_reports,
                 "issues": stage_issues,
+                "stage_evaluation": stage_eval_summary,
                 "started_at": stage_started,
                 "ended_at": _now_iso(),
             }
@@ -932,6 +1038,7 @@ def execute_workflow(
         "status": status,
         "stages": stages_report,
         "validations": validations,
+        "stage_evaluations": stage_evaluations,
         "required_validations": list(workflow.required_validations),
         "failed_required_validations": failed_required,
         "unresolved_issues": unresolved,

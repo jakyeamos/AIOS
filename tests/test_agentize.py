@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 import sys
 from pathlib import Path
@@ -220,3 +221,80 @@ def test_agentize_workflow_executes_and_emits_packet_artifact() -> None:
     assert packet["prompt_library_role"] == "supporting_pattern_corpus"
     assert packet["execution_mode"]["reasoning"]
     assert packet["verification_plan"]
+
+
+def test_stage_evaluation_emits_findings(tmp_path: Path) -> None:
+    conn = sqlite3.connect(":memory:")
+    conn.execute("CREATE TABLE orchestration_runs (id TEXT PRIMARY KEY)")
+    conn.execute("INSERT INTO orchestration_runs (id) VALUES ('run-stage')")
+
+    report = execute_workflow(
+        WorkflowExecutionContext(
+            objective="Agentize this request: implement workflow routing",
+            workflow_key="agentize",
+            run_id="run-stage",
+        ),
+        conn=conn,
+        stage_artifact_root=tmp_path,
+    )
+
+    rows = conn.execute(
+        """
+        SELECT stage_key, stage_kind, criterion_id, level
+        FROM success_criteria_stage_findings
+        ORDER BY stage_key, criterion_id
+        """
+    ).fetchall()
+
+    assert report["stage_evaluations"]
+    assert rows
+    assert {row[0] for row in rows} == {"validate"}
+    assert all(row[1] == "validate" for row in rows)
+
+
+def test_parse_request_stages_produce_no_findings(tmp_path: Path) -> None:
+    conn = sqlite3.connect(":memory:")
+    conn.execute("CREATE TABLE orchestration_runs (id TEXT PRIMARY KEY)")
+    conn.execute("INSERT INTO orchestration_runs (id) VALUES ('run-stage')")
+
+    execute_workflow(
+        WorkflowExecutionContext(
+            objective="Agentize this request: implement workflow routing",
+            workflow_key="agentize",
+            run_id="run-stage",
+        ),
+        conn=conn,
+        stage_artifact_root=tmp_path,
+    )
+
+    parse_count = conn.execute(
+        """
+        SELECT COUNT(*)
+        FROM success_criteria_stage_findings
+        WHERE stage_key = 'compile_intent'
+        """
+    ).fetchone()[0]
+    assert parse_count == 0
+
+
+def test_stage_findings_persisted_to_db_and_artifact(tmp_path: Path) -> None:
+    conn = sqlite3.connect(":memory:")
+    conn.execute("CREATE TABLE orchestration_runs (id TEXT PRIMARY KEY)")
+    conn.execute("INSERT INTO orchestration_runs (id) VALUES ('run-stage')")
+
+    execute_workflow(
+        WorkflowExecutionContext(
+            objective="Agentize this request: implement workflow routing",
+            workflow_key="agentize",
+            run_id="run-stage",
+        ),
+        conn=conn,
+        stage_artifact_root=tmp_path,
+    )
+
+    assert conn.execute("SELECT COUNT(*) FROM success_criteria_stage_findings").fetchone()[0] > 0
+    artifact = tmp_path / "stage-run-stage-validate.json"
+    assert artifact.exists()
+    payload = json.loads(artifact.read_text(encoding="utf-8"))
+    assert payload["stage_key"] == "validate"
+    assert payload["finding_ids"]

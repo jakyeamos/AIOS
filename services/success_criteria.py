@@ -71,6 +71,7 @@ class CriterionRecord:
     path: str
     related: list[str]
     evaluation_method: str
+    stage_applicability: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -132,6 +133,11 @@ def load_registry(path: Path = REGISTRY_PATH) -> list[CriterionRecord]:
                     str(related) for related in item.get("related", []) if isinstance(related, str)
                 ],
                 evaluation_method=str(item.get("evaluation_method", "heuristic")),
+                stage_applicability=tuple(
+                    str(stage)
+                    for stage in item.get("stage_applicability", [])
+                    if isinstance(stage, str) and stage
+                ),
             )
         )
     return rows
@@ -217,6 +223,41 @@ def ensure_success_criteria_schema(conn: sqlite3.Connection) -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_success_criteria_findings_eval
           ON success_criteria_findings(evaluation_id, created_at DESC)
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS success_criteria_stage_findings (
+            id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL REFERENCES orchestration_runs(id),
+            stage_key TEXT NOT NULL,
+            stage_kind TEXT NOT NULL,
+            criterion_id TEXT NOT NULL,
+            criterion_title TEXT NOT NULL,
+            criterion_scope TEXT NOT NULL,
+            level TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            evidence_json TEXT NOT NULL DEFAULT '[]',
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            resolution_status TEXT NOT NULL DEFAULT 'open',
+            resolution_actor TEXT,
+            resolution_rationale TEXT,
+            resolution_evidence_json TEXT NOT NULL DEFAULT '[]',
+            resolved_at TEXT,
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_success_criteria_stage_findings_run
+          ON success_criteria_stage_findings(run_id, stage_key)
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_success_criteria_stage_findings_criterion
+          ON success_criteria_stage_findings(criterion_id, level)
         """
     )
 
@@ -754,6 +795,133 @@ def evaluate_context(
             "warning": warning_count,
             "blocker": blocker_count,
         },
+    }
+
+
+def _stage_kinds_for_criterion(criterion: CriterionRecord) -> tuple[str, ...]:
+    return criterion.stage_applicability or ("validate",)
+
+
+def evaluate_stage_findings(
+    *,
+    criteria: Sequence[CriterionRecord],
+    context: dict[str, Any],
+    stage_key: str,
+    stage_kind: str,
+    run_state: dict[str, Any],
+) -> list[dict[str, Any]]:
+    stage_context = dict(context)
+    stage_context.update(
+        {
+            "stage_key": stage_key,
+            "stage_kind": stage_kind,
+            "run_state": run_state,
+        }
+    )
+    findings: list[dict[str, Any]] = []
+    for criterion in criteria:
+        if stage_kind not in _stage_kinds_for_criterion(criterion):
+            continue
+        finding = evaluate_criterion(criterion, stage_context)
+        findings.append(
+            {
+                "criterion_id": finding.criterion_id,
+                "criterion_title": finding.criterion_title,
+                "criterion_scope": finding.criterion_scope,
+                "level": finding.level,
+                "summary": finding.summary,
+                "evidence": finding.evidence,
+                "metadata": finding.metadata,
+            }
+        )
+    return findings
+
+
+def persist_stage_findings(
+    conn: sqlite3.Connection,
+    *,
+    run_id: str,
+    stage_key: str,
+    stage_kind: str,
+    findings: Sequence[dict[str, Any]],
+    artifact_root: Path = ARTIFACTS_DIR,
+) -> dict[str, Any]:
+    if not findings:
+        return {
+            "finding_ids": [],
+            "artifact_path": None,
+            "blocker_count": 0,
+            "warning_count": 0,
+            "pass_count": 0,
+        }
+    ensure_success_criteria_schema(conn)
+    finding_ids: list[str] = []
+    for finding in findings:
+        finding_id = f"criteria-stage-finding-{uuid.uuid4()}"
+        finding_ids.append(finding_id)
+        conn.execute(
+            """
+            INSERT INTO success_criteria_stage_findings (
+                id,
+                run_id,
+                stage_key,
+                stage_kind,
+                criterion_id,
+                criterion_title,
+                criterion_scope,
+                level,
+                summary,
+                evidence_json,
+                metadata_json
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                finding_id,
+                run_id,
+                stage_key,
+                stage_kind,
+                str(finding["criterion_id"]),
+                str(finding["criterion_title"]),
+                str(finding["criterion_scope"]),
+                str(finding["level"]),
+                str(finding["summary"]),
+                _json(finding.get("evidence", [])),
+                _json(finding.get("metadata", {})),
+            ),
+        )
+
+    pass_count = sum(1 for finding in findings if finding.get("level") == "pass")
+    warning_count = sum(1 for finding in findings if finding.get("level") == "warning")
+    blocker_count = sum(1 for finding in findings if finding.get("level") == "blocker")
+    artifact_root.mkdir(parents=True, exist_ok=True)
+    artifact_path = artifact_root / f"stage-{run_id}-{stage_key}.json"
+    artifact_path.write_text(
+        json.dumps(
+            {
+                "run_id": run_id,
+                "stage_key": stage_key,
+                "stage_kind": stage_kind,
+                "finding_ids": finding_ids,
+                "counts": {
+                    "pass": pass_count,
+                    "warning": warning_count,
+                    "blocker": blocker_count,
+                },
+                "findings": list(findings),
+                "created_at": _now_iso(),
+            },
+            indent=2,
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+    return {
+        "finding_ids": finding_ids,
+        "artifact_path": str(artifact_path),
+        "blocker_count": blocker_count,
+        "warning_count": warning_count,
+        "pass_count": pass_count,
     }
 
 

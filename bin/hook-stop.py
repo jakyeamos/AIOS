@@ -67,7 +67,17 @@ def log(msg: str) -> None:
         pass
 
 
-def _pending_approval_summary(conn: sqlite3.Connection, run_id: str | None) -> tuple[int, list[str]]:
+def _table_exists(conn: sqlite3.Connection, table: str) -> bool:
+    row = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1",
+        (table,),
+    ).fetchone()
+    return row is not None
+
+
+def _pending_approval_summary(
+    conn: sqlite3.Connection, run_id: str | None
+) -> tuple[int, list[str]]:
     if not run_id:
         return 0, []
     rows = conn.execute(
@@ -83,6 +93,44 @@ def _pending_approval_summary(conn: sqlite3.Connection, run_id: str | None) -> t
     ).fetchall()
     titles = [str(row[0]) for row in rows if row[0]]
     return len(titles), titles
+
+
+def _stage_evaluations_for_run(
+    conn: sqlite3.Connection, run_id: str | None
+) -> list[dict[str, Any]]:
+    if not run_id or not _table_exists(conn, "success_criteria_stage_findings"):
+        return []
+    rows = conn.execute(
+        """
+        SELECT id, stage_key, stage_kind, level
+        FROM success_criteria_stage_findings
+        WHERE run_id = ?
+        ORDER BY stage_key, created_at
+        """,
+        (run_id,),
+    ).fetchall()
+    grouped: dict[str, dict[str, Any]] = {}
+    for finding_id, stage_key, stage_kind, level in rows:
+        key = str(stage_key)
+        entry = grouped.setdefault(
+            key,
+            {
+                "stage_key": key,
+                "stage_kind": str(stage_kind),
+                "blocker_count": 0,
+                "warning_count": 0,
+                "pass_count": 0,
+                "finding_ids": [],
+            },
+        )
+        entry["finding_ids"].append(str(finding_id))
+        if level == "blocker":
+            entry["blocker_count"] += 1
+        elif level == "warning":
+            entry["warning_count"] += 1
+        elif level == "pass":
+            entry["pass_count"] += 1
+    return list(grouped.values())
 
 
 def _writeback_governance_summary(conn: sqlite3.Connection, run_id: str | None) -> dict[str, Any]:
@@ -111,7 +159,9 @@ def _writeback_governance_summary(conn: sqlite3.Connection, run_id: str | None) 
             proposed_change = json.loads(row[7] or "{}")
         except json.JSONDecodeError:
             proposed_change = {}
-        policy = proposed_change.get("approval_policy") if isinstance(proposed_change, dict) else None
+        policy = (
+            proposed_change.get("approval_policy") if isinstance(proposed_change, dict) else None
+        )
         policy_class = (
             str(policy.get("policy_class"))
             if isinstance(policy, dict) and policy.get("policy_class")
@@ -157,9 +207,7 @@ def ensure_memory_updates_table(conn: sqlite3.Connection) -> None:
         """
     )
 
-    existing = {
-        row[1] for row in conn.execute("PRAGMA table_info(memory_updates)").fetchall()
-    }
+    existing = {row[1] for row in conn.execute("PRAGMA table_info(memory_updates)").fetchall()}
     if "run_id" not in existing:
         conn.execute("ALTER TABLE memory_updates ADD COLUMN run_id TEXT")
     if "packet_id" not in existing:
@@ -224,14 +272,24 @@ def _tokenize(text: str | None) -> set[str]:
         return set()
 
     stop = {
-        "this", "that", "with", "from", "into", "then", "than", "what", "when",
-        "where", "which", "task", "work", "aios", "project", "system",
+        "this",
+        "that",
+        "with",
+        "from",
+        "into",
+        "then",
+        "than",
+        "what",
+        "when",
+        "where",
+        "which",
+        "task",
+        "work",
+        "aios",
+        "project",
+        "system",
     }
-    return {
-        token
-        for token in re.findall(r"[a-z0-9]{4,}", text.lower())
-        if token not in stop
-    }
+    return {token for token in re.findall(r"[a-z0-9]{4,}", text.lower()) if token not in stop}
 
 
 def find_matching_orchestration_run(
@@ -438,7 +496,9 @@ def main() -> None:
         if len(prompts) == 0:
             open_questions.append("Why were no prompts captured for this session?")
         if len(artifacts) == 0:
-            open_questions.append("Should this session have produced durable artifacts or was it analysis-only?")
+            open_questions.append(
+                "Should this session have produced durable artifacts or was it analysis-only?"
+            )
 
         memory_summary = (
             f"Closed session for objective '{row[4] or 'unspecified'}' with "
@@ -446,14 +506,16 @@ def main() -> None:
         )
         project_name = get_project_name(conn, row[1])
         legacy_fallback_enabled = legacy_run_link_fallback_enabled()
-        linked_run_id, linked_packet_id, linked_invocation_id, used_legacy_link = resolve_run_linkage(
-            conn,
-            session_id=session_id,
-            payload_run_id=data.get("run_id"),
-            payload_invocation_id=data.get("invocation_id"),
-            legacy_matcher=find_matching_orchestration_run if legacy_fallback_enabled else None,
-            project_id=row[1],
-            objective=row[4],
+        linked_run_id, linked_packet_id, linked_invocation_id, used_legacy_link = (
+            resolve_run_linkage(
+                conn,
+                session_id=session_id,
+                payload_run_id=data.get("run_id"),
+                payload_invocation_id=data.get("invocation_id"),
+                legacy_matcher=find_matching_orchestration_run if legacy_fallback_enabled else None,
+                project_id=row[1],
+                objective=row[4],
+            )
         )
         if not linked_run_id and row[1]:
             log(
@@ -499,6 +561,8 @@ def main() -> None:
             ),
         )
 
+        run_row = None
+        consistency_eval_id = None
         if linked_run_id:
             run_row = conn.execute(
                 """
@@ -594,20 +658,13 @@ def main() -> None:
             )
             if used_legacy_link:
                 log(
-                    "legacy run-link fallback used for "
-                    f"session {session_id} -> run {linked_run_id}"
+                    f"legacy run-link fallback used for session {session_id} -> run {linked_run_id}"
                 )
 
         criteria_changed_paths = [
-            path
-            for artifact_type, path in artifacts
-            if path and artifact_type == "patch"
+            path for artifact_type, path in artifacts if path and artifact_type == "patch"
         ]
-        prompt_classifications = [
-            prompt[0]
-            for prompt in prompts
-            if prompt[0]
-        ]
+        prompt_classifications = [prompt[0] for prompt in prompts if prompt[0]]
         accepted_tradeoffs = reason_json.get("accepted_tradeoffs", [])
         if not isinstance(accepted_tradeoffs, list):
             accepted_tradeoffs = [str(accepted_tradeoffs)]
@@ -656,6 +713,7 @@ def main() -> None:
         if linked_run_id:
             pending_approval_count, approval_titles = _pending_approval_summary(conn, linked_run_id)
             governance_summary = _writeback_governance_summary(conn, linked_run_id)
+            stage_evaluations = _stage_evaluations_for_run(conn, linked_run_id)
             closeout_summary = {
                 "report_type": "governed_closeout",
                 "run_id": linked_run_id,
@@ -686,10 +744,12 @@ def main() -> None:
                 },
                 "governance": {
                     **governance_summary,
+                    "stage_evaluations": stage_evaluations,
                     "unresolved_follow_up_count": len(risk_items) + len(open_questions),
                     "requires_review": pending_approval_count > 0
                     or len(risk_items) > 0
-                    or len(open_questions) > 0,
+                    or len(open_questions) > 0
+                    or any(item["blocker_count"] > 0 for item in stage_evaluations),
                 },
                 "generated_at": now,
             }
@@ -730,7 +790,9 @@ def main() -> None:
             f"{len(prompts)} prompts · {len(artifacts)} artifacts captured · "
             f"{insight_count} insights flagged · RTK saved {rtk_metrics['tokens_saved']} tokens"
         )
-        log(f"session {session_id} closed. summary: {candidate_path}. handoff: {handoff_path or 'none'}")
+        log(
+            f"session {session_id} closed. summary: {candidate_path}. handoff: {handoff_path or 'none'}"
+        )
         print(f"AIOS · session closed · {msg}")
         subprocess.run(
             ["osascript", "-e", f'display notification "{msg}" with title "AIOS · Session Closed"'],
@@ -740,7 +802,11 @@ def main() -> None:
         log(f"db error: {e}")
         print(f"AIOS · session close failed: {e}")
         subprocess.run(
-            ["osascript", "-e", f'display notification "{e}" with title "AIOS · Session Close Failed"'],
+            [
+                "osascript",
+                "-e",
+                f'display notification "{e}" with title "AIOS · Session Close Failed"',
+            ],
             capture_output=True,
         )
 
