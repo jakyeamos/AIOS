@@ -21,6 +21,12 @@ AIOS product surfaces are operational tools, not marketing pages.
 Prefer dense but readable tables, drilldowns, traces, filters, and explicit state labels.
 Do not hide missing or inferred data behind polished summary numbers.
 
+When a UI task needs visual direction, agents may use Refero Styles
+(`https://styles.refero.design/`) as a design-reference source before implementation.
+Treat Refero output as inspiration and extracted design vocabulary, not as binding
+project truth. Any adopted colors, typography, spacing, or component patterns must be
+named in the task plan or design notes and reconciled with AIOS operational UI rules.
+
 ## Applicability
 
 - Load for UI, dashboard, command-center, and drilldown work.
@@ -31,3 +37,5 @@ Do not hide missing or inferred data behind polished summary numbers.
 - Users can inspect why a score, warning, or packet was produced.
 - Critical states are not collapsed into vague healthy/unhealthy labels.
 - Controls match expected operational workflows.
+- UI work that uses Refero or another external design source cites the source and
+  records which patterns were adopted or rejected.
