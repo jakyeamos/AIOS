@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 import services.aios_cli as aios_cli  # noqa: E402
+from services import success_criteria  # noqa: E402
 from services.aios_cli import EXIT_OK, run_cli  # noqa: E402
 from services.rtk_integration import ensure_rtk_schema  # noqa: E402
 
@@ -321,7 +322,10 @@ def test_status_reports_recent_governed_closeout(tmp_path: Path, capsys) -> None
                     "changed_artifacts": ["/repo/services/task_routing.py"],
                     "checks_run": {"success_criteria_evaluation_id": "eval-1"},
                     "approvals": {"pending_approval_count": 1},
-                    "unresolved_deltas": {"open_questions": ["Need sign-off"], "risks": ["Follow-up cleanup"]},
+                    "unresolved_deltas": {
+                        "open_questions": ["Need sign-off"],
+                        "risks": ["Follow-up cleanup"],
+                    },
                 }
             ),
         ),
@@ -418,7 +422,10 @@ def test_truth_audit_reports_governed_truth_contract(tmp_path: Path, capsys) -> 
                     "result_summary": "Truth update proposal is ready for review.",
                     "changed_artifacts": [str(truth_file)],
                     "approvals": {"pending_approval_count": 1},
-                    "unresolved_deltas": {"open_questions": ["Operator approval required"], "risks": []},
+                    "unresolved_deltas": {
+                        "open_questions": ["Operator approval required"],
+                        "risks": [],
+                    },
                 }
             ),
         ),
@@ -595,7 +602,10 @@ def test_invocation_audit_and_backend_label_contract(tmp_path: Path, capsys) -> 
         "artifacts",
         "closeout_evaluation",
     ]
-    assert audit_output["data"]["handshake_coverage"]["legacy_fallback_policy"] == "disabled_by_default"
+    assert (
+        audit_output["data"]["handshake_coverage"]["legacy_fallback_policy"]
+        == "disabled_by_default"
+    )
 
     start_exit = run_cli(
         [
@@ -646,9 +656,30 @@ def test_lifecycle_audit_reports_attention_and_unsupported_states(tmp_path: Path
     conn.executemany(
         "INSERT INTO orchestration_run_events (id, run_id, to_status, summary, reason_json, created_at) VALUES (?, ?, ?, ?, ?, ?)",
         [
-            ("e-blocked", "run-blocked", "blocked", "Waiting on dependency", "{}", "2026-04-23T00:31:00Z"),
-            ("e-user", "run-user", "waiting_for_user", "Needs approval", "{}", "2026-04-23T00:32:00Z"),
-            ("e-tool", "run-tool", "waiting_for_tool", "Tool pending", "{}", "2026-04-23T00:33:00Z"),
+            (
+                "e-blocked",
+                "run-blocked",
+                "blocked",
+                "Waiting on dependency",
+                "{}",
+                "2026-04-23T00:31:00Z",
+            ),
+            (
+                "e-user",
+                "run-user",
+                "waiting_for_user",
+                "Needs approval",
+                "{}",
+                "2026-04-23T00:32:00Z",
+            ),
+            (
+                "e-tool",
+                "run-tool",
+                "waiting_for_tool",
+                "Tool pending",
+                "{}",
+                "2026-04-23T00:33:00Z",
+            ),
             (
                 "e-validation",
                 "run-validation",
@@ -858,7 +889,9 @@ def test_workflow_learning_audit_classifies_run_evidence(tmp_path: Path, capsys)
     assert data["classification_counts"]["no_learning_signal"] == 1
 
 
-def test_governance_audit_reports_pending_and_missing_terminal_evidence(tmp_path: Path, capsys) -> None:
+def test_governance_audit_reports_pending_and_missing_terminal_evidence(
+    tmp_path: Path, capsys
+) -> None:
     db_path = tmp_path / "aios.db"
     logs_dir = tmp_path / "logs"
     logs_dir.mkdir()
@@ -868,8 +901,20 @@ def test_governance_audit_reports_pending_and_missing_terminal_evidence(tmp_path
     conn.executemany(
         "INSERT INTO orchestration_runs (id, status, workflow_key, objective, updated_at) VALUES (?, ?, ?, ?, ?)",
         [
-            ("run-governed", "completed", "implementation-delivery", "Governed run", "2026-04-23T01:10:00Z"),
-            ("run-silent", "completed", "implementation-delivery", "Silent run", "2026-04-23T01:20:00Z"),
+            (
+                "run-governed",
+                "completed",
+                "implementation-delivery",
+                "Governed run",
+                "2026-04-23T01:10:00Z",
+            ),
+            (
+                "run-silent",
+                "completed",
+                "implementation-delivery",
+                "Silent run",
+                "2026-04-23T01:20:00Z",
+            ),
         ],
     )
     conn.execute(
@@ -903,6 +948,20 @@ def test_governance_audit_reports_pending_and_missing_terminal_evidence(tmp_path
             ),
         ),
     )
+    success_criteria.ensure_success_criteria_schema(conn)
+    conn.execute(
+        """
+        INSERT INTO success_criteria_stage_findings (
+            id, run_id, stage_key, stage_kind, criterion_id, criterion_title,
+            criterion_scope, level, summary, created_at
+        )
+        VALUES (
+            'criteria-stage-finding-governance', 'run-governed', 'validate', 'validate',
+            'testing-trust', 'Testing Trust', 'global', 'blocker', 'Missing test evidence.',
+            '2026-04-01T00:00:00Z'
+        )
+        """
+    )
     conn.commit()
     conn.close()
 
@@ -924,20 +983,27 @@ def test_governance_audit_reports_pending_and_missing_terminal_evidence(tmp_path
     assert data["summary"]["terminal_run_count"] == 3
     assert data["summary"]["terminal_runs_missing_evidence_count"] == 1
     assert data["summary"]["unresolved_closeout_count"] == 1
+    assert data["stage_findings"]["open_count"] == 1
+    assert data["stage_findings"]["blocker_open_count"] == 1
+    assert data["stage_findings"]["recent"][0]["id"] == "criteria-stage-finding-governance"
     assert data["missing_evidence_runs"][0]["run_id"] == "run-silent"
     assert "terminal_runs_missing_governance_evidence" in {
         finding["code"] for finding in data["findings"]
     }
 
 
-def test_workflow_learning_audit_infers_evidence_from_linked_artifacts(tmp_path: Path, capsys) -> None:
+def test_workflow_learning_audit_infers_evidence_from_linked_artifacts(
+    tmp_path: Path, capsys
+) -> None:
     db_path = tmp_path / "aios.db"
     logs_dir = tmp_path / "logs"
     logs_dir.mkdir()
     _seed_db(db_path)
 
     conn = sqlite3.connect(db_path)
-    conn.execute("CREATE TABLE artifacts (id TEXT PRIMARY KEY, session_id TEXT, artifact_type TEXT, path TEXT, created_at TEXT)")
+    conn.execute(
+        "CREATE TABLE artifacts (id TEXT PRIMARY KEY, session_id TEXT, artifact_type TEXT, path TEXT, created_at TEXT)"
+    )
     conn.execute(
         "INSERT INTO orchestration_runs (id, status, workflow_key) VALUES ('run-artifact', 'completed', 'implementation-delivery')"
     )
@@ -1009,9 +1075,157 @@ def test_contracts_audit_reports_canonical_interfaces(tmp_path: Path, capsys) ->
         "WorkflowLearningEvent",
         "EvaluationFinding",
     }.issubset(names)
-    invocation = next(contract for contract in data["contracts"] if contract["name"] == "InvocationBackend")
+    invocation = next(
+        contract for contract in data["contracts"] if contract["name"] == "InvocationBackend"
+    )
     assert invocation["status"] == "implemented"
     assert invocation["source"] == "services/invocation_backends.py"
+
+
+def test_criteria_finding_resolve_transitions_open_finding(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    conn = sqlite3.connect(db_path)
+    success_criteria.ensure_success_criteria_schema(conn)
+    conn.execute(
+        """
+        INSERT INTO success_criteria_evaluations (
+            id, trigger_kind, evaluator_version, summary
+        )
+        VALUES ('criteria-eval-test', 'test', 'v1', 'test')
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO success_criteria_findings (
+            id, evaluation_id, criterion_id, criterion_title, criterion_scope,
+            level, summary
+        )
+        VALUES (
+            'criteria-finding-test', 'criteria-eval-test', 'testing-trust',
+            'Testing Trust', 'global', 'warning', 'Needs review.'
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "criteria-finding",
+            "resolve",
+            "--id",
+            "criteria-finding-test",
+            "--status",
+            "accepted",
+            "--rationale",
+            "ok",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    payload = json.loads(capsys.readouterr().out)["data"]
+    assert payload["previous_status"] == "open"
+    assert payload["new_status"] == "accepted"
+    conn = sqlite3.connect(db_path)
+    row = conn.execute(
+        """
+        SELECT resolution_status, resolution_actor, resolution_rationale, resolved_at
+        FROM success_criteria_findings
+        WHERE id = 'criteria-finding-test'
+        """
+    ).fetchone()
+    conn.close()
+    assert row[0] == "accepted"
+    assert row[1] == "operator-cli"
+    assert row[2] == "ok"
+    assert row[3] is not None
+
+
+def test_criteria_finding_resolve_works_on_stage_findings_too(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    conn = sqlite3.connect(db_path)
+    success_criteria.ensure_success_criteria_schema(conn)
+    conn.execute(
+        """
+        INSERT INTO success_criteria_stage_findings (
+            id, run_id, stage_key, stage_kind, criterion_id, criterion_title,
+            criterion_scope, level, summary
+        )
+        VALUES (
+            'criteria-stage-finding-test', 'run-1', 'validate', 'validate',
+            'testing-trust', 'Testing Trust', 'global', 'blocker', 'Needs review.'
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "criteria-finding",
+            "resolve",
+            "--id",
+            "criteria-stage-finding-test",
+            "--status",
+            "waived",
+            "--rationale",
+            "accepted risk",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    payload = json.loads(capsys.readouterr().out)["data"]
+    assert payload["scope"] == "stage"
+    assert payload["new_status"] == "waived"
+
+
+def test_standards_resolution_preview_returns_merged_payload(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "standards-resolution",
+            "preview",
+            "--project-id",
+            "p1",
+            "--project-name",
+            "AIOS",
+            "--objective",
+            "Implement workflow orchestration",
+            "--classification",
+            "implement",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    payload = json.loads(capsys.readouterr().out)["data"]
+    assert payload["criteria"]
+    assert payload["resolution_status"] in {"ok", "no_profile_attached"}
+    assert "execution_first_triggers" in payload
 
 
 def test_metadata_and_skills_refresh_flow(tmp_path: Path, capsys) -> None:
@@ -1227,7 +1441,9 @@ def test_metadata_and_skills_refresh_flow(tmp_path: Path, capsys) -> None:
     assert metadata_output["data"]["success_criteria"]["catalog"]["count"] == 1
     assert metadata_output["data"]["success_criteria"]["latest_evaluation"]["id"] == "eval-1"
     assert metadata_output["data"]["workflow_orchestration"]["registry"]["count"] == 1
-    assert metadata_output["data"]["workflow_orchestration"]["latest_execution_report"]["id"] == "wr-1"
+    assert (
+        metadata_output["data"]["workflow_orchestration"]["latest_execution_report"]["id"] == "wr-1"
+    )
     assert metadata_output["data"]["execution_strategies"]["task_family_count"] == 1
     assert metadata_output["data"]["execution_strategies"]["strategy_count"] == 2
     assert metadata_output["data"]["standards_delta"]["registry"]["profile_id"] == "aios-core"
@@ -1441,9 +1657,10 @@ def test_start_work_blocks_ambiguous_route_before_packet_creation(tmp_path: Path
     assert output["error"]["code"] == "route-blocked"
 
     conn = sqlite3.connect(db_path)
-    run_count = conn.execute("SELECT COUNT(*) FROM orchestration_runs WHERE objective = ?", (
-        "Improve Soundscape onboarding and make it launch ready",
-    )).fetchone()[0]
+    run_count = conn.execute(
+        "SELECT COUNT(*) FROM orchestration_runs WHERE objective = ?",
+        ("Improve Soundscape onboarding and make it launch ready",),
+    ).fetchone()[0]
     packet_count = conn.execute("SELECT COUNT(*) FROM briefing_packets").fetchone()[0]
     assert run_count == 0
     assert packet_count == 0

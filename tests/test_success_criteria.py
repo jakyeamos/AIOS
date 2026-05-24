@@ -225,6 +225,46 @@ def test_execution_first_passes_triggered_change_with_execution_evidence() -> No
     assert finding.evidence == ["command: uv run pytest tests/test_workflow.py"]
 
 
+def test_execution_first_skips_pure_doc_changes() -> None:
+    context = success_criteria.infer_context(
+        objective="Update service docs",
+        prompt_classifications=["implement"],
+        changed_files=["services/foo/README.md"],
+        skills=[],
+    )
+    context["execution_evidence"] = []
+    criterion = next(
+        item
+        for item in success_criteria.load_registry()
+        if item.id == "execution-first-verification"
+    )
+
+    finding = success_criteria.evaluate_criterion(criterion, context)
+
+    assert finding.level == "pass"
+    assert finding.metadata["triggers"] == []
+
+
+def test_execution_first_still_fires_on_code_under_services() -> None:
+    context = success_criteria.infer_context(
+        objective="Update service behavior",
+        prompt_classifications=["implement"],
+        changed_files=["services/foo.py"],
+        skills=[],
+    )
+    context["execution_evidence"] = []
+    criterion = next(
+        item
+        for item in success_criteria.load_registry()
+        if item.id == "execution-first-verification"
+    )
+
+    finding = success_criteria.evaluate_criterion(criterion, context)
+
+    assert finding.level == "blocker"
+    assert "core/shared logic modification" in finding.metadata["triggers"]
+
+
 def test_evaluate_and_record_persists_rows_and_artifact(tmp_path: Path) -> None:
     db_path = tmp_path / "criteria.db"
     conn = sqlite3.connect(db_path)

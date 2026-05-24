@@ -21,14 +21,17 @@ CODE_FILE_EXTENSIONS = {
     ".tsx",
     ".js",
     ".jsx",
+    ".mjs",
     ".go",
     ".rb",
     ".rs",
     ".java",
     ".kt",
     ".swift",
+    ".sh",
     ".sql",
 }
+EVALUATION_FINDING_LIFECYCLE_STATES = ("open", "accepted", "resolved", "waived", "stale")
 TEST_PATH_MARKERS = ("test", "__tests__", "spec", "pytest", "integration")
 DOC_PATH_MARKERS = ("/docs/", "/.planning/", "/spec/")
 SENSITIVE_PATH_MARKERS = ("auth", "security", "secret", "token", "permission", "crypto")
@@ -922,6 +925,56 @@ def persist_stage_findings(
         "blocker_count": blocker_count,
         "warning_count": warning_count,
         "pass_count": pass_count,
+    }
+
+
+def resolve_finding(
+    conn: sqlite3.Connection,
+    *,
+    finding_id: str,
+    status: str,
+    actor: str,
+    rationale: str | None = None,
+    evidence: Sequence[str] | None = None,
+) -> dict[str, Any]:
+    if status not in EVALUATION_FINDING_LIFECYCLE_STATES:
+        raise ValueError(f"Invalid finding resolution status: {status}")
+    if finding_id.startswith("criteria-stage-finding-"):
+        table = "success_criteria_stage_findings"
+        scope = "stage"
+    elif finding_id.startswith("criteria-finding-"):
+        table = "success_criteria_findings"
+        scope = "run"
+    else:
+        raise ValueError(f"Unknown finding id scope: {finding_id}")
+    if not _table_exists(conn, table):
+        raise ValueError(f"Finding table is unavailable: {table}")
+
+    row = conn.execute(
+        f"SELECT resolution_status FROM {table} WHERE id = ? LIMIT 1",
+        (finding_id,),
+    ).fetchone()
+    if row is None:
+        raise ValueError(f"Finding not found: {finding_id}")
+    now = _now_iso()
+    conn.execute(
+        f"""
+        UPDATE {table}
+        SET resolution_status = ?,
+            resolution_actor = ?,
+            resolution_rationale = ?,
+            resolution_evidence_json = ?,
+            resolved_at = ?
+        WHERE id = ?
+        """,
+        (status, actor, rationale, _json(list(evidence or [])), now, finding_id),
+    )
+    return {
+        "finding_id": finding_id,
+        "scope": scope,
+        "previous_status": str(row[0] or "open"),
+        "new_status": status,
+        "resolved_at": now,
     }
 
 

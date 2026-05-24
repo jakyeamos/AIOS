@@ -285,6 +285,78 @@ def test_closeout_governance_includes_stage_evaluations(runtime_db: Path) -> Non
     conn.close()
 
 
+def test_execution_first_accepts_tool_event_evidence(runtime_db: Path) -> None:
+    hook_stop = _load_module("hook_stop", "bin/hook-stop.py")
+    conn = sqlite3.connect(runtime_db)
+    conn.execute(
+        """
+        INSERT INTO sessions (id, project_id, tool, started_at, status, cwd)
+        VALUES ('session-evidence', 'p1', 'claude-code', '2026-04-23T00:00:00Z', 'open', '/tmp')
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO tool_events (id, session_id, source_tool, event_type, event_time, payload_json)
+        VALUES ('tool-1', 'session-evidence', 'claude-code', 'Bash',
+                '2026-04-23T00:01:00Z', ?)
+        """,
+        (json.dumps({"command": "uv run pytest tests/test_success_criteria.py"}),),
+    )
+
+    evidence = hook_stop.execution_evidence_for_session(conn, "session-evidence")
+
+    assert "tool-event: uv run pytest tests/test_success_criteria.py" in evidence
+    conn.close()
+
+
+def test_execution_first_accepts_workflow_report_stage_evidence(runtime_db: Path) -> None:
+    hook_stop = _load_module("hook_stop", "bin/hook-stop.py")
+    conn = sqlite3.connect(runtime_db)
+    conn.execute(
+        """
+        INSERT INTO sessions (id, project_id, tool, started_at, status, cwd, run_id)
+        VALUES ('session-evidence', 'p1', 'claude-code', '2026-04-23T00:00:00Z',
+                'open', '/tmp', 'run-evidence')
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (
+            id, objective, workflow_key, agent_key, status, rationale,
+            assumptions_json, context_trace_json
+        )
+        VALUES ('run-evidence', 'Test workflow evidence', 'agentize', 'agentize',
+                'completed', 'test', '[]', '[]')
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO workflow_execution_reports (
+            id, run_id, workflow_key, status, report_json
+        )
+        VALUES ('report-evidence', 'run-evidence', 'agentize', 'completed', ?)
+        """,
+        (
+            json.dumps(
+                {
+                    "stages": [
+                        {
+                            "stage_key": "validate",
+                            "kind": "validate",
+                            "test_command": "uv run pytest tests/test_agentize.py",
+                        }
+                    ]
+                }
+            ),
+        ),
+    )
+
+    evidence = hook_stop.execution_evidence_for_session(conn, "session-evidence")
+
+    assert "workflow-stage: validate: uv run pytest tests/test_agentize.py" in evidence
+    conn.close()
+
+
 def test_insert_writeback_derives_approval_policy_for_high_impact_changes(
     runtime_db: Path, tmp_path: Path
 ) -> None:

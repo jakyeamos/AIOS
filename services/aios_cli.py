@@ -49,7 +49,12 @@ from services.rtk_integration import (
     load_compression_rules,
     rtk_metrics_log,
 )
-from services.success_criteria import preview_applicable_criteria
+from services.success_criteria import (
+    EVALUATION_FINDING_LIFECYCLE_STATES,
+    preview_applicable_criteria,
+    resolve_finding,
+    resolve_task_standards,
+)
 from services.task_routing import route_objective
 from services.workflow_orchestration import load_workflow_registry
 
@@ -150,7 +155,6 @@ VALID_KNOWLEDGE_KINDS = [
     "task_type",
     "workflow",
 ]
-EVALUATION_FINDING_LIFECYCLE_STATES = ["open", "accepted", "resolved", "waived", "stale"]
 WORKFLOW_LEARNING_EVIDENCE_TYPES = [
     "workflow_evidence",
     "prompt_template_evidence",
@@ -2582,6 +2586,54 @@ def _governance_closeout_rows(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     return closeouts
 
 
+def _governance_stage_findings(conn: sqlite3.Connection) -> dict[str, Any]:
+    if not _table_exists(conn, "success_criteria_stage_findings"):
+        return {
+            "open_count": 0,
+            "stale_open_count": 0,
+            "blocker_open_count": 0,
+            "recent": [],
+        }
+    summary = conn.execute(
+        """
+        SELECT
+          SUM(CASE WHEN resolution_status = 'open' THEN 1 ELSE 0 END) AS open_count,
+          SUM(
+            CASE
+              WHEN resolution_status = 'open'
+               AND julianday('now') - julianday(created_at) > 14
+              THEN 1 ELSE 0
+            END
+          ) AS stale_open_count,
+          SUM(
+            CASE
+              WHEN resolution_status = 'open' AND level = 'blocker'
+              THEN 1 ELSE 0
+            END
+          ) AS blocker_open_count
+        FROM success_criteria_stage_findings
+        """
+    ).fetchone()
+    recent = [
+        dict(row)
+        for row in conn.execute(
+            """
+            SELECT id, run_id, stage_key, criterion_id, level, summary, created_at
+            FROM success_criteria_stage_findings
+            WHERE resolution_status = 'open'
+            ORDER BY created_at DESC
+            LIMIT 5
+            """
+        ).fetchall()
+    ]
+    return {
+        "open_count": int(summary["open_count"] or 0) if summary else 0,
+        "stale_open_count": int(summary["stale_open_count"] or 0) if summary else 0,
+        "blocker_open_count": int(summary["blocker_open_count"] or 0) if summary else 0,
+        "recent": recent,
+    }
+
+
 def _governance_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     proposals = _governance_proposal_rows(conn)
     pending = [
@@ -2618,6 +2670,7 @@ def _governance_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     ]
     closeouts = _governance_closeout_rows(conn)
     unresolved_closeouts = [closeout for closeout in closeouts if closeout["has_unresolved_deltas"]]
+    stage_findings = _governance_stage_findings(conn)
 
     source_counts: dict[str, int] = {}
     target_counts: dict[str, int] = {}
@@ -2690,6 +2743,7 @@ def _governance_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
         "pending_approvals": pending[:50],
         "missing_evidence_runs": missing_evidence_runs[:50],
         "governed_closeouts": closeouts[:50],
+        "stage_findings": stage_findings,
         "findings": findings,
     }
 
@@ -2704,6 +2758,15 @@ def _ensure_evaluation_finding_schema(conn: sqlite3.Connection) -> None:
             "resolved_at": "TEXT",
         }.items():
             _ensure_column(conn, "success_criteria_findings", column, definition)
+    if _table_exists(conn, "success_criteria_stage_findings"):
+        for column, definition in {
+            "resolution_status": "TEXT NOT NULL DEFAULT 'open'",
+            "resolution_actor": "TEXT",
+            "resolution_rationale": "TEXT",
+            "resolution_evidence_json": "TEXT NOT NULL DEFAULT '[]'",
+            "resolved_at": "TEXT",
+        }.items():
+            _ensure_column(conn, "success_criteria_stage_findings", column, definition)
     if _table_exists(conn, "consistency_findings"):
         for column, definition in {
             "resolution_status": "TEXT NOT NULL DEFAULT 'open'",
@@ -2768,7 +2831,11 @@ def _evaluation_finding_contract_status(conn: sqlite3.Connection) -> str:
     }
     available_tables = [
         table
-        for table in ("success_criteria_findings", "consistency_findings")
+        for table in (
+            "success_criteria_findings",
+            "success_criteria_stage_findings",
+            "consistency_findings",
+        )
         if _table_exists(conn, table)
     ]
     if not available_tables:
@@ -2832,7 +2899,9 @@ def _contracts_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
             "status": _evaluation_finding_contract_status(conn),
             "source": "success_criteria_findings + consistency_findings",
             "storage": "success_criteria_findings + consistency_findings",
+            "stage_evidence_table": "success_criteria_stage_findings",
             "table_available": _table_exists(conn, "success_criteria_findings")
+            or _table_exists(conn, "success_criteria_stage_findings")
             or _table_exists(conn, "consistency_findings"),
             "lifecycle_states": EVALUATION_FINDING_LIFECYCLE_STATES,
         },
@@ -3161,6 +3230,8 @@ def _metadata_payload(
             "aios contracts-audit --json",
             "aios truth-audit --json",
             "aios governance-audit --json",
+            "aios standards-resolution preview --json",
+            "aios criteria-finding resolve --json --id <finding> --status accepted",
             "aios logs --json --last 50",
             "aios recent-failures --json --last 20",
             "aios rtk --json",
@@ -3234,6 +3305,41 @@ def _rtk_payload(conn: sqlite3.Connection) -> dict[str, Any]:
         "workflow_efficiency": workflows,
         "findings": findings,
     }
+
+
+def _criteria_finding_resolve_payload(
+    conn: sqlite3.Connection, args: argparse.Namespace
+) -> dict[str, Any]:
+    evidence = [str(item) for item in (args.evidence or [])]
+    try:
+        result = resolve_finding(
+            conn,
+            finding_id=str(args.id),
+            status=str(args.status),
+            actor=str(args.actor),
+            rationale=args.rationale,
+            evidence=evidence,
+        )
+        conn.commit()
+        return result
+    except ValueError as exc:
+        raise CLIError("finding-resolution-failed", str(exc), EXIT_USAGE) from exc
+
+
+def _standards_resolution_preview_payload(
+    conn: sqlite3.Connection,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    return resolve_task_standards(
+        conn=conn,
+        project_id=args.project_id,
+        project_name=args.project_name,
+        objective=args.objective,
+        prompt_classifications=args.classification,
+        changed_files=args.changed_file,
+        skills=args.skill,
+        workflow_key=args.workflow_key,
+    )
 
 
 def _render_human(command: str, data: dict[str, Any]) -> None:
@@ -3316,6 +3422,15 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
             f"missing_evidence={summary['terminal_runs_missing_evidence_count']}"
         )
         return
+    if command == "criteria-finding-resolve":
+        print(f"{data['finding_id']} {data['previous_status']}->{data['new_status']}")
+        return
+    if command == "standards-resolution-preview":
+        print(
+            f"criteria={len(data['criteria'])} standards={len(data['standards'])} "
+            f"status={data['resolution_status']}"
+        )
+        return
     if command == "prove-project-health":
         summary = data["summary"]
         print(
@@ -3375,6 +3490,10 @@ def _command_name(args: argparse.Namespace) -> str:
         return f"corpus-{args.corpus_command}"
     if args.command == "harness-eval":
         return f"harness-eval-{args.harness_eval_command}"
+    if args.command == "criteria-finding":
+        return f"criteria-finding-{args.criteria_finding_command}"
+    if args.command == "standards-resolution":
+        return f"standards-resolution-{args.standards_resolution_command}"
     return args.command
 
 
@@ -3442,6 +3561,42 @@ def create_parser() -> argparse.ArgumentParser:
     subparsers.add_parser(
         "governance-audit", help="Governed writeback, approval, and terminal-run evidence audit"
     )
+    criteria_finding = subparsers.add_parser(
+        "criteria-finding", help="Resolve success-criteria findings"
+    )
+    criteria_finding_subparsers = criteria_finding.add_subparsers(
+        dest="criteria_finding_command", required=True
+    )
+    criteria_finding_resolve = criteria_finding_subparsers.add_parser(
+        "resolve", help="Transition a criteria finding lifecycle state"
+    )
+    criteria_finding_resolve.add_argument("--id", required=True)
+    criteria_finding_resolve.add_argument(
+        "--status",
+        required=True,
+        choices=[status for status in EVALUATION_FINDING_LIFECYCLE_STATES if status != "open"],
+    )
+    criteria_finding_resolve.add_argument("--rationale", default=None)
+    criteria_finding_resolve.add_argument("--evidence", action="append", default=[])
+    criteria_finding_resolve.add_argument("--actor", default="operator-cli")
+    criteria_finding_resolve.add_argument("--scope", choices=["run", "stage"], default=None)
+
+    standards_resolution = subparsers.add_parser(
+        "standards-resolution", help="Preview standards and criteria resolution"
+    )
+    standards_resolution_subparsers = standards_resolution.add_subparsers(
+        dest="standards_resolution_command", required=True
+    )
+    standards_resolution_preview = standards_resolution_subparsers.add_parser(
+        "preview", help="Preview resolved criteria and standards"
+    )
+    standards_resolution_preview.add_argument("--project-id", default=None)
+    standards_resolution_preview.add_argument("--project-name", default=None)
+    standards_resolution_preview.add_argument("--objective", default=None)
+    standards_resolution_preview.add_argument("--classification", action="append", default=[])
+    standards_resolution_preview.add_argument("--changed-file", action="append", default=[])
+    standards_resolution_preview.add_argument("--skill", action="append", default=[])
+    standards_resolution_preview.add_argument("--workflow-key", default=None)
     truth_audit = subparsers.add_parser(
         "truth-audit",
         help="Project truth freshness, facet coverage, and governed update contract audit",
@@ -3615,6 +3770,8 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "workflow-learning-audit",
             "contracts-audit",
             "governance-audit",
+            "criteria-finding",
+            "standards-resolution",
             "truth-audit",
             "prove-project-health",
             "sync-automation-history",
@@ -3678,6 +3835,15 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "governance-audit":
             assert conn is not None
             data = _governance_audit_payload(conn)
+        elif args.command == "criteria-finding" and args.criteria_finding_command == "resolve":
+            assert conn is not None
+            data = _criteria_finding_resolve_payload(conn, args)
+        elif (
+            args.command == "standards-resolution"
+            and args.standards_resolution_command == "preview"
+        ):
+            assert conn is not None
+            data = _standards_resolution_preview_payload(conn, args)
         elif args.command == "truth-audit":
             assert conn is not None
             data = _truth_audit_payload(conn, Path(args.truth_file).expanduser().resolve())

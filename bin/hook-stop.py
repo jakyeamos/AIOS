@@ -257,6 +257,72 @@ def execution_evidence_for_session(conn: sqlite3.Connection, session_id: str) ->
     except sqlite3.Error:
         pass
 
+    try:
+        rows = conn.execute(
+            """
+            SELECT payload_json
+            FROM tool_events
+            WHERE session_id = ?
+              AND source_tool = 'claude-code'
+              AND event_type IN ('Bash', 'TestRun')
+            ORDER BY event_time
+            """,
+            (session_id,),
+        ).fetchall()
+        for row in rows:
+            try:
+                payload = json.loads(row[0] or "{}")
+            except json.JSONDecodeError:
+                continue
+            command = str(payload.get("command", "")).strip()
+            if command:
+                evidence.append(f"tool-event: {command[:200]}")
+    except sqlite3.Error:
+        pass
+
+    try:
+        run_rows = conn.execute(
+            """
+            SELECT run_id
+            FROM sessions
+            WHERE id = ? AND run_id IS NOT NULL
+            """,
+            (session_id,),
+        ).fetchall()
+        for run_row in run_rows:
+            run_id = str(run_row[0])
+            report_rows = conn.execute(
+                """
+                SELECT report_json
+                FROM workflow_execution_reports
+                WHERE run_id = ?
+                """,
+                (run_id,),
+            ).fetchall()
+            for report_row in report_rows:
+                try:
+                    report = json.loads(report_row[0] or "{}")
+                except json.JSONDecodeError:
+                    continue
+                stages = report.get("stages", [])
+                if not isinstance(stages, list):
+                    continue
+                for stage in stages:
+                    if not isinstance(stage, dict) or stage.get("kind") not in {"validate", "test"}:
+                        continue
+                    command = (
+                        stage.get("command")
+                        or stage.get("test_command")
+                        or stage.get("output_command")
+                    )
+                    command_text = str(command or "").strip()
+                    if command_text:
+                        evidence.append(
+                            f"workflow-stage: {stage.get('stage_key', 'unknown')}: {command_text[:200]}"
+                        )
+    except sqlite3.Error:
+        pass
+
     deduped: list[str] = []
     seen: set[str] = set()
     for item in evidence:
