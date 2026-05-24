@@ -58,6 +58,7 @@ AIOS should compile messy human intent into the right context, standards, workfl
 - The current codebase map in `.planning/codebase/` should be treated as reference material for planning, while `PROJECT.md`, context receipts, and the control-plane artifacts remain stronger truth surfaces
 - The active v1 roadmap now extends through Phase 15, adding planned tracks for measurable eval/shadow workflows, graph-native memory, multi-provider session ingestion, cross-project complexity standards, and agent skill portfolio integration.
 - The checked-in managed workflow report fixtures now reflect agent-rule-enriched invocation output from the current control-plane runtime.
+- The repository now includes the standalone `research-domain-writing/` skill bundle, Cursor skill shims, and archived package for grounded domain writing workflows.
 
 ## Constraints
 
@@ -96,4 +97,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-23 after refreshing managed control-plane report fixtures*
+*Last updated: 2026-05-23 after adding the research-domain-writing skill bundle*
