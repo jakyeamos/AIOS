@@ -36,35 +36,80 @@
         {
           "key": "parse_request",
           "kind": "parse_request",
-          "required_skills": []
+          "required_skills": [],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
         },
         {
           "key": "normalize_prompt",
           "kind": "normalize_prompt",
           "required_skills": [
             "prompt_library_normalizer"
-          ]
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
         },
         {
           "key": "enrich_context",
           "kind": "enrich_context",
           "required_skills": [
             "obsidian_corpus_retriever"
-          ]
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
         },
         {
           "key": "draft_sections",
           "kind": "generate",
           "required_skills": [
             "academic_draft_generator"
-          ]
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
         },
         {
           "key": "transform_prose",
           "kind": "transform",
           "required_skills": [
             "personal_corpus_humanizer"
-          ]
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
         },
         {
           "key": "validate",
@@ -73,12 +118,48 @@
             "structure_checker",
             "citation_checker",
             "meaning_preservation_checker"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "validations": [
+            {
+              "criterion_id": "code-simplicity",
+              "blocking": true
+            }
+          ],
+          "prompt_bindings": [
+            {
+              "template_id": "research",
+              "role": "primary"
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            }
           ]
         },
         {
           "key": "finalize",
           "kind": "finalize",
-          "required_skills": []
+          "required_skills": [],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
         }
       ],
       "lifecycle_state": "active",
@@ -114,13 +195,84 @@
         {
           "key": "parse_request",
           "kind": "parse_request",
-          "required_skills": []
+          "required_skills": [],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "objective",
+              "source": "packet",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "parse_request_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            }
+          ],
+          "prompt_bindings": [
+            {
+              "template_id": "reasoning",
+              "role": "primary"
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "summary",
+              "path_template": ".planning/runs/{run_id}/implementation-request.md",
+              "required": true
+            }
+          ]
         },
         {
           "key": "normalize_prompt",
           "kind": "normalize_prompt",
           "required_skills": [
             "prompt_library_normalizer"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "prior_stage_output",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "normalize_prompt_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            }
           ]
         },
         {
@@ -128,12 +280,98 @@
           "kind": "validate",
           "required_skills": [
             "scope_check"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "prior_stage_output",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "validate_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            }
+          ],
+          "validations": [
+            {
+              "criterion_id": "code-simplicity",
+              "blocking": true
+            },
+            {
+              "criterion_id": "execution-first-verification",
+              "blocking": true
+            }
+          ],
+          "approval_gates": [
+            {
+              "impact_scope": "workflow-default",
+              "condition": "on_failure",
+              "rationale_template": "Implementation delivery failed validation and needs operator review."
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "evidence",
+              "path_template": "data/success-criteria/evaluations/{run_id}.json",
+              "required": true
+            }
+          ],
+          "standards_bindings": [
+            "code_quality.lint_ratchet",
+            "testing.trust_signal"
           ]
         },
         {
           "key": "finalize",
           "kind": "finalize",
-          "required_skills": []
+          "required_skills": [],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "prior_stage_output",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "finalize_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            }
+          ]
         }
       ],
       "lifecycle_state": "active",
@@ -169,13 +407,84 @@
         {
           "key": "parse_request",
           "kind": "parse_request",
-          "required_skills": []
+          "required_skills": [],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "failure_brief",
+              "source": "packet",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "parse_request_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "blocker_count",
+              "measure": "per_run"
+            }
+          ],
+          "prompt_bindings": [
+            {
+              "template_id": "coding_debug",
+              "role": "primary"
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "report",
+              "path_template": "logs/failure-recovery/{run_id}.md",
+              "required": true
+            }
+          ]
         },
         {
           "key": "normalize_prompt",
           "kind": "normalize_prompt",
           "required_skills": [
             "prompt_library_normalizer"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "prior_stage_output",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "normalize_prompt_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "blocker_count",
+              "measure": "per_run"
+            }
           ]
         },
         {
@@ -183,12 +492,98 @@
           "kind": "validate",
           "required_skills": [
             "scope_check"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "prior_stage_output",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "validate_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "blocker_count",
+              "measure": "per_run"
+            }
+          ],
+          "validations": [
+            {
+              "criterion_id": "execution-first-verification",
+              "blocking": true
+            },
+            {
+              "criterion_id": "testing-trust",
+              "blocking": false
+            }
+          ],
+          "approval_gates": [
+            {
+              "impact_scope": "workflow-default",
+              "condition": "on_blocker",
+              "rationale_template": "Failure recovery found a blocker that needs review."
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "evidence",
+              "path_template": "data/success-criteria/evaluations/{run_id}.json",
+              "required": true
+            }
+          ],
+          "standards_bindings": [
+            "testing.trust_signal",
+            "observability.run_signal_integrity"
           ]
         },
         {
           "key": "finalize",
           "kind": "finalize",
-          "required_skills": []
+          "required_skills": [],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "prior_stage_output",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "finalize_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "blocker_count",
+              "measure": "per_run"
+            }
+          ]
         }
       ],
       "lifecycle_state": "active",
@@ -231,20 +626,65 @@
           "kind": "parse_request",
           "required_skills": [
             "divergent_task_classifier"
-          ]
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
         },
         {
           "key": "generate_candidates",
           "kind": "generate",
           "required_skills": [
             "divergent_candidate_generator"
-          ]
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
         },
         {
           "key": "judge_candidates",
           "kind": "validate",
           "required_skills": [
             "divergent_judge_panel"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "validations": [
+            {
+              "criterion_id": "code-simplicity",
+              "blocking": true
+            }
+          ],
+          "prompt_bindings": [
+            {
+              "template_id": "research",
+              "role": "primary"
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            }
           ]
         },
         {
@@ -253,7 +693,16 @@
           "required_skills": [
             "divergent_portfolio_selector",
             "memory_writeback_proposer"
-          ]
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
         }
       ],
       "lifecycle_state": "active",
@@ -300,7 +749,16 @@
           "kind": "parse_request",
           "required_skills": [
             "personalized_humanizer_classifier"
-          ]
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
         },
         {
           "key": "build_voice_context",
@@ -308,28 +766,64 @@
           "required_skills": [
             "personalized_voice_retriever",
             "personalized_voice_packet_builder"
-          ]
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
         },
         {
           "key": "transform_text",
           "kind": "transform",
           "required_skills": [
             "personalized_humanizer_transformer"
-          ]
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
         },
         {
           "key": "validate_rewrite",
           "kind": "validate",
           "required_skills": [
             "personalized_humanizer_quality_checker"
-          ]
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
         },
         {
           "key": "finalize",
           "kind": "finalize",
           "required_skills": [
             "personalized_humanizer_feedback_collector"
-          ]
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
         }
       ],
       "lifecycle_state": "candidate",
@@ -377,19 +871,64 @@
           "kind": "parse_request",
           "required_skills": [
             "agentize_intent_compiler"
-          ]
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
         },
         {
           "key": "validate",
           "kind": "validate",
           "required_skills": [
             "scope_check"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "validations": [
+            {
+              "criterion_id": "code-simplicity",
+              "blocking": true
+            }
+          ],
+          "prompt_bindings": [
+            {
+              "template_id": "reasoning",
+              "role": "primary"
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            }
           ]
         },
         {
           "key": "finalize",
           "kind": "finalize",
-          "required_skills": []
+          "required_skills": [],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
         }
       ],
       "lifecycle_state": "active",

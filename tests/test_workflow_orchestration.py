@@ -13,7 +13,19 @@ sys.path.insert(0, str(ROOT))
 from services.asset_lifecycle import AssetLifecycleState  # noqa: E402
 from services.workflow_orchestration import (  # noqa: E402
     HEALTH_TO_WORKFLOW_RULES,
+    ApprovalGateBinding,
+    ArtifactBinding,
+    InputBinding,
+    LearningSignalBinding,
+    OutputBinding,
+    PromptBinding,
+    StageSpec,
+    ValidationBinding,
     WorkflowExecutionContext,
+    WorkflowSpec,
+    WritebackBindingSpec,
+    _reset_validation_caches,
+    _stage_from_row,
     execute_workflow,
     load_skill_registry,
     load_workflow_registry,
@@ -163,6 +175,223 @@ def test_validate_workflow_bindings_still_passes_for_existing_workflows() -> Non
     workflows = load_workflow_registry(ROOT / "config" / "workflows" / "registry.json")
     skills = load_skill_registry(ROOT / "config" / "workflows" / "skills.json")
     assert validate_workflow_bindings(workflows, skills) == []
+
+
+def test_stage_spec_loads_vnext_bindings() -> None:
+    stage = _stage_from_row(
+        {
+            "key": "validate",
+            "kind": "validate",
+            "required_skills": ["scope_check"],
+            "required_inputs": [{"key": "packet", "source": "packet"}],
+            "required_outputs": [{"key": "report", "target": "report"}],
+            "validations": [{"criterion_id": "code-simplicity", "blocking": True}],
+            "approval_gates": [
+                {
+                    "impact_scope": "workflow-default",
+                    "condition": "on_failure",
+                    "rationale_template": "review",
+                }
+            ],
+            "expected_artifacts": [{"artifact_kind": "evidence", "path_template": "x"}],
+            "writeback_behavior": {
+                "on_success": ["workflow_learning_event"],
+                "on_failure": ["follow_up_item"],
+            },
+            "learning_signals": [{"signal_kind": "validation_pass", "measure": "per_run"}],
+            "prompt_bindings": [{"template_id": "research", "role": "primary"}],
+            "standards_bindings": ["code_quality.lint_ratchet"],
+        },
+        workflow_key="test",
+    )
+
+    assert isinstance(stage.required_inputs[0], InputBinding)
+    assert isinstance(stage.required_outputs[0], OutputBinding)
+    assert isinstance(stage.validations[0], ValidationBinding)
+    assert isinstance(stage.approval_gates[0], ApprovalGateBinding)
+    assert isinstance(stage.expected_artifacts[0], ArtifactBinding)
+    assert isinstance(stage.writeback_behavior, WritebackBindingSpec)
+    assert isinstance(stage.learning_signals[0], LearningSignalBinding)
+    assert isinstance(stage.prompt_bindings[0], PromptBinding)
+    assert stage.standards_bindings == ("code_quality.lint_ratchet",)
+
+
+def test_stage_spec_defaults_when_bindings_omitted() -> None:
+    stage = _stage_from_row(
+        {"key": "parse", "kind": "parse_request", "required_skills": []},
+        workflow_key="test",
+    )
+    assert stage.required_inputs == ()
+    assert stage.required_outputs == ()
+    assert stage.validations == ()
+    assert stage.approval_gates == ()
+    assert stage.expected_artifacts == ()
+    assert stage.writeback_behavior == WritebackBindingSpec()
+    assert stage.learning_signals == ()
+    assert stage.prompt_bindings == ()
+    assert stage.standards_bindings == ()
+
+
+def test_existing_six_workflows_load_with_default_bindings() -> None:
+    workflows = load_workflow_registry(ROOT / "config" / "workflows" / "registry.json")
+    assert len(workflows) == 6
+    assert all(
+        isinstance(stage.writeback_behavior, WritebackBindingSpec)
+        for workflow in workflows.values()
+        for stage in workflow.stages
+    )
+
+
+def test_input_binding_rejects_unknown_source() -> None:
+    with pytest.raises(ValueError, match="ether"):
+        _stage_from_row(
+            {
+                "key": "parse",
+                "kind": "parse_request",
+                "required_skills": [],
+                "required_inputs": [{"key": "x", "source": "ether"}],
+            },
+            workflow_key="test",
+        )
+
+
+def test_prompt_binding_resolves_template_id() -> None:
+    stage = _stage_from_row(
+        {
+            "key": "parse",
+            "kind": "parse_request",
+            "required_skills": [],
+            "prompt_bindings": [{"template_id": "research", "role": "primary"}],
+        },
+        workflow_key="test",
+    )
+    assert stage.prompt_bindings[0].template_id == "research"
+
+
+def test_approval_gate_binding_rejects_unknown_condition() -> None:
+    with pytest.raises(ValueError, match="sometimes"):
+        _stage_from_row(
+            {
+                "key": "validate",
+                "kind": "validate",
+                "required_skills": [],
+                "approval_gates": [
+                    {
+                        "impact_scope": "workflow-default",
+                        "condition": "sometimes",
+                        "rationale_template": "x",
+                    }
+                ],
+            },
+            workflow_key="test",
+        )
+
+
+def test_writeback_behavior_preserves_no_learning_evidence_required_flag() -> None:
+    stage = _stage_from_row(
+        {
+            "key": "validate",
+            "kind": "validate",
+            "required_skills": [],
+            "writeback_behavior": {
+                "on_success": ["workflow_learning_event"],
+                "on_failure": [],
+                "no_learning_evidence_required": True,
+            },
+        },
+        workflow_key="test",
+    )
+    assert stage.writeback_behavior.no_learning_evidence_required is True
+
+
+def _workflow_for_validation(
+    *,
+    lifecycle_state: str = "candidate",
+    validations: tuple[ValidationBinding, ...] = (),
+    prompt_bindings: tuple[PromptBinding, ...] = (),
+    standards_bindings: tuple[str, ...] = (),
+) -> dict[str, WorkflowSpec]:
+    return {
+        "synthetic": WorkflowSpec(
+            key="synthetic",
+            name="Synthetic",
+            workflow_family="audit_only",
+            purpose="Synthetic",
+            trigger_hints=(),
+            output_contract=(),
+            required_validations=(),
+            stages=(
+                StageSpec(
+                    key="validate",
+                    kind="validate",
+                    required_skills=(),
+                    validations=validations,
+                    prompt_bindings=prompt_bindings,
+                    standards_bindings=standards_bindings,
+                ),
+            ),
+            lifecycle_state=lifecycle_state,  # type: ignore[arg-type]
+        )
+    }
+
+
+def test_validate_bindings_rejects_unresolvable_validation_criterion_id() -> None:
+    _reset_validation_caches()
+    errors = validate_workflow_bindings(
+        _workflow_for_validation(validations=(ValidationBinding("nonexistent-criterion"),)),
+        {},
+    )
+    assert any("nonexistent-criterion" in error and "synthetic" in error for error in errors)
+
+
+def test_validate_bindings_rejects_unresolvable_prompt_binding() -> None:
+    _reset_validation_caches()
+    errors = validate_workflow_bindings(
+        _workflow_for_validation(prompt_bindings=(PromptBinding("ghost-template"),)),
+        {},
+    )
+    assert any("ghost-template" in error and "synthetic" in error for error in errors)
+
+
+def test_validate_bindings_accepts_resolvable_bindings() -> None:
+    _reset_validation_caches()
+    errors = validate_workflow_bindings(
+        _workflow_for_validation(
+            validations=(ValidationBinding("code-simplicity"),),
+            prompt_bindings=(PromptBinding("research"),),
+            standards_bindings=("code_quality.lint_ratchet",),
+        ),
+        {},
+    )
+    assert errors == []
+
+
+def test_active_workflow_without_validations_is_rejected() -> None:
+    _reset_validation_caches()
+    errors = validate_workflow_bindings(_workflow_for_validation(lifecycle_state="active"), {})
+    assert any("zero validations" in error for error in errors)
+
+
+def test_candidate_workflow_without_validations_is_accepted() -> None:
+    _reset_validation_caches()
+    errors = validate_workflow_bindings(_workflow_for_validation(lifecycle_state="candidate"), {})
+    assert errors == []
+
+
+def test_six_existing_workflows_pass_validation_post_vnext() -> None:
+    _reset_validation_caches()
+    workflows = load_workflow_registry(ROOT / "config" / "workflows" / "registry.json")
+    skills = load_skill_registry(ROOT / "config" / "workflows" / "skills.json")
+    assert validate_workflow_bindings(workflows, skills) == []
+
+
+def test_validate_bindings_rejects_unknown_standards_binding() -> None:
+    _reset_validation_caches()
+    errors = validate_workflow_bindings(
+        _workflow_for_validation(standards_bindings=("fake-standard",)),
+        {},
+    )
+    assert any("fake-standard" in error for error in errors)
 
 
 def test_execute_academic_workflow_with_validations(tmp_path: Path) -> None:

@@ -5,7 +5,7 @@ import re
 import sqlite3
 import uuid
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast, get_args
@@ -70,12 +70,145 @@ HEALTH_TO_WORKFLOW_RULES: list[tuple[HealthWorkflowPredicate, str, str]] = [
     ),
 ]
 
+_ALLOWED_INPUT_SOURCES = frozenset({"packet", "prior_stage", "registry", "evidence"})
+_ALLOWED_OUTPUT_TARGETS = frozenset({"report", "writeback", "artifact"})
+_ALLOWED_IMPACT_SCOPES = frozenset(
+    {
+        "prompt-default",
+        "skill-default",
+        "workflow-default",
+        "truth-default",
+        "standards-default",
+        "packet-default",
+    }
+)
+_ALLOWED_APPROVAL_CONDITIONS = frozenset({"always", "on_failure", "on_blocker"})
+_ALLOWED_ARTIFACT_KINDS = frozenset({"patch", "report", "evidence", "summary", "checkpoint"})
+_ALLOWED_LEARNING_SIGNALS = frozenset(
+    {
+        "rework_rate",
+        "validation_pass",
+        "writeback_usefulness",
+        "route_quality",
+        "ambiguity_count",
+        "blocker_count",
+    }
+)
+_ALLOWED_PROMPT_ROLES = frozenset({"primary", "fallback"})
+_VALID_CRITERION_IDS_CACHE: frozenset[str] | None = None
+_VALID_PROMPT_TEMPLATE_IDS_CACHE: frozenset[str] | None = None
+_VALID_STANDARDS_IDS_CACHE: frozenset[str] | None = None
+
+
+@dataclass(frozen=True)
+class InputBinding:
+    key: str
+    source: str
+    required: bool = True
+    schema_ref: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.source not in _ALLOWED_INPUT_SOURCES:
+            raise ValueError(
+                f"Unsupported input source {self.source!r}; expected one of {sorted(_ALLOWED_INPUT_SOURCES)}"
+            )
+
+
+@dataclass(frozen=True)
+class OutputBinding:
+    key: str
+    target: str
+    required: bool = True
+    schema_ref: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.target not in _ALLOWED_OUTPUT_TARGETS:
+            raise ValueError(
+                f"Unsupported output target {self.target!r}; expected one of {sorted(_ALLOWED_OUTPUT_TARGETS)}"
+            )
+
+
+@dataclass(frozen=True)
+class ValidationBinding:
+    criterion_id: str
+    blocking: bool = True
+
+
+@dataclass(frozen=True)
+class ApprovalGateBinding:
+    impact_scope: str
+    condition: str
+    rationale_template: str
+
+    def __post_init__(self) -> None:
+        if self.impact_scope not in _ALLOWED_IMPACT_SCOPES:
+            raise ValueError(
+                f"Unsupported impact_scope {self.impact_scope!r}; expected one of {sorted(_ALLOWED_IMPACT_SCOPES)}"
+            )
+        if self.condition not in _ALLOWED_APPROVAL_CONDITIONS:
+            raise ValueError(
+                f"Unsupported approval condition {self.condition!r}; expected one of {sorted(_ALLOWED_APPROVAL_CONDITIONS)}"
+            )
+
+
+@dataclass(frozen=True)
+class ArtifactBinding:
+    artifact_kind: str
+    path_template: str
+    required: bool = True
+
+    def __post_init__(self) -> None:
+        if self.artifact_kind not in _ALLOWED_ARTIFACT_KINDS:
+            raise ValueError(
+                f"Unsupported artifact_kind {self.artifact_kind!r}; expected one of {sorted(_ALLOWED_ARTIFACT_KINDS)}"
+            )
+
+
+@dataclass(frozen=True)
+class WritebackBindingSpec:
+    on_success: tuple[str, ...] = ()
+    on_failure: tuple[str, ...] = ("workflow_learning_event",)
+    no_learning_evidence_required: bool = False
+
+
+@dataclass(frozen=True)
+class LearningSignalBinding:
+    signal_kind: str
+    measure: str
+
+    def __post_init__(self) -> None:
+        if self.signal_kind not in _ALLOWED_LEARNING_SIGNALS:
+            raise ValueError(
+                f"Unsupported learning signal {self.signal_kind!r}; expected one of {sorted(_ALLOWED_LEARNING_SIGNALS)}"
+            )
+
+
+@dataclass(frozen=True)
+class PromptBinding:
+    template_id: str
+    role: str = "primary"
+
+    def __post_init__(self) -> None:
+        if self.role not in _ALLOWED_PROMPT_ROLES:
+            raise ValueError(
+                f"Unsupported prompt role {self.role!r}; expected one of {sorted(_ALLOWED_PROMPT_ROLES)}"
+            )
+
 
 @dataclass(frozen=True)
 class StageSpec:
     key: str
     kind: str
     required_skills: tuple[str, ...]
+    required_inputs: tuple[InputBinding, ...] = ()
+    required_outputs: tuple[OutputBinding, ...] = ()
+    validations: tuple[ValidationBinding, ...] = ()
+    approval_gates: tuple[ApprovalGateBinding, ...] = ()
+    expected_artifacts: tuple[ArtifactBinding, ...] = ()
+    writeback_behavior: WritebackBindingSpec = field(default_factory=WritebackBindingSpec)
+    learning_signals: tuple[LearningSignalBinding, ...] = ()
+    prompt_bindings: tuple[PromptBinding, ...] = ()
+    standards_bindings: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -159,6 +292,123 @@ def _prompt_lifecycle_state(template: dict[str, Any]) -> AssetLifecycleState:
     return _lifecycle_state_from_row(template, default="candidate")
 
 
+def _dict_rows(value: Any) -> tuple[dict[str, Any], ...]:
+    if not isinstance(value, list):
+        return ()
+    return tuple(row for row in value if isinstance(row, dict))
+
+
+def _input_binding_from_row(row: dict[str, Any]) -> InputBinding:
+    return InputBinding(
+        key=str(row.get("key", "")).strip(),
+        source=str(row.get("source", "")).strip(),
+        required=bool(row.get("required", True)),
+        schema_ref=str(row["schema_ref"]) if row.get("schema_ref") else None,
+    )
+
+
+def _output_binding_from_row(row: dict[str, Any]) -> OutputBinding:
+    return OutputBinding(
+        key=str(row.get("key", "")).strip(),
+        target=str(row.get("target", "")).strip(),
+        required=bool(row.get("required", True)),
+        schema_ref=str(row["schema_ref"]) if row.get("schema_ref") else None,
+    )
+
+
+def _validation_binding_from_row(row: dict[str, Any]) -> ValidationBinding:
+    return ValidationBinding(
+        criterion_id=str(row.get("criterion_id", "")).strip(),
+        blocking=bool(row.get("blocking", True)),
+    )
+
+
+def _approval_binding_from_row(row: dict[str, Any]) -> ApprovalGateBinding:
+    return ApprovalGateBinding(
+        impact_scope=str(row.get("impact_scope", "")).strip(),
+        condition=str(row.get("condition", "")).strip(),
+        rationale_template=str(row.get("rationale_template", "")).strip(),
+    )
+
+
+def _artifact_binding_from_row(row: dict[str, Any]) -> ArtifactBinding:
+    return ArtifactBinding(
+        artifact_kind=str(row.get("artifact_kind", "")).strip(),
+        path_template=str(row.get("path_template", "")).strip(),
+        required=bool(row.get("required", True)),
+    )
+
+
+def _writeback_binding_from_row(row: dict[str, Any]) -> WritebackBindingSpec:
+    return WritebackBindingSpec(
+        on_success=tuple(str(item) for item in row.get("on_success", []) if isinstance(item, str)),
+        on_failure=tuple(
+            str(item)
+            for item in row.get("on_failure", ("workflow_learning_event",))
+            if isinstance(item, str)
+        ),
+        no_learning_evidence_required=bool(row.get("no_learning_evidence_required", False)),
+    )
+
+
+def _learning_binding_from_row(row: dict[str, Any]) -> LearningSignalBinding:
+    return LearningSignalBinding(
+        signal_kind=str(row.get("signal_kind", "")).strip(),
+        measure=str(row.get("measure", "")).strip(),
+    )
+
+
+def _prompt_binding_from_row(row: dict[str, Any]) -> PromptBinding:
+    return PromptBinding(
+        template_id=str(row.get("template_id", "")).strip(),
+        role=str(row.get("role", "primary")).strip(),
+    )
+
+
+def _stage_from_row(row: dict[str, Any], *, workflow_key: str) -> StageSpec:
+    required_skills = row.get("required_skills") or []
+    if not isinstance(required_skills, list):
+        raise ValueError(f"Workflow {workflow_key} stage required_skills must be a list.")
+    writeback_row = row.get("writeback_behavior") or {}
+    if not isinstance(writeback_row, dict):
+        raise ValueError(f"Workflow {workflow_key} stage writeback_behavior must be an object.")
+    standards_bindings = row.get("standards_bindings") or []
+    if not isinstance(standards_bindings, list):
+        raise ValueError(f"Workflow {workflow_key} stage standards_bindings must be a list.")
+    return StageSpec(
+        key=str(row.get("key", "")).strip(),
+        kind=str(row.get("kind", "")).strip(),
+        required_skills=tuple(
+            str(skill).strip() for skill in required_skills if str(skill).strip()
+        ),
+        required_inputs=tuple(
+            _input_binding_from_row(item) for item in _dict_rows(row.get("required_inputs"))
+        ),
+        required_outputs=tuple(
+            _output_binding_from_row(item) for item in _dict_rows(row.get("required_outputs"))
+        ),
+        validations=tuple(
+            _validation_binding_from_row(item) for item in _dict_rows(row.get("validations"))
+        ),
+        approval_gates=tuple(
+            _approval_binding_from_row(item) for item in _dict_rows(row.get("approval_gates"))
+        ),
+        expected_artifacts=tuple(
+            _artifact_binding_from_row(item) for item in _dict_rows(row.get("expected_artifacts"))
+        ),
+        writeback_behavior=_writeback_binding_from_row(writeback_row),
+        learning_signals=tuple(
+            _learning_binding_from_row(item) for item in _dict_rows(row.get("learning_signals"))
+        ),
+        prompt_bindings=tuple(
+            _prompt_binding_from_row(item) for item in _dict_rows(row.get("prompt_bindings"))
+        ),
+        standards_bindings=tuple(
+            str(item).strip() for item in standards_bindings if str(item).strip()
+        ),
+    )
+
+
 def load_workflow_registry(path: Path | None = None) -> dict[str, WorkflowSpec]:
     registry_path = path or DEFAULT_WORKFLOW_REGISTRY
     loaded = _load_json(registry_path)
@@ -180,18 +430,7 @@ def load_workflow_registry(path: Path | None = None) -> dict[str, WorkflowSpec]:
         for row in stage_rows:
             if not isinstance(row, dict):
                 raise ValueError(f"Workflow {key} has invalid stage row.")
-            required_skills = row.get("required_skills") or []
-            if not isinstance(required_skills, list):
-                raise ValueError(f"Workflow {key} stage required_skills must be a list.")
-            stages.append(
-                StageSpec(
-                    key=str(row.get("key", "")).strip(),
-                    kind=str(row.get("kind", "")).strip(),
-                    required_skills=tuple(
-                        str(skill).strip() for skill in required_skills if str(skill).strip()
-                    ),
-                )
-            )
+            stages.append(_stage_from_row(row, workflow_key=key))
         registry[key] = WorkflowSpec(
             key=key,
             name=str(item.get("name", key)),
@@ -267,13 +506,70 @@ def load_skill_registry(path: Path | None = None) -> dict[str, SkillSpec]:
     return registry
 
 
+def _reset_validation_caches() -> None:
+    global _VALID_CRITERION_IDS_CACHE, _VALID_PROMPT_TEMPLATE_IDS_CACHE, _VALID_STANDARDS_IDS_CACHE
+    _VALID_CRITERION_IDS_CACHE = None
+    _VALID_PROMPT_TEMPLATE_IDS_CACHE = None
+    _VALID_STANDARDS_IDS_CACHE = None
+
+
+def _load_valid_criterion_ids() -> frozenset[str] | None:
+    global _VALID_CRITERION_IDS_CACHE
+    if _VALID_CRITERION_IDS_CACHE is not None:
+        return _VALID_CRITERION_IDS_CACHE
+    try:
+        _VALID_CRITERION_IDS_CACHE = frozenset(row.id for row in success_criteria.load_registry())
+    except (OSError, ValueError):
+        return None
+    return _VALID_CRITERION_IDS_CACHE
+
+
+def _load_valid_prompt_template_ids() -> frozenset[str] | None:
+    global _VALID_PROMPT_TEMPLATE_IDS_CACHE
+    if _VALID_PROMPT_TEMPLATE_IDS_CACHE is not None:
+        return _VALID_PROMPT_TEMPLATE_IDS_CACHE
+    try:
+        templates = _load_prompt_templates(DEFAULT_PROMPT_REGISTRY)
+    except (OSError, ValueError):
+        return None
+    _VALID_PROMPT_TEMPLATE_IDS_CACHE = frozenset(
+        str(template.get("id", "")).strip()
+        for template in templates
+        if str(template.get("id", "")).strip()
+    )
+    return _VALID_PROMPT_TEMPLATE_IDS_CACHE
+
+
+def _load_valid_standards_ids() -> frozenset[str] | None:
+    global _VALID_STANDARDS_IDS_CACHE
+    if _VALID_STANDARDS_IDS_CACHE is not None:
+        return _VALID_STANDARDS_IDS_CACHE
+    try:
+        loaded = _load_json(ROOT / "config" / "standards" / "registry.json")
+    except (OSError, ValueError):
+        return None
+    standards = loaded.get("standards")
+    if not isinstance(standards, list):
+        return None
+    _VALID_STANDARDS_IDS_CACHE = frozenset(
+        str(row.get("id", "")).strip()
+        for row in standards
+        if isinstance(row, dict) and str(row.get("id", "")).strip()
+    )
+    return _VALID_STANDARDS_IDS_CACHE
+
+
 def validate_workflow_bindings(
     workflows: dict[str, WorkflowSpec],
     skills: dict[str, SkillSpec],
 ) -> list[str]:
     errors: list[str] = []
+    valid_criterion_ids = _load_valid_criterion_ids()
+    valid_prompt_template_ids = _load_valid_prompt_template_ids()
+    valid_standards_ids = _load_valid_standards_ids()
     for workflow in workflows.values():
         seen_stage_keys: set[str] = set()
+        validation_count = 0
         for stage in workflow.stages:
             if not stage.key:
                 errors.append(f"Workflow {workflow.key} has a stage with an empty key.")
@@ -295,6 +591,42 @@ def validate_workflow_bindings(
                     errors.append(
                         f"Workflow {workflow.key} stage {stage.key} kind {stage.kind} is not allowed for skill {skill_key}."
                     )
+            validation_count += len(stage.validations)
+            if valid_criterion_ids is None and stage.validations:
+                errors.append(
+                    f"workflow={workflow.key} stage={stage.key} skipped: criteria registry unavailable"
+                )
+            elif valid_criterion_ids is not None:
+                for validation in stage.validations:
+                    if validation.criterion_id not in valid_criterion_ids:
+                        errors.append(
+                            f"workflow={workflow.key} stage={stage.key} validation criterion_id={validation.criterion_id!r} does not resolve in success-criteria registry"
+                        )
+            if valid_prompt_template_ids is None and stage.prompt_bindings:
+                errors.append(
+                    f"workflow={workflow.key} stage={stage.key} skipped: prompt registry unavailable"
+                )
+            elif valid_prompt_template_ids is not None:
+                for prompt_binding in stage.prompt_bindings:
+                    if prompt_binding.template_id not in valid_prompt_template_ids:
+                        errors.append(
+                            f"workflow={workflow.key} stage={stage.key} prompt_binding template_id={prompt_binding.template_id!r} does not resolve in prompts/registry.json"
+                        )
+            if valid_standards_ids is None and stage.standards_bindings:
+                errors.append(
+                    f"workflow={workflow.key} stage={stage.key} skipped: standards registry unavailable"
+                )
+            elif valid_standards_ids is not None:
+                for standard_id in stage.standards_bindings:
+                    if standard_id not in valid_standards_ids:
+                        errors.append(
+                            f"workflow={workflow.key} stage={stage.key} standards_binding {standard_id!r} does not resolve in standards registry"
+                        )
+            for approval_gate in stage.approval_gates:
+                if approval_gate.impact_scope not in _ALLOWED_IMPACT_SCOPES:
+                    errors.append(
+                        f"workflow={workflow.key} stage={stage.key} approval_gate impact_scope={approval_gate.impact_scope!r} is invalid"
+                    )
 
         if workflow.required_validations:
             validate_stage = next(
@@ -314,6 +646,10 @@ def validate_workflow_bindings(
                     errors.append(
                         f"Workflow {workflow.key} missing required validation skills in validate stage: {', '.join(missing)}"
                     )
+        if workflow.lifecycle_state in {"approved", "active"} and validation_count == 0:
+            errors.append(
+                f"workflow={workflow.key} lifecycle_state={workflow.lifecycle_state} declares zero validations across its stages; approved/active workflows must declare at least one validation (RESEARCH Pitfall 1)"
+            )
     return errors
 
 
