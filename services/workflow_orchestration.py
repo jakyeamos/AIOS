@@ -4,6 +4,7 @@ import json
 import re
 import sqlite3
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -34,6 +35,39 @@ WORKFLOW_TASK_FAMILIES = {
     "implementation-delivery": "audit_and_implement",
     "failure-recovery": "audit_and_implement",
 }
+HealthWorkflowPredicate = Callable[[dict[str, Any]], bool]
+HEALTH_TO_WORKFLOW_RULES: list[tuple[HealthWorkflowPredicate, str, str]] = [
+    (
+        lambda delta: (
+            delta.get("priority_bucket") == "blocked"
+            and delta.get("domain") == "workflow_agent_control"
+        ),
+        "failure-recovery",
+        "Critical workflow-handshake blocker - recover handshake integrity before other work.",
+    ),
+    (
+        lambda delta: (
+            delta.get("domain") == "security" and delta.get("status") in {"fail", "partial"}
+        ),
+        "security review",
+        "Security domain has open delta - focused security review before broader work.",
+    ),
+    (
+        lambda delta: delta.get("domain") == "architecture" and delta.get("status") == "fail",
+        "codebase architecture review",
+        "Architecture boundary failure - review before remediation work compounds.",
+    ),
+    (
+        lambda delta: delta.get("priority_bucket") in {"foundational", "high_leverage"},
+        "standards backfill",
+        "Highest-leverage standards gap - backfill workflow targets foundational deltas.",
+    ),
+    (
+        lambda delta: delta.get("priority_bucket") == "quick_wins",
+        "implementation-delivery",
+        "Quick-win standards gap - implementation-delivery covers low-effort fixes.",
+    ),
+]
 
 
 @dataclass(frozen=True)
@@ -249,6 +283,74 @@ def validate_workflow_bindings(
                         f"Workflow {workflow.key} missing required validation skills in validate stage: {', '.join(missing)}"
                     )
     return errors
+
+
+def _default_workflow_approval_policy(**_: Any) -> dict[str, Any]:
+    return {
+        "policy_class": "workflow-default_change",
+        "requires_approval": True,
+        "reason": "workflow-default changes require approval before promotion.",
+    }
+
+
+def recommend_workflow_from_health(
+    *,
+    delta_items: list[dict[str, Any]],
+    registry_workflows: set[str] | None = None,
+    workflow_registry_path: Path | None = None,
+    approval_policy_fn: Callable[..., dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    if not delta_items:
+        return []
+    if registry_workflows is None:
+        registry_workflows = set(load_workflow_registry(workflow_registry_path))
+    policy_fn = approval_policy_fn or _default_workflow_approval_policy
+
+    recommendations: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    sorted_items = sorted(
+        delta_items,
+        key=lambda item: float(item.get("priority_score", 0.0) or 0.0),
+        reverse=True,
+    )
+    for item in sorted_items:
+        workflow_key = ""
+        rationale = ""
+        for predicate, candidate_key, candidate_rationale in HEALTH_TO_WORKFLOW_RULES:
+            if predicate(item):
+                workflow_key = candidate_key
+                rationale = candidate_rationale
+                break
+        if not workflow_key or workflow_key in seen:
+            continue
+        seen.add(workflow_key)
+        try:
+            policy = policy_fn(
+                layer_type="workflow",
+                impact_scope="workflow-default",
+                proposed_change={"workflow_key": workflow_key},
+            )
+        except Exception:
+            policy = _default_workflow_approval_policy()
+        recommendations.append(
+            {
+                "workflow_key": workflow_key,
+                "rationale": rationale,
+                "available_in_registry": workflow_key in registry_workflows,
+                "requires_approval": bool(policy.get("requires_approval", True)),
+                "impact_scope": "workflow-default",
+                "policy_class": str(policy.get("policy_class", "workflow-default_change")),
+                "triggered_by": {
+                    "standard_id": str(item.get("standard_id", "")),
+                    "domain": str(item.get("domain", "")),
+                    "priority_bucket": str(item.get("priority_bucket", "")),
+                    "priority_score": float(item.get("priority_score", 0.0) or 0.0),
+                },
+            }
+        )
+        if len(recommendations) >= 5:
+            break
+    return recommendations
 
 
 def _tokenize(text: str | None) -> set[str]:

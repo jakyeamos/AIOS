@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from services.workflow_orchestration import (  # noqa: E402
+    HEALTH_TO_WORKFLOW_RULES,
     WorkflowExecutionContext,
     execute_workflow,
     load_skill_registry,
@@ -17,6 +18,7 @@ from services.workflow_orchestration import (  # noqa: E402
     rank_workflow_candidates,
     recommend_prompt_family,
     recommend_route_primitives,
+    recommend_workflow_from_health,
     summarize_execution_report,
     validate_workflow_bindings,
 )
@@ -49,7 +51,9 @@ def test_execute_academic_workflow_with_validations(tmp_path: Path) -> None:
 
     vault_root = tmp_path / "vault"
     vault_root.mkdir()
-    (vault_root / "style.md").write_text("Use direct transitions and explicit claims.\n", encoding="utf-8")
+    (vault_root / "style.md").write_text(
+        "Use direct transitions and explicit claims.\n", encoding="utf-8"
+    )
 
     context = WorkflowExecutionContext(
         objective="Write an academic paper about retrieval quality and citation fidelity",
@@ -202,7 +206,9 @@ def test_generated_executor_skill_affects_execution(tmp_path: Path) -> None:
 
     assert report["status"] == "completed"
     assert "Debug failing runtime checks" in report["artifacts"]["result_text"]
-    assert any(rule["title"] == "Read before you write" for rule in report["artifacts"]["agent_rules"])
+    assert any(
+        rule["title"] == "Read before you write" for rule in report["artifacts"]["agent_rules"]
+    )
     assert "Agent rules:" in report["artifacts"]["normalized_prompt"]
     generate_stage = next(stage for stage in report["stages"] if stage["kind"] == "generate")
     assert generate_stage["skills"][0]["output_keys"] == ["evidence", "result_text"]
@@ -225,7 +231,12 @@ def test_recommend_prompt_family_for_implementation_workflow() -> None:
     )
 
     assert recommendation["workflow_family"] == "audit_and_implement"
-    assert recommendation["prompt_family"] in {"implementation_handoff", "reasoning_handoff", "research_handoff", "recovery_handoff"}
+    assert recommendation["prompt_family"] in {
+        "implementation_handoff",
+        "reasoning_handoff",
+        "research_handoff",
+        "recovery_handoff",
+    }
     assert recommendation["template_id"] is not None
     assert recommendation["route_status"] in {"approved", "candidate"}
 
@@ -239,3 +250,194 @@ def test_recommend_route_primitives_for_implementation_objective() -> None:
     assert route["selected_workflow"]["workflow_key"] == "implementation-delivery"
     assert route["prompt_recommendation"]["prompt_family"] is not None
     assert route["backend_recommendation"]["selected_surface"] == "codex"
+
+
+def _approval_policy_stub(**_: object) -> dict[str, object]:
+    return {
+        "policy_class": "workflow-default_change",
+        "requires_approval": True,
+        "reason": "workflow-default changes require approval.",
+    }
+
+
+def test_recommend_workflow_returns_standards_backfill_for_foundational() -> None:
+    recommendations = recommend_workflow_from_health(
+        delta_items=[
+            {
+                "standard_id": "code_quality.lint_ratchet",
+                "domain": "code_quality",
+                "status": "fail",
+                "priority_bucket": "foundational",
+                "priority_score": 10.0,
+            }
+        ],
+        registry_workflows={"implementation-delivery", "failure-recovery"},
+        approval_policy_fn=_approval_policy_stub,
+    )
+
+    assert recommendations[0]["workflow_key"] == "standards backfill"
+    assert recommendations[0]["available_in_registry"] is False
+
+
+def test_recommend_workflow_returns_failure_recovery_for_blocked_workflow_agent_control() -> None:
+    recommendations = recommend_workflow_from_health(
+        delta_items=[
+            {
+                "standard_id": "workflow_agent_control.explicit_handshake",
+                "domain": "workflow_agent_control",
+                "status": "fail",
+                "priority_bucket": "blocked",
+                "priority_score": 9.0,
+            }
+        ],
+        registry_workflows={"failure-recovery"},
+        approval_policy_fn=_approval_policy_stub,
+    )
+
+    assert recommendations[0]["workflow_key"] == "failure-recovery"
+    assert recommendations[0]["available_in_registry"] is True
+
+
+def test_recommend_workflow_returns_security_review_for_security_fail() -> None:
+    recommendations = recommend_workflow_from_health(
+        delta_items=[
+            {
+                "standard_id": "security.review_traceability",
+                "domain": "security",
+                "status": "fail",
+                "priority_bucket": "high_leverage",
+                "priority_score": 8.0,
+            }
+        ],
+        registry_workflows={"implementation-delivery"},
+        approval_policy_fn=_approval_policy_stub,
+    )
+
+    assert recommendations[0]["workflow_key"] == "security review"
+    assert recommendations[0]["available_in_registry"] is False
+
+
+def test_recommend_workflow_returns_codebase_architecture_review_for_architecture_fail() -> None:
+    recommendations = recommend_workflow_from_health(
+        delta_items=[
+            {
+                "standard_id": "architecture.boundary_enforcement",
+                "domain": "architecture",
+                "status": "fail",
+                "priority_bucket": "high_leverage",
+                "priority_score": 8.0,
+            }
+        ],
+        registry_workflows={"implementation-delivery"},
+        approval_policy_fn=_approval_policy_stub,
+    )
+
+    assert recommendations[0]["workflow_key"] == "codebase architecture review"
+    assert recommendations[0]["available_in_registry"] is False
+
+
+def test_recommend_workflow_returns_implementation_delivery_for_quick_wins() -> None:
+    recommendations = recommend_workflow_from_health(
+        delta_items=[
+            {
+                "standard_id": "documentation.truth_file_currency",
+                "domain": "documentation",
+                "status": "partial",
+                "priority_bucket": "quick_wins",
+                "priority_score": 4.0,
+            }
+        ],
+        registry_workflows={"implementation-delivery"},
+        approval_policy_fn=_approval_policy_stub,
+    )
+
+    assert recommendations[0]["workflow_key"] == "implementation-delivery"
+    assert recommendations[0]["available_in_registry"] is True
+
+
+def test_recommend_workflow_enriches_with_approval_policy() -> None:
+    recommendations = recommend_workflow_from_health(
+        delta_items=[
+            {
+                "standard_id": "documentation.truth_file_currency",
+                "domain": "documentation",
+                "status": "partial",
+                "priority_bucket": "quick_wins",
+                "priority_score": 4.0,
+            }
+        ],
+        registry_workflows={"implementation-delivery"},
+        approval_policy_fn=_approval_policy_stub,
+    )
+
+    assert recommendations[0]["requires_approval"] is True
+    assert recommendations[0]["impact_scope"] == "workflow-default"
+    assert recommendations[0]["policy_class"] == "workflow-default_change"
+
+
+def test_recommend_workflow_returns_unique_recommendations_up_to_five() -> None:
+    delta_items = [
+        {
+            "standard_id": f"standard-{index}",
+            "domain": domain,
+            "status": status,
+            "priority_bucket": bucket,
+            "priority_score": float(20 - index),
+        }
+        for index, (domain, status, bucket) in enumerate(
+            [
+                ("workflow_agent_control", "fail", "blocked"),
+                ("security", "fail", "high_leverage"),
+                ("architecture", "fail", "high_leverage"),
+                ("testing", "fail", "foundational"),
+                ("documentation", "partial", "quick_wins"),
+                ("code_quality", "fail", "foundational"),
+                ("maintainability", "partial", "high_leverage"),
+                ("ux", "unknown", "quick_wins"),
+                ("observability", "partial", "quick_wins"),
+                ("launch_readiness", "fail", "foundational"),
+            ]
+        )
+    ]
+
+    recommendations = recommend_workflow_from_health(
+        delta_items=delta_items,
+        registry_workflows={"failure-recovery", "implementation-delivery"},
+        approval_policy_fn=_approval_policy_stub,
+    )
+
+    assert len(recommendations) <= 5
+    workflow_keys = [row["workflow_key"] for row in recommendations]
+    assert len(workflow_keys) == len(set(workflow_keys))
+    assert (
+        recommendations[0]["triggered_by"]["priority_score"]
+        >= recommendations[-1]["triggered_by"]["priority_score"]
+    )
+
+
+def test_recommend_workflow_returns_empty_list_when_no_delta_items() -> None:
+    assert recommend_workflow_from_health(delta_items=[], registry_workflows=set()) == []
+
+
+def test_recommend_workflow_triggered_by_carries_delta_metadata() -> None:
+    recommendations = recommend_workflow_from_health(
+        delta_items=[
+            {
+                "standard_id": "testing.trust_signal",
+                "domain": "testing",
+                "status": "fail",
+                "priority_bucket": "foundational",
+                "priority_score": 7.5,
+            }
+        ],
+        registry_workflows=set(),
+        approval_policy_fn=_approval_policy_stub,
+    )
+
+    assert recommendations[0]["triggered_by"] == {
+        "standard_id": "testing.trust_signal",
+        "domain": "testing",
+        "priority_bucket": "foundational",
+        "priority_score": 7.5,
+    }
+    assert len(HEALTH_TO_WORKFLOW_RULES) == 5

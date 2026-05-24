@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import sqlite3
 import sys
+from dataclasses import is_dataclass
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import get_args
 
@@ -10,11 +12,18 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from services.standards_health import (  # noqa: E402
+    DeltaExplanation,
+    EvaluatedStandard,
     Provenance,
+    _classify_provenance,
+    _detect_contradiction,
     _evaluate_known_standard,
+    _findings_by_criterion,
+    build_explanation,
     ensure_standards_health_schema,
     evaluate_and_record,
     load_registry,
+    project_delta_explanations,
 )
 
 DELT_01_DOMAINS = {
@@ -324,6 +333,246 @@ def test_compute_score_emits_all_ten_delt01_domains(tmp_path: Path) -> None:
 
 def test_provenance_import_from_capability_truth_succeeds() -> None:
     assert set(get_args(Provenance)) == {"confirmed", "inferred", "missing", "contradictory"}
+    assert is_dataclass(DeltaExplanation)
+
+
+def test_classify_provenance_confirmed_for_auto_with_evidence() -> None:
+    assert (
+        _classify_provenance(
+            status="pass",
+            confidence=0.9,
+            evidence=("path/to/file",),
+            evaluator_type="auto",
+            cross_signals=None,
+        )
+        == "confirmed"
+    )
+    assert (
+        _classify_provenance(
+            status="pass",
+            confidence=0.7,
+            evidence=("path/to/file",),
+            evaluator_type="auto",
+            cross_signals=None,
+        )
+        == "inferred"
+    )
+
+
+def test_classify_provenance_missing_without_evidence() -> None:
+    assert (
+        _classify_provenance(
+            status="pass",
+            confidence=0.9,
+            evidence=(),
+            evaluator_type="auto",
+            cross_signals=None,
+        )
+        == "missing"
+    )
+    assert (
+        _classify_provenance(
+            status="unknown",
+            confidence=0.9,
+            evidence=("evidence",),
+            evaluator_type="auto",
+            cross_signals=None,
+        )
+        == "missing"
+    )
+
+
+def test_classify_provenance_inferred_for_manual() -> None:
+    assert (
+        _classify_provenance(
+            status="pass",
+            confidence=0.9,
+            evidence=("evidence",),
+            evaluator_type="manual",
+            cross_signals=None,
+        )
+        == "inferred"
+    )
+
+
+def test_classify_provenance_contradictory_on_recent_findings() -> None:
+    assert (
+        _classify_provenance(
+            status="pass",
+            confidence=0.9,
+            evidence=("evidence",),
+            evaluator_type="auto",
+            cross_signals={"findings_by_criterion": {"crit-x": 2}},
+        )
+        == "contradictory"
+    )
+
+
+def test_detect_contradiction_ignores_stale_findings(tmp_path: Path) -> None:
+    conn = _base_conn()
+    conn.execute(
+        """
+        CREATE TABLE success_criteria_evaluations (
+            id TEXT PRIMARY KEY,
+            project_id TEXT,
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE success_criteria_findings (
+            id TEXT PRIMARY KEY,
+            evaluation_id TEXT NOT NULL,
+            criterion_id TEXT NOT NULL,
+            level TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            resolution_status TEXT NOT NULL DEFAULT 'open',
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        "INSERT INTO success_criteria_evaluations (id, project_id, created_at) VALUES ('eval-1', 'proj', ?)",
+        (datetime.now(UTC).isoformat(),),
+    )
+    stale_at = (datetime.now(UTC) - timedelta(days=30)).isoformat()
+    conn.execute(
+        """
+        INSERT INTO success_criteria_findings (
+            id, evaluation_id, criterion_id, level, summary, resolution_status, created_at
+        )
+        VALUES ('finding-stale', 'eval-1', 'testing-trust', 'blocker', 'stale', 'open', ?)
+        """,
+        (stale_at,),
+    )
+    standard = _standard_by_id(tmp_path, "testing.trust_signal")
+    evaluation = EvaluatedStandard(
+        standard=standard,
+        status="pass",
+        reason="passed",
+        measured_state={},
+        evidence=("criteria",),
+        evaluator_type="auto",
+        confidence=0.9,
+        regression_flag=False,
+        waiver_rationale=None,
+        waiver_owner=None,
+        waiver_review_at=None,
+        waiver_affects_portfolio=True,
+    )
+
+    assert _findings_by_criterion(conn, "proj", within_days=14) == {}
+    assert _detect_contradiction(evaluation, {"findings_by_criterion": {}}) is None
+
+    conn.execute(
+        """
+        INSERT INTO success_criteria_findings (
+            id, evaluation_id, criterion_id, level, summary, resolution_status, created_at
+        )
+        VALUES ('finding-recent', 'eval-1', 'testing-trust', 'blocker', 'recent', 'open', ?)
+        """,
+        (datetime.now(UTC).isoformat(),),
+    )
+    findings = _findings_by_criterion(conn, "proj", within_days=14)
+    assert findings == {"testing-trust": 1}
+    assert _detect_contradiction(evaluation, {"findings_by_criterion": findings}) is not None
+
+
+def test_detect_contradiction_returns_none_when_no_related_criteria(tmp_path: Path) -> None:
+    standard = _standard_by_id(tmp_path, "ux.operator_clarity")
+    evaluation = EvaluatedStandard(
+        standard=standard,
+        status="pass",
+        reason="passed",
+        measured_state={},
+        evidence=("manual-review",),
+        evaluator_type="manual",
+        confidence=0.9,
+        regression_flag=False,
+        waiver_rationale=None,
+        waiver_owner=None,
+        waiver_review_at=None,
+        waiver_affects_portfolio=True,
+    )
+
+    assert _detect_contradiction(evaluation, {"findings_by_criterion": {"crit-x": 1}}) is None
+
+
+def test_build_explanation_includes_required_fields(tmp_path: Path) -> None:
+    standard = _standard_by_id(tmp_path, "testing.trust_signal")
+    evaluation = EvaluatedStandard(
+        standard=standard,
+        status="fail",
+        reason="blocker findings",
+        measured_state={"blocker_count": 1},
+        evidence=("criteria-eval",),
+        evaluator_type="auto",
+        confidence=0.9,
+        regression_flag=False,
+        waiver_rationale=None,
+        waiver_owner=None,
+        waiver_review_at=None,
+        waiver_affects_portfolio=True,
+    )
+
+    explanation = build_explanation(
+        evaluation=evaluation,
+        delta_item={
+            "remediation_playbook": {"summary": "Fix tests", "effort": 2, "leverage": 1.3},
+            "priority_score": 6.5,
+            "priority_bucket": "foundational",
+        },
+        capability_signals={"findings_by_criterion": {"testing-trust": 1}},
+        freshness="2026-05-24T00:00:00Z",
+    )
+
+    assert explanation.standard_id == "testing.trust_signal"
+    assert explanation.domain == "testing"
+    assert explanation.status == "fail"
+    assert explanation.provenance in {"confirmed", "inferred", "missing", "contradictory"}
+    assert explanation.confidence == 0.9
+    assert explanation.freshness == "2026-05-24T00:00:00Z"
+    assert explanation.evidence == ("criteria-eval",)
+    assert explanation.remediation_summary == "Fix tests"
+    assert explanation.remediation_effort == 2
+    assert explanation.remediation_leverage == 1.3
+    assert explanation.priority_score == 6.5
+    assert explanation.priority_bucket == "foundational"
+    assert explanation.measured_state == {"blocker_count": 1}
+    assert explanation.expected_state == standard.expected_state
+    assert explanation.reason == "blocker findings"
+
+
+def test_project_delta_explanations_returns_one_per_standard(tmp_path: Path) -> None:
+    registry_path = _production_registry_copy(tmp_path)
+    _, standards = load_registry(registry_path)
+    conn = _base_conn()
+    conn.execute(
+        """
+        INSERT INTO project_standards_profiles (
+            project_id, profile_id, attached_version, latest_version, migration_mode
+        )
+        VALUES ('proj', 'aios-core', '2026.06.0', '2026.06.0', 'current')
+        """
+    )
+    evaluate_and_record(conn, project_id="proj", registry_path=registry_path)
+    conn.commit()
+
+    explanations = project_delta_explanations(conn, "proj")
+
+    assert len(explanations) == len(standards)
+    assert all(explanation.standard_id for explanation in explanations)
+    assert explanations == sorted(
+        explanations,
+        key=lambda item: (-item.priority_score, item.standard_id),
+    )
+
+
+def test_project_delta_explanations_returns_empty_list_without_snapshot() -> None:
+    conn = _base_conn()
+
+    assert project_delta_explanations(conn, "missing") == []
 
 
 def test_scoring_penalty_model_with_regression_unknown_and_waiver(tmp_path: Path) -> None:

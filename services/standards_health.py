@@ -5,7 +5,7 @@ import sqlite3
 import uuid
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Literal, TypedDict, cast
 
@@ -70,6 +70,26 @@ class EvaluatedStandard:
     waiver_affects_portfolio: bool
 
 
+@dataclass(frozen=True)
+class DeltaExplanation:
+    standard_id: str
+    domain: str
+    status: AssessmentStatus
+    provenance: Provenance
+    confidence: float
+    freshness: str
+    evidence: tuple[str, ...]
+    contradiction: str | None
+    remediation_summary: str
+    remediation_effort: float
+    remediation_leverage: float
+    priority_score: float
+    priority_bucket: str
+    measured_state: dict[str, Any]
+    expected_state: dict[str, Any]
+    reason: str
+
+
 class ManualAssessmentOverride(TypedDict, total=False):
     status: AssessmentStatus
     reason: str
@@ -99,6 +119,16 @@ def _json_list(raw: str | None) -> list[Any]:
     except json.JSONDecodeError:
         return []
     return loaded if isinstance(loaded, list) else []
+
+
+def _json_dict(raw: str | None) -> dict[str, Any]:
+    if not raw:
+        return {}
+    try:
+        loaded = json.loads(raw)
+    except json.JSONDecodeError:
+        return {}
+    return loaded if isinstance(loaded, dict) else {}
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -1405,6 +1435,227 @@ def _build_delta_items(
 
     delta_items.sort(key=lambda item: item["priority_score"], reverse=True)
     return delta_items
+
+
+def _has_contradiction(status: AssessmentStatus, cross_signals: dict[str, Any]) -> bool:
+    findings_by_criterion = cross_signals.get("findings_by_criterion")
+    if status != "pass" or not isinstance(findings_by_criterion, dict):
+        return False
+    return any(int(count or 0) > 0 for count in findings_by_criterion.values())
+
+
+def _classify_provenance(
+    *,
+    status: AssessmentStatus,
+    confidence: float,
+    evidence: tuple[str, ...] | list[str],
+    evaluator_type: str,
+    cross_signals: dict[str, Any] | None,
+) -> Provenance:
+    if status == "unknown" or len(evidence) == 0:
+        return "missing"
+    if cross_signals and _has_contradiction(status, cross_signals):
+        return "contradictory"
+    if evaluator_type == "auto" and confidence >= 0.75:
+        return "confirmed"
+    return "inferred"
+
+
+def _findings_by_criterion(
+    conn: sqlite3.Connection,
+    project_id: str,
+    *,
+    within_days: int = 14,
+) -> dict[str, int]:
+    """Return recent open criteria findings for contradiction checks."""
+    cutoff = (datetime.now(UTC) - timedelta(days=within_days)).isoformat()
+    counts: dict[str, int] = defaultdict(int)
+    if _table_exists(conn, "success_criteria_findings") and _table_exists(
+        conn, "success_criteria_evaluations"
+    ):
+        rows = conn.execute(
+            """
+            SELECT f.criterion_id, COUNT(*)
+            FROM success_criteria_findings f
+            INNER JOIN success_criteria_evaluations e ON e.id = f.evaluation_id
+            WHERE e.project_id = ?
+              AND COALESCE(f.resolution_status, 'open') = 'open'
+              AND f.level IN ('warning', 'blocker')
+              AND f.created_at >= ?
+            GROUP BY f.criterion_id
+            """,
+            (project_id, cutoff),
+        ).fetchall()
+        for row in rows:
+            counts[str(row[0])] += int(row[1] or 0)
+    if _table_exists(conn, "success_criteria_stage_findings") and _table_exists(
+        conn, "orchestration_runs"
+    ):
+        rows = conn.execute(
+            """
+            SELECT f.criterion_id, COUNT(*)
+            FROM success_criteria_stage_findings f
+            INNER JOIN orchestration_runs r ON r.id = f.run_id
+            WHERE r.project_id = ?
+              AND COALESCE(f.resolution_status, 'open') = 'open'
+              AND f.level IN ('warning', 'blocker')
+              AND f.created_at >= ?
+            GROUP BY f.criterion_id
+            """,
+            (project_id, cutoff),
+        ).fetchall()
+        for row in rows:
+            counts[str(row[0])] += int(row[1] or 0)
+    return dict(counts)
+
+
+def _detect_contradiction(
+    evaluation: EvaluatedStandard,
+    capability_signals: dict[str, Any] | None,
+) -> str | None:
+    if not evaluation.standard.related_criteria or not capability_signals:
+        return None
+    findings_by_criterion = capability_signals.get("findings_by_criterion")
+    if not isinstance(findings_by_criterion, dict):
+        return None
+    for criterion_id in evaluation.standard.related_criteria:
+        blockers = int(findings_by_criterion.get(criterion_id, 0) or 0)
+        if evaluation.status == "pass" and blockers > 0:
+            return (
+                f"Standard reports pass but {blockers} open finding(s) exist on related "
+                f"criterion '{criterion_id}'."
+            )
+        if evaluation.status == "fail" and blockers == 0 and evaluation.confidence < 0.5:
+            return (
+                f"Standard reports fail with low confidence ({evaluation.confidence}) but no "
+                f"findings recorded on related criterion '{criterion_id}'."
+            )
+    return None
+
+
+def build_explanation(
+    *,
+    evaluation: EvaluatedStandard,
+    delta_item: dict[str, Any] | None,
+    capability_signals: dict[str, Any] | None = None,
+    freshness: str | None = None,
+) -> DeltaExplanation:
+    remediation = (
+        cast(dict[str, Any], delta_item.get("remediation_playbook"))
+        if delta_item and isinstance(delta_item.get("remediation_playbook"), dict)
+        else evaluation.standard.remediation_playbook
+    )
+    contradiction = _detect_contradiction(evaluation, capability_signals)
+    cross_signals = (
+        {
+            "findings_by_criterion": {
+                criterion: 1 for criterion in evaluation.standard.related_criteria
+            }
+        }
+        if contradiction
+        else capability_signals
+    )
+    return DeltaExplanation(
+        standard_id=evaluation.standard.id,
+        domain=evaluation.standard.domain,
+        status=evaluation.status,
+        provenance=_classify_provenance(
+            status=evaluation.status,
+            confidence=evaluation.confidence,
+            evidence=evaluation.evidence,
+            evaluator_type=evaluation.evaluator_type,
+            cross_signals=cross_signals,
+        ),
+        confidence=evaluation.confidence,
+        freshness=freshness or _now_iso(),
+        evidence=evaluation.evidence,
+        contradiction=contradiction,
+        remediation_summary=str(remediation.get("summary", "")),
+        remediation_effort=float(remediation.get("effort", 1.0) or 1.0),
+        remediation_leverage=float(remediation.get("leverage", 1.0) or 1.0),
+        priority_score=float(delta_item.get("priority_score", 0.0) if delta_item else 0.0),
+        priority_bucket=str(
+            delta_item.get("priority_bucket", "high_leverage") if delta_item else "high_leverage"
+        ),
+        measured_state=evaluation.measured_state,
+        expected_state=evaluation.standard.expected_state,
+        reason=evaluation.reason,
+    )
+
+
+def project_delta_explanations(
+    conn: sqlite3.Connection,
+    project_id: str,
+) -> list[DeltaExplanation]:
+    snapshot = latest_snapshot(conn, project_id)
+    if snapshot is None:
+        return []
+    _, standards = load_registry()
+    standards_by_id = {standard.id: standard for standard in standards}
+    capability_signals = {"findings_by_criterion": _findings_by_criterion(conn, project_id)}
+    rows = conn.execute(
+        """
+        SELECT
+            a.standard_id,
+            a.status,
+            a.measured_state_json,
+            a.reason,
+            a.evidence_json,
+            a.last_evaluated_at,
+            a.evaluator_type,
+            a.confidence,
+            a.regression_flag,
+            a.waiver_rationale,
+            a.waiver_owner,
+            a.waiver_review_at,
+            a.waiver_affects_portfolio,
+            d.remediation_playbook_json,
+            d.priority_score,
+            d.priority_bucket
+        FROM standards_assessments a
+        LEFT JOIN standards_delta_items d
+          ON d.snapshot_id = a.snapshot_id AND d.standard_id = a.standard_id
+        WHERE a.snapshot_id = ?
+        ORDER BY COALESCE(d.priority_score, 0) DESC, a.standard_id ASC
+        """,
+        (snapshot["id"],),
+    ).fetchall()
+    explanations: list[DeltaExplanation] = []
+    for row in rows:
+        standard = standards_by_id.get(str(row[0]))
+        if standard is None:
+            continue
+        delta_item = None
+        if row[13] is not None or row[14] is not None or row[15] is not None:
+            delta_item = {
+                "remediation_playbook": _json_dict(row[13]),
+                "priority_score": float(row[14] or 0.0),
+                "priority_bucket": str(row[15] or "high_leverage"),
+            }
+        evaluation = EvaluatedStandard(
+            standard=standard,
+            status=cast(AssessmentStatus, row[1]),
+            reason=str(row[3] or ""),
+            measured_state=_json_dict(row[2]),
+            evidence=tuple(str(item) for item in _json_list(row[4])),
+            evaluator_type=str(row[6] or "manual"),
+            confidence=float(row[7] or 0.0),
+            regression_flag=bool(row[8]),
+            waiver_rationale=str(row[9]) if row[9] is not None else None,
+            waiver_owner=str(row[10]) if row[10] is not None else None,
+            waiver_review_at=str(row[11]) if row[11] is not None else None,
+            waiver_affects_portfolio=bool(row[12]),
+        )
+        explanations.append(
+            build_explanation(
+                evaluation=evaluation,
+                delta_item=delta_item,
+                capability_signals=capability_signals,
+                freshness=str(row[5] or snapshot["created_at"]),
+            )
+        )
+    explanations.sort(key=lambda item: (-item.priority_score, item.standard_id))
+    return explanations
 
 
 def _build_task_rows(
