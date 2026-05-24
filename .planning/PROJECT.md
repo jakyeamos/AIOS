@@ -72,6 +72,7 @@ AIOS should compile messy human intent into the right context, standards, workfl
 - Phase 8 now has an execution-ready context artifact defining the asset lifecycle vocabulary, registry compatibility, workflow contract, evidence recommendation, and promotion governance boundaries.
 - Phase 8 Plan 01 shipped the canonical five-state lifecycle vocabulary for prompts, skills, and workflows, registry lifecycle metadata backfills, governed active-promotion writebacks, and an idempotent migration for legacy lifecycle statuses.
 - Phase 8 Plan 02 shipped stage-rich workflow contract bindings, backward-compatible vNext stage parsing, cross-registry validation for criteria/prompts/standards, and lifecycle-aware validation requirements for active workflows.
+- Phase 8 Plan 03 shipped read-time asset usage evidence, lifecycle-filtered prompt/skill/workflow recommendations, agentize skill recommendation fallback tracking, and route-level skill/workflow alternatives with prompt evidence enrichment.
 
 ## Constraints
 
@@ -110,4 +111,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-24 after shipping Phase 8 Plan 02 workflow contract bindings*
+*Last updated: 2026-05-24 after shipping Phase 8 Plan 03 asset recommendations*
