@@ -61,6 +61,7 @@ AIOS should compile messy human intent into the right context, standards, workfl
 - The repository now includes the standalone `research-domain-writing/` skill bundle, Cursor skill shims, and archived package for grounded domain writing workflows.
 - Phase 6 has an execution-ready context artifact defining standards resolution, stage evaluation, execution-first evidence, and operator finding lifecycle boundaries.
 - Phase 6 Plan 01 shipped registry-driven standards resolution before execution, briefing packet criteria/standards persistence columns, agentize registry-backed standards selection, and session-start standards/trigger previews.
+- Phase 6 Plan 02 shipped durable workflow stage findings, including a `success_criteria_stage_findings` table, stage JSON artifacts, workflow-stage evaluation hooks, and closeout governance aggregation.
 
 ## Constraints
 
@@ -99,4 +100,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-23 after shipping Phase 6 standards resolution*
+*Last updated: 2026-05-23 after shipping Phase 6 workflow stage findings*
