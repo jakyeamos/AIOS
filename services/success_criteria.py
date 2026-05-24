@@ -53,6 +53,14 @@ def _ensure_column(conn: sqlite3.Connection, table: str, column: str, definition
         conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
 
+def _table_exists(conn: sqlite3.Connection, table: str) -> bool:
+    row = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1",
+        (table,),
+    ).fetchone()
+    return row is not None
+
+
 @dataclass(frozen=True)
 class CriterionRecord:
     id: str
@@ -262,10 +270,9 @@ def infer_context(
             task_types.add("implementation")
 
     objective_lower = objective_text.lower()
-    explicit_security_focus = (
-        _contains_any(objective_lower, ("security", "auth", "token", "permission", "secret"))
-        or any("security" in skill.lower() for skill in requested_skills)
-    )
+    explicit_security_focus = _contains_any(
+        objective_lower, ("security", "auth", "token", "permission", "secret")
+    ) or any("security" in skill.lower() for skill in requested_skills)
     if _contains_any(objective_lower, ("test", "pytest", "unit", "integration", "coverage")):
         task_types.add("testing")
         domains.add("testing")
@@ -298,7 +305,8 @@ def infer_context(
     ):
         execution_first_triggers.add("cross-system interactions")
     if code_changes and any(
-        _contains_any(f"/{path.lower()}", EXECUTION_FIRST_PATH_MARKERS) for path in changed
+        _contains_any(f"/{path.lower()}", EXECUTION_FIRST_PATH_MARKERS) and _is_code_path(path)
+        for path in changed
     ):
         execution_first_triggers.add("core/shared logic modification")
     if "bugfix" in task_types or _contains_any(
@@ -310,7 +318,10 @@ def infer_context(
         execution_first_triggers.add("low trust in tests")
     if code_changes and (
         _contains_any(objective_lower, ("complex domain", "domain model"))
-        or any(_contains_any(path.lower(), ("schema", "types", "model", "orchestration")) for path in changed)
+        or any(
+            _contains_any(path.lower(), ("schema", "types", "model", "orchestration"))
+            for path in changed
+        )
     ):
         execution_first_triggers.add("complex domain models")
 
@@ -394,7 +405,9 @@ def _is_code_path(path: str) -> bool:
     return suffix in CODE_FILE_EXTENSIONS and not _is_test_path(path)
 
 
-def _evaluate_testing_trust(context: dict[str, Any], criterion: CriterionRecord) -> CriterionFinding:
+def _evaluate_testing_trust(
+    context: dict[str, Any], criterion: CriterionRecord
+) -> CriterionFinding:
     changed = context.get("changed_files", [])
     code_changes = [path for path in changed if _is_code_path(path)]
     test_changes = [path for path in changed if _is_test_path(path)]
@@ -420,7 +433,9 @@ def _evaluate_testing_trust(context: dict[str, Any], criterion: CriterionRecord)
     )
 
 
-def _evaluate_code_simplicity(context: dict[str, Any], criterion: CriterionRecord) -> CriterionFinding:
+def _evaluate_code_simplicity(
+    context: dict[str, Any], criterion: CriterionRecord
+) -> CriterionFinding:
     changed = context.get("changed_files", [])
     code_changes = [path for path in changed if _is_code_path(path)]
     if len(code_changes) > 40:
@@ -443,7 +458,9 @@ def _evaluate_code_simplicity(context: dict[str, Any], criterion: CriterionRecor
     )
 
 
-def _evaluate_security_review(context: dict[str, Any], criterion: CriterionRecord) -> CriterionFinding:
+def _evaluate_security_review(
+    context: dict[str, Any], criterion: CriterionRecord
+) -> CriterionFinding:
     changed = context.get("changed_files", [])
     sensitive_changes = [
         path for path in changed if _contains_any(path.lower(), SENSITIVE_PATH_MARKERS)
@@ -480,7 +497,9 @@ def _evaluate_security_review(context: dict[str, Any], criterion: CriterionRecor
     )
 
 
-def _evaluate_observability(context: dict[str, Any], criterion: CriterionRecord) -> CriterionFinding:
+def _evaluate_observability(
+    context: dict[str, Any], criterion: CriterionRecord
+) -> CriterionFinding:
     changed = context.get("changed_files", [])
     code_changes = [path for path in changed if _is_code_path(path)]
     observability_changes = [
@@ -983,4 +1002,119 @@ def preview_applicable_criteria(
             }
             for criterion in applicable
         ],
+    }
+
+
+def _standard_applies(
+    standard: Any,
+    *,
+    project_name: str | None,
+    domains: Sequence[str],
+) -> bool:
+    applicability = standard.applicability
+    if not applicability:
+        return True
+
+    project_pattern = str(applicability.get("project_pattern") or "").strip().lower()
+    if project_pattern and project_pattern not in (project_name or "").lower():
+        return False
+
+    projects = applicability.get("projects")
+    if isinstance(projects, list) and projects and "*" not in projects:
+        normalized_projects = {str(project).lower() for project in projects}
+        if (project_name or "").lower() not in normalized_projects:
+            return False
+
+    applicable_domains = applicability.get("domains")
+    if isinstance(applicable_domains, list) and applicable_domains:
+        return bool(set(domains) & {str(domain) for domain in applicable_domains})
+
+    return True
+
+
+def _standard_summary(standard: Any) -> dict[str, Any]:
+    return {
+        "standard_id": standard.id,
+        "title": standard.title,
+        "domain": standard.domain,
+        "weight": standard.weight,
+        "severity_if_missing": standard.severity_if_missing,
+        "related_criteria": list(standard.related_criteria),
+    }
+
+
+def resolve_task_standards(
+    *,
+    project_id: str | None,
+    project_name: str | None,
+    objective: str | None,
+    prompt_classifications: Sequence[str] | None = None,
+    changed_files: Sequence[str] | None = None,
+    skills: Sequence[str] | None = None,
+    workflow_key: str | None = None,
+    conn: sqlite3.Connection | None = None,
+) -> dict[str, Any]:
+    criteria_preview = preview_applicable_criteria(
+        project_id=project_id,
+        project_name=project_name,
+        objective=objective,
+        prompt_classifications=prompt_classifications,
+        changed_files=changed_files,
+        skills=skills,
+    )
+    context = infer_context(
+        objective=objective,
+        prompt_classifications=prompt_classifications,
+        changed_files=changed_files,
+        skills=skills,
+    )
+
+    from services import standards_health  # noqa: PLC0415
+
+    profile, standards = standards_health.load_registry()
+    registry_profile_id = str(profile.get("id") or "")
+    registry_profile_version = str(profile.get("version") or "")
+    profile_id = registry_profile_id
+    profile_version = registry_profile_version
+    resolution_status = "ok"
+
+    if conn is not None and project_id is not None:
+        if not _table_exists(conn, "project_standards_profiles"):
+            resolution_status = "no_profile_attached"
+            standards = []
+        else:
+            row = conn.execute(
+                """
+                SELECT profile_id, attached_version, latest_version
+                FROM project_standards_profiles
+                WHERE project_id = ?
+                LIMIT 1
+                """,
+                (project_id,),
+            ).fetchone()
+            if row is None:
+                resolution_status = "no_profile_attached"
+                standards = []
+            else:
+                profile_id = str(row[0] or registry_profile_id)
+                profile_version = str(row[1] or row[2] or registry_profile_version)
+                standards = [
+                    standard for standard in standards if standard.profile_id == profile_id
+                ]
+
+    domains = [str(domain) for domain in context.get("domains", [])]
+    applicable_standards = [
+        _standard_summary(standard)
+        for standard in standards
+        if _standard_applies(standard, project_name=project_name, domains=domains)
+    ]
+
+    return {
+        "criteria": criteria_preview["criteria"],
+        "standards": applicable_standards,
+        "execution_first_triggers": context["execution_first_triggers"],
+        "workflow_key": workflow_key,
+        "resolution_status": resolution_status,
+        "profile_id": profile_id,
+        "profile_version": profile_version,
     }

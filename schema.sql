@@ -291,6 +291,8 @@ CREATE TABLE briefing_packets (
   route_result_json TEXT NOT NULL DEFAULT '{}',
   selection_trace_json TEXT NOT NULL DEFAULT '[]',
   omitted_context_json TEXT NOT NULL DEFAULT '[]',
+  selected_criteria_json TEXT NOT NULL DEFAULT '[]',
+  selected_standards_json TEXT NOT NULL DEFAULT '[]',
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 CREATE INDEX idx_briefing_packets_project ON briefing_packets(project_id, created_at);

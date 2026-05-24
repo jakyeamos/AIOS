@@ -157,19 +157,40 @@ def _classify(request: str) -> tuple[TaskClassification, ...]:
 
     checks: tuple[tuple[TaskClassification, tuple[str, ...]], ...] = (
         (TaskClassification.SECURITY_REVIEW, ("security", "auth", "token", "secret", "permission")),
-        (TaskClassification.DEBUG, ("debug", "bug", "failing", "failure", "fix", "regression", "broken", "error")),
+        (
+            TaskClassification.DEBUG,
+            ("debug", "bug", "failing", "failure", "fix", "regression", "broken", "error"),
+        ),
         (TaskClassification.AUDIT, ("audit", "review", "inspect", "assess")),
-        (TaskClassification.TEST_GENERATION, ("write tests", "add tests", "test", "coverage", "tdd")),
-        (TaskClassification.UI_UX_IMPROVEMENT, ("ui", "ux", "visual", "interface", "design", "screen", "polish")),
-        (TaskClassification.REFACTOR, ("refactor", "clean up", "cleanup", "without breaking behavior")),
+        (
+            TaskClassification.TEST_GENERATION,
+            ("write tests", "add tests", "test", "coverage", "tdd"),
+        ),
+        (
+            TaskClassification.UI_UX_IMPROVEMENT,
+            ("ui", "ux", "visual", "interface", "design", "screen", "polish"),
+        ),
+        (
+            TaskClassification.REFACTOR,
+            ("refactor", "clean up", "cleanup", "without breaking behavior"),
+        ),
         (TaskClassification.RESEARCH, ("research", "compare", "investigate", "library")),
         (TaskClassification.PLANNING, ("plan", "roadmap", "strategy", "turn this idea")),
         (TaskClassification.PRD_GENERATION, ("prd", "product requirements")),
         (TaskClassification.MIGRATION, ("migrate", "migration")),
         (TaskClassification.ARCHITECTURE_CLEANUP, ("architecture", "boundary", "layering")),
-        (TaskClassification.OBSERVABILITY_IMPROVEMENT, ("observability", "logging", "tracing", "dashboard")),
-        (TaskClassification.PERFORMANCE_IMPROVEMENT, ("performance", "latency", "slow", "optimize")),
-        (TaskClassification.REPO_MAINTENANCE, ("repo", "repository", "dependencies", "maintenance")),
+        (
+            TaskClassification.OBSERVABILITY_IMPROVEMENT,
+            ("observability", "logging", "tracing", "dashboard"),
+        ),
+        (
+            TaskClassification.PERFORMANCE_IMPROVEMENT,
+            ("performance", "latency", "slow", "optimize"),
+        ),
+        (
+            TaskClassification.REPO_MAINTENANCE,
+            ("repo", "repository", "dependencies", "maintenance"),
+        ),
         (TaskClassification.DOCUMENTATION, ("docs", "documentation", "readme")),
         (TaskClassification.EVALUATION_DESIGN, ("eval", "evaluation", "score", "quality")),
         (TaskClassification.HUMANIZING, ("humanize", "like my style", "sound like me")),
@@ -196,7 +217,9 @@ def _select_execution_mode(
         lowered,
         ("auth", "authentication", "security policy", "database schema", "secrets"),
     )
-    complex_repo = _contains_any(lowered, ("whole repo", "entire repo", "architecture", "multi-file", "migration"))
+    complex_repo = _contains_any(
+        lowered, ("whole repo", "entire repo", "architecture", "multi-file", "migration")
+    )
     implementation = TaskClassification.IMPLEMENT in classifications
     audit = TaskClassification.AUDIT in classifications
 
@@ -250,25 +273,57 @@ def _select_execution_mode(
     )
 
 
-def _context_plan(request: str, classifications: tuple[TaskClassification, ...]) -> tuple[ContextRequirement, ...]:
+def _context_plan(
+    request: str, classifications: tuple[TaskClassification, ...]
+) -> tuple[ContextRequirement, ...]:
     context: list[ContextRequirement] = [
-        ContextRequirement("PROJECT.md", "Project truth anchors AIOS behavior and required writebacks."),
-        ContextRequirement("AGENTS.md", "Repository agent workflow contract and local constraints."),
+        ContextRequirement(
+            "PROJECT.md", "Project truth anchors AIOS behavior and required writebacks."
+        ),
+        ContextRequirement(
+            "AGENTS.md", "Repository agent workflow contract and local constraints."
+        ),
     ]
     if _contains_any(request.lower(), ("workflow", "agent", "skill", "prompt", "orchestrat")):
         context.extend(
             [
-                ContextRequirement("config/workflows/registry.json", "Workflow stages and bindings are registry-backed."),
-                ContextRequirement("config/workflows/skills.json", "Skill metadata and stage permissions live here."),
-                ContextRequirement("aios/context/domains/agent-harnesses.md", "Agent harness standards apply to prompt and skill changes."),
+                ContextRequirement(
+                    "config/workflows/registry.json",
+                    "Workflow stages and bindings are registry-backed.",
+                ),
+                ContextRequirement(
+                    "config/workflows/skills.json",
+                    "Skill metadata and stage permissions live here.",
+                ),
+                ContextRequirement(
+                    "aios/context/domains/agent-harnesses.md",
+                    "Agent harness standards apply to prompt and skill changes.",
+                ),
             ]
         )
     if TaskClassification.UI_UX_IMPROVEMENT in classifications:
-        context.append(ContextRequirement("aios/context/standards/global.design.md", "UI work needs design standards."))
+        context.append(
+            ContextRequirement(
+                "aios/context/standards/global.design.md", "UI work needs design standards."
+            )
+        )
     if TaskClassification.SECURITY_REVIEW in classifications:
-        context.append(ContextRequirement("aios/context/standards/global.security.md", "Security asks need global security standards."))
-    if TaskClassification.TEST_GENERATION in classifications or TaskClassification.IMPLEMENT in classifications:
-        context.append(ContextRequirement("aios/context/standards/global.testing.md", "Implementation needs executable verification."))
+        context.append(
+            ContextRequirement(
+                "aios/context/standards/global.security.md",
+                "Security asks need global security standards.",
+            )
+        )
+    if (
+        TaskClassification.TEST_GENERATION in classifications
+        or TaskClassification.IMPLEMENT in classifications
+    ):
+        context.append(
+            ContextRequirement(
+                "aios/context/standards/global.testing.md",
+                "Implementation needs executable verification.",
+            )
+        )
     if TaskClassification.REFACTOR in classifications:
         context.append(
             ContextRequirement(
@@ -276,15 +331,26 @@ def _context_plan(request: str, classifications: tuple[TaskClassification, ...])
                 "Refactors must preserve ownership and architecture boundaries.",
             )
         )
-    if _contains_any(request.lower(), ("success", "criteria", "verify", "test", "workflow", "aios")):
+    if _contains_any(
+        request.lower(), ("success", "criteria", "verify", "test", "workflow", "aios")
+    ):
         context.append(
-            ContextRequirement("spec/success-criteria/index.md", "Success criteria should be attached before execution.")
+            ContextRequirement(
+                "spec/success-criteria/index.md",
+                "Success criteria should be attached before execution.",
+            )
         )
     if _contains_any(request.lower(), ("prompt", "agentize", "template")):
-        context.append(ContextRequirement("prompts/registry.json", "Prompt patterns can be used as evidence, not routing authority."))
+        context.append(
+            ContextRequirement(
+                "prompts/registry.json",
+                "Prompt patterns can be used as evidence, not routing authority.",
+            )
+        )
     return tuple(context)
 
 
+# DEPRECATED: kept as fallback for one cycle, retire in phase 8.
 def _standards(classifications: tuple[TaskClassification, ...]) -> tuple[str, ...]:
     standards = ["maintainability", "testing", "observability"]
     if TaskClassification.SECURITY_REVIEW in classifications:
@@ -300,6 +366,7 @@ def _standards(classifications: tuple[TaskClassification, ...]) -> tuple[str, ..
     return _dedupe(standards)
 
 
+# DEPRECATED: kept as fallback for one cycle, retire in phase 8.
 def _success_criteria(classifications: tuple[TaskClassification, ...]) -> tuple[str, ...]:
     criteria = ["workflow-state-integrity", "testing-trust", "truth-file-consistency"]
     if TaskClassification.SECURITY_REVIEW in classifications:
@@ -319,31 +386,63 @@ def _verification_plan(
     if mode.mode == ExecutionMode.AUDIT_ONLY:
         steps.extend(
             [
-                VerificationStep("evidence_review", "Audit findings must cite inspected files or artifacts."),
-                VerificationStep("recommendation_review", "Recommendations must separate blockers, warnings, and follow-ups."),
+                VerificationStep(
+                    "evidence_review", "Audit findings must cite inspected files or artifacts."
+                ),
+                VerificationStep(
+                    "recommendation_review",
+                    "Recommendations must separate blockers, warnings, and follow-ups.",
+                ),
             ]
         )
-    if TaskClassification.IMPLEMENT in classifications or TaskClassification.REFACTOR in classifications:
+    if (
+        TaskClassification.IMPLEMENT in classifications
+        or TaskClassification.REFACTOR in classifications
+    ):
         steps.extend(
             [
-                VerificationStep("unit_tests", "Changed behavior needs focused tests.", "uv run pytest -q"),
-                VerificationStep("lint", "Python and UI changes should satisfy lint gates where applicable."),
+                VerificationStep(
+                    "unit_tests", "Changed behavior needs focused tests.", "uv run pytest -q"
+                ),
+                VerificationStep(
+                    "lint", "Python and UI changes should satisfy lint gates where applicable."
+                ),
                 VerificationStep("typecheck", "Typed surfaces should remain valid."),
                 VerificationStep("build", "Build or package checks catch integration failures."),
             ]
         )
     if TaskClassification.UI_UX_IMPROVEMENT in classifications:
-        steps.append(VerificationStep("visual_review", "UI work needs visual inspection across relevant viewports."))
-    if TaskClassification.SECURITY_REVIEW in classifications or mode.mode == ExecutionMode.APPROVAL_GATED_MODE:
+        steps.append(
+            VerificationStep(
+                "visual_review", "UI work needs visual inspection across relevant viewports."
+            )
+        )
+    if (
+        TaskClassification.SECURITY_REVIEW in classifications
+        or mode.mode == ExecutionMode.APPROVAL_GATED_MODE
+    ):
         steps.extend(
             [
-                VerificationStep("approval_gate", "Risk-sensitive changes need explicit approval before promotion."),
-                VerificationStep("rollback_plan", "Risk-sensitive changes need a rollback or revert path."),
+                VerificationStep(
+                    "approval_gate",
+                    "Risk-sensitive changes need explicit approval before promotion.",
+                ),
+                VerificationStep(
+                    "rollback_plan", "Risk-sensitive changes need a rollback or revert path."
+                ),
             ]
         )
     if not steps:
-        steps.append(VerificationStep("acceptance_review", "Confirm deliverables match the normalized objective."))
-    steps.append(VerificationStep("project_truth_update", "Meaningful AIOS state changes require truth-file updates."))
+        steps.append(
+            VerificationStep(
+                "acceptance_review", "Confirm deliverables match the normalized objective."
+            )
+        )
+    steps.append(
+        VerificationStep(
+            "project_truth_update", "Meaningful AIOS state changes require truth-file updates."
+        )
+    )
     return tuple(steps)
 
 
@@ -412,6 +511,11 @@ def agentize_request(
     request: str,
     *,
     prompt_registry_path: Path | None = None,
+    project_id: str | None = None,
+    project_name: str | None = None,
+    changed_files: tuple[str, ...] | None = None,
+    workflow_key: str | None = None,
+    conn: sqlite3.Connection | None = None,
 ) -> AgentizedTaskPacket:
     normalized = " ".join(request.strip().split())
     if not normalized:
@@ -445,6 +549,16 @@ def agentize_request(
     ]
     if implementation_like & set(classifications):
         acceptance.append("Changed behavior is covered by tests or an explicit test gap.")
+    standards_resolution = _resolve_packet_standards(
+        project_id=project_id,
+        project_name=project_name,
+        objective=normalized,
+        classifications=classifications,
+        changed_files=changed_files,
+        skills=tuple(skills),
+        workflow_key=workflow_key,
+        conn=conn,
+    )
 
     return AgentizedTaskPacket(
         packet_id=f"agentized-{uuid.uuid4()}",
@@ -454,8 +568,8 @@ def agentize_request(
         execution_mode=execution_mode,
         required_context=_context_plan(normalized, classifications),
         relevant_skills=tuple(skills),
-        relevant_success_criteria=_success_criteria(classifications),
-        relevant_standards=_standards(classifications),
+        relevant_success_criteria=standards_resolution[0],
+        relevant_standards=standards_resolution[1],
         constraints=(
             "Preserve existing behavior unless the packet explicitly authorizes behavior change.",
             "Prefer incremental, reviewable changes over broad rewrites.",
@@ -474,8 +588,12 @@ def agentize_request(
             "AIOS truth files are authoritative for meaningful architecture state changes.",
         ),
         sub_agent_recommendations=(
-            ("Use bounded implementation/review sub-agents for independent repo slices." if execution_mode.mode == ExecutionMode.SUB_AGENT_DRIVEN_DEVELOPMENT else "No sub-agent required by default.")
-        ,),
+            (
+                "Use bounded implementation/review sub-agents for independent repo slices."
+                if execution_mode.mode == ExecutionMode.SUB_AGENT_DRIVEN_DEVELOPMENT
+                else "No sub-agent required by default."
+            ),
+        ),
         model_reasoning_recommendation=(
             "Use higher reasoning for cross-system architecture, security, or migration work; use standard reasoning for bounded single-file tasks."
         ),
@@ -510,6 +628,38 @@ def agentize_request(
         },
         prompt_pattern_evidence=_prompt_evidence(normalized, classifications, prompt_path),
     )
+
+
+def _resolve_packet_standards(
+    *,
+    project_id: str | None,
+    project_name: str | None,
+    objective: str,
+    classifications: tuple[TaskClassification, ...],
+    changed_files: tuple[str, ...] | None,
+    skills: tuple[str, ...],
+    workflow_key: str | None,
+    conn: sqlite3.Connection | None,
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    from services.success_criteria import resolve_task_standards  # noqa: PLC0415
+
+    result = resolve_task_standards(
+        project_id=project_id,
+        project_name=project_name,
+        objective=objective,
+        prompt_classifications=[classification.value for classification in classifications],
+        changed_files=changed_files,
+        skills=skills,
+        workflow_key=workflow_key,
+        conn=conn,
+    )
+    criteria = tuple(str(row["id"]) for row in result.get("criteria", []) if isinstance(row, dict))
+    standards = tuple(
+        str(row["standard_id"]) for row in result.get("standards", []) if isinstance(row, dict)
+    )
+    if result.get("resolution_status") == "no_profile_attached":
+        return criteria or _success_criteria(classifications), standards
+    return criteria or _success_criteria(classifications), standards or _standards(classifications)
 
 
 def ensure_agentize_schema(conn: sqlite3.Connection) -> None:

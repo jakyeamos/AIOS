@@ -4,11 +4,12 @@ import json
 import sqlite3
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from services import success_criteria  # noqa: E402
+from services import standards_health, success_criteria  # noqa: E402
 
 
 def _seed_minimal_runtime_tables(conn: sqlite3.Connection) -> None:
@@ -39,6 +40,139 @@ def test_preview_applicable_criteria_includes_project_and_domain_rules() -> None
     assert "truth-file-consistency" in criterion_ids
     assert "workflow-state-integrity" in criterion_ids
     assert "observability" in criterion_ids
+
+
+def test_resolve_task_standards_merges_criteria_and_standards() -> None:
+    conn = sqlite3.connect(":memory:")
+    _seed_minimal_runtime_tables(conn)
+    standards_health.ensure_standards_health_schema(conn)
+    conn.execute(
+        """
+        INSERT INTO project_standards_profiles (
+            project_id, profile_id, attached_version, latest_version, migration_mode, updated_at
+        )
+        VALUES ('p1', 'aios-core', '2026.05.0', '2026.05.0', 'current', '2026-05-23T00:00:00Z')
+        """
+    )
+
+    result = success_criteria.resolve_task_standards(
+        conn=conn,
+        project_id="p1",
+        project_name="AIOS",
+        objective="Implement workflow orchestration updates",
+        prompt_classifications=["implement"],
+        changed_files=["services/workflow_orchestration.py"],
+        skills=[],
+        workflow_key="implementation-delivery",
+    )
+
+    assert result["resolution_status"] == "ok"
+    assert result["workflow_key"] == "implementation-delivery"
+    assert {row["id"] for row in result["criteria"]} >= {
+        "execution-first-verification",
+        "workflow-state-integrity",
+    }
+    assert {row["standard_id"] for row in result["standards"]} >= {
+        "workflow_agent_control.explicit_handshake",
+        "testing.trust_signal",
+    }
+    assert result["execution_first_triggers"]
+
+
+def test_resolve_task_standards_warns_when_no_profile_attached() -> None:
+    conn = sqlite3.connect(":memory:")
+    _seed_minimal_runtime_tables(conn)
+    standards_health.ensure_standards_health_schema(conn)
+
+    result = success_criteria.resolve_task_standards(
+        conn=conn,
+        project_id="p1",
+        project_name="AIOS",
+        objective="Implement workflow orchestration updates",
+        prompt_classifications=["implement"],
+    )
+
+    assert result["resolution_status"] == "no_profile_attached"
+    assert result["standards"] == []
+    assert result["criteria"]
+
+
+def test_resolve_task_standards_filters_standards_by_applicability(monkeypatch) -> None:
+    conn = sqlite3.connect(":memory:")
+    _seed_minimal_runtime_tables(conn)
+    standards_health.ensure_standards_health_schema(conn)
+    conn.execute(
+        """
+        INSERT INTO project_standards_profiles (
+            project_id, profile_id, attached_version, latest_version, migration_mode, updated_at
+        )
+        VALUES ('p1', 'aios-core', '2026.05.0', '2026.05.0', 'current', '2026-05-23T00:00:00Z')
+        """
+    )
+    matching = SimpleNamespace(
+        id="matching.standard",
+        profile_id="aios-core",
+        title="Matching Standard",
+        domain="workflow",
+        weight=1.0,
+        severity_if_missing=3,
+        related_criteria=(),
+        applicability={"project_pattern": "AIOS"},
+    )
+    excluded = SimpleNamespace(
+        id="excluded.standard",
+        profile_id="aios-core",
+        title="Excluded Standard",
+        domain="workflow",
+        weight=1.0,
+        severity_if_missing=3,
+        related_criteria=(),
+        applicability={"project_pattern": "other-project"},
+    )
+    monkeypatch.setattr(
+        standards_health,
+        "load_registry",
+        lambda: ({"id": "aios-core", "version": "2026.05.0"}, [matching, excluded]),
+    )
+
+    result = success_criteria.resolve_task_standards(
+        conn=conn,
+        project_id="p1",
+        project_name="AIOS",
+        objective="Implement workflow orchestration updates",
+        prompt_classifications=["implement"],
+    )
+
+    assert [row["standard_id"] for row in result["standards"]] == ["matching.standard"]
+
+
+def test_resolve_task_standards_propagates_execution_first_triggers() -> None:
+    result = success_criteria.resolve_task_standards(
+        project_id=None,
+        project_name=None,
+        objective="Debug inconsistent workflow state",
+        prompt_classifications=["debug"],
+        changed_files=["services/workflow_orchestration.py"],
+        skills=[],
+    )
+
+    assert "core/shared logic modification" in result["execution_first_triggers"]
+    assert "debugging inconsistent behavior" in result["execution_first_triggers"]
+
+
+def test_resolve_task_standards_signature_accepts_packet_inputs() -> None:
+    result = success_criteria.resolve_task_standards(
+        project_id=None,
+        project_name=None,
+        objective=None,
+        prompt_classifications=None,
+        changed_files=None,
+        skills=None,
+        workflow_key=None,
+    )
+
+    assert result["resolution_status"] == "ok"
+    assert isinstance(result["criteria"], list)
 
 
 def test_security_review_warns_without_explicit_security_focus() -> None:

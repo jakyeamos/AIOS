@@ -51,6 +51,16 @@ def preview_applicable_criteria(*args: Any, **kwargs: Any) -> dict[str, Any]:
     return preview_applicable_criteria_impl(*args, **kwargs)
 
 
+def resolve_task_standards(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from services.success_criteria import (
+        resolve_task_standards as resolve_task_standards_impl,  # noqa: PLC0415
+    )
+
+    return resolve_task_standards_impl(*args, **kwargs)
+
+
 def log(msg: str) -> None:
     ts = datetime.now(UTC).isoformat()
     try:
@@ -71,7 +81,9 @@ def vault_search(args: list[str]) -> dict:
     try:
         result = subprocess.run(
             ["python3", VAULT_SEARCH] + args,
-            capture_output=True, text=True, timeout=8,
+            capture_output=True,
+            text=True,
+            timeout=8,
         )
         if result.returncode == 0 and result.stdout:
             return json.loads(result.stdout)
@@ -99,9 +111,7 @@ def get_active_rules(conn: sqlite3.Connection, max_rules: int = 3) -> list[str]:
 def get_review_queue_hint(conn: sqlite3.Connection) -> str | None:
     """Return a one-line hint if patterns are awaiting human approval."""
     try:
-        count = conn.execute(
-            "SELECT COUNT(*) FROM patterns WHERE state='knowledge'"
-        ).fetchone()[0]
+        count = conn.execute("SELECT COUNT(*) FROM patterns WHERE state='knowledge'").fetchone()[0]
         if count > 0:
             return f"{count} pattern(s) in review queue — run: approve-pattern --list"
         return None
@@ -188,9 +198,14 @@ def generate_packet(
     note_result = vault_search(["--note", project_name])
     if note_result.get("count", 0) > 0:
         note_excerpt = note_result["results"][0].get("excerpt", "")
-        if note_excerpt and "<!-- No commits" not in note_excerpt and "<!-- Add context" not in note_excerpt:
+        if (
+            note_excerpt
+            and "<!-- No commits" not in note_excerpt
+            and "<!-- Add context" not in note_excerpt
+        ):
             # Extract just Current Focus if present
             import re
+
             cf_match = re.search(r"## Current Focus\n\n(.*?)(?=\n## |\Z)", note_excerpt, re.DOTALL)
             if cf_match:
                 focus_text = cf_match.group(1).strip()
@@ -208,6 +223,7 @@ def generate_packet(
 
         # Grab outcome from most recent handoff too
         import re
+
         outcome_match = re.search(r"### Outcome\n(.+?)(?=\n###|\Z)", excerpt, re.DOTALL)
         if outcome_match:
             outcome = outcome_match.group(1).strip()[:200]
@@ -230,27 +246,31 @@ def generate_packet(
         parts.append(f"**Review queue:** {review_hint}")
 
     # 6. Success criteria preview (resolved before implementation begins)
-    criteria_preview = preview_applicable_criteria(
+    standards_resolution = resolve_task_standards(
         project_id=project_id,
         project_name=project_name,
         objective=objective,
+        conn=conn,
     )
-    criteria_rows = criteria_preview.get("criteria", [])
+    criteria_rows = standards_resolution.get("criteria", [])
     if criteria_rows:
         criteria_lines = [
             f"- {row['id']} ({'blocker' if row['blocking'] else 'advisory'})"
             for row in criteria_rows[:8]
         ]
-        context_hint = criteria_preview.get("context", {})
-        context_bits = []
-        if context_hint.get("task_types"):
-            context_bits.append("task_types=" + ", ".join(context_hint["task_types"]))
-        if context_hint.get("domains"):
-            context_bits.append("domains=" + ", ".join(context_hint["domains"]))
         header = "**Applicable success criteria:**"
-        if context_bits:
-            header += " (" + "; ".join(context_bits) + ")"
         parts.append(header + "\n" + "\n".join(criteria_lines))
+    standard_rows = standards_resolution.get("standards", [])
+    if standard_rows:
+        standard_lines = [
+            f"- {row['standard_id']} ({row['domain']}; weight={row['weight']})"
+            for row in standard_rows[:8]
+        ]
+        parts.append("**Applicable standards:**\n" + "\n".join(standard_lines))
+    triggers = standards_resolution.get("execution_first_triggers", [])
+    if triggers:
+        trigger_lines = [f"- {trigger}" for trigger in triggers[:8]]
+        parts.append("**Execution-first triggers:**\n" + "\n".join(trigger_lines))
 
     # 7. Code Topology Service context (only when index is current)
     cts_context = get_cts_context(cwd, objective)
@@ -321,7 +341,9 @@ def main() -> None:
         ensure_rtk_schema(conn)
 
         # Check if session already exists — /clear re-fires SessionStart with same ID
-        existing = conn.execute("SELECT id, status FROM sessions WHERE id=?", (session_id,)).fetchone()
+        existing = conn.execute(
+            "SELECT id, status FROM sessions WHERE id=?", (session_id,)
+        ).fetchone()
         if existing:
             if run_id or invocation_id:
                 link_session_runtime(

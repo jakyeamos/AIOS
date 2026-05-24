@@ -51,6 +51,11 @@ def test_session_packet_includes_agent_rules(monkeypatch) -> None:
     monkeypatch.setattr(module, "get_open_bug", lambda _conn, _project_id: None)
     monkeypatch.setattr(module, "get_cts_context", lambda _cwd, _objective: None)
     monkeypatch.setattr(module, "preview_applicable_criteria", lambda **_kwargs: {"criteria": []})
+    monkeypatch.setattr(
+        module,
+        "resolve_task_standards",
+        lambda **_kwargs: {"criteria": [], "standards": [], "execution_first_triggers": []},
+    )
 
     packet = module.generate_packet(
         project_name="AIOS",
@@ -73,6 +78,11 @@ def test_session_packet_includes_resume_snapshot(monkeypatch) -> None:
     monkeypatch.setattr(module, "get_open_bug", lambda _conn, _project_id: None)
     monkeypatch.setattr(module, "get_cts_context", lambda _cwd, _objective: None)
     monkeypatch.setattr(module, "preview_applicable_criteria", lambda **_kwargs: {"criteria": []})
+    monkeypatch.setattr(
+        module,
+        "resolve_task_standards",
+        lambda **_kwargs: {"criteria": [], "standards": [], "execution_first_triggers": []},
+    )
 
     conn = sqlite3.connect(":memory:")
     conn.executescript(
@@ -110,7 +120,7 @@ def test_session_packet_includes_resume_snapshot(monkeypatch) -> None:
         VALUES ('run-1', 'waiting_for_user', ?)
         """,
         (
-            "{\"current_stage\":\"awaiting_approval\",\"next_recommended_action\":\"Review pending writeback.\",\"pending_approval_count\":1}",
+            '{"current_stage":"awaiting_approval","next_recommended_action":"Review pending writeback.","pending_approval_count":1}',
         ),
     )
     conn.execute(
@@ -132,6 +142,45 @@ def test_session_packet_includes_resume_snapshot(monkeypatch) -> None:
     assert "**Resume snapshot:**" in packet
     assert "awaiting_approval" in packet
     assert "Review pending writeback." in packet
+
+
+def test_session_packet_includes_standards_resolution(monkeypatch) -> None:
+    module = _load_session_start_module()
+    monkeypatch.setattr(module, "vault_search", lambda _args: {"results": [], "count": 0})
+    monkeypatch.setattr(module, "get_active_rules", lambda _conn, max_rules=3: [])
+    monkeypatch.setattr(module, "get_review_queue_hint", lambda _conn: None)
+    monkeypatch.setattr(module, "get_open_bug", lambda _conn, _project_id: None)
+    monkeypatch.setattr(module, "get_cts_context", lambda _cwd, _objective: None)
+    monkeypatch.setattr(
+        module,
+        "resolve_task_standards",
+        lambda **_kwargs: {
+            "criteria": [{"id": "execution-first-verification", "blocking": True}],
+            "standards": [
+                {
+                    "standard_id": "testing.trust_signal",
+                    "domain": "testing",
+                    "weight": 8,
+                }
+            ],
+            "execution_first_triggers": ["core/shared logic modification"],
+        },
+    )
+
+    packet = module.generate_packet(
+        project_name="AIOS",
+        project_id="project-1",
+        conn=sqlite3.connect(":memory:"),
+        cwd=str(ROOT),
+        objective="Implement workflow state update",
+    )
+
+    assert "**Applicable success criteria:**" in packet
+    assert "execution-first-verification" in packet
+    assert "**Applicable standards:**" in packet
+    assert "testing.trust_signal" in packet
+    assert "**Execution-first triggers:**" in packet
+    assert "core/shared logic modification" in packet
 
 
 def test_synced_installed_skill_preserves_source_metadata(tmp_path: Path) -> None:

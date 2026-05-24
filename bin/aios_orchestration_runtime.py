@@ -229,6 +229,29 @@ def ensure_runtime_schema(conn: sqlite3.Connection) -> None:
     )
     conn.execute(
         """
+        CREATE TABLE IF NOT EXISTS briefing_packets (
+            id TEXT PRIMARY KEY,
+            run_id TEXT REFERENCES orchestration_runs(id),
+            project_id TEXT REFERENCES projects(id),
+            objective TEXT,
+            workflow_key TEXT,
+            agent_key TEXT,
+            packet_markdown TEXT,
+            sections_json TEXT NOT NULL DEFAULT '[]',
+            policy_mode TEXT NOT NULL DEFAULT 'compact-ranked',
+            token_budget INTEGER NOT NULL DEFAULT 900,
+            route_id TEXT,
+            route_result_json TEXT NOT NULL DEFAULT '{}',
+            selection_trace_json TEXT NOT NULL DEFAULT '[]',
+            omitted_context_json TEXT NOT NULL DEFAULT '[]',
+            selected_criteria_json TEXT NOT NULL DEFAULT '[]',
+            selected_standards_json TEXT NOT NULL DEFAULT '[]',
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        )
+        """
+    )
+    conn.execute(
+        """
         CREATE TABLE IF NOT EXISTS consistency_evaluations (
             id TEXT PRIMARY KEY,
             project_id TEXT REFERENCES projects(id),
@@ -327,10 +350,37 @@ def ensure_runtime_schema(conn: sqlite3.Connection) -> None:
         "updated_at",
         "TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))",
     )
+    for column, definition in {
+        "run_id": "TEXT REFERENCES orchestration_runs(id)",
+        "project_id": "TEXT REFERENCES projects(id)",
+        "objective": "TEXT",
+        "workflow_key": "TEXT",
+        "agent_key": "TEXT",
+        "packet_markdown": "TEXT",
+        "sections_json": "TEXT NOT NULL DEFAULT '[]'",
+        "policy_mode": "TEXT NOT NULL DEFAULT 'compact-ranked'",
+        "token_budget": "INTEGER NOT NULL DEFAULT 900",
+        "route_id": "TEXT",
+        "route_result_json": "TEXT NOT NULL DEFAULT '{}'",
+        "selection_trace_json": "TEXT NOT NULL DEFAULT '[]'",
+        "omitted_context_json": "TEXT NOT NULL DEFAULT '[]'",
+        "selected_criteria_json": "TEXT NOT NULL DEFAULT '[]'",
+        "selected_standards_json": "TEXT NOT NULL DEFAULT '[]'",
+        "created_at": "TEXT",
+    }.items():
+        ensure_column(conn, "briefing_packets", column, definition)
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_briefing_packets_project
+          ON briefing_packets(project_id, created_at DESC)
+        """
+    )
     ensure_column(conn, "consistency_findings", "resolution_status", "TEXT NOT NULL DEFAULT 'open'")
     ensure_column(conn, "consistency_findings", "resolution_actor", "TEXT")
     ensure_column(conn, "consistency_findings", "resolution_rationale", "TEXT")
-    ensure_column(conn, "consistency_findings", "resolution_evidence_json", "TEXT NOT NULL DEFAULT '[]'")
+    ensure_column(
+        conn, "consistency_findings", "resolution_evidence_json", "TEXT NOT NULL DEFAULT '[]'"
+    )
     ensure_column(conn, "consistency_findings", "resolved_at", "TEXT")
 
 
@@ -362,7 +412,9 @@ def load_resume_snapshot(conn: sqlite3.Connection, run_id: str) -> dict[str, Any
     ).fetchone()
     if row is None:
         return {}
-    return _parse_json_object(row[0] if not isinstance(row, sqlite3.Row) else row["resume_snapshot_json"])
+    return _parse_json_object(
+        row[0] if not isinstance(row, sqlite3.Row) else row["resume_snapshot_json"]
+    )
 
 
 def store_resume_snapshot(conn: sqlite3.Connection, run_id: str, snapshot: dict[str, Any]) -> None:
@@ -612,7 +664,7 @@ def update_invocation(
     if metadata:
         current_metadata.update(metadata)
 
-    fields = {
+    fields: dict[str, Any] = {
         "status": status,
         "updated_at": now_iso(),
         "metadata_json": _json(current_metadata),
@@ -825,7 +877,13 @@ def writeback_approval_policy(
     normalized_scope = impact_scope.strip().lower()
     change = proposed_change or {}
     high_impact_layers = {"truth", "standard", "standards", "prompt", "skill", "workflow", "packet"}
-    high_impact_scopes = {"global", "project-truth", "workflow-default", "prompt-default", "skill-default"}
+    high_impact_scopes = {
+        "global",
+        "project-truth",
+        "workflow-default",
+        "prompt-default",
+        "skill-default",
+    }
     destructive = bool(change.get("destructive") or change.get("destructive_action"))
 
     if requires_approval:
@@ -966,11 +1024,7 @@ def tokenize(text: str | None) -> set[str]:
         "would",
         "could",
     }
-    return {
-        token
-        for token in re.findall(r"[a-z0-9]{4,}", text.lower())
-        if token not in stop
-    }
+    return {token for token in re.findall(r"[a-z0-9]{4,}", text.lower()) if token not in stop}
 
 
 def _extract_section_items(content: str, heading: str) -> list[str]:
@@ -1049,7 +1103,9 @@ def _load_latest_memory(conn: sqlite3.Connection, run_id: str) -> dict[str, Any]
     }
 
 
-def _load_recent_runs(conn: sqlite3.Connection, project_id: str, run_id: str) -> list[dict[str, Any]]:
+def _load_recent_runs(
+    conn: sqlite3.Connection, project_id: str, run_id: str
+) -> list[dict[str, Any]]:
     rows = conn.execute(
         """
         SELECT id, objective, status, result_summary, completed_at, created_at
@@ -1111,12 +1167,16 @@ def _packet_file_mentions(packet: dict[str, Any]) -> list[str]:
     matches: set[str] = set()
     for section in packet["sections"]:
         for item in section.get("items", []):
-            for match in re.findall(r"(?:[A-Za-z0-9_.-]+/)+[A-Za-z0-9_.-]+\\.[A-Za-z0-9]+", str(item)):
+            for match in re.findall(
+                r"(?:[A-Za-z0-9_.-]+/)+[A-Za-z0-9_.-]+\\.[A-Za-z0-9]+", str(item)
+            ):
                 matches.add(match)
     return sorted(matches)
 
 
-def _latest_standards_signal(conn: sqlite3.Connection, project_id: str | None) -> dict[str, Any] | None:
+def _latest_standards_signal(
+    conn: sqlite3.Connection, project_id: str | None
+) -> dict[str, Any] | None:
     if not project_id or not table_exists(conn, "standards_health_snapshots"):
         return None
     row = conn.execute(
@@ -1233,7 +1293,11 @@ def evaluate_run_consistency(
                         "records it as completed."
                     ),
                     "provenance": [
-                        {"source_kind": "project_truth", "path": truth["path"], "value": missing_item},
+                        {
+                            "source_kind": "project_truth",
+                            "path": truth["path"],
+                            "value": missing_item,
+                        },
                         {"source_kind": "run", "run_id": run_id, "status": row[5]},
                         {"source_kind": "memory", "memory_id": memory["id"] if memory else None},
                     ],
@@ -1244,7 +1308,11 @@ def evaluate_run_consistency(
     current_tokens = tokenize(row[2])
     for prior_run in recent_runs:
         overlap = current_tokens & tokenize(prior_run["objective"])
-        if overlap and {row[5], prior_run["status"]} & {"completed"} and {row[5], prior_run["status"]} & {"failed", "canceled"}:
+        if (
+            overlap
+            and {row[5], prior_run["status"]} & {"completed"}
+            and {row[5], prior_run["status"]} & {"failed", "canceled"}
+        ):
             findings.append(
                 {
                     "finding_kind": "direct_contradiction",
@@ -1268,10 +1336,11 @@ def evaluate_run_consistency(
             )
             break
 
-    compact_guardrail = any("compact ranked" in guardrail.lower() for guardrail in truth["guardrails"])
+    compact_guardrail = any(
+        "compact ranked" in guardrail.lower() for guardrail in truth["guardrails"]
+    )
     if compact_guardrail and (
-        packet["policy_mode"] == "explore"
-        or (packet["token_budget"] or 0) > 1000
+        packet["policy_mode"] == "explore" or (packet["token_budget"] or 0) > 1000
     ):
         findings.append(
             {
@@ -1283,7 +1352,11 @@ def evaluate_run_consistency(
                     "either approval or a truth-file update."
                 ),
                 "provenance": [
-                    {"source_kind": "project_truth", "path": truth["path"], "value": truth["guardrails"]},
+                    {
+                        "source_kind": "project_truth",
+                        "path": truth["path"],
+                        "value": truth["guardrails"],
+                    },
                     {
                         "source_kind": "packet",
                         "packet_id": packet_id,
@@ -1317,7 +1390,10 @@ def evaluate_run_consistency(
                     "summary": "Run is completed but no workflow execution report is linked.",
                     "provenance": [
                         {"source_kind": "run", "run_id": run_id, "status": row[5]},
-                        {"source_kind": "workflow_execution_reports", "count": workflow_report_count},
+                        {
+                            "source_kind": "workflow_execution_reports",
+                            "count": workflow_report_count,
+                        },
                     ],
                     "metadata": {"workflow_key": row[3], "agent_key": row[4]},
                 }
@@ -1328,7 +1404,9 @@ def evaluate_run_consistency(
             artifact
             for artifact in artifacts
             if packet_mentions
-            and not any(artifact.endswith(mention) or mention in artifact for mention in packet_mentions)
+            and not any(
+                artifact.endswith(mention) or mention in artifact for mention in packet_mentions
+            )
         ]
         if packet_mentions and unpredicted:
             findings.append(
@@ -1340,7 +1418,11 @@ def evaluate_run_consistency(
                         f"{len(unpredicted)} touched artifacts were not forecast by the packet file hints."
                     ),
                     "provenance": [
-                        {"source_kind": "packet", "packet_id": packet_id, "mentioned_files": packet_mentions},
+                        {
+                            "source_kind": "packet",
+                            "packet_id": packet_id,
+                            "mentioned_files": packet_mentions,
+                        },
                         {"source_kind": "artifacts", "paths": unpredicted[:12]},
                     ],
                     "metadata": {"unpredicted_count": len(unpredicted)},

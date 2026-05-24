@@ -97,7 +97,14 @@ ATTENTION_RUN_STATUSES = [
     "partial",
     "needs_follow_up",
 ]
-TERMINAL_RUN_STATUSES = ["partial", "needs_follow_up", "completed", "failed", "canceled", "superseded"]
+TERMINAL_RUN_STATUSES = [
+    "partial",
+    "needs_follow_up",
+    "completed",
+    "failed",
+    "canceled",
+    "superseded",
+]
 RESUMABLE_RUN_STATUSES = [
     "ready",
     "in_progress",
@@ -506,9 +513,7 @@ def _criteria_catalog_summary(config_root: Path) -> dict[str, Any]:
     if not isinstance(criteria, list):
         criteria = []
     criteria_ids = [
-        str(item.get("id", ""))
-        for item in criteria
-        if isinstance(item, dict) and item.get("id")
+        str(item.get("id", "")) for item in criteria if isinstance(item, dict) and item.get("id")
     ]
     return {
         "count": len(criteria_ids),
@@ -527,9 +532,7 @@ def _workflow_registry_summary(config_root: Path) -> dict[str, Any]:
     if not isinstance(workflows, list):
         workflows = []
     workflow_keys = [
-        str(item.get("key", ""))
-        for item in workflows
-        if isinstance(item, dict) and item.get("key")
+        str(item.get("key", "")) for item in workflows if isinstance(item, dict) and item.get("key")
     ]
     return {
         "count": len(workflow_keys),
@@ -592,7 +595,9 @@ def _standards_registry_summary(config_root: Path) -> dict[str, Any]:
         "profile_id": profile.get("id"),
         "profile_version": profile.get("version"),
         "default_attached_version": profile.get("default_attached_version"),
-        "standard_count": len([item for item in standards if isinstance(item, dict) and item.get("id")]),
+        "standard_count": len(
+            [item for item in standards if isinstance(item, dict) and item.get("id")]
+        ),
         "domains": domains,
         "registry_path": str(registry_path),
     }
@@ -961,6 +966,8 @@ def _ensure_start_work_schema(conn: sqlite3.Connection) -> None:
         "route_result_json": "TEXT DEFAULT '{}'",
         "selection_trace_json": "TEXT DEFAULT '[]'",
         "omitted_context_json": "TEXT DEFAULT '[]'",
+        "selected_criteria_json": "TEXT DEFAULT '[]'",
+        "selected_standards_json": "TEXT DEFAULT '[]'",
         "created_at": "TEXT",
     }.items():
         _ensure_column(conn, "briefing_packets", column, definition)
@@ -1062,7 +1069,9 @@ def _knowledge_topic_rows(
     return [dict(row) for row in rows]
 
 
-def _recent_writeback_rows(conn: sqlite3.Connection, project_id: str | None, limit: int = 5) -> list[dict[str, Any]]:
+def _recent_writeback_rows(
+    conn: sqlite3.Connection, project_id: str | None, limit: int = 5
+) -> list[dict[str, Any]]:
     if not _table_exists(conn, "improvement_writebacks"):
         return []
     where = "WHERE (? IS NULL OR project_id = ?)"
@@ -1121,7 +1130,9 @@ def _criteria_instruction_lines(criteria_rows: Sequence[dict[str, Any]]) -> list
 
 def _workflow_stage_lines(workflow_contract: dict[str, Any] | None) -> list[str]:
     if workflow_contract is None:
-        return ["Workflow stages unavailable; use the routed workflow key as the governing contract."]
+        return [
+            "Workflow stages unavailable; use the routed workflow key as the governing contract."
+        ]
 
     lines: list[str] = []
     for index, stage in enumerate(workflow_contract.get("stages", []), start=1):
@@ -1139,7 +1150,9 @@ def _workflow_stage_lines(workflow_contract: dict[str, Any] | None) -> list[str]
     output_contract = workflow_contract.get("output_contract") or []
     if isinstance(output_contract, list) and output_contract:
         lines.append("Deliverables: " + "; ".join(str(item) for item in output_contract))
-    return lines or ["Workflow stages unavailable; use the routed workflow key as the governing contract."]
+    return lines or [
+        "Workflow stages unavailable; use the routed workflow key as the governing contract."
+    ]
 
 
 def _prompt_contract_lines(route_payload: dict[str, Any], backend_key: str) -> list[str]:
@@ -1191,7 +1204,9 @@ def _required_check_lines(
         validations = workflow_contract.get("required_validations") or []
         if isinstance(validations, list) and validations:
             lines.append("Workflow validations: " + ", ".join(str(item) for item in validations))
-    blocker_ids = [str(row.get("id")) for row in criteria_rows if row.get("blocking") and row.get("id")]
+    blocker_ids = [
+        str(row.get("id")) for row in criteria_rows if row.get("blocking") and row.get("id")
+    ]
     if blocker_ids:
         lines.append("Blocker criteria to satisfy before completion: " + ", ".join(blocker_ids))
     lines.extend(
@@ -1267,7 +1282,9 @@ def _packet_sections(
     sections.append(
         {
             "title": "Applicable Success Criteria",
-            "items": _criteria_instruction_lines(criteria_rows if isinstance(criteria_rows, list) else []),
+            "items": _criteria_instruction_lines(
+                criteria_rows if isinstance(criteria_rows, list) else []
+            ),
         }
     )
 
@@ -1438,7 +1455,9 @@ def _start_work_payload(
             (linked_session_id,),
         ).fetchone()
         if session is None:
-            raise CLIError("session-not-found", f"Session not found: {linked_session_id}", EXIT_NOT_FOUND)
+            raise CLIError(
+                "session-not-found", f"Session not found: {linked_session_id}", EXIT_NOT_FOUND
+            )
         if session["status"] != "open":
             if explicit_session_id:
                 raise CLIError(
@@ -1457,7 +1476,9 @@ def _start_work_payload(
             (linked_session_id,),
         ).fetchone()
         if session is None:
-            raise CLIError("session-not-found", f"Session not found: {linked_session_id}", EXIT_NOT_FOUND)
+            raise CLIError(
+                "session-not-found", f"Session not found: {linked_session_id}", EXIT_NOT_FOUND
+            )
         session_cwd = str(session["cwd"]) if session["cwd"] else session_cwd
 
     preferred_surface = "codex"
@@ -1473,6 +1494,10 @@ def _start_work_payload(
     route_payload = route.to_json()
     if route.status != "ready":
         raise CLIError("route-blocked", route.blocked_reason or "Routing blocked.", EXIT_USAGE)
+    if route.selected_workflow is None or route.agent_recommendation is None:
+        raise CLIError(
+            "route-incomplete", "Routing did not select a workflow and agent.", EXIT_RUNTIME
+        )
 
     project_id = route.project.selected_project_id
     workflow_key = workflow_key or str(route.selected_workflow["workflow_key"])
@@ -1547,12 +1572,19 @@ def _start_work_payload(
             agent_key,
             status,
             "Started from AIOS CLI so rules, improvements, knowledge, and criteria are visible before implementation.",
-            json.dumps(["Current implementation sessions should attach via explicit run/invocation/session handshake."]),
+            json.dumps(
+                [
+                    "Current implementation sessions should attach via explicit run/invocation/session handshake."
+                ]
+            ),
             json.dumps(
                 [
                     {"source": "success-criteria", "reason": "criteria preview added to packet"},
                     {"source": "active-rules", "reason": "approved rules added to packet"},
-                    {"source": "improvement-writebacks", "reason": "recent improvements added to packet"},
+                    {
+                        "source": "improvement-writebacks",
+                        "reason": "recent improvements added to packet",
+                    },
                 ]
             ),
             backend.key,
@@ -1809,7 +1841,9 @@ def _lifecycle_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
             """
         ).fetchall()
         event_states = {str(row["to_status"]) for row in event_rows}
-        unsupported_states.update(status for status in event_states if status not in canonical_statuses)
+        unsupported_states.update(
+            status for status in event_states if status not in canonical_statuses
+        )
 
     return {
         "summary": {
@@ -1996,7 +2030,9 @@ def _knowledge_objects_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     return {
         "summary": {
             "object_count": object_count,
-            "source_ref_coverage": round(objects_with_sources / object_count, 4) if object_count else 0.0,
+            "source_ref_coverage": round(objects_with_sources / object_count, 4)
+            if object_count
+            else 0.0,
             "objects_without_sources": object_count - objects_with_sources,
             "relationship_count": relationship_total,
             "unknown_kind_count": unknown_kind_count,
@@ -2030,7 +2066,9 @@ def _workflow_learning_kind(layer_type: str | None) -> str:
 def _count_run_rows(conn: sqlite3.Connection, table: str, run_id: str) -> int:
     if not _table_exists(conn, table) or "run_id" not in _table_columns(conn, table):
         return 0
-    row = conn.execute(f"SELECT COUNT(*) AS count FROM {table} WHERE run_id = ?", (run_id,)).fetchone()
+    row = conn.execute(
+        f"SELECT COUNT(*) AS count FROM {table} WHERE run_id = ?", (run_id,)
+    ).fetchone()
     return int(row["count"] or 0) if row else 0
 
 
@@ -2053,7 +2091,9 @@ def _linked_artifact_count(conn: sqlite3.Connection, run_id: str) -> int:
     return int(row["count"] or 0) if row else 0
 
 
-def _inferred_learning_evidence(conn: sqlite3.Connection, run: dict[str, Any]) -> dict[str, Any] | None:
+def _inferred_learning_evidence(
+    conn: sqlite3.Connection, run: dict[str, Any]
+) -> dict[str, Any] | None:
     run_id = str(run["id"])
     workflow_reports = _count_run_rows(conn, "workflow_execution_reports", run_id)
     memory_updates = _count_run_rows(conn, "memory_updates", run_id)
@@ -2069,7 +2109,9 @@ def _inferred_learning_evidence(conn: sqlite3.Connection, run: dict[str, Any]) -
             "status": run.get("status"),
             "workflow_key": run.get("workflow_key"),
         }
-    if run.get("status") in {"failed", "canceled"} and (linked_artifacts > 0 or success_evaluations > 0):
+    if run.get("status") in {"failed", "canceled"} and (
+        linked_artifacts > 0 or success_evaluations > 0
+    ):
         return {
             "run_id": run_id,
             "evidence_type": "bug_quality_evidence",
@@ -2289,7 +2331,11 @@ def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
                 confidence=0.55,
                 approval_state="not_required",
                 rationale=reason,
-                source={"reason": reason, "status": run.get("status"), "workflow_key": run.get("workflow_key")},
+                source={
+                    "reason": reason,
+                    "status": run.get("status"),
+                    "workflow_key": run.get("workflow_key"),
+                },
             )
             no_learning_runs.append(
                 {
@@ -2309,8 +2355,14 @@ def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
                 evidence_type=learning_kind,
                 proposal_target=str(writeback.get("layer_key") or ""),
                 confidence=0.8,
-                approval_state="pending" if writeback.get("status") == "pending_approval" else "not_required",
-                rationale=str(writeback.get("summary") or writeback.get("title") or "Workflow proposal evidence."),
+                approval_state="pending"
+                if writeback.get("status") == "pending_approval"
+                else "not_required",
+                rationale=str(
+                    writeback.get("summary")
+                    or writeback.get("title")
+                    or "Workflow proposal evidence."
+                ),
                 source={"source": "improvement_writebacks", "writeback_id": writeback.get("id")},
             )
             classification_counts[learning_kind] += 1
@@ -2488,7 +2540,9 @@ def _run_has_governance_evidence(conn: sqlite3.Connection, run_id: str) -> bool:
     ]
     for table, column in checks:
         if _table_exists(conn, table) and column in _table_columns(conn, table):
-            row = conn.execute(f"SELECT 1 FROM {table} WHERE {column} = ? LIMIT 1", (run_id,)).fetchone()
+            row = conn.execute(
+                f"SELECT 1 FROM {table} WHERE {column} = ? LIMIT 1", (run_id,)
+            ).fetchone()
             if row is not None:
                 return True
     return False
@@ -2510,8 +2564,10 @@ def _governance_closeout_rows(conn: sqlite3.Connection) -> list[dict[str, Any]]:
         report = _parse_json_object(row["report_json"])
         if report.get("report_type") != "governed_closeout":
             continue
-        approvals = report.get("approvals") if isinstance(report.get("approvals"), dict) else {}
-        unresolved = report.get("unresolved_deltas") if isinstance(report.get("unresolved_deltas"), dict) else {}
+        approvals_raw = report.get("approvals")
+        approvals: dict[str, Any] = approvals_raw if isinstance(approvals_raw, dict) else {}
+        unresolved_raw = report.get("unresolved_deltas")
+        unresolved: dict[str, Any] = unresolved_raw if isinstance(unresolved_raw, dict) else {}
         closeouts.append(
             {
                 "id": row["id"],
@@ -2531,7 +2587,8 @@ def _governance_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     pending = [
         proposal
         for proposal in proposals
-        if proposal["requires_approval"] or proposal["status"] in {"pending", "pending_approval", "proposed"}
+        if proposal["requires_approval"]
+        or proposal["status"] in {"pending", "pending_approval", "proposed"}
     ]
     terminal_runs: list[dict[str, Any]] = []
     if _table_exists(conn, "orchestration_runs"):
@@ -2617,7 +2674,15 @@ def _governance_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
                 "workflow_learning_events",
                 "workflow_execution_reports",
             ],
-            "reviewable_target_types": ["truth", "prompt", "skill", "workflow", "standards", "packet", "memory"],
+            "reviewable_target_types": [
+                "truth",
+                "prompt",
+                "skill",
+                "workflow",
+                "standards",
+                "packet",
+                "memory",
+            ],
             "meaningful_terminal_run_rule": "terminal runs need writeback, follow-up, closeout, or no-learning evidence",
         },
         "source_counts": source_counts,
@@ -2654,10 +2719,20 @@ def _knowledge_contract_status(conn: sqlite3.Connection) -> str:
     if not _table_exists(conn, "knowledge_topics"):
         return "partial"
     topic_columns = _table_columns(conn, "knowledge_topics")
-    required_columns = {"id", "kind", "title", "summary", "confidence", "freshness", "canonical_href"}
+    required_columns = {
+        "id",
+        "kind",
+        "title",
+        "summary",
+        "confidence",
+        "freshness",
+        "canonical_href",
+    }
     if not required_columns.issubset(topic_columns):
         return "partial"
-    if not _table_exists(conn, "knowledge_references") or not _table_exists(conn, "knowledge_relationships"):
+    if not _table_exists(conn, "knowledge_references") or not _table_exists(
+        conn, "knowledge_relationships"
+    ):
         return "partial"
     unknown_kind = conn.execute(
         """
@@ -2745,7 +2820,9 @@ def _contracts_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
         },
         {
             "name": "WorkflowLearningEvent",
-            "status": "implemented" if _table_exists(conn, "workflow_learning_events") else "partial",
+            "status": "implemented"
+            if _table_exists(conn, "workflow_learning_events")
+            else "partial",
             "source": "aios workflow-learning-audit",
             "storage": "workflow_learning_events + improvement_writebacks + improvement_writeback_events",
             "table_available": _table_exists(conn, "workflow_learning_events"),
@@ -2760,12 +2837,16 @@ def _contracts_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
             "lifecycle_states": EVALUATION_FINDING_LIFECYCLE_STATES,
         },
     ]
-    implemented_or_partial = [item for item in contracts if item["status"] in {"implemented", "partial"}]
+    implemented_or_partial = [
+        item for item in contracts if item["status"] in {"implemented", "partial"}
+    ]
     return {
         "summary": {
             "canonical_contract_count": len(contracts),
             "implemented_or_partial_count": len(implemented_or_partial),
-            "implemented_count": len([item for item in contracts if item["status"] == "implemented"]),
+            "implemented_count": len(
+                [item for item in contracts if item["status"] == "implemented"]
+            ),
             "partial_count": len([item for item in contracts if item["status"] == "partial"]),
         },
         "contracts": contracts,
@@ -2868,7 +2949,10 @@ def _truth_audit_payload(conn: sqlite3.Connection, truth_file: Path) -> dict[str
         "contract": {
             "required_facets": TRUTH_REQUIRED_FACETS,
             "accepted_truth_source": str(truth_file),
-            "proposal_sources": ["workflow_execution_reports.report_json", "orchestration_runs.resume_snapshot_json"],
+            "proposal_sources": [
+                "workflow_execution_reports.report_json",
+                "orchestration_runs.resume_snapshot_json",
+            ],
             "important_updates_require_review": True,
             "truth_update_workflow": "project-truth-update",
         },
@@ -3010,7 +3094,11 @@ def _metadata_payload(
     linked_projects = _linked_projects(config_root)
     instructions = _instruction_status(config_root, vault_root, project_id=project_id)
     current_session_path = logs_dir / "current_session"
-    current_session = current_session_path.read_text(encoding="utf-8").strip() if current_session_path.exists() else None
+    current_session = (
+        current_session_path.read_text(encoding="utf-8").strip()
+        if current_session_path.exists()
+        else None
+    )
     run_counts = _run_status_counts(conn)
     latest_criteria_eval = _latest_success_criteria_evaluation(conn)
     latest_workflow_report = _latest_workflow_execution_report(conn)
@@ -3076,7 +3164,7 @@ def _metadata_payload(
             "aios logs --json --last 50",
             "aios recent-failures --json --last 20",
             "aios rtk --json",
-            "aios start-work --json \"objective\"",
+            'aios start-work --json "objective"',
             "aios skills status --json",
             "aios skills refresh --json --apply",
         ],
@@ -3102,7 +3190,11 @@ def _rtk_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     for row in rows:
         raw_tokens = int(row["raw_tokens"])
         compressed_tokens = int(row["compressed_tokens"])
-        reduction = round(max(0, raw_tokens - compressed_tokens) / raw_tokens * 100, 2) if raw_tokens else 0.0
+        reduction = (
+            round(max(0, raw_tokens - compressed_tokens) / raw_tokens * 100, 2)
+            if raw_tokens
+            else 0.0
+        )
         workflows.append(
             {
                 "workflow_key": row["workflow_key"] or "unclassified",
@@ -3188,15 +3280,21 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
         return
     if command == "lifecycle-audit":
         summary = data["summary"]
-        print(f"attention={summary['attention_count']} unsupported={summary['unsupported_state_count']}")
+        print(
+            f"attention={summary['attention_count']} unsupported={summary['unsupported_state_count']}"
+        )
         return
     if command == "knowledge-objects":
         summary = data["summary"]
-        print(f"objects={summary['object_count']} source_ref_coverage={summary['source_ref_coverage']}")
+        print(
+            f"objects={summary['object_count']} source_ref_coverage={summary['source_ref_coverage']}"
+        )
         return
     if command == "workflow-learning-audit":
         summary = data["summary"]
-        print(f"terminal_runs={summary['terminal_run_count']} no_learning={summary['no_learning_count']}")
+        print(
+            f"terminal_runs={summary['terminal_run_count']} no_learning={summary['no_learning_count']}"
+        )
         return
     if command == "contracts-audit":
         summary = data["summary"]
@@ -3287,11 +3385,15 @@ def _run_corpus_command(command: str, passthrough_args: Sequence[str]) -> int:
     elif command == "report":
         argv = ["node", str(script), "--report-only", *passthrough_args]
     else:
-        raise CLIError("unknown-corpus-command", f"Unsupported corpus command: {command}", EXIT_USAGE)
+        raise CLIError(
+            "unknown-corpus-command", f"Unsupported corpus command: {command}", EXIT_USAGE
+        )
     try:
         completed = subprocess.run(argv, check=False)
     except FileNotFoundError as exc:
-        raise CLIError("node-not-found", "Node.js is required for corpus evaluation", EXIT_DEPENDENCY) from exc
+        raise CLIError(
+            "node-not-found", "Node.js is required for corpus evaluation", EXIT_DEPENDENCY
+        ) from exc
     return int(completed.returncode)
 
 
@@ -3300,7 +3402,9 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("--json", action="store_true", help="Emit JSON envelope")
     parser.add_argument("--db", default=str(DEFAULT_DB_PATH), help="SQLite database path")
     parser.add_argument("--logs-dir", default=str(DEFAULT_LOGS_DIR), help="Logs directory")
-    parser.add_argument("--config-root", default=str(DEFAULT_CONFIG_ROOT), help="Config root directory")
+    parser.add_argument(
+        "--config-root", default=str(DEFAULT_CONFIG_ROOT), help="Config root directory"
+    )
     parser.add_argument("--vault-root", default=None, help="Override vault root path")
 
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -3315,17 +3419,29 @@ def create_parser() -> argparse.ArgumentParser:
     logs_parser.add_argument("--source", action="append", default=[], help="Log source filter")
     logs_parser.add_argument("--last", type=int, default=50, help="Last N log lines")
 
-    failures_parser = subparsers.add_parser("recent-failures", help="Recent failures across control-plane surfaces")
+    failures_parser = subparsers.add_parser(
+        "recent-failures", help="Recent failures across control-plane surfaces"
+    )
     failures_parser.add_argument("--last", type=int, default=20, help="Max failures to return")
 
     subparsers.add_parser("rtk", help="RTK compression rules and metrics")
-    subparsers.add_parser("capability-audit", help="Trusted-signal audit for core AIOS capability surfaces")
+    subparsers.add_parser(
+        "capability-audit", help="Trusted-signal audit for core AIOS capability surfaces"
+    )
     subparsers.add_parser("invocation-audit", help="Invocation backend and strict-handshake audit")
-    subparsers.add_parser("lifecycle-audit", help="Run lifecycle state contract and attention-state audit")
-    subparsers.add_parser("knowledge-objects", help="Knowledge object contract and provenance audit")
-    subparsers.add_parser("workflow-learning-audit", help="Workflow learning evidence and proposal audit")
+    subparsers.add_parser(
+        "lifecycle-audit", help="Run lifecycle state contract and attention-state audit"
+    )
+    subparsers.add_parser(
+        "knowledge-objects", help="Knowledge object contract and provenance audit"
+    )
+    subparsers.add_parser(
+        "workflow-learning-audit", help="Workflow learning evidence and proposal audit"
+    )
     subparsers.add_parser("contracts-audit", help="Canonical AIOS interface contract audit")
-    subparsers.add_parser("governance-audit", help="Governed writeback, approval, and terminal-run evidence audit")
+    subparsers.add_parser(
+        "governance-audit", help="Governed writeback, approval, and terminal-run evidence audit"
+    )
     truth_audit = subparsers.add_parser(
         "truth-audit",
         help="Project truth freshness, facet coverage, and governed update contract audit",
@@ -3352,9 +3468,13 @@ def create_parser() -> argparse.ArgumentParser:
         help="Prove every project in inventory, plus missing configured proving projects",
     )
 
-    subparsers.add_parser("sync-automation-history", help="Import durable automation history from local logs")
+    subparsers.add_parser(
+        "sync-automation-history", help="Import durable automation history from local logs"
+    )
 
-    harness_brief = subparsers.add_parser("harness-brief", help="Generate a backend-neutral harness briefing")
+    harness_brief = subparsers.add_parser(
+        "harness-brief", help="Generate a backend-neutral harness briefing"
+    )
     harness_brief.add_argument("--task", required=True, help="Task to classify and brief")
     harness_brief.add_argument("--project", default=None, help="Optional project id")
     harness_brief.add_argument(
@@ -3363,7 +3483,9 @@ def create_parser() -> argparse.ArgumentParser:
         help="Context compiler root",
     )
 
-    harness_simulate = subparsers.add_parser("harness-simulate", help="Run a fake-agent harness fixture")
+    harness_simulate = subparsers.add_parser(
+        "harness-simulate", help="Run a fake-agent harness fixture"
+    )
     harness_simulate.add_argument("--fixture", required=True, help="Harness fixture JSON path")
     harness_simulate.add_argument(
         "--context-root",
@@ -3371,7 +3493,9 @@ def create_parser() -> argparse.ArgumentParser:
         help="Context compiler root",
     )
 
-    harness_replay = subparsers.add_parser("harness-replay", help="Replay a historical session as harness events")
+    harness_replay = subparsers.add_parser(
+        "harness-replay", help="Replay a historical session as harness events"
+    )
     harness_replay.add_argument("--session-id", required=True, help="Session id to replay")
 
     harness_shadow = subparsers.add_parser(
@@ -3389,10 +3513,14 @@ def create_parser() -> argparse.ArgumentParser:
         help="Report readiness for active backend-neutral harness enforcement",
     )
 
-    start_work = subparsers.add_parser("start-work", help="Create a routed AIOS run packet and session handshake")
+    start_work = subparsers.add_parser(
+        "start-work", help="Create a routed AIOS run packet and session handshake"
+    )
     start_work.add_argument("objective", help="Work objective to route through AIOS")
     start_work.add_argument("--project", default=None, help="Project id to link to the run")
-    start_work.add_argument("--session-id", default=None, help="Session id to link; defaults to logs/current_session")
+    start_work.add_argument(
+        "--session-id", default=None, help="Session id to link; defaults to logs/current_session"
+    )
     start_work.add_argument("--workflow", default=None, help="Workflow key override")
     start_work.add_argument("--agent", default=None, help="Agent profile key override")
     start_work.add_argument("--backend", default=None, help="Invocation backend key override")
@@ -3404,7 +3532,9 @@ def create_parser() -> argparse.ArgumentParser:
         default=str(DEFAULT_PRE_CR_REPO),
         help="Path to the pre-cr-suite-lsp repository",
     )
-    pre_pr.add_argument("--server-entry", default=None, help="Override the built pre-cr server entrypoint")
+    pre_pr.add_argument(
+        "--server-entry", default=None, help="Override the built pre-cr server entrypoint"
+    )
     pre_pr.add_argument(
         "--timeout-seconds",
         type=int,
@@ -3418,15 +3548,21 @@ def create_parser() -> argparse.ArgumentParser:
     skills_status = skills_subparsers.add_parser("status", help="Show instruction sync status")
     skills_status.add_argument("--project", default=None, help="Optional project id filter")
 
-    skills_refresh = skills_subparsers.add_parser("refresh", help="Refresh instruction files from registry sources")
+    skills_refresh = skills_subparsers.add_parser(
+        "refresh", help="Refresh instruction files from registry sources"
+    )
     skills_refresh.add_argument("--project", default=None, help="Optional project id filter")
-    skills_refresh.add_argument("--apply", action="store_true", help="Apply updates instead of dry-run")
+    skills_refresh.add_argument(
+        "--apply", action="store_true", help="Apply updates instead of dry-run"
+    )
 
     corpus_parser = subparsers.add_parser("corpus", help="Corpus evaluation harness")
     corpus_subparsers = corpus_parser.add_subparsers(dest="corpus_command", required=True)
     corpus_run = corpus_subparsers.add_parser("run", help="Run the AIOS corpus evaluation harness")
     corpus_run.add_argument("corpus_args", nargs=argparse.REMAINDER)
-    corpus_report = corpus_subparsers.add_parser("report", help="Regenerate a corpus Markdown report")
+    corpus_report = corpus_subparsers.add_parser(
+        "report", help="Regenerate a corpus Markdown report"
+    )
     corpus_report.add_argument("corpus_args", nargs=argparse.REMAINDER)
 
     harness_eval_parser = subparsers.add_parser("harness-eval", help="AIOS harness evaluation")
