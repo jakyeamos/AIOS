@@ -57,6 +57,7 @@ AIOS should compile messy human intent into the right context, standards, workfl
 - Primary user is agentic workflows rather than casual dashboard browsing, so determinism, inspectability, and writeback accuracy matter more than UI polish alone
 - The current codebase map in `.planning/codebase/` should be treated as reference material for planning, while `PROJECT.md`, context receipts, and the control-plane artifacts remain stronger truth surfaces
 - The active v1 roadmap now extends through Phase 15, adding planned tracks for measurable eval/shadow workflows, graph-native memory, multi-provider session ingestion, cross-project complexity standards, and agent skill portfolio integration.
+- The checked-in managed workflow report fixtures now reflect agent-rule-enriched invocation output from the current control-plane runtime.
 
 ## Constraints
 
@@ -95,4 +96,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-23 after expanding the active v1 roadmap through Phase 15*
+*Last updated: 2026-05-23 after refreshing managed control-plane report fixtures*
