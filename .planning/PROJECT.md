@@ -63,6 +63,7 @@ AIOS should compile messy human intent into the right context, standards, workfl
 - Phase 6 Plan 01 shipped registry-driven standards resolution before execution, briefing packet criteria/standards persistence columns, agentize registry-backed standards selection, and session-start standards/trigger previews.
 - Phase 6 Plan 02 shipped durable workflow stage findings, including a `success_criteria_stage_findings` table, stage JSON artifacts, workflow-stage evaluation hooks, and closeout governance aggregation.
 - Phase 6 Plan 03 shipped broader execution-first evidence ingestion plus CLI commands for standards resolution preview and criteria finding lifecycle transitions.
+- Phase 6 is complete with summaries and verification artifacts; GSD now recognizes Phase 7, Delta Scoring And Health Backfill, as the active next phase.
 
 ## Constraints
 
@@ -101,4 +102,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-23 after shipping Phase 6 finding lifecycle controls*
+*Last updated: 2026-05-24 after completing Phase 6 standards evidence artifacts*
