@@ -147,6 +147,12 @@ def _table_exists(conn: sqlite3.Connection, name: str) -> bool:
     return row is not None
 
 
+def _table_columns(conn: sqlite3.Connection, name: str) -> set[str]:
+    if not _table_exists(conn, name):
+        return set()
+    return {str(row[1]) for row in conn.execute(f"PRAGMA table_info({name})").fetchall()}
+
+
 def _version_tuple(value: str) -> tuple[int, ...]:
     parts: list[int] = []
     for token in value.split("."):
@@ -321,6 +327,20 @@ def ensure_standards_health_schema(conn: sqlite3.Connection) -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_standards_assessments_project
           ON standards_assessments(project_id, last_evaluated_at DESC)
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS standards_manual_overrides (
+            id TEXT PRIMARY KEY,
+            project_id TEXT NOT NULL,
+            standard_id TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            actor TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+            updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+            UNIQUE(project_id, standard_id)
+        )
         """
     )
     conn.execute(
@@ -646,6 +666,63 @@ def _latest_status_map(conn: sqlite3.Connection, project_id: str) -> dict[str, A
     return latest
 
 
+def _load_manual_overrides(
+    conn: sqlite3.Connection,
+    project_id: str,
+) -> dict[str, ManualAssessmentOverride]:
+    if not _table_exists(conn, "standards_manual_overrides"):
+        return {}
+    rows = conn.execute(
+        """
+        SELECT standard_id, payload_json
+        FROM standards_manual_overrides
+        WHERE project_id = ?
+        """,
+        (project_id,),
+    ).fetchall()
+    overrides: dict[str, ManualAssessmentOverride] = {}
+    for row in rows:
+        payload = _json_dict(row[1])
+        if payload:
+            overrides[str(row[0])] = cast(ManualAssessmentOverride, payload)
+    return overrides
+
+
+def persist_manual_override(
+    conn: sqlite3.Connection,
+    *,
+    project_id: str,
+    standard_id: str,
+    override: ManualAssessmentOverride,
+    actor: str,
+) -> dict[str, Any]:
+    ensure_standards_health_schema(conn)
+    now = _now_iso()
+    override_id = f"standards-override-{uuid.uuid4()}"
+    conn.execute(
+        """
+        INSERT INTO standards_manual_overrides (
+            id, project_id, standard_id, payload_json, actor, created_at, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(project_id, standard_id)
+        DO UPDATE SET
+            payload_json = excluded.payload_json,
+            actor = excluded.actor,
+            updated_at = excluded.updated_at
+        """,
+        (override_id, project_id, standard_id, _json(dict(override)), actor, now, now),
+    )
+    return {
+        "project_id": project_id,
+        "standard_id": standard_id,
+        "status": override.get("status"),
+        "actor": actor,
+        "rationale": override.get("reason"),
+        "persisted_at": now,
+    }
+
+
 def _find_security_signal(
     conn: sqlite3.Connection, project_id: str
 ) -> tuple[AssessmentStatus, str, float, list[str]]:
@@ -862,7 +939,9 @@ def _evaluate_known_standard(
                     "SELECT COUNT(*) FROM orchestration_runs WHERE project_id = ?", (project_id,)
                 ).fetchone()[0]
             )
-        if _table_exists(conn, "orchestration_run_events"):
+        if _table_exists(conn, "orchestration_run_events") and "project_id" in _table_columns(
+            conn, "orchestration_run_events"
+        ):
             event_count = int(
                 conn.execute(
                     "SELECT COUNT(*) FROM orchestration_run_events WHERE project_id = ?",
@@ -1995,7 +2074,10 @@ def evaluate_and_record(
     previous_status = _latest_status_map(conn, project_id)
     created_at = _now_iso()
 
-    applied_overrides = overrides or {}
+    applied_overrides = {
+        **_load_manual_overrides(conn, project_id),
+        **(overrides or {}),
+    }
     migration_items: list[dict[str, Any]] = []
     evaluations: list[EvaluatedStandard] = []
 
@@ -2003,7 +2085,8 @@ def evaluate_and_record(
         if standard.profile_id != profile_id:
             continue
 
-        if _version_gt(standard.introduced_version, attached_version):
+        override = applied_overrides.get(standard.id)
+        if _version_gt(standard.introduced_version, attached_version) and override is None:
             migration_items.append(
                 {
                     "standard_id": standard.id,
@@ -2033,7 +2116,6 @@ def evaluate_and_record(
             )
             continue
 
-        override = applied_overrides.get(standard.id)
         if override is not None:
             status = cast(AssessmentStatus, override.get("status", "unknown"))
             reason = str(override.get("reason") or "Manual override applied.")

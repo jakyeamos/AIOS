@@ -5,11 +5,13 @@ import sqlite3
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 import services.aios_cli as aios_cli  # noqa: E402
-from services import success_criteria  # noqa: E402
+from services import standards_health, success_criteria  # noqa: E402
 from services.aios_cli import EXIT_OK, run_cli  # noqa: E402
 from services.rtk_integration import ensure_rtk_schema  # noqa: E402
 
@@ -1064,7 +1066,7 @@ def test_contracts_audit_reports_canonical_interfaces(tmp_path: Path, capsys) ->
     contracts_output = json.loads(capsys.readouterr().out)
     data = contracts_output["data"]
     names = {contract["name"] for contract in data["contracts"]}
-    assert data["summary"]["canonical_contract_count"] == 7
+    assert data["summary"]["canonical_contract_count"] == 8
     assert data["summary"]["implemented_or_partial_count"] >= 6
     assert {
         "TrustedSignal",
@@ -1074,6 +1076,7 @@ def test_contracts_audit_reports_canonical_interfaces(tmp_path: Path, capsys) ->
         "RetrievalTrace",
         "WorkflowLearningEvent",
         "EvaluationFinding",
+        "DeltaExplanation",
     }.issubset(names)
     invocation = next(
         contract for contract in data["contracts"] if contract["name"] == "InvocationBackend"
@@ -1226,6 +1229,274 @@ def test_standards_resolution_preview_returns_merged_payload(tmp_path: Path, cap
     assert payload["criteria"]
     assert payload["resolution_status"] in {"ok", "no_profile_attached"}
     assert "execution_first_triggers" in payload
+
+
+def _seed_standards_health_for_cli(db_path: Path) -> None:
+    conn = sqlite3.connect(db_path)
+    conn.execute("ALTER TABLE orchestration_run_events ADD COLUMN project_id TEXT")
+    standards_health.ensure_standards_health_schema(conn)
+    conn.execute(
+        """
+        INSERT INTO project_standards_profiles (
+            project_id, profile_id, attached_version, latest_version, migration_mode
+        )
+        VALUES ('p1', 'aios-core', '2026.06.0', '2026.06.0', 'current')
+        ON CONFLICT(project_id) DO UPDATE SET
+            attached_version = excluded.attached_version,
+            latest_version = excluded.latest_version
+        """
+    )
+    standards_health.evaluate_and_record(conn, project_id="p1")
+    conn.commit()
+    conn.close()
+
+
+def test_delta_explain_cli_returns_explanations(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    _seed_standards_health_for_cli(db_path)
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "delta-explain",
+            "--project",
+            "p1",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    assert data["project_id"] == "p1"
+    assert data["snapshot_id"] is not None
+    assert data["delta_explanations"]
+    assert {
+        "standard_id",
+        "domain",
+        "status",
+        "provenance",
+        "confidence",
+        "freshness",
+        "evidence",
+        "contradiction",
+        "remediation_summary",
+        "priority_score",
+        "priority_bucket",
+    }.issubset(data["delta_explanations"][0])
+
+
+def test_delta_explain_cli_with_no_snapshot_returns_empty_list(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "delta-explain",
+            "--project",
+            "missing",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    assert data == {"project_id": "missing", "snapshot_id": None, "delta_explanations": []}
+
+
+def test_recommend_workflow_cli_returns_recommendations(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    _seed_standards_health_for_cli(db_path)
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "recommend-workflow",
+            "--project",
+            "p1",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    assert data["project_id"] == "p1"
+    assert data["recommendations"]
+    first = data["recommendations"][0]
+    assert {
+        "workflow_key",
+        "rationale",
+        "available_in_registry",
+        "requires_approval",
+        "impact_scope",
+        "policy_class",
+        "triggered_by",
+    }.issubset(first)
+    assert any(row["available_in_registry"] is False for row in data["recommendations"])
+
+
+def test_recommend_workflow_cli_with_no_snapshot_returns_empty_list(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "recommend-workflow",
+            "--project",
+            "missing",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    assert data == {"project_id": "missing", "recommendations": []}
+
+
+def test_standards_override_cli_writes_override_and_next_snapshot_reflects_it(
+    tmp_path: Path, capsys
+) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "standards-override",
+            "--project",
+            "p1",
+            "--standard",
+            "ux.operator_clarity",
+            "--status",
+            "pass",
+            "--rationale",
+            "operator-reviewed-2026-05-24",
+            "--actor",
+            "operator-cli",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    assert data["standard_id"] == "ux.operator_clarity"
+    assert data["status"] == "pass"
+    conn = sqlite3.connect(db_path)
+    standards_health.evaluate_and_record(conn, project_id="p1")
+    row = conn.execute(
+        """
+        SELECT status, evaluator_type, reason
+        FROM standards_assessments
+        WHERE project_id = 'p1' AND standard_id = 'ux.operator_clarity'
+        ORDER BY created_at DESC
+        LIMIT 1
+        """
+    ).fetchone()
+    conn.close()
+    assert row is not None
+    assert row[0] == "pass"
+    assert row[1] == "manual"
+    assert "operator-reviewed-2026-05-24" in row[2]
+
+
+def test_standards_override_cli_rejects_invalid_status(tmp_path: Path) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    with pytest.raises(SystemExit) as exc:
+        run_cli(
+            [
+                "--json",
+                "--db",
+                str(db_path),
+                "--logs-dir",
+                str(logs_dir),
+                "standards-override",
+                "--project",
+                "p1",
+                "--standard",
+                "ux.operator_clarity",
+                "--status",
+                "invalid",
+            ]
+        )
+    assert exc.value.code == 2
+
+
+def test_standards_override_cli_rejects_unknown_standard_id(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "standards-override",
+            "--project",
+            "p1",
+            "--standard",
+            "nonexistent.fake",
+            "--status",
+            "pass",
+            "--rationale",
+            "x",
+        ]
+    )
+
+    assert exit_code == aios_cli.EXIT_USAGE
+    assert json.loads(capsys.readouterr().out)["ok"] is False
+
+
+def test_governance_audit_includes_recommended_workflows(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    _seed_standards_health_for_cli(db_path)
+
+    exit_code = run_cli(
+        ["--json", "--db", str(db_path), "--logs-dir", str(logs_dir), "governance-audit"]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    assert "recommended_workflows" in data
+    assert data["recommended_workflows"]["p1"]
 
 
 def test_metadata_and_skills_refresh_flow(tmp_path: Path, capsys) -> None:

@@ -1,3 +1,5 @@
+import type { TrustedSignalProvenance } from "@/lib/trusted-signals";
+
 export type KnowledgePageKind = "project" | "decision" | "workflow" | "agent" | "system" | "concept";
 
 export type HealthStatus = "healthy" | "warning" | "error" | "unknown";
@@ -599,6 +601,40 @@ export type StandardsDeltaItem = {
   priorityBucket: "foundational" | "high_leverage" | "quick_wins" | "blocked" | "waived_deferred";
 };
 
+export type DeltaExplanation = {
+  standardId: string;
+  domain: string;
+  status: StandardsAssessmentStatus;
+  provenance: TrustedSignalProvenance;
+  confidence: number;
+  freshness: string;
+  evidence: string[];
+  contradiction: string | null;
+  remediationSummary: string;
+  remediationEffort: number;
+  remediationLeverage: number;
+  priorityScore: number;
+  priorityBucket: StandardsDeltaItem["priorityBucket"];
+  measuredState: Record<string, unknown>;
+  expectedState: Record<string, unknown>;
+  reason: string;
+};
+
+export type RecommendedWorkflow = {
+  workflowKey: string;
+  rationale: string;
+  availableInRegistry: boolean;
+  requiresApproval: boolean;
+  impactScope: string;
+  policyClass: string;
+  triggeredBy: {
+    standardId: string;
+    domain: string;
+    priorityBucket: StandardsDeltaItem["priorityBucket"];
+    priorityScore: number;
+  };
+};
+
 export type StandardsBackfillTask = {
   id: string;
   deltaItemId: string;
@@ -651,6 +687,8 @@ export type StandardsHealthSummary = {
   domainScores: StandardsDomainScore[];
   deltaItems: StandardsDeltaItem[];
   backfillTasks: StandardsBackfillTask[];
+  deltaExplanations: DeltaExplanation[];
+  recommendedWorkflows: RecommendedWorkflow[];
   migration: StandardsMigration;
 };
 

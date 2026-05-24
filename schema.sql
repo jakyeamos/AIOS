@@ -695,6 +695,16 @@ CREATE TABLE standards_assessments (
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 CREATE INDEX idx_standards_assessments_project ON standards_assessments(project_id, last_evaluated_at DESC);
+CREATE TABLE standards_manual_overrides (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  standard_id TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  actor TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  UNIQUE(project_id, standard_id)
+);
 CREATE TABLE standards_delta_items (
   id TEXT PRIMARY KEY,
   snapshot_id TEXT NOT NULL,

@@ -1,6 +1,11 @@
 import type Database from "better-sqlite3";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 import type {
+  DeltaExplanation,
+  RecommendedWorkflow,
+  StandardsAssessmentStatus,
   StandardsBackfillTask,
   StandardsDeltaItem,
   StandardsDomainScore,
@@ -63,6 +68,32 @@ type BackfillTaskRow = {
   status: string;
 };
 
+type AssessmentExplanationRow = {
+  standardId: string;
+  status: StandardsAssessmentStatus;
+  measuredStateJson: string;
+  reason: string | null;
+  evidenceJson: string;
+  lastEvaluatedAt: string;
+  evaluatorType: string;
+  confidence: number;
+  expectedStateJson: string;
+  definitionExpectedStateJson: string;
+  definitionRemediationPlaybookJson: string;
+  relatedCriteriaJson: string;
+  definitionEvaluationMethod: string;
+  domain: string;
+  remediationPlaybookJson: string | null;
+  priorityScore: number | null;
+  priorityBucket: StandardsDeltaItem["priorityBucket"] | null;
+};
+
+type WorkflowRegistryFile = {
+  workflows?: Array<{
+    key?: string;
+  }>;
+};
+
 const parseJsonArray = <T>(raw: string, fallback: T): T => {
   try {
     return JSON.parse(raw) as T;
@@ -70,6 +101,41 @@ const parseJsonArray = <T>(raw: string, fallback: T): T => {
     return fallback;
   }
 };
+
+const tableExists = (db: Database.Database, tableName: string): boolean => {
+  const row = db
+    .prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name = ? LIMIT 1")
+    .get(tableName) as { 1: number } | undefined;
+  return row !== undefined;
+};
+
+const getLatestSnapshot = (db: Database.Database, projectId: string): SnapshotRow | undefined =>
+  db
+    .prepare(
+      `
+      SELECT
+        id,
+        profile_id AS profileId,
+        attached_version AS attachedVersion,
+        latest_version AS latestVersion,
+        overall_score AS overallScore,
+        weighted_delta AS weightedDelta,
+        unmet_standards_count AS unmetStandardsCount,
+        critical_delta_count AS criticalDeltaCount,
+        regression_count AS regressionCount,
+        unknown_count AS unknownCount,
+        unknown_coverage AS unknownCoverage,
+        evaluation_confidence AS evaluationConfidence,
+        domain_scores_json AS domainScoresJson,
+        migration_json AS migrationJson,
+        created_at AS createdAt
+      FROM standards_health_snapshots
+      WHERE project_id = ?
+      ORDER BY created_at DESC
+      LIMIT 1
+    `,
+    )
+    .get(projectId) as SnapshotRow | undefined;
 
 const parseDomainScores = (raw: string): StandardsDomainScore[] => {
   const parsed = parseJsonArray<Record<string, { score?: number; confidence?: number; weight?: number }>>(raw, {});
@@ -113,38 +179,223 @@ const parseMigration = (raw: string, attachedVersion: string, latestVersion: str
   };
 };
 
+const recentFindingsByCriterion = (db: Database.Database, projectId: string): Record<string, number> => {
+  const counts: Record<string, number> = {};
+  if (tableExists(db, "success_criteria_findings") && tableExists(db, "success_criteria_evaluations")) {
+    const rows = db
+      .prepare(
+        `
+        SELECT f.criterion_id AS criterionId, COUNT(*) AS count
+        FROM success_criteria_findings f
+        INNER JOIN success_criteria_evaluations e ON e.id = f.evaluation_id
+        WHERE e.project_id = ?
+          AND COALESCE(f.resolution_status, 'open') = 'open'
+          AND f.level IN ('warning', 'blocker')
+          AND f.created_at >= datetime('now', '-14 days')
+        GROUP BY f.criterion_id
+      `,
+      )
+      .all(projectId) as Array<{ criterionId: string; count: number }>;
+    for (const row of rows) {
+      counts[row.criterionId] = (counts[row.criterionId] ?? 0) + Number(row.count);
+    }
+  }
+  return counts;
+};
+
+const detectContradiction = (
+  status: StandardsAssessmentStatus,
+  confidence: number,
+  relatedCriteria: string[],
+  findingsByCriterion: Record<string, number>,
+): string | null => {
+  for (const criterionId of relatedCriteria) {
+    const blockers = Number(findingsByCriterion[criterionId] ?? 0);
+    if (status === "pass" && blockers > 0) {
+      return `Standard reports pass but ${blockers} open finding(s) exist on related criterion '${criterionId}'.`;
+    }
+    if (status === "fail" && blockers === 0 && confidence < 0.5) {
+      return `Standard reports fail with low confidence (${confidence}) but no findings recorded on related criterion '${criterionId}'.`;
+    }
+  }
+  return null;
+};
+
+const classifyProvenance = (
+  status: StandardsAssessmentStatus,
+  confidence: number,
+  evidence: string[],
+  evaluatorType: string,
+  contradiction: string | null,
+): DeltaExplanation["provenance"] => {
+  if (status === "unknown" || evidence.length === 0) {
+    return "missing";
+  }
+  if (contradiction) {
+    return "contradictory";
+  }
+  if (evaluatorType === "auto" && confidence >= 0.75) {
+    return "confirmed";
+  }
+  return "inferred";
+};
+
+const buildDeltaExplanations = (
+  db: Database.Database,
+  snapshotId: string,
+  projectId: string,
+): DeltaExplanation[] => {
+  const findingsByCriterion = recentFindingsByCriterion(db, projectId);
+  const rows = db
+    .prepare(
+      `
+      SELECT
+        a.standard_id AS standardId,
+        a.status,
+        a.measured_state_json AS measuredStateJson,
+        a.reason,
+        a.evidence_json AS evidenceJson,
+        a.last_evaluated_at AS lastEvaluatedAt,
+        a.evaluator_type AS evaluatorType,
+        a.confidence,
+        a.expected_state_snapshot_json AS expectedStateJson,
+        dfn.expected_state_json AS definitionExpectedStateJson,
+        dfn.remediation_playbook_json AS definitionRemediationPlaybookJson,
+        dfn.related_criteria_json AS relatedCriteriaJson,
+        dfn.evaluation_method AS definitionEvaluationMethod,
+        dfn.domain,
+        di.remediation_playbook_json AS remediationPlaybookJson,
+        di.priority_score AS priorityScore,
+        di.priority_bucket AS priorityBucket
+      FROM standards_assessments a
+      INNER JOIN standards_definitions dfn
+        ON dfn.standard_id = a.standard_id AND dfn.profile_id = a.profile_id AND dfn.version = a.standard_version
+      LEFT JOIN standards_delta_items di
+        ON di.snapshot_id = a.snapshot_id AND di.standard_id = a.standard_id
+      WHERE a.snapshot_id = ?
+      ORDER BY COALESCE(di.priority_score, 0) DESC, a.standard_id ASC
+    `,
+    )
+    .all(snapshotId) as AssessmentExplanationRow[];
+
+  return rows.map((row) => {
+    const evidence = parseJsonArray<string[]>(row.evidenceJson, []);
+    const relatedCriteria = parseJsonArray<string[]>(row.relatedCriteriaJson, []);
+    const confidence = Number(row.confidence);
+    const contradiction = detectContradiction(row.status, confidence, relatedCriteria, findingsByCriterion);
+    const remediation = parseJsonArray<Record<string, unknown>>(
+      row.remediationPlaybookJson ?? row.definitionRemediationPlaybookJson,
+      {},
+    );
+    return {
+      standardId: row.standardId,
+      domain: row.domain,
+      status: row.status,
+      provenance: classifyProvenance(row.status, confidence, evidence, row.evaluatorType, contradiction),
+      confidence,
+      freshness: row.lastEvaluatedAt,
+      evidence,
+      contradiction,
+      remediationSummary: String(remediation.summary ?? ""),
+      remediationEffort: Number(remediation.effort ?? 1),
+      remediationLeverage: Number(remediation.leverage ?? 1),
+      priorityScore: Number(row.priorityScore ?? 0),
+      priorityBucket: row.priorityBucket ?? "high_leverage",
+      measuredState: parseJsonArray<Record<string, unknown>>(row.measuredStateJson, {}),
+      expectedState: parseJsonArray<Record<string, unknown>>(
+        row.expectedStateJson || row.definitionExpectedStateJson,
+        {},
+      ),
+      reason: row.reason ?? "",
+    };
+  });
+};
+
+const loadWorkflowRegistryKeys = (): Set<string> => {
+  const registryPath = resolve(process.cwd(), "config/workflows/registry.json");
+  if (!existsSync(registryPath)) {
+    return new Set();
+  }
+  try {
+    const parsed = JSON.parse(readFileSync(registryPath, "utf8")) as WorkflowRegistryFile;
+    return new Set((parsed.workflows ?? []).map((workflow) => workflow.key ?? "").filter(Boolean));
+  } catch {
+    return new Set();
+  }
+};
+
+const workflowForDelta = (delta: StandardsDeltaItem): { workflowKey: string; rationale: string } | null => {
+  if (delta.priorityBucket === "blocked" && delta.domain === "workflow_agent_control") {
+    return {
+      workflowKey: "failure-recovery",
+      rationale: "Critical workflow-handshake blocker - recover handshake integrity before other work.",
+    };
+  }
+  if (delta.domain === "security" && (delta.status === "fail" || delta.status === "partial")) {
+    return {
+      workflowKey: "security review",
+      rationale: "Security domain has open delta - focused security review before broader work.",
+    };
+  }
+  if (delta.domain === "architecture" && delta.status === "fail") {
+    return {
+      workflowKey: "codebase architecture review",
+      rationale: "Architecture boundary failure - review before remediation work compounds.",
+    };
+  }
+  if (delta.priorityBucket === "foundational" || delta.priorityBucket === "high_leverage") {
+    return {
+      workflowKey: "standards backfill",
+      rationale: "Highest-leverage standards gap - backfill workflow targets foundational deltas.",
+    };
+  }
+  if (delta.priorityBucket === "quick_wins") {
+    return {
+      workflowKey: "implementation-delivery",
+      rationale: "Quick-win standards gap - implementation-delivery covers low-effort fixes.",
+    };
+  }
+  return null;
+};
+
+const buildRecommendedWorkflows = (deltaItems: StandardsDeltaItem[]): RecommendedWorkflow[] => {
+  const registryKeys = loadWorkflowRegistryKeys();
+  const seen = new Set<string>();
+  const recommendations: RecommendedWorkflow[] = [];
+  for (const delta of [...deltaItems].sort((a, b) => b.priorityScore - a.priorityScore)) {
+    const match = workflowForDelta(delta);
+    if (!match || seen.has(match.workflowKey)) {
+      continue;
+    }
+    seen.add(match.workflowKey);
+    recommendations.push({
+      workflowKey: match.workflowKey,
+      rationale: match.rationale,
+      availableInRegistry: registryKeys.has(match.workflowKey),
+      requiresApproval: true,
+      impactScope: "workflow-default",
+      policyClass: "workflow-default_change",
+      triggeredBy: {
+        standardId: delta.standardId,
+        domain: delta.domain,
+        priorityBucket: delta.priorityBucket,
+        priorityScore: delta.priorityScore,
+      },
+    });
+    if (recommendations.length >= 5) {
+      break;
+    }
+  }
+  return recommendations;
+};
+
 export const getProjectStandardsHealth = (
   db: Database.Database,
   projectId: string,
 ): StandardsHealthSummary | null => {
   ensureControlPlaneSchema(db);
 
-  const snapshot = db
-    .prepare(
-      `
-      SELECT
-        id,
-        profile_id AS profileId,
-        attached_version AS attachedVersion,
-        latest_version AS latestVersion,
-        overall_score AS overallScore,
-        weighted_delta AS weightedDelta,
-        unmet_standards_count AS unmetStandardsCount,
-        critical_delta_count AS criticalDeltaCount,
-        regression_count AS regressionCount,
-        unknown_count AS unknownCount,
-        unknown_coverage AS unknownCoverage,
-        evaluation_confidence AS evaluationConfidence,
-        domain_scores_json AS domainScoresJson,
-        migration_json AS migrationJson,
-        created_at AS createdAt
-      FROM standards_health_snapshots
-      WHERE project_id = ?
-      ORDER BY created_at DESC
-      LIMIT 1
-    `,
-    )
-    .get(projectId) as SnapshotRow | undefined;
+  const snapshot = getLatestSnapshot(db, projectId);
 
   if (!snapshot) {
     return null;
@@ -257,8 +508,30 @@ export const getProjectStandardsHealth = (
     domainScores: parseDomainScores(snapshot.domainScoresJson),
     deltaItems,
     backfillTasks,
+    deltaExplanations: buildDeltaExplanations(db, snapshot.id, projectId),
+    recommendedWorkflows: buildRecommendedWorkflows(deltaItems),
     migration: parseMigration(snapshot.migrationJson, snapshot.attachedVersion, snapshot.latestVersion),
   };
+};
+
+export const getProjectDeltaExplanations = (
+  db: Database.Database,
+  projectId: string,
+): DeltaExplanation[] => {
+  ensureControlPlaneSchema(db);
+  const snapshot = getLatestSnapshot(db, projectId);
+  if (!snapshot) {
+    return [];
+  }
+  return buildDeltaExplanations(db, snapshot.id, projectId);
+};
+
+export const getRecommendedWorkflowsFromHealth = (
+  db: Database.Database,
+  projectId: string,
+): RecommendedWorkflow[] => {
+  const summary = getProjectStandardsHealth(db, projectId);
+  return summary?.recommendedWorkflows ?? [];
 };
 
 export const updateStandardsBackfillTask = (

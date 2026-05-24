@@ -9,9 +9,10 @@ import sys
 import uuid
 from collections import deque
 from collections.abc import Sequence
+from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from services.automation_history import sync_pipeline_automation_history
 from services.capability_truth import capability_truth_payload
@@ -49,6 +50,16 @@ from services.rtk_integration import (
     load_compression_rules,
     rtk_metrics_log,
 )
+from services.standards_health import (
+    AssessmentStatus,
+    ManualAssessmentOverride,
+    latest_snapshot,
+    persist_manual_override,
+    project_delta_explanations,
+)
+from services.standards_health import (
+    load_registry as load_standards_registry,
+)
 from services.success_criteria import (
     EVALUATION_FINDING_LIFECYCLE_STATES,
     preview_applicable_criteria,
@@ -56,7 +67,7 @@ from services.success_criteria import (
     resolve_task_standards,
 )
 from services.task_routing import route_objective
-from services.workflow_orchestration import load_workflow_registry
+from services.workflow_orchestration import load_workflow_registry, recommend_workflow_from_health
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG_ROOT = REPO_ROOT / "config"
@@ -2634,6 +2645,74 @@ def _governance_stage_findings(conn: sqlite3.Connection) -> dict[str, Any]:
     }
 
 
+def _standards_delta_items_for_snapshot(
+    conn: sqlite3.Connection,
+    snapshot_id: str,
+) -> list[dict[str, Any]]:
+    if not _table_exists(conn, "standards_delta_items"):
+        return []
+    return [
+        {
+            "standard_id": str(row["standard_id"]),
+            "domain": str(row["domain"]),
+            "status": str(row["status"]),
+            "priority_bucket": str(row["priority_bucket"]),
+            "priority_score": float(row["priority_score"] or 0.0),
+            "remediation_playbook": _parse_json_object(row["remediation_playbook_json"]),
+        }
+        for row in conn.execute(
+            """
+            SELECT standard_id, domain, status, priority_bucket, priority_score, remediation_playbook_json
+            FROM standards_delta_items
+            WHERE snapshot_id = ?
+            ORDER BY priority_score DESC, created_at DESC
+            LIMIT 200
+            """,
+            (snapshot_id,),
+        ).fetchall()
+    ]
+
+
+def _recommend_workflows_for_project(
+    conn: sqlite3.Connection,
+    project_id: str,
+    *,
+    limit: int = 5,
+) -> list[dict[str, Any]]:
+    snapshot = latest_snapshot(conn, project_id)
+    if snapshot is None:
+        return []
+    delta_items = _standards_delta_items_for_snapshot(conn, str(snapshot["id"]))
+    if not delta_items:
+        return []
+    registry_workflows = set(load_workflow_registry().keys())
+    return recommend_workflow_from_health(
+        delta_items=delta_items,
+        registry_workflows=registry_workflows,
+    )[:limit]
+
+
+def _recommended_workflows_by_project(conn: sqlite3.Connection) -> dict[str, list[dict[str, Any]]]:
+    if not _table_exists(conn, "standards_health_snapshots"):
+        return {}
+    rows = conn.execute(
+        """
+        SELECT project_id, MAX(created_at) AS latest_created_at
+        FROM standards_health_snapshots
+        GROUP BY project_id
+        ORDER BY latest_created_at DESC
+        LIMIT 50
+        """
+    ).fetchall()
+    recommendations: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        project_id = str(row["project_id"])
+        project_recommendations = _recommend_workflows_for_project(conn, project_id)
+        if project_recommendations:
+            recommendations[project_id] = project_recommendations
+    return recommendations
+
+
 def _governance_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     proposals = _governance_proposal_rows(conn)
     pending = [
@@ -2671,6 +2750,7 @@ def _governance_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     closeouts = _governance_closeout_rows(conn)
     unresolved_closeouts = [closeout for closeout in closeouts if closeout["has_unresolved_deltas"]]
     stage_findings = _governance_stage_findings(conn)
+    recommended_workflows = _recommended_workflows_by_project(conn)
 
     source_counts: dict[str, int] = {}
     target_counts: dict[str, int] = {}
@@ -2744,6 +2824,7 @@ def _governance_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
         "missing_evidence_runs": missing_evidence_runs[:50],
         "governed_closeouts": closeouts[:50],
         "stage_findings": stage_findings,
+        "recommended_workflows": recommended_workflows,
         "findings": findings,
     }
 
@@ -2904,6 +2985,23 @@ def _contracts_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
             or _table_exists(conn, "success_criteria_stage_findings")
             or _table_exists(conn, "consistency_findings"),
             "lifecycle_states": EVALUATION_FINDING_LIFECYCLE_STATES,
+        },
+        {
+            "name": "DeltaExplanation",
+            "status": "implemented",
+            "source": "services.standards_health:DeltaExplanation",
+            "storage": "standards_assessments + standards_delta_items + success_criteria_findings",
+            "table_available": _table_exists(conn, "standards_assessments")
+            and _table_exists(conn, "standards_delta_items"),
+            "contract": (
+                "DeltaExplanation(standard_id, domain, status, provenance, confidence, "
+                "freshness, evidence, contradiction, remediation, priority_score, priority_bucket)"
+            ),
+            "consumers": [
+                "aios delta-explain",
+                "aios-ui standards-health surface",
+                "aios governance-audit recommended_workflows",
+            ],
         },
     ]
     implemented_or_partial = [
@@ -3232,6 +3330,9 @@ def _metadata_payload(
             "aios governance-audit --json",
             "aios standards-resolution preview --json",
             "aios criteria-finding resolve --json --id <finding> --status accepted",
+            "aios delta-explain --json --project <project>",
+            "aios recommend-workflow --json --project <project>",
+            "aios standards-override --json --project <project> --standard <standard> --status pass --rationale <reason>",
             "aios logs --json --last 50",
             "aios recent-failures --json --last 20",
             "aios rtk --json",
@@ -3342,6 +3443,75 @@ def _standards_resolution_preview_payload(
     )
 
 
+def _delta_explain_payload(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    snapshot = latest_snapshot(conn, str(args.project_id))
+    explanations = project_delta_explanations(conn, str(args.project_id))
+    return {
+        "project_id": str(args.project_id),
+        "snapshot_id": snapshot["id"] if snapshot else None,
+        "delta_explanations": [asdict(explanation) for explanation in explanations],
+    }
+
+
+def _recommend_workflow_payload(
+    conn: sqlite3.Connection, args: argparse.Namespace
+) -> dict[str, Any]:
+    limit = max(1, min(int(args.limit), 10))
+    return {
+        "project_id": str(args.project_id),
+        "recommendations": _recommend_workflows_for_project(
+            conn,
+            str(args.project_id),
+            limit=limit,
+        ),
+    }
+
+
+def _standards_override_payload(
+    conn: sqlite3.Connection, args: argparse.Namespace
+) -> dict[str, Any]:
+    _, standards = load_standards_registry()
+    known_standard_ids = {standard.id for standard in standards}
+    standard_id = str(args.standard)
+    if standard_id not in known_standard_ids:
+        raise CLIError(
+            "unknown-standard",
+            f"Unknown standards registry id: {standard_id}",
+            EXIT_USAGE,
+        )
+    status = str(args.status)
+    valid_statuses = {"pass", "partial", "fail", "unknown", "waived", "not_applicable"}
+    if status not in valid_statuses:
+        raise CLIError("invalid-status", f"Invalid standards override status: {status}", EXIT_USAGE)
+    rationale = str(args.rationale or "").strip()
+    if status == "waived" and not rationale:
+        raise CLIError(
+            "missing-rationale", "--rationale is required for waived standards", EXIT_USAGE
+        )
+    confidence = max(0.0, min(1.0, float(args.confidence)))
+    reason = rationale or f"Operator override via aios standards-override at {_now_iso()}"
+    override: ManualAssessmentOverride = {
+        "status": cast(AssessmentStatus, status),
+        "reason": reason,
+        "evidence": [str(item) for item in (args.evidence or [])],
+        "confidence": confidence,
+    }
+    if status == "waived":
+        override["waiver_rationale"] = reason
+        override["waiver_owner"] = str(args.actor)
+        if args.waiver_review_at:
+            override["waiver_review_at"] = str(args.waiver_review_at)
+    result = persist_manual_override(
+        conn,
+        project_id=str(args.project_id),
+        standard_id=standard_id,
+        override=override,
+        actor=str(args.actor),
+    )
+    conn.commit()
+    return result
+
+
 def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "status":
         print(
@@ -3430,6 +3600,15 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
             f"criteria={len(data['criteria'])} standards={len(data['standards'])} "
             f"status={data['resolution_status']}"
         )
+        return
+    if command == "delta-explain":
+        print(f"project={data['project_id']} explanations={len(data['delta_explanations'])}")
+        return
+    if command == "recommend-workflow":
+        print(f"project={data['project_id']} recommendations={len(data['recommendations'])}")
+        return
+    if command == "standards-override":
+        print(f"{data['project_id']} {data['standard_id']}={data['status']}")
         return
     if command == "prove-project-health":
         summary = data["summary"]
@@ -3597,6 +3776,37 @@ def create_parser() -> argparse.ArgumentParser:
     standards_resolution_preview.add_argument("--changed-file", action="append", default=[])
     standards_resolution_preview.add_argument("--skill", action="append", default=[])
     standards_resolution_preview.add_argument("--workflow-key", default=None)
+
+    delta_explain = subparsers.add_parser(
+        "delta-explain",
+        help="Explainable delta drill-down for a project's latest health snapshot",
+    )
+    delta_explain.add_argument("--project", required=True, dest="project_id")
+    delta_explain.add_argument("--format", choices=["json"], default="json")
+
+    recommend_workflow = subparsers.add_parser(
+        "recommend-workflow",
+        help="Recommend workflows from health-state for a project",
+    )
+    recommend_workflow.add_argument("--project", required=True, dest="project_id")
+    recommend_workflow.add_argument("--limit", type=int, default=5)
+
+    standards_override = subparsers.add_parser(
+        "standards-override",
+        help="Record a manual assessment override for a standard",
+    )
+    standards_override.add_argument("--project", required=True, dest="project_id")
+    standards_override.add_argument("--standard", required=True)
+    standards_override.add_argument(
+        "--status",
+        required=True,
+        choices=["pass", "partial", "fail", "unknown", "waived", "not_applicable"],
+    )
+    standards_override.add_argument("--rationale", default=None)
+    standards_override.add_argument("--actor", default="operator-cli")
+    standards_override.add_argument("--confidence", type=float, default=0.95)
+    standards_override.add_argument("--evidence", action="append", default=[])
+    standards_override.add_argument("--waiver-review-at", default=None)
     truth_audit = subparsers.add_parser(
         "truth-audit",
         help="Project truth freshness, facet coverage, and governed update contract audit",
@@ -3772,6 +3982,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "governance-audit",
             "criteria-finding",
             "standards-resolution",
+            "delta-explain",
+            "recommend-workflow",
+            "standards-override",
             "truth-audit",
             "prove-project-health",
             "sync-automation-history",
@@ -3844,6 +4057,15 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         ):
             assert conn is not None
             data = _standards_resolution_preview_payload(conn, args)
+        elif args.command == "delta-explain":
+            assert conn is not None
+            data = _delta_explain_payload(conn, args)
+        elif args.command == "recommend-workflow":
+            assert conn is not None
+            data = _recommend_workflow_payload(conn, args)
+        elif args.command == "standards-override":
+            assert conn is not None
+            data = _standards_override_payload(conn, args)
         elif args.command == "truth-audit":
             assert conn is not None
             data = _truth_audit_payload(conn, Path(args.truth_file).expanduser().resolve())
