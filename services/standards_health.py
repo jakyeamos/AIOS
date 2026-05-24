@@ -9,10 +9,18 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal, TypedDict, cast
 
+from services.capability_truth import Provenance
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REGISTRY_PATH = REPO_ROOT / "config" / "standards" / "registry.json"
 
 AssessmentStatus = Literal["pass", "partial", "fail", "unknown", "waived", "not_applicable"]
+KNOWN_PROVENANCE_STATES: tuple[Provenance, ...] = (
+    "confirmed",
+    "inferred",
+    "missing",
+    "contradictory",
+)
 
 PENALTY_MULTIPLIERS: dict[AssessmentStatus, float] = {
     "pass": 0.0,
@@ -83,6 +91,16 @@ def _json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True)
 
 
+def _json_list(raw: str | None) -> list[Any]:
+    if not raw:
+        return []
+    try:
+        loaded = json.loads(raw)
+    except json.JSONDecodeError:
+        return []
+    return loaded if isinstance(loaded, list) else []
+
+
 def _load_json(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as handle:
         loaded = json.load(handle)
@@ -123,7 +141,9 @@ def _safe_ratio(numerator: float, denominator: float) -> float:
     return numerator / denominator
 
 
-def load_registry(path: Path = DEFAULT_REGISTRY_PATH) -> tuple[dict[str, Any], list[StandardDefinition]]:
+def load_registry(
+    path: Path = DEFAULT_REGISTRY_PATH,
+) -> tuple[dict[str, Any], list[StandardDefinition]]:
     loaded = _load_json(path)
     profile = loaded.get("profile")
     standards_raw = loaded.get("standards")
@@ -158,15 +178,20 @@ def load_registry(path: Path = DEFAULT_REGISTRY_PATH) -> tuple[dict[str, Any], l
                 expected_state=cast(dict[str, Any], item.get("expected_state") or {}),
                 remediation_playbook=cast(dict[str, Any], item.get("remediation_playbook") or {}),
                 blocking_dependencies=tuple(
-                    str(dep)
-                    for dep in blocking_dependencies
-                    if isinstance(dep, str) and dep
+                    str(dep) for dep in blocking_dependencies if isinstance(dep, str) and dep
                 ),
                 version=str(item.get("version") or profile.get("version") or "0.0.0"),
-                introduced_version=str(item.get("introduced_version") or item.get("version") or profile.get("version") or "0.0.0"),
+                introduced_version=str(
+                    item.get("introduced_version")
+                    or item.get("version")
+                    or profile.get("version")
+                    or "0.0.0"
+                ),
                 applicability=cast(dict[str, Any], item.get("applicability") or {}),
                 waiver_policy=cast(dict[str, Any], item.get("waiver_policy") or {}),
-                related_criteria=tuple(str(criterion) for criterion in related_criteria if isinstance(criterion, str)),
+                related_criteria=tuple(
+                    str(criterion) for criterion in related_criteria if isinstance(criterion, str)
+                ),
                 metadata=cast(dict[str, Any], item.get("metadata") or {}),
             )
         )
@@ -556,7 +581,9 @@ def _ensure_project_binding(
 
 
 def _project_repo_path(conn: sqlite3.Connection, project_id: str) -> Path | None:
-    row = conn.execute("SELECT repo_path FROM projects WHERE id = ? LIMIT 1", (project_id,)).fetchone()
+    row = conn.execute(
+        "SELECT repo_path FROM projects WHERE id = ? LIMIT 1", (project_id,)
+    ).fetchone()
     if row is None or not row[0]:
         return None
     repo = Path(str(row[0])).expanduser()
@@ -589,7 +616,9 @@ def _latest_status_map(conn: sqlite3.Connection, project_id: str) -> dict[str, A
     return latest
 
 
-def _find_security_signal(conn: sqlite3.Connection, project_id: str) -> tuple[AssessmentStatus, str, float, list[str]]:
+def _find_security_signal(
+    conn: sqlite3.Connection, project_id: str
+) -> tuple[AssessmentStatus, str, float, list[str]]:
     if not _table_exists(conn, "success_criteria_findings"):
         return "unknown", "No success-criteria findings table was available.", 0.3, []
 
@@ -615,10 +644,17 @@ def _find_security_signal(conn: sqlite3.Connection, project_id: str) -> tuple[As
         return "fail", "Security-review blocker findings are still open.", 0.9, evidence
     if "warning" in levels:
         return "partial", "Security-review warnings require follow-up.", 0.8, evidence
-    return "pass", "Recent security-review findings did not surface warnings/blockers.", 0.75, evidence
+    return (
+        "pass",
+        "Recent security-review findings did not surface warnings/blockers.",
+        0.75,
+        evidence,
+    )
 
 
-def _unresolved_critical_findings(conn: sqlite3.Connection, project_id: str) -> tuple[int, list[str]]:
+def _unresolved_critical_findings(
+    conn: sqlite3.Connection, project_id: str
+) -> tuple[int, list[str]]:
     if not _table_exists(conn, "consistency_findings"):
         return 0, []
     rows = conn.execute(
@@ -653,11 +689,26 @@ def _evaluate_known_standard(
         projects = loaded.get("projects", [])
         project_found = any(
             isinstance(item, dict) and str(item.get("id")) == project_id
-            for item in projects if isinstance(projects, list)
+            for item in projects
+            if isinstance(projects, list)
         )
         if project_found:
-            return "pass", "Project is bound in the architecture enforcement registry.", 0.9, {"registry_path": str(config_path)}, [str(config_path)], "auto"
-        return "fail", "Project is missing from the architecture enforcement registry.", 0.85, {"registry_path": str(config_path)}, [str(config_path)], "auto"
+            return (
+                "pass",
+                "Project is bound in the architecture enforcement registry.",
+                0.9,
+                {"registry_path": str(config_path)},
+                [str(config_path)],
+                "auto",
+            )
+        return (
+            "fail",
+            "Project is missing from the architecture enforcement registry.",
+            0.85,
+            {"registry_path": str(config_path)},
+            [str(config_path)],
+            "auto",
+        )
 
     if standard_id == "code_quality.lint_ratchet":
         if repo_path is None or not repo_path.exists():
@@ -680,8 +731,22 @@ def _evaluate_known_standard(
             evidence.append(str(pyproject))
 
         if lint_signal:
-            return "pass", "Lint/static-check signal exists for this repository.", 0.75, {"repo_path": str(repo_path)}, evidence, "auto"
-        return "partial", "No obvious lint/static-check command was detected.", 0.6, {"repo_path": str(repo_path)}, [str(repo_path)], "auto"
+            return (
+                "pass",
+                "Lint/static-check signal exists for this repository.",
+                0.75,
+                {"repo_path": str(repo_path)},
+                evidence,
+                "auto",
+            )
+        return (
+            "partial",
+            "No obvious lint/static-check command was detected.",
+            0.6,
+            {"repo_path": str(repo_path)},
+            [str(repo_path)],
+            "auto",
+        )
 
     if standard_id == "testing.trust_signal":
         if not _table_exists(conn, "success_criteria_evaluations"):
@@ -697,8 +762,20 @@ def _evaluate_known_standard(
             (project_id,),
         ).fetchone()
         if row is None:
-            return "unknown", "No success-criteria evaluation has been recorded for this project.", 0.3, {}, [], "auto"
-        pass_count, warning_count, blocker_count, summary = int(row[0]), int(row[1]), int(row[2]), str(row[3])
+            return (
+                "unknown",
+                "No success-criteria evaluation has been recorded for this project.",
+                0.3,
+                {},
+                [],
+                "auto",
+            )
+        pass_count, warning_count, blocker_count, summary = (
+            int(row[0]),
+            int(row[1]),
+            int(row[2]),
+            str(row[3]),
+        )
         measured = {
             "pass_count": pass_count,
             "warning_count": warning_count,
@@ -706,12 +783,40 @@ def _evaluate_known_standard(
             "summary": summary,
         }
         if blocker_count > 0:
-            return "fail", "Testing trust has blocker-level findings.", 0.9, measured, [summary], "auto"
+            return (
+                "fail",
+                "Testing trust has blocker-level findings.",
+                0.9,
+                measured,
+                [summary],
+                "auto",
+            )
         if warning_count > 0:
-            return "partial", "Testing trust has warning-level findings.", 0.8, measured, [summary], "auto"
+            return (
+                "partial",
+                "Testing trust has warning-level findings.",
+                0.8,
+                measured,
+                [summary],
+                "auto",
+            )
         if pass_count > 0:
-            return "pass", "Testing trust passed in the latest criteria evaluation.", 0.85, measured, [summary], "auto"
-        return "unknown", "Testing trust has not produced meaningful evidence yet.", 0.4, measured, [summary], "auto"
+            return (
+                "pass",
+                "Testing trust passed in the latest criteria evaluation.",
+                0.85,
+                measured,
+                [summary],
+                "auto",
+            )
+        return (
+            "unknown",
+            "Testing trust has not produced meaningful evidence yet.",
+            0.4,
+            measured,
+            [summary],
+            "auto",
+        )
 
     if standard_id == "security.review_traceability":
         status, reason, confidence, evidence = _find_security_signal(conn, project_id)
@@ -723,11 +828,16 @@ def _evaluate_known_standard(
         report_count = 0
         if _table_exists(conn, "orchestration_runs"):
             run_count = int(
-                conn.execute("SELECT COUNT(*) FROM orchestration_runs WHERE project_id = ?", (project_id,)).fetchone()[0]
+                conn.execute(
+                    "SELECT COUNT(*) FROM orchestration_runs WHERE project_id = ?", (project_id,)
+                ).fetchone()[0]
             )
         if _table_exists(conn, "orchestration_run_events"):
             event_count = int(
-                conn.execute("SELECT COUNT(*) FROM orchestration_run_events WHERE project_id = ?", (project_id,)).fetchone()[0]
+                conn.execute(
+                    "SELECT COUNT(*) FROM orchestration_run_events WHERE project_id = ?",
+                    (project_id,),
+                ).fetchone()[0]
             )
         if _table_exists(conn, "workflow_execution_reports"):
             report_count = int(
@@ -742,20 +852,59 @@ def _evaluate_known_standard(
                 ).fetchone()[0]
             )
 
-        measured = {"run_count": run_count, "event_count": event_count, "report_count": report_count}
+        measured = {
+            "run_count": run_count,
+            "event_count": event_count,
+            "report_count": report_count,
+        }
         if run_count > 0 and event_count > 0 and report_count > 0:
-            return "pass", "Run/event/report observability signals are all present.", 0.9, measured, ["orchestration tables"], "auto"
+            return (
+                "pass",
+                "Run/event/report observability signals are all present.",
+                0.9,
+                measured,
+                ["orchestration tables"],
+                "auto",
+            )
         if run_count > 0 and (event_count > 0 or report_count > 0):
-            return "partial", "Observability signals exist but are incomplete.", 0.75, measured, ["orchestration tables"], "auto"
-        return "unknown", "No workflow observability signal has been captured yet.", 0.35, measured, [], "auto"
+            return (
+                "partial",
+                "Observability signals exist but are incomplete.",
+                0.75,
+                measured,
+                ["orchestration tables"],
+                "auto",
+            )
+        return (
+            "unknown",
+            "No workflow observability signal has been captured yet.",
+            0.35,
+            measured,
+            [],
+            "auto",
+        )
 
     if standard_id == "documentation.truth_file_currency":
         if repo_path is None or not repo_path.exists():
             return "unknown", "Project repository path is unavailable.", 0.25, {}, [], "auto"
         project_file = repo_path / "PROJECT.md"
         if project_file.exists():
-            return "pass", "Project truth file exists.", 0.8, {"truth_file": str(project_file)}, [str(project_file)], "auto"
-        return "fail", "Project truth file is missing.", 0.85, {"truth_file": str(project_file)}, [str(project_file)], "auto"
+            return (
+                "pass",
+                "Project truth file exists.",
+                0.8,
+                {"truth_file": str(project_file)},
+                [str(project_file)],
+                "auto",
+            )
+        return (
+            "fail",
+            "Project truth file is missing.",
+            0.85,
+            {"truth_file": str(project_file)},
+            [str(project_file)],
+            "auto",
+        )
 
     if standard_id == "workflow_agent_control.explicit_handshake":
         if not _table_exists(conn, "sessions"):
@@ -773,7 +922,11 @@ def _evaluate_known_standard(
         total = int(rows[0] or 0)
         with_run = int(rows[1] or 0)
         with_invocation = int(rows[2] or 0)
-        linkage_ratio = min(_safe_ratio(with_run, total), _safe_ratio(with_invocation, total)) if total > 0 else 0.0
+        linkage_ratio = (
+            min(_safe_ratio(with_run, total), _safe_ratio(with_invocation, total))
+            if total > 0
+            else 0.0
+        )
         measured = {
             "total_sessions": total,
             "sessions_with_run_id": with_run,
@@ -783,9 +936,23 @@ def _evaluate_known_standard(
         if total == 0:
             return "unknown", "No sessions exist for this project yet.", 0.3, measured, [], "auto"
         if linkage_ratio >= 0.9:
-            return "pass", "Explicit run/session handshake coverage is healthy.", 0.9, measured, [], "auto"
+            return (
+                "pass",
+                "Explicit run/session handshake coverage is healthy.",
+                0.9,
+                measured,
+                [],
+                "auto",
+            )
         if linkage_ratio >= 0.6:
-            return "partial", "Run/session handshake coverage is incomplete.", 0.75, measured, [], "auto"
+            return (
+                "partial",
+                "Run/session handshake coverage is incomplete.",
+                0.75,
+                measured,
+                [],
+                "auto",
+            )
         return "fail", "Run/session handshake coverage is poor.", 0.8, measured, [], "auto"
 
     if standard_id == "release_ci_discipline.automated_checks":
@@ -793,11 +960,32 @@ def _evaluate_known_standard(
             return "unknown", "Project repository path is unavailable.", 0.25, {}, [], "auto"
         workflows_dir = repo_path / ".github" / "workflows"
         if not workflows_dir.exists():
-            return "partial", "No CI workflows directory was found.", 0.6, {"workflows_dir": str(workflows_dir)}, [str(workflows_dir)], "auto"
+            return (
+                "partial",
+                "No CI workflows directory was found.",
+                0.6,
+                {"workflows_dir": str(workflows_dir)},
+                [str(workflows_dir)],
+                "auto",
+            )
         workflow_files = list(workflows_dir.glob("*.yml")) + list(workflows_dir.glob("*.yaml"))
         if workflow_files:
-            return "pass", "CI workflow files are present.", 0.75, {"workflow_count": len(workflow_files)}, [str(path) for path in workflow_files[:3]], "auto"
-        return "partial", "Workflows directory exists but no YAML workflows were found.", 0.55, {"workflows_dir": str(workflows_dir)}, [str(workflows_dir)], "auto"
+            return (
+                "pass",
+                "CI workflow files are present.",
+                0.75,
+                {"workflow_count": len(workflow_files)},
+                [str(path) for path in workflow_files[:3]],
+                "auto",
+            )
+        return (
+            "partial",
+            "Workflows directory exists but no YAML workflows were found.",
+            0.55,
+            {"workflows_dir": str(workflows_dir)},
+            [str(workflows_dir)],
+            "auto",
+        )
 
     if standard_id == "product_readiness.command_center_operability":
         unresolved_count, unresolved_evidence = _unresolved_critical_findings(conn, project_id)
@@ -817,12 +1005,215 @@ def _evaluate_known_standard(
                 "semi_auto",
             )
         if len(existing) == len(required_paths):
-            return "pass", "Control-surface primitives are present for project health operations.", 0.7, {"required_paths": existing}, existing, "semi_auto"
+            return (
+                "pass",
+                "Control-surface primitives are present for project health operations.",
+                0.7,
+                {"required_paths": existing},
+                existing,
+                "semi_auto",
+            )
         if existing:
-            return "partial", "Some control-surface primitives exist but readiness is incomplete.", 0.55, {"required_paths": existing}, existing, "semi_auto"
-        return "unknown", "No product-readiness control-surface evidence was found.", 0.3, {"required_paths": []}, [], "semi_auto"
+            return (
+                "partial",
+                "Some control-surface primitives exist but readiness is incomplete.",
+                0.55,
+                {"required_paths": existing},
+                existing,
+                "semi_auto",
+            )
+        return (
+            "unknown",
+            "No product-readiness control-surface evidence was found.",
+            0.3,
+            {"required_paths": []},
+            [],
+            "semi_auto",
+        )
 
-    return "unknown", "No evaluator implementation exists for this standard yet.", 0.2, {}, [], "manual"
+    if standard_id == "maintainability.dead_code_signal":
+        return (
+            "unknown",
+            "Dead-code evaluator not yet wired; use 'aios standards-override' to record vulture/knip results manually.",
+            0.2,
+            {"required_tool": "vulture_or_knip"},
+            [],
+            "auto",
+        )
+
+    if standard_id == "ux.operator_clarity":
+        return (
+            "unknown",
+            "Operator-clarity is a manual evaluator; use 'aios standards-override --status pass --rationale ...' once the operator surface is reviewed.",
+            0.2,
+            {},
+            [],
+            "manual",
+        )
+
+    if standard_id == "launch_readiness.deployable":
+        return (
+            "unknown",
+            "Launch-readiness is a semi-auto evaluator awaiting CI evidence wiring; use 'aios standards-override' for now.",
+            0.25,
+            {},
+            [],
+            "semi_auto",
+        )
+
+    if standard_id == "agent_readiness.handoff_packet":
+        if not _table_exists(conn, "briefing_packets"):
+            return (
+                "unknown",
+                "No briefing_packets row exists for this project yet; agent-readiness will flip once a handoff packet is recorded.",
+                0.3,
+                {"row_count": 0},
+                [],
+                "auto",
+            )
+        try:
+            row = conn.execute(
+                """
+                SELECT selected_standards_json, selected_criteria_json
+                FROM briefing_packets
+                WHERE project_id = ?
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                (project_id,),
+            ).fetchone()
+        except sqlite3.OperationalError:
+            return (
+                "unknown",
+                "briefing_packets exists but selected criteria/standards columns are unavailable; rerun schema migration.",
+                0.3,
+                {"schema_columns": "missing"},
+                [],
+                "auto",
+            )
+        if row is None:
+            return (
+                "unknown",
+                "No briefing_packets row exists for this project yet; agent-readiness will flip once a handoff packet is recorded.",
+                0.3,
+                {"row_count": 0},
+                [],
+                "auto",
+            )
+        selected_standards = _json_list(row[0])
+        selected_criteria = _json_list(row[1])
+        measured = {
+            "selected_standards_count": len(selected_standards),
+            "selected_criteria_count": len(selected_criteria),
+        }
+        if selected_standards and selected_criteria:
+            return (
+                "pass",
+                "Latest briefing packet includes resolved standards and criteria.",
+                0.75,
+                measured,
+                ["briefing_packets"],
+                "auto",
+            )
+        if selected_standards or selected_criteria:
+            return (
+                "partial",
+                "Latest briefing packet contains only one of resolved standards or criteria.",
+                0.6,
+                measured,
+                ["briefing_packets"],
+                "auto",
+            )
+        return (
+            "unknown",
+            "Latest briefing packet has no resolved standards or criteria.",
+            0.4,
+            measured,
+            ["briefing_packets"],
+            "auto",
+        )
+
+    if standard_id == "standards_compliance.profile_attached":
+        if not _table_exists(conn, "project_standards_profiles"):
+            return (
+                "unknown",
+                "Project standards profile table is unavailable; attach a profile to enable standards-compliance scoring.",
+                0.3,
+                {"profile_attached": False},
+                [],
+                "auto",
+            )
+        profile_row = conn.execute(
+            "SELECT profile_id FROM project_standards_profiles WHERE project_id = ? LIMIT 1",
+            (project_id,),
+        ).fetchone()
+        if profile_row is None:
+            return (
+                "unknown",
+                "Project has no row in project_standards_profiles; attach a profile to enable standards-compliance scoring.",
+                0.3,
+                {"profile_attached": False},
+                [],
+                "auto",
+            )
+        snapshot_row = None
+        if _table_exists(conn, "standards_health_snapshots"):
+            snapshot_row = conn.execute(
+                """
+                SELECT unknown_coverage
+                FROM standards_health_snapshots
+                WHERE project_id = ?
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                (project_id,),
+            ).fetchone()
+        if snapshot_row is None:
+            return (
+                "unknown",
+                "Project has a profile attached but no health snapshot exists yet; rescore after the next session-close.",
+                0.4,
+                {"profile_attached": True},
+                ["project_standards_profiles"],
+                "auto",
+            )
+        unknown_coverage = float(snapshot_row[0] or 0.0)
+        measured = {"profile_attached": True, "unknown_coverage": unknown_coverage}
+        if unknown_coverage < 0.4:
+            return (
+                "pass",
+                "Project has a standards profile and unknown coverage is below threshold.",
+                0.85,
+                measured,
+                ["project_standards_profiles", "standards_health_snapshots"],
+                "auto",
+            )
+        if unknown_coverage < 0.7:
+            return (
+                "partial",
+                "Project has a standards profile but unknown coverage needs reduction.",
+                0.7,
+                measured,
+                ["project_standards_profiles", "standards_health_snapshots"],
+                "auto",
+            )
+        return (
+            "fail",
+            "Project has a standards profile but unknown coverage is too high.",
+            0.75,
+            measured,
+            ["project_standards_profiles", "standards_health_snapshots"],
+            "auto",
+        )
+
+    return (
+        "unknown",
+        "No evaluator implementation exists for this standard yet.",
+        0.2,
+        {},
+        [],
+        "manual",
+    )
 
 
 def _compute_score(evaluations: list[EvaluatedStandard]) -> dict[str, Any]:
@@ -870,7 +1261,9 @@ def _compute_score(evaluations: list[EvaluatedStandard]) -> dict[str, Any]:
 
     overall_score = 100.0
     if max_penalty > 0:
-        overall_score = max(0.0, min(100.0, round((1.0 - (total_penalty / max_penalty)) * 100.0, 2)))
+        overall_score = max(
+            0.0, min(100.0, round((1.0 - (total_penalty / max_penalty)) * 100.0, 2))
+        )
 
     domain_scores: dict[str, float] = {}
     domain_confidence: dict[str, float] = {}
@@ -879,7 +1272,9 @@ def _compute_score(evaluations: list[EvaluatedStandard]) -> dict[str, Any]:
         if denominator <= 0:
             domain_scores[domain] = 100.0
         else:
-            domain_scores[domain] = max(0.0, min(100.0, round((1.0 - (penalty / denominator)) * 100.0, 2)))
+            domain_scores[domain] = max(
+                0.0, min(100.0, round((1.0 - (penalty / denominator)) * 100.0, 2))
+            )
         domain_confidence[domain] = round(
             _safe_ratio(domain_confidence_weighted[domain], domain_weights[domain]),
             3,
@@ -969,7 +1364,13 @@ def _build_delta_items(
         dependency_unlock = max(1.0, float(unlock_map.get(standard.id, 0) + 1))
         regression_penalty = MAX_PENALTY_MULTIPLIER if evaluation.regression_flag else 1.0
         priority_score = round(
-            (float(standard.severity_if_missing) * leverage * dependency_unlock * regression_penalty) / effort,
+            (
+                float(standard.severity_if_missing)
+                * leverage
+                * dependency_unlock
+                * regression_penalty
+            )
+            / effort,
             3,
         )
 
@@ -1413,10 +1814,9 @@ def evaluate_and_record(
             waiver_owner = None
             waiver_review_at = None
             waiver_affects_portfolio = True
-            regression_flag = (
-                status == "fail"
-                and previous_status.get(standard.id, "not_applicable") not in {"fail", "not_applicable"}
-            )
+            regression_flag = status == "fail" and previous_status.get(
+                standard.id, "not_applicable"
+            ) not in {"fail", "not_applicable"}
 
         if status == "waived" and not waiver_rationale:
             waiver_rationale = "Waived without rationale (should be updated by reviewer)."
@@ -1514,7 +1914,9 @@ def evaluate_and_record(
     }
 
 
-def latest_snapshot(conn: sqlite3.Connection, project_id: str | None = None) -> dict[str, Any] | None:
+def latest_snapshot(
+    conn: sqlite3.Connection, project_id: str | None = None
+) -> dict[str, Any] | None:
     ensure_standards_health_schema(conn)
     if project_id:
         row = conn.execute(

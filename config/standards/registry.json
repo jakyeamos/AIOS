@@ -2,7 +2,7 @@
   "profile": {
     "id": "aios-core",
     "title": "AIOS Core Standards",
-    "version": "2026.05.0",
+    "version": "2026.06.0",
     "default_attached_version": "2026.04.0",
     "domains": [
       "architecture",
@@ -14,7 +14,12 @@
       "workflow_agent_control",
       "release_ci_discipline",
       "product_readiness",
-      "experimentation"
+      "experimentation",
+      "maintainability",
+      "ux",
+      "launch_readiness",
+      "agent_readiness",
+      "standards_compliance"
     ],
     "metadata": {
       "owner": "aios",
@@ -365,6 +370,176 @@
       "related_criteria": ["workflow-state-integrity", "truth-file-consistency"],
       "metadata": {
         "foundational": false
+      }
+    },
+    {
+      "id": "maintainability.dead_code_signal",
+      "title": "Maintainability Dead-Code Signal",
+      "description": "Project has recent dead-code or unused-export evidence and unresolved findings are reviewable.",
+      "domain": "maintainability",
+      "weight": 5,
+      "severity_if_missing": 3,
+      "evaluation_method": "auto",
+      "expected_state": {
+        "vulture_or_knip_clean": true
+      },
+      "remediation_playbook": {
+        "summary": "Run vulture (Python) or knip (TypeScript) and resolve or document each finding.",
+        "effort": 1.5,
+        "leverage": 1.1
+      },
+      "blocking_dependencies": ["code_quality.lint_ratchet"],
+      "version": "2026.06.0",
+      "introduced_version": "2026.06.0",
+      "applicability": {
+        "projects": ["*"]
+      },
+      "waiver_policy": {
+        "allowed": true,
+        "requires_owner": true,
+        "requires_review_date": true,
+        "max_days": 14
+      },
+      "related_criteria": ["code-simplicity"],
+      "metadata": {
+        "foundational": false,
+        "missing_reason": "No automatic evaluator wired yet; use aios standards-override to record a manual assessment."
+      }
+    },
+    {
+      "id": "ux.operator_clarity",
+      "title": "Operator Clarity",
+      "description": "Operator-facing workflow surfaces are documented enough for a new operator to complete the workflow without source-code archaeology.",
+      "domain": "ux",
+      "weight": 5,
+      "severity_if_missing": 3,
+      "evaluation_method": "manual",
+      "expected_state": {
+        "operator_surface_documented": true
+      },
+      "remediation_playbook": {
+        "summary": "Document the operator-facing surface (UI page, CLI command, or report) so a new operator can complete the workflow without source-code archaeology.",
+        "effort": 2.0,
+        "leverage": 1.2
+      },
+      "blocking_dependencies": [],
+      "version": "2026.06.0",
+      "introduced_version": "2026.06.0",
+      "applicability": {
+        "projects": ["*"]
+      },
+      "waiver_policy": {
+        "allowed": true,
+        "requires_owner": true,
+        "requires_review_date": true,
+        "max_days": 30
+      },
+      "related_criteria": [],
+      "metadata": {
+        "foundational": false,
+        "missing_reason": "No automatic UX evaluator exists; flip via aios standards-override once operator documentation is reviewed."
+      }
+    },
+    {
+      "id": "launch_readiness.deployable",
+      "title": "Launch Readiness Deployable",
+      "description": "Project has recent deployability evidence including green CI and release/runbook notes for meaningful changes.",
+      "domain": "launch_readiness",
+      "weight": 7,
+      "severity_if_missing": 4,
+      "evaluation_method": "semi_auto",
+      "expected_state": {
+        "latest_ci_green": true,
+        "release_notes_present": true
+      },
+      "remediation_playbook": {
+        "summary": "Confirm CI is green for the most recent main commit and that release notes / runbook updates exist for the latest meaningful change.",
+        "effort": 1.5,
+        "leverage": 1.3
+      },
+      "blocking_dependencies": ["release_ci_discipline.automated_checks"],
+      "version": "2026.06.0",
+      "introduced_version": "2026.06.0",
+      "applicability": {
+        "projects": ["*"]
+      },
+      "waiver_policy": {
+        "allowed": true,
+        "requires_owner": true,
+        "requires_review_date": true,
+        "max_days": 14
+      },
+      "related_criteria": [],
+      "metadata": {
+        "foundational": true,
+        "missing_reason": "Launch-readiness signal not yet derived from CI evidence; flip via aios standards-override after manual verification."
+      }
+    },
+    {
+      "id": "agent_readiness.handoff_packet",
+      "title": "Agent Readiness Handoff Packet",
+      "description": "Latest serious project runs produce handoff packets with resolved criteria and standards for agent execution.",
+      "domain": "agent_readiness",
+      "weight": 6,
+      "severity_if_missing": 4,
+      "evaluation_method": "auto",
+      "expected_state": {
+        "latest_briefing_packet_present": true,
+        "packet_resolution_status_ok": true
+      },
+      "remediation_playbook": {
+        "summary": "Ensure the latest serious run produced a briefing_packets row with selected_criteria_json + selected_standards_json populated and resolution_status not equal to no_profile_attached.",
+        "effort": 1.0,
+        "leverage": 1.4
+      },
+      "blocking_dependencies": [],
+      "version": "2026.06.0",
+      "introduced_version": "2026.06.0",
+      "applicability": {
+        "projects": ["*"]
+      },
+      "waiver_policy": {
+        "allowed": true,
+        "requires_owner": true,
+        "requires_review_date": true,
+        "max_days": 14
+      },
+      "related_criteria": [],
+      "metadata": {
+        "foundational": false,
+        "missing_reason": "Agent-readiness evaluator returns unknown until a briefing_packets row exists for the project; flip via aios standards-override once handoff packets are in routine use."
+      }
+    },
+    {
+      "id": "standards_compliance.profile_attached",
+      "title": "Standards Compliance Profile Attached",
+      "description": "Project is attached to a standards profile and unknown standards coverage remains below the acceptable threshold.",
+      "domain": "standards_compliance",
+      "weight": 4,
+      "severity_if_missing": 3,
+      "evaluation_method": "auto",
+      "expected_state": {
+        "project_profile_attached": true,
+        "unknown_coverage_below_threshold": true
+      },
+      "remediation_playbook": {
+        "summary": "Attach the project to a standards profile (project_standards_profiles row) and resolve standards still marked unknown until unknown_coverage drops below 0.4.",
+        "effort": 1.0,
+        "leverage": 1.5
+      },
+      "blocking_dependencies": [],
+      "version": "2026.06.0",
+      "introduced_version": "2026.06.0",
+      "applicability": {
+        "projects": ["*"]
+      },
+      "waiver_policy": {
+        "allowed": false
+      },
+      "related_criteria": [],
+      "metadata": {
+        "foundational": true,
+        "missing_reason": "Returns unknown when no project_standards_profiles row exists; flips automatically once a profile is attached."
       }
     }
   ]
