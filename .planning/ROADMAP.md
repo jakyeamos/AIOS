@@ -527,6 +527,285 @@ This milestone makes the mature control plane visible and usable as the default 
 - Visible metrics and recommendations drill down into receipts, routing decisions, evidence trails, and remediation paths.
 - The end-to-end daily flow is visible from vague goal through routing, execution, evaluation, writeback, and unresolved deltas.
 
+### Milestone 6: Testing, Benchmark Evaluation, And Shadow Workflows
+
+This milestone makes AIOS's effectiveness measurable and falsifiable. It converts the agent eval foundation from Phase 10 (Plans 07–08) into running instrumentation. Every major workflow should produce durable evidence, not just output.
+
+#### Phase 11: Testing, Benchmark Evaluation, And Shadow Workflows
+
+**Goal:** Prove measurable workflow lift across real projects through shadow branches, paired comparisons, scorecards, ablations, second brain eval, peer passive trace, automated shadow benchmark execution, portable context packets, and external harness adapters.
+
+**Requirements:** EVAL-01, EVAL-02, EVAL-03, EVAL-04, EVAL-05, EVAL-06, EVAL-07, EVAL-08
+
+**Detailed Scope:**
+- Durable eval_tasks and eval_runs tables capturing every major eval with context profile, condition, model, cost, and result.
+- Second brain evaluation track with gold-set tasks, retrieval precision/recall/staleness metrics, and Second Brain Lift computation.
+- Shadow branch testing infrastructure: isolated worktrees, contamination prevention, diff/test capture, Shadow Branch Delta.
+- Feature ablation runner across 8 conditions proving which AIOS features create lift and which do not.
+- Peer passive trace mode: observation-only, privacy-safe, shadow candidate detection with weighted scoring.
+- Peer automated shadow benchmark pipeline: full 14-state automation state machine from in-person approval through comparison report and backlog creation.
+- Portable context packet generator: task-specific packets that enable peer/core runs without the personal second brain.
+- External harness adapters (SWE-bench, Terminal-Bench) and result normalization into eval_runs with external_clean_room context profile.
+- Eval UI panels embedded in existing Phase 10 operator surfaces (collapsible, degradation-safe).
+
+**Current Infrastructure To Extend:**
+- `services/harness_eval.py` (existing harness eval — not replaced, extended)
+- `bin/hook-session-stop.py` (peer trace session end capture)
+- `schema.sql` (9 new tables)
+- `aios-ui/app/**` (eval panels on runs, projects, command center)
+- `config/agent-eval/` (ablation policies, eval schemas)
+- `docs/evals/` (benchmark eval architecture, context profiles, templates from Phase 10)
+
+**Expected Outputs:**
+- Durable eval run record infrastructure
+- Second brain lift measurement
+- Shadow branch paired comparison
+- Feature ablation scorecard
+- Peer passive trace + shadow candidate queue
+- Automated peer shadow benchmark pipeline
+- Portable context packets
+- External benchmark adapters
+- Eval UI panels on existing operator surfaces
+
+**Dependencies:**
+- Phase 10 (Plans 07–08): Agent eval foundation docs, templates, schemas, AGENTS.md rules
+
+**Observable Success Criteria:**
+- Every major AIOS run has a declared context profile and a durable EvalRun record.
+- Second Brain Lift is measurable for any task with a full-second-brain run and a repo-only run.
+- Shadow branch comparisons are reproducible from the same start SHA without contaminating the baseline branch.
+- Ablation runner proves at least 3 features create measurable lift across the test suite.
+- At least 3 peer passive trace sessions complete without harming peer workflow (no prompt mutation, no repo writes).
+- At least 3 peer shadow candidates move through the full automation pipeline to COMPARISON_REPORT_CREATED.
+- Portable context packets can be generated for any eval task without including personal notes, secrets, or vault content.
+- External harness results normalize to EvalRun rows with external_clean_room context profile.
+
+### Milestone 7: Graph-Native Memory Architecture
+
+This milestone upgrades the AIOS memory layer from grep and flat semantic search into a four-layer structured system: raw source, normalized facts, graph relationships, and model-readable compiled briefing packets. It also hardens the context compiler for stable-prefix prompt caching and documents the future path to KV-cache-aware local serving.
+
+#### Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation
+
+**Goal:** Implement a production-ready layered memory model, a memory compiler that produces model-readable briefing packets, a cache-aware context compiler, a formal memory packet contract, retrieval quality checks, a memory backfill plan, and a future design note on KV-cache-aware local serving.
+
+**Requirements:** MEM-01, MEM-02, MEM-03, MEM-04, MEM-05, MEM-06, MEM-07, MEM-08
+
+**Detailed Scope:**
+- Audit the current memory, retrieval, context-packing, and agent-briefing architecture
+- Implement four memory layers: raw source (Layer A), normalized facts (Layer B), graph relationships (Layer C), and model-facing briefing packets (Layer D)
+- Implement a MemoryCompiler that translates retrieved memory into readable markdown packets — never raw JSON
+- Implement a ContextCompiler with stable-prefix-first ordering for API prompt cache compatibility
+- Write a formal memory packet contract governing required/optional sections, provenance, staleness, contradictions, confidence, and token budget rules
+- Add integration tests and a standalone validation script covering nine retrieval quality constraints
+- Write a prioritized memory backfill plan identifying existing hotspots (truth files, PRDs, agent rules, skills, prompt libraries)
+- Write a future design note on KV-cache-aware local runner as an optional optimization, not a core dependency
+- Add the AIOS Memory Rule to `config/agent-rules.md`
+
+**Current Surfaces To Evolve:**
+- `schema.sql` (four new tables: memory_raw_sources, memory_facts, memory_relationships, memory_packet_receipts)
+- `services/memory_layers.py` (new — composable layer modules)
+- `services/memory_compiler.py` (new — Layer D compiler)
+- `services/context_compiler.py` (new — cache-aware context assembly)
+- `docs/audits/graph-native-memory-audit.md` (new)
+- `docs/specs/memory-packet-contract.md` (new)
+- `docs/backfills/graph-native-memory-backfill.md` (new)
+- `docs/future/kv-cache-aware-local-runner.md` (new)
+- `tests/memory/`, `tests/context/` (new test directories)
+- `scripts/validate-memory-packets.py` (new)
+- `config/agent-rules.md` (Rule 9 added)
+
+**Expected Outputs:**
+- Written memory architecture audit
+- Four-layer memory schema in SQLite
+- MemoryCompiler producing model-readable briefing packets
+- ContextCompiler with deterministic stable-prefix ordering
+- Memory packet contract spec
+- Integration tests and validation script
+- Prioritized backfill plan
+- KV-cache future design note
+
+**Dependencies:**
+- Phase 2 (context packet compilation foundation)
+- Phase 4 (project truth and knowledge layer)
+
+**Observable Success Criteria:**
+- AIOS has a documented memory architecture beyond grep/vector search
+- Important memories can be represented as raw sources (Layer A), normalized facts (Layer B), and graph relationships (Layer C)
+- Retrieved memory is compiled into model-readable briefing packets (Layer D) — never raw JSON
+- Prompt/context layout separates stable cache-friendly memory from dynamic task context
+- Stale, superseded, and contradictory memories are handled explicitly with validity_status markers
+- Provenance is preserved in every model-facing packet
+- Integration tests and validation script catch low-quality memory packets
+- A prioritized backfill plan identifies existing memory hotspots for Layer B/C upgrade
+- KV-cache-aware local serving is documented as a future optimization, not a required dependency
+
+### Milestone 9: Code Quality Gates And Cross-Project Complexity Standards
+
+This milestone adds algorithmic complexity and code simplification as mandatory quality gates across the AIOS agent workflow layer and all first-class linked projects. It produces agent rule additions, pre-check habits, a root quality gate specification, a local complexity pattern checklist, and backfill hotspot inventories for all seven projects in the portfolio. Remediation of discovered hotspots is a follow-on pass; this milestone establishes the gate, the documentation, and the first honest snapshot of where quality debts exist.
+
+#### Phase 14: Code Quality Gates And Cross-Project Complexity Standards
+
+**Goal:** Establish the Complexity + Simplification Gate as a mandatory agent workflow rule, create the quality gate documentation infrastructure, and produce observation-backed backfill inventories for every first-class project.
+
+**Requirements:** QUAL-01, QUAL-02, QUAL-03, QUAL-04, QUAL-05, QUAL-06, QUAL-07, QUAL-08
+
+**Detailed Scope:**
+- Add Rule 10 (Complexity + Simplification Gate) to `config/agent-rules.md` with full trigger conditions, Gate A (complexity/performance), Gate B (simplification/maintainability), Gate C (verification), and record-before-fix policy
+- Extend `AGENTS.md` with the gate section cross-referencing Rule 10
+- Extend `~/.claude/CLAUDE.md` Quality Ladder with Step 5 (Complexity + Simplification Gate — Hard after large work)
+- Create `docs/quality/implementation-pre-check.md` — 8 pre-check questions for during-implementation use
+- Create `docs/quality/complexity-simplification-gate.md` — root gate specification (why, when, what, how, fix-vs-defer, Definition of Done)
+- Create `docs/quality/complexity-checklist.md` — local 17-pattern algorithmic complexity checklist derived from codex-complexity-optimizer patterns; no external dependency
+- Create `docs/backfill/complexity-simplification-backfill.md` — AIOS-specific backfill inventory
+- Create backfill docs for all six linked projects: soundscape-app, portfolio, amos-saas, GitNexus, tm, Terrace
+- Update AIOS backfill doc with Cross-Project Summary table linking all six external inventories
+
+**Current Surfaces To Evolve:**
+- `config/agent-rules.md` (Rule 10 added)
+- `AGENTS.md` (gate section added)
+- `~/.claude/CLAUDE.md` (Quality Ladder extended)
+- `docs/quality/` (new directory with gate spec, checklist, pre-check)
+- `docs/backfill/complexity-simplification-backfill.md` (new AIOS backfill)
+- `~/projects/soundscape-app/docs/complexity-simplification-backfill.md` (new)
+- `~/projects/portfolio/docs/complexity-simplification-backfill.md` (new)
+- `~/projects/amos-saas/docs/complexity-simplification-backfill.md` (new)
+- `~/projects/GitNexus/docs/complexity-simplification-backfill.md` (new)
+- `~/projects/tm/docs/complexity-simplification-backfill.md` (new)
+- `~/projects/Terrace/docs/complexity-simplification-backfill.md` (new)
+
+**Expected Outputs:**
+- Rule 10 in agent-rules.md
+- Gate section in AGENTS.md
+- Quality Ladder Step 5 in ~/.claude/CLAUDE.md
+- Pre-check doc (docs/quality/implementation-pre-check.md)
+- Root gate spec (docs/quality/complexity-simplification-gate.md)
+- Complexity pattern checklist (docs/quality/complexity-checklist.md)
+- AIOS backfill inventory
+- Six external project backfill inventories
+- Cross-project summary table
+
+**Dependencies:**
+- Additive — can run independently of Phase 6/7 infrastructure; findings will feed Phase 6/7 delta scoring once that infrastructure is ready
+- Plan 10-08 (scripts/quality-eval.sh) must be complete to reference in gate docs
+
+**Observable Success Criteria:**
+- Rule 10 is in `config/agent-rules.md` and triggers after any large-work event.
+- Gate sections are in `AGENTS.md` and `~/.claude/CLAUDE.md`.
+- `docs/quality/` contains all three docs: gate spec, pre-check, complexity checklist.
+- Every first-class project has a backfill doc with observation-backed findings or an honest "no major hotspots" statement.
+- The backfill docs clearly distinguish "reported" from "fixed" — no silent remediations.
+- The cross-project summary table in the AIOS backfill doc shows P0/P1/P2 counts for all six external projects.
+- Quality commands (lint, typecheck, test) are run for each project and results recorded in the backfill doc.
+
+### Milestone 8: Data Collection And Provider Extensibility
+
+This milestone extends the AIOS data collection layer from a Claude/Codex-only ingestion pipeline into a formal, extensible provider system. It adds Cursor and Antigravity CLI as first-class local session providers so that all four tools contribute normalized, privacy-safe, provenance-backed session data to the operational database and second brain.
+
+#### Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline
+
+**Goal:** Extend the existing Claude/Codex session ingestion pipeline into a formal provider abstraction, then implement Cursor and Antigravity CLI as first-class providers with incremental sync, secret redaction, structured summarization, and governed writeback proposals.
+
+**Requirements:** SESS-01, SESS-02, SESS-03, SESS-04, SESS-05, SESS-06, SESS-07, SESS-08
+
+**Detailed Scope:**
+- Audit the existing Claude/Codex ingestion pipeline (entry points, DB schema, dedup strategy, writeback flow, abstraction gaps)
+- Introduce `SessionProvider` abstract interface with nine methods and a `NormalizedSession` model; wrap Claude and Codex as conforming providers without changing their behavior
+- Implement Cursor provider: SQLite workspace DB discovery (read-only with temp-copy safety), ItemTable key inspection, agent-transcript JSONL parsing, workspace hash/path mapping, SQLite+JSONL deduplication
+- Implement Antigravity provider: multi-path brain/session discovery, format detection, metadata-only handling for unknown binary files with health warning, reasoning trace pointer storage
+- Add incremental sync with `session_provider_cursors` table; dry-run, backfill, and repair modes; idempotent upserts
+- Add secret redaction running before any summary or writeback; configurable ignore patterns and retention policies; `redaction_incomplete` flag for sessions that cannot be safely redacted
+- Generate 16-field structured session summaries; emit writeback proposals following the existing governed flow into `logs/summaries/` and `auto_ingest.sh`; detect skillification candidates across providers
+- Write 12 acceptance-criteria tests with fixture data; write operator docs for all four providers and system overview; generate backfill report from live dry run
+
+**Current Pipeline To Extend:**
+- `bin/import_ai_history.py` (Claude/Codex parsing — not rewritten, wrapped)
+- `bin/cron-ingest-codex.py` (Codex cron — not replaced, complemented)
+- `bin/auto_ingest.sh` (Obsidian promotion — not changed, new providers plug into same flow)
+- `aios.db:processed_files` (dedup table — complemented by `session_provider_cursors`)
+
+**Expected Outputs:**
+- `services/session_providers/` package with base class, Claude, Codex, Cursor, Antigravity implementations
+- `services/session_redaction.py`, `services/session_summarizer.py`, `services/session_writeback.py`
+- `bin/sessions.py` CLI, `bin/cron-ingest-sessions.py` cron wrapper
+- `config/session-provider-config.yaml`
+- DB migration: `session_provider_cursors` table
+- `tests/test_session_providers.py`, `tests/fixtures/cursor/`, `tests/fixtures/antigravity/`
+- `docs/session-providers/cursor.md`, `docs/session-providers/antigravity.md`, `docs/session-ingestion.md`
+- `docs/backfills/session-provider-backfill.md`
+
+**Dependencies:**
+- Phase 4 (project truth and knowledge layer — for project association in NormalizedSession)
+- Phase 5 (governed writeback — writeback proposals follow same approval flow)
+- Phase 12 (memory architecture — ingested sessions populate Layer A raw sources)
+
+**Observable Success Criteria:**
+- Existing Claude/Codex ingestion behavior and tests are unchanged.
+- Cursor sessions can be discovered and imported from local SQLite workspace databases and agent-transcript JSONL files.
+- Antigravity sessions can be discovered and imported from brain/session directories; unknown binary files are skipped safely with a health warning.
+- Sync is incremental and idempotent; two consecutive runs with no source changes produce identical DB state.
+- Raw session content is stored in SQLite only; no raw transcripts or reasoning traces appear in curated vault notes.
+- Secret redaction runs before any summary or writeback; sessions with redaction failures are held and surfaced in status.
+- Session summaries follow the 16-field structure; writeback proposals are proposals, not automatic vault mutations.
+- All 12 acceptance-criteria tests pass.
+- Operator docs explain how to operate, debug, disable, and extend the provider system.
+
+### Milestone 10: Agent Skill Portfolio Audit And External Library Integration
+
+This milestone audits the local Claude Code skill portfolio against seven target skills from the mattpocock/skills external library, produces a structured merge/add/leave inventory, and delivers upgraded or new skill files. Two skills — `to-issues` and `handoff` — are wired into AIOS session/run infrastructure so that issue decompositions and session handoffs persist in `aios.db` rather than living only as ephemeral Markdown.
+
+#### Phase 15: Agent Skill Portfolio Audit And External Library Integration
+
+**Goal:** Audit local Claude Code skills against seven upstream targets, merge or add the valuable behaviors, and deliver agent-usable skill files with AIOS DB integration for `to-issues` and `handoff`.
+
+**Requirements:** SKIL-01, SKIL-02, SKIL-03, SKIL-04, SKIL-05, SKIL-06, SKIL-07, SKIL-08
+
+**Detailed Scope:**
+- Audit all local Claude Code skill files across `~/.claude/skills/`, plugin namespaces, and project-level `.claude/` directories; produce a timestamped backup and a full inventory with overlap analysis and merge/add/leave decisions
+- Upgrade `interrogate` skill with grill-with-docs behaviors: code-search-before-asking, codebase language challenge, CONTEXT.md glossary maintenance, ADR authorship discipline, canonical language sharpening, user-claim cross-check
+- Add `diagnose` skill: fast feedback loop, reproduce-first discipline, ranked falsifiable hypotheses, one-hypothesis-at-a-time instrumentation, regression test seam authorship, debug artifact cleanup, postmortem, architecture handoff when bug exposes structural debt
+- Upgrade `simplifier` skill with nine architecture lenses (deep/shallow modules, deletion test, interface as test surface, seams, adapters, locality, leverage, AI navigability) and mandatory report-first discipline for major refactors
+- Add `to-issues` skill: vertical tracer-bullet slice decomposition, AFK/HITL labels, dependencies, acceptance criteria; backed by `services/issues_store.py` writing to `aios.db:issues` table with GitHub CLI opt-in and markdown fallback
+- Add `prototype` skill: throwaway clearly-marked question-answering code, logic vs UI type selection, single-command run, no-persistence default, full state exposure, mandatory delete-or-absorb closeout
+- Consolidate skill-authoring skills into one canonical `write-a-skill` skill: comparison matrix first, then single canonical file with progressive disclosure, trigger-rich description discipline, reference files, and script bundling
+- Add `handoff` skill: compact focus-tailored cross-session continuation docs, saved outside workspace by default, suggested skills for next session, reference-not-duplicate discipline, secret redaction; backed by `services/handoff_store.py` writing to `aios.db:handoffs` table
+
+**Current Surfaces To Evolve:**
+- `~/.claude/skills/interrogate.md` (upgrade)
+- `~/.claude/skills/diagnose.md` (create or merge into existing debugging skill)
+- `~/.claude/skills/simplifier.md` (upgrade)
+- `~/.claude/skills/to-issues.md` (create)
+- `~/.claude/skills/prototype.md` (create)
+- `~/.claude/skills/write-a-skill.md` (consolidate)
+- `~/.claude/skills/handoff.md` (create)
+- `~/AIOS/services/issues_store.py` (create)
+- `~/AIOS/services/handoff_store.py` (create)
+- `~/AIOS/data/aios.db` (issues and handoffs table migrations)
+- `docs/phase-15-skill-inventory.md` (create)
+- `docs/phase-15-skill-authoring-comparison.md` (create)
+
+**Expected Outputs:**
+- Timestamped backup of `~/.claude/skills/`
+- Skill inventory with overlap analysis and merge decisions
+- 7 upgraded or new skill files
+- `issues_store.py` and `handoff_store.py` services
+- `aios.db` issues and handoffs tables (idempotent migrations)
+- Skill authoring comparison matrix
+- Canonical `write-a-skill` skill
+
+**Dependencies:**
+- Phase 8 (asset lifecycle — skills wired into AIOS are aware of the registry model)
+- Phase 13 (session ingestion — handoff_store writes session_id from the same session infrastructure)
+- Additive to all phases: skills can be improved independently of AIOS runtime readiness
+
+**Observable Success Criteria:**
+- Backup of `~/.claude/skills/` exists before any modification.
+- `docs/phase-15-skill-inventory.md` covers all seven upstream targets with merge/add/leave decisions and justifications.
+- Each upgraded or new skill has a trigger-rich description that an agent would load without explicit invocation.
+- `to-issues` writes to `aios.db:issues` and `handoff` writes to `aios.db:handoffs`; both fall back gracefully to markdown when the DB is unavailable.
+- `issues` and `handoffs` table migrations are idempotent and do not break existing AIOS DB operations.
+- No existing skill is deleted; merged skills retain a superseded-by header.
+- The canonical `write-a-skill` skill is itself a good example of the principles it teaches.
+
 ## Phase Dependency Chain
 
 | Phase | Depends On | Unlocks |
@@ -541,6 +820,11 @@ This milestone makes the mature control plane visible and usable as the default 
 | Phase 8 | Phases 1-7 | governed asset and workflow library |
 | Phase 9 | Phases 6-8 | conservative self-improvement and workflow comparison |
 | Phase 10 | Phases 1-9 | default operating layer behavior |
+| Phase 11 | Phase 10 (Plans 07-08) | measurable lift evidence, shadow benchmarks, peer eval, external comparability |
+| Phase 12 | Phases 2, 4 | layered memory model, memory compiler, cache-aware context compiler, packet contract |
+| Phase 13 | Phases 4, 5, 12 | normalized session data from all four providers feeding Layer A raw sources |
+| Phase 14 | Plan 10-08 (quality-eval.sh) | mandatory complexity+simplification gate in all agent workflows; cross-project backfill inventories; hotspot findings feeding Phase 6/7 delta scoring |
+| Phase 15 | Phases 8, 13 | upgraded agent skill portfolio; AIOS-backed issue decomposition and session handoff persistence |
 
 ## Requirement Coverage
 
@@ -556,12 +840,17 @@ This milestone makes the mature control plane visible and usable as the default 
 | Phase 8 | ASSET-01, ASSET-02, ASSET-03, ASSET-04, WFLO-01, WFLO-02, WFLO-03, WFLO-04 | 8 |
 | Phase 9 | LEARN-01, LEARN-02, LEARN-03, LEARN-04 | 4 |
 | Phase 10 | OPER-01, OPER-02, OPER-03, OPER-04 | 4 |
+| Phase 11 | EVAL-01, EVAL-02, EVAL-03, EVAL-04, EVAL-05, EVAL-06, EVAL-07, EVAL-08 | 8 |
+| Phase 12 | MEM-01, MEM-02, MEM-03, MEM-04, MEM-05, MEM-06, MEM-07, MEM-08 | 8 |
+| Phase 13 | SESS-01, SESS-02, SESS-03, SESS-04, SESS-05, SESS-06, SESS-07, SESS-08 | 8 |
+| Phase 14 | QUAL-01, QUAL-02, QUAL-03, QUAL-04, QUAL-05, QUAL-06, QUAL-07, QUAL-08 | 8 |
+| Phase 15 | SKIL-01, SKIL-02, SKIL-03, SKIL-04, SKIL-05, SKIL-06, SKIL-07, SKIL-08 | 8 |
 
 **Coverage Validation:**
-- v1 requirements: 44
-- Mapped to phases: 44
+- v1 requirements: 84 (76 prior + 8 SKIL)
+- Mapped to phases: 84
 - Unmapped: 0
 - Multi-mapped: 0
 
 ---
-*Last updated: 2026-05-14 after full roadmap expansion*
+*Last updated: 2026-05-23 after adding Phase 15 Agent Skill Portfolio Audit And External Library Integration*

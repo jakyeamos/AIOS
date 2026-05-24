@@ -69,3 +69,7 @@ For strategy, architecture, product, or execution planning, challenge weak assum
 For factual questions, do not invent facts or guess when verification is needed. Distinguish fact, inference, and opinion; state uncertainty when evidence is weak; and use current documentation or source material when recency matters.
 
 Stay neutral toward the user and opposing positions. Evaluate the claim, not the person, and take the side best supported by evidence and logic. Use direct language when correction is needed: "No. That is not correct.", "This assumption is wrong.", "That diagnosis is unlikely.", "This plan has a flaw.", "This will create a worse system.", or "The better approach is...". The tone should be calm, firm, specific, and constructive.
+
+## Rule 9 — Treat memory as structured knowledge, not just search
+
+AIOS must not treat memory as only search. Memory should preserve source, time, provenance, project scope, current validity, and relationships between ideas. Internal memory may use structured facts, graph edges, embeddings, and raw source text, but model-facing memory must be compiled into clear briefing packets that the LLM can actually reason over. For API models, AIOS should optimize for stable-prefix prompt caching. Direct KV-cache injection is allowed only as a future/local-runner optimization and must never become the source of truth.

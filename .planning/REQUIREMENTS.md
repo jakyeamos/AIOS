@@ -82,6 +82,50 @@
 - [ ] **OPER-03**: AIOS exposes receipts, routing decisions, evidence trails, and drill-down paths for visible metrics and recommendations
 - [ ] **OPER-04**: AIOS can surface the default-layer daily flow end to end: vague goal -> routing -> execution -> evaluation -> writeback -> unresolved deltas
 
+### Testing, Benchmark Evaluation, And Shadow Workflows
+
+- [ ] **EVAL-01**: Every AIOS eval run is recorded in a durable, queryable eval_runs table with context profile, condition, model, harness, result, cost, and failure labels; eval tasks are replayable from the recorded start SHA and acceptance criteria
+- [ ] **EVAL-02**: AIOS can run the same task in full-second-brain mode and repo-only mode and compute Second Brain Lift; AIOS detects stale context retrievals and proposes writebacks; gold-set tasks have known-required-context so recall is measured deterministically
+- [ ] **EVAL-03**: AIOS can run a task from the same starting SHA on an isolated branch/worktree under a specified condition and compare the result against a baseline using shared acceptance criteria, tests, lint, and typecheck without contaminating the baseline branch
+- [ ] **EVAL-04**: AIOS can disable individual features (context packets, second brain, success criteria, subagents, model routing, personal corpus, project truth) and produce an EvalRun per variant from the same starting SHA; ablation scorecard comparison identifies which features contribute measurable lift
+- [ ] **EVAL-05**: AIOS can observe peer workflow sessions without modifying prompts, injecting context, spawning subagents, or changing model selection; trace captures are privacy-safe by default; shadow candidate detection automatically scores each observed task
+- [ ] **EVAL-06**: After a shadow candidate is approved in person, AIOS automatically executes the full benchmark pipeline through snapshot, worktree, task packet generation, AIOS run, verification, scoring, comparison report, and backlog item creation without touching the peer active branch
+- [ ] **EVAL-07**: AIOS can generate a portable context packet from a task description and repo structure that allows peer/core runs to access relevant context without the personal second brain; packets explicitly exclude personal notes, private history, and secrets
+- [ ] **EVAL-08**: AIOS can translate eval tasks into SWE-bench and Terminal-Bench formats and normalize external harness results into EvalRun rows with context_profile = external_clean_room
+
+### Graph-Native Memory Architecture
+
+- [ ] **MEM-01**: AIOS stores memory across four distinct layers: raw source (Layer A with provenance), normalized facts (Layer B with validity status), graph relationships (Layer C with typed predicates), and model-facing compiled briefing packets (Layer D)
+- [ ] **MEM-02**: AIOS compiles retrieved memory into readable markdown briefing packets — never raw JSON or graph edge rows — with sections for Current Truth, Prior Decisions, Constraints, Causal Chain, Contradictions, Open Questions, and Sources/Provenance
+- [ ] **MEM-03**: AIOS assembles prompt context in stable-prefix-first order so identical project/rule/preference sections appear early and dynamic task content appears late, maximizing API provider prompt cache hit rate
+- [ ] **MEM-04**: A formal memory packet contract governs required/optional sections, section ordering, provenance rules, staleness rules, contradiction handling, confidence levels, and token budgeting with documented good and bad packet examples
+- [ ] **MEM-05**: Integration tests and a standalone validation script enforce nine retrieval quality constraints: provenance present, superseded facts excluded from Current Truth, contradictions surfaced, project constraints included, stable/dynamic separation, no raw JSON in output, token budgets respected, deterministic stable prefix, and no unrelated memory bloat
+- [ ] **MEM-06**: A prioritized backfill plan identifies existing AIOS memory hotspots (truth files, PRDs, agent rules, skills, prompt libraries, design specs) with recommended Layer B fact extraction and Layer C relationship backfill at P0/P1/P2 priority
+- [ ] **MEM-07**: AIOS represents memory as connected knowledge using typed graph-edge relationships (caused_by, depends_on, blocks, supersedes, contradicts, supports, evidence_for, belongs_to_project, decided_in, implemented_by, requested_by_user, derived_from, related_to, has_open_question, has_constraint, has_risk, has_owner, has_status) stored in the existing SQLite operational spine
+- [ ] **MEM-08**: A future design note documents why direct KV-cache injection is not a core AIOS dependency for API models, what prerequisites would need to be true for a local-runner path, and how the stable-prefix ContextCompiler bridges today's architecture to that future without requiring it
+
+### Session Ingestion And Provider Extensibility
+
+- [ ] **SESS-01**: AIOS defines a `SessionProvider` abstract interface with nine methods (discover_sources, scan_since, extract_raw_session, normalize_session, compute_fingerprint, upsert_session, summarize_session, emit_writeback_candidates, health_check) and a `NormalizedSession` model with full provenance, timestamp, workspace, participant, message, tool-call, file-edit, command, decision, and status fields; existing Claude and Codex ingestion is wrapped as conforming providers
+- [ ] **SESS-02**: AIOS can discover and ingest Cursor sessions from local SQLite workspace storage databases (opened read-only with temp-copy safety) and agent-transcript JSONL files; workspace hash and resolved folder path are both preserved; SQLite and JSONL sources for the same session are deduplicated
+- [ ] **SESS-03**: AIOS can discover and ingest Antigravity CLI sessions from brain/session directories; file formats are detected before parsing (JSON, JSONL, SQLite, Markdown, text, unknown binary); unknown binary files are stored as metadata-only with a health warning; reasoning traces are stored as raw artifact pointers only and never promoted to vault content
+- [ ] **SESS-04**: Session sync is incremental and idempotent; a `session_provider_cursors` table tracks last mtime, size, hash, and provider session ID per source path; dry-run mode makes no DB writes; backfill mode rescans all sources without duplication; repair mode re-normalizes sessions with stale or missing fields
+- [ ] **SESS-05**: Raw session content is stored in the operational SQLite database, not in the curated Obsidian vault; secret redaction (API keys, tokens, .env values, auth headers, PEM keys) runs before any summary or writeback is generated; sessions with redaction failures are held with a flag and excluded from writeback candidates; per-provider ignore-path patterns and retention policies are configurable
+- [ ] **SESS-06**: Each imported session produces a structured `SessionSummary` with 16 defined fields: what I was trying to do, project/repo involved, important context used, decisions made, files/modules touched, commands/tools used, bugs/failures encountered, successful fixes, unresolved follow-ups, reusable patterns, candidate skills to extract, whether to update a truth file, whether to create an Obsidian note, confidence, source provenance, and writeback proposal status
+- [ ] **SESS-07**: Session writeback follows the governed proposal flow (proposal → approval → vault mutation); raw transcripts and reasoning traces never appear in writeback candidate content; truth file update proposals are generated only for high-confidence sessions that clearly changed project state; skillification candidates are detected when the same pattern appears in 3+ sessions across any providers within 30 days
+- [ ] **SESS-08**: The CLI exposes `aios sessions sync`, `status`, `backfill`, `repair`, and `debug` sub-commands; a cron-friendly wrapper script runs all-provider sync hourly; operator documentation covers all four providers with what is imported, what is not imported, default paths by OS, privacy warnings, backfill and sync instructions, debug instructions, and provider disable instructions; a `docs/backfills/session-provider-backfill.md` report is generated from a dry run on the live machine
+
+### Code Quality Gates And Cross-Project Complexity Standards
+
+- [ ] **QUAL-01**: After any large piece of work (5+ files, 300+ lines, new feature, cross-package, DB/schema, pipeline/model logic, UI with state, agent/workflow change, performance-sensitive path, or infrastructure code), agents run a mandatory Complexity + Simplification Gate covering Gate A (algorithmic complexity/performance), Gate B (simplification/maintainability), and Gate C (verification)
+- [ ] **QUAL-02**: Agent workflows include 8 pre-check implementation questions that surface the most common complexity and simplification issues during coding — before the post-work gate runs — reducing the number of findings that reach the gate
+- [ ] **QUAL-03**: A root quality gate specification exists at `docs/quality/complexity-simplification-gate.md` explaining why the gate exists, when it runs, what agents must check, how to use available tools, how to write backfill findings, how to decide fix-vs-defer, and the Definition of Done for a completed gate pass
+- [ ] **QUAL-04**: A local complexity pattern checklist at `docs/quality/complexity-checklist.md` covers 17 named algorithmic patterns across three categories (algorithmic, render/UI, data access), each with code signature, why-it-matters, and preferred remedy — no external dependencies
+- [ ] **QUAL-05**: AIOS has a complexity+simplification backfill inventory at `docs/backfill/complexity-simplification-backfill.md` with observation-backed findings across all major source areas (services, bin scripts, aios-ui, config, tests), a remediation order, and a Definition of Done for the quality standard
+- [ ] **QUAL-06**: Every first-class linked project (soundscape-app, portfolio, amos-saas, GitNexus, tm, Terrace) has a `docs/complexity-simplification-backfill.md` with observation-backed findings or an honest "no major hotspots" statement, quality command results, and a Definition of Done
+- [ ] **QUAL-07**: The quality gate explicitly distinguishes "report hotspot" from "fix hotspot" — agents record every finding before any fix attempt; fixes are permitted only for sub-5-line, no-behavior-risk changes; all other findings are deferred to a dedicated remediation pass
+- [ ] **QUAL-08**: The cross-project summary table in the AIOS backfill doc links all six external project backfill inventories with P0/P1/P2 hotspot counts, providing the operator a portfolio-level view for prioritizing remediation across all projects
+
 ## v2 Requirements
 
 None currently. The full operating-system vision is intentionally being planned into v1 and sequenced through milestones rather than deferred into a later release bucket.
@@ -140,12 +184,53 @@ None currently. The full operating-system vision is intentionally being planned 
 | OPER-02 | Phase 10: Operator Surfaces, Query, And Daily-Flow Visibility | Pending |
 | OPER-03 | Phase 10: Operator Surfaces, Query, And Daily-Flow Visibility | Pending |
 | OPER-04 | Phase 10: Operator Surfaces, Query, And Daily-Flow Visibility | Pending |
+| EVAL-01 | Phase 11: Testing, Benchmark Evaluation, And Shadow Workflows | Pending |
+| EVAL-02 | Phase 11: Testing, Benchmark Evaluation, And Shadow Workflows | Pending |
+| EVAL-03 | Phase 11: Testing, Benchmark Evaluation, And Shadow Workflows | Pending |
+| EVAL-04 | Phase 11: Testing, Benchmark Evaluation, And Shadow Workflows | Pending |
+| EVAL-05 | Phase 11: Testing, Benchmark Evaluation, And Shadow Workflows | Pending |
+| EVAL-06 | Phase 11: Testing, Benchmark Evaluation, And Shadow Workflows | Pending |
+| EVAL-07 | Phase 11: Testing, Benchmark Evaluation, And Shadow Workflows | Pending |
+| EVAL-08 | Phase 11: Testing, Benchmark Evaluation, And Shadow Workflows | Pending |
+
+| MEM-01 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Pending |
+| MEM-02 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Pending |
+| MEM-03 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Pending |
+| MEM-04 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Pending |
+| MEM-05 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Pending |
+| MEM-06 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Pending |
+| MEM-07 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Pending |
+| MEM-08 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Pending |
+| SESS-01 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Pending |
+| SESS-02 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Pending |
+| SESS-03 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Pending |
+| SESS-04 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Pending |
+| SESS-05 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Pending |
+| SESS-06 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Pending |
+| SESS-07 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Pending |
+| SESS-08 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Pending |
+| QUAL-01 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Pending |
+| QUAL-02 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Pending |
+| QUAL-03 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Pending |
+| QUAL-04 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Pending |
+| QUAL-05 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Pending |
+| QUAL-06 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Pending |
+| QUAL-07 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Pending |
+| QUAL-08 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Pending |
+| SKIL-01 | Phase 15: Agent Skill Portfolio Audit And External Library Integration | Pending |
+| SKIL-02 | Phase 15: Agent Skill Portfolio Audit And External Library Integration | Pending |
+| SKIL-03 | Phase 15: Agent Skill Portfolio Audit And External Library Integration | Pending |
+| SKIL-04 | Phase 15: Agent Skill Portfolio Audit And External Library Integration | Pending |
+| SKIL-05 | Phase 15: Agent Skill Portfolio Audit And External Library Integration | Pending |
+| SKIL-06 | Phase 15: Agent Skill Portfolio Audit And External Library Integration | Pending |
+| SKIL-07 | Phase 15: Agent Skill Portfolio Audit And External Library Integration | Pending |
+| SKIL-08 | Phase 15: Agent Skill Portfolio Audit And External Library Integration | Pending |
 
 **Coverage:**
-- v1 requirements: 44 total
-- Mapped to phases: 44
+- v1 requirements: 84 total (76 prior + 8 SKIL)
+- Mapped to phases: 84
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-13*
-*Last updated: 2026-05-13 after roadmap traceability mapping*
+*Last updated: 2026-05-23 after adding Phase 15 SKIL requirements*

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-05-22T18:29:58.186Z"
+last_updated: "2026-05-23T10:44:58.159Z"
 progress:
-  total_phases: 10
+  total_phases: 14
   completed_phases: 5
-  total_plans: 32
+  total_plans: 79
   completed_plans: 15
-  percent: 47
+  percent: 19
 ---
 
 # AIOS Planning State
@@ -59,6 +59,12 @@ progress:
 | 2026-05-16 | Wire agent rules into runtime behavior | Planned in `.planning/quick/260516-agent-rules-runtime-wiring`; `config/agent-rules.md` now loads into session-start packets, context compiler receipts, workflow execution artifacts, and synced skill source metadata. |
 | 2026-05-18 | Add optional personalized humanizer voice step | Planned in `.planning/quick/260518-1837-personalized-humanizer-optional-voice-step`; personalized humanizer now distinguishes standalone cleanup-plus-voice runs from post-generic voice-only pipeline runs. |
 | 2026-05-21 | Add truth-first reasoning principle | Planned in `.planning/quick/260521-s13-add-truth-first-reasoning-rules-as-an-ai`; `config/agent-rules.md` now requires agents to prioritize correctness over agreement, verify user claims before accepting them, state clear verdicts for evaluated claims or plans, and reject bad fixes or weak strategies. |
+
+| 2026-05-23 | Add Phase 11 Testing, Benchmark Evaluation, And Shadow Workflows | Phase 11 directory created with 11-RESEARCH.md and plans 11-01 through 11-07. Phase 10 extended with plans 10-07 (Agent Eval Foundation) and 10-08 (Quality Hotspot Checklist and Backfill Docs). REQUIREMENTS.md extended with EVAL-01 through EVAL-08. ROADMAP.md extended with Milestone 6 and Phase 11 scope. Total phases: 11, total plans: 47. |
+| 2026-05-23 | Add Phase 12 Graph-Native Memory Architecture And Cache-Aware Context Compilation | Phase 12 directory created with 12-RESEARCH.md and plans 12-01 through 12-08 (audit, schema, memory compiler, context compiler, packet contract, quality checks, backfill plan, KV-cache future note). REQUIREMENTS.md extended with MEM-01 through MEM-08. ROADMAP.md extended with Milestone 7 and Phase 12 scope. config/agent-rules.md extended with Rule 9. Total phases: 12, total plans: 55. |
+| 2026-05-23 | Add Phase 13 Multi-Provider Session Ingestion And Second Brain Data Pipeline | Phase 13 directory created with 13-RESEARCH.md and plans 13-01 through 13-08 (pipeline audit, provider interface + DB migrations, Cursor provider, Antigravity provider, incremental sync + CLI, privacy + redaction, summarization + writeback, tests + docs + backfill report). REQUIREMENTS.md extended with SESS-01 through SESS-08. ROADMAP.md extended with Milestone 8 and Phase 13 scope. Total phases: 13, total plans: 63. |
+| 2026-05-23 | Add Phase 14 Code Quality Gates And Cross-Project Complexity Standards | Phase 14 directory created with 14-RESEARCH.md and plans 14-01 through 14-08 (agent rule + workflow gate, pre-check questions, root gate doc, complexity pattern checklist, AIOS backfill, soundscape-app + portfolio backfill, amos-saas + GitNexus + tm backfill, Terrace backfill + cross-project summary). REQUIREMENTS.md extended with QUAL-01 through QUAL-08. ROADMAP.md extended with Milestone 9 and Phase 14 scope. Total phases: 14, total plans: 71. |
+| 2026-05-23 | Add Phase 15 Agent Skill Portfolio Audit And External Library Integration | Phase 15 directory created with 15-RESEARCH.md and plans 15-01 through 15-08 (skill inventory audit + backup, interrogate upgrade with grill-with-docs behaviors, diagnose skill, simplifier upgrade with architecture-first report discipline, to-issues skill with aios.db issues_store, prototype skill, write-a-skill consolidation, handoff skill with aios.db handoff_store). REQUIREMENTS.md extended with SKIL-01 through SKIL-08. ROADMAP.md extended with Milestone 10 and Phase 15 scope. Total phases: 15, total plans: 79. |
 | 2026-05-24 | Add Refero Styles design-reference workflow guidance | Planned in `.planning/quick/260524-refero-styles-design-reference-workflow`; global design standards now allow Refero Styles as an optional cited design-reference source while preserving AIOS operational UI constraints. |
 
 ---
