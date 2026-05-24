@@ -1,5 +1,5 @@
 {
-  "report_id": "workflow-report-feb01853-2633-4d94-a901-d4c9ebc3d723",
+  "report_id": "workflow-report-412bc4cf-1ddb-47ef-b9a5-97db2070637e",
   "run_id": "run-managed",
   "invocation_id": "invoke-managed",
   "workflow_key": "implementation-delivery",
@@ -14,8 +14,8 @@
       "rtk_mode": "compressed",
       "skills": [],
       "issues": [],
-      "started_at": "2026-05-14T01:07:49.815631+00:00",
-      "ended_at": "2026-05-14T01:07:49.815636+00:00"
+      "started_at": "2026-05-19T04:41:02.906274+00:00",
+      "ended_at": "2026-05-19T04:41:02.906280+00:00"
     },
     {
       "stage_key": "normalize_prompt",
@@ -31,12 +31,14 @@
             "normalized_prompt",
             "strategy_id",
             "template_id"
-          ]
+          ],
+          "source_path": null,
+          "installed_name": null
         }
       ],
       "issues": [],
-      "started_at": "2026-05-14T01:07:49.815639+00:00",
-      "ended_at": "2026-05-14T01:07:49.816757+00:00"
+      "started_at": "2026-05-19T04:41:02.906283+00:00",
+      "ended_at": "2026-05-19T04:41:02.906753+00:00"
     },
     {
       "stage_key": "validate",
@@ -48,12 +50,14 @@
           "skill_key": "scope_check",
           "execution_mode": "deterministic",
           "status": "completed",
-          "output_keys": []
+          "output_keys": [],
+          "source_path": null,
+          "installed_name": null
         }
       ],
       "issues": [],
-      "started_at": "2026-05-14T01:07:49.816762+00:00",
-      "ended_at": "2026-05-14T01:07:49.816784+00:00"
+      "started_at": "2026-05-19T04:41:02.906756+00:00",
+      "ended_at": "2026-05-19T04:41:02.906786+00:00"
     },
     {
       "stage_key": "finalize",
@@ -62,8 +66,8 @@
       "rtk_mode": "compressed",
       "skills": [],
       "issues": [],
-      "started_at": "2026-05-14T01:07:49.816786+00:00",
-      "ended_at": "2026-05-14T01:07:49.816788+00:00"
+      "started_at": "2026-05-19T04:41:02.906788+00:00",
+      "ended_at": "2026-05-19T04:41:02.906789+00:00"
     }
   ],
   "validations": [
@@ -152,14 +156,45 @@
       },
       "compiled_instruction": "Task Family: audit_and_implement\nIntent: Audit the current state, identify concrete gaps, and implement scoped, verifiable fixes.\nSurface: codex\nUser Objective: Managed runtime handshake integration\n\nRequired Inputs:\n- objective\n- target_scope\n\nOutput Contract:\n- Prioritized audit findings tied to concrete evidence.\n- Implemented scoped changes aligned to the stated objective.\n- Explicit verification outcome with residual risk notes when applicable.\n\nHard Constraints:\n- Do not fabricate implementation or test outcomes.\n- Do not expand scope beyond objective without explicit approval.\n- Preserve repository conventions and active guardrails.\n- Record blockers explicitly instead of guessing.\n\nQuality Rubric Weights:\n- actionability: 15\n- correctness_groundedness: 30\n- intent_preservation: 20\n- scope_discipline: 20\n- verification_rigor: 15\n\nAdapter Guidance:\n- Use concise structured prose with explicit constraints, actionable edits, and deterministic verification statements."
     },
-    "normalized_prompt": "Objective: Managed runtime handshake integration\nWorkflow: implementation-delivery\nDeliverable: Provide structured output that preserves factual meaning and explicit evidence references.\nStrategy: audit_and_implement_codex_v1 v1.0 (codex)\nTemplate: coding_debug",
+    "normalized_prompt": "Objective: Managed runtime handshake integration\nWorkflow: implementation-delivery\nDeliverable: Provide structured output that preserves factual meaning and explicit evidence references.\nStrategy: audit_and_implement_codex_v1 v1.0 (codex)\nTemplate: coding_debug\nAgent rules: Surface conflicts, don't average them; Read before you write; Tests verify intent, not just behavior; Checkpoint after every significant step; Match the codebase's conventions, even if you disagree; Fail loud",
     "style_profile": null,
     "evidence_notes": [],
+    "agent_rules": [
+      {
+        "title": "Surface conflicts, don't average them",
+        "body": "If two existing patterns in the codebase contradict, don't blend them.\nPick one (the more recent / more tested), explain why, and flag the other for cleanup.\n\"Average\" code that satisfies both rules is the worst code."
+      },
+      {
+        "title": "Read before you write",
+        "body": "Before adding code in a file, read the file's exports, the immediate caller, and any obvious shared utilities.\nIf you don't understand why existing code is structured the way it is, ask before adding to it.\n\"Looks orthogonal to me\" is the most dangerous phrase in this codebase."
+      },
+      {
+        "title": "Tests verify intent, not just behavior",
+        "body": "Every test must encode WHY the behavior matters, not just WHAT it does.\nA test like `expect(getUserName()).toBe('John')` is worthless if the function takes a hardcoded ID.\nIf you can't write a test that would fail when business logic changes, the function is wrong."
+      },
+      {
+        "title": "Checkpoint after every significant step",
+        "body": "After completing each step in a multi-step task: summarize what was done, what's verified, what's left.\nDon't continue from a state you can't describe back to me.\nIf you lose track, stop and restate."
+      },
+      {
+        "title": "Match the codebase's conventions, even if you disagree",
+        "body": "If the codebase uses snake_case and you'd prefer camelCase: snake_case.\nIf the codebase uses class-based components and you'd prefer hooks: class-based.\nDisagreement is a separate conversation. Inside the codebase, conformance > taste.\nIf you genuinely think the convention is harmful, surface it. Don't fork it silently."
+      },
+      {
+        "title": "Fail loud",
+        "body": "If you can't be sure something worked, say so explicitly.\n\"Migration completed\" is wrong if 30 records were skipped silently.\n\"Tests pass\" is wrong if you skipped any.\n\"Feature works\" is wrong if you didn't verify the edge case I asked about.\nDefault to surfacing uncertainty, not hiding it."
+      },
+      {
+        "title": "Prefer orchestrated subagents for non-trivial work",
+        "body": "For most non-trivial work, the orchestrator should classify the task, decompose it, control context, route execution, supervise quality gates, and own final synthesis.\nDelegate execution to specialized subagents using the lowest-cost model tier and reasoning level likely to complete the task reliably.\nDirect execution is allowed when the task is simple, likely under 5-10 minutes, affects one small file or doc, requires no repo-wide context, is a pure explanation or isolated command, or subagent setup would cost more than it saves.\nPrefer subagents when the task needs repo inspection, multiple phases, architecture, tests, security, migrations, data models, multi-file changes, parallel research, isolated review, or protection from context bloat and premium-model token waste.\nUse `config/execution-strategies/model-routing-policy.json` as the routing table for agent roles, model tiers, reasoning levels, telemetry fields, benchmark classes, and promotion statuses."
+      }
+    ],
     "draft_text": null,
     "humanized_text": null,
     "result_text": null,
     "learned_workflow_skill": null,
-    "learned_workflow_evidence": []
+    "learned_workflow_evidence": [],
+    "agentized_task_packet": null
   },
   "rtk": {
     "interface": "rtk_run(command: string, mode: \"compressed\" | \"raw\" | \"adaptive\")",
@@ -180,7 +215,7 @@
       "critical_information_hidden": "raw"
     }
   },
-  "created_at": "2026-05-14T01:07:49.816826+00:00",
-  "started_at": "2026-05-14T01:07:49.814683+00:00",
-  "ended_at": "2026-05-14T01:07:49.816827+00:00"
+  "created_at": "2026-05-19T04:41:02.906833+00:00",
+  "started_at": "2026-05-19T04:41:02.905335+00:00",
+  "ended_at": "2026-05-19T04:41:02.906835+00:00"
 }

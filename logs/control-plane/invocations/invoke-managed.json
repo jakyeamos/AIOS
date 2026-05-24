@@ -7,8 +7,8 @@
   "workflow_key": "implementation-delivery",
   "agent_key": "implementation-lead",
   "packet_id": "packet-managed",
-  "workflow_report_id": "workflow-report-b857c09d-d342-438f-9695-c14971133ad2",
+  "workflow_report_id": "workflow-report-4465e41a-901d-42a4-8754-df8dfe261bf7",
   "workflow_report_path": "/Users/jakyeamos/AIOS/logs/control-plane/workflow-reports/invoke-managed.json",
   "workflow_summary": "Workflow implementation-delivery finished with status=completed; stages=4; validations=1/1 passed.",
-  "recorded_at": "2026-05-14T01:07:49.819890+00:00"
+  "recorded_at": "2026-05-19T04:41:02.910679+00:00"
 }
