@@ -1,0 +1,9 @@
+{
+  "version": "2026-05-22",
+  "min_sample_size": 5,
+  "min_recurrence_count": 3,
+  "min_confidence": 0.6,
+  "cooling_period_days": 14,
+  "min_sample_size_for_trend": 10,
+  "per_signal_overrides": {}
+}
