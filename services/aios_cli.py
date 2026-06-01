@@ -10,10 +10,16 @@ import uuid
 from collections import deque
 from collections.abc import Sequence
 from dataclasses import asdict
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, cast
 
+from services.asset_lifecycle import (
+    AssetKind,
+    AssetLifecycleState,
+    list_assets,
+    promote_asset,
+)
 from services.automation_history import sync_pipeline_automation_history
 from services.capability_truth import capability_truth_payload
 from services.harness import (
@@ -68,6 +74,10 @@ from services.success_criteria import (
 )
 from services.task_routing import route_objective
 from services.workflow_orchestration import load_workflow_registry, recommend_workflow_from_health
+from services.workflow_promotion import (
+    compare_workflow_effectiveness,
+    propose_workflow_promotion,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG_ROOT = REPO_ROOT / "config"
@@ -3003,6 +3013,35 @@ def _contracts_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
                 "aios governance-audit recommended_workflows",
             ],
         },
+        {
+            "name": "AssetLifecycle",
+            "status": "implemented",
+            "source": "services/asset_lifecycle.py",
+            "source_of_truth": [
+                "services/asset_lifecycle.py",
+                "config/workflows/registry.json",
+                "prompts/registry.json",
+                "config/workflows/skills.json",
+                "promotion_lifecycle_items",
+            ],
+            "storage": "promotion_lifecycle_items",
+            "table_available": _table_exists(conn, "promotion_lifecycle_items"),
+            "notes": "Five-state lifecycle across prompts, skills, and workflows.",
+        },
+        {
+            "name": "WorkflowComparison",
+            "status": "implemented",
+            "source": "services/workflow_promotion.py",
+            "source_of_truth": [
+                "services/workflow_promotion.py",
+                "workflow_execution_reports",
+                "success_criteria_stage_findings",
+                "improvement_writebacks",
+            ],
+            "storage": "workflow_execution_reports + success_criteria_stage_findings + improvement_writebacks",
+            "table_available": _table_exists(conn, "workflow_execution_reports"),
+            "notes": "Stage- and run-level effectiveness comparison for workflow promotion.",
+        },
     ]
     implemented_or_partial = [
         item for item in contracts if item["status"] in {"implemented", "partial"}
@@ -3018,6 +3057,80 @@ def _contracts_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
         },
         "contracts": contracts,
     }
+
+
+def _resolve_since_argument(value: str | None) -> str:
+    if not value:
+        return "1970-01-01T00:00:00Z"
+    normalized = value.strip()
+    if normalized.endswith("d") and normalized[:-1].isdigit():
+        days = int(normalized[:-1])
+        return (datetime.now(UTC) - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return normalized
+
+
+def _asset_lifecycle_list_payload(
+    conn: sqlite3.Connection, args: argparse.Namespace
+) -> dict[str, Any]:
+    assets = list_assets(
+        conn,
+        kind=cast(AssetKind | None, args.kind),
+        state=cast(AssetLifecycleState | None, args.state),
+    )
+    return {"assets": [asdict(asset) for asset in assets]}
+
+
+def _asset_lifecycle_promote_payload(
+    conn: sqlite3.Connection, args: argparse.Namespace
+) -> dict[str, Any]:
+    transition = promote_asset(
+        conn,
+        asset_kind=cast(AssetKind, args.kind),
+        asset_key=args.key,
+        from_state=cast(AssetLifecycleState, args.from_state),
+        to_state=cast(AssetLifecycleState, args.to_state),
+        actor=args.actor,
+        rationale=args.rationale,
+        evidence_ids=tuple(args.evidence_id or []),
+    )
+    return asdict(transition)
+
+
+def _workflow_compare_payload(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    result = compare_workflow_effectiveness(
+        conn,
+        workflow_key=args.workflow_key,
+        since=_resolve_since_argument(args.since),
+    )
+    return asdict(result)
+
+
+def _promote_asset_payload(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    if args.kind == "workflow":
+        evidence = compare_workflow_effectiveness(
+            conn,
+            workflow_key=args.key,
+            since=_resolve_since_argument(args.since),
+        )
+        return propose_workflow_promotion(
+            conn,
+            workflow_key=args.key,
+            to_state=cast(AssetLifecycleState, args.to_state),
+            evidence=evidence,
+            actor=args.actor,
+            rationale=args.rationale,
+        )
+    transition = promote_asset(
+        conn,
+        asset_kind=cast(AssetKind, args.kind),
+        asset_key=args.key,
+        from_state=cast(AssetLifecycleState, args.from_state),
+        to_state=cast(AssetLifecycleState, args.to_state),
+        actor=args.actor,
+        rationale=args.rationale,
+        evidence_ids=tuple(args.evidence_id or []),
+    )
+    return asdict(transition)
 
 
 def _status_payload(conn: sqlite3.Connection) -> dict[str, Any]:
@@ -3807,6 +3920,77 @@ def create_parser() -> argparse.ArgumentParser:
     standards_override.add_argument("--confidence", type=float, default=0.95)
     standards_override.add_argument("--evidence", action="append", default=[])
     standards_override.add_argument("--waiver-review-at", default=None)
+
+    asset_lifecycle = subparsers.add_parser(
+        "asset-lifecycle", help="List and transition prompt, skill, and workflow assets"
+    )
+    asset_lifecycle_subparsers = asset_lifecycle.add_subparsers(
+        dest="asset_lifecycle_command", required=True
+    )
+    asset_lifecycle_list = asset_lifecycle_subparsers.add_parser(
+        "list", help="List lifecycle-managed assets"
+    )
+    asset_lifecycle_list.add_argument(
+        "--kind", choices=["prompt", "skill", "workflow"], default=None
+    )
+    asset_lifecycle_list.add_argument(
+        "--state",
+        choices=["draft", "candidate", "approved", "active", "deprecated"],
+        default=None,
+    )
+    asset_lifecycle_promote = asset_lifecycle_subparsers.add_parser(
+        "promote", help="Record a governed asset lifecycle transition"
+    )
+    asset_lifecycle_promote.add_argument(
+        "--kind", required=True, choices=["prompt", "skill", "workflow"]
+    )
+    asset_lifecycle_promote.add_argument("--key", required=True)
+    asset_lifecycle_promote.add_argument(
+        "--from",
+        required=True,
+        dest="from_state",
+        choices=["draft", "candidate", "approved", "active", "deprecated"],
+    )
+    asset_lifecycle_promote.add_argument(
+        "--to",
+        required=True,
+        dest="to_state",
+        choices=["draft", "candidate", "approved", "active", "deprecated"],
+    )
+    asset_lifecycle_promote.add_argument("--actor", required=True)
+    asset_lifecycle_promote.add_argument("--rationale", required=True)
+    asset_lifecycle_promote.add_argument("--evidence-id", action="append", default=[])
+
+    workflow_compare = subparsers.add_parser(
+        "workflow-compare", help="Compare workflow effectiveness from durable evidence"
+    )
+    workflow_compare.add_argument("--workflow-key", required=True)
+    workflow_compare.add_argument("--since", default="30d")
+
+    promote_asset_parser = subparsers.add_parser(
+        "promote-asset", help="Propose or record an asset promotion"
+    )
+    promote_asset_parser.add_argument(
+        "--kind", required=True, choices=["prompt", "skill", "workflow"]
+    )
+    promote_asset_parser.add_argument("--key", required=True)
+    promote_asset_parser.add_argument(
+        "--from",
+        dest="from_state",
+        default="candidate",
+        choices=["draft", "candidate", "approved", "active", "deprecated"],
+    )
+    promote_asset_parser.add_argument(
+        "--to",
+        required=True,
+        dest="to_state",
+        choices=["draft", "candidate", "approved", "active", "deprecated"],
+    )
+    promote_asset_parser.add_argument("--actor", required=True)
+    promote_asset_parser.add_argument("--rationale", required=True)
+    promote_asset_parser.add_argument("--since", default="30d")
+    promote_asset_parser.add_argument("--evidence-id", action="append", default=[])
+
     truth_audit = subparsers.add_parser(
         "truth-audit",
         help="Project truth freshness, facet coverage, and governed update contract audit",
@@ -3985,6 +4169,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "delta-explain",
             "recommend-workflow",
             "standards-override",
+            "asset-lifecycle",
+            "workflow-compare",
+            "promote-asset",
             "truth-audit",
             "prove-project-health",
             "sync-automation-history",
@@ -4066,6 +4253,18 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "standards-override":
             assert conn is not None
             data = _standards_override_payload(conn, args)
+        elif args.command == "asset-lifecycle" and args.asset_lifecycle_command == "list":
+            assert conn is not None
+            data = _asset_lifecycle_list_payload(conn, args)
+        elif args.command == "asset-lifecycle" and args.asset_lifecycle_command == "promote":
+            assert conn is not None
+            data = _asset_lifecycle_promote_payload(conn, args)
+        elif args.command == "workflow-compare":
+            assert conn is not None
+            data = _workflow_compare_payload(conn, args)
+        elif args.command == "promote-asset":
+            assert conn is not None
+            data = _promote_asset_payload(conn, args)
         elif args.command == "truth-audit":
             assert conn is not None
             data = _truth_audit_payload(conn, Path(args.truth_file).expanduser().resolve())

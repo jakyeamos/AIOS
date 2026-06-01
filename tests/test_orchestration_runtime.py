@@ -896,7 +896,7 @@ def test_managed_runtime_completes_via_explicit_handshake(runtime_db: Path, tmp_
 
     workflow_report = conn.execute(
         """
-        SELECT workflow_key, status, artifact_path
+        SELECT workflow_key, status, artifact_path, report_json
         FROM workflow_execution_reports
         WHERE run_id = ?
         LIMIT 1
@@ -907,6 +907,15 @@ def test_managed_runtime_completes_via_explicit_handshake(runtime_db: Path, tmp_
     assert workflow_report[0] == "implementation-delivery"
     assert workflow_report[1] == "completed"
     assert workflow_report[2] is not None
+    workflow_payload = json.loads(workflow_report[3])
+    assert workflow_payload["stage_evaluations"][2]["stage_finding_ids"]
+    assert (
+        conn.execute(
+            "SELECT COUNT(*) FROM success_criteria_stage_findings WHERE run_id = ?",
+            (run_id,),
+        ).fetchone()[0]
+        > 0
+    )
 
     workflow_artifact = conn.execute(
         """
@@ -931,6 +940,92 @@ def test_managed_runtime_completes_via_explicit_handshake(runtime_db: Path, tmp_
 
     assert "in_progress" in event_types
     assert "completed" in event_types
+
+
+def test_managed_runtime_keeps_failed_workflow_report(runtime_db: Path, tmp_path: Path) -> None:
+    from aios_orchestration_runtime import ensure_runtime_schema
+
+    repo_path = tmp_path / "repo"
+    repo_path.mkdir()
+    home = tmp_path / "home"
+    (home / "AIOS" / "logs").mkdir(parents=True)
+
+    conn = sqlite3.connect(runtime_db)
+    project_id = _insert_project(conn, repo_path)
+    ensure_runtime_schema(conn)
+    run_id = "run-managed-failed-workflow"
+    invocation_id = "invoke-managed-failed-workflow"
+    packet_id = "packet-managed-failed-workflow"
+
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (
+            id, project_id, objective, workflow_key, agent_key, status, rationale,
+            assumptions_json, context_trace_json, backend_key, packet_id, created_at, updated_at
+        )
+        VALUES (
+            ?, ?, 'Compare workflow promotion strategies',
+            'divergent-strategy', 'implementation-lead', 'ready',
+            'Managed runtime failed workflow evidence test', '[]', '[]',
+            'aios-managed-runtime', ?, '2026-04-19T00:00:00Z', '2026-04-19T00:00:00Z'
+        )
+        """,
+        (run_id, project_id, packet_id),
+    )
+    conn.execute(
+        """
+        INSERT INTO orchestration_invocations (
+            id, run_id, backend_key, backend_label, status, handshake_token,
+            command_json, metadata_json, created_at, updated_at
+        )
+        VALUES (
+            ?, ?, 'aios-managed-runtime', 'AIOS Managed Runtime', 'launching', ?,
+            '[]', '{}', '2026-04-19T00:00:00Z', '2026-04-19T00:00:00Z'
+        )
+        """,
+        (invocation_id, run_id, run_id),
+    )
+    conn.commit()
+    conn.close()
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "bin" / "aios-managed-run.py"),
+            "--run-id",
+            run_id,
+            "--invocation-id",
+            invocation_id,
+            "--db",
+            str(runtime_db),
+        ],
+        cwd=str(ROOT),
+        env={**os.environ, "HOME": str(home), "AIOS_DB": str(runtime_db)},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 1
+
+    conn = sqlite3.connect(runtime_db)
+    run = conn.execute("SELECT status FROM orchestration_runs WHERE id = ?", (run_id,)).fetchone()
+    workflow_report = conn.execute(
+        """
+        SELECT workflow_key, status, report_json, artifact_path
+        FROM workflow_execution_reports
+        WHERE run_id = ?
+        LIMIT 1
+        """,
+        (run_id,),
+    ).fetchone()
+    conn.close()
+
+    assert run[0] == "failed"
+    assert workflow_report is not None
+    assert workflow_report[0] == "divergent-strategy"
+    assert workflow_report[1] == "failed"
+    assert workflow_report[3] is not None
+    assert json.loads(workflow_report[2])["unresolved_issues"]
 
 
 def test_managed_closeout_repairs_authoritative_run_state(runtime_db: Path, tmp_path: Path) -> None:

@@ -427,3 +427,53 @@ def test_repair_stale_open_sessions_abandons_only_inactive_non_current(
     assert statuses["has-prompt"] == "open"
     assert event is not None
     assert event[0] == "SessionAbandonedBackfill"
+
+
+def test_resolve_session_cwd_replaces_agent_config_dir_with_registered_process_cwd(
+    hook_db: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    hook_lifecycle = _load_module("hook_lifecycle_attribution", "bin/hook_lifecycle.py")
+    repo_path = tmp_path / "AIOS"
+    repo_path.mkdir()
+    monkeypatch.chdir(repo_path)
+
+    conn = sqlite3.connect(hook_db)
+    conn.execute(
+        """
+        INSERT INTO projects (id, name, repo_path, obsidian_path, status)
+        VALUES ('project-aios', 'AIOS', ?, '', 'active')
+        """,
+        (str(repo_path),),
+    )
+
+    resolved = hook_lifecycle.resolve_session_cwd(conn, str(Path.home() / ".claude"))
+    conn.close()
+
+    assert resolved == str(repo_path)
+
+
+def test_get_or_create_project_uses_registered_process_project_for_agent_config_payload(
+    hook_db: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    hook_lifecycle = _load_module("hook_lifecycle_project_attribution", "bin/hook_lifecycle.py")
+    repo_path = tmp_path / "AIOS"
+    repo_path.mkdir()
+    monkeypatch.chdir(repo_path)
+
+    conn = sqlite3.connect(hook_db)
+    conn.execute(
+        """
+        INSERT INTO projects (id, name, repo_path, obsidian_path, status)
+        VALUES ('project-aios', 'AIOS', ?, '', 'active')
+        """,
+        (str(repo_path),),
+    )
+
+    project_id = hook_lifecycle.get_or_create_project(conn, str(Path.home() / ".claude"))
+    conn.close()
+
+    assert project_id == "project-aios"

@@ -24,6 +24,7 @@ from services.workflow_orchestration import (  # noqa: E402
     WorkflowExecutionContext,
     WorkflowSpec,
     WritebackBindingSpec,
+    _build_stage_evaluation_summary,
     _reset_validation_caches,
     _stage_from_row,
     execute_workflow,
@@ -445,6 +446,24 @@ def test_execute_academic_workflow_with_validations(tmp_path: Path) -> None:
     assert "status=completed" in summary
 
 
+def test_stage_evaluation_summary_in_report() -> None:
+    context = WorkflowExecutionContext(
+        objective="Audit and implement a scoped fix for failing runtime checks",
+        workflow_key="implementation-delivery",
+        surface="codex",
+        run_id="run-stage-summary",
+        invocation_id="invoke-stage-summary",
+    )
+
+    report = execute_workflow(context)
+
+    assert "stage_evaluations" in report
+    assert len(report["stage_evaluations"]) == len(report["stages"])
+    first_stage = report["stage_evaluations"][0]
+    assert first_stage["stage_key"] == report["stages"][0]["stage_key"]
+    assert first_stage["outcome"] in {"completed", "failed", "blocked"}
+
+
 def test_unknown_workflow_raises(tmp_path: Path) -> None:
     context = WorkflowExecutionContext(
         objective="Any objective",
@@ -803,3 +822,62 @@ def test_recommend_workflow_triggered_by_carries_delta_metadata() -> None:
         "priority_score": 7.5,
     }
     assert len(HEALTH_TO_WORKFLOW_RULES) == 5
+
+
+def test_stage_evaluation_summary_outcome_completed_when_no_blockers() -> None:
+    summary = _build_stage_evaluation_summary(
+        stage_key="validate",
+        skill_reports=[],
+        validations=[{"passed": True}],
+        stage_issues=[],
+        stage_findings=[],
+    )
+    assert summary["outcome"] == "completed"
+    assert summary["passed_validations"] == 1
+    assert summary["total_validations"] == 1
+
+
+def test_stage_evaluation_summary_outcome_failed_when_validation_fails() -> None:
+    summary = _build_stage_evaluation_summary(
+        stage_key="validate",
+        skill_reports=[],
+        validations=[{"passed": False}],
+        stage_issues=[],
+        stage_findings=[],
+    )
+    assert summary["outcome"] == "failed"
+
+
+def test_stage_evaluation_summary_outcome_blocked_when_blocker_finding() -> None:
+    summary = _build_stage_evaluation_summary(
+        stage_key="validate",
+        skill_reports=[],
+        validations=[{"passed": True}],
+        stage_issues=[],
+        stage_findings=[{"id": "finding-1", "level": "blocker"}],
+    )
+    assert summary["outcome"] == "blocked"
+    assert summary["blocker_count"] == 1
+
+
+def test_stage_evaluation_summary_includes_stage_finding_ids() -> None:
+    summary = _build_stage_evaluation_summary(
+        stage_key="validate",
+        skill_reports=[],
+        validations=[],
+        stage_issues=[],
+        stage_findings=[{"id": "finding-1", "level": "warning"}],
+    )
+    assert summary["stage_finding_ids"] == ["finding-1"]
+
+
+def test_stage_evaluation_summary_counts_warnings_separately() -> None:
+    summary = _build_stage_evaluation_summary(
+        stage_key="validate",
+        skill_reports=[],
+        validations=[],
+        stage_issues=[],
+        stage_findings=[{"id": "finding-1", "level": "warning"}],
+    )
+    assert summary["warning_count"] == 1
+    assert summary["outcome"] == "completed"

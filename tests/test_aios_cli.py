@@ -115,9 +115,16 @@ def _seed_db(path: Path) -> None:
             summary TEXT,
             evidence_json TEXT DEFAULT '[]',
             proposed_change_json TEXT DEFAULT '{}',
+            impact_scope TEXT DEFAULT 'scoped',
             status TEXT,
             requires_approval INTEGER DEFAULT 0,
-            created_at TEXT
+            approval_reason TEXT,
+            token_regressive INTEGER DEFAULT 0,
+            created_at TEXT,
+            updated_at TEXT,
+            decision_note TEXT,
+            decision_actor TEXT,
+            decision_at TEXT
         );
         CREATE TABLE knowledge_topics (
             id TEXT PRIMARY KEY,
@@ -176,11 +183,13 @@ def _seed_db(path: Path) -> None:
     conn.execute(
         """
         INSERT INTO improvement_writebacks (
-            id, project_id, layer_type, layer_key, title, summary, status, requires_approval, created_at
+            id, project_id, layer_type, layer_key, title, summary, status,
+            requires_approval, created_at, updated_at
         )
         VALUES (
             'wb-1', 'p1', 'workflow', 'routing', 'Route serious work through AIOS',
-            'Use the control plane packet before implementation work.', 'applied', 0, '2026-04-23T00:25:00Z'
+            'Use the control plane packet before implementation work.', 'applied', 0,
+            '2026-04-23T00:25:00Z', '2026-04-23T00:25:00Z'
         )
         """
     )
@@ -241,6 +250,152 @@ def test_status_and_recent_failures_json(tmp_path: Path, capsys) -> None:
     assert status_output["ok"] is True
     assert status_output["command"] == "status"
     assert status_output["data"]["resumable_runs"] == []
+
+
+def test_asset_lifecycle_list_subcommand(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        """
+        CREATE TABLE promotion_lifecycle_items (
+          id TEXT PRIMARY KEY,
+          item_kind TEXT NOT NULL,
+          item_key TEXT NOT NULL,
+          source_run_id TEXT,
+          status TEXT NOT NULL,
+          evidence_json TEXT NOT NULL DEFAULT '[]',
+          status_reason TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          metadata_json TEXT NOT NULL DEFAULT '{}'
+        )
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO promotion_lifecycle_items (
+          id, item_kind, item_key, status, status_reason, created_at, updated_at
+        )
+        VALUES ('life-1', 'workflow', 'implementation-delivery', 'active', 'seed',
+                '2026-05-24T00:00:00Z', '2026-05-24T00:00:00Z')
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    assert (
+        run_cli(["--json", "--db", str(db_path), "asset-lifecycle", "list", "--kind", "workflow"])
+        == EXIT_OK
+    )
+    output = json.loads(capsys.readouterr().out)
+    assert output["data"]["assets"][0]["kind"] == "workflow"
+    assert output["data"]["assets"][0]["lifecycle_state"] == "active"
+
+
+def test_asset_lifecycle_promote_subcommand(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    _seed_db(db_path)
+
+    assert (
+        run_cli(
+            [
+                "--json",
+                "--db",
+                str(db_path),
+                "asset-lifecycle",
+                "promote",
+                "--kind",
+                "prompt",
+                "--key",
+                "research",
+                "--from",
+                "draft",
+                "--to",
+                "candidate",
+                "--actor",
+                "op",
+                "--rationale",
+                "test",
+            ]
+        )
+        == EXIT_OK
+    )
+    output = json.loads(capsys.readouterr().out)
+    assert output["data"]["asset_key"] == "research"
+    assert output["data"]["to_state"] == "candidate"
+
+
+def test_workflow_compare_cli(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    _seed_db(db_path)
+
+    assert (
+        run_cli(
+            [
+                "--json",
+                "--db",
+                str(db_path),
+                "workflow-compare",
+                "--workflow-key",
+                "academic_paper_v1",
+                "--since",
+                "2026-01-01T00:00:00Z",
+            ]
+        )
+        == EXIT_OK
+    )
+    output = json.loads(capsys.readouterr().out)
+    assert output["data"]["workflow_key"] == "academic_paper_v1"
+    assert "mean_blockers_per_stage" in output["data"]
+    assert "writeback_usefulness" in output["data"]
+
+
+def test_promote_asset_cli_for_workflow_uses_workflow_promotion(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    _seed_db(db_path)
+
+    assert (
+        run_cli(
+            [
+                "--json",
+                "--db",
+                str(db_path),
+                "promote-asset",
+                "--kind",
+                "workflow",
+                "--key",
+                "implementation-delivery",
+                "--to",
+                "approved",
+                "--actor",
+                "op",
+                "--rationale",
+                "evidence",
+                "--since",
+                "2026-01-01T00:00:00Z",
+            ]
+        )
+        == EXIT_OK
+    )
+    output = json.loads(capsys.readouterr().out)
+    assert output["data"]["requires_approval"] is True
+    assert output["data"]["writeback_id"]
+    assert output["data"]["lifecycle_id"]
+
+
+def test_contracts_audit_includes_asset_lifecycle_and_workflow_comparison(
+    tmp_path: Path, capsys
+) -> None:
+    db_path = tmp_path / "aios.db"
+    _seed_db(db_path)
+
+    assert run_cli(["--json", "--db", str(db_path), "contracts-audit"]) == EXIT_OK
+    output = json.loads(capsys.readouterr().out)
+    names = {contract["name"] for contract in output["data"]["contracts"]}
+    assert {"AssetLifecycle", "WorkflowComparison"} <= names
 
 
 def test_status_reports_resume_snapshot_for_resumable_run(tmp_path: Path, capsys) -> None:
@@ -1066,7 +1221,7 @@ def test_contracts_audit_reports_canonical_interfaces(tmp_path: Path, capsys) ->
     contracts_output = json.loads(capsys.readouterr().out)
     data = contracts_output["data"]
     names = {contract["name"] for contract in data["contracts"]}
-    assert data["summary"]["canonical_contract_count"] == 8
+    assert data["summary"]["canonical_contract_count"] == 10
     assert data["summary"]["implemented_or_partial_count"] >= 6
     assert {
         "TrustedSignal",
@@ -1077,6 +1232,8 @@ def test_contracts_audit_reports_canonical_interfaces(tmp_path: Path, capsys) ->
         "WorkflowLearningEvent",
         "EvaluationFinding",
         "DeltaExplanation",
+        "AssetLifecycle",
+        "WorkflowComparison",
     }.issubset(names)
     invocation = next(
         contract for contract in data["contracts"] if contract["name"] == "InvocationBackend"

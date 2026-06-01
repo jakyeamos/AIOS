@@ -1349,6 +1349,36 @@ def _execute_skill(
     return {}, None
 
 
+def _build_stage_evaluation_summary(
+    *,
+    stage_key: str,
+    skill_reports: list[dict[str, Any]],
+    validations: list[dict[str, Any]],
+    stage_issues: list[str],
+    stage_findings: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    del skill_reports
+    findings = stage_findings or []
+    blocker_count = len([finding for finding in findings if finding.get("level") == "blocker"])
+    warning_count = len([finding for finding in findings if finding.get("level") == "warning"])
+    passed_validations = len([row for row in validations if row.get("passed", False)])
+    total_validations = len(validations)
+    outcome = "completed"
+    if blocker_count > 0:
+        outcome = "blocked"
+    elif stage_issues or any(not row.get("passed", False) for row in validations):
+        outcome = "failed"
+    return {
+        "stage_key": stage_key,
+        "passed_validations": passed_validations,
+        "total_validations": total_validations,
+        "blocker_count": blocker_count,
+        "warning_count": warning_count,
+        "stage_finding_ids": [str(finding.get("id")) for finding in findings if finding.get("id")],
+        "outcome": outcome,
+    }
+
+
 def execute_workflow(
     context: WorkflowExecutionContext,
     *,
@@ -1391,6 +1421,7 @@ def execute_workflow(
         stage_started = _now_iso()
         skill_reports: list[dict[str, Any]] = []
         stage_issues: list[str] = []
+        stage_validations: list[dict[str, Any]] = []
 
         for skill_key in stage.required_skills:
             spec = skills[skill_key]
@@ -1412,18 +1443,12 @@ def execute_workflow(
             )
             if validation is not None:
                 validations.append(validation)
+                stage_validations.append(validation)
                 if not validation.get("passed", False):
                     stage_issues.extend(validation.get("issues", []))
 
         stage_status = "completed" if not stage_issues else "failed"
-        stage_eval_summary = {
-            "stage_key": stage.key,
-            "stage_kind": stage.kind,
-            "finding_ids": [],
-            "blocker_count": 0,
-            "warning_count": 0,
-            "pass_count": 0,
-        }
+        stage_findings: list[dict[str, Any]] = []
         if conn is not None and context.run_id:
             criteria_context = success_criteria.infer_context(
                 objective=context.objective,
@@ -1460,7 +1485,32 @@ def execute_workflow(
                 stage_status = "failed"
             elif stage_eval_summary["warning_count"] > 0 and stage_status == "completed":
                 stage_status = "warning"
-            stage_evaluations.append(stage_eval_summary)
+            try:
+                rows = conn.execute(
+                    """
+                    SELECT id, level, summary
+                    FROM success_criteria_stage_findings
+                    WHERE run_id = ? AND stage_key = ?
+                    """,
+                    (context.run_id, stage.key),
+                ).fetchall()
+                stage_findings = [
+                    {"id": row[0], "level": row[1], "summary": row[2]} for row in rows
+                ]
+            except sqlite3.OperationalError:
+                stage_findings = []
+        stage_eval_summary = _build_stage_evaluation_summary(
+            stage_key=stage.key,
+            skill_reports=skill_reports,
+            validations=stage_validations,
+            stage_issues=stage_issues,
+            stage_findings=stage_findings,
+        )
+        if stage_eval_summary["outcome"] in {"blocked", "failed"}:
+            stage_status = "failed"
+        elif stage_eval_summary["warning_count"] > 0 and stage_status == "completed":
+            stage_status = "warning"
+        stage_evaluations.append(stage_eval_summary)
         if stage_issues:
             unresolved.extend(stage_issues)
 

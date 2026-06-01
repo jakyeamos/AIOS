@@ -24,11 +24,18 @@ from aios_orchestration_runtime import (  # noqa: E402
     evaluate_run_consistency,
     insert_workflow_execution_report,
     insert_writeback,
+    link_session_runtime,
     resolve_run_linkage,
     transition_run,
     update_invocation,
 )
-from hook_lifecycle import ensure_session, load_hook_payload, resolve_hook_session_id  # noqa: E402
+from hook_lifecycle import (  # noqa: E402
+    ensure_session,
+    get_or_create_project,
+    load_hook_payload,
+    resolve_hook_session_id,
+    resolve_session_cwd,
+)
 
 from services.rtk_integration import ensure_rtk_schema, rtk_metrics_log  # noqa: E402
 from services.session_effectiveness import write_session_effectiveness_receipt  # noqa: E402
@@ -73,6 +80,99 @@ def _table_exists(conn: sqlite3.Connection, table: str) -> bool:
         (table,),
     ).fetchone()
     return row is not None
+
+
+def _json_obj(value: str | None) -> dict[str, Any]:
+    if not value:
+        return {}
+    try:
+        loaded = json.loads(value)
+    except json.JSONDecodeError:
+        return {}
+    return loaded if isinstance(loaded, dict) else {}
+
+
+def _emit_asset_promotion_candidate(
+    conn: sqlite3.Connection,
+    *,
+    run_id: str,
+    project_id: str | None,
+) -> str | None:
+    report_row = conn.execute(
+        """
+        SELECT workflow_key, status, report_json
+        FROM workflow_execution_reports
+        WHERE run_id = ?
+        ORDER BY created_at DESC
+        LIMIT 1
+        """,
+        (run_id,),
+    ).fetchone()
+    if not report_row or report_row[1] != "completed":
+        return None
+    report = _json_obj(report_row[2])
+    stage_evaluations = report.get("stage_evaluations", [])
+    if not isinstance(stage_evaluations, list) or not stage_evaluations:
+        return None
+    if any(
+        isinstance(stage, dict)
+        and (stage.get("outcome") == "blocked" or int(stage.get("blocker_count") or 0) > 0)
+        for stage in stage_evaluations
+    ):
+        return None
+    if _table_exists(conn, "agentize_evaluations"):
+        row = conn.execute(
+            """
+            SELECT transformed_request_json
+            FROM agentize_evaluations
+            ORDER BY created_at DESC
+            LIMIT 1
+            """
+        ).fetchone()
+        if row:
+            packet = _json_obj(row[0])
+            metadata = packet.get("experiment_metadata", {})
+            if (
+                isinstance(metadata, dict)
+                and metadata.get("recommendation_source") != "recommender"
+            ):
+                return None
+
+    workflow_key = str(report_row[0])
+    writeback_id = f"writeback-{uuid.uuid4()}"
+    now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    conn.execute(
+        """
+        INSERT INTO improvement_writebacks (
+            id, run_id, project_id, layer_type, layer_key, title, summary, evidence_json,
+            proposed_change_json, impact_scope, status, requires_approval, approval_reason,
+            token_regressive, created_at, updated_at
+        )
+        VALUES (?, ?, ?, 'workflow', ?, ?, ?, ?, ?, 'workflow-default', 'proposed', 1, ?, 0, ?, ?)
+        """,
+        (
+            writeback_id,
+            run_id,
+            project_id,
+            workflow_key,
+            f"Asset promotion candidate for {workflow_key}",
+            f"Run {run_id} completed cleanly with recommender-driven assets.",
+            json.dumps([f"run_id={run_id}", f"workflow_key={workflow_key}"], sort_keys=True),
+            json.dumps(
+                {
+                    "policy_class": "asset_promotion_candidate",
+                    "workflow_key": workflow_key,
+                    "candidate_to_state": "approved",
+                    "stage_evaluations": stage_evaluations,
+                },
+                sort_keys=True,
+            ),
+            "Clean recommender-driven run is a candidate for asset promotion review.",
+            now,
+            now,
+        ),
+    )
+    return writeback_id
 
 
 def _pending_approval_summary(
@@ -417,6 +517,33 @@ def get_project_name(conn: sqlite3.Connection, project_id: str | None) -> str | 
     return str(row[0])
 
 
+def _persist_resolved_run_linkage(
+    conn: sqlite3.Connection,
+    *,
+    session_id: str,
+    linked_run_id: str | None,
+    linked_invocation_id: str | None,
+    objective: str | None,
+    used_legacy_link: bool,
+    payload_run_id: str | None,
+    payload_invocation_id: str | None,
+) -> None:
+    if not linked_run_id and not linked_invocation_id:
+        return
+    link_session_runtime(
+        conn,
+        session_id=session_id,
+        run_id=linked_run_id,
+        invocation_id=linked_invocation_id,
+        runtime_metadata={
+            "linked_via": "legacy-match" if used_legacy_link else "explicit-handshake",
+            "payload_run_id": payload_run_id,
+            "payload_invocation_id": payload_invocation_id,
+        },
+        objective=objective,
+    )
+
+
 def main() -> None:
     data = load_hook_payload(
         log=log,
@@ -467,6 +594,19 @@ def main() -> None:
             conn.close()
             print("AIOS · session already closed, skipping")
             sys.exit(0)
+
+        resolved_cwd = resolve_session_cwd(conn, data.get("cwd") or row[3])
+        if resolved_cwd != row[3]:
+            resolved_project_id = get_or_create_project(conn, resolved_cwd)
+            conn.execute(
+                "UPDATE sessions SET project_id = ?, cwd = ? WHERE id = ?",
+                (resolved_project_id, resolved_cwd, session_id),
+            )
+            row = (row[0], resolved_project_id, row[2], resolved_cwd, row[4], row[5])
+            log(
+                "corrected session project cwd before close: "
+                f"{session_id} -> {resolved_project_id} ({resolved_cwd})"
+            )
 
         now = datetime.now(UTC).isoformat()
         run_outcome = data.get("run_outcome") or "completed"
@@ -588,6 +728,16 @@ def main() -> None:
                 "strict run-linkage required; no explicit run/session/invocation handshake "
                 f"found for session {session_id}"
             )
+        _persist_resolved_run_linkage(
+            conn,
+            session_id=session_id,
+            linked_run_id=linked_run_id,
+            linked_invocation_id=linked_invocation_id,
+            objective=row[4],
+            used_legacy_link=used_legacy_link,
+            payload_run_id=data.get("run_id"),
+            payload_invocation_id=data.get("invocation_id"),
+        )
         memory_update_id = str(uuid.uuid4())
 
         # Close session in DB
@@ -828,6 +978,16 @@ def main() -> None:
                 report=closeout_summary,
                 artifact_path=str(candidate_path),
             )
+            try:
+                promotion_writeback_id = _emit_asset_promotion_candidate(
+                    conn,
+                    run_id=linked_run_id,
+                    project_id=row[1],
+                )
+                if promotion_writeback_id:
+                    log(f"asset promotion candidate emitted: {promotion_writeback_id}")
+            except Exception as exc:
+                log(f"asset promotion candidate skipped: {exc}")
 
         # Log Stop event
         conn.execute(

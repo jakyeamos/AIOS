@@ -59,6 +59,44 @@ def _normalize_path(path: str | None) -> str | None:
         return str(Path(path).expanduser())
 
 
+def _is_agent_config_cwd(path: str | None) -> bool:
+    if not path:
+        return False
+    return Path(path).expanduser().name in {".claude", ".codex"}
+
+
+def _project_id_for_cwd(conn: sqlite3.Connection, cwd: str | None) -> str | None:
+    normalized = _normalize_path(cwd)
+    if not normalized:
+        return None
+    row = conn.execute("SELECT id FROM projects WHERE repo_path = ? LIMIT 1", (normalized,)).fetchone()
+    if row:
+        return str(row[0])
+    return None
+
+
+def resolve_session_cwd(conn: sqlite3.Connection, payload_cwd: str | None) -> str:
+    """
+    Prefer the real hook process workspace over agent configuration dirs.
+
+    Claude can pass `/Users/.../.claude` as payload cwd for global config
+    interactions. When the hook itself is running from a registered project,
+    treating `.claude` as the project poisons downstream attribution.
+    """
+    resolved_payload = _normalize_path(payload_cwd)
+    process_cwd = _normalize_path(os.getcwd())
+    if (
+        resolved_payload
+        and _is_agent_config_cwd(resolved_payload)
+        and process_cwd
+        and process_cwd != resolved_payload
+        and not _is_agent_config_cwd(process_cwd)
+        and _project_id_for_cwd(conn, process_cwd)
+    ):
+        return process_cwd
+    return resolved_payload or process_cwd or os.getcwd()
+
+
 def _session_row(conn: sqlite3.Connection, session_id: str | None) -> sqlite3.Row | tuple[Any, ...] | None:
     if not session_id:
         return None
@@ -144,18 +182,19 @@ def resolve_hook_session_id(
 
 
 def get_or_create_project(conn: sqlite3.Connection, cwd: str) -> str:
-    row = conn.execute("SELECT id FROM projects WHERE repo_path = ?", (cwd,)).fetchone()
+    resolved_cwd = resolve_session_cwd(conn, cwd)
+    row = conn.execute("SELECT id FROM projects WHERE repo_path = ?", (resolved_cwd,)).fetchone()
     if row:
         return str(row[0])
 
-    project_id = hashlib.sha256(cwd.encode()).hexdigest()[:16]
-    name = os.path.basename(cwd.rstrip("/")) or cwd
+    project_id = hashlib.sha256(resolved_cwd.encode()).hexdigest()[:16]
+    name = os.path.basename(resolved_cwd.rstrip("/")) or resolved_cwd
     conn.execute(
         """
         INSERT OR IGNORE INTO projects (id, name, repo_path, obsidian_path, status)
         VALUES (?, ?, ?, ?, 'active')
         """,
-        (project_id, name, cwd, ""),
+        (project_id, name, resolved_cwd, ""),
     )
     return project_id
 
@@ -177,7 +216,7 @@ def ensure_session(
     if row:
         return str(row[1]), False
 
-    resolved_cwd = cwd or os.getcwd()
+    resolved_cwd = resolve_session_cwd(conn, cwd)
     project_id = get_or_create_project(conn, resolved_cwd)
     conn.execute(
         """
