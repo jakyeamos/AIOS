@@ -56,17 +56,17 @@
 
 ### Prompt, Skill, And Workflow Assets
 
-- [ ] **ASSET-01**: AIOS tracks prompts, skills, and workflows as lifecycle-managed assets with purpose, applicability, status, and evidence of usefulness
-- [ ] **ASSET-02**: AIOS can distinguish draft, candidate, approved, active, and deprecated reusable assets
-- [ ] **ASSET-03**: AIOS links reusable assets to the workflows and task types where they have succeeded or failed
-- [ ] **ASSET-04**: AIOS can recommend proven prompts, skills, and workflows during packet generation and handoff creation
+- [x] **ASSET-01**: AIOS tracks prompts, skills, and workflows as lifecycle-managed assets with purpose, applicability, status, and evidence of usefulness
+- [x] **ASSET-02**: AIOS can distinguish draft, candidate, approved, active, and deprecated reusable assets
+- [x] **ASSET-03**: AIOS links reusable assets to the workflows and task types where they have succeeded or failed
+- [x] **ASSET-04**: AIOS can recommend proven prompts, skills, and workflows during packet generation and handoff creation
 
 ### Workflow Contracts And Library
 
-- [ ] **WFLO-01**: AIOS defines each governed workflow as a stage-based contract with required inputs, required outputs, validations, and expected artifacts
-- [ ] **WFLO-02**: AIOS can bind prompts, skills, tools, standards, approval gates, and writeback behavior to specific workflow stages
-- [ ] **WFLO-03**: AIOS can evaluate workflow success at both the stage level and the overall run level using durable evidence
-- [ ] **WFLO-04**: AIOS can compare workflow effectiveness over time and promote, revise, or deprecate workflows based on evidence
+- [x] **WFLO-01**: AIOS defines each governed workflow as a stage-based contract with required inputs, required outputs, validations, and expected artifacts
+- [x] **WFLO-02**: AIOS can bind prompts, skills, tools, standards, approval gates, and writeback behavior to specific workflow stages
+- [x] **WFLO-03**: AIOS can evaluate workflow success at both the stage level and the overall run level using durable evidence
+- [x] **WFLO-04**: AIOS can compare workflow effectiveness over time and promote, revise, or deprecate workflows based on evidence
 
 ### Continuous Improvement
 
@@ -126,6 +126,50 @@
 - [ ] **QUAL-07**: The quality gate explicitly distinguishes "report hotspot" from "fix hotspot" — agents record every finding before any fix attempt; fixes are permitted only for sub-5-line, no-behavior-risk changes; all other findings are deferred to a dedicated remediation pass
 - [ ] **QUAL-08**: The cross-project summary table in the AIOS backfill doc links all six external project backfill inventories with P0/P1/P2 hotspot counts, providing the operator a portfolio-level view for prioritizing remediation across all projects
 
+### Harness Determinism, Evidence, And Independent Verification
+
+- [ ] **HARN-01**: AIOS produces a concise existing-harness audit that maps entrypoints, orchestration, lifecycle state, prompt/template system, model selection, context routing, second-brain integration, evaluation, evidence/logging, recovery, shadow branches, learning, docs, scripts, CI checks, WIP areas, and current sources of truth
+- [ ] **HARN-02**: AIOS compares current lifecycle behavior against intake, context routing, planning, implementation, verification, review, closeout, and retrospective phases, then identifies deterministic transition logic, completion artifacts, failure modes, and minimal reliability patches
+- [ ] **HARN-03**: AIOS binds completion markers to fresh durable evidence artifacts with timestamp, task id, phase, agent/model, command, exit code, stdout/stderr path or hash, parsed summary, diff/commit hash, status, and caveats; empty markers and agent-authored "tests passed" claims do not satisfy completion
+- [ ] **HARN-04**: Implementation-bearing governed workflows require a structurally independent verifier artifact before closeout, reviewing task spec, diff or changed files, and evidence artifacts with structured pass/fail/needs-work output and concrete citations
+- [ ] **HARN-05**: Context routing records manifests with loaded/skipped sources, reasons, second-brain availability, fallback behavior, context budget, and retrieval reasons; tests cover both second-brain and no-second-brain conditions
+- [ ] **HARN-06**: Prompt and template audits identify duplicated instructions, stale rules, unclear phase boundaries, missing output schemas, and prose-only state-machine responsibilities; targeted patches move obvious gates into code or config where feasible
+- [ ] **HARN-07**: AIOS records structured retrospective artifacts and model-selection logs so repeated failures can become reviewable rules, checks, playbooks, benchmark cases, memory proposals, or model-routing updates without silent self-mutation
+- [ ] **HARN-08**: Shadow branch and benchmark parity metadata preserve existing workflows while adding branch/run metadata, comparison artifacts, parity checklist status, failure classification, and replay instructions where current artifacts are weak
+
+### Developer Experience Capability Pack
+
+- [ ] **DXPK-01**: AIOS audits current DX-relevant infrastructure, including skills, agents, commands, routing rules, telemetry, eval specs, shadow-branch testing, second-brain integration, docs, generated concepts, quality gates, existing equivalents, duplication risks, conventions, proposed files, risks, and implementation plan
+- [ ] **DXPK-02**: AIOS defines a Developer Experience capability pack with six capabilities: DX optimizer, interface DX reviewer, documentation writer, security reviewer, TypeScript specialist, and spec-fidelity coder; each capability has purpose, responsibilities, triggers, modes, output schemas, assumptions policy, and evidence expectations
+- [ ] **DXPK-03**: AIOS measures or explicitly marks as not measured core DX metrics including setup, clone-to-run, dev server startup, feedback loop speed, test/typecheck/lint/build/CI runtime, manual setup steps, validation command count, README quickstart, setup validation, ambiguous instructions, and agent/token cost where telemetry supports it
+- [ ] **DXPK-04**: AIOS routes DX capabilities only when justified, supports compact audit, full audit, implementation, and review-only modes, and uses dynamic model/reasoning metadata rather than fixed model-per-agent choices
+- [ ] **DXPK-05**: The DX pack works with and without second-brain context; personal second-brain retrieval can improve local runs, but peer-run workflows fall back to repo-local artifacts only
+- [ ] **DXPK-06**: The DX pack integrates with existing quality, security, TypeScript, docs, and implementation workflows without checklist bloat; security findings are contextual, TypeScript review is targeted, and docs avoid marketing fluff
+- [ ] **DXPK-07**: AIOS adds DX eval coverage with at least three fixture scenarios: poor onboarding repo, public CLI change, and TypeScript package boundary change, covering routing, metrics, README clarity, interface review, security context, TypeScript invocation discipline, assumptions, second-brain parity, small diffs, and before/after metrics
+- [ ] **DXPK-08**: AIOS documents the Developer Experience pack, capability invocation, static-prompt differences, shadow-branch support, second-brain parity, metric recording, model routing, override controls, validation workflow, and final implementation report format
+
+### Meta-Learning Proposal Layer
+
+- [ ] **META-01**: AIOS audits current instruction, skill, agent, command, memory, shadow-branch, session transcript, eval, model-routing, sub-agent, and preference/correction capture surfaces, then identifies target storage layers, no-auto-modify areas, auto-permission safety checks, and minimal implementation path
+- [ ] **META-02**: AIOS extracts normalized session signals from logs, transcript exports, or workflow traces, including explicit corrections, repeated corrections, approvals, command repetition, tool friction, context misses, model mismatch, contradictions, scope restatements, second-brain misses, and irrelevant loaded context
+- [ ] **META-03**: AIOS scores extracted signals with weighted confidence, recency, explicit remember requests, multi-project evidence, blast radius, security/permission risk, and contradictions, then filters out generic, vague, one-off, unsafe, or contradictory learnings without enough evidence
+- [ ] **META-04**: AIOS routes accepted signals to the right target layer: global rule, project rule, skill instruction, command, agent/sub-agent suggestion, second-brain note, eval/test case, or observe-only, with justification and project-vs-global safeguards
+- [ ] **META-05**: AIOS generates reviewable meta-learning proposals with stable IDs, target layer/file, confidence, risk, evidence, layer justification, proposed patch or markdown, rollback instructions, manual approval requirement, and explicit conflict resolution output
+- [ ] **META-06**: AIOS separates auto-allow permission recommendations from ordinary learning proposals and scores them by read/write capability, filesystem and network access, credential exposure, destructive potential, reversibility, repo sensitivity, sandboxability, and dry-run support; dangerous actions are never auto-allowed by default
+- [ ] **META-07**: AIOS generates shadow-branch eval plans for medium/high-impact proposals and exposes a minimal `aios meta` command interface for audit, session analysis, proposal listing, approval/rejection, and eval plan generation, or equivalent script fallback
+- [ ] **META-08**: AIOS documents the meta-learning layer, routing policy, scoring policy, auto-allow safety, proposal format, limitations, and tests for correction detection, scoring, routing, conflicts, proposal formatting, auto-allow risk, and shadow eval planning
+
+### Native Workflow Command Pack
+
+- [ ] **CMDP-01**: AIOS audits current command, skill, prompt, agent, workflow, CLI, sub-agent, model-routing, second-brain, and eval harness architecture and determines where each native command belongs
+- [ ] **CMDP-02**: AIOS defines native command contracts with command names, input/output schemas, safety class, read-only/modifying behavior, second-brain usage, sub-agent/reviewer lane representation, validation gates, logging metadata, rollback expectations, and MVP order
+- [ ] **CMDP-03**: AIOS implements read-only `aios zoom-out` for files, directories, or modules, returning structured orientation with purpose, system position, dependencies, sibling modules, conventions, domain vocabulary, risks, and next context
+- [ ] **CMDP-04**: AIOS implements `aios handoff` to generate compact continuation context with goal, current state, branch/workspace status, files touched, decisions, tests, failed approaches, blockers, references, and next actions
+- [ ] **CMDP-05**: AIOS implements read-only `aios review squad` with security, correctness, testing, architecture, maintainability, and project-alignment reviewer lanes, supporting branch diff or selected file scopes and severity-grouped actionable findings
+- [ ] **CMDP-06**: AIOS implements read-only `aios audit security` with strict and practical modes, contextual findings, affected files, exploit/failure scenario, recommended fix, confidence, non-issues checked, and verification suggestions
+- [ ] **CMDP-07**: AIOS implements guarded `aios cleanup de-slopify` and sandboxed `aios prototype`, preserving behavior/public APIs, applying only low-risk cleanup, isolating prototype artifacts, and documenting cleanup or promotion steps
+- [ ] **CMDP-08**: AIOS adds lightweight native command metadata logging, tests for registration/schema/read-only/safety behavior, and docs covering command purpose, safety class, sub-agent use, second-brain behavior, examples, and recommended workflows
+
 ## v2 Requirements
 
 None currently. The full operating-system vision is intentionally being planned into v1 and sequenced through milestones rather than deferred into a later release bucket.
@@ -168,14 +212,14 @@ None currently. The full operating-system vision is intentionally being planned 
 | GOV-02 | Phase 5: Governed Writeback And Approval Control | Pending |
 | GOV-03 | Phase 5: Governed Writeback And Approval Control | Pending |
 | GOV-04 | Phase 5: Governed Writeback And Approval Control | Pending |
-| ASSET-01 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Pending |
-| ASSET-02 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Pending |
-| ASSET-03 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Pending |
-| ASSET-04 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Pending |
-| WFLO-01 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Pending |
-| WFLO-02 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Pending |
-| WFLO-03 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Pending |
-| WFLO-04 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Pending |
+| ASSET-01 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Complete |
+| ASSET-02 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Complete |
+| ASSET-03 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Complete |
+| ASSET-04 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Complete |
+| WFLO-01 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Complete |
+| WFLO-02 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Complete |
+| WFLO-03 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Complete |
+| WFLO-04 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Complete |
 | LEARN-01 | Phase 9: Continuous Learning And Conservative Optimization | Pending |
 | LEARN-02 | Phase 9: Continuous Learning And Conservative Optimization | Pending |
 | LEARN-03 | Phase 9: Continuous Learning And Conservative Optimization | Pending |
@@ -225,12 +269,44 @@ None currently. The full operating-system vision is intentionally being planned 
 | SKIL-06 | Phase 15: Agent Skill Portfolio Audit And External Library Integration | Pending |
 | SKIL-07 | Phase 15: Agent Skill Portfolio Audit And External Library Integration | Pending |
 | SKIL-08 | Phase 15: Agent Skill Portfolio Audit And External Library Integration | Pending |
+| HARN-01 | Phase 16: Harness Determinism, Evidence, And Independent Verification | Pending |
+| HARN-02 | Phase 16: Harness Determinism, Evidence, And Independent Verification | Pending |
+| HARN-03 | Phase 16: Harness Determinism, Evidence, And Independent Verification | Pending |
+| HARN-04 | Phase 16: Harness Determinism, Evidence, And Independent Verification | Pending |
+| HARN-05 | Phase 16: Harness Determinism, Evidence, And Independent Verification | Pending |
+| HARN-06 | Phase 16: Harness Determinism, Evidence, And Independent Verification | Pending |
+| HARN-07 | Phase 16: Harness Determinism, Evidence, And Independent Verification | Pending |
+| HARN-08 | Phase 16: Harness Determinism, Evidence, And Independent Verification | Pending |
+| DXPK-01 | Phase 17: Developer Experience Capability Pack | Pending |
+| DXPK-02 | Phase 17: Developer Experience Capability Pack | Pending |
+| DXPK-03 | Phase 17: Developer Experience Capability Pack | Pending |
+| DXPK-04 | Phase 17: Developer Experience Capability Pack | Pending |
+| DXPK-05 | Phase 17: Developer Experience Capability Pack | Pending |
+| DXPK-06 | Phase 17: Developer Experience Capability Pack | Pending |
+| DXPK-07 | Phase 17: Developer Experience Capability Pack | Pending |
+| DXPK-08 | Phase 17: Developer Experience Capability Pack | Pending |
+| META-01 | Phase 18: Meta-Learning Proposal Layer | Pending |
+| META-02 | Phase 18: Meta-Learning Proposal Layer | Pending |
+| META-03 | Phase 18: Meta-Learning Proposal Layer | Pending |
+| META-04 | Phase 18: Meta-Learning Proposal Layer | Pending |
+| META-05 | Phase 18: Meta-Learning Proposal Layer | Pending |
+| META-06 | Phase 18: Meta-Learning Proposal Layer | Pending |
+| META-07 | Phase 18: Meta-Learning Proposal Layer | Pending |
+| META-08 | Phase 18: Meta-Learning Proposal Layer | Pending |
+| CMDP-01 | Phase 19: Native Workflow Command Pack | Pending |
+| CMDP-02 | Phase 19: Native Workflow Command Pack | Pending |
+| CMDP-03 | Phase 19: Native Workflow Command Pack | Pending |
+| CMDP-04 | Phase 19: Native Workflow Command Pack | Pending |
+| CMDP-05 | Phase 19: Native Workflow Command Pack | Pending |
+| CMDP-06 | Phase 19: Native Workflow Command Pack | Pending |
+| CMDP-07 | Phase 19: Native Workflow Command Pack | Pending |
+| CMDP-08 | Phase 19: Native Workflow Command Pack | Pending |
 
 **Coverage:**
-- v1 requirements: 84 total (76 prior + 8 SKIL)
-- Mapped to phases: 84
+- v1 requirements: 116 total (108 prior + 8 CMDP)
+- Mapped to phases: 116
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-13*
-*Last updated: 2026-05-23 after adding Phase 15 SKIL requirements*
+*Last updated: 2026-06-01 after adding Phase 19 CMDP requirements*
