@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-05-24
+Last updated: 2026-06-01
 
 ## What AIOS Is
 
@@ -30,6 +30,16 @@ The repository currently contains four meaningful subsystems:
    The file-backed AIOS Context Compiler: tiered Markdown routing manifests, deterministic task compilation, generated briefings, and context receipts.
 
 Root operator documentation now lives in `README.md`, including local UI launch commands, key UI routes, store paths, workflow proposal backfill, and verification commands.
+
+## Implemented On 2026-06-01
+
+AIOS Phase 9 continuous learning now routes divergent strategy and workflow experiment winners through governed promotion proposals:
+
+- `services.workflow_promotion.propose_asset_promotion` emits approval-required improvement writebacks plus proposed lifecycle rows for prompt and skill promotion candidates
+- divergent strategy winners now target `candidate` through the Phase 8 proposal surface instead of silently writing lifecycle promotion state
+- workflow-skill experiment winners keep existing scoring and `promotion_ready` outcomes while additionally emitting reviewable skill-promotion proposals
+- defensive fallback paths preserve legacy behavior with explicit stderr warnings when the Phase 8 proposal surface is unavailable
+- regression coverage locks live proposal rows, fallback warnings, runtime persistence, and prompt/skill asset-kind routing
 
 ## Implemented On 2026-05-24
 
