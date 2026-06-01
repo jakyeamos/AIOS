@@ -41,7 +41,7 @@ from services.invocation_backends import (
     get_invocation_backend,
     list_invocation_backends,
 )
-from services.learning_taxonomy import LearningSignalKind
+from services.learning_taxonomy import LEARNING_SIGNAL_KINDS, LearningSignalKind
 from services.path_resolution import get_vault_root
 from services.pre_pr_readiness import (
     DEFAULT_PRE_CR_REPO,
@@ -2293,6 +2293,9 @@ def _no_learning_reason(conn: sqlite3.Connection, run: dict[str, Any]) -> str:
 def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     _ensure_workflow_learning_schema(conn)
     classification_counts = {kind: 0 for kind in WORKFLOW_LEARNING_EVIDENCE_TYPES}
+    signal_kind_counts = _workflow_learning_signal_kind_counts(conn)
+    recurring_patterns = _recent_recurring_patterns(conn)
+    conservative_proposals = _recent_conservative_proposals(conn)
     if not _table_exists(conn, "orchestration_runs"):
         return {
             "summary": {
@@ -2301,17 +2304,25 @@ def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
                 "no_learning_count": 0,
                 "proposal_count": 0,
                 "pending_approval_count": 0,
+                "recurring_pattern_count": len(recurring_patterns),
+                "conservative_proposal_count": len(conservative_proposals),
+                "signal_kind_counts": signal_kind_counts,
             },
             "contract": {
                 "evidence_types": WORKFLOW_LEARNING_EVIDENCE_TYPES,
                 "run_source": "orchestration_runs",
                 "proposal_source": "improvement_writebacks",
+                "signal_kinds": list(LEARNING_SIGNAL_KINDS),
+                "pattern_source": "services/learning_analysis.detect_recurring_patterns",
+                "conservatism_policy_source": "config/learning/conservatism-policy.json",
             },
             "classification_counts": classification_counts,
             "persisted_events": [],
             "inferred_evidence": [],
             "no_learning_runs": [],
             "proposals": [],
+            "recurring_patterns": recurring_patterns,
+            "conservative_proposals": conservative_proposals,
         }
 
     terminal_placeholders = ", ".join("?" for _ in TERMINAL_RUN_STATUSES)
@@ -2457,6 +2468,9 @@ def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
             "persisted_event_count": _count(conn, "workflow_learning_events"),
             "proposal_count": len(proposals),
             "pending_approval_count": pending_approval_count,
+            "recurring_pattern_count": len(recurring_patterns),
+            "conservative_proposal_count": len(conservative_proposals),
+            "signal_kind_counts": signal_kind_counts,
         },
         "contract": {
             "evidence_types": WORKFLOW_LEARNING_EVIDENCE_TYPES,
@@ -2464,13 +2478,173 @@ def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
             "event_source": "workflow_learning_events",
             "proposal_source": "improvement_writebacks",
             "promotion_gate": "status + requires_approval on improvement_writebacks",
+            "signal_kinds": list(LEARNING_SIGNAL_KINDS),
+            "pattern_source": "services/learning_analysis.detect_recurring_patterns",
+            "conservatism_policy_source": "config/learning/conservatism-policy.json",
         },
         "classification_counts": classification_counts,
         "persisted_events": persisted_event_rows[:50],
         "inferred_evidence": inferred_evidence[:50],
         "no_learning_runs": no_learning_runs[:20],
         "proposals": proposals[:50],
+        "recurring_patterns": recurring_patterns,
+        "conservative_proposals": conservative_proposals,
     }
+
+
+def _workflow_learning_signal_kind_counts(conn: sqlite3.Connection) -> dict[str, int]:
+    if not _table_exists(conn, "workflow_learning_events") or "signal_kind" not in _table_columns(
+        conn, "workflow_learning_events"
+    ):
+        return {}
+    return {
+        str(row["signal_kind"]): int(row["count"] or 0)
+        for row in conn.execute(
+            """
+            SELECT signal_kind, COUNT(*) AS count
+            FROM workflow_learning_events
+            WHERE signal_kind IS NOT NULL
+            GROUP BY signal_kind
+            """
+        ).fetchall()
+    }
+
+
+def _recent_recurring_patterns(conn: sqlite3.Connection) -> list[dict[str, Any]]:
+    try:
+        from services.learning_analysis import detect_recurring_patterns
+
+        return [
+            asdict(pattern)
+            for pattern in detect_recurring_patterns(conn, since="30d", project_id=None)[:50]
+        ]
+    except sqlite3.OperationalError:
+        return []
+
+
+def _recent_conservative_proposals(conn: sqlite3.Connection) -> list[dict[str, Any]]:
+    if not _table_exists(conn, "improvement_writebacks"):
+        return []
+    return [
+        dict(row)
+        for row in conn.execute(
+            """
+            SELECT id, layer_type, layer_key, impact_scope, status, requires_approval,
+                   proposed_change_json, created_at
+            FROM improvement_writebacks
+            WHERE proposed_change_json LIKE '%"source": "learning_analysis"%'
+            ORDER BY created_at DESC
+            LIMIT 50
+            """
+        ).fetchall()
+    ]
+
+
+def _learning_analyze_payload(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.learning_analysis import detect_recurring_patterns
+
+    signal_kinds = tuple(args.signal_kind) if args.signal_kind else None
+    patterns = detect_recurring_patterns(
+        conn,
+        since=str(args.since),
+        project_id=args.project,
+        signal_kinds=signal_kinds,
+    )
+    return {
+        "recurring_patterns": [asdict(pattern) for pattern in patterns],
+        "total_patterns": len(patterns),
+        "since": str(args.since),
+        "project_id": args.project,
+        "dry_run": bool(args.dry_run),
+        "policy_version": "config/learning/conservatism-policy.json",
+    }
+
+
+def _learning_propose_payload(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.conservative_optimizer import (
+        _classify_skip_reason,
+        load_conservatism_policy,
+        propose_from_all_patterns,
+    )
+    from services.learning_analysis import detect_recurring_patterns
+
+    patterns = detect_recurring_patterns(conn, since=str(args.since), project_id=args.project)
+    policy = load_conservatism_policy()
+    if bool(args.dry_run):
+        would_propose = []
+        would_skip = []
+        for pattern in patterns:
+            reason = _classify_skip_reason(conn, pattern, policy)
+            if reason is None:
+                would_propose.append(asdict(pattern))
+            else:
+                would_skip.append(
+                    {
+                        "pattern_id": pattern.pattern_id,
+                        "signal_kind": pattern.signal_kind,
+                        "reason": reason,
+                    }
+                )
+        return {
+            "proposed_count": len(would_propose),
+            "skipped_count": len(would_skip),
+            "writebacks": [],
+            "skipped": would_skip,
+            "would_propose": would_propose,
+            "would_skip": would_skip,
+            "dry_run": True,
+        }
+    result = propose_from_all_patterns(conn, patterns, policy, actor=str(args.actor))
+    conn.commit()
+    result["dry_run"] = False
+    return result
+
+
+def _learning_impact_payload(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.learning_impact import build_per_run_impact, build_rollup
+
+    if args.run_id:
+        impact = build_per_run_impact(conn, run_id=str(args.run_id))
+        if impact is None:
+            return {"run_id": args.run_id, "found": False}
+        payload = asdict(impact)
+        payload["found"] = True
+        return payload
+    if args.workflow:
+        return asdict(
+            build_rollup(
+                conn,
+                scope="workflow",
+                key=str(args.workflow),
+                since=str(args.since),
+                project_id=args.project,
+            )
+        )
+    if args.prompt:
+        return asdict(
+            build_rollup(
+                conn,
+                scope="prompt",
+                key=str(args.prompt),
+                since=str(args.since),
+                project_id=args.project,
+            )
+        )
+    if args.skill:
+        return asdict(
+            build_rollup(
+                conn,
+                scope="skill",
+                key=str(args.skill),
+                since=str(args.since),
+                project_id=args.project,
+            )
+        )
+    raise CLIError(
+        "missing-learning-impact-target",
+        "Specify --run-id, --workflow, --prompt, or --skill",
+        EXIT_USAGE,
+    )
 
 
 def _json_has_content(raw: Any) -> bool:
@@ -3005,6 +3179,25 @@ def _contracts_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
             "table_available": _table_exists(conn, "workflow_learning_events"),
         },
         {
+            "name": "LearningSignal",
+            "status": "implemented" if _learning_signal_contract_implemented(conn) else "partial",
+            "source": "services/learning_taxonomy.py",
+            "source_of_truth": [
+                "services/learning_taxonomy.py",
+                "services/learning_analysis.py",
+                "services/conservative_optimizer.py",
+                "services/learning_impact.py",
+                "config/learning/conservatism-policy.json",
+                "workflow_learning_events.signal_kind",
+            ],
+            "storage": "workflow_learning_events.signal_kind + improvement_writebacks.proposed_change_json",
+            "table_available": _table_exists(conn, "workflow_learning_events"),
+            "notes": (
+                "Two-axis classification with cross-run pattern detection, conservative "
+                "approval-required proposals, and impact projections."
+            ),
+        },
+        {
             "name": "EvaluationFinding",
             "status": _evaluation_finding_contract_status(conn),
             "source": "success_criteria_findings + consistency_findings",
@@ -3076,6 +3269,17 @@ def _contracts_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
         },
         "contracts": contracts,
     }
+
+
+def _learning_signal_contract_implemented(conn: sqlite3.Connection) -> bool:
+    return (
+        "signal_kind" in _table_columns(conn, "workflow_learning_events")
+        and (REPO_ROOT / "services" / "learning_taxonomy.py").exists()
+        and (REPO_ROOT / "services" / "learning_analysis.py").exists()
+        and (REPO_ROOT / "services" / "conservative_optimizer.py").exists()
+        and (REPO_ROOT / "services" / "learning_impact.py").exists()
+        and (REPO_ROOT / "config" / "learning" / "conservatism-policy.json").exists()
+    )
 
 
 def _resolve_since_argument(value: str | None) -> str:
@@ -3868,6 +4072,36 @@ def create_parser() -> argparse.ArgumentParser:
     subparsers.add_parser(
         "workflow-learning-audit", help="Workflow learning evidence and proposal audit"
     )
+    learning_analyze = subparsers.add_parser(
+        "learning-analyze", help="Analyze recurring learning patterns"
+    )
+    learning_analyze.add_argument("--since", default="30d")
+    learning_analyze.add_argument("--project", default=None)
+    learning_analyze.add_argument("--signal-kind", action="append", default=[])
+    learning_analyze.add_argument("--json", action="store_true")
+    learning_analyze.add_argument("--dry-run", action="store_true")
+
+    learning_propose = subparsers.add_parser(
+        "learning-propose", help="Create governed proposals from recurring learning patterns"
+    )
+    learning_propose.add_argument("--since", default="30d")
+    learning_propose.add_argument("--project", default=None)
+    learning_propose.add_argument("--actor", default="operator-cli")
+    learning_propose.add_argument("--json", action="store_true")
+    learning_propose.add_argument("--dry-run", action="store_true")
+
+    learning_impact = subparsers.add_parser(
+        "learning-impact", help="Project per-run or per-asset learning impact"
+    )
+    learning_impact_target = learning_impact.add_mutually_exclusive_group(required=True)
+    learning_impact_target.add_argument("--run-id", default=None)
+    learning_impact_target.add_argument("--workflow", default=None)
+    learning_impact_target.add_argument("--prompt", default=None)
+    learning_impact_target.add_argument("--skill", default=None)
+    learning_impact.add_argument("--since", default="30d")
+    learning_impact.add_argument("--project", default=None)
+    learning_impact.add_argument("--json", action="store_true")
+
     subparsers.add_parser("contracts-audit", help="Canonical AIOS interface contract audit")
     subparsers.add_parser(
         "governance-audit", help="Governed writeback, approval, and terminal-run evidence audit"
@@ -4181,6 +4415,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "lifecycle-audit",
             "knowledge-objects",
             "workflow-learning-audit",
+            "learning-analyze",
+            "learning-propose",
+            "learning-impact",
             "contracts-audit",
             "governance-audit",
             "criteria-finding",
@@ -4248,6 +4485,15 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "workflow-learning-audit":
             assert conn is not None
             data = _workflow_learning_payload(conn)
+        elif args.command == "learning-analyze":
+            assert conn is not None
+            data = _learning_analyze_payload(conn, args)
+        elif args.command == "learning-propose":
+            assert conn is not None
+            data = _learning_propose_payload(conn, args)
+        elif args.command == "learning-impact":
+            assert conn is not None
+            data = _learning_impact_payload(conn, args)
         elif args.command == "contracts-audit":
             assert conn is not None
             data = _contracts_audit_payload(conn)

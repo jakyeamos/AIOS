@@ -225,6 +225,171 @@ def _seed_db(path: Path) -> None:
     conn.close()
 
 
+def _ensure_learning_tables(conn: sqlite3.Connection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS success_criteria_findings (
+            id TEXT PRIMARY KEY,
+            run_id TEXT,
+            criterion_id TEXT NOT NULL,
+            workflow_key TEXT,
+            level TEXT NOT NULL,
+            resolution_status TEXT NOT NULL DEFAULT 'open',
+            created_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS prompts_used (
+            id TEXT PRIMARY KEY,
+            run_id TEXT,
+            template_id TEXT,
+            outcome_score REAL,
+            created_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS agentize_evaluations (
+            id TEXT PRIMARY KEY,
+            run_id TEXT,
+            selected_skills_json TEXT NOT NULL DEFAULT '[]',
+            selected_standards_json TEXT NOT NULL DEFAULT '[]',
+            outcome_quality INTEGER,
+            tests_passed INTEGER,
+            follow_up_required INTEGER NOT NULL DEFAULT 0,
+            major_repair_required INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS improvement_writeback_events (
+            id TEXT PRIMARY KEY,
+            writeback_id TEXT NOT NULL,
+            run_id TEXT,
+            event_type TEXT NOT NULL,
+            from_status TEXT,
+            to_status TEXT,
+            actor TEXT NOT NULL DEFAULT 'system',
+            note TEXT,
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT NOT NULL
+        );
+        """
+    )
+
+
+def _seed_workflow_learning_minimal(conn: sqlite3.Connection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE orchestration_runs (
+            id TEXT PRIMARY KEY,
+            project_id TEXT,
+            status TEXT,
+            workflow_key TEXT,
+            route_result_json TEXT DEFAULT '{}',
+            result_summary TEXT,
+            created_at TEXT,
+            updated_at TEXT
+        );
+        CREATE TABLE improvement_writebacks (
+            id TEXT PRIMARY KEY,
+            run_id TEXT,
+            project_id TEXT,
+            layer_type TEXT,
+            layer_key TEXT,
+            title TEXT,
+            summary TEXT,
+            evidence_json TEXT DEFAULT '[]',
+            proposed_change_json TEXT DEFAULT '{}',
+            impact_scope TEXT DEFAULT 'scoped',
+            status TEXT,
+            requires_approval INTEGER DEFAULT 0,
+            approval_reason TEXT,
+            token_regressive INTEGER DEFAULT 0,
+            created_at TEXT,
+            updated_at TEXT
+        );
+        """
+    )
+    _ensure_learning_tables(conn)
+
+
+def _seed_learning_pattern_evidence(
+    conn: sqlite3.Connection,
+    *,
+    project_id: str,
+    criterion_id: str,
+    prefix: str,
+) -> None:
+    _ensure_learning_tables(conn)
+    for index in range(5):
+        run_id = f"{prefix}-run-{index}"
+        conn.execute(
+            """
+            INSERT INTO orchestration_runs
+              (id, project_id, status, workflow_key, route_result_json, created_at, updated_at)
+            VALUES (?, ?, 'completed', 'implementation-delivery', '{}', ?, ?)
+            """,
+            (run_id, project_id, "2026-05-21T00:00:00Z", "2026-05-21T00:00:00Z"),
+        )
+        conn.execute(
+            """
+            INSERT INTO success_criteria_findings
+              (id, run_id, criterion_id, workflow_key, level, resolution_status, created_at)
+            VALUES (?, ?, ?, 'implementation-delivery', 'blocker', 'open', ?)
+            """,
+            (f"{prefix}-finding-{index}", run_id, criterion_id, "2026-05-21T00:00:00Z"),
+        )
+
+
+def _seed_learning_impact_evidence(conn: sqlite3.Connection) -> None:
+    conn.row_factory = sqlite3.Row
+    _ensure_learning_tables(conn)
+    aios_cli._ensure_workflow_learning_schema(conn)
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs
+          (id, project_id, status, workflow_key, route_result_json, created_at, updated_at)
+        VALUES (
+          'impact-run', 'p1', 'completed', 'implementation-delivery',
+          '{"workflow_key":"implementation-delivery"}',
+          '2026-05-21T00:00:00Z', '2026-05-21T00:00:00Z'
+        )
+        """
+    )
+    aios_cli._record_workflow_learning_event(
+        conn,
+        run_id="impact-run",
+        evidence_type="workflow_evidence",
+        proposal_target="implementation-delivery",
+        confidence=0.8,
+        approval_state="not_required",
+        rationale="seed",
+        source={},
+        signal_kind="weak_workflow",
+    )
+
+
+def _seed_workflow_rollup_evidence(conn: sqlite3.Connection) -> None:
+    _ensure_learning_tables(conn)
+    for index in range(10):
+        run_id = f"rollup-run-{index}"
+        conn.execute(
+            """
+            INSERT INTO orchestration_runs
+              (id, project_id, status, workflow_key, created_at, updated_at)
+            VALUES (?, 'p1', 'completed', 'implementation-delivery', ?, ?)
+            """,
+            (run_id, "2026-05-21T00:00:00Z", "2026-05-21T00:00:00Z"),
+        )
+        conn.execute(
+            """
+            INSERT INTO workflow_execution_reports
+              (id, run_id, workflow_key, status, created_at)
+            VALUES (?, ?, 'implementation-delivery', ?, ?)
+            """,
+            (
+                f"rollup-report-{index}",
+                run_id,
+                "failed" if index < 2 else "completed",
+                "2026-05-21T00:00:00Z",
+            ),
+        )
+
+
 def _memory_conn() -> sqlite3.Connection:
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
@@ -1210,6 +1375,317 @@ def test_workflow_learning_audit_classifies_run_evidence(tmp_path: Path, capsys)
     assert data["classification_counts"]["workflow_evidence"] == 2
     assert data["classification_counts"]["prompt_template_evidence"] == 1
     assert data["classification_counts"]["no_learning_signal"] == 1
+
+
+def test_learning_analyze_cli_dry_run(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    conn = sqlite3.connect(db_path)
+    _seed_learning_pattern_evidence(conn, project_id="p1", criterion_id="C-p1", prefix="p1")
+    conn.commit()
+    conn.close()
+
+    exit_code = run_cli(
+        [
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "learning-analyze",
+            "--json",
+            "--dry-run",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    assert data["dry_run"] is True
+    assert data["total_patterns"] >= 1
+    assert data["recurring_patterns"]
+
+
+def test_learning_analyze_cli_per_project(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    conn = sqlite3.connect(db_path)
+    _seed_learning_pattern_evidence(conn, project_id="p1", criterion_id="C-p1", prefix="p1")
+    _seed_learning_pattern_evidence(conn, project_id="p2", criterion_id="C-p2", prefix="p2")
+    conn.commit()
+    conn.close()
+
+    exit_code = run_cli(
+        [
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "learning-analyze",
+            "--json",
+            "--project",
+            "p1",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    scope_keys = {pattern["scope_key"] for pattern in data["recurring_patterns"]}
+    assert "C-p1" in scope_keys
+    assert "C-p2" not in scope_keys
+
+
+def test_learning_propose_cli_writes_writebacks(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    conn = sqlite3.connect(db_path)
+    _seed_learning_pattern_evidence(conn, project_id="p1", criterion_id="C-p1", prefix="p1")
+    conn.commit()
+    conn.close()
+
+    exit_code = run_cli(
+        ["--db", str(db_path), "--logs-dir", str(logs_dir), "learning-propose", "--json"]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    assert data["proposed_count"] >= 1
+    conn = sqlite3.connect(db_path)
+    count = conn.execute(
+        """
+        SELECT COUNT(*)
+        FROM improvement_writebacks
+        WHERE proposed_change_json LIKE '%"source": "learning_analysis"%'
+        """
+    ).fetchone()[0]
+    conn.close()
+    assert count >= 1
+
+
+def test_learning_propose_cli_dry_run(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    conn = sqlite3.connect(db_path)
+    _seed_learning_pattern_evidence(conn, project_id="p1", criterion_id="C-p1", prefix="p1")
+    before = conn.execute("SELECT COUNT(*) FROM improvement_writebacks").fetchone()[0]
+    conn.commit()
+    conn.close()
+
+    exit_code = run_cli(
+        [
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "learning-propose",
+            "--json",
+            "--dry-run",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    assert data["dry_run"] is True
+    conn = sqlite3.connect(db_path)
+    after = conn.execute("SELECT COUNT(*) FROM improvement_writebacks").fetchone()[0]
+    conn.close()
+    assert after == before
+
+
+def test_learning_impact_cli_per_run(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    conn = sqlite3.connect(db_path)
+    _seed_learning_impact_evidence(conn)
+    conn.commit()
+    conn.close()
+
+    exit_code = run_cli(
+        [
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "learning-impact",
+            "--run-id",
+            "impact-run",
+            "--json",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    assert data["run_id"] == "impact-run"
+    assert data["workflow_key"] == "implementation-delivery"
+    assert data["signals_emitted"] == ["weak_workflow"]
+
+
+def test_learning_impact_cli_workflow_rollup(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    conn = sqlite3.connect(db_path)
+    _seed_workflow_rollup_evidence(conn)
+    conn.commit()
+    conn.close()
+
+    exit_code = run_cli(
+        [
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "learning-impact",
+            "--workflow",
+            "implementation-delivery",
+            "--since",
+            "2026-06-01T00:00:00Z",
+            "--json",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    assert data["scope"] == "workflow"
+    assert data["key"] == "implementation-delivery"
+
+
+def test_learning_impact_cli_prompt_rollup(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    conn = sqlite3.connect(db_path)
+    _ensure_learning_tables(conn)
+    conn.execute(
+        """
+        INSERT INTO prompts_used (id, run_id, template_id, outcome_score, created_at)
+        VALUES ('prompt-rollup', 'run-prompt', 'research', 0.9, '2026-05-21T00:00:00Z')
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    exit_code = run_cli(
+        [
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "learning-impact",
+            "--prompt",
+            "research",
+            "--since",
+            "2026-06-01T00:00:00Z",
+            "--json",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    assert data["scope"] == "prompt"
+
+
+def test_workflow_learning_payload_includes_signal_kind_counts() -> None:
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    _seed_workflow_learning_minimal(conn)
+    aios_cli._ensure_workflow_learning_schema(conn)
+    for index, signal_kind in enumerate(
+        ["weak_prompt", "weak_prompt", "weak_workflow", "ignored_rule", "ignored_rule"]
+    ):
+        aios_cli._record_workflow_learning_event(
+            conn,
+            run_id=f"r{index}",
+            evidence_type="workflow_evidence",
+            proposal_target="implementation-delivery",
+            confidence=0.8,
+            approval_state="not_required",
+            rationale="seed",
+            source={},
+            signal_kind=signal_kind,  # type: ignore[arg-type]
+        )
+
+    payload = aios_cli._workflow_learning_payload(conn)
+
+    assert payload["summary"]["signal_kind_counts"] == {
+        "ignored_rule": 2,
+        "weak_prompt": 2,
+        "weak_workflow": 1,
+    }
+
+
+def test_workflow_learning_payload_includes_recurring_patterns_and_proposals() -> None:
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    _seed_workflow_learning_minimal(conn)
+    _seed_learning_pattern_evidence(conn, project_id="p1", criterion_id="C-p1", prefix="p1")
+    conn.execute(
+        """
+        INSERT INTO improvement_writebacks (
+            id, layer_type, layer_key, title, summary, evidence_json, proposed_change_json,
+            impact_scope, status, requires_approval, created_at, updated_at
+        )
+        VALUES (
+            'wb-learning', 'workflow', 'implementation-delivery', 'Learning proposal',
+            'Review learning proposal', '[]', '{"metadata":{"source": "learning_analysis"}}',
+            'workflow-default', 'pending_approval', 1, '2026-05-21T00:00:00Z', '2026-05-21T00:00:00Z'
+        )
+        """
+    )
+
+    payload = aios_cli._workflow_learning_payload(conn)
+
+    assert payload["recurring_patterns"]
+    assert payload["conservative_proposals"]
+    assert "persisted_events" in payload
+    assert "proposals" in payload
+    assert "no_learning_runs" in payload
+
+
+def test_workflow_learning_payload_contract_block_extended() -> None:
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    _seed_workflow_learning_minimal(conn)
+
+    payload = aios_cli._workflow_learning_payload(conn)
+
+    assert "signal_kinds" in payload["contract"]
+    assert (
+        payload["contract"]["pattern_source"]
+        == "services/learning_analysis.detect_recurring_patterns"
+    )
+    assert (
+        payload["contract"]["conservatism_policy_source"]
+        == "config/learning/conservatism-policy.json"
+    )
+
+
+def test_contracts_audit_includes_learning_signal(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    exit_code = run_cli(
+        ["--json", "--db", str(db_path), "--logs-dir", str(logs_dir), "contracts-audit"]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    row = next(contract for contract in data["contracts"] if contract["name"] == "LearningSignal")
+    assert row["status"] == "implemented"
+    assert "services/learning_taxonomy.py" in row["source_of_truth"]
+    assert "config/learning/conservatism-policy.json" in row["source_of_truth"]
 
 
 def test_governance_audit_reports_pending_and_missing_terminal_evidence(
