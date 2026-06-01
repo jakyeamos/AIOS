@@ -42,6 +42,15 @@ AIOS Phase 9 continuous learning now routes divergent strategy and workflow expe
 - regression coverage locks live proposal rows, fallback warnings, runtime persistence, and prompt/skill asset-kind routing
 - Phase 9 is verified complete in `.planning/phases/09-continuous-learning-and-conservative-optimization/09-VERIFICATION.md` with LEARN-01 through LEARN-04 satisfied and 185 targeted tests passing
 
+## Implemented On 2026-06-01
+
+AIOS Phase 10 now has the first operator-surface backend for cross-entity search:
+
+- `services.operator_search.search_entities` returns safe `OperatorSearchHit` projections across 17 entity kinds without new SQLite tables or FTS indexes
+- every search hit carries a non-null `drill_down_path` for later UI and tRPC operator surfaces
+- `aios operator-search` exposes the backend from the CLI with kind, project, and limit filters
+- `contracts-audit` now includes an `OperatorSurface` row marked partial until the UI mirror, tRPC router, and rendered search page ship
+
 ## Implemented On 2026-05-24
 
 AIOS now records session effectiveness as a durable receipt and exposes live activity indicators to Claude Code:
