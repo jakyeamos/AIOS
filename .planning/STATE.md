@@ -8,8 +8,8 @@ progress:
   total_phases: 19
   completed_phases: 7
   total_plans: 105
-  completed_plans: 22
-  percent: 21
+  completed_plans: 23
+  percent: 22
 ---
 
 # AIOS Planning State
@@ -26,13 +26,13 @@ progress:
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
 - Latest completed phase: Phase 7, Delta Scoring And Health Backfill, shipped ten-domain standards health scoring, delta explanations, provenance-aware contradiction checks, health-derived workflow recommendations, and standards manual overrides.
-- Latest completed plan: Phase 8 Plan 04 shipped durable workflow stage rollups, workflow effectiveness comparison, governed workflow promotion proposals, asset lifecycle CLI operations, and advisory promotion candidate writebacks.
+- Latest completed plan: Phase 8 Plan 05 shipped four candidate workflow contracts, draft executor stubs, strict prompt lifecycle validation, and registry-safe workflow recommendation keys.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 2, Truth, Governance, And Evidence
 - Active phase: Phase 8, Prompt, Skill, Workflow Contracts, And Asset Lifecycle
-- Active plan: Phase 8 Plan 05, planned workflow contracts and prompt lifecycle validation
+- Active plan: Phase 8 verification
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7
 - Next dependency chain: Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
@@ -77,6 +77,7 @@ progress:
 | 2026-05-24 | Complete Phase 7 Delta Scoring And Health Backfill | Phase 7 shipped ten-domain standards health coverage, read-time delta explanations, provenance and contradiction classification, health-derived workflow recommendations, UI/CLI drill-down surfaces, governance-audit recommendations, and durable standards manual overrides. |
 | 2026-06-01 | Finish workflow promotion runtime evidence path | Planned in `.planning/quick/260601-workflow-promotion-runtime-evidence`; managed governed workflow runs now persist stage findings and workflow report evidence through the same runtime path consumed by `workflow-compare` and workflow promotion candidates. |
 | 2026-06-01 | Complete Phase 8 Plan 04 workflow promotion evidence | `.planning/phases/08-prompt-skill-workflow-contracts-and-asset-lifecycle/08-04-SUMMARY.md` records durable stage evaluation rollups, workflow comparison metrics, governed promotion proposals, asset lifecycle CLI commands, and advisory closeout promotion candidates. |
+| 2026-06-01 | Complete Phase 8 Plan 05 planned workflow contracts | `.planning/phases/08-prompt-skill-workflow-contracts-and-asset-lifecycle/08-05-SUMMARY.md` records candidate contracts for audit-only, audit-and-implement, standards-backfill, and security-review plus draft executor stubs and strict prompt lifecycle validation. |
 
 ---
-*Last updated: 2026-06-01 after completing Phase 8 Plan 04*
+*Last updated: 2026-06-01 after completing Phase 8 Plan 05*
