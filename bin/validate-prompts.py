@@ -16,6 +16,14 @@ VALID_CLASSIFICATIONS = {
     "explain",
     "other",
 }
+VALID_LIFECYCLE_STATES = frozenset({"draft", "candidate", "approved", "active", "deprecated"})
+VALID_LIFECYCLE_STATE_ORDER = (
+    "draft",
+    "candidate",
+    "approved",
+    "active",
+    "deprecated",
+)
 REQUIRED_FIELDS = (
     "id",
     "name",
@@ -30,6 +38,9 @@ REQUIRED_FIELDS = (
     "eval_criteria",
     "owner",
     "last_updated",
+    "lifecycle_state",
+    "applicability",
+    "last_evaluated_at",
     "changelog",
 )
 
@@ -256,22 +267,22 @@ def validate_templates(prompts_root: Path) -> tuple[list[dict[str, Any]], list[s
         path = template["path"]
         fm = template["frontmatter"]
         template_errors: list[str] = []
+        template_id = str(fm.get("id", "")).strip()
 
         for field in REQUIRED_FIELDS:
             if field not in fm or not _is_non_empty(fm[field]):
                 template_errors.append(f"missing required field '{field}'")
 
-            template_id = str(fm.get("id", "")).strip()
         if template_id:
             first_path = ids_seen.get(template_id)
             if first_path and first_path != path:
-                template_errors.append(f"duplicate id '{template_id}' also used by {first_path.name}")
+                template_errors.append(
+                    f"duplicate id '{template_id}' also used by {first_path.name}"
+                )
             ids_seen[template_id] = path
 
             if path.stem != template_id:
-                template_errors.append(
-                    f"id '{template_id}' does not match filename '{path.stem}'"
-                )
+                template_errors.append(f"id '{template_id}' does not match filename '{path.stem}'")
 
             eval_case_path = prompts_root / "evals" / template_id / "cases.md"
             if not eval_case_path.exists():
@@ -280,6 +291,14 @@ def validate_templates(prompts_root: Path) -> tuple[list[dict[str, Any]], list[s
         classification = str(fm.get("classification", "")).strip()
         if classification and classification not in VALID_CLASSIFICATIONS:
             template_errors.append(f"invalid classification '{classification}'")
+
+        lifecycle_state = str(fm.get("lifecycle_state", "")).strip()
+        if lifecycle_state and lifecycle_state not in VALID_LIFECYCLE_STATES:
+            allowed = "|".join(VALID_LIFECYCLE_STATE_ORDER)
+            template_errors.append(
+                f"lifecycle_state {lifecycle_state!r} not in {list(VALID_LIFECYCLE_STATE_ORDER)}; "
+                f"valid values are {allowed}"
+            )
 
         required_inputs = fm.get("required_inputs", [])
         if not isinstance(required_inputs, list) or len(required_inputs) == 0:
@@ -297,16 +316,30 @@ def validate_templates(prompts_root: Path) -> tuple[list[dict[str, Any]], list[s
             errors.extend([f"{path}: {error}" for error in template_errors])
             continue
 
+        applicability = fm.get("applicability", [])
+        prompt_family = str(fm.get("prompt_family") or _default_prompt_family(template_id)).strip()
         row = {
             "id": template_id,
             "name": fm["name"],
             "version": fm["version"],
             "classification": classification,
+            "prompt_family": prompt_family,
+            "route_status": str(
+                fm.get("route_status") or _route_status_for_lifecycle(lifecycle_state)
+            ),
+            "applicable_workflow_families": applicability,
             "tags": fm.get("tags", []),
             "purpose": fm["purpose"],
             "required_inputs": required_inputs,
             "optional_inputs": fm.get("optional_inputs", []),
             "last_updated": fm["last_updated"],
+            "lifecycle_state": lifecycle_state,
+            "applicability": applicability,
+            "last_evaluated_at": fm["last_evaluated_at"],
+            "usefulness_evidence": fm.get(
+                "usefulness_evidence",
+                {"sample_size": 0, "success_rate": 0, "last_used_at": None},
+            ),
             "file": f"prompts/{path.name}",
         }
         registry_rows.append(row)
@@ -315,18 +348,38 @@ def validate_templates(prompts_root: Path) -> tuple[list[dict[str, Any]], list[s
     return registry_rows, errors, warnings
 
 
+def _default_prompt_family(template_id: str) -> str:
+    return {
+        "coding_debug": "recovery_handoff",
+        "content_writing": "content_generation",
+        "reasoning": "reasoning_handoff",
+        "research": "research_handoff",
+        "summarization": "implementation_handoff",
+    }.get(template_id, "")
+
+
+def _route_status_for_lifecycle(lifecycle_state: str) -> str:
+    if lifecycle_state in {"approved", "active"}:
+        return "approved"
+    return lifecycle_state
+
+
 def write_registry(prompts_root: Path, rows: list[dict[str, Any]]) -> Path:
     registry_path = prompts_root / "registry.json"
     payload = {
         "generated_at": datetime.now(UTC).isoformat(),
         "templates": rows,
     }
-    registry_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    registry_path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
     return registry_path
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Validate AIOS prompt templates and generate registry.json")
+    parser = argparse.ArgumentParser(
+        description="Validate AIOS prompt templates and generate registry.json"
+    )
     parser.add_argument(
         "--prompts-root",
         default=str((Path.home() / "AIOS" / "prompts").resolve()),

@@ -16,6 +16,10 @@ eval_criteria:
   - Root cause is explicit.
 owner: test-suite
 last_updated: "2026-04-23"
+lifecycle_state: active
+applicability:
+  - failure_recovery
+last_evaluated_at: "2026-05-21T00:00:00Z"
 changelog:
   - version: "1.0"
     date: "2026-04-23"

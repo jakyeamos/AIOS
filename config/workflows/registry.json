@@ -941,6 +941,1130 @@
         "compile_this_task"
       ],
       "purpose_long": "Compile messy human requests into execution-ready agent task packets with context, standards, verification, and writeback requirements."
+    },
+    {
+      "key": "audit-only",
+      "name": "Audit Only",
+      "workflow_family": "audit_only",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "audit_only",
+        "review",
+        "audit",
+        "architecture_review",
+        "launch_readiness_audit"
+      ],
+      "purpose": "Review code, plans, or project state without applying implementation changes.",
+      "purpose_long": "Review code, plans, or project state with severity-ordered findings, evidence trails, remediation suggestions, and governed follow-up writebacks without applying implementation changes.",
+      "trigger_hints": [
+        "review this",
+        "what do you think",
+        "audit",
+        "architecture review",
+        "launch readiness"
+      ],
+      "output_contract": [
+        "severity ordered findings",
+        "evidence trail",
+        "remediation suggestions",
+        "follow-up candidates"
+      ],
+      "required_validations": [
+        "scope_check"
+      ],
+      "stages": [
+        {
+          "key": "parse_request",
+          "kind": "parse_request",
+          "required_skills": [],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "objective",
+              "source": "packet",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "parse_request_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            }
+          ],
+          "prompt_bindings": [
+            {
+              "template_id": "reasoning",
+              "role": "primary"
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "summary",
+              "path_template": ".planning/runs/{run_id}/audit-request.md",
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "enrich_context",
+          "kind": "enrich_context",
+          "required_skills": [
+            "smart_search"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "prior_stage_output",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "enrich_context_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            }
+          ],
+          "prompt_bindings": [
+            {
+              "template_id": "research",
+              "role": "primary"
+            },
+            {
+              "template_id": "reasoning",
+              "role": "fallback"
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "evidence",
+              "path_template": "logs/audit-only/{run_id}-context.json",
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "audit_findings",
+          "kind": "validate",
+          "required_skills": [
+            "audit_only_executor",
+            "scope_check"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "prior_stage_output",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "audit_findings_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            }
+          ],
+          "validations": [
+            {
+              "criterion_id": "code-simplicity",
+              "blocking": true
+            },
+            {
+              "criterion_id": "execution-first-verification",
+              "blocking": false
+            }
+          ],
+          "standards_bindings": [
+            "code_quality.lint_ratchet",
+            "testing.trust_signal"
+          ],
+          "approval_gates": [
+            {
+              "impact_scope": "workflow-default",
+              "condition": "on_blocker",
+              "rationale_template": "Audit-only found blocker findings before converting them into truth or follow-up work."
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "report",
+              "path_template": "logs/audit-only/{run_id}.md",
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "finalize",
+          "kind": "finalize",
+          "required_skills": [],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "prior_stage_output",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "finalize_result",
+              "target": "writeback",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            },
+            {
+              "signal_kind": "writeback_usefulness",
+              "measure": "per_run"
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "summary",
+              "path_template": ".planning/runs/{run_id}/audit-closeout.md",
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "audit-and-implement",
+      "name": "Audit and Implement",
+      "workflow_family": "audit_and_implement",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "audit_and_implement",
+        "production_ready",
+        "fix_and_improve",
+        "standards_action"
+      ],
+      "purpose": "Audit a target, implement scoped fixes, and close with verification evidence.",
+      "purpose_long": "Audit a target, produce a bounded implementation plan, apply scoped changes, verify behavior, and emit governed truth/writeback follow-up evidence.",
+      "trigger_hints": [
+        "make this production-ready",
+        "fix and improve",
+        "audit and implement",
+        "implement remediation"
+      ],
+      "output_contract": [
+        "implementation plan",
+        "changed files",
+        "verification evidence",
+        "closeout summary"
+      ],
+      "required_validations": [
+        "scope_check"
+      ],
+      "stages": [
+        {
+          "key": "parse_request",
+          "kind": "parse_request",
+          "required_skills": [],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "objective",
+              "source": "packet",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "parse_request_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            }
+          ],
+          "prompt_bindings": [
+            {
+              "template_id": "reasoning",
+              "role": "primary"
+            }
+          ]
+        },
+        {
+          "key": "enrich_context",
+          "kind": "enrich_context",
+          "required_skills": [
+            "smart_search"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "prior_stage_output",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "enrich_context_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            }
+          ],
+          "prompt_bindings": [
+            {
+              "template_id": "research",
+              "role": "primary"
+            },
+            {
+              "template_id": "reasoning",
+              "role": "fallback"
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "evidence",
+              "path_template": "logs/audit-and-implement/{run_id}-context.json",
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "plan",
+          "kind": "generate",
+          "required_skills": [
+            "audit_and_implement_executor"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "prior_stage_output",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "plan_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            }
+          ],
+          "prompt_bindings": [
+            {
+              "template_id": "coding_debug",
+              "role": "primary"
+            },
+            {
+              "template_id": "research",
+              "role": "fallback"
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "report",
+              "path_template": ".planning/runs/{run_id}/implementation-plan.md",
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "implementation",
+          "kind": "generate",
+          "required_skills": [
+            "audit_and_implement_executor"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "prior_stage_output",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "implementation_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "rework_rate",
+              "measure": "per_run"
+            },
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            }
+          ],
+          "approval_gates": [
+            {
+              "impact_scope": "workflow-default",
+              "condition": "on_failure",
+              "rationale_template": "Implementation stage failed or touched workflow-default behavior and needs operator review."
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "patch",
+              "path_template": "staging/patches/{run_id}.patch",
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "validate",
+          "kind": "validate",
+          "required_skills": [
+            "scope_check"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "prior_stage_output",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "validate_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            }
+          ],
+          "validations": [
+            {
+              "criterion_id": "execution-first-verification",
+              "blocking": true
+            },
+            {
+              "criterion_id": "testing-trust",
+              "blocking": false
+            }
+          ],
+          "standards_bindings": [
+            "testing.trust_signal",
+            "code_quality.lint_ratchet"
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "evidence",
+              "path_template": "data/success-criteria/evaluations/{run_id}.json",
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "finalize",
+          "kind": "finalize",
+          "required_skills": [],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "prior_stage_output",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "finalize_result",
+              "target": "writeback",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            },
+            {
+              "signal_kind": "writeback_usefulness",
+              "measure": "per_run"
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "summary",
+              "path_template": ".planning/runs/{run_id}/implementation-closeout.md",
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "standards-backfill",
+      "name": "Standards Backfill",
+      "workflow_family": "standards_backfill",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "standards_backfill",
+        "health_gap",
+        "standards_gap",
+        "quality_backfill"
+      ],
+      "purpose": "Turn standards health gaps into prioritized remediation plans and governed follow-up work.",
+      "purpose_long": "Use standards health, project truth, and evidence gaps to produce prioritized remediation plans, follow-up items, and learning signals without silently changing standards.",
+      "trigger_hints": [
+        "bring this project to standard",
+        "standards backfill",
+        "health gaps",
+        "close standards gaps"
+      ],
+      "output_contract": [
+        "standards gap evidence",
+        "remediation priorities",
+        "follow-up items",
+        "delta summary"
+      ],
+      "required_validations": [
+        "scope_check"
+      ],
+      "stages": [
+        {
+          "key": "parse_request",
+          "kind": "parse_request",
+          "required_skills": [],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "objective",
+              "source": "packet",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "parse_request_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            }
+          ],
+          "prompt_bindings": [
+            {
+              "template_id": "reasoning",
+              "role": "primary"
+            }
+          ]
+        },
+        {
+          "key": "enrich_context",
+          "kind": "enrich_context",
+          "required_skills": [
+            "smart_search"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "prior_stage_output",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "enrich_context_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            }
+          ],
+          "prompt_bindings": [
+            {
+              "template_id": "research",
+              "role": "primary"
+            },
+            {
+              "template_id": "reasoning",
+              "role": "fallback"
+            }
+          ],
+          "standards_bindings": [
+            "standards_compliance.profile_attached",
+            "code_quality.lint_ratchet"
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "evidence",
+              "path_template": "logs/standards-backfill/{run_id}-health.json",
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "gap_analysis",
+          "kind": "validate",
+          "required_skills": [
+            "standards_backfill_executor",
+            "scope_check"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "prior_stage_output",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "gap_analysis_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            },
+            {
+              "signal_kind": "writeback_usefulness",
+              "measure": "per_run"
+            }
+          ],
+          "validations": [
+            {
+              "criterion_id": "truth-file-consistency",
+              "blocking": true
+            },
+            {
+              "criterion_id": "observability",
+              "blocking": false
+            }
+          ],
+          "standards_bindings": [
+            "standards_compliance.profile_attached",
+            "observability.run_signal_integrity"
+          ],
+          "approval_gates": [
+            {
+              "impact_scope": "workflow-default",
+              "condition": "on_blocker",
+              "rationale_template": "Standards backfill found blocker gaps before remediation promotion."
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "report",
+              "path_template": "logs/standards-backfill/{run_id}.md",
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "remediation_plan",
+          "kind": "generate",
+          "required_skills": [
+            "standards_backfill_executor"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "prior_stage_output",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "remediation_plan_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "report",
+              "path_template": ".planning/runs/{run_id}/standards-remediation.md",
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "finalize",
+          "kind": "finalize",
+          "required_skills": [],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "prior_stage_output",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "finalize_result",
+              "target": "writeback",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            },
+            {
+              "signal_kind": "writeback_usefulness",
+              "measure": "per_run"
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "summary",
+              "path_template": ".planning/runs/{run_id}/standards-backfill-closeout.md",
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "security-review",
+      "name": "Security Review",
+      "workflow_family": "security_review",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "security_review",
+        "auth",
+        "secrets",
+        "oidc",
+        "risk_acceptance"
+      ],
+      "purpose": "Classify security risk, evidence, and remediation paths before sensitive changes are accepted.",
+      "purpose_long": "Review sensitive auth, secrets, OIDC, and risk-acceptance surfaces with explicit evidence, policy bindings, and governed risk follow-up.",
+      "trigger_hints": [
+        "security review",
+        "auth",
+        "secrets",
+        "OIDC",
+        "risk acceptance",
+        "sensitive architecture"
+      ],
+      "output_contract": [
+        "risk summary",
+        "security findings",
+        "acceptance recommendations",
+        "remediation path"
+      ],
+      "required_validations": [
+        "scope_check"
+      ],
+      "stages": [
+        {
+          "key": "parse_request",
+          "kind": "parse_request",
+          "required_skills": [],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "objective",
+              "source": "packet",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "parse_request_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            }
+          ],
+          "prompt_bindings": [
+            {
+              "template_id": "reasoning",
+              "role": "primary"
+            }
+          ]
+        },
+        {
+          "key": "enrich_context",
+          "kind": "enrich_context",
+          "required_skills": [
+            "smart_search"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "prior_stage_output",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "enrich_context_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            }
+          ],
+          "prompt_bindings": [
+            {
+              "template_id": "research",
+              "role": "primary"
+            },
+            {
+              "template_id": "reasoning",
+              "role": "fallback"
+            }
+          ],
+          "standards_bindings": [
+            "security.review_traceability"
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "evidence",
+              "path_template": "logs/security-review/{run_id}-context.json",
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "threat_review",
+          "kind": "validate",
+          "required_skills": [
+            "security_review_executor",
+            "scope_check"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "prior_stage_output",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "threat_review_result",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "blocker_count",
+              "measure": "per_run"
+            },
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            }
+          ],
+          "validations": [
+            {
+              "criterion_id": "security-review",
+              "blocking": true
+            },
+            {
+              "criterion_id": "repo-boundary-discipline",
+              "blocking": false
+            }
+          ],
+          "standards_bindings": [
+            "security.review_traceability",
+            "workflow_agent_control.explicit_handshake"
+          ],
+          "approval_gates": [
+            {
+              "impact_scope": "workflow-default",
+              "condition": "on_blocker",
+              "rationale_template": "Security review found blocker risk or accepted-risk decision requiring operator review."
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "report",
+              "path_template": "logs/security-review/{run_id}.md",
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "finalize",
+          "kind": "finalize",
+          "required_skills": [],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "required_inputs": [
+            {
+              "key": "prior_stage_output",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "finalize_result",
+              "target": "writeback",
+              "required": true
+            }
+          ],
+          "learning_signals": [
+            {
+              "signal_kind": "validation_pass",
+              "measure": "per_run"
+            },
+            {
+              "signal_kind": "writeback_usefulness",
+              "measure": "per_run"
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "summary",
+              "path_template": ".planning/runs/{run_id}/security-review-closeout.md",
+              "required": true
+            }
+          ]
+        }
+      ]
     }
   ]
 }

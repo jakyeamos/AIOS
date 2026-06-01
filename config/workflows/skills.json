@@ -680,6 +680,127 @@
         "enrich_context"
       ],
       "purpose_long": "基于 opencli 命令的智能搜索路由器。当用户想要搜索、查询、查找或研究信息时，尤其是涉及指定网站、社交媒体、技术资料、新闻、购物、旅游、求职、金融或中文内容时，务必使用此 skill"
+    },
+    {
+      "key": "audit_only_executor",
+      "purpose": "Run audit-only review stages and emit severity-ordered findings.",
+      "purpose_long": "Run audit-only review stages and emit severity-ordered findings.",
+      "allowed_stages": [
+        "validate"
+      ],
+      "input_schema": {
+        "type": "object"
+      },
+      "output_schema": {
+        "type": "object"
+      },
+      "invariants": [
+        "Preserve the workflow objective.",
+        "Emit structured evidence for validation and closeout."
+      ],
+      "failure_conditions": [
+        "Missing objective or prior-stage context.",
+        "No evidence-bearing output."
+      ],
+      "side_effects": [],
+      "execution_mode": "heuristic",
+      "lifecycle_state": "draft",
+      "applicability": [
+        "audit_only"
+      ],
+      "source_path": null,
+      "installed_name": null
+    },
+    {
+      "key": "audit_and_implement_executor",
+      "purpose": "Run audit-and-implement planning and implementation stages through the learned workflow seam.",
+      "purpose_long": "Run audit-and-implement planning and implementation stages through the learned workflow seam.",
+      "allowed_stages": [
+        "generate"
+      ],
+      "input_schema": {
+        "type": "object"
+      },
+      "output_schema": {
+        "type": "object"
+      },
+      "invariants": [
+        "Preserve the workflow objective.",
+        "Emit structured evidence for validation and closeout."
+      ],
+      "failure_conditions": [
+        "Missing objective or prior-stage context.",
+        "No evidence-bearing output."
+      ],
+      "side_effects": [],
+      "execution_mode": "heuristic",
+      "lifecycle_state": "draft",
+      "applicability": [
+        "audit_and_implement"
+      ],
+      "source_path": null,
+      "installed_name": null
+    },
+    {
+      "key": "standards_backfill_executor",
+      "purpose": "Analyze standards gaps and produce remediation plans through the learned workflow seam.",
+      "purpose_long": "Analyze standards gaps and produce remediation plans through the learned workflow seam.",
+      "allowed_stages": [
+        "validate",
+        "generate"
+      ],
+      "input_schema": {
+        "type": "object"
+      },
+      "output_schema": {
+        "type": "object"
+      },
+      "invariants": [
+        "Preserve the workflow objective.",
+        "Emit structured evidence for validation and closeout."
+      ],
+      "failure_conditions": [
+        "Missing objective or prior-stage context.",
+        "No evidence-bearing output."
+      ],
+      "side_effects": [],
+      "execution_mode": "heuristic",
+      "lifecycle_state": "draft",
+      "applicability": [
+        "standards_backfill"
+      ],
+      "source_path": null,
+      "installed_name": null
+    },
+    {
+      "key": "security_review_executor",
+      "purpose": "Run security review stages and emit risk-classified findings.",
+      "purpose_long": "Run security review stages and emit risk-classified findings.",
+      "allowed_stages": [
+        "validate"
+      ],
+      "input_schema": {
+        "type": "object"
+      },
+      "output_schema": {
+        "type": "object"
+      },
+      "invariants": [
+        "Preserve the workflow objective.",
+        "Emit structured evidence for validation and closeout."
+      ],
+      "failure_conditions": [
+        "Missing objective or prior-stage context.",
+        "No evidence-bearing output."
+      ],
+      "side_effects": [],
+      "execution_mode": "heuristic",
+      "lifecycle_state": "draft",
+      "applicability": [
+        "security_review"
+      ],
+      "source_path": null,
+      "installed_name": null
     }
   ]
 }

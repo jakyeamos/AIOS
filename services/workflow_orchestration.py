@@ -50,7 +50,7 @@ HEALTH_TO_WORKFLOW_RULES: list[tuple[HealthWorkflowPredicate, str, str]] = [
         lambda delta: (
             delta.get("domain") == "security" and delta.get("status") in {"fail", "partial"}
         ),
-        "security review",
+        "security-review",
         "Security domain has open delta - focused security review before broader work.",
     ),
     (
@@ -60,7 +60,7 @@ HEALTH_TO_WORKFLOW_RULES: list[tuple[HealthWorkflowPredicate, str, str]] = [
     ),
     (
         lambda delta: delta.get("priority_bucket") in {"foundational", "high_leverage"},
-        "standards backfill",
+        "standards-backfill",
         "Highest-leverage standards gap - backfill workflow targets foundational deltas.",
     ),
     (
@@ -793,6 +793,8 @@ def rank_workflow_candidates(
             & objective_tokens
         ):
             score += 3
+        if workflow.lifecycle_state == "active":
+            score += 2
         if score <= 0:
             continue
         candidates.append(

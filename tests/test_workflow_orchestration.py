@@ -62,14 +62,14 @@ def test_load_registry_normalizes_lifecycle_fields() -> None:
 
 def test_existing_six_workflows_load_with_defaults() -> None:
     workflows = load_workflow_registry(ROOT / "config" / "workflows" / "registry.json")
-    assert set(workflows) == {
+    assert {
         "implementation-delivery",
         "failure-recovery",
         "academic_paper_v1",
         "divergent-strategy",
         "personalized-humanizer",
         "agentize",
-    }
+    } <= set(workflows)
     assert workflows["implementation-delivery"].lifecycle_state == "active"
     assert workflows["failure-recovery"].lifecycle_state == "active"
 
@@ -235,7 +235,7 @@ def test_stage_spec_defaults_when_bindings_omitted() -> None:
 
 def test_existing_six_workflows_load_with_default_bindings() -> None:
     workflows = load_workflow_registry(ROOT / "config" / "workflows" / "registry.json")
-    assert len(workflows) == 6
+    assert len(workflows) >= 6
     assert all(
         isinstance(stage.writeback_behavior, WritebackBindingSpec)
         for workflow in workflows.values()
@@ -656,7 +656,7 @@ def test_recommend_workflow_returns_standards_backfill_for_foundational() -> Non
         approval_policy_fn=_approval_policy_stub,
     )
 
-    assert recommendations[0]["workflow_key"] == "standards backfill"
+    assert recommendations[0]["workflow_key"] == "standards-backfill"
     assert recommendations[0]["available_in_registry"] is False
 
 
@@ -694,7 +694,7 @@ def test_recommend_workflow_returns_security_review_for_security_fail() -> None:
         approval_policy_fn=_approval_policy_stub,
     )
 
-    assert recommendations[0]["workflow_key"] == "security review"
+    assert recommendations[0]["workflow_key"] == "security-review"
     assert recommendations[0]["available_in_registry"] is False
 
 

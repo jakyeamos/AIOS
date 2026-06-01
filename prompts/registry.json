@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-23T18:06:32.849253+00:00",
+  "generated_at": "2026-06-01T22:29:38.532859+00:00",
   "templates": [
     {
       "id": "coding_debug",
@@ -37,18 +37,18 @@
         }
       ],
       "last_updated": "2026-04-23",
-      "file": "prompts/coding_debug.md",
       "lifecycle_state": "active",
       "applicability": [
         "failure_recovery",
         "audit_and_implement"
       ],
+      "last_evaluated_at": "2026-05-21T00:00:00Z",
       "usefulness_evidence": {
         "sample_size": 0,
         "success_rate": 0,
         "last_used_at": null
       },
-      "last_evaluated_at": "2026-05-21T00:00:00Z"
+      "file": "prompts/coding_debug.md"
     },
     {
       "id": "content_writing",
@@ -83,17 +83,17 @@
         }
       ],
       "last_updated": "2026-04-23",
-      "file": "prompts/content_writing.md",
       "lifecycle_state": "active",
       "applicability": [
         "content_generation"
       ],
+      "last_evaluated_at": "2026-05-21T00:00:00Z",
       "usefulness_evidence": {
         "sample_size": 0,
         "success_rate": 0,
         "last_used_at": null
       },
-      "last_evaluated_at": "2026-05-21T00:00:00Z"
+      "file": "prompts/content_writing.md"
     },
     {
       "id": "reasoning",
@@ -130,18 +130,18 @@
         }
       ],
       "last_updated": "2026-04-23",
-      "file": "prompts/reasoning.md",
       "lifecycle_state": "active",
       "applicability": [
         "audit_only",
         "audit_and_implement"
       ],
+      "last_evaluated_at": "2026-05-21T00:00:00Z",
       "usefulness_evidence": {
         "sample_size": 0,
         "success_rate": 0,
         "last_used_at": null
       },
-      "last_evaluated_at": "2026-05-21T00:00:00Z"
+      "file": "prompts/reasoning.md"
     },
     {
       "id": "research",
@@ -179,19 +179,19 @@
         }
       ],
       "last_updated": "2026-04-23",
-      "file": "prompts/research.md",
       "lifecycle_state": "active",
       "applicability": [
         "audit_only",
         "audit_and_implement",
         "content_generation"
       ],
+      "last_evaluated_at": "2026-05-21T00:00:00Z",
       "usefulness_evidence": {
         "sample_size": 0,
         "success_rate": 0,
         "last_used_at": null
       },
-      "last_evaluated_at": "2026-05-21T00:00:00Z"
+      "file": "prompts/research.md"
     },
     {
       "id": "summarization",
@@ -226,18 +226,17 @@
         }
       ],
       "last_updated": "2026-04-23",
-      "file": "prompts/summarization.md",
       "lifecycle_state": "candidate",
       "applicability": [
         "audit_and_implement"
       ],
+      "last_evaluated_at": "2026-05-21T00:00:00Z",
       "usefulness_evidence": {
         "sample_size": 0,
         "success_rate": 0,
         "last_used_at": null
       },
-      "last_evaluated_at": "2026-05-21T00:00:00Z"
+      "file": "prompts/summarization.md"
     }
-  ],
-  "version": "2026-05-21"
+  ]
 }
