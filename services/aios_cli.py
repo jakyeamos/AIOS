@@ -14,6 +14,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, cast
 
+import services.next_action as next_action_module
 import services.operator_search as operator_search_module
 from services.asset_lifecycle import (
     AssetKind,
@@ -2670,6 +2671,23 @@ def cmd_operator_search(conn: sqlite3.Connection, args: argparse.Namespace) -> d
     }
 
 
+def cmd_next_action(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    try:
+        actions = next_action_module.get_next_actions(
+            conn,
+            project_id=args.project,
+            limit=int(args.limit),
+        )
+    except ValueError as exc:
+        raise CLIError("next-action-invalid-limit", str(exc), EXIT_USAGE) from exc
+    return {
+        "actions": [asdict(action) for action in actions],
+        "total_actions": len(actions),
+        "project_id": args.project,
+        "limit": int(args.limit),
+    }
+
+
 def _json_has_content(raw: Any) -> bool:
     if raw is None:
         return False
@@ -3235,6 +3253,25 @@ def _contracts_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
             "notes": (
                 "Cross-entity search backend (Phase 10, Plan 01). UI mirror lands in "
                 "Plan 04; tRPC router in Plan 05; UI rendering in Plan 06."
+            ),
+        },
+        {
+            "name": "NextAction",
+            "status": "implemented"
+            if (REPO_ROOT / "aios-ui" / "server" / "aios" / "next-action.ts").exists()
+            else "partial",
+            "source": "services/next_action.py",
+            "source_of_truth": [
+                "services/next_action.py",
+                "services/aios_cli.py:cmd_next_action",
+            ],
+            "storage": "read-only fusion across existing control-plane tables",
+            "table_available": True,
+            "notes": (
+                "Next-action fusion backend (Phase 10, Plan 02). Fuses health deltas, "
+                "pending writebacks, open blockers, terminal-run gaps, backfill tasks, "
+                "promotion candidates, and learning proposals. UI mirror lands in Plan "
+                "04; tRPC router in Plan 05; rendered surfaces in Plan 06."
             ),
         },
         {
@@ -4156,6 +4193,11 @@ def create_parser() -> argparse.ArgumentParser:
     operator_search.add_argument("--limit", type=int, default=operator_search_module.DEFAULT_LIMIT)
     operator_search.add_argument("--json", action="store_true")
 
+    next_action = subparsers.add_parser("next-action", help="Rank fused next actions")
+    next_action.add_argument("--project", default=None)
+    next_action.add_argument("--limit", type=int, default=next_action_module.DEFAULT_LIMIT)
+    next_action.add_argument("--json", action="store_true")
+
     subparsers.add_parser("contracts-audit", help="Canonical AIOS interface contract audit")
     subparsers.add_parser(
         "governance-audit", help="Governed writeback, approval, and terminal-run evidence audit"
@@ -4473,6 +4515,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "learning-propose",
             "learning-impact",
             "operator-search",
+            "next-action",
             "contracts-audit",
             "governance-audit",
             "criteria-finding",
@@ -4552,6 +4595,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "operator-search":
             assert conn is not None
             data = cmd_operator_search(conn, args)
+        elif args.command == "next-action":
+            assert conn is not None
+            data = cmd_next_action(conn, args)
         elif args.command == "contracts-audit":
             assert conn is not None
             data = _contracts_audit_payload(conn)

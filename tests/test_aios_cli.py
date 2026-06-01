@@ -1787,6 +1787,181 @@ def test_contracts_audit_includes_operator_surface_row(tmp_path: Path, capsys) -
     assert "services/operator_search.py" in operator_surface["source_of_truth"]
 
 
+def _seed_next_action_cli_rows(db_path: Path) -> None:
+    conn = sqlite3.connect(db_path)
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS standards_delta_items (
+          id TEXT PRIMARY KEY,
+          project_id TEXT,
+          domain TEXT,
+          priority_bucket TEXT,
+          severity REAL,
+          summary TEXT,
+          remediation_playbook_json TEXT,
+          status TEXT,
+          created_at TEXT
+        );
+        CREATE TABLE IF NOT EXISTS standards_backfill_tasks (
+          id TEXT PRIMARY KEY,
+          project_id TEXT,
+          summary TEXT,
+          status TEXT,
+          priority_bucket TEXT,
+          created_at TEXT
+        );
+        CREATE TABLE IF NOT EXISTS promotion_lifecycle_items (
+          id TEXT PRIMARY KEY,
+          item_kind TEXT,
+          item_key TEXT,
+          status TEXT,
+          created_at TEXT
+        );
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO standards_delta_items (
+          id, project_id, domain, priority_bucket, severity, summary,
+          remediation_playbook_json, status, created_at
+        )
+        VALUES (
+          'delta-cli-p1', 'p1', 'testing', 'foundational', 9,
+          'Fix p1 testing', '{"recommended_workflow_key":"standards-backfill"}',
+          'open', '2026-06-01T00:00:00Z'
+        )
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO standards_delta_items (
+          id, project_id, domain, priority_bucket, severity, summary,
+          remediation_playbook_json, status, created_at
+        )
+        VALUES (
+          'delta-cli-p2', 'p2', 'testing', 'foundational', 8,
+          'Fix p2 testing', '{}', 'open', '2026-06-01T00:00:00Z'
+        )
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO improvement_writebacks (
+          id, run_id, project_id, layer_type, layer_key, title, summary, status,
+          requires_approval, proposed_change_json, created_at, updated_at
+        )
+        VALUES (
+          'wb-cli-p1', 'run-1', 'p1', 'workflow', 'implementation-delivery',
+          'Review p1 writeback', 'Approve p1 writeback', 'pending_approval',
+          1, '{}', '2026-06-01T00:00:00Z', '2026-06-01T00:00:00Z'
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
+
+
+def test_next_action_cli_json(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    _seed_next_action_cli_rows(db_path)
+
+    exit_code = run_cli(
+        [
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "next-action",
+            "--project",
+            "p1",
+            "--json",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    assert data["project_id"] == "p1"
+    assert data["total_actions"] >= 1
+    assert all(action["drill_down_path"] for action in data["actions"])
+    assert all(
+        action["priority_bucket"]
+        in {"foundational", "high_leverage", "quick_wins", "blocked", "waived_deferred"}
+        for action in data["actions"]
+    )
+
+
+def test_next_action_cli_cross_project(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    _seed_next_action_cli_rows(db_path)
+
+    exit_code = run_cli(
+        ["--db", str(db_path), "--logs-dir", str(logs_dir), "next-action", "--json"]
+    )
+
+    assert exit_code == EXIT_OK
+    actions = json.loads(capsys.readouterr().out)["data"]["actions"]
+    assert {"p1", "p2"} <= {action["project_id"] for action in actions if action["project_id"]}
+
+
+def test_next_action_cli_limit_validation(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    exit_code = run_cli(
+        [
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "next-action",
+            "--project",
+            "p1",
+            "--limit",
+            "100",
+            "--json",
+        ]
+    )
+
+    output = json.loads(capsys.readouterr().out)
+    assert exit_code == 2
+    assert output["ok"] is False
+    assert output["error"]["code"] == "next-action-invalid-limit"
+
+
+def test_contracts_audit_includes_next_action_row(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "contracts-audit",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    next_action = next(
+        contract for contract in data["contracts"] if contract["name"] == "NextAction"
+    )
+    assert next_action["status"] == "partial"
+    assert "services/next_action.py" in next_action["source_of_truth"]
+
+
 def test_workflow_learning_payload_includes_signal_kind_counts() -> None:
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
@@ -2055,7 +2230,7 @@ def test_contracts_audit_reports_canonical_interfaces(tmp_path: Path, capsys) ->
     contracts_output = json.loads(capsys.readouterr().out)
     data = contracts_output["data"]
     names = {contract["name"] for contract in data["contracts"]}
-    assert data["summary"]["canonical_contract_count"] == 12
+    assert data["summary"]["canonical_contract_count"] == 13
     assert data["summary"]["implemented_or_partial_count"] >= 6
     assert {
         "TrustedSignal",
@@ -2066,6 +2241,7 @@ def test_contracts_audit_reports_canonical_interfaces(tmp_path: Path, capsys) ->
         "WorkflowLearningEvent",
         "LearningSignal",
         "OperatorSurface",
+        "NextAction",
         "EvaluationFinding",
         "DeltaExplanation",
         "AssetLifecycle",

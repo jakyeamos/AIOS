@@ -124,3 +124,10 @@ def test_operator_search_does_not_import_bin() -> None:
 
     assert "from bin" not in source
     assert "import bin" not in source
+
+
+def test_next_action_does_not_import_bin() -> None:
+    source = (ROOT / "services" / "next_action.py").read_text(encoding="utf-8")
+
+    assert "from bin" not in source
+    assert "import bin" not in source
