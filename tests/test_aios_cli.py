@@ -1595,6 +1595,198 @@ def test_learning_impact_cli_prompt_rollup(tmp_path: Path, capsys) -> None:
     assert data["scope"] == "prompt"
 
 
+def test_operator_search_cli_json(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (
+          id, project_id, objective, workflow_key, status, created_at, updated_at
+        )
+        VALUES ('run-alpha', 'p1', 'alpha objective', 'implementation-delivery',
+                'completed', '2026-06-01T00:00:00Z', '2026-06-01T00:00:00Z')
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    exit_code = run_cli(
+        [
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "operator-search",
+            "--query",
+            "alpha",
+            "--json",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    assert data["query"] == "alpha"
+    assert data["total_hits"] >= 1
+    assert all(hit["drill_down_path"] for hit in data["hits"])
+
+
+def test_operator_search_cli_kinds_filter(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    exit_code = run_cli(
+        [
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "operator-search",
+            "--query",
+            "Route",
+            "--kinds",
+            "run",
+            "--kinds",
+            "writeback",
+            "--json",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    hits = json.loads(capsys.readouterr().out)["data"]["hits"]
+    assert hits
+    assert {hit["kind"] for hit in hits} <= {"run", "writeback"}
+
+
+def test_operator_search_cli_project_filter(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (
+          id, project_id, objective, workflow_key, status, created_at, updated_at
+        )
+        VALUES ('run-p2', 'p2', 'needle objective', 'implementation-delivery',
+                'completed', '2026-06-01T00:00:00Z', '2026-06-01T00:00:00Z')
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (
+          id, project_id, objective, workflow_key, status, created_at, updated_at
+        )
+        VALUES ('run-p1', 'p1', 'needle objective', 'implementation-delivery',
+                'completed', '2026-06-01T00:01:00Z', '2026-06-01T00:01:00Z')
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    exit_code = run_cli(
+        [
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "operator-search",
+            "--query",
+            "needle",
+            "--project",
+            "p1",
+            "--json",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    hits = json.loads(capsys.readouterr().out)["data"]["hits"]
+    assert hits
+    assert all(hit["project_id"] in {"p1", None} for hit in hits)
+    assert "run-p2" not in {hit["id"] for hit in hits}
+
+
+def test_operator_search_cli_rejects_invalid_kind(tmp_path: Path) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    with pytest.raises(SystemExit) as exc:
+        run_cli(
+            [
+                "--db",
+                str(db_path),
+                "--logs-dir",
+                str(logs_dir),
+                "operator-search",
+                "--query",
+                "x",
+                "--kinds",
+                "not-a-kind",
+            ]
+        )
+
+    assert exc.value.code == 2
+
+
+def test_operator_search_cli_rejects_long_query(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    exit_code = run_cli(
+        [
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "operator-search",
+            "--query",
+            "a" * 201,
+            "--json",
+        ]
+    )
+
+    output = json.loads(capsys.readouterr().out)
+    assert exit_code == 2
+    assert output["ok"] is False
+    assert output["error"]["code"] == "operator-search-invalid-query"
+    assert "exceeds max 200" in output["error"]["message"]
+
+
+def test_contracts_audit_includes_operator_surface_row(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "contracts-audit",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    operator_surface = next(
+        contract for contract in data["contracts"] if contract["name"] == "OperatorSurface"
+    )
+    assert operator_surface["status"] == "partial"
+    assert "services/operator_search.py" in operator_surface["source_of_truth"]
+
+
 def test_workflow_learning_payload_includes_signal_kind_counts() -> None:
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
@@ -1863,7 +2055,7 @@ def test_contracts_audit_reports_canonical_interfaces(tmp_path: Path, capsys) ->
     contracts_output = json.loads(capsys.readouterr().out)
     data = contracts_output["data"]
     names = {contract["name"] for contract in data["contracts"]}
-    assert data["summary"]["canonical_contract_count"] == 11
+    assert data["summary"]["canonical_contract_count"] == 12
     assert data["summary"]["implemented_or_partial_count"] >= 6
     assert {
         "TrustedSignal",
@@ -1873,6 +2065,7 @@ def test_contracts_audit_reports_canonical_interfaces(tmp_path: Path, capsys) ->
         "RetrievalTrace",
         "WorkflowLearningEvent",
         "LearningSignal",
+        "OperatorSurface",
         "EvaluationFinding",
         "DeltaExplanation",
         "AssetLifecycle",

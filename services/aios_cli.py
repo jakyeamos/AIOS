@@ -14,6 +14,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, cast
 
+import services.operator_search as operator_search_module
 from services.asset_lifecycle import (
     AssetKind,
     AssetLifecycleState,
@@ -2647,6 +2648,28 @@ def _learning_impact_payload(conn: sqlite3.Connection, args: argparse.Namespace)
     )
 
 
+def cmd_operator_search(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    query = str(args.query)
+    try:
+        hits = operator_search_module.search_entities(
+            conn,
+            query=query,
+            kinds=tuple(args.kinds) if args.kinds else None,
+            project_id=args.project,
+            limit=int(args.limit),
+        )
+    except ValueError as exc:
+        raise CLIError("operator-search-invalid-query", str(exc), EXIT_USAGE) from exc
+    return {
+        "hits": [asdict(hit) for hit in hits],
+        "total_hits": len(hits),
+        "query": query,
+        "kinds": list(args.kinds) if args.kinds else None,
+        "project_id": args.project,
+        "limit": int(args.limit),
+    }
+
+
 def _json_has_content(raw: Any) -> bool:
     if raw is None:
         return False
@@ -3195,6 +3218,23 @@ def _contracts_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
             "notes": (
                 "Two-axis classification with cross-run pattern detection, conservative "
                 "approval-required proposals, and impact projections."
+            ),
+        },
+        {
+            "name": "OperatorSurface",
+            "status": "implemented"
+            if (REPO_ROOT / "aios-ui" / "server" / "aios" / "operator-search.ts").exists()
+            else "partial",
+            "source": "services/operator_search.py",
+            "source_of_truth": [
+                "services/operator_search.py",
+                "services/aios_cli.py:cmd_operator_search",
+            ],
+            "storage": "read-only projection across existing control-plane tables",
+            "table_available": True,
+            "notes": (
+                "Cross-entity search backend (Phase 10, Plan 01). UI mirror lands in "
+                "Plan 04; tRPC router in Plan 05; UI rendering in Plan 06."
             ),
         },
         {
@@ -4102,6 +4142,20 @@ def create_parser() -> argparse.ArgumentParser:
     learning_impact.add_argument("--project", default=None)
     learning_impact.add_argument("--json", action="store_true")
 
+    operator_search = subparsers.add_parser(
+        "operator-search", help="Search across operator-visible AIOS entities"
+    )
+    operator_search.add_argument("--query", required=True)
+    operator_search.add_argument(
+        "--kinds",
+        action="append",
+        default=[],
+        choices=operator_search_module.ENTITY_KINDS,
+    )
+    operator_search.add_argument("--project", default=None)
+    operator_search.add_argument("--limit", type=int, default=operator_search_module.DEFAULT_LIMIT)
+    operator_search.add_argument("--json", action="store_true")
+
     subparsers.add_parser("contracts-audit", help="Canonical AIOS interface contract audit")
     subparsers.add_parser(
         "governance-audit", help="Governed writeback, approval, and terminal-run evidence audit"
@@ -4418,6 +4472,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "learning-analyze",
             "learning-propose",
             "learning-impact",
+            "operator-search",
             "contracts-audit",
             "governance-audit",
             "criteria-finding",
@@ -4494,6 +4549,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "learning-impact":
             assert conn is not None
             data = _learning_impact_payload(conn, args)
+        elif args.command == "operator-search":
+            assert conn is not None
+            data = cmd_operator_search(conn, args)
         elif args.command == "contracts-audit":
             assert conn is not None
             data = _contracts_audit_payload(conn)

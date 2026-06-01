@@ -117,3 +117,10 @@ def test_python_profile_fails_on_cycles(tmp_path: Path) -> None:
     adapter = report["projects"][0]["profiles"][0]["adapters"][0]
     assert adapter["status"] == "failed"
     assert any(v["code"] == "dependency-cycle" for v in adapter["violations"])
+
+
+def test_operator_search_does_not_import_bin() -> None:
+    source = (ROOT / "services" / "operator_search.py").read_text(encoding="utf-8")
+
+    assert "from bin" not in source
+    assert "import bin" not in source
