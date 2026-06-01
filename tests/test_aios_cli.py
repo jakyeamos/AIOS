@@ -1962,6 +1962,223 @@ def test_contracts_audit_includes_next_action_row(tmp_path: Path, capsys) -> Non
     assert "services/next_action.py" in next_action["source_of_truth"]
 
 
+def _seed_daily_flow_replay_rows(db_path: Path) -> None:
+    conn = sqlite3.connect(db_path)
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS standards_delta_items (
+          id TEXT PRIMARY KEY,
+          project_id TEXT,
+          domain TEXT,
+          priority_bucket TEXT,
+          severity REAL,
+          summary TEXT,
+          remediation_playbook_json TEXT DEFAULT '{}',
+          status TEXT,
+          updated_at TEXT
+        );
+        CREATE TABLE IF NOT EXISTS success_criteria_findings (
+          id TEXT PRIMARY KEY,
+          run_id TEXT,
+          criterion_id TEXT,
+          level TEXT,
+          message TEXT,
+          resolution_status TEXT,
+          created_at TEXT
+        );
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (
+          id, project_id, objective, workflow_key, status, route_id, route_result_json,
+          created_at, updated_at
+        )
+        VALUES (
+          'daily-run', 'p1', 'implement login', 'implementation-delivery', 'completed',
+          'route-daily',
+          '{"selected_workflow":{"workflow_key":"implementation-delivery"}}',
+          '2026-06-01T00:00:00Z', '2026-06-01T00:01:00Z'
+        )
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO briefing_packets (id, run_id, project_id, objective, route_id, created_at)
+        VALUES ('daily-packet', 'daily-run', 'p1', 'implement login', 'route-daily',
+                '2026-06-01T00:00:10Z')
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO success_criteria_findings (
+          id, run_id, criterion_id, level, message, resolution_status, created_at
+        )
+        VALUES ('daily-finding', 'daily-run', 'OPER-04', 'warning', 'Trace checked',
+                'resolved', '2026-06-01T00:00:20Z')
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO improvement_writebacks (
+          id, run_id, project_id, layer_type, layer_key, title, summary, status,
+          requires_approval, created_at, updated_at
+        )
+        VALUES ('daily-wb', 'daily-run', 'p1', 'truth', 'PROJECT.md', 'Update truth',
+                'Record daily-flow projection', 'pending_approval', 1,
+                '2026-06-01T00:00:30Z', '2026-06-01T00:00:30Z')
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO standards_delta_items (
+          id, project_id, domain, priority_bucket, severity, summary,
+          remediation_playbook_json, status, updated_at
+        )
+        VALUES ('daily-delta', 'p1', 'operator', 'foundational', 9,
+                'Daily flow needs rendering',
+                '{"recommended_workflow_key":"implementation-delivery"}',
+                'open', '2026-06-01T00:00:40Z')
+        """
+    )
+    conn.commit()
+    conn.close()
+
+
+def test_daily_flow_preview_cli(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    before = (
+        sqlite3.connect(db_path).execute("SELECT COUNT(*) FROM orchestration_runs").fetchone()[0]
+    )
+
+    exit_code = run_cli(
+        [
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "daily-flow",
+            "--objective",
+            "implement login",
+            "--project",
+            "p1",
+            "--dry-run",
+            "--json",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    assert data["is_preview"] is True
+    assert data["step_count"] == 8
+    assert [step["kind"] for step in data["trace"]["steps"]] == [
+        "goal",
+        "route",
+        "packet",
+        "run",
+        "evaluation",
+        "writeback",
+        "unresolved_delta",
+        "next_action",
+    ]
+    assert all(step["drill_down_path"] for step in data["trace"]["steps"])
+    after = (
+        sqlite3.connect(db_path).execute("SELECT COUNT(*) FROM orchestration_runs").fetchone()[0]
+    )
+    assert after == before
+
+
+def test_daily_flow_replay_cli(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    _seed_daily_flow_replay_rows(db_path)
+
+    exit_code = run_cli(
+        [
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "daily-flow",
+            "--run-id",
+            "daily-run",
+            "--json",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    assert data["is_preview"] is False
+    assert data["trace"]["objective"] == "implement login"
+    assert data["step_count"] == 8
+    assert data["trace"]["steps"][2]["evidence_ref"]["id"] == "daily-packet"
+
+
+def test_daily_flow_cli_requires_one_mode(tmp_path: Path) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    with pytest.raises(SystemExit) as exc:
+        run_cli(["--db", str(db_path), "--logs-dir", str(logs_dir), "daily-flow", "--json"])
+
+    assert exc.value.code == 2
+
+
+def test_daily_flow_cli_rejects_both_modes(tmp_path: Path) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    with pytest.raises(SystemExit) as exc:
+        run_cli(
+            [
+                "--db",
+                str(db_path),
+                "--logs-dir",
+                str(logs_dir),
+                "daily-flow",
+                "--objective",
+                "x",
+                "--run-id",
+                "daily-run",
+            ]
+        )
+
+    assert exc.value.code == 2
+
+
+def test_contracts_audit_includes_daily_flow_row(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "contracts-audit",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    daily_flow = next(contract for contract in data["contracts"] if contract["name"] == "DailyFlow")
+    assert daily_flow["status"] == "partial"
+    assert "services/daily_flow.py" in daily_flow["source_of_truth"]
+
+
 def test_workflow_learning_payload_includes_signal_kind_counts() -> None:
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
@@ -2230,7 +2447,7 @@ def test_contracts_audit_reports_canonical_interfaces(tmp_path: Path, capsys) ->
     contracts_output = json.loads(capsys.readouterr().out)
     data = contracts_output["data"]
     names = {contract["name"] for contract in data["contracts"]}
-    assert data["summary"]["canonical_contract_count"] == 13
+    assert data["summary"]["canonical_contract_count"] == 14
     assert data["summary"]["implemented_or_partial_count"] >= 6
     assert {
         "TrustedSignal",
@@ -2242,6 +2459,7 @@ def test_contracts_audit_reports_canonical_interfaces(tmp_path: Path, capsys) ->
         "LearningSignal",
         "OperatorSurface",
         "NextAction",
+        "DailyFlow",
         "EvaluationFinding",
         "DeltaExplanation",
         "AssetLifecycle",

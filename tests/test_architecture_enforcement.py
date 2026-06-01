@@ -131,3 +131,10 @@ def test_next_action_does_not_import_bin() -> None:
 
     assert "from bin" not in source
     assert "import bin" not in source
+
+
+def test_daily_flow_does_not_import_bin() -> None:
+    source = (ROOT / "services" / "daily_flow.py").read_text(encoding="utf-8")
+
+    assert "from bin" not in source
+    assert "import bin" not in source

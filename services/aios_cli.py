@@ -24,6 +24,7 @@ from services.asset_lifecycle import (
 )
 from services.automation_history import sync_pipeline_automation_history
 from services.capability_truth import capability_truth_payload
+from services.daily_flow import preview_from_objective, replay_from_run
 from services.harness import (
     active_readiness,
     brief_task,
@@ -2688,6 +2689,24 @@ def cmd_next_action(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[
     }
 
 
+def cmd_daily_flow(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    if args.objective:
+        trace = preview_from_objective(
+            conn,
+            objective=str(args.objective),
+            project_id=args.project,
+        )
+    else:
+        trace = replay_from_run(conn, run_id=str(args.run_id))
+    return {
+        "trace": asdict(trace),
+        "is_preview": trace.is_preview,
+        "objective": trace.objective,
+        "project_id": trace.project_id,
+        "step_count": len(trace.steps),
+    }
+
+
 def _json_has_content(raw: Any) -> bool:
     if raw is None:
         return False
@@ -3272,6 +3291,26 @@ def _contracts_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
                 "pending writebacks, open blockers, terminal-run gaps, backfill tasks, "
                 "promotion candidates, and learning proposals. UI mirror lands in Plan "
                 "04; tRPC router in Plan 05; rendered surfaces in Plan 06."
+            ),
+        },
+        {
+            "name": "DailyFlow",
+            "status": "implemented"
+            if (REPO_ROOT / "aios-ui" / "server" / "aios" / "daily-flow.ts").exists()
+            else "partial",
+            "source": "services/daily_flow.py",
+            "source_of_truth": [
+                "services/daily_flow.py",
+                "services/agentize.py:agentize_request(dry_run=True)",
+                "services/aios_cli.py:cmd_daily_flow",
+            ],
+            "storage": "read-only projection across route, packet, run, evaluation, writeback, delta, and next-action sources",
+            "table_available": True,
+            "notes": (
+                "Daily-flow trace backend (Phase 10, Plan 03). Preview is dry via "
+                "SAVEPOINT; replay is pure-read. UI mirror lands in Plan 04; tRPC "
+                "router in Plan 05; DailyFlowTrace component on /runs/[id] and "
+                "Command Center in Plan 06."
             ),
         },
         {
@@ -4198,6 +4237,14 @@ def create_parser() -> argparse.ArgumentParser:
     next_action.add_argument("--limit", type=int, default=next_action_module.DEFAULT_LIMIT)
     next_action.add_argument("--json", action="store_true")
 
+    daily_flow = subparsers.add_parser("daily-flow", help="Preview or replay daily-flow trace")
+    daily_flow_mode = daily_flow.add_mutually_exclusive_group(required=True)
+    daily_flow_mode.add_argument("--objective", default=None)
+    daily_flow_mode.add_argument("--run-id", dest="run_id", default=None)
+    daily_flow.add_argument("--project", default=None)
+    daily_flow.add_argument("--dry-run", action="store_true")
+    daily_flow.add_argument("--json", action="store_true", default=True)
+
     subparsers.add_parser("contracts-audit", help="Canonical AIOS interface contract audit")
     subparsers.add_parser(
         "governance-audit", help="Governed writeback, approval, and terminal-run evidence audit"
@@ -4516,6 +4563,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "learning-impact",
             "operator-search",
             "next-action",
+            "daily-flow",
             "contracts-audit",
             "governance-audit",
             "criteria-finding",
@@ -4598,6 +4646,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "next-action":
             assert conn is not None
             data = cmd_next_action(conn, args)
+        elif args.command == "daily-flow":
+            assert conn is not None
+            data = cmd_daily_flow(conn, args)
         elif args.command == "contracts-audit":
             assert conn is not None
             data = _contracts_audit_payload(conn)

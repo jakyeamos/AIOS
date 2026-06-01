@@ -516,6 +516,48 @@ def agentize_request(
     changed_files: tuple[str, ...] | None = None,
     workflow_key: str | None = None,
     conn: sqlite3.Connection | None = None,
+    dry_run: bool = False,
+) -> AgentizedTaskPacket:
+    if dry_run and conn is not None:
+        savepoint_name = f"agentize_dry_run_{uuid.uuid4().hex}"
+        conn.execute(f"SAVEPOINT {savepoint_name}")
+        try:
+            packet = _agentize_request_impl(
+                request,
+                prompt_registry_path=prompt_registry_path,
+                project_id=project_id,
+                project_name=project_name,
+                changed_files=changed_files,
+                workflow_key=workflow_key,
+                conn=conn,
+            )
+            conn.execute(f"ROLLBACK TO SAVEPOINT {savepoint_name}")
+            conn.execute(f"RELEASE SAVEPOINT {savepoint_name}")
+            return packet
+        except Exception:
+            conn.execute(f"ROLLBACK TO SAVEPOINT {savepoint_name}")
+            conn.execute(f"RELEASE SAVEPOINT {savepoint_name}")
+            raise
+    return _agentize_request_impl(
+        request,
+        prompt_registry_path=prompt_registry_path,
+        project_id=project_id,
+        project_name=project_name,
+        changed_files=changed_files,
+        workflow_key=workflow_key,
+        conn=conn,
+    )
+
+
+def _agentize_request_impl(
+    request: str,
+    *,
+    prompt_registry_path: Path | None = None,
+    project_id: str | None = None,
+    project_name: str | None = None,
+    changed_files: tuple[str, ...] | None = None,
+    workflow_key: str | None = None,
+    conn: sqlite3.Connection | None = None,
 ) -> AgentizedTaskPacket:
     normalized = " ".join(request.strip().split())
     if not normalized:
