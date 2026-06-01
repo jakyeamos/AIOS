@@ -225,6 +225,172 @@ def _seed_db(path: Path) -> None:
     conn.close()
 
 
+def _memory_conn() -> sqlite3.Connection:
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def test_record_learning_event_persists_signal_kind() -> None:
+    conn = _memory_conn()
+    aios_cli._ensure_workflow_learning_schema(conn)
+
+    aios_cli._record_workflow_learning_event(
+        conn,
+        run_id="r1",
+        evidence_type="workflow_evidence",
+        proposal_target="propose-x",
+        confidence=0.7,
+        approval_state="pending",
+        rationale="seed",
+        source={"k": "v"},
+        signal_kind="weak_workflow",
+    )
+
+    assert (
+        conn.execute(
+            "SELECT signal_kind FROM workflow_learning_events WHERE run_id = 'r1'"
+        ).fetchone()["signal_kind"]
+        == "weak_workflow"
+    )
+
+
+def test_record_learning_event_signal_kind_optional() -> None:
+    conn = _memory_conn()
+    aios_cli._ensure_workflow_learning_schema(conn)
+
+    aios_cli._record_workflow_learning_event(
+        conn,
+        run_id="r1",
+        evidence_type="workflow_evidence",
+        proposal_target="propose-x",
+        confidence=0.7,
+        approval_state="pending",
+        rationale="seed",
+        source={"k": "v"},
+    )
+
+    assert (
+        conn.execute(
+            "SELECT signal_kind FROM workflow_learning_events WHERE run_id = 'r1'"
+        ).fetchone()["signal_kind"]
+        is None
+    )
+
+
+def test_workflow_learning_event_dedupe_respects_signal_kind() -> None:
+    conn = _memory_conn()
+    aios_cli._ensure_workflow_learning_schema(conn)
+
+    for signal_kind in ("weak_workflow", "ignored_rule", "weak_workflow"):
+        aios_cli._record_workflow_learning_event(
+            conn,
+            run_id="r1",
+            evidence_type="workflow_evidence",
+            proposal_target="propose-x",
+            confidence=0.7,
+            approval_state="pending",
+            rationale="seed",
+            source={"k": "v"},
+            signal_kind=signal_kind,
+        )
+
+    assert (
+        conn.execute("SELECT COUNT(*) AS count FROM workflow_learning_events").fetchone()["count"]
+        == 2
+    )
+
+
+def test_workflow_learning_event_dedupe_legacy_path_unchanged() -> None:
+    conn = _memory_conn()
+    aios_cli._ensure_workflow_learning_schema(conn)
+
+    for _ in range(2):
+        aios_cli._record_workflow_learning_event(
+            conn,
+            run_id="r1",
+            evidence_type="workflow_evidence",
+            proposal_target="propose-x",
+            confidence=0.7,
+            approval_state="pending",
+            rationale="seed",
+            source={"k": "v"},
+        )
+
+    assert (
+        conn.execute("SELECT COUNT(*) AS count FROM workflow_learning_events").fetchone()["count"]
+        == 1
+    )
+
+
+def test_ensure_workflow_learning_schema_creates_signal_kind_column() -> None:
+    conn = _memory_conn()
+
+    aios_cli._ensure_workflow_learning_schema(conn)
+
+    columns = {row["name"] for row in conn.execute("PRAGMA table_info(workflow_learning_events)")}
+    assert "signal_kind" in columns
+
+
+def test_workflow_learning_payload_surfaces_signal_kind() -> None:
+    conn = _memory_conn()
+    conn.execute(
+        """
+        CREATE TABLE orchestration_runs (
+            id TEXT PRIMARY KEY,
+            project_id TEXT,
+            session_id TEXT,
+            objective TEXT,
+            workflow_key TEXT,
+            agent_key TEXT,
+            status TEXT,
+            rationale TEXT,
+            assumptions_json TEXT DEFAULT '[]',
+            context_trace_json TEXT DEFAULT '[]',
+            result_summary TEXT,
+            updated_at TEXT
+        )
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (
+            id, objective, workflow_key, agent_key, status, rationale, result_summary, updated_at
+        )
+        VALUES ('r1', 'objective', 'implementation-delivery', 'codex', 'completed',
+                'rationale', 'done', '2026-06-01T00:00:00Z')
+        """
+    )
+    aios_cli._ensure_workflow_learning_schema(conn)
+    aios_cli._record_workflow_learning_event(
+        conn,
+        run_id="r1",
+        evidence_type="workflow_evidence",
+        proposal_target="implementation-delivery",
+        confidence=0.7,
+        approval_state="not_required",
+        rationale="seed",
+        source={"k": "v"},
+        signal_kind="weak_workflow",
+    )
+    aios_cli._record_workflow_learning_event(
+        conn,
+        run_id="r1",
+        evidence_type="prompt_template_evidence",
+        proposal_target="research",
+        confidence=0.7,
+        approval_state="not_required",
+        rationale="seed",
+        source={"k": "v"},
+    )
+
+    payload = aios_cli._workflow_learning_payload(conn)
+    by_target = {row["proposal_target"]: row for row in payload["persisted_events"]}
+
+    assert by_target["implementation-delivery"]["signal_kind"] == "weak_workflow"
+    assert by_target["research"]["signal_kind"] is None
+
+
 def test_status_and_recent_failures_json(tmp_path: Path, capsys) -> None:
     db_path = tmp_path / "aios.db"
     logs_dir = tmp_path / "logs"

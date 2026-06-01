@@ -41,6 +41,7 @@ from services.invocation_backends import (
     get_invocation_backend,
     list_invocation_backends,
 )
+from services.learning_taxonomy import LearningSignalKind
 from services.path_resolution import get_vault_root
 from services.pre_pr_readiness import (
     DEFAULT_PRE_CR_REPO,
@@ -2197,6 +2198,18 @@ def _ensure_workflow_learning_schema(conn: sqlite3.Connection) -> None:
           ON workflow_learning_events(run_id, created_at DESC)
         """
     )
+    columns = {
+        str(row["name"])
+        for row in conn.execute("PRAGMA table_info(workflow_learning_events)").fetchall()
+    }
+    if "signal_kind" not in columns:
+        conn.execute("ALTER TABLE workflow_learning_events ADD COLUMN signal_kind TEXT")
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_workflow_learning_events_signal
+          ON workflow_learning_events(signal_kind, created_at DESC)
+        """
+    )
 
 
 def _workflow_learning_event_exists(
@@ -2205,6 +2218,7 @@ def _workflow_learning_event_exists(
     run_id: str,
     evidence_type: str,
     proposal_target: str | None,
+    signal_kind: LearningSignalKind | None = None,
 ) -> bool:
     row = conn.execute(
         """
@@ -2213,9 +2227,10 @@ def _workflow_learning_event_exists(
         WHERE run_id = ?
           AND evidence_type = ?
           AND COALESCE(proposal_target, '') = COALESCE(?, '')
+          AND COALESCE(signal_kind, '') = COALESCE(?, '')
         LIMIT 1
         """,
-        (run_id, evidence_type, proposal_target),
+        (run_id, evidence_type, proposal_target, signal_kind),
     ).fetchone()
     return row is not None
 
@@ -2230,21 +2245,23 @@ def _record_workflow_learning_event(
     approval_state: str,
     rationale: str,
     source: dict[str, Any],
+    signal_kind: LearningSignalKind | None = None,
 ) -> None:
     if _workflow_learning_event_exists(
         conn,
         run_id=run_id,
         evidence_type=evidence_type,
         proposal_target=proposal_target,
+        signal_kind=signal_kind,
     ):
         return
     conn.execute(
         """
         INSERT INTO workflow_learning_events (
           id, run_id, evidence_type, proposal_target, confidence,
-          approval_state, rationale, source_json, created_at
+          approval_state, rationale, source_json, signal_kind, created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             f"learning-{uuid.uuid4()}",
@@ -2255,6 +2272,7 @@ def _record_workflow_learning_event(
             approval_state,
             rationale,
             json.dumps(source, sort_keys=True),
+            signal_kind,
             _now_iso(),
         ),
     )
@@ -2411,7 +2429,8 @@ def _workflow_learning_payload(conn: sqlite3.Connection) -> dict[str, Any]:
         dict(row)
         for row in conn.execute(
             """
-            SELECT run_id, evidence_type, proposal_target, confidence, approval_state, rationale, source_json, created_at
+            SELECT run_id, evidence_type, proposal_target, confidence, approval_state,
+                   rationale, source_json, signal_kind, created_at
             FROM workflow_learning_events
             ORDER BY created_at DESC
             LIMIT 100

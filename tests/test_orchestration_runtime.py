@@ -47,6 +47,157 @@ def _insert_project(conn: sqlite3.Connection, repo_path: Path) -> str:
     return project_id
 
 
+def _legacy_workflow_learning_table(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE workflow_learning_events (
+            id TEXT PRIMARY KEY,
+            run_id TEXT,
+            evidence_type TEXT NOT NULL,
+            proposal_target TEXT,
+            confidence REAL NOT NULL DEFAULT 0.5,
+            approval_state TEXT NOT NULL DEFAULT 'not_required',
+            rationale TEXT NOT NULL,
+            source_json TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        )
+        """
+    )
+
+
+def test_signal_kind_column_added_idempotently() -> None:
+    from aios_orchestration_runtime import _ensure_workflow_learning_signal_kind_column
+
+    conn = sqlite3.connect(":memory:")
+    _legacy_workflow_learning_table(conn)
+
+    _ensure_workflow_learning_signal_kind_column(conn)
+    _ensure_workflow_learning_signal_kind_column(conn)
+
+    columns = [
+        row[1] for row in conn.execute("PRAGMA table_info(workflow_learning_events)").fetchall()
+    ]
+    assert columns.count("signal_kind") == 1
+    index = conn.execute(
+        """
+        SELECT name FROM sqlite_master
+        WHERE type = 'index' AND name = 'idx_workflow_learning_events_signal'
+        """
+    ).fetchone()
+    assert index is not None
+
+
+def test_signal_kind_column_left_alone_when_present() -> None:
+    from aios_orchestration_runtime import _ensure_workflow_learning_signal_kind_column
+
+    conn = sqlite3.connect(":memory:")
+    _legacy_workflow_learning_table(conn)
+    conn.execute("ALTER TABLE workflow_learning_events ADD COLUMN signal_kind TEXT")
+
+    _ensure_workflow_learning_signal_kind_column(conn)
+
+    columns = [
+        row[1] for row in conn.execute("PRAGMA table_info(workflow_learning_events)").fetchall()
+    ]
+    assert columns.count("signal_kind") == 1
+
+
+def test_ensure_runtime_schema_invokes_signal_kind_helper() -> None:
+    from aios_orchestration_runtime import ensure_runtime_schema
+
+    conn = sqlite3.connect(":memory:")
+    _apply_base_schema(conn)
+    ensure_runtime_schema(conn)
+
+    columns = [
+        row[1] for row in conn.execute("PRAGMA table_info(workflow_learning_events)").fetchall()
+    ]
+    assert "signal_kind" in columns
+
+
+def test_writeback_policy_route_default_requires_approval() -> None:
+    from aios_orchestration_runtime import writeback_approval_policy
+
+    policy = writeback_approval_policy(
+        layer_type="route",
+        impact_scope="route-default",
+        proposed_change=None,
+    )
+
+    assert policy == {
+        "policy_class": "route-default_change",
+        "requires_approval": True,
+        "reason": "route-default changes require approval before promotion.",
+    }
+
+
+def test_writeback_policy_packet_default_requires_approval() -> None:
+    from aios_orchestration_runtime import writeback_approval_policy
+
+    policy = writeback_approval_policy(
+        layer_type="packet",
+        impact_scope="packet-default",
+        proposed_change=None,
+    )
+
+    assert policy == {
+        "policy_class": "packet-default_change",
+        "requires_approval": True,
+        "reason": "packet-default changes require approval before promotion.",
+    }
+
+
+def test_writeback_policy_existing_scopes_unchanged() -> None:
+    from aios_orchestration_runtime import writeback_approval_policy
+
+    for scope in (
+        "global",
+        "project-truth",
+        "workflow-default",
+        "prompt-default",
+        "skill-default",
+        "standards-default",
+    ):
+        policy = writeback_approval_policy(
+            layer_type="workflow",
+            impact_scope=scope,
+            proposed_change=None,
+        )
+        assert policy["requires_approval"] is True
+        assert policy["policy_class"] == f"{scope}_change"
+
+    scoped = writeback_approval_policy(
+        layer_type="memory",
+        impact_scope="scoped",
+        proposed_change=None,
+    )
+    assert scoped["requires_approval"] is False
+
+
+def test_pre_migration_rows_remain_visible_in_select() -> None:
+    from aios_orchestration_runtime import _ensure_workflow_learning_signal_kind_column
+
+    conn = sqlite3.connect(":memory:")
+    _legacy_workflow_learning_table(conn)
+    conn.execute(
+        """
+        INSERT INTO workflow_learning_events (
+            id, run_id, evidence_type, proposal_target, confidence,
+            approval_state, rationale, source_json
+        )
+        VALUES ('event-1', 'run-1', 'workflow_evidence', 'workflow', 0.7,
+                'not_required', 'legacy', '{}')
+        """
+    )
+
+    _ensure_workflow_learning_signal_kind_column(conn)
+
+    row = conn.execute(
+        "SELECT id, signal_kind FROM workflow_learning_events WHERE id = 'event-1'"
+    ).fetchone()
+    assert row == ("event-1", None)
+
+
 @pytest.fixture
 def runtime_db(tmp_path: Path) -> Path:
     from aios_orchestration_runtime import ensure_runtime_schema

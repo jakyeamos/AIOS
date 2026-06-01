@@ -71,6 +71,18 @@ def table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
     return row is not None
 
 
+def _ensure_workflow_learning_signal_kind_column(conn: sqlite3.Connection) -> None:
+    if not table_exists(conn, "workflow_learning_events"):
+        return
+    ensure_column(conn, "workflow_learning_events", "signal_kind", "TEXT")
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_workflow_learning_events_signal
+          ON workflow_learning_events(signal_kind, created_at DESC)
+        """
+    )
+
+
 def ensure_runtime_schema(conn: sqlite3.Connection) -> None:
     conn.execute(
         """
@@ -207,6 +219,7 @@ def ensure_runtime_schema(conn: sqlite3.Connection) -> None:
           ON workflow_learning_events(run_id, created_at DESC)
         """
     )
+    _ensure_workflow_learning_signal_kind_column(conn)
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS workflow_execution_reports (
@@ -911,13 +924,25 @@ def writeback_approval_policy(
     normalized_layer = layer_type.strip().lower()
     normalized_scope = impact_scope.strip().lower()
     change = proposed_change or {}
-    high_impact_layers = {"truth", "standard", "standards", "prompt", "skill", "workflow", "packet"}
+    high_impact_layers = {
+        "truth",
+        "standard",
+        "standards",
+        "prompt",
+        "skill",
+        "workflow",
+        "packet",
+        "route",
+    }
     high_impact_scopes = {
         "global",
         "project-truth",
         "workflow-default",
         "prompt-default",
         "skill-default",
+        "standards-default",
+        "route-default",
+        "packet-default",
     }
     destructive = bool(change.get("destructive") or change.get("destructive_action"))
 
