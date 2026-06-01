@@ -60,6 +60,17 @@ AIOS Phase 10 now has a read-time next-action fusion backend:
 - `aios next-action` exposes the fused action list from the CLI with project and limit filters
 - `contracts-audit` now includes a `NextAction` row marked partial until the UI mirror, tRPC router, and rendered panels ship
 
+## Implemented On 2026-06-01
+
+AIOS Phase 10 now has a Python daily-flow trace backend:
+
+- `services.daily_flow.preview_from_objective` returns the canonical eight-step `DailyFlowTrace` from objective input without persisting orchestration run or briefing packet rows
+- `services.daily_flow.replay_from_run` reconstructs the same goal, route, packet, run, evaluation, writeback, unresolved delta, and next-action sequence from existing SQLite rows
+- every `DailyFlowStep` carries provenance, evidence references, freshness, metadata, and a non-null drill-down path, with missing upstream phase tables rendered as explicit `missing` steps
+- `services.agentize.agentize_request(dry_run=True)` wraps packet generation in a SQLite SAVEPOINT followed by rollback so preview remains inspection-only
+- `aios daily-flow` exposes mutually exclusive preview (`--objective`) and replay (`--run-id`) modes from the CLI
+- `contracts-audit` now includes a `DailyFlow` row marked partial until the TypeScript mirror, tRPC router, and rendered trace components ship
+
 ## Implemented On 2026-05-24
 
 AIOS now records session effectiveness as a durable receipt and exposes live activity indicators to Claude Code:
