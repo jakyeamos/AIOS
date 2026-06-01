@@ -82,6 +82,12 @@ def _table_exists(conn: sqlite3.Connection, table: str) -> bool:
     return row is not None
 
 
+def _table_columns(conn: sqlite3.Connection, table: str) -> set[str]:
+    if not _table_exists(conn, table):
+        return set()
+    return {str(row[1]) for row in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+
+
 def _json_obj(value: str | None) -> dict[str, Any]:
     if not value:
         return {}
@@ -90,6 +96,123 @@ def _json_obj(value: str | None) -> dict[str, Any]:
     except json.JSONDecodeError:
         return {}
     return loaded if isinstance(loaded, dict) else {}
+
+
+# Closeout signal priority:
+# 1. Explicit follow-up or major repair flags mean repeated_failure.
+# 2. Failed workflow report status means weak_workflow.
+# 3. Completed run with unresolved blocker findings means ignored_rule.
+# 4. Otherwise the learning event is still recorded with signal_kind=NULL.
+def _classify_closeout_signal_kind(
+    *,
+    follow_up_required: bool,
+    major_repair_required: bool,
+    run_status: str | None,
+    has_open_blocker: bool,
+) -> str | None:
+    if follow_up_required or major_repair_required:
+        return "repeated_failure"
+    if run_status == "failed":
+        return "weak_workflow"
+    if has_open_blocker:
+        return "ignored_rule"
+    return None
+
+
+def _emit_closeout_learning_signal(
+    conn: sqlite3.Connection,
+    *,
+    run_id: str,
+    workflow_key: str,
+    run_status: str | None,
+) -> str | None:
+    if run_status not in {"completed", "failed", "canceled"}:
+        return None
+    follow_up_required, major_repair_required = _latest_agentize_flags(conn, run_id)
+    report_status = _latest_workflow_report_status(conn, run_id) or run_status
+    signal_kind = _classify_closeout_signal_kind(
+        follow_up_required=follow_up_required,
+        major_repair_required=major_repair_required,
+        run_status=report_status,
+        has_open_blocker=_has_open_blocker_finding(conn, run_id),
+    )
+    from services.aios_cli import (  # noqa: PLC0415
+        _ensure_workflow_learning_schema,
+        _record_workflow_learning_event,
+    )
+
+    _ensure_workflow_learning_schema(conn)
+    _record_workflow_learning_event(
+        conn,
+        run_id=run_id,
+        evidence_type="workflow_evidence",
+        proposal_target=workflow_key,
+        confidence=0.6,
+        approval_state="not_required",
+        rationale="Terminal closeout learning signal heuristic.",
+        source={"source": "hook-stop", "run_status": run_status, "workflow_key": workflow_key},
+        signal_kind=signal_kind,  # type: ignore[arg-type]
+    )
+    return signal_kind
+
+
+def _latest_agentize_flags(conn: sqlite3.Connection, run_id: str) -> tuple[bool, bool]:
+    if not _table_exists(conn, "agentize_evaluations"):
+        return False, False
+    columns = _table_columns(conn, "agentize_evaluations")
+    if "follow_up_required" not in columns or "major_repair_required" not in columns:
+        return False, False
+    where_clause = "WHERE run_id = ?" if "run_id" in columns else ""
+    params: tuple[str, ...] = (run_id,) if "run_id" in columns else ()
+    row = conn.execute(
+        f"""
+        SELECT follow_up_required, major_repair_required
+        FROM agentize_evaluations
+        {where_clause}
+        ORDER BY created_at DESC
+        LIMIT 1
+        """,
+        params,
+    ).fetchone()
+    if not row:
+        return False, False
+    return bool(int(row[0] or 0)), bool(int(row[1] or 0))
+
+
+def _latest_workflow_report_status(conn: sqlite3.Connection, run_id: str) -> str | None:
+    if not _table_exists(conn, "workflow_execution_reports"):
+        return None
+    row = conn.execute(
+        """
+        SELECT status
+        FROM workflow_execution_reports
+        WHERE run_id = ?
+        ORDER BY created_at DESC
+        LIMIT 1
+        """,
+        (run_id,),
+    ).fetchone()
+    return str(row[0]) if row and row[0] is not None else None
+
+
+def _has_open_blocker_finding(conn: sqlite3.Connection, run_id: str) -> bool:
+    if not _table_exists(conn, "success_criteria_findings"):
+        return False
+    columns = _table_columns(conn, "success_criteria_findings")
+    if "run_id" not in columns:
+        return False
+    row = conn.execute(
+        """
+        SELECT 1
+        FROM success_criteria_findings
+        WHERE run_id = ?
+          AND level = 'blocker'
+          AND COALESCE(resolution_status, 'open') = 'open'
+        LIMIT 1
+        """,
+        (run_id,),
+    ).fetchone()
+    return row is not None
 
 
 def _emit_asset_promotion_candidate(
@@ -978,6 +1101,15 @@ def main() -> None:
                 report=closeout_summary,
                 artifact_path=str(candidate_path),
             )
+            try:
+                _emit_closeout_learning_signal(
+                    conn,
+                    run_id=linked_run_id,
+                    workflow_key=run_row[0] if run_row else "implementation-delivery",
+                    run_status=run_outcome,
+                )
+            except Exception as exc:
+                log(f"closeout learning signal skipped: {exc}")
             try:
                 promotion_writeback_id = _emit_asset_promotion_candidate(
                     conn,

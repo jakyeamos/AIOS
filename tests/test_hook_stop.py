@@ -97,6 +97,88 @@ def _conn(status: str = "completed") -> sqlite3.Connection:
     return conn
 
 
+def _closeout_signal_conn() -> sqlite3.Connection:
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    conn.executescript(
+        """
+        CREATE TABLE workflow_execution_reports (
+          id TEXT PRIMARY KEY,
+          run_id TEXT,
+          invocation_id TEXT,
+          workflow_key TEXT,
+          status TEXT,
+          report_json TEXT,
+          artifact_path TEXT,
+          created_at TEXT
+        );
+        CREATE TABLE agentize_evaluations (
+          id TEXT PRIMARY KEY,
+          run_id TEXT,
+          follow_up_required INTEGER NOT NULL DEFAULT 0,
+          major_repair_required INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT
+        );
+        CREATE TABLE success_criteria_findings (
+          id TEXT PRIMARY KEY,
+          run_id TEXT,
+          criterion_id TEXT,
+          workflow_key TEXT,
+          level TEXT,
+          resolution_status TEXT,
+          created_at TEXT
+        );
+        """
+    )
+    return conn
+
+
+def _seed_closeout_run(
+    conn: sqlite3.Connection,
+    *,
+    follow_up_required: int = 0,
+    major_repair_required: int = 0,
+    workflow_status: str = "completed",
+    has_open_blocker: bool = False,
+) -> None:
+    conn.execute(
+        """
+        INSERT INTO workflow_execution_reports
+        VALUES ('wr-closeout', 'run-1', NULL, 'implementation-delivery', ?, '{}', NULL, ?)
+        """,
+        (workflow_status, "2026-06-01T00:00:00Z"),
+    )
+    conn.execute(
+        """
+        INSERT INTO agentize_evaluations
+        VALUES ('ae-closeout', 'run-1', ?, ?, ?)
+        """,
+        (follow_up_required, major_repair_required, "2026-06-01T00:00:00Z"),
+    )
+    if has_open_blocker:
+        conn.execute(
+            """
+            INSERT INTO success_criteria_findings
+            VALUES (
+              'finding-closeout', 'run-1', 'C-closeout', 'implementation-delivery',
+              'blocker', 'open', '2026-06-01T00:00:00Z'
+            )
+            """
+        )
+
+
+def _latest_signal_kind(conn: sqlite3.Connection) -> str | None:
+    row = conn.execute(
+        """
+        SELECT signal_kind
+        FROM workflow_learning_events
+        ORDER BY created_at DESC
+        LIMIT 1
+        """
+    ).fetchone()
+    return None if row is None else row[0]
+
+
 def test_hook_stop_emits_asset_promotion_candidate_when_threshold_crossed() -> None:
     module = _load_hook_stop()
     conn = _conn()
@@ -113,6 +195,96 @@ def test_hook_stop_emits_asset_promotion_candidate_when_threshold_crossed() -> N
     assert (
         module._emit_asset_promotion_candidate(failed_conn, run_id="run-1", project_id="p1") is None
     )
+
+
+def test_closeout_signal_kind_repeated_failure_when_follow_up_required() -> None:
+    module = _load_hook_stop()
+    conn = _closeout_signal_conn()
+    _seed_closeout_run(conn, follow_up_required=1)
+
+    signal_kind = module._emit_closeout_learning_signal(
+        conn, run_id="run-1", workflow_key="implementation-delivery", run_status="completed"
+    )
+
+    assert signal_kind == "repeated_failure"
+    assert _latest_signal_kind(conn) == "repeated_failure"
+
+
+def test_closeout_signal_kind_repeated_failure_when_major_repair_required() -> None:
+    module = _load_hook_stop()
+    conn = _closeout_signal_conn()
+    _seed_closeout_run(conn, major_repair_required=1)
+
+    signal_kind = module._emit_closeout_learning_signal(
+        conn, run_id="run-1", workflow_key="implementation-delivery", run_status="completed"
+    )
+
+    assert signal_kind == "repeated_failure"
+
+
+def test_closeout_signal_kind_weak_workflow_when_status_failed() -> None:
+    module = _load_hook_stop()
+    conn = _closeout_signal_conn()
+    _seed_closeout_run(conn, workflow_status="failed")
+
+    signal_kind = module._emit_closeout_learning_signal(
+        conn, run_id="run-1", workflow_key="implementation-delivery", run_status="failed"
+    )
+
+    assert signal_kind == "weak_workflow"
+
+
+def test_closeout_signal_kind_ignored_rule_when_open_blocker_finding() -> None:
+    module = _load_hook_stop()
+    conn = _closeout_signal_conn()
+    _seed_closeout_run(conn, has_open_blocker=True)
+
+    signal_kind = module._emit_closeout_learning_signal(
+        conn, run_id="run-1", workflow_key="implementation-delivery", run_status="completed"
+    )
+
+    assert signal_kind == "ignored_rule"
+
+
+def test_closeout_signal_kind_null_when_clean_run() -> None:
+    module = _load_hook_stop()
+    conn = _closeout_signal_conn()
+    _seed_closeout_run(conn)
+
+    signal_kind = module._emit_closeout_learning_signal(
+        conn, run_id="run-1", workflow_key="implementation-delivery", run_status="completed"
+    )
+
+    assert signal_kind is None
+    assert _latest_signal_kind(conn) is None
+
+
+def test_closeout_signal_kind_priority_order() -> None:
+    module = _load_hook_stop()
+    conn = _closeout_signal_conn()
+    _seed_closeout_run(conn, follow_up_required=1, workflow_status="failed", has_open_blocker=True)
+
+    signal_kind = module._emit_closeout_learning_signal(
+        conn, run_id="run-1", workflow_key="implementation-delivery", run_status="failed"
+    )
+
+    assert signal_kind == "repeated_failure"
+
+
+def test_closeout_signal_kind_only_for_terminal_runs() -> None:
+    module = _load_hook_stop()
+    conn = _closeout_signal_conn()
+    _seed_closeout_run(conn, workflow_status="active")
+
+    signal_kind = module._emit_closeout_learning_signal(
+        conn, run_id="run-1", workflow_key="implementation-delivery", run_status="active"
+    )
+
+    assert signal_kind is None
+    row = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='workflow_learning_events'"
+    ).fetchone()
+    assert row is None
 
 
 def test_hook_stop_persists_resolved_run_before_effectiveness_receipt(tmp_path: Path) -> None:

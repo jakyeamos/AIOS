@@ -1863,7 +1863,7 @@ def test_contracts_audit_reports_canonical_interfaces(tmp_path: Path, capsys) ->
     contracts_output = json.loads(capsys.readouterr().out)
     data = contracts_output["data"]
     names = {contract["name"] for contract in data["contracts"]}
-    assert data["summary"]["canonical_contract_count"] == 10
+    assert data["summary"]["canonical_contract_count"] == 11
     assert data["summary"]["implemented_or_partial_count"] >= 6
     assert {
         "TrustedSignal",
@@ -1872,6 +1872,7 @@ def test_contracts_audit_reports_canonical_interfaces(tmp_path: Path, capsys) ->
         "KnowledgeObject",
         "RetrievalTrace",
         "WorkflowLearningEvent",
+        "LearningSignal",
         "EvaluationFinding",
         "DeltaExplanation",
         "AssetLifecycle",
