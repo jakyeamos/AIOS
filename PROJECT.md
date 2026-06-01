@@ -51,6 +51,15 @@ AIOS Phase 10 now has the first operator-surface backend for cross-entity search
 - `aios operator-search` exposes the backend from the CLI with kind, project, and limit filters
 - `contracts-audit` now includes an `OperatorSurface` row marked partial until the UI mirror, tRPC router, and rendered search page ship
 
+## Implemented On 2026-06-01
+
+AIOS Phase 10 now has a read-time next-action fusion backend:
+
+- `services.next_action.get_next_actions` ranks actions from standards deltas, pending writebacks, open blockers, terminal-run learning gaps, backfill tasks, promotion candidates, and learning proposals
+- `NextAction` rows carry priority buckets, confidence, evidence ids, optional workflow launch keys, and non-null drill-down paths
+- `aios next-action` exposes the fused action list from the CLI with project and limit filters
+- `contracts-audit` now includes a `NextAction` row marked partial until the UI mirror, tRPC router, and rendered panels ship
+
 ## Implemented On 2026-05-24
 
 AIOS now records session effectiveness as a durable receipt and exposes live activity indicators to Claude Code:
