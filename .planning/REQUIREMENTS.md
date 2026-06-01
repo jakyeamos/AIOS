@@ -70,7 +70,7 @@
 
 ### Continuous Improvement
 
-- [ ] **LEARN-01**: AIOS can capture run evidence that informs future prompt, skill, workflow, and packet improvements
+- [x] **LEARN-01**: AIOS can capture run evidence that informs future prompt, skill, workflow, and packet improvements
 - [ ] **LEARN-02**: AIOS can identify recurring failure modes, ignored rules, bloated packets, or weak workflows from accumulated evidence
 - [ ] **LEARN-03**: AIOS can propose conservative improvements to routing, context selection, and evaluation based on reviewed outcomes
 - [ ] **LEARN-04**: AIOS makes compounding visible by showing what each meaningful run improved for future work
@@ -220,7 +220,7 @@ None currently. The full operating-system vision is intentionally being planned 
 | WFLO-02 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Complete |
 | WFLO-03 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Complete |
 | WFLO-04 | Phase 8: Prompt, Skill, Workflow Contracts, And Asset Lifecycle | Complete |
-| LEARN-01 | Phase 9: Continuous Learning And Conservative Optimization | Pending |
+| LEARN-01 | Phase 9: Continuous Learning And Conservative Optimization | Complete |
 | LEARN-02 | Phase 9: Continuous Learning And Conservative Optimization | Pending |
 | LEARN-03 | Phase 9: Continuous Learning And Conservative Optimization | Pending |
 | LEARN-04 | Phase 9: Continuous Learning And Conservative Optimization | Pending |
