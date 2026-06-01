@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-06-01T23:15:59.000Z"
+last_updated: "2026-06-01T23:34:00.000Z"
 progress:
   total_phases: 19
   completed_phases: 8
   total_plans: 105
-  completed_plans: 28
-  percent: 27
+  completed_plans: 29
+  percent: 28
 ---
 
 # AIOS Planning State
@@ -26,13 +26,13 @@ progress:
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
 - Latest completed phase: Phase 8, Prompt, Skill, Workflow Contracts, And Asset Lifecycle, shipped lifecycle-managed prompts/skills/workflows, evidence-backed asset recommendation, stage-rich workflow contracts, workflow comparison/promotion, planned workflow candidate contracts, and strict prompt lifecycle validation.
-- Latest completed plan: Phase 9 Plan 05 shipped operator-facing learning CLI commands, closeout signal-kind emission, and UI server/tRPC learning surfaces.
+- Latest completed plan: Phase 9 Plan 06 tightened divergent strategy and workflow experiment winners through governed promotion proposals.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 4, Reusable Improvement Loops
 - Active phase: Phase 9, Continuous Learning And Conservative Optimization
-- Active plan: Phase 9 wave 4, Plan 09-06
+- Active plan: Phase 9 verification and closeout
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8
 - Next dependency chain: Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
@@ -84,6 +84,7 @@ progress:
 | 2026-06-01 | Complete Phase 9 Plan 03 learning impact projections | `.planning/phases/09-continuous-learning-and-conservative-optimization/09-03-SUMMARY.md` records pure-read `LearningImpactPerRun` and `LearningImpactRollup` projections, trend rationale sample-size guards, and 21 focused impact tests. |
 | 2026-06-01 | Complete Phase 9 Plan 04 conservative learning optimizer | `.planning/phases/09-continuous-learning-and-conservative-optimization/09-04-SUMMARY.md` records approval-required learning writebacks, conservatism policy thresholds, cooling-period dedupe, and 24 optimizer tests. |
 | 2026-06-01 | Complete Phase 9 Plan 05 learning operator surfaces | `.planning/phases/09-continuous-learning-and-conservative-optimization/09-05-SUMMARY.md` records learning CLI commands, closeout `signal_kind` emission, workflow-learning audit extensions, and UI server/tRPC learning surfaces. |
+| 2026-06-01 | Complete Phase 9 Plan 06 governed promotion wiring | `.planning/phases/09-continuous-learning-and-conservative-optimization/09-06-SUMMARY.md` records approval-gated divergent strategy and workflow experiment promotion proposals plus the missing `propose_asset_promotion` surface. |
 
 ---
-*Last updated: 2026-06-01 after completing Phase 9 Plan 05*
+*Last updated: 2026-06-01 after completing Phase 9 Plan 06*

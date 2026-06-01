@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from services.asset_lifecycle import (
+    AssetKind,
     AssetLifecycleState,
     promote_asset,
     writeback_approval_policy_shim,
@@ -315,6 +316,93 @@ def propose_workflow_promotion(
     }
 
 
+def propose_asset_promotion(
+    conn: sqlite3.Connection,
+    *,
+    asset_kind: AssetKind,
+    asset_key: str,
+    to_state: AssetLifecycleState,
+    evidence: dict[str, Any],
+    actor: str,
+    rationale: str | None = None,
+) -> dict[str, Any]:
+    ensure_workflow_promotion_schema(conn)
+    summary = rationale or f"Promote {asset_kind} {asset_key} to {to_state}"
+    proposed_change = {
+        "asset_kind": asset_kind,
+        "asset_key": asset_key,
+        "to_state": to_state,
+        "evidence": evidence,
+    }
+    policy = writeback_approval_policy_shim(
+        layer_type=asset_kind,
+        impact_scope=f"{asset_kind}-default",
+        proposed_change=proposed_change,
+    )
+    writeback_id = f"writeback-{uuid.uuid4()}"
+    now = _now_iso()
+    conn.execute(
+        """
+        INSERT INTO improvement_writebacks (
+          id, run_id, project_id, layer_type, layer_key, title, summary,
+          evidence_json, proposed_change_json, impact_scope, status, requires_approval,
+          approval_reason, token_regressive, created_at, updated_at
+        )
+        VALUES (?, NULL, NULL, ?, ?, ?, ?, ?, ?, ?, 'proposed', ?, ?, 0, ?, ?)
+        """,
+        (
+            writeback_id,
+            asset_kind,
+            asset_key,
+            f"Promote {asset_kind} {asset_key}",
+            summary,
+            _json(evidence),
+            _json({**proposed_change, "actor": actor, "approval_policy": policy}),
+            f"{asset_kind}-default",
+            1 if policy["requires_approval"] else 0,
+            policy.get("reason"),
+            now,
+            now,
+        ),
+    )
+    lifecycle_id = f"{asset_kind}-promotion-{uuid.uuid4()}"
+    conn.execute(
+        """
+        INSERT INTO promotion_lifecycle_items (
+          id, item_kind, item_key, source_run_id, status, evidence_json, status_reason,
+          created_at, updated_at, metadata_json
+        )
+        VALUES (?, ?, ?, ?, 'proposed', ?, ?, ?, ?, ?)
+        """,
+        (
+            lifecycle_id,
+            asset_kind,
+            asset_key,
+            evidence.get("run_id")
+            or evidence.get("divergent_run_id")
+            or evidence.get("experiment_id"),
+            _json(evidence),
+            summary,
+            now,
+            now,
+            _json(
+                {
+                    "actor": actor,
+                    "target_state": to_state,
+                    "approval_writeback_id": writeback_id,
+                    "source": evidence.get("source"),
+                }
+            ),
+        ),
+    )
+    return {
+        "writeback_id": writeback_id,
+        "lifecycle_id": lifecycle_id,
+        "requires_approval": bool(policy["requires_approval"]),
+        "rationale": policy.get("reason"),
+    }
+
+
 def finalize_workflow_promotion(
     conn: sqlite3.Connection,
     *,
@@ -376,5 +464,6 @@ __all__ = [
     "compare_workflow_effectiveness",
     "finalize_workflow_promotion",
     "promote_asset",
+    "propose_asset_promotion",
     "propose_workflow_promotion",
 ]

@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import sys
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal, get_args
 
-from services.asset_lifecycle import AssetLifecycleState
+from services.asset_lifecycle import AssetKind, AssetLifecycleState
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CANDIDATE_REGISTRY = ROOT / "config" / "divergent-strategy" / "candidates.json"
@@ -671,6 +672,67 @@ def transition_promotion_lifecycle(
     return dict(row)
 
 
+def _propose_via_workflow_promotion_if_available(
+    conn: sqlite3.Connection,
+    *,
+    asset_kind: str,
+    asset_key: str,
+    to_state: AssetLifecycleState,
+    evidence: dict[str, Any],
+    actor: str,
+    rationale: str,
+) -> dict[str, Any] | None:
+    try:
+        from services.workflow_promotion import (
+            propose_asset_promotion,
+            propose_workflow_promotion,
+        )
+    except ImportError:
+        print(
+            "[warn] Phase 8 workflow_promotion absent; falling back to "
+            "transition_promotion_lifecycle direct write. Promotion governance "
+            "is loose for this run; Phase 10 will tighten once Phase 8 ships.",
+            file=sys.stderr,
+        )
+        return None
+    if asset_kind == "workflow":
+        from services.workflow_promotion import WorkflowEffectiveness
+
+        workflow_evidence = WorkflowEffectiveness(
+            workflow_key=asset_key,
+            since=str(evidence.get("since", "")),
+            run_count=int(evidence.get("run_count", 1)),
+            completed_count=int(evidence.get("completed_count", 1)),
+            failed_count=int(evidence.get("failed_count", 0)),
+            rework_rate=float(evidence.get("rework_rate", 0.0)),
+            validation_pass_rate=float(evidence.get("validation_pass_rate", 1.0)),
+            mean_blocker_count=float(evidence.get("mean_blocker_count", 0.0)),
+            mean_blockers_per_stage=float(evidence.get("mean_blockers_per_stage", 0.0)),
+            writeback_usefulness=float(evidence.get("writeback_usefulness", 0.0)),
+            stage_evaluations={},
+        )
+        return propose_workflow_promotion(
+            conn,
+            workflow_key=asset_key,
+            to_state=to_state,
+            evidence=workflow_evidence,
+            actor=actor,
+            rationale=rationale,
+        )
+    if asset_kind not in {"prompt", "skill"}:
+        raise ValueError(f"Unsupported divergent promotion asset kind: {asset_kind}")
+    typed_asset_kind: AssetKind = "prompt" if asset_kind == "prompt" else "skill"
+    return propose_asset_promotion(
+        conn,
+        asset_kind=typed_asset_kind,
+        asset_key=asset_key,
+        to_state=to_state,
+        evidence=evidence,
+        actor=actor,
+        rationale=rationale,
+    )
+
+
 def create_divergent_run(
     conn: sqlite3.Connection,
     *,
@@ -832,15 +894,31 @@ def create_divergent_run(
         portfolio=portfolio,
         entropy=entropy,
     )
-    transition_promotion_lifecycle(
+    promotion_result = _propose_via_workflow_promotion_if_available(
         conn,
-        item_id="skill-divergent-strategy",
-        item_kind="skill",
-        item_key="divergent-strategy",
-        requested_status="candidate",
-        source_run_id=run_id,
-        evidence=[],
+        asset_kind="skill",
+        asset_key="divergent-strategy",
+        to_state="candidate",
+        evidence={
+            "source": "divergent_strategy",
+            "divergent_run_id": run_id,
+            "portfolio": portfolio,
+            "quality_score": quality_score,
+            "entropy_score": entropy.diversity_score,
+        },
+        actor="divergent_strategy",
+        rationale="Portfolio winner with judge consensus",
     )
+    if promotion_result is None:
+        transition_promotion_lifecycle(
+            conn,
+            item_id="skill-divergent-strategy",
+            item_kind="skill",
+            item_key="divergent-strategy",
+            requested_status="candidate",
+            source_run_id=run_id,
+            evidence=[],
+        )
     conn.commit()
 
     run = DivergentRun(

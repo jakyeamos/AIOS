@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+import services.divergent_strategy as divergent_strategy  # noqa: E402
 from services.divergent_strategy import (  # noqa: E402
     approve_memory_writeback,
     classify_task,
@@ -75,6 +76,133 @@ def test_divergent_run_persists_portfolio_writebacks_and_entropy() -> None:
     assert {row["status"] for row in writebacks} == {"proposed"}
 
 
+def test_divergent_winner_goes_through_propose_asset_promotion_when_phase8_present() -> None:
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    ensure_divergent_schema(conn)
+
+    result = create_divergent_run(
+        conn,
+        source_task="Design a guarded promotion path for divergent strategy",
+        mode="lightweight",
+    )
+
+    writeback = conn.execute(
+        """
+        SELECT layer_type, layer_key, requires_approval, proposed_change_json
+        FROM improvement_writebacks
+        WHERE layer_type = 'skill' AND layer_key = 'divergent-strategy'
+        """
+    ).fetchone()
+    lifecycle = conn.execute(
+        """
+        SELECT item_kind, item_key, source_run_id, status, metadata_json
+        FROM promotion_lifecycle_items
+        WHERE item_kind = 'skill' AND item_key = 'divergent-strategy'
+        """
+    ).fetchone()
+
+    assert writeback["requires_approval"] == 1
+    assert '"source": "divergent_strategy"' in writeback["proposed_change_json"]
+    assert lifecycle["item_kind"] == "skill"
+    assert lifecycle["source_run_id"] == result.run.id
+    assert lifecycle["status"] == "proposed"
+    assert '"target_state": "candidate"' in lifecycle["metadata_json"]
+
+
+def test_divergent_winner_falls_back_when_phase8_missing(monkeypatch, capsys) -> None:
+    def unavailable(*args, **kwargs):
+        print(
+            "[warn] Phase 8 workflow_promotion absent; falling back to legacy path.",
+            file=sys.stderr,
+        )
+        return None
+
+    monkeypatch.setattr(
+        divergent_strategy,
+        "_propose_via_workflow_promotion_if_available",
+        unavailable,
+    )
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    ensure_divergent_schema(conn)
+
+    result = create_divergent_run(conn, source_task="Exercise fallback", mode="lightweight")
+
+    assert "Phase 8 workflow_promotion absent" in capsys.readouterr().err
+    lifecycle = conn.execute(
+        """
+        SELECT source_run_id, status
+        FROM promotion_lifecycle_items
+        WHERE item_kind = 'skill' AND item_key = 'divergent-strategy'
+        """
+    ).fetchone()
+    assert lifecycle["source_run_id"] == result.run.id
+    assert lifecycle["status"] == "candidate"
+    writeback_table = conn.execute(
+        """
+        SELECT 1 FROM sqlite_master
+        WHERE type = 'table' AND name = 'improvement_writebacks'
+        """
+    ).fetchone()
+    writeback_count = (
+        conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM improvement_writebacks
+            WHERE layer_type = 'skill' AND layer_key = 'divergent-strategy'
+            """
+        ).fetchone()[0]
+        if writeback_table
+        else 0
+    )
+    assert writeback_count == 0
+
+
+def test_divergent_runtime_behavior_otherwise_unchanged() -> None:
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    ensure_divergent_schema(conn)
+
+    result = create_divergent_run(
+        conn, source_task="Compare implementation options", mode="lightweight"
+    )
+
+    assert result.run.status == "completed"
+    assert conn.execute("SELECT COUNT(*) FROM divergent_runs").fetchone()[0] == 1
+    assert conn.execute("SELECT COUNT(*) FROM divergent_candidates").fetchone()[0] == 3
+    assert conn.execute("SELECT COUNT(*) FROM divergent_judgments").fetchone()[0] >= 6
+    assert conn.execute("SELECT COUNT(*) FROM entropy_observations").fetchone()[0] == 1
+    assert result.portfolio["best_overall"]
+
+
+def test_divergent_winner_asset_kind_routing() -> None:
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    ensure_divergent_schema(conn)
+
+    result = divergent_strategy._propose_via_workflow_promotion_if_available(
+        conn,
+        asset_kind="skill",
+        asset_key="divergent-strategy",
+        to_state="candidate",
+        evidence={"source": "divergent_strategy", "divergent_run_id": "run-1"},
+        actor="divergent_strategy",
+        rationale="Portfolio winner with judge consensus",
+    )
+
+    assert result is not None
+    row = conn.execute(
+        "SELECT item_kind, item_key, status FROM promotion_lifecycle_items WHERE id = ?",
+        (result["lifecycle_id"],),
+    ).fetchone()
+    assert dict(row) == {
+        "item_kind": "skill",
+        "item_key": "divergent-strategy",
+        "status": "proposed",
+    }
+
+
 def test_writeback_approval_does_not_promote_without_evidence() -> None:
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
@@ -95,7 +223,7 @@ def test_writeback_approval_does_not_promote_without_evidence() -> None:
         "SELECT status FROM promotion_lifecycle_items WHERE source_run_id = ?",
         (result.run.id,),
     ).fetchone()
-    assert promotion["status"] == "candidate"
+    assert promotion["status"] == "proposed"
 
 
 def test_entropy_scores_convergence_risk_for_repeated_shapes() -> None:

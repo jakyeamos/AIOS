@@ -11,6 +11,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from services.asset_lifecycle import AssetKind, AssetLifecycleState
 from services.workflow_orchestration import WorkflowExecutionContext, execute_workflow
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -44,6 +45,67 @@ def _display_path(path: Path) -> str:
         return str(path.relative_to(ROOT))
     except ValueError:
         return str(path)
+
+
+def _propose_via_workflow_promotion_if_available(
+    conn: sqlite3.Connection,
+    *,
+    asset_kind: str,
+    asset_key: str,
+    to_state: AssetLifecycleState,
+    evidence: dict[str, Any],
+    actor: str,
+    rationale: str,
+) -> dict[str, Any] | None:
+    try:
+        from services.workflow_promotion import (
+            propose_asset_promotion,
+            propose_workflow_promotion,
+        )
+    except ImportError:
+        print(
+            "[warn] Phase 8 workflow_promotion absent; falling back to "
+            "workflow_skill_experiments promotion_ready status only. Promotion governance "
+            "is loose for this run; Phase 10 will tighten once Phase 8 ships.",
+            file=sys.stderr,
+        )
+        return None
+    if asset_kind == "workflow":
+        from services.workflow_promotion import WorkflowEffectiveness
+
+        workflow_evidence = WorkflowEffectiveness(
+            workflow_key=asset_key,
+            since=str(evidence.get("since", "")),
+            run_count=int(evidence.get("run_count", 1)),
+            completed_count=int(evidence.get("completed_count", 1)),
+            failed_count=int(evidence.get("failed_count", 0)),
+            rework_rate=float(evidence.get("rework_rate", 0.0)),
+            validation_pass_rate=float(evidence.get("validation_pass_rate", 1.0)),
+            mean_blocker_count=float(evidence.get("mean_blocker_count", 0.0)),
+            mean_blockers_per_stage=float(evidence.get("mean_blockers_per_stage", 0.0)),
+            writeback_usefulness=float(evidence.get("writeback_usefulness", 0.0)),
+            stage_evaluations={},
+        )
+        return propose_workflow_promotion(
+            conn,
+            workflow_key=asset_key,
+            to_state=to_state,
+            evidence=workflow_evidence,
+            actor=actor,
+            rationale=rationale,
+        )
+    if asset_kind not in {"prompt", "skill"}:
+        raise ValueError(f"Unsupported experiment promotion asset kind: {asset_kind}")
+    typed_asset_kind: AssetKind = "prompt" if asset_kind == "prompt" else "skill"
+    return propose_asset_promotion(
+        conn,
+        asset_kind=typed_asset_kind,
+        asset_key=asset_key,
+        to_state=to_state,
+        evidence=evidence,
+        actor=actor,
+        rationale=rationale,
+    )
 
 
 def ensure_workflow_experiment_schema(conn: sqlite3.Connection) -> None:
@@ -208,7 +270,9 @@ def seed_paper_fixtures(
     return seeded
 
 
-def _queued_rows(conn: sqlite3.Connection, *, limit: int, experiment_id: str | None = None) -> list[sqlite3.Row]:
+def _queued_rows(
+    conn: sqlite3.Connection, *, limit: int, experiment_id: str | None = None
+) -> list[sqlite3.Row]:
     conn.row_factory = sqlite3.Row
     if experiment_id:
         return conn.execute(
@@ -353,15 +417,22 @@ def _score_report(report: dict[str, Any], skill_key: str) -> float:
     failed = report.get("failed_required_validations") or []
     if not failed:
         score += 0.12
-    artifacts = report.get("artifacts") if isinstance(report.get("artifacts"), dict) else {}
+    raw_artifacts = report.get("artifacts")
+    artifacts = raw_artifacts if isinstance(raw_artifacts, dict) else {}
     if artifacts.get("normalized_prompt"):
         score += 0.08
     if artifacts.get("result_text"):
         score += 0.12
     if artifacts.get("learned_workflow_skill") == skill_key:
         score += 0.06
-    for stage in report.get("stages", []):
+    raw_stages = report.get("stages")
+    stages = raw_stages if isinstance(raw_stages, list) else []
+    for stage in stages:
+        if not isinstance(stage, dict):
+            continue
         for skill in stage.get("skills", []):
+            if not isinstance(skill, dict):
+                continue
             if skill.get("skill_key") == skill_key and skill.get("output_keys"):
                 score += 0.04
     return round(min(score, 1.0), 4)
@@ -381,9 +452,13 @@ def _repo_profile(repo_path: Path) -> dict[str, Any]:
         for path in source_files
         if "test" in path.name.lower() or "tests" in {part.lower() for part in path.parts}
     ]
-    package = _load_json(repo_path / "package.json") if (repo_path / "package.json").exists() else {}
-    workspaces = package.get("workspaces") if isinstance(package.get("workspaces"), list) else []
-    scripts = package.get("scripts") if isinstance(package.get("scripts"), dict) else {}
+    package = (
+        _load_json(repo_path / "package.json") if (repo_path / "package.json").exists() else {}
+    )
+    raw_workspaces = package.get("workspaces")
+    raw_scripts = package.get("scripts")
+    workspaces = raw_workspaces if isinstance(raw_workspaces, list) else []
+    scripts = raw_scripts if isinstance(raw_scripts, dict) else {}
     return {
         "has_package_json": (repo_path / "package.json").exists(),
         "has_pyproject": (repo_path / "pyproject.toml").exists(),
@@ -413,7 +488,9 @@ def _workflow_repo_fit_score(workflow_key: str, repo_path: Path) -> float:
     elif "debug" in workflow_key:
         if profile["has_pyproject"] and profile["test_file_count"]:
             score += 0.16
-        if profile["test_file_count"] and profile["test_file_count"] < max(profile["source_file_count"], 1):
+        if profile["test_file_count"] and profile["test_file_count"] < max(
+            profile["source_file_count"], 1
+        ):
             score += 0.08
         if profile["workspace_count"]:
             score += 0.06
@@ -455,7 +532,8 @@ def _python_validation_command(repo_path: Path) -> list[str]:
 def _repo_validation_command(repo_path: Path) -> list[str]:
     if (repo_path / "package.json").exists():
         package = _load_json(repo_path / "package.json")
-        scripts = package.get("scripts") if isinstance(package.get("scripts"), dict) else {}
+        raw_scripts = package.get("scripts")
+        scripts = raw_scripts if isinstance(raw_scripts, dict) else {}
         if "test" in scripts:
             return ["npm", "test", "--", "--runInBand"]
         if "lint" in scripts:
@@ -505,7 +583,8 @@ def _score_candidate(
         score += 0.12
     else:
         score -= 0.25
-    artifacts = report.get("artifacts") if isinstance(report.get("artifacts"), dict) else {}
+    raw_artifacts = report.get("artifacts")
+    artifacts = raw_artifacts if isinstance(raw_artifacts, dict) else {}
     if artifacts.get("learned_workflow_skill") == skill_key:
         score += _workflow_repo_fit_score(workflow_key, repo_path)
     return round(max(0.0, min(score, 1.0)), 4)
@@ -533,7 +612,9 @@ def _prepare_branch(repo_path: Path, branch_name: str, dry_run: bool) -> dict[st
     if dry_run:
         return {"ok": True, "original_branch": original_branch, "dry_run": True}
     exists = _run_git(repo_path, ["rev-parse", "--verify", branch_name])
-    switch_args = ["switch", branch_name] if exists.returncode == 0 else ["switch", "-c", branch_name]
+    switch_args = (
+        ["switch", branch_name] if exists.returncode == 0 else ["switch", "-c", branch_name]
+    )
     switched = _run_git(repo_path, switch_args)
     if switched.returncode != 0:
         return {"ok": False, "error": switched.stderr.strip() or switched.stdout.strip()}
@@ -542,7 +623,9 @@ def _prepare_branch(repo_path: Path, branch_name: str, dry_run: bool) -> dict[st
     return {"ok": True, "original_branch": original_branch}
 
 
-def _write_repo_artifact(repo_path: Path, row: sqlite3.Row, payload: dict[str, Any], dry_run: bool) -> str | None:
+def _write_repo_artifact(
+    repo_path: Path, row: sqlite3.Row, payload: dict[str, Any], dry_run: bool
+) -> str | None:
     artifact_path = repo_path / ".aios" / "workflow-skill-experiments" / f"{row['id']}.json"
     if dry_run:
         return str(artifact_path)
@@ -557,7 +640,10 @@ def _write_repo_artifact(repo_path: Path, row: sqlite3.Row, payload: dict[str, A
             f"Record AIOS workflow skill experiment {row['workflow_key']} on {row['test_repo_id']}",
         ],
     )
-    if commit.returncode != 0 and "nothing to commit" not in (commit.stderr + commit.stdout).lower():
+    if (
+        commit.returncode != 0
+        and "nothing to commit" not in (commit.stderr + commit.stdout).lower()
+    ):
         raise RuntimeError(commit.stderr.strip() or commit.stdout.strip())
     return str(artifact_path)
 
@@ -683,7 +769,33 @@ def run_workflow_skill_experiment(
     delta = round(candidate_score - baseline_score, 4)
     ablation_delta = round(candidate_score - ablation_score, 4)
     repo_fit_score = _workflow_repo_fit_score(str(row["workflow_key"]), repo_path)
-    outcome = "promotion_ready" if delta >= 0.05 and candidate_validation.get("passed") else "no_improvement"
+    outcome = (
+        "promotion_ready"
+        if delta >= 0.05 and candidate_validation.get("passed")
+        else "no_improvement"
+    )
+    promotion_result: dict[str, Any] | None = None
+    if outcome == "promotion_ready":
+        promotion_result = _propose_via_workflow_promotion_if_available(
+            conn,
+            asset_kind="skill",
+            asset_key=skill_key,
+            to_state="candidate",
+            evidence={
+                "source": "workflow_experiments",
+                "experiment_id": experiment_id,
+                "workflow_key": row["workflow_key"],
+                "skill_key": skill_key,
+                "baseline_score": baseline_score,
+                "candidate_score": candidate_score,
+                "score_delta": delta,
+                "ablation_score": ablation_score,
+                "ablation_delta": ablation_delta,
+                "test_repo_id": row["test_repo_id"],
+            },
+            actor="workflow_experiments",
+            rationale="Experiment winner improved validation score",
+        )
     artifact_payload = {
         "experiment_id": experiment_id,
         "workflow_key": row["workflow_key"],
@@ -730,6 +842,7 @@ def run_workflow_skill_experiment(
         "validation_command": candidate_validation.get("command"),
         "divergent_strategy_standard": DIVERGENT_STRATEGY_STANDARD,
         "dry_run": dry_run,
+        "promotion_proposal": promotion_result,
     }
     conn.execute(
         """
@@ -762,6 +875,7 @@ def run_workflow_skill_experiment(
         "score_delta": delta,
         "outcome": outcome,
         "artifact_path": artifact_path,
+        "promotion_proposal": promotion_result,
     }
 
 
