@@ -255,6 +255,89 @@ export type RunValueScore = {
   estimatedMinutesSaved: number;
 };
 
+export type LearningSignalKind =
+  | "repeated_failure"
+  | "ignored_rule"
+  | "bloated_packet"
+  | "weak_prompt"
+  | "weak_workflow"
+  | "route_misroute"
+  | "standards_regression"
+  | "writeback_adopted"
+  | "writeback_rejected"
+  | "compounding_gain";
+
+export interface RecurringPattern {
+  pattern_id: string;
+  signal_kind: LearningSignalKind;
+  scope_kind: string;
+  scope_key: string;
+  project_id: string | null;
+  sample_size: number;
+  recurrence_count: number;
+  confidence: number;
+  since: string;
+  summary: string;
+  evidence_run_ids: readonly string[];
+  suggested_remediation_class: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface AssetEvidenceDelta {
+  asset_kind: "prompt" | "skill" | "workflow" | "standard" | "route";
+  asset_key: string;
+  delta_sample_size: number;
+  delta_success_count: number;
+  delta_blocker_count: number;
+}
+
+export interface ProposalCreated {
+  writeback_id: string;
+  signal_kind: LearningSignalKind | null;
+  requires_approval: boolean;
+  status: string;
+}
+
+export interface LearningImpactPerRun {
+  run_id: string;
+  workflow_key: string | null;
+  signals_emitted: readonly LearningSignalKind[];
+  assets_evidenced: readonly AssetEvidenceDelta[];
+  proposals_created: readonly ProposalCreated[];
+  learning_events_persisted: number;
+  no_learning_reason: string | null;
+}
+
+export interface LearningImpactRollup {
+  scope: "workflow" | "prompt" | "skill";
+  key: string;
+  since: string;
+  sample_size: number;
+  rework_rate_30d: number | null;
+  rework_rate_90d: number | null;
+  success_rate_30d: number | null;
+  blocker_rate_30d: number | null;
+  trend: "improving" | "flat" | "regressing" | "insufficient_data";
+  rationale: string;
+  project_id: string | null;
+}
+
+export interface ConservativeProposalRow {
+  writeback_id: string;
+  layer_type: string;
+  layer_key: string;
+  impact_scope: string;
+  signal_kind: LearningSignalKind | null;
+  pattern_id: string | null;
+  proposal_status: string;
+  current_lifecycle_state: string | null;
+  requires_approval: boolean;
+  created_at: string;
+  sample_size: number | null;
+  recurrence_count: number | null;
+  confidence: number | null;
+}
+
 export type ProjectValueScore = {
   projectId: string;
   projectName: string;

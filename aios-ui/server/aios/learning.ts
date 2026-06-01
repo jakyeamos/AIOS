@@ -2,6 +2,13 @@ import { randomUUID } from "node:crypto";
 
 import type Database from "better-sqlite3";
 
+import type {
+  ConservativeProposalRow,
+  LearningImpactPerRun,
+  LearningImpactRollup,
+  LearningSignalKind,
+  RecurringPattern,
+} from "@/lib/types";
 import { ensureControlPlaneSchema } from "@/server/aios/schema";
 
 const parseJsonArray = <T>(raw: string, fallback: T): T => {
@@ -10,6 +17,33 @@ const parseJsonArray = <T>(raw: string, fallback: T): T => {
   } catch {
     return fallback;
   }
+};
+
+const parseJsonRecord = (raw: string | null): Record<string, unknown> => {
+  if (!raw) {
+    return {};
+  }
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : {};
+  } catch {
+    return {};
+  }
+};
+
+const numberOrNull = (value: unknown): number | null =>
+  typeof value === "number" ? value : null;
+
+const stringOrNull = (value: unknown): string | null =>
+  typeof value === "string" ? value : null;
+
+const tableExistsInDb = (db: Database.Database, tableName: string): boolean => {
+  const row = db
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1")
+    .get(tableName) as { name: string } | undefined;
+  return Boolean(row?.name);
 };
 
 export const proposeRunWritebacks = (db: Database.Database, runId: string): void => {
@@ -166,4 +200,241 @@ export const proposeRunWritebacks = (db: Database.Database, runId: string): void
       timestamp,
     );
   }
+};
+
+export const getLearningImpactForRun = (
+  db: Database.Database,
+  runId: string,
+): LearningImpactPerRun | null => {
+  ensureControlPlaneSchema(db);
+  if (!tableExistsInDb(db, "orchestration_runs")) {
+    return null;
+  }
+  const run = db
+    .prepare("SELECT id, workflow_key AS workflowKey FROM orchestration_runs WHERE id = ? LIMIT 1")
+    .get(runId) as { id: string; workflowKey: string | null } | undefined;
+  if (!run) {
+    return null;
+  }
+  const signalRows = tableExistsInDb(db, "workflow_learning_events")
+    ? (db
+        .prepare(
+          `
+          SELECT signal_kind AS signalKind
+          FROM workflow_learning_events
+          WHERE run_id = ? AND signal_kind IS NOT NULL
+          ORDER BY created_at, id
+        `,
+        )
+        .all(runId) as Array<{ signalKind: LearningSignalKind }>)
+    : [];
+  const signals = Array.from(new Set(signalRows.map((row) => row.signalKind)));
+  const eventCount = tableExistsInDb(db, "workflow_learning_events")
+    ? ((db
+        .prepare("SELECT COUNT(*) AS count FROM workflow_learning_events WHERE run_id = ?")
+        .get(runId) as { count: number }).count ?? 0)
+    : 0;
+  const proposals = listConservativeProposals(db, undefined, 200)
+    .filter((proposal) => {
+      const payload = parseJsonRecord(
+        (
+          db
+            .prepare("SELECT proposed_change_json FROM improvement_writebacks WHERE id = ? LIMIT 1")
+            .get(proposal.writeback_id) as { proposed_change_json: string | null } | undefined
+        )?.proposed_change_json ?? null,
+      );
+      const evidence = (payload.metadata as Record<string, unknown> | undefined)?.evidence_run_ids;
+      return Array.isArray(evidence) && evidence.includes(runId);
+    })
+    .map((proposal) => ({
+      writeback_id: proposal.writeback_id,
+      signal_kind: proposal.signal_kind,
+      requires_approval: proposal.requires_approval,
+      status: proposal.proposal_status,
+    }));
+  return {
+    run_id: run.id,
+    workflow_key: run.workflowKey,
+    signals_emitted: signals,
+    assets_evidenced: run.workflowKey
+      ? [
+          {
+            asset_kind: "workflow",
+            asset_key: run.workflowKey,
+            delta_sample_size: 1,
+            delta_success_count: 0,
+            delta_blocker_count: 0,
+          },
+        ]
+      : [],
+    proposals_created: proposals,
+    learning_events_persisted: eventCount,
+    no_learning_reason: signals.length === 0 && proposals.length === 0 ? "one_off_task" : null,
+  };
+};
+
+export const getLearningImpactRollup = (
+  db: Database.Database,
+  scope: "workflow" | "prompt" | "skill",
+  key: string,
+  since: string,
+  projectId?: string | null,
+): LearningImpactRollup => {
+  ensureControlPlaneSchema(db);
+  const rows = tableExistsInDb(db, "workflow_execution_reports")
+    ? (db
+        .prepare(
+          `
+          SELECT w.status AS status
+          FROM workflow_execution_reports w
+          LEFT JOIN orchestration_runs r ON r.id = w.run_id
+          WHERE w.workflow_key = ?
+            AND w.created_at >= ?
+            AND (? IS NULL OR r.project_id = ?)
+        `,
+        )
+        .all(key, since, projectId ?? null, projectId ?? null) as Array<{ status: string }>)
+    : [];
+  const sampleSize = rows.length;
+  const failed = rows.filter((row) => row.status === "failed").length;
+  const completed = rows.filter((row) => row.status === "completed").length;
+  const reworkRate = sampleSize > 0 ? failed / sampleSize : null;
+  const successRate = sampleSize > 0 ? completed / sampleSize : null;
+  return {
+    scope,
+    key,
+    since,
+    sample_size: sampleSize,
+    rework_rate_30d: reworkRate,
+    rework_rate_90d: null,
+    success_rate_30d: successRate,
+    blocker_rate_30d: null,
+    trend: sampleSize < 10 ? "insufficient_data" : "flat",
+    rationale:
+      sampleSize < 10
+        ? `sample_size=${sampleSize} below trend threshold 10`
+        : `sample_size=${sampleSize} has no prior comparison in UI projection`,
+    project_id: projectId ?? null,
+  };
+};
+
+export const listRecurringPatterns = (
+  db: Database.Database,
+  since: string,
+  projectId?: string | null,
+  limit = 50,
+): RecurringPattern[] => {
+  ensureControlPlaneSchema(db);
+  if (!tableExistsInDb(db, "workflow_learning_events")) {
+    return [];
+  }
+  const rows = db
+    .prepare(
+      `
+      SELECT
+        e.signal_kind AS signalKind,
+        COALESCE(e.proposal_target, r.workflow_key, 'unknown') AS scopeKey,
+        r.project_id AS projectId,
+        COUNT(*) AS sampleSize,
+        GROUP_CONCAT(e.run_id) AS runIds
+      FROM workflow_learning_events e
+      LEFT JOIN orchestration_runs r ON r.id = e.run_id
+      WHERE e.signal_kind IS NOT NULL
+        AND e.created_at >= ?
+        AND (? IS NULL OR r.project_id = ?)
+      GROUP BY e.signal_kind, COALESCE(e.proposal_target, r.workflow_key, 'unknown'), r.project_id
+      ORDER BY sampleSize DESC
+      LIMIT ?
+    `,
+    )
+    .all(since, projectId ?? null, projectId ?? null, limit) as Array<{
+    signalKind: LearningSignalKind;
+    scopeKey: string;
+    projectId: string | null;
+    sampleSize: number;
+    runIds: string | null;
+  }>;
+  return rows.map((row) => ({
+    pattern_id: `ui-${row.signalKind}-${row.scopeKey}`,
+    signal_kind: row.signalKind,
+    scope_kind: "workflow",
+    scope_key: row.scopeKey,
+    project_id: row.projectId,
+    sample_size: row.sampleSize,
+    recurrence_count: row.sampleSize,
+    confidence: 1,
+    since,
+    summary: `${row.signalKind} appeared ${row.sampleSize} times for ${row.scopeKey}`,
+    evidence_run_ids: row.runIds ? row.runIds.split(",") : [],
+    suggested_remediation_class: "review_learning_signal",
+    metadata: { source: "workflow_learning_events" },
+  }));
+};
+
+export const listConservativeProposals = (
+  db: Database.Database,
+  status?: string,
+  limit = 50,
+): ConservativeProposalRow[] => {
+  ensureControlPlaneSchema(db);
+  if (!tableExistsInDb(db, "improvement_writebacks")) {
+    return [];
+  }
+  const lifecycleJoin = tableExistsInDb(db, "promotion_lifecycle_items")
+    ? "LEFT JOIN promotion_lifecycle_items p ON p.item_kind = w.layer_type AND p.item_key = w.layer_key"
+    : "";
+  const lifecycleStateSelect = tableExistsInDb(db, "promotion_lifecycle_items")
+    ? "p.status AS currentLifecycleState"
+    : "NULL AS currentLifecycleState";
+  const rows = db
+    .prepare(
+      `
+      SELECT
+        w.id AS writebackId,
+        w.layer_type AS layerType,
+        w.layer_key AS layerKey,
+        w.impact_scope AS impactScope,
+        w.status AS proposalStatus,
+        w.requires_approval AS requiresApproval,
+        w.created_at AS createdAt,
+        w.proposed_change_json AS proposedChangeJson,
+        ${lifecycleStateSelect}
+      FROM improvement_writebacks w
+      ${lifecycleJoin}
+      WHERE w.proposed_change_json LIKE ?
+        AND (? IS NULL OR w.status = ?)
+      ORDER BY w.created_at DESC
+      LIMIT ?
+    `,
+    )
+    .all('%"source": "learning_analysis"%', status ?? null, status ?? null, limit) as Array<{
+    writebackId: string;
+    layerType: string;
+    layerKey: string;
+    impactScope: string;
+    proposalStatus: string;
+    requiresApproval: number;
+    createdAt: string;
+    proposedChangeJson: string | null;
+    currentLifecycleState: string | null;
+  }>;
+  return rows.map((row) => {
+    const payload = parseJsonRecord(row.proposedChangeJson);
+    const metadata = parseJsonRecord(JSON.stringify(payload.metadata ?? {}));
+    return {
+      writeback_id: row.writebackId,
+      layer_type: row.layerType,
+      layer_key: row.layerKey,
+      impact_scope: row.impactScope,
+      signal_kind: stringOrNull(payload.signal_kind) as LearningSignalKind | null,
+      pattern_id: stringOrNull(metadata.pattern_id),
+      proposal_status: row.proposalStatus,
+      current_lifecycle_state: row.currentLifecycleState,
+      requires_approval: row.requiresApproval === 1,
+      created_at: row.createdAt,
+      sample_size: numberOrNull(metadata.sample_size),
+      recurrence_count: numberOrNull(metadata.recurrence_count),
+      confidence: numberOrNull(metadata.confidence),
+    };
+  });
 };

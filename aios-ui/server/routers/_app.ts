@@ -7,6 +7,7 @@ import { divergentRouter } from "@/server/routers/divergent";
 import { experimentsRouter } from "@/server/routers/experiments";
 import { insightsRouter } from "@/server/routers/insights";
 import { knowledgeRouter } from "@/server/routers/knowledge";
+import { learningRouter } from "@/server/routers/learning";
 import { patternsRouter } from "@/server/routers/patterns";
 import { projectsRouter } from "@/server/routers/projects";
 import { promptsRouter } from "@/server/routers/prompts";
@@ -22,6 +23,7 @@ export const appRouter = createTRPCRouter({
   costs: costsRouter,
   divergent: divergentRouter,
   knowledge: knowledgeRouter,
+  learning: learningRouter,
   patterns: patternsRouter,
   projects: projectsRouter,
   query: queryRouter,
