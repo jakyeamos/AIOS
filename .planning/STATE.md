@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-05-24T00:00:00.000Z"
+last_updated: "2026-06-01T00:00:00.000Z"
 progress:
-  total_phases: 15
+  total_phases: 19
   completed_phases: 7
-  total_plans: 79
-  completed_plans: 21
-  percent: 27
+  total_plans: 105
+  completed_plans: 22
+  percent: 21
 ---
 
 # AIOS Planning State
@@ -26,13 +26,15 @@ progress:
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
 - Latest completed phase: Phase 7, Delta Scoring And Health Backfill, shipped ten-domain standards health scoring, delta explanations, provenance-aware contradiction checks, health-derived workflow recommendations, and standards manual overrides.
+- Latest completed plan: Phase 8 Plan 04 shipped durable workflow stage rollups, workflow effectiveness comparison, governed workflow promotion proposals, asset lifecycle CLI operations, and advisory promotion candidate writebacks.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 2, Truth, Governance, And Evidence
 - Active phase: Phase 8, Prompt, Skill, Workflow Contracts, And Asset Lifecycle
+- Active plan: Phase 8 Plan 05, planned workflow contracts and prompt lifecycle validation
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7
-- Next dependency chain: Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15
+- Next dependency chain: Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
 
 ## Known Constraints To Preserve
@@ -66,9 +68,15 @@ progress:
 | 2026-05-23 | Add Phase 13 Multi-Provider Session Ingestion And Second Brain Data Pipeline | Phase 13 directory created with 13-RESEARCH.md and plans 13-01 through 13-08 (pipeline audit, provider interface + DB migrations, Cursor provider, Antigravity provider, incremental sync + CLI, privacy + redaction, summarization + writeback, tests + docs + backfill report). REQUIREMENTS.md extended with SESS-01 through SESS-08. ROADMAP.md extended with Milestone 8 and Phase 13 scope. Total phases: 13, total plans: 63. |
 | 2026-05-23 | Add Phase 14 Code Quality Gates And Cross-Project Complexity Standards | Phase 14 directory created with 14-RESEARCH.md and plans 14-01 through 14-08 (agent rule + workflow gate, pre-check questions, root gate doc, complexity pattern checklist, AIOS backfill, soundscape-app + portfolio backfill, amos-saas + GitNexus + tm backfill, Terrace backfill + cross-project summary). REQUIREMENTS.md extended with QUAL-01 through QUAL-08. ROADMAP.md extended with Milestone 9 and Phase 14 scope. Total phases: 14, total plans: 71. |
 | 2026-05-23 | Add Phase 15 Agent Skill Portfolio Audit And External Library Integration | Phase 15 directory created with 15-RESEARCH.md and plans 15-01 through 15-08 (skill inventory audit + backup, interrogate upgrade with grill-with-docs behaviors, diagnose skill, simplifier upgrade with architecture-first report discipline, to-issues skill with aios.db issues_store, prototype skill, write-a-skill consolidation, handoff skill with aios.db handoff_store). REQUIREMENTS.md extended with SKIL-01 through SKIL-08. ROADMAP.md extended with Milestone 10 and Phase 15 scope. Total phases: 15, total plans: 79. |
+| 2026-06-01 | Add Phase 16 Harness Determinism, Evidence, And Independent Verification | Phase 16 directory created with 16-RESEARCH.md and plans 16-01 through 16-06 (existing harness audit, evidence chain hardening, independent verifier gate, context routing manifest, deterministic phase gates and prompt boundary tightening, retrospective/model-selection/shadow parity metadata). REQUIREMENTS.md extended with HARN-01 through HARN-08. ROADMAP.md extended with Milestone 11 and Phase 16 scope. Total phases: 16, total plans: 85. |
+| 2026-06-01 | Add Phase 17 Developer Experience Capability Pack | Phase 17 directory created with 17-RESEARCH.md and plans 17-01 through 17-06 (DX pack audit, capability contract and metrics, capability assets and routing metadata, dynamic mode/model routing, DX eval hooks and fixtures, documentation and validation report workflow). REQUIREMENTS.md extended with DXPK-01 through DXPK-08. ROADMAP.md extended with Milestone 12 and Phase 17 scope. Total phases: 17, total plans: 91. |
+| 2026-06-01 | Add Phase 18 Meta-Learning Proposal Layer | Phase 18 directory created with 18-RESEARCH.md and plans 18-01 through 18-07 (meta-learning audit, session signal extractor, confidence scoring and router, proposal generator, auto-allow safety, shadow eval plans and meta CLI, documentation and tests). REQUIREMENTS.md extended with META-01 through META-08. ROADMAP.md extended with Milestone 13 and Phase 18 scope. Total phases: 18, total plans: 98. |
+| 2026-06-01 | Add Phase 19 Native Workflow Command Pack | Phase 19 directory created with 19-RESEARCH.md and plans 19-01 through 19-07 (native command audit, command contracts and safety classes, read-only MVP commands, security audit, guarded cleanup and prototype, command metadata logging, tests and docs). REQUIREMENTS.md extended with CMDP-01 through CMDP-08. ROADMAP.md extended with Milestone 14 and Phase 19 scope. Total phases: 19, total plans: 105. |
 | 2026-05-24 | Add Refero Styles design-reference workflow guidance | Planned in `.planning/quick/260524-refero-styles-design-reference-workflow`; global design standards now allow Refero Styles as an optional cited design-reference source while preserving AIOS operational UI constraints. |
 | 2026-05-24 | Complete Phase 6 Standards Resolution And Evidence-Based Evaluation | Phase 6 shipped registry-backed standards resolution, briefing packet criteria/standards persistence, durable workflow-stage criteria findings, closeout stage evaluation aggregation, broader execution-first evidence ingestion, and CLI lifecycle controls for criteria findings plus standards preview. |
 | 2026-05-24 | Complete Phase 7 Delta Scoring And Health Backfill | Phase 7 shipped ten-domain standards health coverage, read-time delta explanations, provenance and contradiction classification, health-derived workflow recommendations, UI/CLI drill-down surfaces, governance-audit recommendations, and durable standards manual overrides. |
+| 2026-06-01 | Finish workflow promotion runtime evidence path | Planned in `.planning/quick/260601-workflow-promotion-runtime-evidence`; managed governed workflow runs now persist stage findings and workflow report evidence through the same runtime path consumed by `workflow-compare` and workflow promotion candidates. |
+| 2026-06-01 | Complete Phase 8 Plan 04 workflow promotion evidence | `.planning/phases/08-prompt-skill-workflow-contracts-and-asset-lifecycle/08-04-SUMMARY.md` records durable stage evaluation rollups, workflow comparison metrics, governed promotion proposals, asset lifecycle CLI commands, and advisory closeout promotion candidates. |
 
 ---
-*Last updated: 2026-05-24 after completing Phase 7 delta health work*
+*Last updated: 2026-06-01 after completing Phase 8 Plan 04*
