@@ -108,6 +108,17 @@ AIOS Phase 10 operator projections are now rendered in the local UI:
 - Browser verification passed for `/`, `/search?query=implementation`, `/writebacks`, `/automations`, `/projects/be2139e874c1a02e`, and `/runs/managed-invoke-manual-5a3df472-1a00-46ce-a2ba-02c271fde2b8`
 - UI verification passes with `pnpm exec tsc --noEmit`, `pnpm lint`, and `pnpm lint:architecture`; lint still reports the existing anti-slop warning baseline only
 
+## Implemented On 2026-06-01
+
+AIOS Phase 10 now has an Agent Eval Foundation for major-task review:
+
+- `docs/evals/benchmark-eval-architecture.md` defines the four-layer eval stack, eight rollout phases, AIOS Effectiveness Score formula, context comparison formulas, 14 conditions, 25 failure labels, completion gates, and anti-cheating rules
+- `docs/evals/context-profiles.md` defines the six context profiles and the rule that second-brain wins prove local lift rather than portable benchmark superiority
+- `docs/evals/templates/` contains major-task, backfill-hotspot, shadow-branch, failure-record, and portable-context-packet templates for agent-fillable eval records
+- `config/agent-eval/eval-schemas.py` defines `EvalTask`, `EvalRun`, `ShadowCandidate`, `EvalScore`, and `EvalFailure` TypedDict contracts for later automation
+- `AGENTS.md` now includes an Agent Eval Workflow rule after Execution-First Verification with trigger scope, a 10-step checklist, anti-cheating rules, and personalized/local portability labeling
+- verification passes with `python3 -m py_compile config/agent-eval/eval-schemas.py`, `uv run ruff check config/agent-eval/eval-schemas.py`, and `git diff --check`
+
 ## Implemented On 2026-05-24
 
 AIOS now records session effectiveness as a durable receipt and exposes live activity indicators to Claude Code:
