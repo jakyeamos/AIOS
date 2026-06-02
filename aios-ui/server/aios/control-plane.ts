@@ -6,15 +6,24 @@ import type {
   BriefingPacket,
   ConsistencyFinding,
   ControlPlaneRunDetail,
+  DailyFlowTrace,
   GovernanceOverview,
   GovernanceProposalSummary,
   GovernanceRunGap,
   ImprovementWriteback,
+  NextAction,
   OrchestrationRun,
   OrchestrationRunStatus,
+  PhaseId,
+  PhaseStatus,
+  PhaseStatusReport,
   RouteRecommendation,
 } from "@/lib/control-plane";
-import { agentProfiles, invocationBackends, workflowTemplates } from "@/server/aios/catalog";
+import type { LearningImpactRollup } from "@/lib/types";
+import { getCatalogSnapshot } from "@/server/aios/catalog";
+import { replayDailyFlow } from "@/server/aios/daily-flow";
+import { getLearningImpactRollup } from "@/server/aios/learning";
+import { getNextActions } from "@/server/aios/next-action";
 import { assembleRankedPacket, expandPacketContext } from "@/server/aios/packet-assembly";
 import { ensureControlPlaneSchema } from "@/server/aios/schema";
 import {
@@ -357,27 +366,103 @@ const listPacketRows = (db: Database.Database, limit = 12): BriefingPacket[] => 
 };
 
 export const getControlPlaneOverview = (db: Database.Database): {
-  workflowTemplates: typeof workflowTemplates;
-  agentProfiles: typeof agentProfiles;
-  invocationBackends: typeof invocationBackends;
+  workflowTemplates: ReturnType<typeof getCatalogSnapshot>["workflowTemplates"];
+  agentProfiles: ReturnType<typeof getCatalogSnapshot>["agentProfiles"];
+  invocationBackends: ReturnType<typeof getCatalogSnapshot>["invocationBackends"];
   runs: OrchestrationRun[];
   packets: BriefingPacket[];
   pendingWritebacks: ImprovementWriteback[];
   governance: GovernanceOverview;
   recentFindings: ConsistencyFinding[];
+  nextActions: NextAction[];
+  dailyFlowSummary: DailyFlowTrace | null;
+  learningImpactRollup: LearningImpactRollup[];
+  phaseStatus: PhaseStatusReport[];
 } => {
+  const catalog = getCatalogSnapshot();
   const runs = listControlPlaneRuns(db);
   const governance = getGovernanceOverview(db);
+  const nextActions = getNextActions(db, { limit: 8 });
   return {
-    workflowTemplates,
-    agentProfiles,
-    invocationBackends: listInvocationBackends(),
+    workflowTemplates: catalog.workflowTemplates,
+    agentProfiles: catalog.agentProfiles,
+    invocationBackends: catalog.invocationBackends.length > 0 ? catalog.invocationBackends : listInvocationBackends(),
     runs,
     packets: listPacketRows(db),
     pendingWritebacks: listImprovementWritebacks(db, { limit: 12 }).filter((writeback) => writeback.requiresApproval),
     governance,
     recentFindings: listConsistencyFindings(db, { limit: 12 }),
+    nextActions,
+    dailyFlowSummary: latestDailyFlowSummary(db, runs),
+    learningImpactRollup: topLearningImpactRollups(db),
+    phaseStatus: phaseCompletionAudit(db),
   };
+};
+
+const latestDailyFlowSummary = (db: Database.Database, runs: OrchestrationRun[]): DailyFlowTrace | null => {
+  const run = runs.find((entry) => entry.status !== "planned") ?? runs[0];
+  return run ? replayDailyFlow(db, { runId: run.id }) : null;
+};
+
+const topLearningImpactRollups = (db: Database.Database): LearningImpactRollup[] => {
+  if (!tableExists(db, "orchestration_runs")) {
+    return [];
+  }
+  const rows = db
+    .prepare(
+      `
+      SELECT workflow_key AS workflowKey, COUNT(*) AS count
+      FROM orchestration_runs
+      WHERE workflow_key IS NOT NULL
+      GROUP BY workflow_key
+      ORDER BY count DESC, workflow_key ASC
+      LIMIT 3
+      `,
+    )
+    .all() as Array<{ workflowKey: string; count: number }>;
+  return rows.map((row) =>
+    getLearningImpactRollup(db, "workflow", row.workflowKey, "1970-01-01T00:00:00.000Z", null),
+  );
+};
+
+const PHASE_TABLE_REQUIREMENTS: Record<PhaseId, readonly string[]> = {
+  phase_01: ["projects", "sessions"],
+  phase_02: ["orchestration_runs", "briefing_packets"],
+  phase_03: ["success_criteria_evaluations", "success_criteria_findings"],
+  phase_04: ["improvement_writebacks", "improvement_writeback_events"],
+  phase_05: ["workflow_execution_reports", "workflow_learning_events"],
+  phase_06: ["standards_health_snapshots", "standards_delta_items"],
+  phase_07: ["quality_pipeline_runs", "quality_pipeline_checks"],
+  phase_08: ["workflow_experiments"],
+  phase_09: ["promotion_lifecycle_items"],
+  phase_10: ["standards_backfill_tasks", "automation_run_history"],
+};
+
+export const phaseCompletionAudit = (db: Database.Database): PhaseStatusReport[] => {
+  const services = {
+    phase_01: ["projects-router"],
+    phase_02: ["control-plane-router"],
+    phase_03: ["success-criteria-engine"],
+    phase_04: ["writeback-router"],
+    phase_05: ["learning-router"],
+    phase_06: ["standards-health"],
+    phase_07: ["quality-pipeline"],
+    phase_08: ["experiments-router"],
+    phase_09: ["workflows-router"],
+    phase_10: ["daily-flow-router", "operator-search-router", "next-action-router"],
+  } satisfies Record<PhaseId, readonly string[]>;
+
+  return Object.entries(PHASE_TABLE_REQUIREMENTS).map(([phase, tables]) => {
+    const missingTables = tables.filter((table) => !tableExists(db, table));
+    const status: PhaseStatus =
+      missingTables.length === 0 ? "complete" : missingTables.length === tables.length ? "missing" : "partial";
+    return {
+      phase: phase as PhaseId,
+      status,
+      missingTables,
+      missingServices: services[phase as PhaseId].length === 0 ? services[phase as PhaseId] : [],
+    };
+  });
 };
 
 export const getGovernanceOverview = (db: Database.Database): GovernanceOverview => {
@@ -396,6 +481,12 @@ export const getGovernanceOverview = (db: Database.Database): GovernanceOverview
     .map(([policyClass, count]) => ({ policyClass, count }))
     .sort((left, right) => right.count - left.count || left.policyClass.localeCompare(right.policyClass));
   const terminal = terminalRunGaps(db);
+  const policyClassDrillDowns = Object.fromEntries(
+    policyClassCounts.map((row) => [
+      row.policyClass,
+      `/writebacks?policyClass=${encodeURIComponent(row.policyClass)}`,
+    ]),
+  );
 
   return {
     summary: {
@@ -408,6 +499,7 @@ export const getGovernanceOverview = (db: Database.Database): GovernanceOverview
     pendingApprovals,
     recentProposals: proposals.slice(0, 20),
     policyClassCounts,
+    policyClassDrillDowns,
     terminalRunsMissingEvidence: terminal.gaps,
     linkRules: [
       "Approval-sensitive truth, standards, prompt, skill, workflow, packet, global, project-truth, and destructive-action changes must remain pending until reviewed.",
@@ -425,12 +517,14 @@ export const planTask = (
 
   const projectId = input.projectId ?? null;
   const assembledPacket = assembleRankedPacket(db, input);
+  const catalog = getCatalogSnapshot();
   const runId = `run-${randomUUID()}`;
   const packetId = `packet-${randomUUID()}`;
   const backendKey =
-    workflowTemplates.find((workflow) => workflow.key === assembledPacket.workflowKey)?.defaultBackendKey ??
-    agentProfiles.find((agent) => agent.key === assembledPacket.agentKey)?.defaultBackendKey ??
-    invocationBackends[0].key;
+    catalog.workflowTemplates.find((workflow) => workflow.key === assembledPacket.workflowKey)?.defaultBackendKey ??
+    catalog.agentProfiles.find((agent) => agent.key === assembledPacket.agentKey)?.defaultBackendKey ??
+    catalog.invocationBackends[0]?.key ??
+    "codex-managed-runtime";
 
   supersedePendingRuns(db, projectId, runId);
 

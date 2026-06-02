@@ -1,7 +1,9 @@
 import { z } from "zod";
 import type Database from "better-sqlite3";
+import { TRPCError } from "@trpc/server";
 
 import type { AiosProjectComponentKey, TaskiProjectSummary } from "@/lib/control-plane";
+import { invokeControlPlaneRun, planTask } from "@/server/aios/control-plane";
 import {
   isAiosProjectComponentKey,
   setAiosProjectComponentEnabled,
@@ -44,6 +46,13 @@ type ProjectSessionRow = {
   promptCount: number;
   toolEventCount: number;
   artifactCount: number;
+};
+
+type StandardsDeltaLaunchRow = {
+  id: string;
+  projectId: string;
+  summary: string;
+  remediationPlaybookJson: string;
 };
 
 const normalizeStatus = (status: string): ProjectStatus => (status === "archived" ? "archived" : "active");
@@ -228,6 +237,20 @@ const mapSession = (row: ProjectSessionRow): Session => ({
   toolEventCount: row.toolEventCount,
   artifactCount: row.artifactCount,
 });
+
+const parseJsonRecord = (raw: string | null): Record<string, unknown> => {
+  if (!raw) {
+    return {};
+  }
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : {};
+  } catch {
+    return {};
+  }
+};
 
 export const projectsRouter = createTRPCRouter({
   list: publicProcedure
@@ -417,4 +440,53 @@ export const projectsRouter = createTRPCRouter({
       }),
     )
     .mutation(({ ctx, input }) => updateStandardsBackfillTask(ctx.db, input)),
+
+  launchRemediation: publicProcedure
+    .input(
+      z.object({
+        projectId: z.string().min(1),
+        deltaId: z.string().min(1),
+        objective: z.string().min(8).max(500).optional(),
+      }),
+    )
+    .mutation(({ ctx, input }) => {
+      if (!tableExists("standards_delta_items")) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "standards_delta_items table is not available." });
+      }
+      const delta = ctx.db
+        .prepare(
+          `
+          SELECT
+            id,
+            project_id AS projectId,
+            summary,
+            remediation_playbook_json AS remediationPlaybookJson
+          FROM standards_delta_items
+          WHERE id = ? AND project_id = ?
+          LIMIT 1
+          `,
+        )
+        .get(input.deltaId, input.projectId) as StandardsDeltaLaunchRow | undefined;
+      if (!delta) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Standards delta was not found for this project." });
+      }
+      const playbook = parseJsonRecord(delta.remediationPlaybookJson);
+      const workflowKey = typeof playbook.recommended_workflow_key === "string"
+        ? playbook.recommended_workflow_key
+        : null;
+      if (!workflowKey) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Delta does not define recommended_workflow_key." });
+      }
+      const plan = planTask(ctx.db, {
+        objective: input.objective ?? `[remediation:${delta.id}] [workflow:${workflowKey}] ${delta.summary}`,
+        projectId: input.projectId,
+      });
+      const invocation = invokeControlPlaneRun(ctx.db, { runId: plan.run.id });
+      return {
+        deltaId: delta.id,
+        recommendedWorkflowKey: workflowKey,
+        plan,
+        invocation,
+      };
+    }),
 });

@@ -167,6 +167,7 @@ export type AgentProfile = {
   bestFor: string[];
   guardrails: string[];
   defaultBackendKey: string;
+  isSeedData?: boolean;
 };
 
 export type WorkflowTemplate = {
@@ -177,6 +178,7 @@ export type WorkflowTemplate = {
   deliverables: string[];
   validation: string[];
   defaultBackendKey: string;
+  isSeedData?: boolean;
 };
 
 export type InvocationBackend = {
@@ -189,6 +191,7 @@ export type InvocationBackend = {
   surface: "codex" | "claude_code" | "manual";
   deprecated?: boolean;
   requiresStrictHandshake?: boolean;
+  isSeedData?: boolean;
 };
 
 export type PacketSection = {
@@ -456,7 +459,7 @@ export type GroundedCitation = {
 
 export type GroundedAnswer = {
   question: string;
-  intent: "what_changed" | "project_state" | "decision_why" | "agent_brief" | "system_state";
+  intent: "what_changed" | "project_state" | "decision_why" | "agent_brief" | "system_state" | "should_i_run_workflow";
   answer: string;
   facts: string[];
   inferences: string[];
@@ -464,6 +467,13 @@ export type GroundedAnswer = {
   assumptions: string[];
   citations: GroundedCitation[];
   retrievalTrace: ContextTrace[];
+  recommendedWorkflow?: {
+    workflowKey: string;
+    rationale: string;
+    drillDownPath: string;
+  } | null;
+  recommendedPacketPreview?: Record<string, unknown> | null;
+  launchableRunId?: string | null;
 };
 
 export type TopicGraphKind = KnowledgePageKind | "task_type" | "policy";
@@ -604,6 +614,7 @@ export type GovernanceOverview = {
   pendingApprovals: GovernanceProposalSummary[];
   recentProposals: GovernanceProposalSummary[];
   policyClassCounts: Array<{ policyClass: string; count: number }>;
+  policyClassDrillDowns: Record<string, string>;
   terminalRunsMissingEvidence: GovernanceRunGap[];
   linkRules: string[];
 };

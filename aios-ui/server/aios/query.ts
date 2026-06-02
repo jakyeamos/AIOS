@@ -1,9 +1,11 @@
 import type Database from "better-sqlite3";
 
 import type { GroundedAnswer, GroundedCitation, TruthKnowledgeBoundary } from "@/lib/control-plane";
+import { workflowPath } from "@/lib/drill-down";
 import { getCtsContext } from "@/server/aios/cts";
 import { getProjectDossier, getTruthKnowledgeBoundary, listKnowledgePages } from "@/server/aios/knowledge";
 import { listRecentChanges } from "@/server/aios/changes";
+import { getNextActions } from "@/server/aios/next-action";
 import { getTopicMarkers, getTopicReferences, searchTopicGraph } from "@/server/aios/topic-graph";
 
 const tableExists = (db: Database.Database, name: string): boolean => {
@@ -74,6 +76,17 @@ const isTruthOperatorQuestion = (question: string): boolean => {
   );
 };
 
+const isWorkflowRunQuestion = (question: string): boolean => {
+  const lower = question.toLowerCase();
+  return (
+    lower.includes("should i run") ||
+    lower.includes("what workflow") ||
+    lower.includes("which workflow") ||
+    lower.includes("run workflow") ||
+    lower.includes("launch workflow")
+  );
+};
+
 const classifyIntent = (
   question: string,
 ): GroundedAnswer["intent"] => {
@@ -81,6 +94,10 @@ const classifyIntent = (
 
   if (lower.includes("what changed")) {
     return "what_changed";
+  }
+
+  if (isWorkflowRunQuestion(question)) {
+    return "should_i_run_workflow";
   }
 
   if (lower.includes("why") && (lower.includes("decision") || lower.includes("decid"))) {
@@ -384,6 +401,74 @@ const answerCapabilityQuestion = (db: Database.Database, question: string): Grou
   };
 };
 
+const answerWorkflowRunQuestion = (
+  db: Database.Database,
+  question: string,
+  projectId: string | null,
+): GroundedAnswer => {
+  const [action] = getNextActions(db, { projectId, limit: 1 });
+  const workflowKey = action?.recommendedWorkflowKey ?? null;
+  return {
+    question,
+    intent: "should_i_run_workflow",
+    answer: workflowKey
+      ? `The strongest available signal points to ${workflowKey}. This answer is advisory only; it does not launch a run.`
+      : action
+        ? "There is a next action, but it does not name a specific workflow. Review the linked evidence before launching anything."
+        : "There is no current next-action signal strong enough to recommend launching a workflow.",
+    facts: action
+      ? [
+          `Top next action: ${action.title}`,
+          `Priority bucket: ${action.priorityBucket}`,
+          `Evidence ids: ${action.evidenceIds.join(", ") || "none"}`,
+        ]
+      : ["No next-action rows were returned for this project scope."],
+    inferences: action
+      ? [
+          `Confidence is ${action.confidence}.`,
+          action.rationale,
+        ]
+      : ["The operator should compile a packet or inspect project health before launching a workflow."],
+    recommendations: workflowKey
+      ? [`Inspect ${workflowKey}, then use a control-plane plan/invoke mutation if the evidence is acceptable.`]
+      : ["Use the control-plane planner to create a packet before invoking a run."],
+    assumptions: projectId ? [] : ["No project scope was supplied, so the recommendation is portfolio-wide."],
+    citations: action
+      ? [
+          {
+            label: action.title,
+            href: action.drillDownPath,
+            excerpt: action.rationale,
+          },
+        ]
+      : [],
+    retrievalTrace: [
+      {
+        source: "next-action",
+        reason: "Loaded ranked next-action projection before recommending a workflow.",
+        freshness: "Live from SQLite at query time",
+        confidence: action?.confidence ?? 0,
+      },
+    ],
+    recommendedWorkflow: workflowKey
+      ? {
+          workflowKey,
+          rationale: action?.rationale ?? "Recommended by next-action projection.",
+          drillDownPath: workflowPath(workflowKey),
+        }
+      : null,
+    recommendedPacketPreview: action
+      ? {
+          projectId,
+          objective: action.title,
+          evidenceIds: action.evidenceIds,
+          sourceActionKind: action.kind,
+        }
+      : null,
+    launchableRunId: null,
+  };
+};
+
 export const answerGroundedQuestion = (
   db: Database.Database,
   input: { question: string; projectId?: string | null },
@@ -405,6 +490,10 @@ export const answerGroundedQuestion = (
 
   if (isTruthOperatorQuestion(input.question)) {
     return answerTruthOperatorQuestion(db, input.question, truthBoundary, recentChanges);
+  }
+
+  if (intent === "should_i_run_workflow") {
+    return answerWorkflowRunQuestion(db, input.question, projectId);
   }
 
   if (intent === "what_changed") {

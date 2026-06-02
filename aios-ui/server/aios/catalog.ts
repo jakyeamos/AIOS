@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import type { AgentProfile, InvocationBackend, WorkflowTemplate } from "@/lib/control-plane";
 
 export const invocationBackends: InvocationBackend[] = [
@@ -9,6 +12,7 @@ export const invocationBackends: InvocationBackend[] = [
     supportsCancel: true,
     commandPreview: ["python3", "bin/aios-managed-run.py", "--backend-key", "codex-managed-runtime"],
     surface: "codex",
+    isSeedData: true,
   },
   {
     key: "claude-managed-runtime",
@@ -18,6 +22,7 @@ export const invocationBackends: InvocationBackend[] = [
     supportsCancel: true,
     commandPreview: ["python3", "bin/aios-managed-run.py", "--backend-key", "claude-managed-runtime"],
     surface: "claude_code",
+    isSeedData: true,
   },
   {
     key: "manual-session-legacy",
@@ -29,6 +34,7 @@ export const invocationBackends: InvocationBackend[] = [
     surface: "manual",
     deprecated: true,
     requiresStrictHandshake: true,
+    isSeedData: true,
   },
 ];
 
@@ -47,6 +53,7 @@ export const agentProfiles: AgentProfile[] = [
       "Write architectural rationale and tradeoffs as durable artifacts.",
     ],
     defaultBackendKey: "claude-managed-runtime",
+    isSeedData: true,
   },
   {
     key: "implementation-lead",
@@ -62,6 +69,7 @@ export const agentProfiles: AgentProfile[] = [
       "Expose inspectability instead of hiding behavior in prompts.",
     ],
     defaultBackendKey: "codex-managed-runtime",
+    isSeedData: true,
   },
   {
     key: "debug-surgeon",
@@ -77,6 +85,7 @@ export const agentProfiles: AgentProfile[] = [
       "Record failure mode and recovery path into durable memory.",
     ],
     defaultBackendKey: "codex-managed-runtime",
+    isSeedData: true,
   },
   {
     key: "memory-curator",
@@ -92,6 +101,7 @@ export const agentProfiles: AgentProfile[] = [
       "Do not elevate staging content into canonical knowledge.",
     ],
     defaultBackendKey: "claude-managed-runtime",
+    isSeedData: true,
   },
 ];
 
@@ -116,6 +126,7 @@ export const workflowTemplates: WorkflowTemplate[] = [
       "Routing, retrieval, and packet generation are inspectable.",
     ],
     defaultBackendKey: "codex-managed-runtime",
+    isSeedData: true,
   },
   {
     key: "implementation-delivery",
@@ -137,6 +148,7 @@ export const workflowTemplates: WorkflowTemplate[] = [
       "Relevant architecture and prior decisions are cited.",
     ],
     defaultBackendKey: "codex-managed-runtime",
+    isSeedData: true,
   },
   {
     key: "failure-recovery",
@@ -158,14 +170,86 @@ export const workflowTemplates: WorkflowTemplate[] = [
       "Recovery steps and unresolved questions are logged.",
     ],
     defaultBackendKey: "codex-managed-runtime",
+    isSeedData: true,
   },
 ];
 
+type WorkflowRegistryRow = {
+  key?: unknown;
+  name?: unknown;
+  purpose?: unknown;
+  purpose_long?: unknown;
+  trigger_hints?: unknown;
+  output_contract?: unknown;
+  required_validations?: unknown;
+  lifecycle_state?: unknown;
+};
+
+type WorkflowRegistry = {
+  workflows?: unknown;
+};
+
+export type CatalogSnapshot = {
+  workflowTemplates: WorkflowTemplate[];
+  agentProfiles: AgentProfile[];
+  invocationBackends: InvocationBackend[];
+};
+
+const registryCandidates = (): string[] => [
+  path.join(process.cwd(), "../config/workflows/registry.json"),
+  path.join(process.cwd(), "config/workflows/registry.json"),
+];
+
+const stringArray = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+
+const registryWorkflowTemplates = (): WorkflowTemplate[] | null => {
+  const registryPath = registryCandidates().find((candidate) => fs.existsSync(candidate));
+  if (!registryPath) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(fs.readFileSync(registryPath, "utf8")) as WorkflowRegistry;
+    if (!Array.isArray(parsed.workflows)) {
+      return null;
+    }
+    return parsed.workflows
+      .filter((item): item is WorkflowRegistryRow => item !== null && typeof item === "object")
+      .map((workflow) => {
+        const key = typeof workflow.key === "string" ? workflow.key : "unknown-workflow";
+        return {
+          key,
+          name: typeof workflow.name === "string" ? workflow.name : key,
+          summary:
+            typeof workflow.purpose_long === "string"
+              ? workflow.purpose_long
+              : typeof workflow.purpose === "string"
+                ? workflow.purpose
+                : "Workflow registered without a summary.",
+          triggers: stringArray(workflow.trigger_hints),
+          deliverables: stringArray(workflow.output_contract),
+          validation: stringArray(workflow.required_validations),
+          defaultBackendKey: "codex-managed-runtime",
+          isSeedData: false,
+        };
+      });
+  } catch {
+    return null;
+  }
+};
+
+export const getCatalogSnapshot = (): CatalogSnapshot => ({
+  workflowTemplates: registryWorkflowTemplates() ?? workflowTemplates,
+  agentProfiles,
+  invocationBackends,
+});
+
 export const findInvocationBackend = (key: string): InvocationBackend =>
-  invocationBackends.find((backend) => backend.key === key) ?? invocationBackends[0];
+  getCatalogSnapshot().invocationBackends.find((backend) => backend.key === key) ?? invocationBackends[0];
 
 export const findWorkflowTemplate = (objective: string): WorkflowTemplate => {
   const lower = objective.toLowerCase();
+  const snapshot = getCatalogSnapshot();
 
   if (
     lower.includes("knowledge") ||
@@ -173,30 +257,31 @@ export const findWorkflowTemplate = (objective: string): WorkflowTemplate => {
     lower.includes("orchestration") ||
     lower.includes("second brain")
   ) {
-    return workflowTemplates[0];
+    return snapshot.workflowTemplates.find((workflow) => workflow.key === "knowledge-os-evolution") ?? workflowTemplates[0];
   }
 
   if (lower.includes("debug") || lower.includes("fix") || lower.includes("broken")) {
-    return workflowTemplates[2];
+    return snapshot.workflowTemplates.find((workflow) => workflow.key === "failure-recovery") ?? workflowTemplates[2];
   }
 
-  return workflowTemplates[1];
+  return snapshot.workflowTemplates.find((workflow) => workflow.key === "implementation-delivery") ?? workflowTemplates[1];
 };
 
 export const findAgentProfile = (objective: string): AgentProfile => {
   const lower = objective.toLowerCase();
+  const snapshot = getCatalogSnapshot();
 
   if (lower.includes("audit") || lower.includes("architecture")) {
-    return agentProfiles[0];
+    return snapshot.agentProfiles[0];
   }
 
   if (lower.includes("debug") || lower.includes("fix") || lower.includes("failure")) {
-    return agentProfiles[2];
+    return snapshot.agentProfiles[2];
   }
 
   if (lower.includes("memory") || lower.includes("decision") || lower.includes("handoff")) {
-    return agentProfiles[3];
+    return snapshot.agentProfiles[3];
   }
 
-  return agentProfiles[1];
+  return snapshot.agentProfiles[1];
 };
