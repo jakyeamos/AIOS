@@ -8,8 +8,8 @@ progress:
   total_phases: 19
   completed_phases: 9
   total_plans: 105
-  completed_plans: 35
-  percent: 33
+  completed_plans: 36
+  percent: 34
 ---
 
 # AIOS Planning State
@@ -26,13 +26,13 @@ progress:
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
 - Latest completed phase: Phase 9, Continuous Learning And Conservative Optimization, shipped typed learning signals, recurring pattern detection, learning impact projections, conservative approval-gated proposals, operator learning surfaces, and governed divergent/experiment promotion wiring.
-- Latest completed plan: Phase 10 Plan 06 shipped rendered operator surfaces for global search, next actions, daily-flow traces, phase and seed-data status, writeback governance filters, automation triggers, grounded-query workflow launches, and Browser-verified route rendering.
+- Latest completed plan: Phase 10 Plan 07 shipped the Agent Eval Foundation docs, context profiles, templates, schema definitions, and AGENTS.md eval workflow rule.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 5, Operator Surfaces And Daily Flow
 - Active phase: Phase 10, Operator Surfaces, Query, And Daily-Flow Visibility
-- Active plan: Phase 10 Plan 10-07
+- Active plan: Phase 10 Plan 10-08
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9
 - Next dependency chain: Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
@@ -92,6 +92,7 @@ progress:
 | 2026-06-01 | Complete Phase 10 Plan 04 UI projection layer | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-04-SUMMARY.md` records TypeScript drill-down builders, operator-search and next-action UI projection mirrors, operator-surface types, and drill-down paths on standards-health and learning rows. |
 | 2026-06-01 | Complete Phase 10 Plan 05 UI router and trigger wiring | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-05-SUMMARY.md` records UI-callable operator-search, next-action, daily-flow, and writeback routers; trigger mutations that call `planTask` before `invokeControlPlaneRun`; query-as-launcher recommendations; extended control-plane overview fields; governance policy-class drill-downs; and catalog seed labeling. |
 | 2026-06-02 | Complete Phase 10 Plan 06 rendered operator surfaces | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-06-SUMMARY.md` records global search, faceted `/search`, next-action panels, daily-flow traces, phase and seed-data banners, writeback filters, automation trigger buttons, grounded-query launch controls, and Browser-verified rendering across the target routes. |
+| 2026-06-02 | Complete Phase 10 Plan 07 Agent Eval Foundation | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-07-SUMMARY.md` records the benchmark eval architecture, context profiles, major-task, hotspot, shadow-branch, failure, and portable-packet templates, `EvalTask`/`EvalRun`/`ShadowCandidate`/`EvalScore`/`EvalFailure` schemas, and the new AGENTS.md eval workflow rule. |
 
 ---
-*Last updated: 2026-06-02 after completing Phase 10 Plan 06*
+*Last updated: 2026-06-02 after completing Phase 10 Plan 07*

@@ -60,6 +60,38 @@ When triggered:
 
 Do not rely solely on static reasoning in these cases.
 
+## Agent Eval Workflow
+
+Run this eval workflow after large tasks: PRD implementation, major refactors, test-suite generation, architecture changes, cross-file feature work, quality audits, shadow-branch comparisons, and peer-run benchmark candidates. Apply proportionality: small edits, typo fixes, narrow doc updates, and isolated one-file changes do not require a full eval record unless they affect success criteria, governance, security, privacy, or project truth.
+
+Minimum eval checklist:
+
+1. Re-read the original task, PRD, plan, or acceptance criteria before judging completion.
+2. Identify the context profile: `jakye_second_brain_full`, `jakye_second_brain_limited`, `jakye_repo_only`, `peer_repo_only`, `peer_portable_context_packet`, or `external_clean_room`.
+3. Check every acceptance criterion against current evidence.
+4. Run the automated checks that match the changed surface, such as lint, typecheck, tests, build, architecture lint, or rendered/runtime verification.
+5. Run maintainability checks for architecture boundaries, duplication, complexity, naming, typing, security, privacy, observability, and test adequacy.
+6. Produce or update a backfill note when a hotspot, missing standard, failure record, or reusable lesson remains.
+7. Separate completed work, failed checks, residual risks, and follow-ups instead of mixing them into one success claim.
+8. Do not claim success if key checks failed unless the blocker is explicitly accepted and recorded.
+9. Label failures using the AIOS failure taxonomy in `docs/evals/benchmark-eval-architecture.md`.
+10. Label personalized local runs as non-portable when they use `jakye_second_brain_full` or `jakye_second_brain_limited`.
+
+Anti-cheating rules:
+
+1. Do not edit tests, fixtures, or acceptance criteria merely to make an implementation pass.
+2. Do not skip verification and claim success from static reasoning alone.
+3. Do not suppress command errors, logs, warnings, failed checks, or browser/runtime failures.
+4. Do not claim completion when blocker-level criteria still fail.
+5. Do not use private second-brain context in `peer_repo_only` or `external_clean_room` runs.
+6. Do not contaminate peer or baseline branches with AIOS-only fixes before comparison.
+7. Do not silently change the task scope after implementation.
+8. Do not use a narrow check as proof of broad behavior.
+9. Do not hide unresolved follow-ups that affect acceptance or quality.
+10. Do not label personalized local wins as portable/core benchmark wins.
+
+Portability label rule: any run using `jakye_second_brain_full` or `jakye_second_brain_limited` context must be labeled personalized/local, not portable/core. Use `docs/evals/benchmark-eval-architecture.md`, `docs/evals/context-profiles.md`, and `docs/evals/templates/major-task-eval.md` for the full eval vocabulary and record format.
+
 ## Runtime Sources of Truth
 
 - Criteria registry: `config/success-criteria/registry.json`
