@@ -82,6 +82,19 @@ AIOS Phase 10 now has a TypeScript operator projection layer for the UI:
 - `aios-ui/server/aios/standards-health.ts` and `aios-ui/server/aios/learning.ts` now attach drill-down paths to operator-visible delta, backfill, workflow recommendation, learning rollup, recurring pattern, and conservative proposal rows
 - UI quality gates pass with `pnpm lint`, `pnpm exec tsc --noEmit`, and `pnpm lint:architecture`; lint still reports the existing anti-slop warning baseline only
 
+## Implemented On 2026-06-01
+
+AIOS Phase 10 operator projections are now callable through the UI tRPC layer:
+
+- `operatorSearch`, `nextAction`, `dailyFlow`, and `writebacks` routers expose search, next-action, daily-flow preview/replay, and governed writeback inspection procedures
+- `aios-ui/server/aios/daily-flow.ts` mirrors the Python daily-flow shape with the canonical eight steps and read-only preview behavior
+- automation and project remediation trigger mutations reuse the existing control-plane path by calling `planTask` before `invokeControlPlaneRun`
+- grounded query answers now classify `should_i_run_workflow` questions and return optional workflow recommendation, packet-preview, and launchable-run fields without auto-launching
+- `getControlPlaneOverview` now includes next actions, a daily-flow summary, learning impact rollups, and phase status reports when backing tables are present
+- governance overview rows include policy-class drill-down paths for approval review surfaces
+- catalog rows now distinguish registered workflow data from seeded fallback UI catalog entries with `isSeedData`
+- UI verification passes with `pnpm lint`, `pnpm exec tsc --noEmit`, and `pnpm lint:architecture`; lint still reports the existing anti-slop warning baseline only
+
 ## Implemented On 2026-05-24
 
 AIOS now records session effectiveness as a durable receipt and exposes live activity indicators to Claude Code:
