@@ -95,6 +95,19 @@ AIOS Phase 10 operator projections are now callable through the UI tRPC layer:
 - catalog rows now distinguish registered workflow data from seeded fallback UI catalog entries with `isSeedData`
 - UI verification passes with `pnpm lint`, `pnpm exec tsc --noEmit`, and `pnpm lint:architecture`; lint still reports the existing anti-slop warning baseline only
 
+## Implemented On 2026-06-01
+
+AIOS Phase 10 operator projections are now rendered in the local UI:
+
+- `/search` is in primary navigation and renders faceted mixed-entity operator search from `operatorSearch.search`
+- the top bar now includes debounced global search suggestions with drill-down links and full-results navigation
+- the Command Center renders phase-status and seed-data banners, top next actions, daily-flow trace summary, and learning-impact rollup
+- project detail pages render project-scoped next actions, while run detail pages render daily-flow replay traces
+- `/writebacks` now consumes the governed `writebacks.list` router with status, policy-class, source, and project filters
+- automations and grounded-query answers expose workflow launch controls through the existing governed trigger mutations without auto-launching
+- Browser verification passed for `/`, `/search?query=implementation`, `/writebacks`, `/automations`, `/projects/be2139e874c1a02e`, and `/runs/managed-invoke-manual-5a3df472-1a00-46ce-a2ba-02c271fde2b8`
+- UI verification passes with `pnpm exec tsc --noEmit`, `pnpm lint`, and `pnpm lint:architecture`; lint still reports the existing anti-slop warning baseline only
+
 ## Implemented On 2026-05-24
 
 AIOS now records session effectiveness as a durable receipt and exposes live activity indicators to Claude Code:
