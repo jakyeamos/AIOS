@@ -71,6 +71,17 @@ AIOS Phase 10 now has a Python daily-flow trace backend:
 - `aios daily-flow` exposes mutually exclusive preview (`--objective`) and replay (`--run-id`) modes from the CLI
 - `contracts-audit` now includes a `DailyFlow` row marked partial until the TypeScript mirror, tRPC router, and rendered trace components ship
 
+## Implemented On 2026-06-01
+
+AIOS Phase 10 now has a TypeScript operator projection layer for the UI:
+
+- `aios-ui/lib/drill-down.ts` centralizes 18 URL builders for operator-visible entities and encodes every interpolated id/key
+- `aios-ui/lib/control-plane.ts` exports shared operator-surface types for search hits, next actions, daily-flow traces, phase status, and priority buckets
+- `aios-ui/server/aios/operator-search.ts` mirrors the Python operator-search backend with 17 read-only dispatchers, safe-column projection, scoring constants, and drill-down paths
+- `aios-ui/server/aios/next-action.ts` mirrors the Python next-action backend with six source fetchers, bucket ranking, and drill-down paths
+- `aios-ui/server/aios/standards-health.ts` and `aios-ui/server/aios/learning.ts` now attach drill-down paths to operator-visible delta, backfill, workflow recommendation, learning rollup, recurring pattern, and conservative proposal rows
+- UI quality gates pass with `pnpm lint`, `pnpm exec tsc --noEmit`, and `pnpm lint:architecture`; lint still reports the existing anti-slop warning baseline only
+
 ## Implemented On 2026-05-24
 
 AIOS now records session effectiveness as a durable receipt and exposes live activity indicators to Claude Code:
