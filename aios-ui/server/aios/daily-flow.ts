@@ -220,6 +220,11 @@ const _evaluationForRun = (db: Database.Database, runId: string): Row | null => 
   if (!columns.has("run_id")) {
     return null;
   }
+  const orderExpr = columns.has("updated_at") && columns.has("created_at")
+    ? "COALESCE(updated_at, created_at, '')"
+    : columns.has("created_at")
+      ? "created_at"
+      : "''";
   return (
     db
       .prepare(
@@ -227,7 +232,7 @@ const _evaluationForRun = (db: Database.Database, runId: string): Row | null => 
         SELECT *
         FROM success_criteria_evaluations
         WHERE run_id = ?
-        ORDER BY COALESCE(created_at, updated_at, '') DESC
+        ORDER BY ${orderExpr} DESC
         LIMIT 1
         `,
       )

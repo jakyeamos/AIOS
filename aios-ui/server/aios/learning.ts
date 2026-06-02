@@ -167,7 +167,7 @@ export const proposeRunWritebacks = (db: Database.Database, runId: string): void
       created_at,
       updated_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const insertEvent = db.prepare(`
     INSERT INTO improvement_writeback_events (

@@ -103,6 +103,10 @@ a:hover {
   border-bottom: 1px solid var(--border);
   padding: 20px 0;
   margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
 }
 
 .topbar-eyebrow {
@@ -118,6 +122,59 @@ a:hover {
   margin: 8px 0 0;
   font-family: var(--font-jetbrains-mono), ui-monospace;
   font-size: 24px;
+}
+
+.global-search {
+  position: relative;
+  width: min(420px, 42vw);
+}
+
+.global-search-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-muted);
+  font-family: var(--font-jetbrains-mono), ui-monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 10px;
+}
+
+.global-search input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.global-search-results {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  width: min(520px, 80vw);
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgb(0 0 0 / 35%);
+}
+
+.global-search-hit,
+.global-search-all {
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.global-search-hit:hover,
+.global-search-all:hover {
+  background: var(--surface);
+  text-decoration: none;
 }
 
 .page-shell {
@@ -306,6 +363,24 @@ a:hover {
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
   gap: 16px;
+}
+
+.search-layout {
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.daily-flow-stack {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.daily-flow-missing {
+  opacity: 0.68;
+  border-style: dashed;
 }
 
 .detail-list {
@@ -587,7 +662,7 @@ a:hover {
 }
 
 .table-automations {
-  grid-template-columns: 1.1fr minmax(360px, 2fr) 0.75fr 0.7fr;
+  grid-template-columns: 1.1fr minmax(300px, 1.8fr) 0.75fr 0.7fr 1fr;
 }
 
 .table-patterns {
@@ -1212,6 +1287,25 @@ a:hover {
   }
 
   .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .global-search {
+    width: 100%;
+  }
+
+  .global-search-results {
+    left: 0;
+    right: auto;
+    width: 100%;
+  }
+
+  .search-layout {
     grid-template-columns: 1fr;
   }
 

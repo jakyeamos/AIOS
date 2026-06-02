@@ -1,3 +1,4 @@
+import { AutomationTriggerButton } from "@/components/automations/AutomationTriggerButton";
 import { PageShell } from "@/components/layout/PageShell";
 import { StatCard } from "@/components/primitives/StatCard";
 import { StatusBadge } from "@/components/primitives/StatusBadge";
@@ -29,9 +30,10 @@ export default async function AutomationsPage(): Promise<React.JSX.Element> {
           <span>Trigger</span>
           <span>Success Rate</span>
           <span>Status</span>
+          <span>Action</span>
         </div>
         {automations.map((automation) => (
-          <div key={automation.id} className="table-row table-automations">
+          <div key={automation.id} className="table-row table-automations" data-mutation="automations.triggerWorkflow">
             <span>{automation.name}</span>
             <span title={automation.triggerSignal.explanation}>
               {automation.triggerLabel}
@@ -52,6 +54,13 @@ export default async function AutomationsPage(): Promise<React.JSX.Element> {
                 {automation.urgency}
                 {automation.lastFailureSummary ? `: ${automation.lastFailureSummary}` : ""}
               </span>
+            </span>
+            <span>
+              <AutomationTriggerButton
+                automationId={automation.id}
+                automationName={automation.name}
+                defaultObjective={`Run ${automation.name}`}
+              />
             </span>
           </div>
         ))}

@@ -1,4 +1,8 @@
 import { GroundedQueryStudio } from "@/components/query/GroundedQueryStudio";
+import { DailyFlowTrace } from "@/components/daily-flow/DailyFlowTrace";
+import { NextActionPanel } from "@/components/next-action/NextActionPanel";
+import { PhaseStatusBanner } from "@/components/command-center/PhaseStatusBanner";
+import { SeedDataBanner } from "@/components/command-center/SeedDataBanner";
 import { PageShell } from "@/components/layout/PageShell";
 import { ProvenanceBadge } from "@/components/primitives/ProvenanceBadge";
 import { StatCard } from "@/components/primitives/StatCard";
@@ -11,6 +15,21 @@ import {
   buildCommandCenterTimeline,
 } from "@/lib/status-provenance";
 import { getCaller } from "@/server/caller";
+
+type SeedCatalogRow = {
+  isSeedData?: boolean;
+};
+
+const countSeedDataRows = (overview: {
+  workflowTemplates: SeedCatalogRow[];
+  agentProfiles: SeedCatalogRow[];
+  invocationBackends: SeedCatalogRow[];
+}): number =>
+  [
+    ...overview.workflowTemplates,
+    ...overview.agentProfiles,
+    ...overview.invocationBackends,
+  ].filter((row) => row.isSeedData === true).length;
 
 export default async function CommandCenterPage(): Promise<React.JSX.Element> {
   const caller = await getCaller();
@@ -65,6 +84,9 @@ export default async function CommandCenterPage(): Promise<React.JSX.Element> {
       title="Command Center"
       subtitle="Source-backed system awareness across runs, approvals, experiments, automations, and recent change lineage."
     >
+      <PhaseStatusBanner phaseStatus={overview.phaseStatus ?? []} />
+      <SeedDataBanner seedDataCount={countSeedDataRows(overview)} />
+
       <div className="grid grid-4">
         <StatCard label="System Health" value={systemTone.toUpperCase()} status={systemTone} />
         <StatCard label="Active Runs" value={activeRuns.length} status={activeRuns.length > 0 ? "warning" : "healthy"} />
@@ -85,6 +107,42 @@ export default async function CommandCenterPage(): Promise<React.JSX.Element> {
           status={activeExperiments.length > 0 ? "warning" : "healthy"}
         />
       </div>
+
+      <div className="grid grid-2">
+        <NextActionPanel actions={overview.nextActions ?? []} projectId={null} />
+        {overview.dailyFlowSummary ? (
+          <DailyFlowTrace trace={overview.dailyFlowSummary} />
+        ) : (
+          <section className="panel-card">
+            <h3 className="section-title">Daily Flow Trace</h3>
+            <p className="panel-subtitle">Daily-flow data is being populated. Open a run after execution to replay the trace.</p>
+          </section>
+        )}
+      </div>
+
+      <section className="panel-card">
+        <h3 className="section-title">Learning Impact Rollup</h3>
+        <div className="stack">
+          {overview.learningImpactRollup.length > 0 ? (
+            overview.learningImpactRollup.map((rollup) => (
+              <article key={`${rollup.scope}-${rollup.key}`} className="entity-card">
+                <div className="panel-row">
+                  <p className="panel-title">{rollup.key}</p>
+                  <a href={rollup.drillDownPath} className="button-secondary">Drill in</a>
+                </div>
+                <p className="entity-meta">
+                  samples {rollup.sample_size} · trend {rollup.trend} · success{" "}
+                  {rollup.success_rate_30d === null ? "insufficient data" : rollup.success_rate_30d.toFixed(2)}
+                </p>
+              </article>
+            ))
+          ) : (
+            <article className="entity-card">
+              <p className="panel-subtitle">Learning impact rows are being populated by workflow execution reports.</p>
+            </article>
+          )}
+        </div>
+      </section>
 
       <section className="panel-card">
         <h3 className="section-title">Needs Attention Now</h3>

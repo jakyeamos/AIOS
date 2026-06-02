@@ -1,0 +1,10 @@
+{
+  "version": "2026-05-22",
+  "max_query_length": 200,
+  "default_limit": 50,
+  "per_kind_cap": 20,
+  "recency_boost_half_life_days": 14,
+  "exact_key_boost": 0.3,
+  "default_debounce_ms": 200,
+  "notes": "Reviewable thresholds for operatorSearch. Module constants in services/operator_search.py and aios-ui/server/aios/operator-search.ts currently hardcode these values; a follow-up phase may switch them to read this file. Centralized here so operators can audit and tune before that work lands."
+}

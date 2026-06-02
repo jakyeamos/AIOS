@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-06-01T23:59:59.000Z"
+last_updated: "2026-06-02T00:00:00.000Z"
 progress:
   total_phases: 19
   completed_phases: 9
   total_plans: 105
-  completed_plans: 34
-  percent: 32
+  completed_plans: 35
+  percent: 33
 ---
 
 # AIOS Planning State
@@ -26,13 +26,13 @@ progress:
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
 - Latest completed phase: Phase 9, Continuous Learning And Conservative Optimization, shipped typed learning signals, recurring pattern detection, learning impact projections, conservative approval-gated proposals, operator learning surfaces, and governed divergent/experiment promotion wiring.
-- Latest completed plan: Phase 10 Plan 05 shipped UI-callable operator-search, next-action, daily-flow, and writeback routers; workflow trigger mutations through planTask/invokeControlPlaneRun; query-as-launcher recommendations; control-plane overview extensions; and catalog seed labeling.
+- Latest completed plan: Phase 10 Plan 06 shipped rendered operator surfaces for global search, next actions, daily-flow traces, phase and seed-data status, writeback governance filters, automation triggers, grounded-query workflow launches, and Browser-verified route rendering.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 5, Operator Surfaces And Daily Flow
 - Active phase: Phase 10, Operator Surfaces, Query, And Daily-Flow Visibility
-- Active plan: Phase 10 Plan 10-06
+- Active plan: Phase 10 Plan 10-07
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9
 - Next dependency chain: Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
@@ -91,6 +91,7 @@ progress:
 | 2026-06-01 | Complete Phase 10 Plan 03 daily-flow trace backend | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-03-SUMMARY.md` records the Python DailyFlowTrace backend, `aios daily-flow`, SAVEPOINT-backed preview dryness, replay projections, graceful missing-source degradation, and DailyFlow contract row. |
 | 2026-06-01 | Complete Phase 10 Plan 04 UI projection layer | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-04-SUMMARY.md` records TypeScript drill-down builders, operator-search and next-action UI projection mirrors, operator-surface types, and drill-down paths on standards-health and learning rows. |
 | 2026-06-01 | Complete Phase 10 Plan 05 UI router and trigger wiring | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-05-SUMMARY.md` records UI-callable operator-search, next-action, daily-flow, and writeback routers; trigger mutations that call `planTask` before `invokeControlPlaneRun`; query-as-launcher recommendations; extended control-plane overview fields; governance policy-class drill-downs; and catalog seed labeling. |
+| 2026-06-02 | Complete Phase 10 Plan 06 rendered operator surfaces | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-06-SUMMARY.md` records global search, faceted `/search`, next-action panels, daily-flow traces, phase and seed-data banners, writeback filters, automation trigger buttons, grounded-query launch controls, and Browser-verified rendering across the target routes. |
 
 ---
-*Last updated: 2026-06-01 after completing Phase 10 Plan 05*
+*Last updated: 2026-06-02 after completing Phase 10 Plan 06*

@@ -178,8 +178,11 @@ const _fromPendingWritebacks = (db: Database.Database, { projectId }: FetchArgs)
 const _fromOpenBlockers = (db: Database.Database, { projectId }: FetchArgs): NextAction[] => {
   if (!_safeTableExists(db, "success_criteria_findings")) return [];
   const columns = _tableColumns(db, "success_criteria_findings");
-  const messageColumn = columns.has("message") ? "message" : columns.has("summary") ? "summary" : "''";
-  const canJoinRuns = _safeTableExists(db, "orchestration_runs");
+  const runIdColumn = columns.has("run_id") ? "f.run_id AS run_id" : "NULL AS run_id";
+  const criterionIdColumn = columns.has("criterion_id") ? "f.criterion_id AS criterion_id" : "NULL AS criterion_id";
+  const messageColumn = columns.has("message") ? "f.message" : columns.has("summary") ? "f.summary" : "''";
+  const createdAtColumn = columns.has("created_at") ? "f.created_at AS created_at" : "'' AS created_at";
+  const canJoinRuns = columns.has("run_id") && _safeTableExists(db, "orchestration_runs");
   const where = ["f.level = 'blocker'", "f.resolution_status = 'open'"];
   const params: unknown[] = [];
   if (projectId && canJoinRuns) {
@@ -190,12 +193,12 @@ const _fromOpenBlockers = (db: Database.Database, { projectId }: FetchArgs): Nex
     .prepare(
       `
       SELECT f.id,
-             ${_selectable(columns, "run_id", "NULL")},
-             ${_selectable(columns, "criterion_id", "NULL")},
+             ${runIdColumn},
+             ${criterionIdColumn},
              f.level,
              ${messageColumn} AS message,
              ${canJoinRuns ? "r.project_id" : "NULL"} AS project_id,
-             ${_selectable(columns, "created_at", "''")}
+             ${createdAtColumn}
       FROM success_criteria_findings f
       ${canJoinRuns ? "LEFT JOIN orchestration_runs r ON r.id = f.run_id" : ""}
       WHERE ${where.join(" AND ")}

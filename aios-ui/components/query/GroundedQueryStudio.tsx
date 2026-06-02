@@ -22,9 +22,15 @@ const exampleQuestions = [
 ];
 
 export function GroundedQueryStudio({ projects }: GroundedQueryStudioProps): React.JSX.Element {
+  const utils = trpc.useUtils();
   const [projectId, setProjectId] = useState<string>(projects[0]?.id ?? "");
   const [question, setQuestion] = useState(exampleQuestions[0]);
   const query = trpc.query.ask.useMutation();
+  const workflowLauncher = trpc.automations.triggerWorkflow.useMutation({
+    onSuccess: async () => {
+      await utils.controlPlane.overview.invalidate();
+    },
+  });
 
   const answer: GroundedAnswer | undefined = query.data;
 
@@ -85,6 +91,29 @@ export function GroundedQueryStudio({ projects }: GroundedQueryStudioProps): Rea
             <article className="entity-card">
               <p className="panel-title">{answer.intent}</p>
               <p className="panel-subtitle">{answer.answer}</p>
+              {answer.recommendedWorkflow ? (
+                <div className="stack" style={{ marginTop: "0.75rem" }}>
+                  <p className="entity-meta">
+                    workflow: {answer.recommendedWorkflow.workflowKey} · {answer.recommendedWorkflow.rationale}
+                  </p>
+                  <button
+                    type="button"
+                    className="button-primary"
+                    disabled={workflowLauncher.isPending}
+                    onClick={() =>
+                      workflowLauncher.mutate({
+                        automationId: "grounded-query",
+                        workflowKey: answer.recommendedWorkflow?.workflowKey ?? "implementation-delivery",
+                        objective: question.trim(),
+                        projectId: projectId || undefined,
+                      })
+                    }
+                  >
+                    {workflowLauncher.isPending ? "Launching..." : "Launch workflow"}
+                  </button>
+                  {workflowLauncher.data ? <p className="entity-meta">run: {workflowLauncher.data.plan.run.id}</p> : null}
+                </div>
+              ) : null}
             </article>
             <div className="stack">
               <article className="entity-card">

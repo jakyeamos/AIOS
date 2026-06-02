@@ -7,6 +7,7 @@ export type NavItem = {
 export const PRIMARY_NAV: NavItem[] = [
   { href: "/", label: "Command Center", short: "Home" },
   { href: "/knowledge", label: "Knowledge", short: "Wiki" },
+  { href: "/search", label: "Search", short: "Search" },
   { href: "/projects", label: "Projects", short: "Projects" },
   { href: "/control", label: "Control Plane", short: "Control" },
   { href: "/context", label: "Context Compiler", short: "Context" },
