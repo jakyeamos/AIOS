@@ -249,6 +249,118 @@ export type RouteRecommendation = {
   status?: string;
 };
 
+// === Phase 10 operator surface types ===
+
+export type EntityKind =
+  | "run"
+  | "packet"
+  | "writeback"
+  | "finding"
+  | "prompt_template"
+  | "prompt_use"
+  | "skill"
+  | "workflow"
+  | "knowledge_object"
+  | "route_decision"
+  | "delta_item"
+  | "backfill_task"
+  | "automation"
+  | "experiment"
+  | "divergent_run"
+  | "learning_pattern"
+  | "promotion_lifecycle_item";
+
+export interface OperatorSearchHit {
+  kind: EntityKind;
+  id: string;
+  title: string;
+  summary: string;
+  projectId: string | null;
+  score: number;
+  sourceTable: string;
+  lastUpdatedAt: string;
+  drillDownPath: string;
+  metadata: Record<string, unknown>;
+}
+
+export type NextActionKind =
+  | "launch_remediation_workflow"
+  | "approve_pending_writeback"
+  | "resolve_open_blocker"
+  | "review_learning_proposal"
+  | "fix_terminal_run_gap"
+  | "promote_candidate_asset"
+  | "investigate_regressed_metric"
+  | "complete_backfill_task";
+
+export type PriorityBucket =
+  | "foundational"
+  | "high_leverage"
+  | "quick_wins"
+  | "blocked"
+  | "waived_deferred";
+
+export interface NextAction {
+  kind: NextActionKind;
+  title: string;
+  rationale: string;
+  projectId: string | null;
+  priorityBucket: PriorityBucket;
+  recommendedWorkflowKey: string | null;
+  evidenceIds: readonly string[];
+  drillDownPath: string;
+  confidence: number;
+  metadata: Record<string, unknown>;
+}
+
+export type DailyFlowStepKind =
+  | "goal"
+  | "route"
+  | "packet"
+  | "run"
+  | "evaluation"
+  | "writeback"
+  | "unresolved_delta"
+  | "next_action";
+
+export interface DailyFlowStep {
+  kind: DailyFlowStepKind;
+  summary: string;
+  evidenceRef: Record<string, unknown>;
+  drillDownPath: string;
+  provenance: "confirmed" | "inferred" | "missing" | "contradictory";
+  freshness: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface DailyFlowTrace {
+  projectId: string | null;
+  objective: string;
+  isPreview: boolean;
+  steps: readonly DailyFlowStep[];
+}
+
+export type PhaseId =
+  | "phase_01"
+  | "phase_02"
+  | "phase_03"
+  | "phase_04"
+  | "phase_05"
+  | "phase_06"
+  | "phase_07"
+  | "phase_08"
+  | "phase_09"
+  | "phase_10";
+
+export type PhaseStatus = "complete" | "partial" | "missing";
+
+export interface PhaseStatusReport {
+  phase: PhaseId;
+  status: PhaseStatus;
+  missingTables?: readonly string[];
+  missingServices?: readonly string[];
+}
+
 export type OmittedContextItem = {
   label: string;
   sourceKind: string;
@@ -599,6 +711,7 @@ export type StandardsDeltaItem = {
   linkedTaskIds: string[];
   priorityScore: number;
   priorityBucket: "foundational" | "high_leverage" | "quick_wins" | "blocked" | "waived_deferred";
+  drillDownPath?: string;
 };
 
 export type DeltaExplanation = {
@@ -633,6 +746,7 @@ export type RecommendedWorkflow = {
     priorityBucket: StandardsDeltaItem["priorityBucket"];
     priorityScore: number;
   };
+  drillDownPath?: string;
 };
 
 export type StandardsBackfillTask = {
@@ -654,6 +768,7 @@ export type StandardsBackfillTask = {
   priorityBucket: StandardsDeltaItem["priorityBucket"];
   blocked: boolean;
   status: string;
+  drillDownPath?: string;
 };
 
 export type StandardsMigration = {

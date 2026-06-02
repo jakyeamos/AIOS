@@ -281,6 +281,7 @@ export interface RecurringPattern {
   evidence_run_ids: readonly string[];
   suggested_remediation_class: string;
   metadata: Record<string, unknown>;
+  drillDownPath?: string;
 }
 
 export interface AssetEvidenceDelta {
@@ -320,6 +321,7 @@ export interface LearningImpactRollup {
   trend: "improving" | "flat" | "regressing" | "insufficient_data";
   rationale: string;
   project_id: string | null;
+  drillDownPath?: string;
 }
 
 export interface ConservativeProposalRow {
@@ -336,6 +338,7 @@ export interface ConservativeProposalRow {
   sample_size: number | null;
   recurrence_count: number | null;
   confidence: number | null;
+  drillDownPath?: string;
 }
 
 export type ProjectValueScore = {

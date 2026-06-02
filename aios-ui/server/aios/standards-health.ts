@@ -12,6 +12,7 @@ import type {
   StandardsHealthSummary,
   StandardsMigration,
 } from "@/lib/control-plane";
+import { backfillTaskPath, deltaItemPath, workflowPath } from "@/lib/drill-down";
 import { ensureControlPlaneSchema } from "@/server/aios/schema";
 
 type SnapshotRow = {
@@ -381,6 +382,7 @@ const buildRecommendedWorkflows = (deltaItems: StandardsDeltaItem[]): Recommende
         priorityBucket: delta.priorityBucket,
         priorityScore: delta.priorityScore,
       },
+      drillDownPath: workflowPath(match.workflowKey),
     });
     if (recommendations.length >= 5) {
       break;
@@ -438,6 +440,7 @@ export const getProjectStandardsHealth = (
     linkedTaskIds: parseJsonArray<string[]>(row.linkedTaskIdsJson, []),
     priorityScore: Number(row.priorityScore),
     priorityBucket: row.priorityBucket,
+    drillDownPath: deltaItemPath(projectId, row.id),
   }));
 
   const backfillRows = db
@@ -489,6 +492,7 @@ export const getProjectStandardsHealth = (
     priorityBucket: row.priorityBucket,
     blocked: row.blocked === 1,
     status: row.status,
+    drillDownPath: backfillTaskPath(projectId, row.id),
   }));
 
   return {

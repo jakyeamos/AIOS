@@ -9,6 +9,13 @@ import type {
   LearningSignalKind,
   RecurringPattern,
 } from "@/lib/types";
+import {
+  learningPatternPath,
+  promptTemplatePath,
+  skillPath,
+  workflowPath,
+  writebackPath,
+} from "@/lib/drill-down";
 import { ensureControlPlaneSchema } from "@/server/aios/schema";
 
 const parseJsonArray = <T>(raw: string, fallback: T): T => {
@@ -44,6 +51,16 @@ const tableExistsInDb = (db: Database.Database, tableName: string): boolean => {
     .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1")
     .get(tableName) as { name: string } | undefined;
   return Boolean(row?.name);
+};
+
+const rollupPath = (scope: "workflow" | "prompt" | "skill", key: string): string => {
+  if (scope === "workflow") {
+    return workflowPath(key);
+  }
+  if (scope === "prompt") {
+    return promptTemplatePath(key);
+  }
+  return skillPath(key);
 };
 
 export const proposeRunWritebacks = (db: Database.Database, runId: string): void => {
@@ -315,6 +332,7 @@ export const getLearningImpactRollup = (
         ? `sample_size=${sampleSize} below trend threshold 10`
         : `sample_size=${sampleSize} has no prior comparison in UI projection`,
     project_id: projectId ?? null,
+    drillDownPath: rollupPath(scope, key),
   };
 };
 
@@ -368,6 +386,7 @@ export const listRecurringPatterns = (
     evidence_run_ids: row.runIds ? row.runIds.split(",") : [],
     suggested_remediation_class: "review_learning_signal",
     metadata: { source: "workflow_learning_events" },
+    drillDownPath: learningPatternPath(`ui-${row.signalKind}-${row.scopeKey}`),
   }));
 };
 
@@ -435,6 +454,7 @@ export const listConservativeProposals = (
       sample_size: numberOrNull(metadata.sample_size),
       recurrence_count: numberOrNull(metadata.recurrence_count),
       confidence: numberOrNull(metadata.confidence),
+      drillDownPath: writebackPath(row.writebackId),
     };
   });
 };
