@@ -119,6 +119,16 @@ AIOS Phase 10 now has an Agent Eval Foundation for major-task review:
 - `AGENTS.md` now includes an Agent Eval Workflow rule after Execution-First Verification with trigger scope, a 10-step checklist, anti-cheating rules, and personalized/local portability labeling
 - verification passes with `python3 -m py_compile config/agent-eval/eval-schemas.py`, `uv run ruff check config/agent-eval/eval-schemas.py`, and `git diff --check`
 
+## Implemented On 2026-06-01
+
+AIOS Phase 10 now has a quality eval baseline for future major-task reviews:
+
+- `scripts/quality-eval.sh` provides a read-only hotspot scan for large Python files, assertion-free tests, `services` importing `bin`, large UI components, vulture findings, and shellcheck findings
+- `package.json` exposes the scan through `pnpm quality:eval`
+- `docs/backfill/agent-eval-backfill.md` records the first factual hotspot inventory for Python services, CLI scripts, tests, aios-ui, config, and eval infrastructure
+- the baseline records 59 Python files over 500 lines, 0 assertion-free Python tests, 0 `services` imports from `bin`, 3 TypeScript component files over 400 lines, 0 vulture findings, and 2 shellcheck files with findings in the current workspace
+- Phase 10 is complete in planning state and the active roadmap position has advanced to Phase 11 testing and benchmark evaluation
+
 ## Implemented On 2026-05-24
 
 AIOS now records session effectiveness as a durable receipt and exposes live activity indicators to Claude Code:
