@@ -8,6 +8,7 @@
     "test:context": "node --test tests/context-compiler.test.mjs",
     "test:wiki": "node --test tests/wiki-maintenance.test.mjs",
     "wiki:check": "node tools/wiki-check.mjs",
+    "quality:eval": "bash scripts/quality-eval.sh",
     "corpus:evaluate": "node scripts/aios-corpus-eval.cjs"
   }
 }
