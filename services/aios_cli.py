@@ -60,6 +60,7 @@ from services.rtk_integration import (
     load_compression_rules,
     rtk_metrics_log,
 )
+from services.skills_harvest import HarvestOptions, harvest_skills_library
 from services.standards_health import (
     AssessmentStatus,
     ManualAssessmentOverride,
@@ -4103,6 +4104,19 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "skills-refresh":
         print(f"updated={data['updated_count']} pending={data['pending_count']}")
         return
+    if command == "skills-harvest":
+        summary = data["summary"]
+        git_data = data.get("git", {})
+        print(
+            f"sources={summary['candidate_count']} "
+            f"skills={summary['skill_count']} "
+            f"instructions={summary['project_instruction_count'] + summary['global_instruction_count']} "
+            f"conflicts={summary['conflict_count']} "
+            f"validation={data['validation']['status']} "
+            f"committed={git_data.get('committed', False)} "
+            f"pushed={git_data.get('pushed', False)}"
+        )
+        return
     if command == "harness-eval-run":
         totals = data["totals"]
         print(
@@ -4500,6 +4514,76 @@ def create_parser() -> argparse.ArgumentParser:
     skills_refresh.add_argument(
         "--apply", action="store_true", help="Apply updates instead of dry-run"
     )
+    skills_harvest = skills_subparsers.add_parser(
+        "harvest",
+        help="Scan project roots and generate a reusable skills library with TMCP",
+    )
+    skills_harvest.add_argument(
+        "--roots",
+        nargs="+",
+        required=True,
+        help="Project root directories to scan",
+    )
+    skills_harvest.add_argument(
+        "--out",
+        required=True,
+        help="Output path for the generated skills library repository",
+    )
+    skills_harvest.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Plan the harvest and validation without writing files",
+    )
+    skills_harvest.add_argument(
+        "--include-hidden",
+        action="store_true",
+        help="Scan hidden directories beyond known agent configuration directories",
+    )
+    skills_harvest.add_argument(
+        "--max-file-size",
+        type=int,
+        default=250_000,
+        help="Maximum candidate file size in bytes",
+    )
+    skills_harvest.add_argument(
+        "--github-repo",
+        default=None,
+        help="GitHub repository name or URL to create/push when --push is used",
+    )
+    skills_harvest.add_argument("--push", action="store_true", help="Push generated repo with gh")
+    skills_harvest.add_argument(
+        "--tmcp",
+        dest="tmcp",
+        action="store_true",
+        default=True,
+        help="Generate the skills.tmcp layer",
+    )
+    skills_harvest.add_argument(
+        "--no-tmcp",
+        dest="tmcp",
+        action="store_false",
+        help="Skip TMCP generation",
+    )
+    skills_harvest.add_argument(
+        "--no-rewrite",
+        action="store_true",
+        help="Copy reusable skill content without standardized rewrite sections",
+    )
+    skills_harvest.add_argument(
+        "--interactive",
+        action="store_true",
+        help="Reserved for future human-in-the-loop merge decisions",
+    )
+    skills_harvest.add_argument(
+        "--report-only",
+        action="store_true",
+        help="Generate reports without git initialization",
+    )
+    skills_harvest.add_argument(
+        "--force",
+        action="store_true",
+        help="Replace an existing generated harvest output repository",
+    )
 
     corpus_parser = subparsers.add_parser("corpus", help="Corpus evaluation harness")
     corpus_subparsers = corpus_parser.add_subparsers(dest="corpus_command", required=True)
@@ -4749,6 +4833,23 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
                 vault_root=vault_root,
                 project_id=args.project,
                 apply=bool(args.apply),
+            )
+        elif args.command == "skills" and args.skills_command == "harvest":
+            data = harvest_skills_library(
+                HarvestOptions(
+                    roots=tuple(Path(root) for root in args.roots),
+                    out=Path(args.out),
+                    include_hidden=bool(args.include_hidden),
+                    max_file_size=max(1, int(args.max_file_size)),
+                    dry_run=bool(args.dry_run),
+                    github_repo=args.github_repo,
+                    push=bool(args.push),
+                    tmcp=bool(args.tmcp),
+                    no_rewrite=bool(args.no_rewrite),
+                    interactive=bool(args.interactive),
+                    report_only=bool(args.report_only),
+                    force=bool(args.force),
+                )
             )
         else:
             raise CLIError("unknown-command", f"Unsupported command: {args.command}", EXIT_USAGE)

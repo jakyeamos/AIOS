@@ -10,6 +10,7 @@ logs/summaries/
 logs/current_session
 logs/closed/
 staging/
+skills-library/
 .worktrees/
 .pytest_cache/
 .superpowers/
