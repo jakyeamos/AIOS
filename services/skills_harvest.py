@@ -317,7 +317,7 @@ def validate_generated_library(
     for rel_path, content in generation["file_contents"].items():
         if not rel_path.startswith("skills.tmcp/"):
             continue
-        ref_pattern = r"@(?:task|module|branch|test|source|repair):[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*"
+        ref_pattern = r"@(?:task|module|branch|test|source|repair|shortcut):[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*"
         for full_ref in re.findall(ref_pattern, content):
             if full_ref not in known_refs:
                 check(f"tmcp-ref:{rel_path}:{full_ref}", False, "unresolved reference")
@@ -336,6 +336,11 @@ def validate_generated_library(
         "tmcp-evaluation-plan",
         "skills.tmcp/evaluation-plan.md" in files,
         "Evaluation and token-ROI plan is generated.",
+    )
+    check(
+        "tmcp-shortcut-policy",
+        "skills.tmcp/shortcuts/candidate.md" in files,
+        "Shortcut promotion policy is generated.",
     )
     for rel_path, content in generation["file_contents"].items():
         if rel_path.startswith("skills.tmcp/tasks/") and rel_path.endswith(".md"):
@@ -527,11 +532,13 @@ def _tmcp_files(
         "skills.tmcp/tests/routing_cases.md": _routing_cases(task_map),
         "skills.tmcp/tests/behavior_equivalence.md": _behavior_equivalence_cases(task_map),
         "skills.tmcp/tests/traversal_roi_cases.md": _traversal_roi_cases(task_map),
+        "skills.tmcp/tests/shortcut_promotion_cases.md": _shortcut_promotion_cases(task_map),
         "skills.tmcp/tests/module_cases.md": _module_cases(modules),
         "skills.tmcp/tests/conflict_cases.md": _conflict_cases(branches),
         "skills.tmcp/repairs/repair_recommendations.md": _repair_recommendations(conflicts),
         "skills.tmcp/repairs/failed_equivalence_cases.md": "# Failed Equivalence Cases\n\nNo failed behavioral equivalence cases were detected by deterministic validation.\n",
         "skills.tmcp/repairs/inferred_module_promotions.md": _inferred_promotions(modules),
+        "skills.tmcp/shortcuts/candidate.md": _shortcut_promotion_policy(),
     }
     for task, task_sources in task_map.items():
         files[f"skills.tmcp/tasks/{task}.md"] = _task_file(task, task_sources, modules, branches)
@@ -1277,6 +1284,10 @@ def _tmcp_router(task_map: dict[str, list[CandidateFile]]) -> str:
         "Allowed traversal actions: " + ", ".join(TMCP_TRAVERSAL_ACTIONS) + ".",
         "",
         "[NODE: ROUTER.START]",
+        "CONSIDER @shortcut:candidate before normal task routing when a prior traversal fingerprint matches the task, project, and available context.",
+        "SKIP @shortcut:candidate when there is no matching receipt history, unresolved repair, or positive token-ROI evidence.",
+        "",
+        "[NODE: ROUTER.TASK]",
     ]
     ordered = list(task_map)
     for index, task in enumerate(ordered):
@@ -1364,6 +1375,7 @@ def _task_file(
             "- Preserve source-tier precedence: project_authoritative > personal_agent > local_agent_config > reference.",
             "- Keep the constructed packet smaller than loading the broad source skill set unless evaluation shows quality loss.",
             "- Store traversal metadata so repeated successful paths can become shortcuts and failed paths can become repairs.",
+            "- When a shortcut candidate matches, treat it as a top-level node and then branch from it only for task-specific deltas.",
             "",
             "## Branches",
             *[f"- {ref}" for ref in branch_refs],
@@ -1519,7 +1531,8 @@ def _tmcp_design_decision(generated_at: str) -> str:
             "",
             "## Learning Policy",
             "- Store traversal path, skipped nodes, branch decisions, token estimates, validation evidence, and outcome.",
-            "- Promote repeated successful paths into shortcuts only after quality and token ROI are positive.",
+            "- Promote repeated successful paths into @shortcut:candidate records only after quality and token ROI are positive.",
+            "- Once promoted, expose the shortcut as a top-level router node and allow new branches to grow from it.",
             "- Create repair recommendations when traversal paths fail or over-load low-value nodes.",
             "",
         ]
@@ -1539,16 +1552,20 @@ def _traversal_receipt_schema() -> str:
             '  "task_id": "string",',
             '  "task_summary": "string",',
             '  "entry_node": "@task:implementation",',
+            '  "traversal_fingerprint": "sha256 of ordered loaded nodes, selected branches, source tiers, and project scope",',
             '  "loaded_nodes": ["@task:implementation", "@module:evidence_first"],',
             '  "considered_nodes": ["@task:testing"],',
             '  "skipped_nodes": [{"node": "@task:research", "reason": "No external uncertainty"}],',
             '  "selected_branches": [{"branch": "@branch:direct_implementation", "reason": "Explicit user implementation intent"}],',
+            '  "shortcut_candidate": {"node": "@shortcut:candidate", "matched": false, "reason": "No promoted receipt matched this task"},',
             '  "source_tiers_used": ["project_authoritative", "personal_agent"],',
             '  "transition_trace": [',
             '    {"from": "ROUTER.START", "to": "@task:implementation", "action": "LOAD", "why": "Implementation intent"}',
             "  ],",
             '  "custom_skill_token_estimate": 0,',
             '  "baseline_skill_token_estimate": 0,',
+            '  "promotion_metrics": {"use_count": 0, "success_count": 0, "positive_token_roi_count": 0, "projects_seen": []},',
+            '  "promoted_skill_target": null,',
             '  "execution_outcome": "pass|partial|fail|blocked",',
             '  "validation_evidence": ["command or artifact"],',
             '  "repair_recommendations": []',
@@ -1560,6 +1577,7 @@ def _traversal_receipt_schema() -> str:
             "- Every skipped plausible node must have a reason.",
             "- Branch choices must cite competing branches when any exist.",
             "- Token estimates must compare custom packet size to an equivalent broad-skill baseline when available.",
+            "- Shortcut promotion requires repeated receipt evidence, not a single successful run.",
             "- Outcomes must be linked to validation evidence, not just agent confidence.",
             "",
         ]
@@ -1577,6 +1595,7 @@ def _evaluation_plan() -> str:
             "- baseline_skill: load the closest existing canonical skill or source skill.",
             "- tmcp_custom_skill: traverse TMCP, construct a task-specific packet, then execute.",
             "- tmcp_router_only: use router-selected task without adjacent exploration.",
+            "- tmcp_promoted_shortcut: load a promoted shortcut path, then branch only for task-specific deltas.",
             "",
             "## Metrics",
             "- task_success: pass, partial, fail, blocked.",
@@ -1592,6 +1611,8 @@ def _evaluation_plan() -> str:
             "## Pass Rule",
             "- TMCP custom skill is worth using when quality is equal or better and token cost is lower, or when quality improves enough to justify extra token cost.",
             "- TMCP custom skill should be repaired when it loads nodes that do not affect behavior or misses project-specific constraints.",
+            "- A path is eligible for shortcut promotion when use_count >= 3, validation_success_rate >= 0.8, positive_token_roi_count >= 2, and no unresolved repair blocks the path.",
+            "- A promoted shortcut should be demoted or repaired when two recent uses have negative token ROI, miss requirements, or require repeated manual corrections.",
             "",
             "## Minimum Evaluation Cases",
             "- simple implementation with tests.",
@@ -1605,6 +1626,7 @@ def _evaluation_plan() -> str:
             "- Persist traversal receipts with run/session ids when available.",
             "- Cluster repeated successful paths into candidate shortcuts.",
             "- Promote shortcuts only after repeated positive token ROI and validation success.",
+            "- Expose promoted shortcuts as top-level router nodes so future branches can build from them.",
             "- Generate repair recommendations for repeated negative ROI or failed validation.",
             "",
         ]
@@ -1639,10 +1661,12 @@ def _tmcp_manifest(
         "@task_router: skills.tmcp/router.md",
         "",
         "## Graph Traversal",
+        "- CONSIDER @shortcut:candidate first when receipt history indicates a repeated successful path.",
         "- Start at router, but allow agent reasoning to CONSIDER adjacent task/module/branch nodes.",
         "- Construct a minimal custom skill packet from the traversed path.",
         "- Emit a traversal receipt using `skills.tmcp/traversal-receipt-schema.md`.",
         "- Evaluate quality and token ROI using `skills.tmcp/evaluation-plan.md`.",
+        "- Promote stable repeated paths into top-level shortcut nodes only after evaluation evidence passes.",
         "",
         "## Task Map",
     ]
@@ -1655,7 +1679,17 @@ def _tmcp_manifest(
     lines.extend(["", "## Branch Map"])
     for branch in branches:
         lines.append(f"- @branch:{branch['id']} type={branch['type']}")
-    lines.extend(["", "## Repair Recommendation Summary", "- See @repair:repair_recommendations"])
+    lines.extend(
+        [
+            "",
+            "## Shortcut Promotion",
+            "- @shortcut:candidate starts as the generic promotion target for repeated successful paths.",
+            "- Promoted shortcuts should become named top-level router nodes before gaining branches.",
+            "",
+            "## Repair Recommendation Summary",
+            "- See @repair:repair_recommendations",
+        ]
+    )
     return "\n".join(lines) + "\n"
 
 
@@ -1690,12 +1724,14 @@ def _compiler_report(
             "## Behavioral Tests",
             "- Routing, module, branch, and conflict cases were generated as markdown test fixtures.",
             "- Traversal ROI cases were generated to compare custom-skill construction against baseline skill loading.",
+            "- Shortcut promotion cases were generated to guard against promoting one-off traversal wins.",
             "",
             "## Decision Graph Semantics",
             f"- Decision ID: {TMCP_DESIGN_DECISION_ID}",
             "- TMCP output is a graph traversal scaffold for agent reasoning, not a rigid IF/ELSE replacement.",
             "- Transition hooks are generated so constructed custom skills can be assembled coherently.",
             "- Traversal receipts are the durable learning surface for AIOS.",
+            "- Repeated successful receipt fingerprints can be promoted into shortcut nodes.",
             "",
             "## Metrics",
             f"- Duplication reduction estimate: {reduction}%",
@@ -1710,6 +1746,7 @@ def _compiler_report(
             "- Review inferred modules before treating advisory behavior as enforced behavior.",
             "- Resolve active conflict branches only after checking source provenance.",
             "- Add executable traversal evaluations before promoting TMCP paths as superior to baseline skills.",
+            "- Promote only stable shortcuts, then branch from the shortcut node for recurring variants.",
             "",
         ]
     )
@@ -1822,6 +1859,82 @@ def _traversal_roi_cases(task_map: dict[str, list[CandidateFile]]) -> str:
             ]
         )
     return "\n".join(lines)
+
+
+def _shortcut_promotion_cases(task_map: dict[str, list[CandidateFile]]) -> str:
+    lines = ["# Shortcut Promotion Cases", ""]
+    for task in task_map:
+        lines.extend(
+            [
+                f"## Case: @test:{task}.shortcut_promotion",
+                "",
+                "## Goal",
+                f"Decide whether a repeated traversal path for @task:{task} should become a top-level shortcut node.",
+                "",
+                "## Required Evidence",
+                "- At least three traversal receipts share the same traversal_fingerprint.",
+                "- validation_success_rate is at least 0.8.",
+                "- positive_token_roi_count is at least 2.",
+                "- missed_requirement_count is zero across promoted examples.",
+                "- No unresolved repair recommendation blocks the path.",
+                "",
+                "## Expected Outcome",
+                "- Eligible paths become a named promoted shortcut derived from @shortcut:candidate.",
+                "- Ineligible paths remain receipt history and may still inform repairs.",
+                "- Once promoted, future graph traversal starts at the shortcut and branches only for task-specific deltas.",
+                "",
+            ]
+        )
+    return "\n".join(lines)
+
+
+def _shortcut_promotion_policy() -> str:
+    return "\n".join(
+        [
+            "# Shortcut: Candidate Promotion",
+            "",
+            "## Metadata",
+            "Shortcut ID: @shortcut:candidate",
+            "Status: promotion_policy",
+            "",
+            "## Purpose",
+            "Turn a repeated, validated custom-skill traversal path into a reusable top-level TMCP node.",
+            "",
+            "## Why This Exists",
+            "- TMCP should not re-run the same tree search forever when the same path keeps winning.",
+            "- A successful path is stronger than a static prewritten skill because it encodes task intent, selected branches, source-tier precedence, and validation evidence.",
+            "- Once promoted, the shortcut becomes a new starting node that future branches can grow from.",
+            "",
+            "## Promotion Threshold",
+            "- use_count >= 3 for the same traversal_fingerprint.",
+            "- validation_success_rate >= 0.8.",
+            "- positive_token_roi_count >= 2.",
+            "- missed_requirement_count == 0 for promoted examples.",
+            "- No unresolved repair recommendation, conflict branch, or project-specific override blocks promotion.",
+            "",
+            "## Construction Rule",
+            "- Name the shortcut after the stable task path, not the original one-off request.",
+            "- Include the ordered selected task, modules, branches, source tiers, and output contract.",
+            "- Preserve links to the receipts that justified promotion.",
+            "- Write the promoted artifact as a normal skill target only when it has enough evidence to be reused outside the original run.",
+            "",
+            "## Router Behavior",
+            "- CONSIDER this shortcut before normal task routing when task, project, and context fingerprints match receipt history.",
+            "- USE a promoted shortcut when it is expected to reduce traversal cost without losing validation or project-specific constraints.",
+            "- SKIP a shortcut when the request includes a new domain, stricter project overlay, unresolved conflict, or changed validation surface.",
+            "",
+            "## Demotion and Repair",
+            "- Demote or repair when two recent uses have negative token ROI.",
+            "- Demote or repair when a shortcut misses requirements that normal traversal would have loaded.",
+            "- Demote or repair when users or agents repeatedly add the same missing branch by hand.",
+            "",
+            "## Output",
+            "- Candidate shortcut: receipt cluster plus promotion evidence.",
+            "- Promoted shortcut: named top-level router node and optional generated `skills/<shortcut>/SKILL.md` target.",
+            "- Repair: recommendation when the candidate path is useful but not yet safe to promote.",
+            "",
+        ]
+    )
 
 
 def _module_cases(modules: list[dict[str, Any]]) -> str:
@@ -2003,10 +2116,13 @@ def _known_tmcp_refs(generation: dict[str, Any]) -> set[str]:
             refs.add(f"@task:{task_id}")
             refs.add(f"@test:{task_id}.basic_route")
             refs.add(f"@test:{task_id}.traversal_roi")
+            refs.add(f"@test:{task_id}.shortcut_promotion")
         if path.startswith("skills.tmcp/modules/") and path.endswith(".md"):
             refs.add(f"@module:{Path(path).stem}")
         if path.startswith("skills.tmcp/branches/") and path.endswith(".branch.md"):
             refs.add(f"@branch:{Path(path).name.removesuffix('.branch.md')}")
+        if path.startswith("skills.tmcp/shortcuts/") and path.endswith(".md"):
+            refs.add(f"@shortcut:{Path(path).stem}")
     for source in generation["sources"]:
         refs.add(f"@source:{source['slug']}")
     refs.add("@repair:repair_recommendations")

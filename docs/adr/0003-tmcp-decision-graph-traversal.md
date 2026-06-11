@@ -34,6 +34,8 @@ Generated TMCP nodes must support:
 
 Generated task files must include transition edges and custom-skill construction rules. Generated modules and branches must include transition hooks. Generated TMCP must include a traversal receipt schema and evaluation plan.
 
+Repeated successful traversal paths may be promoted into shortcut nodes. Shortcut promotion must be evidence-driven: the same traversal fingerprint must recur, validation must remain successful, token ROI must be positive often enough to justify reuse, and no unresolved repair or project-specific override may block the path. Once promoted, a shortcut becomes a top-level router node that future branches can build from.
+
 ## Consequences
 
 TMCP traversal becomes a first-class AIOS learning surface. A run can record the path it took, skipped nodes, selected branches, source tiers used, validation evidence, token estimates, and outcome.
@@ -41,11 +43,14 @@ TMCP traversal becomes a first-class AIOS learning surface. A run can record the
 This enables later AIOS behavior:
 
 - promote repeated successful traversal paths into shortcuts
+- expose promoted shortcuts as top-level graph nodes
+- branch from promoted shortcuts when a recurring variant appears
 - repair paths that miss project-specific requirements
+- demote shortcuts when token ROI or validation quality regresses
 - demote nodes with poor instruction precision
 - compare custom TMCP packets against broad baseline skill loading
 
-The current implementation remains heuristic. It does not yet execute semantic graph search or persist traversal receipts into SQLite. The generated markdown defines the contract that future runtime work should implement.
+The current implementation remains heuristic. It does not yet execute semantic graph search, persist traversal receipts into SQLite, or materialize promoted shortcut skills automatically. The generated markdown defines the contract that future runtime work should implement.
 
 ## Validation
 
@@ -54,6 +59,7 @@ The current generator validates that:
 - `skills.tmcp/design-decision.md` exists
 - `skills.tmcp/traversal-receipt-schema.md` exists
 - `skills.tmcp/evaluation-plan.md` exists
+- `skills.tmcp/shortcuts/candidate.md` exists
 - every generated task includes transition edges and custom-skill construction sections
 - TMCP references resolve
 

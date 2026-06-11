@@ -50,6 +50,7 @@ def test_harvest_dry_run_plans_tmcp_without_writing(tmp_path: Path) -> None:
     assert "skills.tmcp/design-decision.md" in result["planned_files"]
     assert "skills.tmcp/traversal-receipt-schema.md" in result["planned_files"]
     assert "skills.tmcp/evaluation-plan.md" in result["planned_files"]
+    assert "skills.tmcp/shortcuts/candidate.md" in result["planned_files"]
     assert not out.exists()
 
 
@@ -67,10 +68,13 @@ def test_harvest_generates_library_and_commits(tmp_path: Path) -> None:
     assert (out / "skills.tmcp" / "design-decision.md").exists()
     assert (out / "skills.tmcp" / "traversal-receipt-schema.md").exists()
     assert (out / "skills.tmcp" / "evaluation-plan.md").exists()
+    assert (out / "skills.tmcp" / "shortcuts" / "candidate.md").exists()
+    assert (out / "skills.tmcp" / "tests" / "shortcut_promotion_cases.md").exists()
     assert (out / "audit" / "discovery-report.md").exists()
     assert (out / "skills.tmcp" / "branches" / "approval_before_edit.branch.md").exists()
     router = (out / "skills.tmcp" / "router.md").read_text(encoding="utf-8")
     assert "thin decision graph" in router
+    assert "@shortcut:candidate" in router
     implementation_task = (out / "skills.tmcp" / "tasks" / "implementation.md").read_text(
         encoding="utf-8"
     )
@@ -78,6 +82,10 @@ def test_harvest_generates_library_and_commits(tmp_path: Path) -> None:
     assert "## Custom Skill Construction" in implementation_task
     evaluation_plan = (out / "skills.tmcp" / "evaluation-plan.md").read_text(encoding="utf-8")
     assert "token_roi" in evaluation_plan
+    assert "tmcp_promoted_shortcut" in evaluation_plan
+    shortcut = (out / "skills.tmcp" / "shortcuts" / "candidate.md").read_text(encoding="utf-8")
+    assert "## Promotion Threshold" in shortcut
+    assert "top-level TMCP node" in shortcut
     generated_agents = next((out / "instructions" / "global").glob("*.md"))
     text = generated_agents.read_text(encoding="utf-8")
     assert "ghp_123456789012345678901234567890123456" not in text
