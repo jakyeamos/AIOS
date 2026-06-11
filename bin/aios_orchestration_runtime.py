@@ -242,6 +242,38 @@ def ensure_runtime_schema(conn: sqlite3.Connection) -> None:
     )
     conn.execute(
         """
+        CREATE TABLE IF NOT EXISTS tmcp_traversal_receipts (
+            id TEXT PRIMARY KEY,
+            run_id TEXT REFERENCES orchestration_runs(id),
+            invocation_id TEXT REFERENCES orchestration_invocations(id),
+            session_id TEXT REFERENCES sessions(id),
+            project_path TEXT,
+            task_id TEXT NOT NULL,
+            traversal_fingerprint TEXT NOT NULL,
+            packet_json TEXT NOT NULL,
+            selected_nodes_json TEXT NOT NULL DEFAULT '[]',
+            skipped_nodes_json TEXT NOT NULL DEFAULT '[]',
+            token_estimates_json TEXT NOT NULL DEFAULT '{}',
+            execution_outcome TEXT NOT NULL DEFAULT 'pending',
+            validation_evidence_json TEXT NOT NULL DEFAULT '[]',
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_tmcp_traversal_receipts_run
+          ON tmcp_traversal_receipts(run_id, created_at DESC)
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_tmcp_traversal_receipts_fingerprint
+          ON tmcp_traversal_receipts(traversal_fingerprint, created_at DESC)
+        """
+    )
+    conn.execute(
+        """
         CREATE TABLE IF NOT EXISTS briefing_packets (
             id TEXT PRIMARY KEY,
             run_id TEXT REFERENCES orchestration_runs(id),

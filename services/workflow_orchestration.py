@@ -263,6 +263,7 @@ class WorkflowExecutionContext:
     prompt_registry_path: str | None = None
     run_id: str | None = None
     invocation_id: str | None = None
+    tmcp_packet: dict[str, Any] | None = None
 
 
 def _now_iso() -> str:
@@ -1413,11 +1414,13 @@ def execute_workflow(
         "workflow_key": workflow.key,
         "rtk_mode": workflow_rtk_mode,
         "agent_rules": [{"title": rule.title, "body": rule.body} for rule in load_agent_rules()],
+        "tmcp_packet": context.tmcp_packet,
     }
     stages_report: list[dict[str, Any]] = []
     validations: list[dict[str, Any]] = []
     unresolved: list[str] = []
     stage_evaluations: list[dict[str, Any]] = []
+    validation_execution_map: dict[str, dict[str, Any]] = {}
 
     for stage in workflow.stages:
         stage_started = _now_iso()
@@ -1516,6 +1519,21 @@ def execute_workflow(
         if stage_issues:
             unresolved.extend(stage_issues)
 
+        if stage.kind == "validate":
+            stage_passed = stage_eval_summary["outcome"] not in {"blocked", "failed"}
+            for skill_report in skill_reports:
+                skill_key = skill_report.get("skill_key")
+                if not skill_key or skill_report.get("status") != "completed":
+                    continue
+                validation_execution_map[str(skill_key)] = {
+                    "validation_key": str(skill_key),
+                    "passed": stage_passed,
+                    "issues": list(stage_issues),
+                    "source": "validate_stage_skill_execution",
+                    "stage_key": stage.key,
+                    "stage_outcome": stage_eval_summary["outcome"],
+                }
+
         stages_report.append(
             {
                 "stage_key": stage.key,
@@ -1537,6 +1555,8 @@ def execute_workflow(
         for row in validations
         if isinstance(row, dict) and row.get("validation_key")
     }
+    for key, row in validation_execution_map.items():
+        required_validation_map.setdefault(key, row)
     missing_validations = [
         key for key in workflow.required_validations if key not in required_validation_map
     ]
@@ -1580,6 +1600,7 @@ def execute_workflow(
             "learned_workflow_skill": run_state.get("learned_workflow_skill"),
             "learned_workflow_evidence": run_state.get("learned_workflow_evidence", []),
             "agentized_task_packet": run_state.get("agentized_task_packet"),
+            "tmcp_packet": run_state.get("tmcp_packet"),
         },
         "rtk": {
             "interface": rtk_rules.get(

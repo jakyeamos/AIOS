@@ -31,6 +31,11 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from services.tmcp_runtime import (  # noqa: E402
+    compile_tmcp_packet,
+    ensure_tmcp_schema,
+    persist_tmcp_traversal_receipt,
+)
 from services.workflow_orchestration import (  # noqa: E402
     WorkflowExecutionContext,
     execute_workflow,
@@ -41,6 +46,7 @@ HOOK_SESSION_START = ROOT / "bin" / "hook-session-start.py"
 HOOK_STOP = ROOT / "bin" / "hook-stop.py"
 REPORT_DIR = ROOT / "logs" / "control-plane" / "invocations"
 WORKFLOW_REPORT_DIR = ROOT / "logs" / "control-plane" / "workflow-reports"
+TMCP_PACKET_DIR = ROOT / "logs" / "control-plane" / "tmcp-packets"
 BACKEND_SURFACES = {
     "codex-managed-runtime": "codex",
     "claude-managed-runtime": "claude_code",
@@ -159,6 +165,43 @@ def write_invocation_report(
     conn.commit()
     conn.close()
     return str(report_path)
+
+
+def write_tmcp_packet_artifact(
+    conn: sqlite3.Connection,
+    *,
+    session_id: str,
+    run_id: str,
+    invocation_id: str,
+    packet: dict[str, object],
+    receipt_id: str,
+) -> str:
+    TMCP_PACKET_DIR.mkdir(parents=True, exist_ok=True)
+    packet_path = TMCP_PACKET_DIR / f"{invocation_id}.json"
+    packet_path.write_text(json.dumps(packet, indent=2, sort_keys=True), encoding="utf-8")
+    conn.execute(
+        """
+        INSERT INTO artifacts (id, session_id, artifact_type, path, metadata_json, created_at)
+        VALUES (?, ?, 'tmcp-packet', ?, ?, ?)
+        """,
+        (
+            f"artifact-{uuid.uuid4()}",
+            session_id,
+            str(packet_path),
+            json.dumps(
+                {
+                    "run_id": run_id,
+                    "invocation_id": invocation_id,
+                    "tmcp_receipt_id": receipt_id,
+                    "task_id": packet.get("task_id"),
+                    "traversal_fingerprint": packet.get("traversal_fingerprint"),
+                },
+                sort_keys=True,
+            ),
+            now_iso(),
+        ),
+    )
+    return str(packet_path)
 
 
 def ensure_managed_start(
@@ -364,11 +407,19 @@ def main() -> int:
     workflow_report_id: str | None = None
     workflow_report_path: str | None = None
     workflow_summary: str | None = None
+    tmcp_packet: dict[str, object] | None = None
+    tmcp_receipt_id: str | None = None
+    tmcp_packet_path: str | None = None
 
     try:
         surface = BACKEND_SURFACES.get(backend_key)
         if surface is None:
             raise RuntimeError(f"Unsupported managed backend key: {backend_key}")
+        tmcp_packet = compile_tmcp_packet(
+            objective=context["objective"] or "",
+            project_path=context["repo_path"],
+            context_receipt_id=context["packet_id"],
+        )
         workflow_context = WorkflowExecutionContext(
             objective=context["objective"] or "",
             workflow_key=context["workflow_key"] or "implementation-delivery",
@@ -377,53 +428,76 @@ def main() -> int:
             vault_root=context["obsidian_path"],
             run_id=run_id,
             invocation_id=invocation_id,
+            tmcp_packet=tmcp_packet,
         )
-        workflow_report = execute_workflow(workflow_context)
-        workflow_summary = summarize_execution_report(workflow_report)
+        conn = sqlite3.connect(db_path)
+        try:
+            ensure_runtime_schema(conn)
+            ensure_tmcp_schema(conn)
+            tmcp_receipt_id = persist_tmcp_traversal_receipt(
+                conn,
+                packet=tmcp_packet,
+                run_id=run_id,
+                invocation_id=invocation_id,
+                session_id=session_id,
+            )
+            tmcp_packet["receipt_id"] = tmcp_receipt_id
+            tmcp_packet_path = write_tmcp_packet_artifact(
+                conn,
+                session_id=session_id,
+                run_id=run_id,
+                invocation_id=invocation_id,
+                packet=tmcp_packet,
+                receipt_id=tmcp_receipt_id,
+            )
+            workflow_report = execute_workflow(workflow_context, conn=conn)
+            workflow_report.setdefault("artifacts", {})["tmcp_packet_path"] = tmcp_packet_path
+            workflow_summary = summarize_execution_report(workflow_report)
+            WORKFLOW_REPORT_DIR.mkdir(parents=True, exist_ok=True)
+            workflow_path = WORKFLOW_REPORT_DIR / f"{invocation_id}.json"
+            workflow_path.write_text(json.dumps(workflow_report, indent=2), encoding="utf-8")
+            workflow_report_path = str(workflow_path)
+
+            workflow_report_id = insert_workflow_execution_report(
+                conn,
+                run_id=run_id,
+                invocation_id=invocation_id,
+                workflow_key=workflow_context.workflow_key,
+                status=str(workflow_report.get("status", "completed")),
+                report=workflow_report,
+                artifact_path=workflow_report_path,
+            )
+            conn.execute(
+                """
+                INSERT INTO artifacts (id, session_id, artifact_type, path, metadata_json, created_at)
+                VALUES (?, ?, 'workflow-execution-report', ?, ?, ?)
+                """,
+                (
+                    f"artifact-{uuid.uuid4()}",
+                    session_id,
+                    workflow_report_path,
+                    json.dumps(
+                        {
+                            "run_id": run_id,
+                            "invocation_id": invocation_id,
+                            "workflow_key": workflow_context.workflow_key,
+                            "workflow_report_id": workflow_report_id,
+                            "tmcp_receipt_id": tmcp_receipt_id,
+                            "tmcp_packet_path": tmcp_packet_path,
+                        }
+                    ),
+                    now_iso(),
+                ),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
         if workflow_report.get("status") != "completed":
             raise RuntimeError(
                 f"Workflow execution failed for {workflow_context.workflow_key}: "
                 + "; ".join(workflow_report.get("unresolved_issues", []))
             )
-
-        WORKFLOW_REPORT_DIR.mkdir(parents=True, exist_ok=True)
-        workflow_path = WORKFLOW_REPORT_DIR / f"{invocation_id}.json"
-        workflow_path.write_text(json.dumps(workflow_report, indent=2), encoding="utf-8")
-        workflow_report_path = str(workflow_path)
-
-        conn = sqlite3.connect(db_path)
-        ensure_runtime_schema(conn)
-        workflow_report_id = insert_workflow_execution_report(
-            conn,
-            run_id=run_id,
-            invocation_id=invocation_id,
-            workflow_key=workflow_context.workflow_key,
-            status=str(workflow_report.get("status", "completed")),
-            report=workflow_report,
-            artifact_path=workflow_report_path,
-        )
-        conn.execute(
-            """
-            INSERT INTO artifacts (id, session_id, artifact_type, path, metadata_json, created_at)
-            VALUES (?, ?, 'workflow-execution-report', ?, ?, ?)
-            """,
-            (
-                f"artifact-{uuid.uuid4()}",
-                session_id,
-                workflow_report_path,
-                json.dumps(
-                    {
-                        "run_id": run_id,
-                        "invocation_id": invocation_id,
-                        "workflow_key": workflow_context.workflow_key,
-                        "workflow_report_id": workflow_report_id,
-                    }
-                ),
-                now_iso(),
-            ),
-        )
-        conn.commit()
-        conn.close()
 
         report_path = write_invocation_report(
             db_path,
@@ -454,6 +528,8 @@ def main() -> int:
             "backend_key": backend_key,
             "workflow_report_id": workflow_report_id,
             "workflow_report_path": workflow_report_path,
+            "tmcp_receipt_id": tmcp_receipt_id,
+            "tmcp_packet_path": tmcp_packet_path,
         }
 
     if canceled["flag"] and outcome == "completed":

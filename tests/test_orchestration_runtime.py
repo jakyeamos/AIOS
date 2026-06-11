@@ -1060,6 +1060,9 @@ def test_managed_runtime_completes_via_explicit_handshake(runtime_db: Path, tmp_
     assert workflow_report[2] is not None
     workflow_payload = json.loads(workflow_report[3])
     assert workflow_payload["stage_evaluations"][2]["stage_finding_ids"]
+    assert workflow_payload["artifacts"]["tmcp_packet"]["task_id"] == "agent_workflow"
+    assert workflow_payload["artifacts"]["tmcp_packet"]["receipt_id"]
+    assert workflow_payload["artifacts"]["tmcp_packet_path"]
     assert (
         conn.execute(
             "SELECT COUNT(*) FROM success_criteria_stage_findings WHERE run_id = ?",
