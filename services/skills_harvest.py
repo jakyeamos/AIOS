@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import Any
 
 COMPILER_VERSION = "skills-harvest-v0.1"
+TMCP_DESIGN_DECISION_ID = "tmcp-decision-graph-v0.2"
+TMCP_TRAVERSAL_ACTIONS = ("LOAD", "CONSIDER", "USE", "SKIP", "EXIT", "WHY", "EVIDENCE", "OUTCOME")
 
 SOURCE_CANDIDATE_NAMES = {
     "AGENTS.md",
@@ -320,6 +322,28 @@ def validate_generated_library(
             if full_ref not in known_refs:
                 check(f"tmcp-ref:{rel_path}:{full_ref}", False, "unresolved reference")
     check("tmcp-router", "skills.tmcp/router.md" in files, "Task-first router is generated.")
+    check(
+        "tmcp-design-decision",
+        "skills.tmcp/design-decision.md" in files,
+        "Decision-graph design decision is generated.",
+    )
+    check(
+        "tmcp-traversal-schema",
+        "skills.tmcp/traversal-receipt-schema.md" in files,
+        "Traversal receipt schema is generated.",
+    )
+    check(
+        "tmcp-evaluation-plan",
+        "skills.tmcp/evaluation-plan.md" in files,
+        "Evaluation and token-ROI plan is generated.",
+    )
+    for rel_path, content in generation["file_contents"].items():
+        if rel_path.startswith("skills.tmcp/tasks/") and rel_path.endswith(".md"):
+            check(
+                f"tmcp-task-transitions:{rel_path}",
+                "## Transition Edges" in content and "## Custom Skill Construction" in content,
+                "Task node includes explicit transition edges and custom-skill construction rules.",
+            )
     check("source-dispositions", True, "Every discovered source has an imported/skipped record.")
     check("secret-redaction", True, "Secret patterns are redacted before generated writes.")
     check("dry-run-rerunnable", True, "Command accepts --dry-run and does not require output writes.")
@@ -487,6 +511,9 @@ def _tmcp_files(
     branches = _branches(conflicts)
     files: dict[str, str] = {
         "skills.tmcp/router.md": _tmcp_router(task_map),
+        "skills.tmcp/design-decision.md": _tmcp_design_decision(generated_at),
+        "skills.tmcp/traversal-receipt-schema.md": _traversal_receipt_schema(),
+        "skills.tmcp/evaluation-plan.md": _evaluation_plan(),
         "skills.tmcp/manifest.md": _tmcp_manifest(
             sources, task_map, modules, branches, conflicts, generated_at
         ),
@@ -499,6 +526,7 @@ def _tmcp_files(
         "skills.tmcp/provenance/branch_sources.md": _branch_sources(branches),
         "skills.tmcp/tests/routing_cases.md": _routing_cases(task_map),
         "skills.tmcp/tests/behavior_equivalence.md": _behavior_equivalence_cases(task_map),
+        "skills.tmcp/tests/traversal_roi_cases.md": _traversal_roi_cases(task_map),
         "skills.tmcp/tests/module_cases.md": _module_cases(modules),
         "skills.tmcp/tests/conflict_cases.md": _conflict_cases(branches),
         "skills.tmcp/repairs/repair_recommendations.md": _repair_recommendations(conflicts),
@@ -900,6 +928,8 @@ def _task_sources(candidates: list[CandidateFile]) -> dict[str, list[CandidateFi
                 task_map[task].append(candidate)
     if not task_map:
         task_map["agent_workflow"] = candidates
+    for task in TASK_KEYWORDS:
+        task_map.setdefault(task, [])
     return dict(sorted(task_map.items()))
 
 
@@ -923,7 +953,8 @@ def _modules_from_sources(candidates: list[CandidateFile]) -> list[dict[str, Any
                 counts[module_id] += 1
                 source_map[module_id].append(candidate.slug)
     modules: list[dict[str, Any]] = []
-    for module_id, count in sorted(counts.items()):
+    for module_id in sorted(patterns):
+        count = counts[module_id]
         modules.append(
             {
                 "id": module_id,
@@ -932,28 +963,6 @@ def _modules_from_sources(candidates: list[CandidateFile]) -> list[dict[str, Any
                 "activation": "active" if count >= 2 else "advisory_only",
                 "source_count": count,
                 "sources": sorted(set(source_map[module_id])),
-            }
-        )
-    if "output_contract" not in {module["id"] for module in modules}:
-        modules.append(
-            {
-                "id": "output_contract",
-                "type": "output_contract",
-                "status": "inferred",
-                "activation": "advisory_only",
-                "source_count": 0,
-                "sources": [],
-            }
-        )
-    if "provenance_policy" not in {module["id"] for module in modules}:
-        modules.append(
-            {
-                "id": "provenance_policy",
-                "type": "routing_rule",
-                "status": "inferred",
-                "activation": "advisory_only",
-                "source_count": 0,
-                "sources": [],
             }
         )
     return modules
@@ -1261,7 +1270,11 @@ def _tmcp_router(task_map: dict[str, list[CandidateFile]]) -> str:
     lines = [
         "# TMCP Router",
         "",
-        "Entry point for generated agent routing. Tasks take precedence over original skill identity.",
+        "Entry point for generated agent routing. TMCP is a thin decision graph, not a rigid script.",
+        "",
+        "Agents should explore the graph enough to construct a task-specific custom skill packet, then stop. Record the path as a traversal receipt so AIOS can learn from the run.",
+        "",
+        "Allowed traversal actions: " + ", ".join(TMCP_TRAVERSAL_ACTIONS) + ".",
         "",
         "[NODE: ROUTER.START]",
     ]
@@ -1272,8 +1285,13 @@ def _tmcp_router(task_map: dict[str, list[CandidateFile]]) -> str:
         lines.append(f"{prefix} task involves {terms} THEN LOAD @task:{task}")
     lines.append("ELSE LOAD @task:agent_workflow")
     lines.append("")
+    lines.append("[NODE: ROUTER.EXPLORE]")
+    lines.append("CONSIDER adjacent task nodes when task intent is compound.")
+    lines.append("SKIP adjacent task nodes when they do not add constraints, validation, or project-specific behavior.")
+    lines.append("WHY record the selected path, skipped nodes, and evidence in the traversal receipt.")
+    lines.append("")
     lines.append("[NODE: ROUTER.EXIT]")
-    lines.append("THEN EXIT after the selected task tree reaches its output contract.")
+    lines.append("THEN EXIT after constructing the smallest custom skill packet that preserves required behavior.")
     return "\n".join(lines) + "\n"
 
 
@@ -1305,6 +1323,13 @@ def _task_file(
             "## Optional Modules",
             "- @module:provenance_policy",
             "",
+            "## Traversal Contract",
+            "- LOAD this task when task intent matches the trigger conditions.",
+            "- CONSIDER adjacent task nodes when the request mixes intents such as implementation plus testing or audit plus planning.",
+            "- USE only modules and branches that change behavior, validation, permissions, output, or provenance.",
+            "- SKIP nodes that do not add task-specific instruction value.",
+            "- WHY record node choices, skipped alternatives, and evidence in `skills.tmcp/traversal-receipt-schema.md` format.",
+            "",
             "## Decision Tree",
             f"[NODE: {task}.classify_scope]",
             f"IF request clearly matches @task:{task} THEN CONTINUE to [NODE: {task}.gather_context]",
@@ -1324,6 +1349,21 @@ def _task_file(
             "",
             f"[NODE: {task}.report]",
             "THEN USE @module:output_contract",
+            "",
+            "## Transition Edges",
+            f"- LOAD -> @task:{task}: task intent matches trigger conditions.",
+            "- CONSIDER -> @task:testing: implementation, audit, or data changes need validation evidence.",
+            "- CONSIDER -> @task:research: external facts, uncertain standards, or unfamiliar domain claims affect correctness.",
+            "- CONSIDER -> @task:documentation: durable truth, readme, or project memory should be updated.",
+            "- USE -> @branch:approval_before_edit: edit permission is ambiguous or source policy conflicts.",
+            "- USE -> @branch:direct_implementation: user explicitly requested implementation and no stricter project branch blocks it.",
+            "- EXIT -> output contract: selected nodes form a minimal custom skill packet.",
+            "",
+            "## Custom Skill Construction",
+            "- Concatenate the selected task, required modules, selected branch, project overlays, and output contract in traversal order.",
+            "- Preserve source-tier precedence: project_authoritative > personal_agent > local_agent_config > reference.",
+            "- Keep the constructed packet smaller than loading the broad source skill set unless evaluation shows quality loss.",
+            "- Store traversal metadata so repeated successful paths can become shortcuts and failed paths can become repairs.",
             "",
             "## Branches",
             *[f"- {ref}" for ref in branch_refs],
@@ -1374,6 +1414,12 @@ def _module_file(module: dict[str, Any]) -> str:
             "## Instruction",
             "- Apply the module behavior while preserving source-specific overlays and provenance.",
             "",
+            "## Transition Hooks",
+            "- Entry: task node explicitly lists this module or traversal reasoning selects it as behavior-changing.",
+            "- Before use: check whether a selected branch overrides or narrows this module.",
+            "- After use: continue to the next selected module, selected branch, validation gate, or output contract.",
+            "- Receipt: record why this module was loaded or skipped when it was a plausible candidate.",
+            "",
             "## Exceptions",
             "- Inferred advisory modules do not change behavior until promoted.",
             "",
@@ -1421,6 +1467,12 @@ def _branch_file(branch: dict[str, Any]) -> str:
             "## Behavior",
             "- Preserve the branch behavior as active until the conflict or context is resolved.",
             "",
+            "## Transition Hooks",
+            "- Entry: selected when task context, source-tier precedence, or conflict evidence makes this branch behavior-changing.",
+            "- Before use: compare competing branches and cite the evidence that selected this branch.",
+            "- After use: return to the task node's validation or output node.",
+            "- Receipt: record competing branches considered and why they were skipped.",
+            "",
             "## Competing Branches",
             *competing_lines,
             "",
@@ -1432,6 +1484,128 @@ def _branch_file(branch: dict[str, Any]) -> str:
             "",
             "## Repair Recommendation",
             "- Clarify source behavior if this branch is selected unexpectedly.",
+            "",
+        ]
+    )
+
+
+def _tmcp_design_decision(generated_at: str) -> str:
+    return "\n".join(
+        [
+            "# TMCP Design Decision: Decision Graph Traversal",
+            "",
+            f"Decision ID: {TMCP_DESIGN_DECISION_ID}",
+            f"Generated At: {generated_at}",
+            "Status: active",
+            "",
+            "## Decision",
+            "TMCP is a thin, agent-explorable markdown decision graph. It is not a rigid IF/ELSE script and not a single flattened skill.",
+            "",
+            "Agents construct a custom skill packet by traversing task, module, branch, provenance, and output nodes that are relevant to the current task intent.",
+            "",
+            "## Rationale",
+            "- Agent reasoning is better than static IF/ELSE for ambiguous task intent.",
+            "- Thin graph nodes reduce duplication and allow selective loading.",
+            "- Traversal receipts make reasoning inspectable and learnable by AIOS.",
+            "- Source-tier precedence protects project-specific behavior from generic plugin or history material.",
+            "",
+            "## Required Traversal Actions",
+            *(f"- {action}" for action in TMCP_TRAVERSAL_ACTIONS),
+            "",
+            "## Transition Policy",
+            "- Prefer explicit transition edges over raw concatenation when constructing a custom skill.",
+            "- Raw ingestion is acceptable only as a fallback when transition metadata is missing.",
+            "- Every transition should explain what behavior, validation, permission rule, output contract, or provenance it adds.",
+            "",
+            "## Learning Policy",
+            "- Store traversal path, skipped nodes, branch decisions, token estimates, validation evidence, and outcome.",
+            "- Promote repeated successful paths into shortcuts only after quality and token ROI are positive.",
+            "- Create repair recommendations when traversal paths fail or over-load low-value nodes.",
+            "",
+        ]
+    )
+
+
+def _traversal_receipt_schema() -> str:
+    return "\n".join(
+        [
+            "# TMCP Traversal Receipt Schema",
+            "",
+            "Agents should emit or persist this shape after constructing a custom skill packet.",
+            "",
+            "```json",
+            "{",
+            '  "schema": "tmcp-traversal-receipt-v0.2",',
+            '  "task_id": "string",',
+            '  "task_summary": "string",',
+            '  "entry_node": "@task:implementation",',
+            '  "loaded_nodes": ["@task:implementation", "@module:evidence_first"],',
+            '  "considered_nodes": ["@task:testing"],',
+            '  "skipped_nodes": [{"node": "@task:research", "reason": "No external uncertainty"}],',
+            '  "selected_branches": [{"branch": "@branch:direct_implementation", "reason": "Explicit user implementation intent"}],',
+            '  "source_tiers_used": ["project_authoritative", "personal_agent"],',
+            '  "transition_trace": [',
+            '    {"from": "ROUTER.START", "to": "@task:implementation", "action": "LOAD", "why": "Implementation intent"}',
+            "  ],",
+            '  "custom_skill_token_estimate": 0,',
+            '  "baseline_skill_token_estimate": 0,',
+            '  "execution_outcome": "pass|partial|fail|blocked",',
+            '  "validation_evidence": ["command or artifact"],',
+            '  "repair_recommendations": []',
+            "}",
+            "```",
+            "",
+            "## Required Invariants",
+            "- Every loaded node must have a reason.",
+            "- Every skipped plausible node must have a reason.",
+            "- Branch choices must cite competing branches when any exist.",
+            "- Token estimates must compare custom packet size to an equivalent broad-skill baseline when available.",
+            "- Outcomes must be linked to validation evidence, not just agent confidence.",
+            "",
+        ]
+    )
+
+
+def _evaluation_plan() -> str:
+    return "\n".join(
+        [
+            "# TMCP Evaluation Plan",
+            "",
+            "Purpose: verify whether tree search plus custom skill construction improves outcomes enough to justify its token and latency cost.",
+            "",
+            "## Conditions To Compare",
+            "- baseline_skill: load the closest existing canonical skill or source skill.",
+            "- tmcp_custom_skill: traverse TMCP, construct a task-specific packet, then execute.",
+            "- tmcp_router_only: use router-selected task without adjacent exploration.",
+            "",
+            "## Metrics",
+            "- task_success: pass, partial, fail, blocked.",
+            "- validation_success: whether relevant checks passed.",
+            "- instruction_precision: loaded nodes that changed behavior divided by loaded nodes.",
+            "- missed_requirement_count: source-specific requirements lost or skipped incorrectly.",
+            "- conflict_handling_quality: branch selection was correct and justified.",
+            "- custom_skill_tokens: estimated tokens in constructed packet.",
+            "- baseline_tokens: estimated tokens in broad skill/source baseline.",
+            "- token_roi: quality_delta divided by token_delta.",
+            "- traversal_overhead_ms: time spent constructing the packet.",
+            "",
+            "## Pass Rule",
+            "- TMCP custom skill is worth using when quality is equal or better and token cost is lower, or when quality improves enough to justify extra token cost.",
+            "- TMCP custom skill should be repaired when it loads nodes that do not affect behavior or misses project-specific constraints.",
+            "",
+            "## Minimum Evaluation Cases",
+            "- simple implementation with tests.",
+            "- project-specific implementation with commit hooks.",
+            "- audit-only request where edits are not allowed.",
+            "- mixed audit plus implementation request.",
+            "- research-heavy request requiring external uncertainty handling.",
+            "- conflict case involving edit permission.",
+            "",
+            "## AIOS Learning Hook",
+            "- Persist traversal receipts with run/session ids when available.",
+            "- Cluster repeated successful paths into candidate shortcuts.",
+            "- Promote shortcuts only after repeated positive token ROI and validation success.",
+            "- Generate repair recommendations for repeated negative ROI or failed validation.",
             "",
         ]
     )
@@ -1459,9 +1633,16 @@ def _tmcp_manifest(
         f"Inferred modules: {len(inferred)}",
         f"Conflicts: {len(conflicts)}",
         "Behavioral equivalence pass rate: deterministic checks only",
+        f"Design decision: {TMCP_DESIGN_DECISION_ID}",
         "",
         "## Entry Point",
         "@task_router: skills.tmcp/router.md",
+        "",
+        "## Graph Traversal",
+        "- Start at router, but allow agent reasoning to CONSIDER adjacent task/module/branch nodes.",
+        "- Construct a minimal custom skill packet from the traversed path.",
+        "- Emit a traversal receipt using `skills.tmcp/traversal-receipt-schema.md`.",
+        "- Evaluate quality and token ROI using `skills.tmcp/evaluation-plan.md`.",
         "",
         "## Task Map",
     ]
@@ -1508,6 +1689,13 @@ def _compiler_report(
             "",
             "## Behavioral Tests",
             "- Routing, module, branch, and conflict cases were generated as markdown test fixtures.",
+            "- Traversal ROI cases were generated to compare custom-skill construction against baseline skill loading.",
+            "",
+            "## Decision Graph Semantics",
+            f"- Decision ID: {TMCP_DESIGN_DECISION_ID}",
+            "- TMCP output is a graph traversal scaffold for agent reasoning, not a rigid IF/ELSE replacement.",
+            "- Transition hooks are generated so constructed custom skills can be assembled coherently.",
+            "- Traversal receipts are the durable learning surface for AIOS.",
             "",
             "## Metrics",
             f"- Duplication reduction estimate: {reduction}%",
@@ -1516,10 +1704,12 @@ def _compiler_report(
             f"- Conflict count: {len(conflicts)}",
             f"- Inferred module count: {sum(1 for module in modules if module['status'] == 'inferred')}",
             f"- Router coverage: {len(sources)} source files mapped into task candidates",
+            "- Token ROI: not measured yet; see `skills.tmcp/evaluation-plan.md` for required comparison.",
             "",
             "## Repairs Recommended",
             "- Review inferred modules before treating advisory behavior as enforced behavior.",
             "- Resolve active conflict branches only after checking source provenance.",
+            "- Add executable traversal evaluations before promoting TMCP paths as superior to baseline skills.",
             "",
         ]
     )
@@ -1596,6 +1786,38 @@ def _behavior_equivalence_cases(task_map: dict[str, list[CandidateFile]]) -> str
                 "## Pass Criteria",
                 "- TMCP behavior matches original skill behavior.",
                 "- No inferred advisory module changes behavior.",
+                "",
+            ]
+        )
+    return "\n".join(lines)
+
+
+def _traversal_roi_cases(task_map: dict[str, list[CandidateFile]]) -> str:
+    lines = ["# Traversal ROI Cases", ""]
+    for task in task_map:
+        lines.extend(
+            [
+                f"## Case: @test:{task}.traversal_roi",
+                "",
+                "## Goal",
+                f"Compare a TMCP-constructed custom skill for @task:{task} against loading the nearest broad baseline skill.",
+                "",
+                "## Baseline",
+                "- Load nearest canonical skill or original source skill.",
+                "- Execute task with baseline instructions.",
+                "- Record baseline token estimate and validation outcome.",
+                "",
+                "## TMCP Custom Skill",
+                f"- LOAD @task:{task}.",
+                "- CONSIDER adjacent task nodes that add validation, research, documentation, or permission behavior.",
+                "- USE only behavior-changing modules and branches.",
+                "- SKIP unrelated nodes with reasons.",
+                "- Emit traversal receipt.",
+                "",
+                "## Pass Criteria",
+                "- Validation outcome is equal or better than baseline.",
+                "- Missed requirement count is zero.",
+                "- Token ROI is positive, or quality gain justifies additional tokens.",
                 "",
             ]
         )
@@ -1780,6 +2002,7 @@ def _known_tmcp_refs(generation: dict[str, Any]) -> set[str]:
             task_id = Path(path).stem
             refs.add(f"@task:{task_id}")
             refs.add(f"@test:{task_id}.basic_route")
+            refs.add(f"@test:{task_id}.traversal_roi")
         if path.startswith("skills.tmcp/modules/") and path.endswith(".md"):
             refs.add(f"@module:{Path(path).stem}")
         if path.startswith("skills.tmcp/branches/") and path.endswith(".branch.md"):
