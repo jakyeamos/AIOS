@@ -86,6 +86,11 @@ def test_harvest_generates_library_and_commits(tmp_path: Path) -> None:
     shortcut = (out / "skills.tmcp" / "shortcuts" / "candidate.md").read_text(encoding="utf-8")
     assert "## Promotion Threshold" in shortcut
     assert "top-level TMCP node" in shortcut
+    assert "## Shortcut Statuses" in shortcut
+    assert "stale_candidate" in shortcut
+    assert "## Rebuild Outcomes" in shortcut
+    assert "source graph version" in shortcut
+    assert "fall back to router traversal" in shortcut
     generated_agents = next((out / "instructions" / "global").glob("*.md"))
     text = generated_agents.read_text(encoding="utf-8")
     assert "ghp_123456789012345678901234567890123456" not in text

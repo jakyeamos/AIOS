@@ -13,6 +13,21 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SKILLS_LIBRARY = ROOT / "skills-library"
 TMCP_PACKET_SCHEMA = "tmcp-runtime-packet-v0.1"
 TMCP_RECEIPT_SCHEMA = "tmcp-traversal-receipt-v0.3"
+SHORTCUT_STATUSES = (
+    "active",
+    "stale_candidate",
+    "needs_revalidation",
+    "superseded",
+    "deprecated",
+    "conflict_branch",
+)
+SHORTCUT_REBUILD_OUTCOMES = (
+    "revalidate_unchanged",
+    "regenerate_new_version",
+    "split_more_specific",
+    "create_conflict_branches",
+    "deprecate_not_useful",
+)
 
 TASK_KEYWORDS: dict[str, tuple[str, ...]] = {
     "audit": ("audit", "review", "inspect", "evaluate"),
@@ -98,6 +113,12 @@ def compile_tmcp_packet(
     selected_nodes = [f"@task:{task_id}", *(f"@module:{item}" for item in modules), f"@branch:{branch_id}"]
     skipped_nodes = _skipped_nodes(task_id, modules)
     shortcut = _shortcut_summary(tmcp_root)
+    graph_version = _graph_version(tmcp_root)
+    shortcut_candidate = _shortcut_candidate(
+        tmcp_root=tmcp_root,
+        task_id=task_id,
+        graph_version=graph_version,
+    )
 
     node_sections = [
         _node_excerpt("Router", tmcp_root / "router.md"),
@@ -113,6 +134,7 @@ def compile_tmcp_packet(
         selected_nodes=selected_nodes,
         skipped_nodes=skipped_nodes,
         context_receipt_id=context_receipt_id,
+        shortcut_candidate=shortcut_candidate,
         sections=node_sections,
     )
     token_estimates = {
@@ -137,14 +159,18 @@ def compile_tmcp_packet(
         "objective": objective_text,
         "project_path": project_path,
         "context_receipt_id": context_receipt_id,
+        "source_graph_version": graph_version,
         "entry_node": f"@task:{task_id}",
         "selected_nodes": selected_nodes,
         "skipped_nodes": skipped_nodes,
         "selected_branches": [{"branch": f"@branch:{branch_id}", "reason": _branch_reason(branch_id)}],
-        "shortcut_candidate": {
-            "node": "@shortcut:candidate",
-            "matched": False,
-            "reason": "Promoted shortcut lookup is not enabled yet; compile normal TMCP path.",
+        "shortcut_candidate": shortcut_candidate,
+        "shortcut_governance": {
+            "allowed_statuses": list(SHORTCUT_STATUSES),
+            "rebuild_outcomes": list(SHORTCUT_REBUILD_OUTCOMES),
+            "default_fallback": "router_traversal",
+            "generated_artifact_not_source_of_truth": True,
+            "requires_behavioral_tests_for_default": True,
         },
         "transition_trace": _transition_trace(task_id, modules, branch_id),
         "traversal_fingerprint": fingerprint,
@@ -246,6 +272,25 @@ def _shortcut_summary(tmcp_root: Path) -> str:
     return _node_excerpt("Shortcut candidate", shortcut, max_chars=1200)
 
 
+def _shortcut_candidate(*, tmcp_root: Path, task_id: str, graph_version: str) -> dict[str, Any]:
+    candidate_path = tmcp_root / "shortcuts" / "candidate.md"
+    return {
+        "node": "@shortcut:candidate",
+        "matched": False,
+        "status": "needs_revalidation" if candidate_path.exists() else "stale_candidate",
+        "usable_as_default": False,
+        "freshness": "uncertain",
+        "source_graph_version": graph_version,
+        "source_tasks": [f"@task:{task_id}"],
+        "source_modules": [],
+        "source_branches": [],
+        "source_skills": [],
+        "fallback": "router_traversal",
+        "reason": "No valid active shortcut with current graph version and confirmed unchanged source material was found.",
+        "repair_recommendation": "Use router traversal and evaluate whether this path should revalidate, regenerate, split, branch, or deprecate an existing shortcut.",
+    }
+
+
 def _node_excerpt(title: str, path: Path, *, max_chars: int = 1800) -> str:
     if not path.exists():
         return f"## {title}\n\nMissing TMCP node: `{path}`.\n"
@@ -262,6 +307,7 @@ def _packet_markdown(
     selected_nodes: list[str],
     skipped_nodes: list[dict[str, str]],
     context_receipt_id: str | None,
+    shortcut_candidate: dict[str, Any],
     sections: list[str],
 ) -> str:
     skipped_lines = [f"- {row['node']}: {row['reason']}" for row in skipped_nodes]
@@ -280,10 +326,19 @@ def _packet_markdown(
             "## Skipped Plausible Nodes",
             *(skipped_lines or ["- none"]),
             "",
+            "## Shortcut Freshness",
+            f"- Candidate: {shortcut_candidate['node']}",
+            f"- Status: {shortcut_candidate['status']}",
+            f"- Source graph version: {shortcut_candidate['source_graph_version']}",
+            f"- Default usable: {shortcut_candidate['usable_as_default']}",
+            f"- Fallback: {shortcut_candidate['fallback']}",
+            f"- Reason: {shortcut_candidate['reason']}",
+            "",
             "## Execution Instruction",
             "- Use this packet as the run-specific skill overlay before executing the workflow.",
             "- Preserve project/context compiler instructions when they are stricter than this packet.",
             "- Record validation evidence so this traversal can later be promoted, repaired, or demoted.",
+            "- If shortcut freshness is uncertain, continue with router traversal.",
             "",
             *sections,
         ]
@@ -308,6 +363,22 @@ def _estimate_baseline_tokens(tmcp_root: Path, task_id: str, packet_markdown: st
         )
         return max(_estimate_tokens(packet_markdown), sibling_tokens)
     return max(_estimate_tokens(packet_markdown) * 2, _estimate_tokens(packet_markdown) + 400)
+
+
+def _graph_version(tmcp_root: Path) -> str:
+    if not tmcp_root.exists():
+        return "missing"
+    digest = hashlib.sha256()
+    for path in sorted(tmcp_root.rglob("*.md")):
+        try:
+            content = path.read_bytes()
+        except OSError:
+            continue
+        digest.update(path.relative_to(tmcp_root).as_posix().encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(content)
+        digest.update(b"\0")
+    return digest.hexdigest()
 
 
 def _fingerprint(*, task_id: str, selected_nodes: list[str], project_scope: str) -> str:

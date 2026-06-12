@@ -68,6 +68,13 @@ def test_compile_tmcp_packet_selects_task_and_stable_fingerprint(tmp_path: Path)
     assert "@module:test_gate" in packet["selected_nodes"]
     assert packet["selected_branches"][0]["branch"] == "@branch:direct_implementation"
     assert "AIOS TMCP Custom Skill Packet" in packet["packet_markdown"]
+    assert packet["source_graph_version"] != "missing"
+    assert packet["shortcut_candidate"]["fallback"] == "router_traversal"
+    assert packet["shortcut_candidate"]["status"] == "needs_revalidation"
+    assert packet["shortcut_candidate"]["usable_as_default"] is False
+    assert "stale_candidate" in packet["shortcut_governance"]["allowed_statuses"]
+    assert "split_more_specific" in packet["shortcut_governance"]["rebuild_outcomes"]
+    assert "Shortcut Freshness" in packet["packet_markdown"]
     assert packet["traversal_fingerprint"] == again["traversal_fingerprint"]
     assert packet["token_estimates"]["custom_skill_tokens"] > 0
 
