@@ -86,6 +86,13 @@ AIOS Phase 11 Plan 11-02 now has the second-brain eval track:
 - `aios eval second-brain-lift`, `aios eval retrieval-metrics`, and `aios eval gold-set-run` expose the track through the JSON-first CLI
 - focused service and CLI tests verify retrieval math, gold-set recall, missing-run handling, policy JSON shape, and CLI output
 
+AIOS Phase 11 Plan 11-03 now has shadow branch testing infrastructure:
+
+- `schema.sql` defines `shadow_branch_runs` for paired eval branch/worktree metadata, comparison deltas, and contamination status
+- `services.shadow_branch_runner` creates isolated worktrees, rejects active-tree path reuse, checks branch contamination, parses diff stats, computes test deltas, computes Shadow Branch Delta from eval scores, and cleans up worktrees
+- `aios shadow create-worktree`, `aios shadow compare`, and `aios shadow cleanup` expose the shadow branch path through the JSON-first CLI
+- focused mocked git tests verify safety rules, diff/test parsing, delta math, branch naming, cleanup, and CLI output
+
 ## Implemented On 2026-06-01
 
 AIOS Phase 9 continuous learning now routes divergent strategy and workflow experiment winners through governed promotion proposals:
