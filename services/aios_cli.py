@@ -70,6 +70,13 @@ from services.second_brain_eval import (
     compute_second_brain_lift,
     evaluate_gold_set_run,
 )
+from services.shadow_branch_runner import (
+    cleanup_shadow_worktree,
+    compare_shadow_runs,
+    create_shadow_worktree,
+    record_shadow_branch_run,
+    shadow_branch_name,
+)
 from services.skills_harvest import HarvestOptions, harvest_skills_library
 from services.standards_health import (
     AssessmentStatus,
@@ -2782,6 +2789,49 @@ def cmd_eval_gold_set_run(conn: sqlite3.Connection, args: argparse.Namespace) ->
     )
 
 
+def cmd_shadow_create_worktree(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    branch_name = shadow_branch_name(task_id=str(args.task_id), condition=str(args.condition))
+    worktree_path = create_shadow_worktree(
+        repo_path=Path(args.repo_path).resolve(),
+        start_sha=str(args.start_sha),
+        branch_name=branch_name,
+    )
+    shadow_run_id = record_shadow_branch_run(
+        conn,
+        task_id=str(args.task_id),
+        condition=str(args.condition),
+        start_sha=str(args.start_sha),
+        aios_branch=branch_name,
+        worktree_path=worktree_path,
+    )
+    conn.commit()
+    return {
+        "shadow_run_id": shadow_run_id,
+        "task_id": args.task_id,
+        "branch_name": branch_name,
+        "worktree_path": worktree_path,
+        "contamination_check_passed": False,
+    }
+
+
+def cmd_shadow_compare(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    result = compare_shadow_runs(
+        conn,
+        shadow_run_id=str(args.shadow_run_id),
+        baseline_run_id=str(args.baseline_run_id),
+    )
+    conn.commit()
+    return result
+
+
+def cmd_shadow_cleanup(args: argparse.Namespace) -> dict[str, Any]:
+    cleanup_shadow_worktree(
+        worktree_path=Path(args.worktree_path).resolve(),
+        repo_path=Path(args.repo_path).resolve(),
+    )
+    return {"worktree_path": args.worktree_path, "removed": True}
+
+
 def _json_has_content(raw: Any) -> bool:
     if raw is None:
         return False
@@ -4218,11 +4268,22 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "eval-gold-set-run":
         print(f"recall={data['recall']} missed_sources={len(data['missed_sources'])}")
         return
+    if command == "shadow-create-worktree":
+        print(f"shadow_run={data['shadow_run_id']} branch={data['branch_name']}")
+        return
+    if command == "shadow-compare":
+        print(f"shadow_run={data['shadow_run_id']} delta={data['delta']}")
+        return
+    if command == "shadow-cleanup":
+        print(f"worktree={data['worktree_path']} removed={data['removed']}")
+        return
 
 
 def _command_name(args: argparse.Namespace) -> str:
     if args.command == "eval":
         return f"eval-{args.eval_command}"
+    if args.command == "shadow":
+        return f"shadow-{args.shadow_command}"
     if args.command == "skills":
         return f"skills-{args.skills_command}"
     if args.command == "corpus":
@@ -4399,6 +4460,31 @@ def create_parser() -> argparse.ArgumentParser:
     eval_gold_set_run.add_argument("--run-id", required=True)
     eval_gold_set_run.add_argument("--gold-task-id", required=True)
     eval_gold_set_run.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    shadow_parser = subparsers.add_parser("shadow", help="Create and compare eval shadow worktrees")
+    shadow_subparsers = shadow_parser.add_subparsers(dest="shadow_command", required=True)
+    shadow_create = shadow_subparsers.add_parser(
+        "create-worktree", help="Create an isolated eval worktree"
+    )
+    shadow_create.add_argument("--task-id", required=True)
+    shadow_create.add_argument("--start-sha", required=True)
+    shadow_create.add_argument("--condition", required=True)
+    shadow_create.add_argument("--repo-path", default=".")
+    shadow_create.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    shadow_compare = shadow_subparsers.add_parser(
+        "compare", help="Compare an AIOS shadow run against a baseline eval run"
+    )
+    shadow_compare.add_argument("--shadow-run-id", required=True)
+    shadow_compare.add_argument("--baseline-run-id", required=True)
+    shadow_compare.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    shadow_cleanup = shadow_subparsers.add_parser(
+        "cleanup", help="Remove an isolated eval worktree"
+    )
+    shadow_cleanup.add_argument("--worktree-path", required=True)
+    shadow_cleanup.add_argument("--repo-path", default=".")
+    shadow_cleanup.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     subparsers.add_parser("contracts-audit", help="Canonical AIOS interface contract audit")
     subparsers.add_parser(
@@ -4808,6 +4894,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "harness-replay",
             "harness-shadow-evaluate",
             "eval",
+            "shadow",
         }:
             conn = _connect_db(db_path)
         else:
@@ -4964,6 +5051,14 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "eval" and args.eval_command == "gold-set-run":
             assert conn is not None
             data = cmd_eval_gold_set_run(conn, args)
+        elif args.command == "shadow" and args.shadow_command == "create-worktree":
+            assert conn is not None
+            data = cmd_shadow_create_worktree(conn, args)
+        elif args.command == "shadow" and args.shadow_command == "compare":
+            assert conn is not None
+            data = cmd_shadow_compare(conn, args)
+        elif args.command == "shadow" and args.shadow_command == "cleanup":
+            data = cmd_shadow_cleanup(args)
         elif args.command == "harness-active-readiness":
             data = active_readiness()
         elif args.command == "start-work":

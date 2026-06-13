@@ -968,3 +968,20 @@ CREATE TABLE IF NOT EXISTS eval_gold_set_context (
   required_source_type TEXT,
   PRIMARY KEY (gold_task_id, required_source_id)
 );
+CREATE TABLE IF NOT EXISTS shadow_branch_runs (
+  id TEXT PRIMARY KEY,
+  task_id TEXT REFERENCES eval_tasks(id),
+  baseline_run_id TEXT REFERENCES eval_runs(id),
+  aios_run_id TEXT REFERENCES eval_runs(id),
+  condition TEXT NOT NULL,
+  start_sha TEXT NOT NULL,
+  baseline_branch TEXT,
+  aios_branch TEXT,
+  worktree_path TEXT,
+  diff_stat_json TEXT,
+  test_delta_json TEXT,
+  shadow_branch_delta REAL,
+  comparison_report_path TEXT,
+  contamination_check_passed INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT
+);
