@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-06-01
+Last updated: 2026-06-13
 
 ## What AIOS Is
 
@@ -30,6 +30,61 @@ The repository currently contains four meaningful subsystems:
    The file-backed AIOS Context Compiler: tiered Markdown routing manifests, deterministic task compilation, generated briefings, and context receipts.
 
 Root operator documentation now lives in `README.md`, including local UI launch commands, key UI routes, store paths, workflow proposal backfill, and verification commands.
+
+## Implemented On 2026-06-13
+
+AIOS now has a safe optional NotebookLM MCP route for bounded second-brain synthesis:
+
+- `services.notebooklm_synthesis` classifies when NotebookLM should be used, rejected, or sequenced after local retrieval, including source-of-truth memory, operational memory, code search, bounded source synthesis, connection discovery, learning detection, drift detection, and whole-vault rejection cases
+- source-bundle metadata now records included and excluded sources while excluding sensitive classes, raw operational paths, and over-limit sources before any NotebookLM handoff
+- the default `NotebookLMMCPAdapter` is optional, reads the experimental `jacob_bd_notebooklm_mcp_cli` backend contract from `config/notebooklm/backends.json`, checks for `nlm` and `notebooklm-mcp`, and fails safely with `skipped_unavailable` provenance instead of making AIOS boot depend on an external MCP server
+- `NotebookLMCLIAdapter` now provides a guarded automated agent path through `nlm login --check`, `nlm notebook create`, `nlm source add --wait`, and `nlm notebook query`, while failing closed for missing auth, empty bundles, excluded sources, unsafe sources, or command failures
+- `docs/contracts/notebooklm-mcp-cli-contract.md`, `aios/policies/notebooklm-routing.md`, `docs/architecture/notebooklm-mcp-addon.md`, and `aios/context/packets/knowledge.notebooklm-routing.md` document that the `jacob-bd/notebooklm-mcp-cli` backend is experimental, uses internal APIs/cookie auth, and must remain bounded and review-gated
+- regression coverage in `tests/test_notebooklm_synthesis.py` validates the nine requested routing scenarios plus bundle filtering, backend registry loading, mode-to-tool planning, CLI command sequencing, auth failure behavior, unavailable-adapter behavior, and staging template structure
+
+## Implemented On 2026-06-13
+
+AIOS managed runtime now uses persisted TMCP traversal receipts for shortcut promotion:
+
+- `services.tmcp_runtime.compile_tmcp_packet` can evaluate prior receipts for the same traversal fingerprint, source graph version, task, validation success rate, positive token ROI, and blocker-free evidence before marking a shortcut active
+- promoted shortcuts become the packet entry node and prepend the selected node path so workflow reports show that the managed path entered through `@shortcut:*` while preserving the underlying task/module/branch traversal
+- `bin/aios-managed-run.py` compiles TMCP packets with the runtime SQLite connection and updates each traversal receipt with workflow execution outcome and validation evidence after workflow execution
+- runtime-shaped verification now covers a managed subprocess run seeded with repeated successful receipts and confirms the generated workflow report routes through the promoted shortcut
+
+## Architecture Governance On 2026-06-05
+
+AIOS now tracks subsystem extraction decisions in `.planning/SUBSYSTEM_EXTRACTION_PLAN.md`. The current architecture posture is to keep AIOS as a monorepo incubator and extract only after a subsystem has a stable public contract, focused tests, clear data ownership, independent reuse pressure, and lower coordination cost outside this repo.
+
+`AGENTS.md` requires future work to update that plan whenever subsystem maturity, ownership, contracts, storage boundaries, dependency direction, or extraction posture changes.
+
+## Implemented On 2026-06-05
+
+AIOS now has a reusable local skills harvest workflow:
+
+- `aios skills harvest` scans explicit project and agent roots for AGENTS/CLAUDE/GEMINI/Cursor/Codex/Claude skills, commands, workflows, prompts, and agent-facing configuration without modifying source files
+- `services.skills_harvest` classifies candidates, redacts secret-like values, records provenance, detects edit-permission conflicts, and consolidates overlapping reusable skill candidates into canonical skill groups
+- source tiers distinguish `project_authoritative`, `personal_agent`, `local_agent_config`, `plugin_reference`, `history_reference`, and `reference` material so project and personal behavior shape active TMCP while plugin/history material stays preserved but advisory
+- the generated local repository lives at `skills-library/`, is ignored by the parent AIOS repo, and contains `skills/`, `instructions/`, `workflows/`, `skills.tmcp/`, `audit/`, `manifest.json`, and `skills.lock`
+- TMCP now treats repeated successful traversal paths as shortcut candidates: receipt fingerprints with repeated validation success and positive token ROI can become top-level graph nodes that later branches build from
+- the first broad local harvest scanned projects plus local Gemini/Cursor/Claude/Codex/Agents roots, found 2,834 candidate files, consolidated 1,694 reusable skill candidates into 99 canonical skills, and used 1,539 project/personal/global-config sources as active TMCP authority
+- the generated repository is committed locally; GitHub push remains an operator step when network approval is available
+
+## Implemented On 2026-06-13
+
+AIOS Phase 11 Plan 11-01 now has durable eval-run infrastructure:
+
+- `schema.sql` defines eval task, run, score, failure, and gold-set task tables for benchmark and shadow-workflow evidence
+- `services.eval_run_service` records eval tasks/runs, scores, failures, run detail, run lists, and aggregate summaries with context-profile, final-status, priority, and JSON-list validation
+- `aios eval record-run`, `aios eval list-runs`, and `aios eval summary` expose the eval-run store through the existing CLI path
+- `tests/test_eval_run_service.py` and eval CLI coverage verify the service contract against real SQLite behavior, including missing-later-table tolerance for future Phase 11 plans
+
+AIOS Phase 11 Plan 11-02 now has the second-brain eval track:
+
+- `schema.sql` defines second-brain retrieval and gold-set context mapping tables for precision, recall, and staleness measurement
+- `services.second_brain_eval` records retrievals, computes retrieval metrics, registers gold-set context requirements, evaluates missed required sources, and computes Second Brain Lift between full and repo-only runs
+- `config/agent-eval/ablation-policies/` includes no-second-brain, no-personal-corpus, no-project-truth, and no-prior-task-history policy files
+- `aios eval second-brain-lift`, `aios eval retrieval-metrics`, and `aios eval gold-set-run` expose the track through the JSON-first CLI
+- focused service and CLI tests verify retrieval math, gold-set recall, missing-run handling, policy JSON shape, and CLI output
 
 ## Implemented On 2026-06-01
 
@@ -119,6 +174,15 @@ AIOS Phase 10 now has an Agent Eval Foundation for major-task review:
 - `AGENTS.md` now includes an Agent Eval Workflow rule after Execution-First Verification with trigger scope, a 10-step checklist, anti-cheating rules, and personalized/local portability labeling
 - verification passes with `python3 -m py_compile config/agent-eval/eval-schemas.py`, `uv run ruff check config/agent-eval/eval-schemas.py`, and `git diff --check`
 
+## Implemented On 2026-06-05
+
+AIOS managed prompt capture now flows through the same hook path as interactive prompt submission:
+
+- `bin/aios-managed-run.py` emits `hook-prompt-submit.py` for the governed run objective after managed session start, preserving explicit session/run/invocation/backend linkage
+- managed session-effectiveness receipts now see `prompts_used` rows for synthesized managed sessions instead of blocking on `prompt_count: 0`
+- regression coverage in `tests/test_orchestration_runtime.py` verifies the managed subprocess path writes the objective into `prompts_used`
+- runtime verification against `data/aios.db` produced `logs/session-effectiveness/managed-invoke-managed-prompt-capture-260604202353.json` with `prompt_count: 1`, project `AIOS`, run `run-managed-prompt-capture-260604202353`, and no blockers
+
 ## Implemented On 2026-06-01
 
 AIOS Phase 10 now has a quality eval baseline for future major-task reviews:
@@ -128,6 +192,17 @@ AIOS Phase 10 now has a quality eval baseline for future major-task reviews:
 - `docs/backfill/agent-eval-backfill.md` records the first factual hotspot inventory for Python services, CLI scripts, tests, aios-ui, config, and eval infrastructure
 - the baseline records 59 Python files over 500 lines, 0 assertion-free Python tests, 0 `services` imports from `bin`, 3 TypeScript component files over 400 lines, 0 vulture findings, and 2 shellcheck files with findings in the current workspace
 - Phase 10 is complete in planning state and the active roadmap position has advanced to Phase 11 testing and benchmark evaluation
+
+## Implemented On 2026-06-01
+
+AIOS session-effectiveness attribution now preserves the real project and governed run linkage through the hook lifecycle:
+
+- hook lifecycle project resolution treats agent config directories such as `.claude` and `.codex` as non-project cwd payloads when the hook process is running inside a registered project
+- `hook-session-start.py` stores the resolved workspace cwd in session rows, runtime metadata, invocation metadata, startup packets, and hook logs
+- `hook-stop.py` repairs open sessions before closeout if their cwd resolves away from an agent config directory, then persists resolved run/invocation linkage back onto `sessions` before writing session-effectiveness receipts
+- regression coverage locks `.claude` payload resolution to the registered AIOS project and verifies effectiveness receipts see persisted governed run ids
+- the runtime path was verified against `/Users/jakyeamos/AIOS/data/aios.db` with a `.claude` payload cwd, producing a receipt under project `AIOS` and run `run-session-attribution-runtime-test`
+- managed governed workflow runs now pass the runtime SQLite connection through stage execution, so `workflow_execution_reports.report_json` and `success_criteria_stage_findings` are populated from the same execution path that powers `workflow-compare` and workflow promotion candidates
 
 ## Implemented On 2026-05-24
 
