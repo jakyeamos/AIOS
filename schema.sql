@@ -880,3 +880,91 @@ CREATE TABLE personalized_humanizer_eval_results (
   results_json TEXT NOT NULL DEFAULT '[]',
   summary_json TEXT NOT NULL DEFAULT '{}'
 );
+
+CREATE TABLE IF NOT EXISTS eval_tasks (
+  id TEXT PRIMARY KEY,
+  repo_id TEXT,
+  source TEXT,
+  start_sha TEXT NOT NULL,
+  context_profile TEXT NOT NULL,
+  task_type TEXT,
+  prompt_summary TEXT,
+  acceptance_criteria_json TEXT,
+  success_criteria_files_json TEXT,
+  created_at TEXT
+);
+CREATE TABLE IF NOT EXISTS eval_runs (
+  id TEXT PRIMARY KEY,
+  task_id TEXT REFERENCES eval_tasks(id),
+  condition TEXT NOT NULL,
+  mode TEXT NOT NULL,
+  harness TEXT,
+  model TEXT,
+  context_profile TEXT NOT NULL,
+  branch_name TEXT,
+  duration_ms INTEGER,
+  total_tokens INTEGER,
+  estimated_cost_usd REAL,
+  tool_calls INTEGER,
+  failed_commands INTEGER,
+  files_changed INTEGER,
+  tests_run_json TEXT,
+  final_status TEXT NOT NULL,
+  created_at TEXT
+);
+CREATE TABLE IF NOT EXISTS eval_scores (
+  id TEXT PRIMARY KEY,
+  run_id TEXT REFERENCES eval_runs(id),
+  task_success REAL,
+  quality_adherence REAL,
+  workflow_speed REAL,
+  cost_efficiency REAL,
+  context_effectiveness REAL,
+  second_brain_effectiveness REAL,
+  context_portability REAL,
+  autonomy REAL,
+  user_trust REAL,
+  overall_score REAL NOT NULL,
+  reviewer_notes TEXT,
+  created_at TEXT
+);
+CREATE TABLE IF NOT EXISTS eval_failures (
+  id TEXT PRIMARY KEY,
+  run_id TEXT REFERENCES eval_runs(id),
+  failure_types_json TEXT NOT NULL,
+  summary TEXT,
+  suspected_cause TEXT,
+  affected_components_json TEXT,
+  recommended_fixes_json TEXT,
+  priority TEXT NOT NULL,
+  regression_task_created INTEGER DEFAULT 0,
+  backfill_item_created INTEGER DEFAULT 0,
+  standards_update_needed INTEGER DEFAULT 0,
+  created_at TEXT
+);
+CREATE TABLE IF NOT EXISTS eval_gold_set_tasks (
+  id TEXT PRIMARY KEY,
+  task_id TEXT REFERENCES eval_tasks(id),
+  required_context_sources_json TEXT NOT NULL,
+  expected_retrieval_ids_json TEXT,
+  known_correct_outcome TEXT,
+  created_at TEXT
+);
+CREATE TABLE IF NOT EXISTS eval_second_brain_retrievals (
+  id TEXT PRIMARY KEY,
+  run_id TEXT REFERENCES eval_runs(id),
+  source_type TEXT,
+  source_id TEXT,
+  source_path TEXT,
+  was_needed INTEGER,
+  was_stale INTEGER,
+  stale_reason TEXT,
+  relevance_score REAL,
+  created_at TEXT
+);
+CREATE TABLE IF NOT EXISTS eval_gold_set_context (
+  gold_task_id TEXT REFERENCES eval_gold_set_tasks(id),
+  required_source_id TEXT,
+  required_source_type TEXT,
+  PRIMARY KEY (gold_task_id, required_source_id)
+);

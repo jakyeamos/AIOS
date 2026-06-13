@@ -25,6 +25,11 @@ from services.asset_lifecycle import (
 from services.automation_history import sync_pipeline_automation_history
 from services.capability_truth import capability_truth_payload
 from services.daily_flow import preview_from_objective, replay_from_run
+from services.eval_run_service import (
+    create_eval_run,
+    get_eval_summary,
+    list_eval_runs,
+)
 from services.harness import (
     active_readiness,
     brief_task,
@@ -59,6 +64,11 @@ from services.rtk_integration import (
     ensure_rtk_schema,
     load_compression_rules,
     rtk_metrics_log,
+)
+from services.second_brain_eval import (
+    compute_retrieval_metrics,
+    compute_second_brain_lift,
+    evaluate_gold_set_run,
 )
 from services.skills_harvest import HarvestOptions, harvest_skills_library
 from services.standards_health import (
@@ -2708,6 +2718,70 @@ def cmd_daily_flow(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[s
     }
 
 
+def cmd_eval_record_run(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    try:
+        run_id = create_eval_run(
+            conn,
+            task_id=str(args.task_id),
+            condition=str(args.condition),
+            mode=str(args.mode),
+            harness=args.harness,
+            model=args.model,
+            context_profile=str(args.context_profile),
+            final_status=str(args.final_status),
+            duration_ms=args.duration_ms,
+            total_tokens=args.tokens,
+            estimated_cost_usd=args.cost,
+            files_changed=args.files_changed,
+        )
+    except ValueError as exc:
+        raise CLIError("eval-record-invalid", str(exc), EXIT_USAGE) from exc
+    conn.commit()
+    return {"run_id": run_id, "task_id": args.task_id, "final_status": args.final_status}
+
+
+def cmd_eval_list_runs(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    try:
+        runs = list_eval_runs(
+            conn,
+            task_id=args.task_id,
+            condition=args.condition,
+            context_profile=args.context_profile,
+            limit=int(args.limit),
+        )
+    except ValueError as exc:
+        raise CLIError("eval-list-invalid", str(exc), EXIT_USAGE) from exc
+    return {"runs": runs, "count": len(runs), "limit": int(args.limit)}
+
+
+def cmd_eval_summary(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    return get_eval_summary(conn, project_id=args.project)
+
+
+def cmd_eval_second_brain_lift(
+    conn: sqlite3.Connection, args: argparse.Namespace
+) -> dict[str, Any]:
+    return compute_second_brain_lift(
+        conn,
+        full_run_id=str(args.full_run_id),
+        repo_only_run_id=str(args.repo_only_run_id),
+    )
+
+
+def cmd_eval_retrieval_metrics(
+    conn: sqlite3.Connection, args: argparse.Namespace
+) -> dict[str, Any]:
+    return compute_retrieval_metrics(conn, str(args.run_id))
+
+
+def cmd_eval_gold_set_run(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    return evaluate_gold_set_run(
+        conn,
+        run_id=str(args.run_id),
+        gold_task_id=str(args.gold_task_id),
+    )
+
+
 def _json_has_content(raw: Any) -> bool:
     if raw is None:
         return False
@@ -4126,9 +4200,29 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
             f"average={totals['average_score']}"
         )
         return
+    if command == "eval-record-run":
+        print(f"run={data['run_id']} task={data['task_id']} status={data['final_status']}")
+        return
+    if command == "eval-list-runs":
+        print(f"runs={data['count']} limit={data['limit']}")
+        return
+    if command == "eval-summary":
+        print(f"runs={data['run_count']} average_score={data['average_score']}")
+        return
+    if command == "eval-second-brain-lift":
+        print(f"available={data['available']} overall_lift={data.get('overall_lift')}")
+        return
+    if command == "eval-retrieval-metrics":
+        print(f"retrievals={data['count_total']} precision={data['precision']}")
+        return
+    if command == "eval-gold-set-run":
+        print(f"recall={data['recall']} missed_sources={len(data['missed_sources'])}")
+        return
 
 
 def _command_name(args: argparse.Namespace) -> str:
+    if args.command == "eval":
+        return f"eval-{args.eval_command}"
     if args.command == "skills":
         return f"skills-{args.skills_command}"
     if args.command == "corpus":
@@ -4258,6 +4352,53 @@ def create_parser() -> argparse.ArgumentParser:
     daily_flow.add_argument("--project", default=None)
     daily_flow.add_argument("--dry-run", action="store_true")
     daily_flow.add_argument("--json", action="store_true", default=True)
+
+    eval_parser = subparsers.add_parser("eval", help="Record and inspect AIOS eval runs")
+    eval_subparsers = eval_parser.add_subparsers(dest="eval_command", required=True)
+    eval_record_run = eval_subparsers.add_parser("record-run", help="Record an eval run")
+    eval_record_run.add_argument("--task-id", required=True)
+    eval_record_run.add_argument("--condition", required=True)
+    eval_record_run.add_argument("--mode", required=True)
+    eval_record_run.add_argument("--context-profile", required=True)
+    eval_record_run.add_argument("--final-status", required=True)
+    eval_record_run.add_argument("--harness", default=None)
+    eval_record_run.add_argument("--model", default=None)
+    eval_record_run.add_argument("--duration-ms", type=int, default=None)
+    eval_record_run.add_argument("--tokens", type=int, default=None)
+    eval_record_run.add_argument("--cost", type=float, default=None)
+    eval_record_run.add_argument("--files-changed", type=int, default=0)
+    eval_record_run.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    eval_list_runs = eval_subparsers.add_parser("list-runs", help="List eval runs")
+    eval_list_runs.add_argument("--task-id", default=None)
+    eval_list_runs.add_argument("--condition", default=None)
+    eval_list_runs.add_argument("--context-profile", default=None)
+    eval_list_runs.add_argument("--limit", type=int, default=50)
+    eval_list_runs.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    eval_summary = eval_subparsers.add_parser("summary", help="Summarize eval runs")
+    eval_summary.add_argument("--project", default=None)
+    eval_summary.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    eval_second_brain_lift = eval_subparsers.add_parser(
+        "second-brain-lift", help="Compute lift between full second-brain and repo-only runs"
+    )
+    eval_second_brain_lift.add_argument("--full-run-id", required=True)
+    eval_second_brain_lift.add_argument("--repo-only-run-id", required=True)
+    eval_second_brain_lift.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    eval_retrieval_metrics = eval_subparsers.add_parser(
+        "retrieval-metrics", help="Compute retrieval precision, recall, and staleness metrics"
+    )
+    eval_retrieval_metrics.add_argument("--run-id", required=True)
+    eval_retrieval_metrics.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    eval_gold_set_run = eval_subparsers.add_parser(
+        "gold-set-run", help="Evaluate a run against known required gold-set context"
+    )
+    eval_gold_set_run.add_argument("--run-id", required=True)
+    eval_gold_set_run.add_argument("--gold-task-id", required=True)
+    eval_gold_set_run.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     subparsers.add_parser("contracts-audit", help="Canonical AIOS interface contract audit")
     subparsers.add_parser(
@@ -4666,6 +4807,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "harness-simulate",
             "harness-replay",
             "harness-shadow-evaluate",
+            "eval",
         }:
             conn = _connect_db(db_path)
         else:
@@ -4804,6 +4946,24 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "harness-shadow-evaluate":
             assert conn is not None
             data = shadow_evaluate_session(conn, session_id=args.session_id)
+        elif args.command == "eval" and args.eval_command == "record-run":
+            assert conn is not None
+            data = cmd_eval_record_run(conn, args)
+        elif args.command == "eval" and args.eval_command == "list-runs":
+            assert conn is not None
+            data = cmd_eval_list_runs(conn, args)
+        elif args.command == "eval" and args.eval_command == "summary":
+            assert conn is not None
+            data = cmd_eval_summary(conn, args)
+        elif args.command == "eval" and args.eval_command == "second-brain-lift":
+            assert conn is not None
+            data = cmd_eval_second_brain_lift(conn, args)
+        elif args.command == "eval" and args.eval_command == "retrieval-metrics":
+            assert conn is not None
+            data = cmd_eval_retrieval_metrics(conn, args)
+        elif args.command == "eval" and args.eval_command == "gold-set-run":
+            assert conn is not None
+            data = cmd_eval_gold_set_run(conn, args)
         elif args.command == "harness-active-readiness":
             data = active_readiness()
         elif args.command == "start-work":

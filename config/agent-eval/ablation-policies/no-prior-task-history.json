@@ -1,0 +1,9 @@
+{
+  "condition": "aios_no_prior_task_history",
+  "description": "Disable archived task summaries and prior task history to measure compounding workflow memory.",
+  "disable_sources": [
+    "prior_task_history",
+    "archived_task_summaries"
+  ],
+  "portability_impact": "medium"
+}

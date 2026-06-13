@@ -1,0 +1,13 @@
+{
+  "condition": "aios_no_second_brain",
+  "description": "Disable all second-brain and durable memory sources to measure full Second Brain Lift against repo-only execution.",
+  "disable_sources": [
+    "obsidian_notes",
+    "project_memory",
+    "personal_corpus",
+    "prior_task_history",
+    "project_truth",
+    "standards_files"
+  ],
+  "portability_impact": "high"
+}

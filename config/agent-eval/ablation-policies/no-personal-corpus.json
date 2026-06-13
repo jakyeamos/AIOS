@@ -1,0 +1,9 @@
+{
+  "condition": "aios_no_personal_context",
+  "description": "Disable personal corpus and writing samples while preserving project-local truth sources.",
+  "disable_sources": [
+    "personal_corpus",
+    "writing_samples"
+  ],
+  "portability_impact": "medium"
+}
