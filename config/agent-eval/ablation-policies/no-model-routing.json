@@ -1,0 +1,10 @@
+{
+  "condition": "aios_no_model_routing",
+  "description": "Disable model routing and tier selection to measure whether dynamic model choice improves eval outcomes.",
+  "disable_features": [
+    "model_routing_policy",
+    "cheap_model_preference",
+    "model_tier_selection"
+  ],
+  "portability_impact": "low"
+}

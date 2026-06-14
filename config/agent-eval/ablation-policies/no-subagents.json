@@ -1,0 +1,10 @@
+{
+  "condition": "aios_no_subagents",
+  "description": "Disable subagent dispatch and parallel execution to measure orchestration lift against single-agent execution.",
+  "disable_features": [
+    "subagent_dispatch",
+    "parallel_agent_execution",
+    "agent_orchestration"
+  ],
+  "portability_impact": "low"
+}

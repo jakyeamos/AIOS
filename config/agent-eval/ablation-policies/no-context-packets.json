@@ -1,0 +1,10 @@
+{
+  "condition": "aios_no_context_packets",
+  "description": "Disable context packet assembly, ranking, and briefing compilation to isolate the lift from AIOS context packets.",
+  "disable_features": [
+    "context_packet_assembly",
+    "packet_ranking",
+    "briefing_compilation"
+  ],
+  "portability_impact": "high"
+}

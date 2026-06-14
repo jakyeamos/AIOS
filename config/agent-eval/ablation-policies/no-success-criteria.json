@@ -1,0 +1,10 @@
+{
+  "condition": "aios_no_success_criteria",
+  "description": "Disable success criteria and standards gates to measure their contribution to verification quality.",
+  "disable_features": [
+    "success_criteria_resolution",
+    "standards_gate",
+    "criteria_evaluation"
+  ],
+  "portability_impact": "medium"
+}

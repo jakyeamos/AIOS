@@ -16,6 +16,7 @@ from typing import Any, cast
 
 import services.next_action as next_action_module
 import services.operator_search as operator_search_module
+from services.ablation_runner import compare_ablation_suite, run_ablation_suite
 from services.asset_lifecycle import (
     AssetKind,
     AssetLifecycleState,
@@ -2914,6 +2915,28 @@ def cmd_shadow_queue(conn: sqlite3.Connection) -> dict[str, Any]:
     return {"candidates": candidates, "count": len(candidates)}
 
 
+def cmd_ablation_run(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    policy_paths = [item for item in str(args.policies).split(",") if item]
+    run_ids = run_ablation_suite(
+        conn,
+        task_id=str(args.task_id),
+        start_sha=str(args.start_sha),
+        policy_paths=policy_paths,
+        repo_path=Path(args.repo_path).resolve(),
+        base_run_id=args.base_run_id,
+    )
+    conn.commit()
+    return {"run_ids": run_ids, "count": len(run_ids), "task_id": args.task_id}
+
+
+def cmd_ablation_compare(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    return compare_ablation_suite(
+        conn,
+        task_id=str(args.task_id),
+        base_run_id=str(args.base_run_id),
+    )
+
+
 def _json_has_content(raw: Any) -> bool:
     if raw is None:
         return False
@@ -4374,6 +4397,12 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "peer-trace-list":
         print(f"sessions={data['count']} limit={data['limit']}")
         return
+    if command == "ablation-run":
+        print(f"runs={data['count']} task={data['task_id']}")
+        return
+    if command == "ablation-compare":
+        print(f"conditions={len(data['feature_lift'])} task={data['task_id']}")
+        return
 
 
 def _command_name(args: argparse.Namespace) -> str:
@@ -4383,6 +4412,8 @@ def _command_name(args: argparse.Namespace) -> str:
         return f"shadow-{args.shadow_command}"
     if args.command == "peer-trace":
         return f"peer-trace-{args.peer_trace_command}"
+    if args.command == "ablation":
+        return f"ablation-{args.ablation_command}"
     if args.command == "skills":
         return f"skills-{args.skills_command}"
     if args.command == "corpus":
@@ -4608,6 +4639,21 @@ def create_parser() -> argparse.ArgumentParser:
     peer_trace_list = peer_trace_subparsers.add_parser("list", help="List peer trace sessions")
     peer_trace_list.add_argument("--limit", type=int, default=50)
     peer_trace_list.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    ablation = subparsers.add_parser("ablation", help="Run and compare AIOS feature ablations")
+    ablation_subparsers = ablation.add_subparsers(dest="ablation_command", required=True)
+    ablation_run = ablation_subparsers.add_parser("run", help="Run ablation policies")
+    ablation_run.add_argument("--task-id", required=True)
+    ablation_run.add_argument("--start-sha", required=True)
+    ablation_run.add_argument("--policies", required=True)
+    ablation_run.add_argument("--repo-path", default=".")
+    ablation_run.add_argument("--base-run-id", default=None)
+    ablation_run.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    ablation_compare = ablation_subparsers.add_parser("compare", help="Compare ablation scores")
+    ablation_compare.add_argument("--task-id", required=True)
+    ablation_compare.add_argument("--base-run-id", required=True)
+    ablation_compare.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     subparsers.add_parser("contracts-audit", help="Canonical AIOS interface contract audit")
     subparsers.add_parser(
@@ -5019,6 +5065,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "eval",
             "shadow",
             "peer-trace",
+            "ablation",
         }:
             conn = _connect_db(db_path)
         else:
@@ -5198,6 +5245,12 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "peer-trace" and args.peer_trace_command == "list":
             assert conn is not None
             data = cmd_peer_trace_list(conn, args)
+        elif args.command == "ablation" and args.ablation_command == "run":
+            assert conn is not None
+            data = cmd_ablation_run(conn, args)
+        elif args.command == "ablation" and args.ablation_command == "compare":
+            assert conn is not None
+            data = cmd_ablation_compare(conn, args)
         elif args.command == "harness-active-readiness":
             data = active_readiness()
         elif args.command == "start-work":
