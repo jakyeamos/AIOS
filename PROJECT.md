@@ -101,6 +101,12 @@ AIOS Phase 11 Plan 11-05 now has peer passive trace infrastructure:
 - `services.shadow_candidate_scorer` scores observed tasks with weighted criteria, hard blocker caps, recommendation tiers, reasons, and blockers
 - `aios peer-trace start|stop|list`, `aios shadow score`, and `aios shadow queue` expose the passive trace and candidate queue surfaces
 
+AIOS Phase 11 Plan 11-04 now has the feature ablation runner:
+
+- `config/agent-eval/ablation-policies/` includes no-context-packets, no-success-criteria, no-subagents, and no-model-routing, completing the eight-policy ablation suite with the Plan 11-02 policies
+- `services.ablation_runner` loads policies, creates shadow worktrees, invokes context compilation with disabled features, falls back to a worktree-local ablation override file, records EvalRuns, and compares ablation scores against a base run
+- `aios ablation run` and `aios ablation compare` expose ablation execution and score comparison through the JSON-first CLI
+
 ## Implemented On 2026-06-01
 
 AIOS Phase 9 continuous learning now routes divergent strategy and workflow experiment winners through governed promotion proposals:
