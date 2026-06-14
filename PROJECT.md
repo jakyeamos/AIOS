@@ -93,6 +93,14 @@ AIOS Phase 11 Plan 11-03 now has shadow branch testing infrastructure:
 - `aios shadow create-worktree`, `aios shadow compare`, and `aios shadow cleanup` expose the shadow branch path through the JSON-first CLI
 - focused mocked git tests verify safety rules, diff/test parsing, delta math, branch naming, cleanup, and CLI output
 
+AIOS Phase 11 Plan 11-05 now has peer passive trace infrastructure:
+
+- `schema.sql` defines peer session, peer trace, and shadow candidate tables
+- `config/peer-eval/peer-trace-policy.json` defaults peer trace mode to observation-only with prompt mutation, context injection, subagents, repo writes, automated shadow launch, prompt text storage, and file content storage disabled
+- `services.peer_trace` starts/stops peer sessions, records redacted trace metadata, lists sessions, and returns session details
+- `services.shadow_candidate_scorer` scores observed tasks with weighted criteria, hard blocker caps, recommendation tiers, reasons, and blockers
+- `aios peer-trace start|stop|list`, `aios shadow score`, and `aios shadow queue` expose the passive trace and candidate queue surfaces
+
 ## Implemented On 2026-06-01
 
 AIOS Phase 9 continuous learning now routes divergent strategy and workflow experiment winners through governed promotion proposals:
