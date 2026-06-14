@@ -76,6 +76,11 @@ from services.second_brain_eval import (
     compute_second_brain_lift,
     evaluate_gold_set_run,
 )
+from services.shadow_automation import (
+    approve_candidate,
+    run_full_automation_pipeline,
+    shadow_status,
+)
 from services.shadow_branch_runner import (
     cleanup_shadow_worktree,
     compare_shadow_runs,
@@ -2937,6 +2942,26 @@ def cmd_ablation_compare(conn: sqlite3.Connection, args: argparse.Namespace) -> 
     )
 
 
+def cmd_shadow_approve(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    state = approve_candidate(conn, str(args.candidate_id))
+    conn.commit()
+    return {"candidate_id": args.candidate_id, "automation_state": state}
+
+
+def cmd_shadow_run_pipeline(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    result = run_full_automation_pipeline(
+        conn,
+        candidate_id=str(args.candidate_id),
+        repo_path=Path(args.repo_path).resolve(),
+    )
+    conn.commit()
+    return result
+
+
+def cmd_shadow_status(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    return shadow_status(conn, str(args.candidate_id))
+
+
 def _json_has_content(raw: Any) -> bool:
     if raw is None:
         return False
@@ -4403,6 +4428,15 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "ablation-compare":
         print(f"conditions={len(data['feature_lift'])} task={data['task_id']}")
         return
+    if command == "shadow-approve":
+        print(f"candidate={data['candidate_id']} state={data['automation_state']}")
+        return
+    if command == "shadow-run-pipeline":
+        print(f"candidate={data['candidate_id']} state={data['final_state']}")
+        return
+    if command == "shadow-status":
+        print(f"candidate={data['candidate_id']} state={data['automation_state']}")
+        return
 
 
 def _command_name(args: argparse.Namespace) -> str:
@@ -4622,6 +4656,21 @@ def create_parser() -> argparse.ArgumentParser:
 
     shadow_queue = shadow_subparsers.add_parser("queue", help="List scored shadow candidates")
     shadow_queue.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    shadow_approve = shadow_subparsers.add_parser("approve", help="Approve a shadow candidate")
+    shadow_approve.add_argument("--candidate-id", required=True)
+    shadow_approve.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    shadow_run_pipeline = shadow_subparsers.add_parser(
+        "run-pipeline", help="Run the approved shadow automation pipeline"
+    )
+    shadow_run_pipeline.add_argument("--candidate-id", required=True)
+    shadow_run_pipeline.add_argument("--repo-path", default=".")
+    shadow_run_pipeline.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    shadow_status_parser = shadow_subparsers.add_parser("status", help="Show shadow candidate status")
+    shadow_status_parser.add_argument("--candidate-id", required=True)
+    shadow_status_parser.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     peer_trace = subparsers.add_parser("peer-trace", help="Record privacy-safe peer trace metadata")
     peer_trace_subparsers = peer_trace.add_subparsers(dest="peer_trace_command", required=True)
@@ -5251,6 +5300,15 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "ablation" and args.ablation_command == "compare":
             assert conn is not None
             data = cmd_ablation_compare(conn, args)
+        elif args.command == "shadow" and args.shadow_command == "approve":
+            assert conn is not None
+            data = cmd_shadow_approve(conn, args)
+        elif args.command == "shadow" and args.shadow_command == "run-pipeline":
+            assert conn is not None
+            data = cmd_shadow_run_pipeline(conn, args)
+        elif args.command == "shadow" and args.shadow_command == "status":
+            assert conn is not None
+            data = cmd_shadow_status(conn, args)
         elif args.command == "harness-active-readiness":
             data = active_readiness()
         elif args.command == "start-work":
