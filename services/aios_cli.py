@@ -51,6 +51,11 @@ from services.invocation_backends import (
 )
 from services.learning_taxonomy import LEARNING_SIGNAL_KINDS, LearningSignalKind
 from services.path_resolution import get_vault_root
+from services.peer_trace import (
+    end_peer_session,
+    list_peer_sessions,
+    start_peer_session,
+)
 from services.pre_pr_readiness import (
     DEFAULT_PRE_CR_REPO,
     pre_pr_readiness_payload,
@@ -77,6 +82,7 @@ from services.shadow_branch_runner import (
     record_shadow_branch_run,
     shadow_branch_name,
 )
+from services.shadow_candidate_scorer import score_shadow_candidate
 from services.skills_harvest import HarvestOptions, harvest_skills_library
 from services.standards_health import (
     AssessmentStatus,
@@ -2832,6 +2838,82 @@ def cmd_shadow_cleanup(args: argparse.Namespace) -> dict[str, Any]:
     return {"worktree_path": args.worktree_path, "removed": True}
 
 
+def cmd_peer_trace_start(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    session_id = start_peer_session(
+        conn,
+        anonymous_peer_id=str(args.peer_id),
+        harness_used=args.harness,
+        repo_language=args.repo_language,
+        repo_framework=args.repo_framework,
+    )
+    conn.commit()
+    return {"session_id": session_id, "anonymous_peer_id": args.peer_id}
+
+
+def cmd_peer_trace_stop(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    end_peer_session(conn, str(args.session_id))
+    conn.commit()
+    return {"session_id": args.session_id, "ended": True}
+
+
+def cmd_peer_trace_list(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    sessions = list_peer_sessions(conn, limit=int(args.limit))
+    return {"sessions": sessions, "count": len(sessions), "limit": int(args.limit)}
+
+
+def cmd_shadow_score(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    trace_row = conn.execute(
+        "SELECT * FROM peer_traces WHERE id = ? LIMIT 1",
+        (str(args.trace_id),),
+    ).fetchone()
+    if trace_row is None:
+        raise CLIError("shadow-score-not-found", f"Peer trace not found: {args.trace_id}", EXIT_NOT_FOUND)
+    trace_record = dict(trace_row)
+    score = score_shadow_candidate(trace_record)
+    candidate_id = f"shadow-candidate-{uuid.uuid4()}"
+    now = _now_iso()
+    conn.execute(
+        """
+        INSERT INTO shadow_candidates (
+          id, peer_session_id, peer_trace_id, score, recommendation, reasons_json,
+          blockers_json, automation_state, state_updated_at, created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            candidate_id,
+            trace_record.get("peer_session_id"),
+            args.trace_id,
+            score["score"],
+            score["recommendation"],
+            json.dumps(score["reasons"], sort_keys=True),
+            json.dumps(score["blockers"], sort_keys=True),
+            "TRACE_ONLY",
+            now,
+            now,
+        ),
+    )
+    conn.commit()
+    return {"candidate_id": candidate_id, **score}
+
+
+def cmd_shadow_queue(conn: sqlite3.Connection) -> dict[str, Any]:
+    rows = conn.execute(
+        """
+        SELECT * FROM shadow_candidates
+        WHERE recommendation != 'trace_only'
+        ORDER BY score DESC, created_at DESC
+        """
+    ).fetchall()
+    candidates = []
+    for row in rows:
+        item = dict(row)
+        item["reasons"] = json.loads(item.pop("reasons_json") or "[]")
+        item["blockers"] = json.loads(item.pop("blockers_json") or "[]")
+        candidates.append(item)
+    return {"candidates": candidates, "count": len(candidates)}
+
+
 def _json_has_content(raw: Any) -> bool:
     if raw is None:
         return False
@@ -4277,6 +4359,21 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "shadow-cleanup":
         print(f"worktree={data['worktree_path']} removed={data['removed']}")
         return
+    if command == "shadow-score":
+        print(f"candidate={data['candidate_id']} score={data['score']}")
+        return
+    if command == "shadow-queue":
+        print(f"candidates={data['count']}")
+        return
+    if command == "peer-trace-start":
+        print(f"session={data['session_id']} peer={data['anonymous_peer_id']}")
+        return
+    if command == "peer-trace-stop":
+        print(f"session={data['session_id']} ended={data['ended']}")
+        return
+    if command == "peer-trace-list":
+        print(f"sessions={data['count']} limit={data['limit']}")
+        return
 
 
 def _command_name(args: argparse.Namespace) -> str:
@@ -4284,6 +4381,8 @@ def _command_name(args: argparse.Namespace) -> str:
         return f"eval-{args.eval_command}"
     if args.command == "shadow":
         return f"shadow-{args.shadow_command}"
+    if args.command == "peer-trace":
+        return f"peer-trace-{args.peer_trace_command}"
     if args.command == "skills":
         return f"skills-{args.skills_command}"
     if args.command == "corpus":
@@ -4485,6 +4584,30 @@ def create_parser() -> argparse.ArgumentParser:
     shadow_cleanup.add_argument("--worktree-path", required=True)
     shadow_cleanup.add_argument("--repo-path", default=".")
     shadow_cleanup.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    shadow_score = shadow_subparsers.add_parser("score", help="Score a peer trace")
+    shadow_score.add_argument("--trace-id", required=True)
+    shadow_score.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    shadow_queue = shadow_subparsers.add_parser("queue", help="List scored shadow candidates")
+    shadow_queue.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    peer_trace = subparsers.add_parser("peer-trace", help="Record privacy-safe peer trace metadata")
+    peer_trace_subparsers = peer_trace.add_subparsers(dest="peer_trace_command", required=True)
+    peer_trace_start = peer_trace_subparsers.add_parser("start", help="Start a peer trace session")
+    peer_trace_start.add_argument("--peer-id", required=True)
+    peer_trace_start.add_argument("--harness", default=None)
+    peer_trace_start.add_argument("--repo-language", default=None)
+    peer_trace_start.add_argument("--repo-framework", default=None)
+    peer_trace_start.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    peer_trace_stop = peer_trace_subparsers.add_parser("stop", help="Stop a peer trace session")
+    peer_trace_stop.add_argument("--session-id", required=True)
+    peer_trace_stop.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    peer_trace_list = peer_trace_subparsers.add_parser("list", help="List peer trace sessions")
+    peer_trace_list.add_argument("--limit", type=int, default=50)
+    peer_trace_list.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     subparsers.add_parser("contracts-audit", help="Canonical AIOS interface contract audit")
     subparsers.add_parser(
@@ -4895,6 +5018,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "harness-shadow-evaluate",
             "eval",
             "shadow",
+            "peer-trace",
         }:
             conn = _connect_db(db_path)
         else:
@@ -5059,6 +5183,21 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             data = cmd_shadow_compare(conn, args)
         elif args.command == "shadow" and args.shadow_command == "cleanup":
             data = cmd_shadow_cleanup(args)
+        elif args.command == "shadow" and args.shadow_command == "score":
+            assert conn is not None
+            data = cmd_shadow_score(conn, args)
+        elif args.command == "shadow" and args.shadow_command == "queue":
+            assert conn is not None
+            data = cmd_shadow_queue(conn)
+        elif args.command == "peer-trace" and args.peer_trace_command == "start":
+            assert conn is not None
+            data = cmd_peer_trace_start(conn, args)
+        elif args.command == "peer-trace" and args.peer_trace_command == "stop":
+            assert conn is not None
+            data = cmd_peer_trace_stop(conn, args)
+        elif args.command == "peer-trace" and args.peer_trace_command == "list":
+            assert conn is not None
+            data = cmd_peer_trace_list(conn, args)
         elif args.command == "harness-active-readiness":
             data = active_readiness()
         elif args.command == "start-work":

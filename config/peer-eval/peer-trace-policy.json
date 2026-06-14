@@ -1,0 +1,16 @@
+{
+  "allowAutomatedCandidateDetection": true,
+  "allowAutomatedShadowLaunch": false,
+  "allowContextInjection": false,
+  "allowPromptMutation": false,
+  "allowRepoWrites": false,
+  "allowShadowBranch": false,
+  "allowSubagents": false,
+  "contextProfile": "peer_repo_only",
+  "maxTaskTimeIncreasePercent": 5,
+  "peerMode": "trace",
+  "repoNameHashed": true,
+  "secretRedactionAlwaysOn": true,
+  "storeFileContents": false,
+  "storePromptText": false
+}

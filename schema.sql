@@ -985,3 +985,45 @@ CREATE TABLE IF NOT EXISTS shadow_branch_runs (
   contamination_check_passed INTEGER NOT NULL DEFAULT 0,
   created_at TEXT
 );
+CREATE TABLE IF NOT EXISTS peer_sessions (
+  id TEXT PRIMARY KEY,
+  anonymous_peer_id TEXT NOT NULL,
+  started_at TEXT,
+  ended_at TEXT,
+  context_profile TEXT NOT NULL DEFAULT 'peer_repo_only',
+  harness_used TEXT,
+  repo_language TEXT,
+  repo_framework TEXT,
+  total_tasks_observed INTEGER DEFAULT 0,
+  created_at TEXT
+);
+CREATE TABLE IF NOT EXISTS peer_traces (
+  id TEXT PRIMARY KEY,
+  peer_session_id TEXT REFERENCES peer_sessions(id),
+  task_category TEXT,
+  prompt_length INTEGER,
+  turn_count INTEGER,
+  tool_call_count INTEGER,
+  failed_command_count INTEGER,
+  duration_ms INTEGER,
+  files_changed_count INTEGER,
+  tests_run INTEGER,
+  final_status TEXT,
+  peer_rating INTEGER,
+  notes TEXT,
+  store_prompt_text INTEGER DEFAULT 0,
+  created_at TEXT
+);
+CREATE TABLE IF NOT EXISTS shadow_candidates (
+  id TEXT PRIMARY KEY,
+  task_id TEXT REFERENCES eval_tasks(id),
+  peer_session_id TEXT REFERENCES peer_sessions(id),
+  peer_trace_id TEXT REFERENCES peer_traces(id),
+  score REAL NOT NULL,
+  recommendation TEXT NOT NULL,
+  reasons_json TEXT,
+  blockers_json TEXT,
+  automation_state TEXT NOT NULL DEFAULT 'TRACE_ONLY',
+  state_updated_at TEXT,
+  created_at TEXT
+);
