@@ -107,6 +107,12 @@ AIOS Phase 11 Plan 11-04 now has the feature ablation runner:
 - `services.ablation_runner` loads policies, creates shadow worktrees, invokes context compilation with disabled features, falls back to a worktree-local ablation override file, records EvalRuns, and compares ablation scores against a base run
 - `aios ablation run` and `aios ablation compare` expose ablation execution and score comparison through the JSON-first CLI
 
+AIOS Phase 11 Plan 11-06 now has the peer automated shadow benchmark pipeline:
+
+- `services.shadow_automation` approves candidates, advances persisted automation states, captures start SHA, blocks contaminated runs, creates shadow worktrees, writes comparison reports, appends backlog follow-ups, and records verification scoring/failure hooks
+- `aios shadow approve`, `aios shadow run-pipeline`, and `aios shadow status` expose candidate approval, pipeline execution, and state inspection through the JSON-first CLI
+- mocked state-machine tests verify approval, transition persistence, contamination blocking, report creation, and backlog append behavior
+
 ## Implemented On 2026-06-01
 
 AIOS Phase 9 continuous learning now routes divergent strategy and workflow experiment winners through governed promotion proposals:
