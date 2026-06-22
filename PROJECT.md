@@ -40,6 +40,8 @@ AIOS now has a portable TMCP developer-process skill graph:
 - the default branch is read-only, while explicit mutation, network-required, and destructive-action branches preserve safe behavior when the pack is used in other projects
 - `tests/test_portable_dev_process_tmcp.py` verifies graph integrity, core capability coverage, routing-case consistency, and the no-AIOS-governance portability contract
 
+AIOS also now vendors the `make-interfaces-feel-better` UI polish skill under `skills/` and registers it as the `make_interfaces_feel_better` candidate workflow skill for frontend generation, validation, and visual polish routing.
+
 ## Implemented On 2026-06-21
 
 AIOS now has a file-backed TMCP paired-run benchmark pipeline:

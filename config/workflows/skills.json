@@ -646,6 +646,36 @@
       "purpose_long": "Record approved, edited, or rejected outputs as evidence for candidate profile updates."
     },
     {
+      "key": "make_interfaces_feel_better",
+      "purpose": "Design engineering principles for making interfaces feel polished. Use when building UI components, reviewing frontend code, implementing animations, hover states, shadows, borders, typography, micro-interactions, enter/exit animations, or any visual detail work.",
+      "allowed_stages": [
+        "generate",
+        "validate"
+      ],
+      "input_schema": {},
+      "output_schema": {},
+      "invariants": [
+        "Apply UI polish principles without overriding project-specific design systems or accessibility requirements.",
+        "Review output should use grouped markdown tables with Before and After columns when changes are made."
+      ],
+      "failure_conditions": [
+        "Polish guidance contradicts explicit project UI standards.",
+        "Review output omits concrete before/after evidence for changed UI details."
+      ],
+      "side_effects": [],
+      "execution_mode": "heuristic",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "generate",
+        "validate",
+        "frontend",
+        "visual_polish"
+      ],
+      "source_path": "skills/make-interfaces-feel-better/SKILL.md",
+      "installed_name": "make-interfaces-feel-better",
+      "purpose_long": "Design engineering principles for making interfaces feel polished. Use when building UI components, reviewing frontend code, implementing animations, hover states, shadows, borders, typography, micro-interactions, enter/exit animations, or any visual detail work."
+    },
+    {
       "key": "remotion_best_practices",
       "purpose": "Best practices for Remotion - Video creation in React",
       "allowed_stages": [
