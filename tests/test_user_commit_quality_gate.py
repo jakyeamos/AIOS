@@ -1,0 +1,146 @@
+from __future__ import annotations
+
+import importlib.util
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+GATE_PATH = ROOT / "bin" / "user-commit-quality-gate.py"
+SPEC = importlib.util.spec_from_file_location("user_commit_quality_gate", GATE_PATH)
+assert SPEC is not None
+gate = importlib.util.module_from_spec(SPEC)
+sys.modules["user_commit_quality_gate"] = gate
+assert SPEC.loader is not None
+SPEC.loader.exec_module(gate)
+
+
+def test_blocks_handler_before_send_without_reason() -> None:
+    text = """
+worker.addEventListener("message", onMessage);
+worker.postMessage({ type: "go" });
+"""
+
+    findings = gate.find_handler_before_send("src/worker.ts", text)
+
+    assert len(findings) == 1
+    assert findings[0].rule == "handler-before-send"
+
+
+def test_allows_handler_before_send_with_reason() -> None:
+    text = """
+// quality-gate: allow handler-before-send: worker synchronously replays cached messages.
+worker.addEventListener("message", onMessage);
+worker.postMessage({ type: "go" });
+"""
+
+    findings = gate.find_handler_before_send("src/worker.ts", text)
+
+    assert findings == []
+
+
+def test_blocks_conflict_markers() -> None:
+    findings = gate.find_conflict_markers("src/file.ts", "<<<<<<< HEAD\nvalue\n")
+
+    assert findings
+    assert findings[0].rule == "conflict-marker"
+
+
+def test_blocks_secret_literal() -> None:
+    findings = gate.find_secret_literals("src/config.ts", 'apiKey = "sk_live_1234567890abcdef"\n')
+
+    assert findings
+    assert findings[0].rule == "secret-literal"
+
+
+def test_allows_documented_dummy_secret() -> None:
+    findings = gate.find_secret_literals("README.md", 'apiKey = "placeholder_1234567890"\n')
+
+    assert findings == []
+
+
+def test_blocks_npm_commands() -> None:
+    findings = gate.find_package_manager_violations("README.md", "npm install\n")
+
+    assert findings
+    assert findings[0].rule == "package-manager"
+
+
+def test_blocks_any_in_production_typescript() -> None:
+    findings = gate.find_typescript_any("src/client.ts", "export const value: any = input;\n")
+
+    assert findings
+    assert findings[0].rule == "typescript-any"
+
+
+def test_allows_any_in_typescript_tests() -> None:
+    findings = gate.find_typescript_any("tests/client.test.ts", "const value: any = input;\n")
+
+    assert findings == []
+
+
+def test_blocks_oversized_python_source() -> None:
+    findings = gate.find_oversized_source("services/large.py", "\n".join(["print('x')"] * 501))
+
+    assert findings
+    assert findings[0].rule == "oversized-source"
+
+
+def test_blocks_python_test_without_assertions() -> None:
+    findings = gate.find_weak_python_test("tests/test_smoke.py", "def test_smoke():\n    run()\n")
+
+    assert findings
+    assert findings[0].rule == "weak-test"
+
+
+def test_requires_pre_cr_config_for_source_commits(tmp_path: Path) -> None:
+    findings = gate.check_pre_cr_requirement(tmp_path, ["src/app.ts"])
+
+    assert findings
+    assert findings[0].rule == "pre-cr-required"
+
+
+def test_skips_pre_cr_for_non_source_commits(tmp_path: Path) -> None:
+    findings = gate.check_pre_cr_requirement(tmp_path, ["README.md"])
+
+    assert findings == []
+
+
+def test_runs_pre_cr_when_config_and_cli_exist(tmp_path: Path, monkeypatch) -> None:
+    (tmp_path / ".pre-cr.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(gate.shutil, "which", lambda command: "/bin/pre-cr" if command == "pre-cr" else None)
+
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        assert command == ["/bin/pre-cr", "run", "--json", "--workspace", str(tmp_path)]
+        return subprocess.CompletedProcess(command, 0, stdout='{"ok":true}', stderr="")
+
+    monkeypatch.setattr(gate.subprocess, "run", fake_run)
+
+    findings = gate.check_pre_cr_requirement(tmp_path, ["src/app.ts"])
+
+    assert findings == []
+
+
+def test_reports_pre_cr_coverage_failure(tmp_path: Path, monkeypatch) -> None:
+    (tmp_path / ".pre-cr.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(gate.shutil, "which", lambda command: "/bin/pre-cr" if command == "pre-cr" else None)
+
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        payload = {
+            "ok": False,
+            "result": {
+                "coverageCheck": {
+                    "coveragePercent": 42,
+                    "threshold": 80,
+                }
+            },
+        }
+        return subprocess.CompletedProcess(command, 1, stdout=gate.json.dumps(payload), stderr="")
+
+    monkeypatch.setattr(gate.subprocess, "run", fake_run)
+
+    findings = gate.check_pre_cr_requirement(tmp_path, ["src/app.ts"])
+
+    assert findings
+    assert findings[0].rule == "pre-cr-failed"
+    assert "42" in findings[0].message

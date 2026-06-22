@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export PATH="$HOME/.local/bin:$PATH"
+
+python3 /Users/jakyeamos/AIOS/bin/user-commit-quality-gate.py

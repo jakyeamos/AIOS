@@ -1,0 +1,372 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import json
+import re
+import shutil
+import subprocess
+from collections.abc import Sequence
+from dataclasses import dataclass
+from pathlib import Path
+
+CODE_EXTENSIONS = {".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"}
+TEXT_EXTENSIONS = {
+    ".css",
+    ".env",
+    ".html",
+    ".js",
+    ".jsx",
+    ".json",
+    ".md",
+    ".mjs",
+    ".py",
+    ".sh",
+    ".sql",
+    ".toml",
+    ".ts",
+    ".tsx",
+    ".txt",
+    ".yaml",
+    ".yml",
+    ".zsh",
+}
+SOURCE_EXTENSIONS = {".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".py", ".sh"}
+TEST_PATH_PARTS = ("test", "tests", "__tests__", "spec", "specs")
+HANDLER_PATTERNS = (
+    "addEventListener(\"message\"",
+    "addEventListener('message'",
+    ".on(\"message\"",
+    ".on('message'",
+    ".once(\"message\"",
+    ".once('message'",
+    ".onmessage",
+)
+SEND_PATTERNS = (".postMessage(", "postMessage(")
+ALLOW_HANDLER_MARKER = "quality-gate: allow handler-before-send"
+ALLOW_SECRET_MARKER = "quality-gate: allow secret"
+SECRET_RE = re.compile(
+    r"(?i)\b(api[_-]?key|secret|token|password|private[_-]?key|client[_-]?secret)\b"
+    r"\s*[:=]\s*['\"][^'\"\s]{12,}['\"]"
+)
+TS_ANY_RE = re.compile(r"(:\s*any\b|\bas\s+any\b|<\s*any\s*>|Array\s*<\s*any\s*>)")
+PACKAGE_MANAGER_RE = re.compile(r"\b(npm|yarn)\s+(install|add|run|test|ci|start|build|lint|exec)\b")
+CONFLICT_MARKERS = ("<<<<<<< ", "=======", ">>>>>>> ")
+PRE_CR_SOURCE_EXTENSIONS = {".py", ".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".go", ".rs", ".swift"}
+
+
+@dataclass(frozen=True)
+class Finding:
+    path: str
+    line: int
+    rule: str
+    message: str
+
+
+def git_lines(args: Sequence[str]) -> list[str]:
+    result = subprocess.run(
+        ["git", *args],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        return []
+    return [line.strip() for line in result.stdout.splitlines() if line.strip()]
+
+
+def repo_root() -> Path:
+    result = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode == 0 and result.stdout.strip():
+        return Path(result.stdout.strip())
+    return Path.cwd()
+
+
+def staged_paths() -> list[str]:
+    return git_lines(["diff", "--cached", "--name-only", "--diff-filter=ACMR"])
+
+
+def staged_text(path: str) -> str | None:
+    result = subprocess.run(
+        ["git", "show", f":{path}"],
+        text=True,
+        capture_output=True,
+        errors="replace",
+        check=False,
+    )
+    if result.returncode != 0:
+        return None
+    if "\x00" in result.stdout:
+        return None
+    return result.stdout
+
+
+def should_scan_text(path: str) -> bool:
+    suffix = Path(path).suffix.lower()
+    if suffix in TEXT_EXTENSIONS:
+        return True
+    return Path(path).name in {".env", ".env.local", ".env.production", "Dockerfile"}
+
+
+def should_run_pre_cr(paths: Sequence[str]) -> bool:
+    return any(Path(path).suffix.lower() in PRE_CR_SOURCE_EXTENSIONS for path in paths)
+
+
+def find_conflict_markers(path: str, text: str) -> list[Finding]:
+    findings: list[Finding] = []
+    for index, line in enumerate(text.splitlines(), start=1):
+        if line.startswith(CONFLICT_MARKERS):
+            findings.append(
+                Finding(path, index, "conflict-marker", "remove merge conflict marker")
+            )
+    return findings
+
+
+def find_secret_literals(path: str, text: str) -> list[Finding]:
+    findings: list[Finding] = []
+    for index, line in enumerate(text.splitlines(), start=1):
+        if ALLOW_SECRET_MARKER in line:
+            continue
+        lowered = line.lower()
+        if any(marker in lowered for marker in ("example", "placeholder", "redacted", "dummy")):
+            continue
+        if SECRET_RE.search(line):
+            findings.append(
+                Finding(
+                    path,
+                    index,
+                    "secret-literal",
+                    f"possible secret literal; move to env or add `{ALLOW_SECRET_MARKER}: <reason>`",
+                )
+            )
+    return findings
+
+
+def find_package_manager_violations(path: str, text: str) -> list[Finding]:
+    findings: list[Finding] = []
+    if Path(path).name in {"package-lock.json", "yarn.lock"}:
+        findings.append(
+            Finding(path, 1, "package-manager", "use pnpm; do not commit npm/yarn lockfiles")
+        )
+        return findings
+    for index, line in enumerate(text.splitlines(), start=1):
+        if PACKAGE_MANAGER_RE.search(line):
+            findings.append(
+                Finding(path, index, "package-manager", "use pnpm instead of npm/yarn commands")
+            )
+    return findings
+
+
+def find_typescript_any(path: str, text: str) -> list[Finding]:
+    if Path(path).suffix.lower() not in {".ts", ".tsx"} or is_test_path(path):
+        return []
+    findings: list[Finding] = []
+    for index, line in enumerate(text.splitlines(), start=1):
+        stripped = line.strip()
+        if stripped.startswith("//") or "quality-gate: allow any" in line:
+            continue
+        if TS_ANY_RE.search(line):
+            findings.append(
+                Finding(
+                    path,
+                    index,
+                    "typescript-any",
+                    "avoid `any` in production TypeScript; use a real type or add `quality-gate: allow any: <reason>`",
+                )
+            )
+    return findings
+
+
+def find_oversized_source(path: str, text: str) -> list[Finding]:
+    suffix = Path(path).suffix.lower()
+    if suffix not in SOURCE_EXTENSIONS:
+        return []
+    if has_oversized_exception(path):
+        return []
+    limit = 500 if suffix == ".py" else 400 if suffix in CODE_EXTENSIONS else 350
+    line_count = len([line for line in text.splitlines() if line.strip()])
+    if line_count <= limit:
+        return []
+    return [
+        Finding(
+            path,
+            1,
+            "oversized-source",
+            f"{line_count} nonblank lines exceeds portable quality limit {limit}; split by responsibility or document an exception",
+        )
+    ]
+
+
+def has_oversized_exception(path: str) -> bool:
+    exception_file = Path(".quality-gate-exceptions")
+    if not exception_file.exists():
+        return False
+    target = f"oversized-source {path}"
+    return any(line.strip().startswith(target) for line in exception_file.read_text(errors="replace").splitlines())
+
+
+def find_weak_python_test(path: str, text: str) -> list[Finding]:
+    if Path(path).suffix.lower() != ".py" or not is_test_path(path):
+        return []
+    if any(marker in text for marker in ("assert ", "pytest.raises", "unittest", "assertEqual", "assertIn")):
+        return []
+    return [
+        Finding(
+            path,
+            1,
+            "weak-test",
+            "Python test file has no obvious assertions; add behavior assertions or document why it is smoke-only",
+        )
+    ]
+
+
+def find_handler_before_send(path: str, text: str) -> list[Finding]:
+    if Path(path).suffix.lower() not in CODE_EXTENSIONS:
+        return []
+    lines = text.splitlines()
+    findings: list[Finding] = []
+    for index, line in enumerate(lines):
+        if not any(pattern in line for pattern in HANDLER_PATTERNS):
+            continue
+        if has_allow_marker(lines, index):
+            continue
+        window = lines[index : index + 41]
+        if any(any(pattern in candidate for pattern in SEND_PATTERNS) for candidate in window):
+            findings.append(
+                Finding(
+                    path,
+                    index + 1,
+                    "handler-before-send",
+                    "message handler appears before postMessage; send first or document a real runtime reason with "
+                    f"`{ALLOW_HANDLER_MARKER}: <reason>`",
+                )
+            )
+    return findings
+
+
+def check_pre_cr_requirement(root: Path, paths: Sequence[str]) -> list[Finding]:
+    if not should_run_pre_cr(paths):
+        return []
+    config_path = root / ".pre-cr.json"
+    if not config_path.exists():
+        return [
+            Finding(
+                ".pre-cr.json",
+                1,
+                "pre-cr-required",
+                "every project on this device must define .pre-cr.json before source commits",
+            )
+        ]
+
+    cli = shutil.which("pre-cr")
+    if not cli:
+        return [
+            Finding(
+                ".pre-cr.json",
+                1,
+                "pre-cr-unavailable",
+                "pre-cr CLI is required for source commits; install @pre-cr/server or expose `pre-cr` on PATH",
+            )
+        ]
+
+    result = subprocess.run(
+        [cli, "run", "--json", "--workspace", str(root)],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode == 0:
+        return []
+
+    summary = pre_cr_failure_summary(result.stdout, result.stderr)
+    return [
+        Finding(
+            ".pre-cr.json",
+            1,
+            "pre-cr-failed",
+            summary,
+        )
+    ]
+
+
+def pre_cr_failure_summary(stdout: str, stderr: str) -> str:
+    try:
+        payload = json.loads(stdout)
+    except json.JSONDecodeError:
+        text = (stderr or stdout or "Pre-CR check failed.").strip()
+        return text.splitlines()[0][:240]
+
+    result = payload.get("result") if isinstance(payload, dict) else None
+    if not isinstance(result, dict):
+        return str(payload.get("error") or "Pre-CR check failed.")[:240] if isinstance(payload, dict) else "Pre-CR check failed."
+    coverage = result.get("coverageCheck")
+    if isinstance(coverage, dict):
+        return (
+            "Pre-CR changed-line coverage failed: "
+            f"{coverage.get('coveragePercent')}% < threshold {coverage.get('threshold')}%."
+        )
+    health = result.get("health")
+    issues = health.get("issues") if isinstance(health, dict) else None
+    if isinstance(issues, list) and issues:
+        first = issues[0]
+        if isinstance(first, dict):
+            return str(first.get("message") or "Pre-CR health check failed.")[:240]
+    return "Pre-CR check failed."
+
+
+def is_test_path(path: str) -> bool:
+    lowered_parts = {part.lower() for part in Path(path).parts}
+    name = Path(path).name.lower()
+    return bool(lowered_parts.intersection(TEST_PATH_PARTS)) or name.startswith("test_") or name.endswith(
+        (".test.ts", ".test.tsx", ".spec.ts", ".spec.tsx")
+    )
+
+
+def has_allow_marker(lines: Sequence[str], index: int) -> bool:
+    start = max(0, index - 3)
+    end = min(len(lines), index + 1)
+    return any(ALLOW_HANDLER_MARKER in line for line in lines[start:end])
+
+
+def run_gate(paths: Sequence[str] | None = None) -> list[Finding]:
+    selected_paths = list(paths) if paths is not None else staged_paths()
+    findings: list[Finding] = []
+    root = repo_root()
+    for path in selected_paths:
+        if not should_scan_text(path):
+            continue
+        text = staged_text(path)
+        if text is None:
+            continue
+        findings.extend(find_conflict_markers(path, text))
+        findings.extend(find_secret_literals(path, text))
+        findings.extend(find_package_manager_violations(path, text))
+        findings.extend(find_typescript_any(path, text))
+        findings.extend(find_oversized_source(path, text))
+        findings.extend(find_weak_python_test(path, text))
+        findings.extend(find_handler_before_send(path, text))
+    findings.extend(check_pre_cr_requirement(root, selected_paths))
+    return findings
+
+
+def print_report(findings: Sequence[Finding]) -> None:
+    if not findings:
+        print("[PASS] User commit quality gate")
+        return
+    print("[FAIL] User commit quality gate")
+    for finding in findings:
+        print(f"  - {finding.path}:{finding.line} [{finding.rule}] {finding.message}")
+
+
+def main() -> int:
+    findings = run_gate()
+    print_report(findings)
+    return 1 if findings else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
