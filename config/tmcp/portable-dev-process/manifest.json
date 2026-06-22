@@ -1,0 +1,161 @@
+{
+  "schema": "portable-dev-process-tmcp-v0.1",
+  "pack_id": "portable_dev_process",
+  "version": "2026-06-22",
+  "status": "draft_active",
+  "entrypoint": "router.md",
+  "portable_contract": {
+    "requires_aios_runtime": false,
+    "requires_sqlite": false,
+    "requires_truth_file_workflow": false,
+    "requires_eval_archive": false,
+    "allowed_state": [
+      "repo-local files",
+      "tool output",
+      "optional hook files explicitly installed by the user"
+    ],
+    "forbidden_default_side_effects": [
+      "remote push",
+      "dependency install",
+      "hook installation",
+      "database writes outside the target repository",
+      "truth-file or roadmap updates"
+    ]
+  },
+  "nodes": {
+    "tasks": {
+      "repo_detect": {
+        "path": "tasks/repo_detect.md",
+        "triggers": ["detect stack", "inspect repo", "find commands", "map project"],
+        "requires": ["modules/tool_safety.md", "modules/command_discovery.md"],
+        "outputs": ["stack_profile", "command_map", "risk_notes"]
+      },
+      "quality_check": {
+        "path": "tasks/quality_check.md",
+        "triggers": ["lint", "typecheck", "test", "build", "verify"],
+        "requires": ["modules/command_discovery.md", "modules/quality_gate.md"],
+        "outputs": ["check_results", "failure_summary", "next_fix_targets"]
+      },
+      "debug_failure": {
+        "path": "tasks/debug_failure.md",
+        "triggers": ["debug", "failure", "bug", "root cause", "regression"],
+        "requires": ["modules/reproduce_first.md", "modules/quality_gate.md"],
+        "outputs": ["repro_steps", "observed_failure", "suspected_cause", "fix_plan"]
+      },
+      "review_diff": {
+        "path": "tasks/review_diff.md",
+        "triggers": ["review", "diff", "staged", "pull request", "risk"],
+        "requires": ["modules/diff_review.md", "modules/git_hygiene.md"],
+        "outputs": ["findings", "test_gaps", "commit_readiness"]
+      },
+      "add_tests": {
+        "path": "tasks/add_tests.md",
+        "triggers": ["add tests", "coverage", "regression test", "test plan"],
+        "requires": ["modules/command_discovery.md", "modules/test_authoring.md"],
+        "outputs": ["test_plan", "test_changes", "verification_command"]
+      },
+      "ci_triage": {
+        "path": "tasks/ci_triage.md",
+        "triggers": ["ci", "github actions", "pipeline", "failing check"],
+        "requires": ["modules/ci_triage.md", "modules/quality_gate.md"],
+        "outputs": ["failed_job_summary", "local_repro_command", "fix_order"]
+      },
+      "frontend_verify": {
+        "path": "tasks/frontend_verify.md",
+        "triggers": ["frontend", "ui", "browser", "screenshot", "visual verify"],
+        "requires": ["modules/frontend_runtime.md", "modules/quality_gate.md"],
+        "outputs": ["runtime_url", "screenshot_evidence", "ui_findings"]
+      },
+      "visual_polish": {
+        "path": "tasks/visual_polish.md",
+        "triggers": [
+          "visual polish",
+          "product UI polish",
+          "enterprise SaaS polish",
+          "dashboard polish",
+          "AI UI polish",
+          "realistic demo data",
+          "generic shadcn output"
+        ],
+        "requires": [
+          "modules/visual_polish_system.md",
+          "modules/enterprise_saas_visual_polish.md",
+          "modules/data_realism_polish.md"
+        ],
+        "optional": [
+          "modules/ai_surface_polish.md",
+          "modules/frontend_runtime.md",
+          "branches/tenure_visual_identity.branch.md"
+        ],
+        "outputs": [
+          "archetype_and_density",
+          "polish_findings",
+          "forbidden_visual_patterns",
+          "data_realism_gaps",
+          "verification_notes"
+        ]
+      },
+      "git_hygiene": {
+        "path": "tasks/git_hygiene.md",
+        "triggers": ["commit", "branch", "stage", "dirty tree", "pre-commit"],
+        "requires": ["modules/git_hygiene.md", "modules/hook_guidance.md"],
+        "outputs": ["worktree_status", "atomic_commit_plan", "hook_recommendations"]
+      },
+      "dependency_audit": {
+        "path": "tasks/dependency_audit.md",
+        "triggers": ["dependency", "package", "audit", "upgrade", "lockfile"],
+        "requires": ["modules/dependency_policy.md", "modules/command_discovery.md"],
+        "outputs": ["dependency_findings", "safe_commands", "risk_summary"]
+      },
+      "docs_update": {
+        "path": "tasks/docs_update.md",
+        "triggers": ["docs", "readme", "changelog", "release notes", "developer guide"],
+        "requires": ["modules/doc_update.md", "modules/diff_review.md"],
+        "outputs": ["doc_targets", "doc_changes", "staleness_notes"]
+      }
+    },
+    "modules": {
+      "tool_safety": "modules/tool_safety.md",
+      "command_discovery": "modules/command_discovery.md",
+      "quality_gate": "modules/quality_gate.md",
+      "reproduce_first": "modules/reproduce_first.md",
+      "diff_review": "modules/diff_review.md",
+      "git_hygiene": "modules/git_hygiene.md",
+      "test_authoring": "modules/test_authoring.md",
+      "ci_triage": "modules/ci_triage.md",
+      "frontend_runtime": "modules/frontend_runtime.md",
+      "visual_polish_system": "modules/visual_polish_system.md",
+      "enterprise_saas_visual_polish": "modules/enterprise_saas_visual_polish.md",
+      "ai_surface_polish": "modules/ai_surface_polish.md",
+      "data_realism_polish": "modules/data_realism_polish.md",
+      "dependency_policy": "modules/dependency_policy.md",
+      "hook_guidance": "modules/hook_guidance.md",
+      "doc_update": "modules/doc_update.md"
+    },
+    "branches": {
+      "read_only_default": "branches/read_only_default.branch.md",
+      "explicit_mutation": "branches/explicit_mutation.branch.md",
+      "network_required": "branches/network_required.branch.md",
+      "destructive_action": "branches/destructive_action.branch.md",
+      "tenure_visual_identity": "branches/tenure_visual_identity.branch.md"
+    }
+  },
+  "edges": [
+    {"from": "repo_detect", "to": "quality_check", "when": "commands_discovered"},
+    {"from": "quality_check", "to": "debug_failure", "when": "checks_failed"},
+    {"from": "debug_failure", "to": "add_tests", "when": "root_cause_identified"},
+    {"from": "review_diff", "to": "git_hygiene", "when": "commit_ready"},
+    {"from": "ci_triage", "to": "debug_failure", "when": "local_repro_needed"},
+    {"from": "frontend_verify", "to": "quality_check", "when": "code_changed"},
+    {"from": "frontend_verify", "to": "visual_polish", "when": "visual_quality_or_product_fit_needed"},
+    {"from": "visual_polish", "to": "frontend_verify", "when": "rendered_ui_changed"},
+    {"from": "visual_polish", "to": "tenure_visual_identity", "when": "active_project_is_tenure"},
+    {"from": "dependency_audit", "to": "quality_check", "when": "dependency_changed"},
+    {"from": "docs_update", "to": "review_diff", "when": "docs_changed"}
+  ],
+  "install_targets": [
+    ".agents/skills/portable-dev-process",
+    ".codex/skills/portable-dev-process",
+    "skills.tmcp/portable-dev-process"
+  ]
+}

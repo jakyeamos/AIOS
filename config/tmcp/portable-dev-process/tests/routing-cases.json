@@ -1,0 +1,45 @@
+{
+  "schema": "portable-dev-process-routing-cases-v0.1",
+  "cases": [
+    {
+      "objective": "figure out what commands this repo has",
+      "expected_task": "repo_detect",
+      "expected_modules": ["tool_safety", "command_discovery"]
+    },
+    {
+      "objective": "debug the failing typecheck",
+      "expected_task": "debug_failure",
+      "expected_modules": ["reproduce_first", "quality_gate"]
+    },
+    {
+      "objective": "review my staged changes before I commit",
+      "expected_task": "review_diff",
+      "expected_modules": ["diff_review", "git_hygiene"]
+    },
+    {
+      "objective": "install a pre-commit hook for lint and tests",
+      "expected_task": "git_hygiene",
+      "expected_modules": ["git_hygiene", "hook_guidance"],
+      "expected_branch": "explicit_mutation"
+    },
+    {
+      "objective": "make this generated SaaS dashboard feel polished instead of generic shadcn",
+      "expected_task": "visual_polish",
+      "expected_modules": [
+        "visual_polish_system",
+        "enterprise_saas_visual_polish",
+        "data_realism_polish"
+      ]
+    },
+    {
+      "objective": "apply the Tenure visual polish system to this SOP search screen",
+      "expected_task": "visual_polish",
+      "expected_modules": [
+        "visual_polish_system",
+        "enterprise_saas_visual_polish",
+        "data_realism_polish"
+      ],
+      "expected_branch": "tenure_visual_identity"
+    }
+  ]
+}

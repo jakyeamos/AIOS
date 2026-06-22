@@ -1083,6 +1083,45 @@ def test_managed_runtime_completes_via_explicit_handshake(runtime_db: Path, tmp_
     assert workflow_artifact is not None
     assert workflow_artifact[1] == workflow_report[2]
 
+    tmcp_receipt = conn.execute(
+        """
+        SELECT task_id, traversal_fingerprint, packet_json
+        FROM tmcp_traversal_receipts
+        WHERE run_id = ? AND invocation_id = ?
+        LIMIT 1
+        """,
+        (run_id, invocation_id),
+    ).fetchone()
+    assert tmcp_receipt is not None
+    assert tmcp_receipt[0] == "agent_workflow"
+    assert tmcp_receipt[1]
+    assert json.loads(tmcp_receipt[2])["entry_node"] == "@task:agent_workflow"
+
+    tmcp_artifact = conn.execute(
+        """
+        SELECT artifact_type, path, metadata_json
+        FROM artifacts
+        WHERE session_id = ? AND artifact_type = 'tmcp-packet'
+        LIMIT 1
+        """,
+        (run[1],),
+    ).fetchone()
+    assert tmcp_artifact is not None
+    assert Path(tmcp_artifact[1]).exists()
+    assert json.loads(tmcp_artifact[2])["tmcp_receipt_id"] == workflow_payload["artifacts"][
+        "tmcp_packet"
+    ]["receipt_id"]
+
+    prompt = conn.execute(
+        """
+        SELECT prompt_text, classification
+        FROM prompts_used
+        WHERE session_id = ?
+        """,
+        (run[1],),
+    ).fetchone()
+    assert prompt == ("Managed runtime handshake integration", "other")
+
     event_types = {
         row[0]
         for row in conn.execute(
@@ -1094,6 +1133,141 @@ def test_managed_runtime_completes_via_explicit_handshake(runtime_db: Path, tmp_
 
     assert "in_progress" in event_types
     assert "completed" in event_types
+
+
+def test_managed_runtime_uses_promoted_tmcp_shortcut(runtime_db: Path, tmp_path: Path) -> None:
+    from aios_orchestration_runtime import ensure_runtime_schema
+
+    from services.tmcp_runtime import (
+        compile_tmcp_packet,
+        ensure_tmcp_schema,
+        persist_tmcp_traversal_receipt,
+    )
+
+    repo_path = tmp_path / "repo"
+    repo_path.mkdir()
+    (repo_path / "PROJECT.md").write_text("# AIOS\n", encoding="utf-8")
+    home = tmp_path / "home"
+    (home / "AIOS" / "logs").mkdir(parents=True)
+
+    conn = sqlite3.connect(runtime_db)
+    project_id = _insert_project(conn, repo_path)
+    ensure_runtime_schema(conn)
+    ensure_tmcp_schema(conn)
+    run_id = "run-managed-shortcut"
+    invocation_id = "invoke-managed-shortcut"
+    packet_id = "packet-managed-shortcut"
+    objective = "Managed runtime handshake integration"
+
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (
+            id, project_id, objective, workflow_key, agent_key, status, rationale,
+            assumptions_json, context_trace_json, backend_key, packet_id, created_at, updated_at
+        )
+        VALUES (?, ?, ?, 'implementation-delivery', 'implementation-lead', 'ready',
+            'Managed runtime shortcut test', '[]', '[]', 'aios-managed-runtime', ?,
+            '2026-04-19T00:00:00Z', '2026-04-19T00:00:00Z')
+        """,
+        (run_id, project_id, objective, packet_id),
+    )
+    conn.execute(
+        """
+        INSERT INTO briefing_packets (
+            id, run_id, project_id, objective, workflow_key, agent_key,
+            packet_markdown, sections_json, policy_mode, token_budget,
+            selection_trace_json, omitted_context_json, created_at
+        )
+        VALUES (?, ?, ?, ?, 'implementation-delivery', 'implementation-lead',
+            'packet', '[]', 'compact-ranked', 900, '[]', '[]', '2026-04-19T00:00:00Z')
+        """,
+        (packet_id, run_id, project_id, objective),
+    )
+    conn.execute(
+        """
+        INSERT INTO orchestration_invocations (
+            id, run_id, backend_key, backend_label, status, handshake_token,
+            command_json, metadata_json, created_at, updated_at
+        )
+        VALUES (?, ?, 'aios-managed-runtime', 'AIOS Managed Runtime', 'launching', ?,
+            '[]', '{}', '2026-04-19T00:00:00Z', '2026-04-19T00:00:00Z')
+        """,
+        (invocation_id, run_id, run_id),
+    )
+    seed_packet = compile_tmcp_packet(
+        objective=objective,
+        project_path=str(repo_path),
+        context_receipt_id=packet_id,
+    )
+    seed_packet["token_estimates"] = {
+        **seed_packet["token_estimates"],
+        "estimated_token_delta": 250,
+    }
+    for index in range(3):
+        persist_tmcp_traversal_receipt(
+            conn,
+            packet=seed_packet,
+            run_id=f"prior-run-{index}",
+            invocation_id=f"prior-invoke-{index}",
+            session_id=f"prior-session-{index}",
+            execution_outcome="completed",
+            validation_evidence=["scope_check passed"],
+        )
+    conn.commit()
+    conn.close()
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "bin" / "aios-managed-run.py"),
+            "--run-id",
+            run_id,
+            "--invocation-id",
+            invocation_id,
+            "--db",
+            str(runtime_db),
+        ],
+        cwd=str(ROOT),
+        env={
+            **os.environ,
+            "HOME": str(home),
+            "AIOS_DB": str(runtime_db),
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr or result.stdout
+
+    conn = sqlite3.connect(runtime_db)
+    workflow_payload = json.loads(
+        conn.execute(
+            """
+            SELECT report_json
+            FROM workflow_execution_reports
+            WHERE run_id = ?
+            LIMIT 1
+            """,
+            (run_id,),
+        ).fetchone()[0]
+    )
+    tmcp_packet = workflow_payload["artifacts"]["tmcp_packet"]
+    assert tmcp_packet["shortcut_candidate"]["matched"] is True
+    assert tmcp_packet["shortcut_candidate"]["status"] == "active"
+    assert tmcp_packet["entry_node"].startswith("@shortcut:agent_workflow:")
+
+    receipt = conn.execute(
+        """
+        SELECT execution_outcome, validation_evidence_json
+        FROM tmcp_traversal_receipts
+        WHERE run_id = ? AND invocation_id = ?
+        LIMIT 1
+        """,
+        (run_id, invocation_id),
+    ).fetchone()
+    conn.close()
+    assert receipt[0] == "completed"
+    assert "scope_check passed" in json.loads(receipt[1])
 
 
 def test_managed_runtime_keeps_failed_workflow_report(runtime_db: Path, tmp_path: Path) -> None:

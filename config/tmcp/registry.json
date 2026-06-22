@@ -1,0 +1,33 @@
+{
+  "schema": "tmcp-global-registry-v0.1",
+  "version": "2026-06-22",
+  "entry_policy": "Intent-driven traversal may cross registered namespaces. Prefer the smallest behavior-changing packet; do not treat namespace boundaries as access limits.",
+  "namespaces": {
+    "portable_dev_process": {
+      "path": "portable-dev-process",
+      "manifest": "portable-dev-process/manifest.json",
+      "router": "portable-dev-process/router.md",
+      "portable": true,
+      "requires_aios_runtime": false,
+      "project_specific": false,
+      "description": "Portable development-process graph that can be vendored into non-AIOS repositories while remaining traversable from the full local TMCP registry."
+    }
+  },
+  "cross_namespace_edges": [
+    {
+      "from": "@task:implementation",
+      "to": "@namespace:portable_dev_process/@task:visual_polish",
+      "when": "frontend generation or UI implementation needs visual polish"
+    },
+    {
+      "from": "@task:testing",
+      "to": "@namespace:portable_dev_process/@task:frontend_verify",
+      "when": "rendered frontend verification is required"
+    },
+    {
+      "from": "@namespace:portable_dev_process/@task:visual_polish",
+      "to": "@namespace:portable_dev_process/@branch:tenure_visual_identity",
+      "when": "active project is Tenure or user explicitly requests Tenure-specific polish"
+    }
+  ]
+}

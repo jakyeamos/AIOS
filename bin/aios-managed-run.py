@@ -35,6 +35,7 @@ from services.tmcp_runtime import (  # noqa: E402
     compile_tmcp_packet,
     ensure_tmcp_schema,
     persist_tmcp_traversal_receipt,
+    update_tmcp_traversal_receipt_outcome,
 )
 from services.workflow_orchestration import (  # noqa: E402
     WorkflowExecutionContext,
@@ -43,6 +44,7 @@ from services.workflow_orchestration import (  # noqa: E402
 )
 
 HOOK_SESSION_START = ROOT / "bin" / "hook-session-start.py"
+HOOK_PROMPT_SUBMIT = ROOT / "bin" / "hook-prompt-submit.py"
 HOOK_STOP = ROOT / "bin" / "hook-stop.py"
 REPORT_DIR = ROOT / "logs" / "control-plane" / "invocations"
 WORKFLOW_REPORT_DIR = ROOT / "logs" / "control-plane" / "workflow-reports"
@@ -204,6 +206,25 @@ def write_tmcp_packet_artifact(
     return str(packet_path)
 
 
+def _tmcp_validation_evidence(workflow_report: dict[str, object]) -> list[str]:
+    evidence: list[str] = []
+    for validation in workflow_report.get("validations", []):
+        if not isinstance(validation, dict):
+            continue
+        validation_key = str(validation.get("validation_key", "validation"))
+        passed = "passed" if validation.get("passed") else "failed"
+        evidence.append(f"{validation_key} {passed}")
+    for stage in workflow_report.get("stage_evaluations", []):
+        if not isinstance(stage, dict):
+            continue
+        stage_key = str(stage.get("stage_key", "stage"))
+        outcome = str(stage.get("outcome", "unknown"))
+        blockers = int(stage.get("blocker_count", 0) or 0)
+        warnings = int(stage.get("warning_count", 0) or 0)
+        evidence.append(f"{stage_key} {outcome} blockers={blockers} warnings={warnings}")
+    return evidence
+
+
 def ensure_managed_start(
     db_path: str,
     *,
@@ -268,6 +289,33 @@ def ensure_managed_start(
     )
     conn.commit()
     conn.close()
+
+
+def emit_managed_prompt_capture(
+    *,
+    session_id: str,
+    run_id: str,
+    invocation_id: str,
+    backend_key: str,
+    context: dict[str, str | None],
+    env: dict[str, str],
+) -> None:
+    objective = (context["objective"] or "").strip()
+    if not objective:
+        return
+    emit_hook(
+        HOOK_PROMPT_SUBMIT,
+        {
+            "session_id": session_id,
+            "cwd": context["repo_path"] or str(ROOT),
+            "prompt": objective,
+            "run_id": run_id,
+            "invocation_id": invocation_id,
+            "backend_key": backend_key,
+            "source": "aios-managed-runtime",
+        },
+        env,
+    )
 
 
 def ensure_managed_closeout(
@@ -400,6 +448,14 @@ def main() -> int:
         session_id=session_id,
         backend_key=backend_key,
     )
+    emit_managed_prompt_capture(
+        session_id=session_id,
+        run_id=run_id,
+        invocation_id=invocation_id,
+        backend_key=backend_key,
+        context=context,
+        env=env,
+    )
 
     outcome = "completed"
     result_summary = "Managed runtime captured invocation metadata and completed normally."
@@ -415,25 +471,26 @@ def main() -> int:
         surface = BACKEND_SURFACES.get(backend_key)
         if surface is None:
             raise RuntimeError(f"Unsupported managed backend key: {backend_key}")
-        tmcp_packet = compile_tmcp_packet(
-            objective=context["objective"] or "",
-            project_path=context["repo_path"],
-            context_receipt_id=context["packet_id"],
-        )
-        workflow_context = WorkflowExecutionContext(
-            objective=context["objective"] or "",
-            workflow_key=context["workflow_key"] or "implementation-delivery",
-            surface=surface,
-            repo_path=context["repo_path"],
-            vault_root=context["obsidian_path"],
-            run_id=run_id,
-            invocation_id=invocation_id,
-            tmcp_packet=tmcp_packet,
-        )
         conn = sqlite3.connect(db_path)
         try:
             ensure_runtime_schema(conn)
             ensure_tmcp_schema(conn)
+            tmcp_packet = compile_tmcp_packet(
+                objective=context["objective"] or "",
+                project_path=context["repo_path"],
+                context_receipt_id=context["packet_id"],
+                receipt_conn=conn,
+            )
+            workflow_context = WorkflowExecutionContext(
+                objective=context["objective"] or "",
+                workflow_key=context["workflow_key"] or "implementation-delivery",
+                surface=surface,
+                repo_path=context["repo_path"],
+                vault_root=context["obsidian_path"],
+                run_id=run_id,
+                invocation_id=invocation_id,
+                tmcp_packet=tmcp_packet,
+            )
             tmcp_receipt_id = persist_tmcp_traversal_receipt(
                 conn,
                 packet=tmcp_packet,
@@ -452,6 +509,12 @@ def main() -> int:
             )
             workflow_report = execute_workflow(workflow_context, conn=conn)
             workflow_report.setdefault("artifacts", {})["tmcp_packet_path"] = tmcp_packet_path
+            update_tmcp_traversal_receipt_outcome(
+                conn,
+                receipt_id=tmcp_receipt_id,
+                execution_outcome=str(workflow_report.get("status", "completed")),
+                validation_evidence=_tmcp_validation_evidence(workflow_report),
+            )
             workflow_summary = summarize_execution_report(workflow_report)
             WORKFLOW_REPORT_DIR.mkdir(parents=True, exist_ok=True)
             workflow_path = WORKFLOW_REPORT_DIR / f"{invocation_id}.json"
