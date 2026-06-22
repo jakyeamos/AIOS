@@ -31,6 +31,11 @@ from services.eval_run_service import (
     get_eval_summary,
     list_eval_runs,
 )
+from services.external_benchmark_adapter import (
+    normalize_external_result,
+    to_swe_bench_format,
+    to_terminal_bench_format,
+)
 from services.harness import (
     active_readiness,
     brief_task,
@@ -57,6 +62,7 @@ from services.peer_trace import (
     list_peer_sessions,
     start_peer_session,
 )
+from services.portable_context_packet_generator import generate_packet
 from services.pre_pr_readiness import (
     DEFAULT_PRE_CR_REPO,
     pre_pr_readiness_payload,
@@ -2962,6 +2968,42 @@ def cmd_shadow_status(conn: sqlite3.Connection, args: argparse.Namespace) -> dic
     return shadow_status(conn, str(args.candidate_id))
 
 
+def cmd_packet_generate(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    return generate_packet(
+        conn,
+        task_description=str(args.task),
+        repo_path=Path(args.repo_path).resolve(),
+        packet_id=args.packet_id,
+    )
+
+
+def _eval_task_dict(conn: sqlite3.Connection, task_id: str) -> dict[str, Any]:
+    row = conn.execute("SELECT * FROM eval_tasks WHERE id = ? LIMIT 1", (task_id,)).fetchone()
+    if row is None:
+        raise CLIError("eval-task-not-found", f"Eval task not found: {task_id}", EXIT_NOT_FOUND)
+    return dict(row)
+
+
+def cmd_benchmark_to_swe_bench(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    return to_swe_bench_format(_eval_task_dict(conn, str(args.task_id)))
+
+
+def cmd_benchmark_to_terminal_bench(
+    conn: sqlite3.Connection, args: argparse.Namespace
+) -> dict[str, Any]:
+    return to_terminal_bench_format(_eval_task_dict(conn, str(args.task_id)))
+
+
+def cmd_benchmark_normalize_result(args: argparse.Namespace) -> dict[str, Any]:
+    result = json.loads(Path(args.result_file).read_text(encoding="utf-8"))
+    return normalize_external_result(
+        result,
+        eval_task_id=str(args.task_id),
+        harness=str(args.harness),
+        model=str(args.model),
+    )
+
+
 def _json_has_content(raw: Any) -> bool:
     if raw is None:
         return False
@@ -4437,6 +4479,12 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "shadow-status":
         print(f"candidate={data['candidate_id']} state={data['automation_state']}")
         return
+    if command == "packet-generate":
+        print(f"packet={data['packet_id']} files={len(data['included_files'])}")
+        return
+    if command.startswith("benchmark-"):
+        print(json.dumps(data, sort_keys=True))
+        return
 
 
 def _command_name(args: argparse.Namespace) -> str:
@@ -4448,6 +4496,10 @@ def _command_name(args: argparse.Namespace) -> str:
         return f"peer-trace-{args.peer_trace_command}"
     if args.command == "ablation":
         return f"ablation-{args.ablation_command}"
+    if args.command == "packet":
+        return f"packet-{args.packet_command}"
+    if args.command == "benchmark":
+        return f"benchmark-{args.benchmark_command}"
     if args.command == "skills":
         return f"skills-{args.skills_command}"
     if args.command == "corpus":
@@ -4703,6 +4755,33 @@ def create_parser() -> argparse.ArgumentParser:
     ablation_compare.add_argument("--task-id", required=True)
     ablation_compare.add_argument("--base-run-id", required=True)
     ablation_compare.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    packet = subparsers.add_parser("packet", help="Generate portable context packets")
+    packet_subparsers = packet.add_subparsers(dest="packet_command", required=True)
+    packet_generate = packet_subparsers.add_parser("generate", help="Generate a packet")
+    packet_generate.add_argument("--task", required=True)
+    packet_generate.add_argument("--repo-path", required=True)
+    packet_generate.add_argument("--packet-id", default=None)
+    packet_generate.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    benchmark = subparsers.add_parser("benchmark", help="External benchmark adapters")
+    benchmark_subparsers = benchmark.add_subparsers(dest="benchmark_command", required=True)
+    swe = benchmark_subparsers.add_parser("to-swe-bench", help="Convert eval task to SWE-bench")
+    swe.add_argument("--task-id", required=True)
+    swe.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    terminal = benchmark_subparsers.add_parser(
+        "to-terminal-bench", help="Convert eval task to Terminal-Bench"
+    )
+    terminal.add_argument("--task-id", required=True)
+    terminal.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    normalize = benchmark_subparsers.add_parser(
+        "normalize-result", help="Normalize an external benchmark result"
+    )
+    normalize.add_argument("--task-id", required=True)
+    normalize.add_argument("--harness", required=True)
+    normalize.add_argument("--model", required=True)
+    normalize.add_argument("--result-file", required=True)
+    normalize.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     subparsers.add_parser("contracts-audit", help="Canonical AIOS interface contract audit")
     subparsers.add_parser(
@@ -5115,6 +5194,8 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "shadow",
             "peer-trace",
             "ablation",
+            "packet",
+            "benchmark",
         }:
             conn = _connect_db(db_path)
         else:
@@ -5309,6 +5390,17 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "shadow" and args.shadow_command == "status":
             assert conn is not None
             data = cmd_shadow_status(conn, args)
+        elif args.command == "packet" and args.packet_command == "generate":
+            assert conn is not None
+            data = cmd_packet_generate(conn, args)
+        elif args.command == "benchmark" and args.benchmark_command == "to-swe-bench":
+            assert conn is not None
+            data = cmd_benchmark_to_swe_bench(conn, args)
+        elif args.command == "benchmark" and args.benchmark_command == "to-terminal-bench":
+            assert conn is not None
+            data = cmd_benchmark_to_terminal_bench(conn, args)
+        elif args.command == "benchmark" and args.benchmark_command == "normalize-result":
+            data = cmd_benchmark_normalize_result(args)
         elif args.command == "harness-active-readiness":
             data = active_readiness()
         elif args.command == "start-work":

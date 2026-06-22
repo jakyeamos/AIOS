@@ -1,5 +1,6 @@
 import { GroundedQueryStudio } from "@/components/query/GroundedQueryStudio";
 import { DailyFlowTrace } from "@/components/daily-flow/DailyFlowTrace";
+import { ShadowCandidateQueue } from "@/components/eval/ShadowCandidateQueue";
 import { NextActionPanel } from "@/components/next-action/NextActionPanel";
 import { PhaseStatusBanner } from "@/components/command-center/PhaseStatusBanner";
 import { SeedDataBanner } from "@/components/command-center/SeedDataBanner";
@@ -33,11 +34,12 @@ const countSeedDataRows = (overview: {
 
 export default async function CommandCenterPage(): Promise<React.JSX.Element> {
   const caller = await getCaller();
-  const [overview, changes, automations, experiments] = await Promise.all([
+  const [overview, changes, automations, experiments, shadowCandidates] = await Promise.all([
     caller.controlPlane.overview(),
     caller.changes.list({ limit: 12 }),
     caller.automations.list(),
     caller.experiments.list(),
+    caller.eval.shadowCandidates(),
   ]);
 
   const referenceTimestamps = [
@@ -162,6 +164,8 @@ export default async function CommandCenterPage(): Promise<React.JSX.Element> {
           ))}
         </div>
       </section>
+
+      <ShadowCandidateQueue candidates={shadowCandidates} />
 
       <div className="grid grid-2">
         <section className="panel-card">

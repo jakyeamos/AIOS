@@ -700,6 +700,60 @@ export type RunInspection = {
   riskCarryover: string[];
 };
 
+export type EvalRun = {
+  id: string;
+  taskId: string | null;
+  condition: string;
+  mode: string;
+  harness: string | null;
+  model: string | null;
+  contextProfile: string;
+  branchName: string | null;
+  durationMs: number | null;
+  totalTokens: number | null;
+  estimatedCostUsd: number | null;
+  toolCalls: number | null;
+  failedCommands: number | null;
+  filesChanged: number | null;
+  finalStatus: string;
+  createdAt: string | null;
+  overallScore: number | null;
+};
+
+export type EvalSummary = {
+  scopeId: string;
+  runCount: number;
+  taskCount: number;
+  overallScore: number | null;
+  taskSuccess: number | null;
+  qualityAdherence: number | null;
+  workflowSpeed: number | null;
+  costEfficiency: number | null;
+  contextEffectiveness: number | null;
+  secondBrainEffectiveness: number | null;
+  contextPortability: number | null;
+  autonomy: number | null;
+  userTrust: number | null;
+  contextProfile: string | null;
+  secondBrainLift: number | null;
+  portabilityGap: number | null;
+  fullEvalRunPath: string | null;
+};
+
+export type ShadowCandidate = {
+  candidateId: string;
+  taskId: string | null;
+  projectId: string | null;
+  peerSessionId: string | null;
+  score: number;
+  recommendation: string;
+  reasons: string[];
+  blockers: string[];
+  automationState: string;
+  stateUpdatedAt: string | null;
+  createdAt: string | null;
+};
+
 export type StandardsAssessmentStatus = "pass" | "partial" | "fail" | "unknown" | "waived" | "not_applicable";
 
 export type StandardsDomainScore = {

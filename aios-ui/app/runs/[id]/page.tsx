@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { DailyFlowTrace } from "@/components/daily-flow/DailyFlowTrace";
+import { EvalSummaryPanel } from "@/components/eval/EvalSummaryPanel";
 import { PageShell } from "@/components/layout/PageShell";
 import { SessionCard } from "@/components/panels/SessionCard";
 import { StatusBadge } from "@/components/primitives/StatusBadge";
@@ -28,9 +29,10 @@ export default async function RunDetailPage({
   const { id } = await params;
   const query = await searchParams;
   const caller = await getCaller();
-  const [result, trace] = await Promise.all([
+  const [result, trace, evalSummary] = await Promise.all([
     caller.sessions.detail({ id }),
     caller.dailyFlow.replay({ runId: id }),
+    caller.eval.summaryForRun({ runId: id }),
   ]);
 
   if (!result.session) {
@@ -63,6 +65,7 @@ export default async function RunDetailPage({
   return (
     <PageShell title={`Run ${result.session.id}`} subtitle="Trace and root-cause surface for this session.">
       <DailyFlowTrace trace={trace} />
+      <EvalSummaryPanel evalData={evalSummary} />
       <SessionCard session={result.session} />
 
       <div className="grid grid-2">

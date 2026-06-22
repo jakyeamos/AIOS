@@ -4,6 +4,7 @@ import json
 import sqlite3
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -13,6 +14,7 @@ sys.path.insert(0, str(ROOT))
 import services.aios_cli as aios_cli  # noqa: E402
 from services import standards_health, success_criteria  # noqa: E402
 from services.aios_cli import EXIT_OK, run_cli  # noqa: E402
+from services.eval_run_service import create_eval_task  # noqa: E402
 from services.rtk_integration import ensure_rtk_schema  # noqa: E402
 
 
@@ -3188,6 +3190,239 @@ def test_metadata_and_skills_refresh_flow(tmp_path: Path, capsys) -> None:
     assert status_exit == EXIT_OK
     status_output = json.loads(capsys.readouterr().out)
     assert status_output["data"]["summary"]["in_sync"] == 1
+
+
+def test_skills_harvest_cli_dry_run(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    root = tmp_path / "project"
+    root.mkdir()
+    (root / "AGENTS.md").write_text("Use pnpm and preserve local workflow rules.\n", encoding="utf-8")
+    out = tmp_path / "skills-library"
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "skills",
+            "harvest",
+            "--roots",
+            str(root),
+            "--out",
+            str(out),
+            "--dry-run",
+            "--tmcp",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    output = json.loads(capsys.readouterr().out)
+    assert output["ok"] is True
+    assert output["data"]["summary"]["candidate_count"] == 1
+    assert output["data"]["summary"]["dry_run"] is True
+    assert output["data"]["validation"]["passed"] is True
+    assert not out.exists()
+
+
+def test_eval_run_cli_record_list_and_summary_json(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    conn = sqlite3.connect(db_path)
+    task_id = create_eval_task(
+        conn,
+        repo_id="p1",
+        source="controlled_benchmark",
+        start_sha="abc123",
+        context_profile="jakye_repo_only",
+        task_type="feature",
+        prompt_summary="Record eval CLI run.",
+        acceptance_criteria=["record run"],
+        success_criteria_files=["tests/test_aios_cli.py"],
+    )
+    conn.commit()
+    conn.close()
+
+    record_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "eval",
+            "record-run",
+            "--task-id",
+            task_id,
+            "--condition",
+            "full-aios",
+            "--mode",
+            "controlled",
+            "--context-profile",
+            "jakye_repo_only",
+            "--final-status",
+            "success",
+            "--duration-ms",
+            "1200",
+            "--tokens",
+            "3456",
+            "--cost",
+            "0.42",
+            "--files-changed",
+            "3",
+        ]
+    )
+    assert record_exit == EXIT_OK
+    record_output = json.loads(capsys.readouterr().out)
+    assert record_output["ok"] is True
+    assert record_output["data"]["task_id"] == task_id
+    assert record_output["data"]["final_status"] == "success"
+
+    list_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "eval",
+            "list-runs",
+            "--condition",
+            "full-aios",
+            "--context-profile",
+            "jakye_repo_only",
+        ]
+    )
+    assert list_exit == EXIT_OK
+    list_output = json.loads(capsys.readouterr().out)
+    assert list_output["data"]["count"] == 1
+    assert list_output["data"]["runs"][0]["task_id"] == task_id
+    assert list_output["data"]["runs"][0]["duration_ms"] == 1200
+
+    summary_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "eval",
+            "summary",
+            "--project",
+            "p1",
+        ]
+    )
+    assert summary_exit == EXIT_OK
+    summary_output = json.loads(capsys.readouterr().out)
+    assert summary_output["data"]["run_count"] == 1
+    assert summary_output["data"]["task_count"] == 1
+    assert summary_output["data"]["by_status"] == {"success": 1}
+
+
+def test_packet_and_benchmark_cli_json_paths(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    repo = tmp_path / "repo"
+    packet_dir = tmp_path / "packets"
+    repo.mkdir()
+    (repo / "package.json").write_text(
+        json.dumps({"scripts": {"test": "vitest", "build": "next build"}}),
+        encoding="utf-8",
+    )
+    (repo / "src.ts").write_text("export const value = 1;\n", encoding="utf-8")
+
+    with patch("services.portable_context_packet_generator.DEFAULT_PACKET_DIR", packet_dir):
+        packet_exit = run_cli(
+            [
+                "--json",
+                "--db",
+                str(db_path),
+                "--logs-dir",
+                str(logs_dir),
+                "packet",
+                "generate",
+                "--task",
+                "Create a portable context packet.",
+                "--repo-path",
+                str(repo),
+                "--packet-id",
+                "packet-cli",
+            ]
+        )
+
+    assert packet_exit == EXIT_OK
+    packet_output = json.loads(capsys.readouterr().out)
+    assert packet_output["data"]["packet_id"] == "packet-cli"
+    assert "pnpm test" in packet_output["data"]["test_commands"]
+    assert (packet_dir / "packet-cli.json").exists()
+
+    conn = sqlite3.connect(db_path)
+    task_id = create_eval_task(
+        conn,
+        repo_id="owner/repo",
+        source="external_benchmark",
+        start_sha="abc123",
+        context_profile="external_clean_room",
+        task_type="bugfix",
+        prompt_summary="Fix benchmark issue.",
+        acceptance_criteria=[],
+        success_criteria_files=[],
+    )
+    conn.commit()
+    conn.close()
+
+    swe_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "benchmark",
+            "to-swe-bench",
+            "--task-id",
+            task_id,
+        ]
+    )
+    assert swe_exit == EXIT_OK
+    swe_output = json.loads(capsys.readouterr().out)
+    assert swe_output["data"]["repo"] == "owner/repo"
+    assert swe_output["data"]["base_commit"] == "abc123"
+
+    result_path = tmp_path / "external-result.json"
+    result_path.write_text(json.dumps({"passed": True, "tests_run": ["pytest"]}), encoding="utf-8")
+    normalize_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "benchmark",
+            "normalize-result",
+            "--task-id",
+            task_id,
+            "--harness",
+            "swe-bench",
+            "--model",
+            "gpt-5",
+            "--result-file",
+            str(result_path),
+        ]
+    )
+    assert normalize_exit == EXIT_OK
+    normalize_output = json.loads(capsys.readouterr().out)
+    assert normalize_output["data"]["mode"] == "external"
+    assert normalize_output["data"]["context_profile"] == "external_clean_room"
+    assert normalize_output["data"]["final_status"] == "success"
 
 
 def test_start_work_creates_packet_and_links_current_session(tmp_path: Path, capsys) -> None:
