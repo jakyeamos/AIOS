@@ -31,9 +31,9 @@ SHORTCUT_REBUILD_OUTCOMES = (
 )
 
 TASK_KEYWORDS: dict[str, tuple[str, ...]] = {
-    "audit": ("audit", "review", "inspect", "evaluate"),
+    "audit": ("audit", "review", "inspect", "evaluate", "compare"),
     "implementation": ("implement", "edit", "patch", "fix", "refactor", "build"),
-    "planning": ("plan", "roadmap", "phase", "acceptance"),
+    "planning": ("plan", "roadmap", "phase", "acceptance", "strategy", "strategies", "promotion"),
     "research": ("research", "investigate", "source", "citation"),
     "debugging": ("debug", "bug", "root cause", "failure"),
     "testing": ("test", "verify", "validate", "quality gate"),
@@ -121,7 +121,7 @@ def compile_tmcp_packet(
     objective_text = objective.strip()
     task_id = _select_task(objective_text)
     modules = _select_modules(objective_text, task_id, tmcp_root)
-    branch_id = _select_branch(objective_text)
+    branch_id = _select_branch(objective_text, task_id)
     registry_overlay = _select_registry_overlay(objective_text, task_id)
     router_selected_nodes = [
         f"@task:{task_id}",
@@ -289,7 +289,7 @@ def _select_task(objective: str) -> str:
 def _select_modules(objective: str, task_id: str, tmcp_root: Path) -> list[str]:
     lowered = objective.lower()
     modules = list(DEFAULT_MODULES)
-    if task_id in {"implementation", "debugging", "testing"} or any(
+    if task_id in {"implementation", "debugging", "planning", "testing"} or any(
         term in lowered for term in ("test", "verify", "validate")
     ):
         modules.append("test_gate")
@@ -300,11 +300,13 @@ def _select_modules(objective: str, task_id: str, tmcp_root: Path) -> list[str]:
     return [module_id for module_id in dict.fromkeys(modules) if _module_exists(tmcp_root, module_id)]
 
 
-def _select_branch(objective: str) -> str:
+def _select_branch(objective: str, task_id: str) -> str:
     lowered = objective.lower()
     direct_terms = ("implement", "fix", "patch", "edit", "do this", "build", "wire")
     if any(term in lowered for term in direct_terms):
         return "direct_implementation"
+    if task_id in {"audit", "planning", "research", "testing", "documentation"}:
+        return "approval_before_edit"
     return "ambiguous_task_resolution"
 
 
@@ -774,6 +776,8 @@ def _project_scope(project_path: str | None) -> str:
 def _branch_reason(branch_id: str) -> str:
     if branch_id == "direct_implementation":
         return "Objective contains direct implementation language."
+    if branch_id == "approval_before_edit":
+        return "Objective is read-only or planning-oriented; require approval before edits."
     return "Objective did not clearly grant direct implementation; preserve ambiguity branch."
 
 

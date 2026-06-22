@@ -17,6 +17,11 @@
       "expected_modules": ["diff_review", "git_hygiene"]
     },
     {
+      "objective": "Compare workflow promotion strategies",
+      "expected_task": "planning_review",
+      "expected_modules": ["command_discovery", "test_authoring", "quality_gate"]
+    },
+    {
       "objective": "install a pre-commit hook for lint and tests",
       "expected_task": "git_hygiene",
       "expected_modules": ["git_hygiene", "hook_guidance"],

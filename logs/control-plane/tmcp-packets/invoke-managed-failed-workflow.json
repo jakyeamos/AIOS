@@ -1,0 +1,158 @@
+{
+  "context_receipt_id": "packet-managed-failed-workflow",
+  "created_at": "2026-06-22T17:24:18.776377+00:00",
+  "entry_node": "@task:planning",
+  "objective": "Compare workflow promotion strategies",
+  "packet_markdown": "# AIOS TMCP Custom Skill Packet\n\nObjective: Compare workflow promotion strategies\nTask: @task:planning\nContext receipt: packet-managed-failed-workflow\n\n## Selected Nodes\n- @task:planning\n- @module:context_gathering\n- @module:evidence_first\n- @module:provenance_policy\n- @module:output_contract\n- @module:test_gate\n- @branch:approval_before_edit\n- @namespace:portable_dev_process/@task:planning_review\n- @namespace:portable_dev_process/@module:command_discovery\n- @namespace:portable_dev_process/@module:test_authoring\n- @namespace:portable_dev_process/@module:quality_gate\n\n## Skipped Plausible Nodes\n- @task:research: Not required by objective classifier.\n- @task:documentation: Not required by objective classifier.\n- @task:testing: Not required by objective classifier.\n\n## Shortcut Freshness\n- Candidate: @shortcut:candidate\n- Status: needs_revalidation\n- Source graph version: 736d4a1f79537663eecc0a38585b573cf3c02260b7b75c54bcb0a84fa3b87658\n- Default usable: False\n- Fallback: router_traversal\n- Reason: No valid active shortcut with current graph version and confirmed unchanged source material was found.\n\n## Execution Instruction\n- Use this packet as the run-specific skill overlay before executing the workflow.\n- Preserve project/context compiler instructions when they are stricter than this packet.\n- Record validation evidence so this traversal can later be promoted, repaired, or demoted.\n- If shortcut freshness is uncertain, continue with router traversal.\n\n## Router\n\nSource: `/Users/jakyeamos/AIOS/skills-library/skills.tmcp/router.md`\n\n# TMCP Router\n\nEntry point for generated agent routing. TMCP is a thin decision graph, not a rigid script.\n\nAgents should explore the graph enough to construct a task-specific custom skill packet, then stop. Record the path as a traversal receipt so AIOS can learn from the run.\n\nAllowed traversal actions: LOAD, CONSIDER, USE, SKIP, EXIT, WHY, EVIDENCE, OUTCOME.\n\n[NODE: ROUTER.START]\nCONSIDER @shortcut:candidate before normal task routing when a prior traversal fingerprint matches the task, project, and available context.\nUSE an active shortcut only when its source graph version is current, related source material is unchanged, and behavioral tests passed.\nSKIP @shortcut:candidate when there is no matching receipt history, unresolved repair, current graph version, unchanged source material, or positive token-ROI evidence.\nELSE LOAD task nodes through normal router traversal and emit a shortcut rebuild recommendation.\n\n[NODE: ROUTER.TASK]\nIF task involves agent, workflow, routing THEN LOAD @task:agent_workflow\nELSE IF task involves audit, review, inspect THEN LOAD @task:audit\nELSE IF task involves debug, bug, root cause THEN LOAD @task:debugging\nELSE IF task involves document, readme, docs THEN LOAD @task:documentation\nELSE IF task involves implement, edit, patch THEN LOAD @task:implementation\nELSE IF task involves plan, roadmap, phase THEN LOAD @task:planning\nELSE IF task involves research, investigate, source THEN LOAD @task:research\nELSE IF task involves test, verify, validate THEN LOAD @task:testing\nELSE LOAD @task:agent_workflow\n\n[NODE: ROUTER.EXPLORE]\nCONSIDER adjacent task nodes when task intent is compound.\nSKIP adjacent task nodes when they do not add constraints, validation, or project-specific behavior.\nWHY record the selected path, skipped nodes, and evidence\n...(truncated)\n\n## Task planning\n\nSource: `/Users/jakyeamos/AIOS/skills-library/skills.tmcp/tasks/planning.md`\n\n# Task: Planning\n\n## Metadata\nTask ID: @task:planning\nStatus: active\nGenerated From:\n- @source:bbdse-agents-64c1db\n- @source:bbdse-bbds-analytics-product-suite-docs-project-truth-1e3d3e\n- @source:bbdse-bbds-analytics-product-suite-docs-superpowers-plans-2026-05-27-lis-findings-redesign-215ec5\n- @source:bbdse-clfe-docs-artifact-catalog-6af4f7\n- @source:bbdse-clfe-docs-conditional-model-spec-1d5cb6\n- @source:bbdse-clfe-docs-project-truth-92cf64\n- @source:bbdse-clfe-docs-source-coverage-and-failures-17e042\n- @source:bbdse-clfe-reports-stint-ingest-validation-39c19d\n- @source:bbdse-cap-fit-builder-docs-gsd-plan-5a92b3\n- @source:bbdse-cap-fit-builder-docs-project-truth-f1a5a3\n- @source:bbdse-coach-value-over-expected-docs-artifact-catalog-17cbbc\n- @source:bbdse-coach-value-over-expected-docs-gsd-plan-06581b\n\n## Trigger Conditions\n- User task matches one of: plan, roadmap, phase, acceptance.\n\n## Required Modules\n- @module:context_gathering\n- @module:evidence_first\n- @module:minimal_patch_policy\n- @module:output_contract\n- @module:provenance_policy\n- @module:test_gate\n\n## Optional Modules\n- @module:provenance_policy\n\n## Traversal Contract\n- LOAD this task when task intent matches the trigger conditions.\n- CONSIDER adjacent task nodes when the request mixes intents such as implementation plus testing or audit plus planning.\n- USE only modules and branches that change behavior, validation, permissions, output, or provenance.\n- SKIP nodes that do not add task-specific instruction value.\n- WHY record node choices, skipped alternatives, and evidence in `skills.tmcp/traversal-receipt-schema.md` format.\n\n## Decision Tree\n[NODE: planning.classify_scope]\nIF request clearly matches @task:planning THEN CONTINUE to [NODE: planning.gather_context]\nELSE USE @branch:ambiguous_task_resolution\n...(truncated)\n\n## Module context_gathering\n\nSource: `/Users/jakyeamos/AIOS/skills-library/skills.tmcp/modules/context_gathering.md`\n\n# Module: Context Gathering\n\n## Metadata\nModule ID: @module:context_gathering\nType: context_policy\nStatus: active\nActivation: active\n\n## Purpose\nCentralize repeated context gathering behavior from harvested sources.\n\n## Type\ncontext_policy\n\n## Applies When\n- A task tree lists this module as required or optional.\n\n## Does Not Apply When\n- A conflict branch explicitly overrides this behavior.\n\n## Instruction\n- Apply the module behavior while preserving source-specific overlays and provenance.\n\n## Transition Hooks\n- Entry: task node explicitly lists this module or traversal reasoning selects it as behavior-changing.\n- Before use: check whether a selected branch overrides or narrows this module.\n- After use: continue to the next selected module, selected branch, validation gate, or output contract.\n- Receipt: record why this module was loaded or skipped when it was a plausible candidate.\n\n## Exceptions\n- Inferred advisory modules do not change behavior until promoted.\n\n## Used By\n- Generated task trees that list this module.\n\n## Source Skills\n- @source:agents-572b98\n- @source:agents-6736e3\n- @source:aios-context-compiled-latest-126912\n- @source:aios-context-compiled-latest-895f87\n- @source:aios-context-domains-agent-harnesses-12a1ab\n- @source:aios-context-domains-data-projects-5827a3\n- @source:aios-context-domains-index-d2dc55\n- @source:aios-context-domains-knowledge-systems-467a41\n- @source:aios-context-domains-web-apps-0279a0\n- @source:aios-context-features-context-compiler-10c6fe\n- @source:aios-context-features-index-fb0f05\n- @source:aios-context-features-obsidian-search-58fa5b\n- @source:aios-context-features-prompt-library-c4efc5\n- @source:aios-context-features-skill-registry-6b400c\n- @source:aios-context-features-standards-delta-063cf3\n- @source:aios-context-handoffs-l\n...(truncated)\n\n## Module evidence_first\n\nSource: `/Users/jakyeamos/AIOS/skills-library/skills.tmcp/modules/evidence_first.md`\n\n# Module: Evidence First\n\n## Metadata\nModule ID: @module:evidence_first\nType: constraint\nStatus: active\nActivation: active\n\n## Purpose\nCentralize repeated evidence first behavior from harvested sources.\n\n## Type\nconstraint\n\n## Applies When\n- A task tree lists this module as required or optional.\n\n## Does Not Apply When\n- A conflict branch explicitly overrides this behavior.\n\n## Instruction\n- Apply the module behavior while preserving source-specific overlays and provenance.\n\n## Transition Hooks\n- Entry: task node explicitly lists this module or traversal reasoning selects it as behavior-changing.\n- Before use: check whether a selected branch overrides or narrows this module.\n- After use: continue to the next selected module, selected branch, validation gate, or output contract.\n- Receipt: record why this module was loaded or skipped when it was a plausible candidate.\n\n## Exceptions\n- Inferred advisory modules do not change behavior until promoted.\n\n## Used By\n- Generated task trees that list this module.\n\n## Source Skills\n- @source:agents-572b98\n- @source:agents-6736e3\n- @source:aios-context-compiled-latest-126912\n- @source:aios-context-compiled-latest-895f87\n- @source:aios-context-domains-agent-harnesses-12a1ab\n- @source:aios-context-domains-data-projects-5827a3\n- @source:aios-context-domains-product-design-a58f01\n- @source:aios-context-domains-web-apps-0279a0\n- @source:aios-context-features-index-fb0f05\n- @source:aios-context-features-skill-registry-6b400c\n- @source:aios-context-features-standards-delta-063cf3\n- @source:aios-context-packets-security-oidc-secrets-d63541\n- @source:aios-context-packets-testing-no-mock-echo-80057b\n- @source:aios-context-packets-ui-command-center-ce799a\n- @source:aios-context-projects-aios-ui-968065\n- @source:aios-context-schema-c66a4a\n- @\n...(truncated)\n\n## Module provenance_policy\n\nSource: `/Users/jakyeamos/AIOS/skills-library/skills.tmcp/modules/provenance_policy.md`\n\n# Module: Provenance Policy\n\n## Metadata\nModule ID: @module:provenance_policy\nType: routing_rule\nStatus: active\nActivation: active\n\n## Purpose\nCentralize repeated provenance policy behavior from harvested sources.\n\n## Type\nrouting_rule\n\n## Applies When\n- A task tree lists this module as required or optional.\n\n## Does Not Apply When\n- A conflict branch explicitly overrides this behavior.\n\n## Instruction\n- Apply the module behavior while preserving source-specific overlays and provenance.\n\n## Transition Hooks\n- Entry: task node explicitly lists this module or traversal reasoning selects it as behavior-changing.\n- Before use: check whether a selected branch overrides or narrows this module.\n- After use: continue to the next selected module, selected branch, validation gate, or output contract.\n- Receipt: record why this module was loaded or skipped when it was a plausible candidate.\n\n## Exceptions\n- Inferred advisory modules do not change behavior until promoted.\n\n## Used By\n- Generated task trees that list this module.\n\n## Source Skills\n- @source:agents-6736e3\n- @source:aios-context-compiled-latest-126912\n- @source:aios-context-compiled-latest-895f87\n- @source:aios-context-domains-data-projects-5827a3\n- @source:aios-context-domains-knowledge-systems-467a41\n- @source:aios-context-domains-product-design-a58f01\n- @source:aios-context-domains-web-apps-0279a0\n- @source:aios-context-features-context-compiler-10c6fe\n- @source:aios-context-features-obsidian-search-58fa5b\n- @source:aios-context-features-prompt-library-c4efc5\n- @source:aios-context-features-standards-delta-063cf3\n- @source:aios-context-handoffs-latest-0b39bf\n- @source:aios-context-index-504319\n- @source:aios-context-packets-knowledge-obsidian-routing-a27338\n- @source:aios-context-packets-ui-command-center-ce799a\n-\n...(truncated)\n\n## Module output_contract\n\nSource: `/Users/jakyeamos/AIOS/skills-library/skills.tmcp/modules/output_contract.md`\n\n# Module: Output Contract\n\n## Metadata\nModule ID: @module:output_contract\nType: output_contract\nStatus: active\nActivation: active\n\n## Purpose\nCentralize repeated output contract behavior from harvested sources.\n\n## Type\noutput_contract\n\n## Applies When\n- A task tree lists this module as required or optional.\n\n## Does Not Apply When\n- A conflict branch explicitly overrides this behavior.\n\n## Instruction\n- Apply the module behavior while preserving source-specific overlays and provenance.\n\n## Transition Hooks\n- Entry: task node explicitly lists this module or traversal reasoning selects it as behavior-changing.\n- Before use: check whether a selected branch overrides or narrows this module.\n- After use: continue to the next selected module, selected branch, validation gate, or output contract.\n- Receipt: record why this module was loaded or skipped when it was a plausible candidate.\n\n## Exceptions\n- Inferred advisory modules do not change behavior until promoted.\n\n## Used By\n- Generated task trees that list this module.\n\n## Source Skills\n- @source:agents-6736e3\n- @source:aios-context-compiled-latest-126912\n- @source:aios-context-compiled-latest-895f87\n- @source:aios-context-domains-agent-harnesses-12a1ab\n- @source:aios-context-domains-data-projects-5827a3\n- @source:aios-context-domains-index-d2dc55\n- @source:aios-context-domains-knowledge-systems-467a41\n- @source:aios-context-domains-product-design-a58f01\n- @source:aios-context-domains-web-apps-0279a0\n- @source:aios-context-features-context-compiler-10c6fe\n- @source:aios-context-features-index-fb0f05\n- @source:aios-context-features-obsidian-search-58fa5b\n- @source:aios-context-features-prompt-library-c4efc5\n- @source:aios-context-features-skill-registry-6b400c\n- @source:aios-context-features-standards-delta-063cf3\n- @sourc\n...(truncated)\n\n## Module test_gate\n\nSource: `/Users/jakyeamos/AIOS/skills-library/skills.tmcp/modules/test_gate.md`\n\n# Module: Test Gate\n\n## Metadata\nModule ID: @module:test_gate\nType: validation_gate\nStatus: active\nActivation: active\n\n## Purpose\nCentralize repeated test gate behavior from harvested sources.\n\n## Type\nvalidation_gate\n\n## Applies When\n- A task tree lists this module as required or optional.\n\n## Does Not Apply When\n- A conflict branch explicitly overrides this behavior.\n\n## Instruction\n- Apply the module behavior while preserving source-specific overlays and provenance.\n\n## Transition Hooks\n- Entry: task node explicitly lists this module or traversal reasoning selects it as behavior-changing.\n- Before use: check whether a selected branch overrides or narrows this module.\n- After use: continue to the next selected module, selected branch, validation gate, or output contract.\n- Receipt: record why this module was loaded or skipped when it was a plausible candidate.\n\n## Exceptions\n- Inferred advisory modules do not change behavior until promoted.\n\n## Used By\n- Generated task trees that list this module.\n\n## Source Skills\n- @source:agents-572b98\n- @source:agents-6736e3\n- @source:aios-context-compiled-latest-126912\n- @source:aios-context-compiled-latest-895f87\n- @source:aios-context-domains-knowledge-systems-467a41\n- @source:aios-context-features-context-compiler-10c6fe\n- @source:aios-context-handoffs-latest-0b39bf\n- @source:aios-context-index-504319\n- @source:aios-context-packets-knowledge-obsidian-routing-a27338\n- @source:aios-context-packets-testing-no-mock-echo-80057b\n- @source:aios-context-packets-ui-command-center-ce799a\n- @source:aios-context-packets-workflow-approval-gates-408919\n- @source:aios-context-projects-aios-ui-968065\n- @source:aios-context-receipts-latest-619013\n- @source:aios-context-receipts-latest-986dec\n- @source:aios-context-router-6fcf02\n- @source:aios-\n...(truncated)\n\n## Branch approval_before_edit\n\nSource: `/Users/jakyeamos/AIOS/skills-library/skills.tmcp/branches/approval_before_edit.branch.md`\n\n# Branch: Approval Before Edit\n\n## Metadata\nBranch ID: @branch:approval_before_edit\nStatus: active\n\n## Branch Type\nconflict\n\n## Conflict or Context\nSome sources require approval before edits while others allow direct implementation when intent is explicit.\n\n## Applies When\n- The task context selects this branch.\n\n## Does Not Apply When\n- Explicit user instruction or a higher-priority safety rule selects a competing branch.\n\n## Behavior\n- Preserve the branch behavior as active until the conflict or context is resolved.\n\n## Transition Hooks\n- Entry: selected when task context, source-tier precedence, or conflict evidence makes this branch behavior-changing.\n- Before use: compare competing branches and cite the evidence that selected this branch.\n- After use: return to the task node's validation or output node.\n- Receipt: record competing branches considered and why they were skipped.\n\n## Competing Branches\n- @branch:direct_implementation\n\n## Selection Rule\n- Explicit user instruction, safety, task intent, provenance, then conservative fallback.\n\n## Source Skills\n- @source:hoopscout-docs-prd-prd-ccfe28\n- @source:not-mine-gitnexus-agents-d5b619\n- @source:not-mine-gitnexus-claude-49597d\n- @source:not-mine-gitnexus-guardrails-d55e20\n- @source:not-mine-praxis-prompting-praxis-challenge-flow-codex-178c6c\n- @source:terrace-agents-skills-terrace-autonomous-skill-e9c9e6\n- @source:terrace-agents-skills-terrace-spec-interrogator-step-01-create-d1b8b6\n- @source:terrace-claude-commands-terrace-autonomous-9a1fdf\n- @source:terrace-claude-skills-terrace-autonomous-skill-4fbc8d\n- @source:terrace-docs-superpowers-specs-2026-04-29-terrace-agent-production-lifecycle-design-9cc080\n- @source:vaults-command-center-02-ai-os-02-session-handoffs-2026-04-01-jakyeamos-44e8d83d-eaca14\n- @source:vault\n...(truncated)\n\n## Namespace portable_dev_process router\n\nSource: `/Users/jakyeamos/AIOS/config/tmcp/portable-dev-process/router.md`\n\n# Portable Dev Process Router\n\nThis router builds a minimal custom skill packet from practical AIOS-derived developer tools. It intentionally excludes AIOS governance loops, truth-file writebacks, eval archives, and continuous-learning requirements.\n\nAllowed traversal actions: LOAD, CONSIDER, USE, SKIP, EXIT, WHY, EVIDENCE, OUTCOME.\n\n## Start\n\nLOAD `manifest.json`.\n\nUSE `@branch:read_only_default` unless the user explicitly asked for implementation, hook installation, dependency changes, commits, or other mutation.\n\n## Task Routing\n\n- IF the request asks what repo this is, what stack it uses, or which commands exist, LOAD `@task:repo_detect`.\n- IF the request asks to run lint, typecheck, tests, build, or verification, LOAD `@task:quality_check`.\n- IF the request reports a bug, failure, flaky behavior, regression, or error output, LOAD `@task:debug_failure`.\n- IF the request asks for a review, staged diff assessment, PR assessment, or risk scan, LOAD `@task:review_diff`.\n- IF the request asks for tests or coverage, LOAD `@task:add_tests`.\n- IF the request asks to compare strategies, review a plan, choose a promotion path, define acceptance criteria, or make planning testable, LOAD `\n...(truncated)\n\n## Namespace portable_dev_process task planning_review\n\nSource: `/Users/jakyeamos/AIOS/config/tmcp/portable-dev-process/tasks/planning_review.md`\n\n# Task: Planning Review\n\nTask ID: `@task:planning_review`\n\n## Trigger\n\nUse when the user asks to compare strategies, review implementation plans, choose a promotion path, define acceptance criteria, or turn a planning decision into a testable verification path.\n\n## Required Modules\n\n- `@module:command_discovery`\n- `@module:test_authoring`\n- `@module:quality_gate`\n\n## Instructions\n\n1. Identify the candidate strategies, decision criteria, and evidence needed to compare them.\n2. Discover existing commands and test conventions before recommending verification.\n3. Convert the preferred path into behavior-level acceptance criteria.\n4. Define the smallest regression or validation check that would prove the route works.\n5. Keep the output read-only unless the user explicitly asks for edits.\n\n## Exit\n\nExit with strategy options, tradeoff notes, acceptance criteria, and a verification command or test plan.\n\n## Namespace portable_dev_process module command_discovery\n\nSource: `/Users/jakyeamos/AIOS/config/tmcp/portable-dev-process/modules/command_discovery.md`\n\n# Module: Command Discovery\n\nModule ID: `@module:command_discovery`\n\nDiscover commands from authoritative local sources in this order:\n\n1. Agent instructions and project docs.\n2. Package metadata and lockfiles.\n3. Task runners such as Make, Just, Turbo, tox, nox, Cargo, Gradle, or Xcode schemes.\n4. CI configuration.\n5. Existing scripts and test conventions.\n\nPrefer the project package manager. For JavaScript, infer from lockfiles and instructions; do not mix package managers casually.\n\nOutput command candidates with confidence and whether each command is read-only, mutating, networked, or expensive.\n\n## Namespace portable_dev_process module test_authoring\n\nSource: `/Users/jakyeamos/AIOS/config/tmcp/portable-dev-process/modules/test_authoring.md`\n\n# Module: Test Authoring\n\nModule ID: `@module:test_authoring`\n\nMatch existing test framework, naming, fixture style, and assertion level. Prefer small behavior tests that fail before the fix and pass after it.\n\nDo not edit tests merely to make implementation pass. If acceptance criteria are wrong, surface that as a separate issue.\n\nRun the new or changed tests directly.\n\n## Namespace portable_dev_process module quality_gate\n\nSource: `/Users/jakyeamos/AIOS/config/tmcp/portable-dev-process/modules/quality_gate.md`\n\n# Module: Quality Gate\n\nModule ID: `@module:quality_gate`\n\nRun the narrowest meaningful gate first, then broaden when the touched surface justifies it. Typical gates include lint, typecheck, tests, build, architecture checks, smoke checks, and browser verification.\n\nWhen a command fails, preserve:\n\n- command\n- working directory\n- exit status\n- first meaningful error\n- likely owner\n- next action\n\nDo not claim completion if a blocker-level gate failed unless the user explicitly accepts the tradeoff.\n\n## Shortcut candidate\n\nSource: `/Users/jakyeamos/AIOS/skills-library/skills.tmcp/shortcuts/candidate.md`\n\n# Shortcut: Candidate Promotion\n\n## Metadata\nShortcut ID: @shortcut:candidate\nStatus: promotion_policy\n\n## Purpose\nTurn a repeated, validated custom-skill traversal path into a reusable top-level TMCP node.\n\n## Shortcut Skill Contract\n- A shortcut skill is a cached compiled traversal through the TMCP graph.\n- Shortcut skills are generated artifacts, not source of truth.\n- Shortcut skills must preserve provenance.\n- Shortcut skills must declare their source graph version.\n- Shortcut skills must declare source tasks, modules, branches, and source skills.\n- Shortcut skills must be revalidated when related source material changes.\n- Shortcut skills must not be manually appended by default.\n- Related graph changes must trigger regeneration, splitting, supersession, conflict branching, or deprecation review.\n- If shortcut freshness is uncertain, agents must fall back to router traversal.\n- Shortcut skills may only become default paths after behavioral tests pass.\n\n## Shortcut Statuses\n- active: valid for default use when graph version and source material are current.\n- stale_candidate: likely affected by source or graph drift; do not use as default.\n- needs_revalidation: candidate has us\n...(truncated)\n",
+  "project_path": "/private/var/folders/r7/b6pc8f3d7mjgkqx_wps2p52r0000gn/T/pytest-of-jakyeamos/pytest-180/test_managed_runtime_routes_wo0/repo",
+  "receipt_id": "tmcp-receipt-12aa09a7-f91b-4bbb-ab4c-ce4a88d9116f",
+  "receipt_schema": "tmcp-traversal-receipt-v0.3",
+  "registry_overlay": {
+    "entry_policy": "Intent-driven traversal may cross registered namespaces. Prefer the smallest behavior-changing packet; do not treat namespace boundaries as access limits.",
+    "matched": true,
+    "namespaces": [
+      {
+        "modules": [
+          "command_discovery",
+          "test_authoring",
+          "quality_gate"
+        ],
+        "namespace": "portable_dev_process",
+        "optional_nodes": [],
+        "portable": true,
+        "reason": "Manifest trigger score 3 matched objective.",
+        "requires_aios_runtime": false,
+        "selected_branch": null,
+        "task": "planning_review"
+      }
+    ],
+    "registry": "/Users/jakyeamos/AIOS/config/tmcp/registry.json",
+    "schema": "tmcp-registry-overlay-v0.1",
+    "skipped_namespaces": []
+  },
+  "schema": "tmcp-runtime-packet-v0.1",
+  "selected_branches": [
+    {
+      "branch": "@branch:approval_before_edit",
+      "reason": "Objective is read-only or planning-oriented; require approval before edits."
+    }
+  ],
+  "selected_nodes": [
+    "@task:planning",
+    "@module:context_gathering",
+    "@module:evidence_first",
+    "@module:provenance_policy",
+    "@module:output_contract",
+    "@module:test_gate",
+    "@branch:approval_before_edit",
+    "@namespace:portable_dev_process/@task:planning_review",
+    "@namespace:portable_dev_process/@module:command_discovery",
+    "@namespace:portable_dev_process/@module:test_authoring",
+    "@namespace:portable_dev_process/@module:quality_gate"
+  ],
+  "shortcut_candidate": {
+    "fallback": "router_traversal",
+    "freshness": "uncertain",
+    "matched": false,
+    "node": "@shortcut:candidate",
+    "reason": "No valid active shortcut with current graph version and confirmed unchanged source material was found.",
+    "repair_recommendation": "Use router traversal and evaluate whether this path should revalidate, regenerate, split, branch, or deprecate an existing shortcut.",
+    "source_branches": [],
+    "source_graph_version": "736d4a1f79537663eecc0a38585b573cf3c02260b7b75c54bcb0a84fa3b87658",
+    "source_modules": [],
+    "source_skills": [],
+    "source_tasks": [
+      "@task:planning"
+    ],
+    "status": "needs_revalidation",
+    "usable_as_default": false
+  },
+  "shortcut_governance": {
+    "allowed_statuses": [
+      "active",
+      "stale_candidate",
+      "needs_revalidation",
+      "superseded",
+      "deprecated",
+      "conflict_branch"
+    ],
+    "default_fallback": "router_traversal",
+    "generated_artifact_not_source_of_truth": true,
+    "rebuild_outcomes": [
+      "revalidate_unchanged",
+      "regenerate_new_version",
+      "split_more_specific",
+      "create_conflict_branches",
+      "deprecate_not_useful"
+    ],
+    "requires_behavioral_tests_for_default": true
+  },
+  "skipped_nodes": [
+    {
+      "node": "@task:research",
+      "reason": "Not required by objective classifier."
+    },
+    {
+      "node": "@task:documentation",
+      "reason": "Not required by objective classifier."
+    },
+    {
+      "node": "@task:testing",
+      "reason": "Not required by objective classifier."
+    }
+  ],
+  "source": "/Users/jakyeamos/AIOS/skills-library/skills.tmcp",
+  "source_graph_version": "736d4a1f79537663eecc0a38585b573cf3c02260b7b75c54bcb0a84fa3b87658",
+  "status": "compiled",
+  "task_id": "planning",
+  "token_estimates": {
+    "baseline_skill_tokens": 4850,
+    "custom_skill_tokens": 3278,
+    "estimated_token_delta": 1572
+  },
+  "transition_trace": [
+    {
+      "action": "LOAD",
+      "from": "ROUTER.START",
+      "to": "@task:planning",
+      "why": "Objective keyword classification selected the task node."
+    },
+    {
+      "action": "USE",
+      "from": "@task:planning",
+      "to": "@module:context_gathering",
+      "why": "Module is part of the minimal managed-run TMCP overlay."
+    },
+    {
+      "action": "USE",
+      "from": "@module:context_gathering",
+      "to": "@module:evidence_first",
+      "why": "Module is part of the minimal managed-run TMCP overlay."
+    },
+    {
+      "action": "USE",
+      "from": "@module:evidence_first",
+      "to": "@module:provenance_policy",
+      "why": "Module is part of the minimal managed-run TMCP overlay."
+    },
+    {
+      "action": "USE",
+      "from": "@module:provenance_policy",
+      "to": "@module:output_contract",
+      "why": "Module is part of the minimal managed-run TMCP overlay."
+    },
+    {
+      "action": "USE",
+      "from": "@module:output_contract",
+      "to": "@module:test_gate",
+      "why": "Module is part of the minimal managed-run TMCP overlay."
+    },
+    {
+      "action": "USE",
+      "from": "@module:test_gate",
+      "to": "@branch:approval_before_edit",
+      "why": "Objective is read-only or planning-oriented; require approval before edits."
+    }
+  ],
+  "traversal_fingerprint": "227df5426fe567b3cc5e59359b513c0fab2e51fa16d49e49eb0de77a3673de1c"
+}

@@ -1270,7 +1270,10 @@ def test_managed_runtime_uses_promoted_tmcp_shortcut(runtime_db: Path, tmp_path:
     assert "scope_check passed" in json.loads(receipt[1])
 
 
-def test_managed_runtime_keeps_failed_workflow_report(runtime_db: Path, tmp_path: Path) -> None:
+def test_managed_runtime_routes_workflow_strategy_comparison_to_planning(
+    runtime_db: Path,
+    tmp_path: Path,
+) -> None:
     from aios_orchestration_runtime import ensure_runtime_schema
 
     repo_path = tmp_path / "repo"
@@ -1333,7 +1336,7 @@ def test_managed_runtime_keeps_failed_workflow_report(runtime_db: Path, tmp_path
         text=True,
         check=False,
     )
-    assert result.returncode == 1
+    assert result.returncode == 0, result.stderr or result.stdout
 
     conn = sqlite3.connect(runtime_db)
     run = conn.execute("SELECT status FROM orchestration_runs WHERE id = ?", (run_id,)).fetchone()
@@ -1346,14 +1349,33 @@ def test_managed_runtime_keeps_failed_workflow_report(runtime_db: Path, tmp_path
         """,
         (run_id,),
     ).fetchone()
+    tmcp_receipt = conn.execute(
+        """
+        SELECT task_id, packet_json
+        FROM tmcp_traversal_receipts
+        WHERE run_id = ? AND invocation_id = ?
+        LIMIT 1
+        """,
+        (run_id, invocation_id),
+    ).fetchone()
     conn.close()
 
-    assert run[0] == "failed"
+    assert run[0] == "completed"
     assert workflow_report is not None
     assert workflow_report[0] == "divergent-strategy"
-    assert workflow_report[1] == "failed"
+    assert workflow_report[1] == "completed"
     assert workflow_report[3] is not None
-    assert json.loads(workflow_report[2])["unresolved_issues"]
+    workflow_payload = json.loads(workflow_report[2])
+    assert workflow_payload["unresolved_issues"] == []
+    tmcp_packet = workflow_payload["artifacts"]["tmcp_packet"]
+    assert tmcp_packet["task_id"] == "planning"
+    assert tmcp_packet["entry_node"] == "@task:planning"
+    assert tmcp_packet["selected_branches"][0]["branch"] == "@branch:approval_before_edit"
+    assert "@namespace:portable_dev_process/@task:planning_review" in tmcp_packet["selected_nodes"]
+    assert "@namespace:portable_dev_process/@module:test_authoring" in tmcp_packet["selected_nodes"]
+    assert tmcp_receipt is not None
+    assert tmcp_receipt[0] == "planning"
+    assert json.loads(tmcp_receipt[1])["entry_node"] == "@task:planning"
 
 
 def test_managed_closeout_repairs_authoritative_run_state(runtime_db: Path, tmp_path: Path) -> None:

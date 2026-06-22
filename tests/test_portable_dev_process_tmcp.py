@@ -73,6 +73,7 @@ def test_portable_dev_process_has_core_dev_process_capabilities() -> None:
         "debug_failure",
         "review_diff",
         "add_tests",
+        "planning_review",
         "ci_triage",
         "frontend_verify",
         "visual_polish",

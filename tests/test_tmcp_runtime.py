@@ -175,6 +175,33 @@ def test_compile_tmcp_packet_can_cross_into_registered_portable_namespace(tmp_pa
     assert "Namespace portable_dev_process task visual_polish" in packet["packet_markdown"]
 
 
+def test_compile_tmcp_packet_routes_workflow_strategy_comparison_to_planning(
+    tmp_path: Path,
+) -> None:
+    library = _seed_tmcp_library(tmp_path / "skills-library")
+
+    packet = compile_tmcp_packet(
+        objective="Compare workflow promotion strategies",
+        project_path="/tmp/project",
+        skills_library_path=library,
+    )
+
+    assert packet["task_id"] == "planning"
+    assert packet["entry_node"] == "@task:planning"
+    assert "@task:agent_workflow" not in packet["selected_nodes"]
+    assert packet["selected_branches"][0]["branch"] == "@branch:approval_before_edit"
+    assert "@module:test_gate" in packet["selected_nodes"]
+    assert (
+        "@namespace:portable_dev_process/@task:planning_review"
+        in packet["selected_nodes"]
+    )
+    assert (
+        "@namespace:portable_dev_process/@module:test_authoring"
+        in packet["selected_nodes"]
+    )
+    assert packet["registry_overlay"]["matched"] is True
+
+
 def test_compile_tmcp_packet_selects_tenure_branch_only_when_intent_matches(
     tmp_path: Path,
 ) -> None:

@@ -54,6 +54,29 @@
         "requires": ["modules/command_discovery.md", "modules/test_authoring.md"],
         "outputs": ["test_plan", "test_changes", "verification_command"]
       },
+      "planning_review": {
+        "path": "tasks/planning_review.md",
+        "triggers": [
+          "plan",
+          "strategy",
+          "strategies",
+          "compare",
+          "promotion",
+          "acceptance",
+          "test plan"
+        ],
+        "requires": [
+          "modules/command_discovery.md",
+          "modules/test_authoring.md",
+          "modules/quality_gate.md"
+        ],
+        "outputs": [
+          "strategy_options",
+          "test_plan",
+          "verification_command",
+          "tradeoff_notes"
+        ]
+      },
       "ci_triage": {
         "path": "tasks/ci_triage.md",
         "triggers": ["ci", "github actions", "pipeline", "failing check"],
@@ -146,6 +169,7 @@
     {"from": "repo_detect", "to": "quality_check", "when": "commands_discovered"},
     {"from": "quality_check", "to": "debug_failure", "when": "checks_failed"},
     {"from": "debug_failure", "to": "add_tests", "when": "root_cause_identified"},
+    {"from": "planning_review", "to": "quality_check", "when": "verification_command_selected"},
     {"from": "review_diff", "to": "git_hygiene", "when": "commit_ready"},
     {"from": "ci_triage", "to": "debug_failure", "when": "local_repro_needed"},
     {"from": "frontend_verify", "to": "quality_check", "when": "code_changed"},
