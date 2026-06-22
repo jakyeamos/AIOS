@@ -1,0 +1,203 @@
+# TMCP Multi-Project Benchmark Technical Report
+
+```json
+{
+  "comparisons": {
+    "baseline__flat_skills": {
+      "baseline": {
+        "completion_rate": 1.0,
+        "median_estimated_loaded_context_tokens": 0.0,
+        "median_quality_score": 100.0,
+        "median_total_benchmark_seconds": 0.3746625,
+        "median_total_tokens": null,
+        "run_count": 2,
+        "success_count": 2
+      },
+      "challenger": {
+        "completion_rate": 1.0,
+        "median_estimated_loaded_context_tokens": 1400.0,
+        "median_quality_score": 100.0,
+        "median_total_benchmark_seconds": 0.40398049999999996,
+        "median_total_tokens": null,
+        "run_count": 2,
+        "success_count": 2
+      },
+      "estimated_loaded_context_token_delta": -1400.0,
+      "quality_claim_allowed": true,
+      "reason": "quality_noninferior",
+      "speed_claim_allowed": false,
+      "speed_delta_seconds": -0.029318,
+      "token_claim_allowed": false
+    },
+    "baseline__tmcp_cold_start": {
+      "baseline": {
+        "completion_rate": 1.0,
+        "median_estimated_loaded_context_tokens": 0.0,
+        "median_quality_score": 100.0,
+        "median_total_benchmark_seconds": 0.3746625,
+        "median_total_tokens": null,
+        "run_count": 2,
+        "success_count": 2
+      },
+      "challenger": {
+        "completion_rate": 1.0,
+        "median_estimated_loaded_context_tokens": 900.0,
+        "median_quality_score": 100.0,
+        "median_total_benchmark_seconds": 0.48366200000000004,
+        "median_total_tokens": null,
+        "run_count": 2,
+        "success_count": 2
+      },
+      "estimated_loaded_context_token_delta": -900.0,
+      "quality_claim_allowed": true,
+      "reason": "quality_noninferior",
+      "speed_claim_allowed": false,
+      "speed_delta_seconds": -0.109,
+      "token_claim_allowed": false
+    },
+    "baseline__tmcp_validated_shortcut": {
+      "baseline": {
+        "completion_rate": 1.0,
+        "median_estimated_loaded_context_tokens": 0.0,
+        "median_quality_score": 100.0,
+        "median_total_benchmark_seconds": 0.3746625,
+        "median_total_tokens": null,
+        "run_count": 2,
+        "success_count": 2
+      },
+      "challenger": {
+        "completion_rate": 1.0,
+        "median_estimated_loaded_context_tokens": 450.0,
+        "median_quality_score": 100.0,
+        "median_total_benchmark_seconds": 0.629535,
+        "median_total_tokens": null,
+        "run_count": 2,
+        "success_count": 2
+      },
+      "estimated_loaded_context_token_delta": -450.0,
+      "quality_claim_allowed": true,
+      "reason": "quality_noninferior",
+      "speed_claim_allowed": false,
+      "speed_delta_seconds": -0.254872,
+      "token_claim_allowed": false
+    },
+    "flat_skills__tmcp_cold_start": {
+      "baseline": {
+        "completion_rate": 1.0,
+        "median_estimated_loaded_context_tokens": 1400.0,
+        "median_quality_score": 100.0,
+        "median_total_benchmark_seconds": 0.40398049999999996,
+        "median_total_tokens": null,
+        "run_count": 2,
+        "success_count": 2
+      },
+      "challenger": {
+        "completion_rate": 1.0,
+        "median_estimated_loaded_context_tokens": 900.0,
+        "median_quality_score": 100.0,
+        "median_total_benchmark_seconds": 0.48366200000000004,
+        "median_total_tokens": null,
+        "run_count": 2,
+        "success_count": 2
+      },
+      "estimated_loaded_context_token_delta": 500.0,
+      "quality_claim_allowed": true,
+      "reason": "quality_noninferior",
+      "speed_claim_allowed": false,
+      "speed_delta_seconds": -0.079682,
+      "token_claim_allowed": true
+    },
+    "flat_skills__tmcp_validated_shortcut": {
+      "baseline": {
+        "completion_rate": 1.0,
+        "median_estimated_loaded_context_tokens": 1400.0,
+        "median_quality_score": 100.0,
+        "median_total_benchmark_seconds": 0.40398049999999996,
+        "median_total_tokens": null,
+        "run_count": 2,
+        "success_count": 2
+      },
+      "challenger": {
+        "completion_rate": 1.0,
+        "median_estimated_loaded_context_tokens": 450.0,
+        "median_quality_score": 100.0,
+        "median_total_benchmark_seconds": 0.629535,
+        "median_total_tokens": null,
+        "run_count": 2,
+        "success_count": 2
+      },
+      "estimated_loaded_context_token_delta": 950.0,
+      "quality_claim_allowed": true,
+      "reason": "quality_noninferior",
+      "speed_claim_allowed": false,
+      "speed_delta_seconds": -0.225554,
+      "token_claim_allowed": true
+    },
+    "tmcp_cold_start__tmcp_validated_shortcut": {
+      "baseline": {
+        "completion_rate": 1.0,
+        "median_estimated_loaded_context_tokens": 900.0,
+        "median_quality_score": 100.0,
+        "median_total_benchmark_seconds": 0.48366200000000004,
+        "median_total_tokens": null,
+        "run_count": 2,
+        "success_count": 2
+      },
+      "challenger": {
+        "completion_rate": 1.0,
+        "median_estimated_loaded_context_tokens": 450.0,
+        "median_quality_score": 100.0,
+        "median_total_benchmark_seconds": 0.629535,
+        "median_total_tokens": null,
+        "run_count": 2,
+        "success_count": 2
+      },
+      "estimated_loaded_context_token_delta": 450.0,
+      "quality_claim_allowed": true,
+      "reason": "quality_noninferior",
+      "speed_claim_allowed": false,
+      "speed_delta_seconds": -0.145873,
+      "token_claim_allowed": true
+    }
+  },
+  "conditions": {
+    "baseline": {
+      "completion_rate": 1.0,
+      "median_estimated_loaded_context_tokens": 0.0,
+      "median_quality_score": 100.0,
+      "median_total_benchmark_seconds": 0.3746625,
+      "median_total_tokens": null,
+      "run_count": 2,
+      "success_count": 2
+    },
+    "flat_skills": {
+      "completion_rate": 1.0,
+      "median_estimated_loaded_context_tokens": 1400.0,
+      "median_quality_score": 100.0,
+      "median_total_benchmark_seconds": 0.40398049999999996,
+      "median_total_tokens": null,
+      "run_count": 2,
+      "success_count": 2
+    },
+    "tmcp_cold_start": {
+      "completion_rate": 1.0,
+      "median_estimated_loaded_context_tokens": 900.0,
+      "median_quality_score": 100.0,
+      "median_total_benchmark_seconds": 0.48366200000000004,
+      "median_total_tokens": null,
+      "run_count": 2,
+      "success_count": 2
+    },
+    "tmcp_validated_shortcut": {
+      "completion_rate": 1.0,
+      "median_estimated_loaded_context_tokens": 450.0,
+      "median_quality_score": 100.0,
+      "median_total_benchmark_seconds": 0.629535,
+      "median_total_tokens": null,
+      "run_count": 2,
+      "success_count": 2
+    }
+  },
+  "run_count": 8
+}
+```

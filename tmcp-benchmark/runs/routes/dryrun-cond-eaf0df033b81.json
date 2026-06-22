@@ -1,0 +1,16 @@
+{
+  "condition_actual": "tmcp_cold_start",
+  "expected_modules": [
+    "@task:implementation",
+    "@module:test_gate"
+  ],
+  "route_precision": 1.0,
+  "route_recall": 1.0,
+  "run_id": "dryrun-cond-eaf0df033b81",
+  "schema": "tmcp-benchmark-route-v0.1",
+  "selected_modules": [
+    "@task:implementation",
+    "@module:test_gate"
+  ],
+  "shortcut_state": "NONE"
+}

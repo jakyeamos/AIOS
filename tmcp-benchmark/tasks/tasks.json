@@ -1,0 +1,175 @@
+{
+  "created_at": "2026-06-21T18:59:33.773925+00:00",
+  "route_visibility": "expected_tmcp_route is hidden from executing agents.",
+  "schema": "tmcp-benchmark-tasks-v0.1",
+  "tasks": [
+    {
+      "compositionality_score": 2,
+      "difficulty_estimate": "dry_run",
+      "evaluator_rubric": "default-100",
+      "expected_shortcut_eligibility": true,
+      "expected_skills": [
+        "testing"
+      ],
+      "expected_tmcp_route": [
+        "@task:implementation",
+        "@module:test_gate"
+      ],
+      "hidden_acceptance_criteria": [
+        "hidden dry-run command exits 0"
+      ],
+      "hidden_test_commands": [
+        "python3 -c 'print(\"hidden dry run\")'"
+      ],
+      "known_risks": [
+        "dry-run task is not publishable evidence"
+      ],
+      "maximum_cost_budget_usd": null,
+      "maximum_execution_time_seconds": 60,
+      "maximum_token_budget": 10000,
+      "natural_language_request": "Dry-run development task for benchmark harness calibration.",
+      "network_access": "disabled",
+      "prohibited_shortcuts": [],
+      "project_id": "Bballedu",
+      "public_acceptance_criteria": [
+        "public dry-run command exits 0"
+      ],
+      "real_work_reason": "Validates the benchmark execution and artifact contract before real tasks.",
+      "required_test_commands": [
+        "python3 -c 'print(\"public dry run\")'"
+      ],
+      "split": "development",
+      "starting_commit": "53dffcc2f0fbcae307b12fbec4b7d8758379e0a3",
+      "task_class": "repeated_task_family",
+      "task_family_id": "bballedu-deterministic-loop",
+      "task_id": "bballedu-dry-dev"
+    },
+    {
+      "compositionality_score": 2,
+      "difficulty_estimate": "dry_run",
+      "evaluator_rubric": "default-100",
+      "expected_shortcut_eligibility": true,
+      "expected_skills": [
+        "testing"
+      ],
+      "expected_tmcp_route": [
+        "@task:implementation",
+        "@module:test_gate"
+      ],
+      "hidden_acceptance_criteria": [
+        "hidden dry-run command exits 0"
+      ],
+      "hidden_test_commands": [
+        "python3 -c 'print(\"hidden dry run\")'"
+      ],
+      "known_risks": [
+        "dry-run task is not publishable evidence"
+      ],
+      "maximum_cost_budget_usd": null,
+      "maximum_execution_time_seconds": 60,
+      "maximum_token_budget": 10000,
+      "natural_language_request": "Dry-run held-out task for benchmark harness calibration.",
+      "network_access": "disabled",
+      "prohibited_shortcuts": [
+        "bballedu-dry-heldout"
+      ],
+      "project_id": "Bballedu",
+      "public_acceptance_criteria": [
+        "public dry-run command exits 0"
+      ],
+      "real_work_reason": "Validates held-out benchmark artifact flow without leaking implementation answers.",
+      "required_test_commands": [
+        "python3 -c 'print(\"public dry run\")'"
+      ],
+      "split": "held_out",
+      "starting_commit": "53dffcc2f0fbcae307b12fbec4b7d8758379e0a3",
+      "task_class": "repeated_task_family",
+      "task_family_id": "bballedu-deterministic-loop",
+      "task_id": "bballedu-dry-heldout"
+    },
+    {
+      "compositionality_score": 2,
+      "difficulty_estimate": "dry_run",
+      "evaluator_rubric": "default-100",
+      "expected_shortcut_eligibility": true,
+      "expected_skills": [
+        "testing"
+      ],
+      "expected_tmcp_route": [
+        "@task:implementation",
+        "@module:test_gate"
+      ],
+      "hidden_acceptance_criteria": [
+        "hidden dry-run command exits 0"
+      ],
+      "hidden_test_commands": [
+        "python3 -c 'print(\"hidden dry run\")'"
+      ],
+      "known_risks": [
+        "dry-run task is not publishable evidence"
+      ],
+      "maximum_cost_budget_usd": null,
+      "maximum_execution_time_seconds": 60,
+      "maximum_token_budget": 10000,
+      "natural_language_request": "Dry-run development task for benchmark harness calibration.",
+      "network_access": "disabled",
+      "prohibited_shortcuts": [],
+      "project_id": "Terrace",
+      "public_acceptance_criteria": [
+        "public dry-run command exits 0"
+      ],
+      "real_work_reason": "Validates the benchmark execution and artifact contract before real tasks.",
+      "required_test_commands": [
+        "python3 -c 'print(\"public dry run\")'"
+      ],
+      "split": "development",
+      "starting_commit": "7d08386c07c50d1412551b33df2974ecc6ae4847",
+      "task_class": "repeated_task_family",
+      "task_family_id": "terrace-deterministic-loop",
+      "task_id": "terrace-dry-dev"
+    },
+    {
+      "compositionality_score": 2,
+      "difficulty_estimate": "dry_run",
+      "evaluator_rubric": "default-100",
+      "expected_shortcut_eligibility": true,
+      "expected_skills": [
+        "testing"
+      ],
+      "expected_tmcp_route": [
+        "@task:implementation",
+        "@module:test_gate"
+      ],
+      "hidden_acceptance_criteria": [
+        "hidden dry-run command exits 0"
+      ],
+      "hidden_test_commands": [
+        "python3 -c 'print(\"hidden dry run\")'"
+      ],
+      "known_risks": [
+        "dry-run task is not publishable evidence"
+      ],
+      "maximum_cost_budget_usd": null,
+      "maximum_execution_time_seconds": 60,
+      "maximum_token_budget": 10000,
+      "natural_language_request": "Dry-run held-out task for benchmark harness calibration.",
+      "network_access": "disabled",
+      "prohibited_shortcuts": [
+        "terrace-dry-heldout"
+      ],
+      "project_id": "Terrace",
+      "public_acceptance_criteria": [
+        "public dry-run command exits 0"
+      ],
+      "real_work_reason": "Validates held-out benchmark artifact flow without leaking implementation answers.",
+      "required_test_commands": [
+        "python3 -c 'print(\"public dry run\")'"
+      ],
+      "split": "held_out",
+      "starting_commit": "7d08386c07c50d1412551b33df2974ecc6ae4847",
+      "task_class": "repeated_task_family",
+      "task_family_id": "terrace-deterministic-loop",
+      "task_id": "terrace-dry-heldout"
+    }
+  ]
+}

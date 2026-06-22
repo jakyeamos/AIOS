@@ -1,0 +1,17 @@
+{
+  "agent_completed_at": "2026-06-21T19:00:35.114282+00:00",
+  "environment_ready_at": "2026-06-21T19:00:35.016211+00:00",
+  "evaluation_completed_at": "2026-06-21T19:00:35.114283+00:00",
+  "first_edit_at": "",
+  "first_relevant_action_at": "2026-06-21T19:00:35.016606+00:00",
+  "first_successful_test_at": "2026-06-21T19:00:35.069467+00:00",
+  "first_test_at": "2026-06-21T19:00:35.016807+00:00",
+  "hidden_tests_completed_at": "2026-06-21T19:00:35.114279+00:00",
+  "public_tests_completed_at": "2026-06-21T19:00:35.070017+00:00",
+  "route_selected_at": "2026-06-21T19:00:35.016247+00:00",
+  "routing_seconds": 4e-06,
+  "setup_seconds": 0.381968,
+  "started_at": "2026-06-21T19:00:34.634323+00:00",
+  "task_presented_at": "2026-06-21T19:00:35.016245+00:00",
+  "total_benchmark_seconds": 0.480007
+}

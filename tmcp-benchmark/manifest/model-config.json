@@ -1,0 +1,8 @@
+{
+  "model": "unset",
+  "model_version": "unset",
+  "network_access": "disabled",
+  "reasoning_level": "unset",
+  "schema": "tmcp-benchmark-model-config-v0.1",
+  "tool_permissions": "local"
+}

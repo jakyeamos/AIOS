@@ -1,0 +1,7 @@
+$ python3 -c 'print("public dry run")'
+
+STDOUT:
+public dry run
+
+
+STDERR:

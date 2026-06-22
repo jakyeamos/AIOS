@@ -1,0 +1,8 @@
+{
+  "created_at": "2026-06-18T04:10:01.623599+00:00",
+  "hardware": "arm64",
+  "platform": "macOS-26.3.1-arm64-arm-64bit-Mach-O",
+  "python_version": "3.14.3",
+  "schema": "tmcp-benchmark-environments-v0.1",
+  "unavailable_values_policy": "Use null, never fabricated zeros."
+}

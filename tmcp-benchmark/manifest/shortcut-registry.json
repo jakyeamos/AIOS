@@ -1,0 +1,19 @@
+{
+  "created_at": "2026-06-18T04:10:01.638745+00:00",
+  "leakage_rule": "Shortcuts must encode reusable routing knowledge, not target-task answers.",
+  "schema": "tmcp-benchmark-shortcut-registry-v0.1",
+  "shortcut_states": [
+    "NONE",
+    "CANDIDATE_AVAILABLE",
+    "VALIDATED_AVAILABLE",
+    "VALIDATED_SELECTED",
+    "VALIDATED_NOT_SELECTED",
+    "SHORTCUT_MISS",
+    "FALSE_SHORTCUT_HIT",
+    "STALE_SHORTCUT",
+    "SHORTCUT_REJECTED",
+    "SHORTCUT_FALLBACK",
+    "SHORTCUT_INVALIDATED"
+  ],
+  "shortcuts": []
+}

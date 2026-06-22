@@ -1,0 +1,58 @@
+{
+  "created_at": "2026-06-21T18:59:33.773801+00:00",
+  "schema": "tmcp-benchmark-task-families-v0.1",
+  "task_families": [
+    {
+      "description": "Dry-run family for validating benchmark artifact flow in Bballedu.",
+      "development_tasks": [
+        "bballedu-dry-dev"
+      ],
+      "expected_modules": [
+        "context_gathering",
+        "test_gate"
+      ],
+      "expected_quality_gates": [
+        "public_tests",
+        "hidden_tests"
+      ],
+      "held_out_tasks": [
+        "bballedu-dry-heldout"
+      ],
+      "known_invalidating_differences": [],
+      "shared_process_structure": [
+        "inspect",
+        "route",
+        "test"
+      ],
+      "shortcut_eligible": true,
+      "shortcut_transfer_scope": "same_repository",
+      "task_family_id": "bballedu-deterministic-loop"
+    },
+    {
+      "description": "Dry-run family for validating benchmark artifact flow in Terrace.",
+      "development_tasks": [
+        "terrace-dry-dev"
+      ],
+      "expected_modules": [
+        "context_gathering",
+        "test_gate"
+      ],
+      "expected_quality_gates": [
+        "public_tests",
+        "hidden_tests"
+      ],
+      "held_out_tasks": [
+        "terrace-dry-heldout"
+      ],
+      "known_invalidating_differences": [],
+      "shared_process_structure": [
+        "inspect",
+        "route",
+        "test"
+      ],
+      "shortcut_eligible": true,
+      "shortcut_transfer_scope": "same_repository",
+      "task_family_id": "terrace-deterministic-loop"
+    }
+  ]
+}

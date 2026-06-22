@@ -1,0 +1,15 @@
+{
+  "condition_actual": "flat_skills",
+  "expected_modules": [
+    "@task:implementation",
+    "@module:test_gate"
+  ],
+  "route_precision": 0.0,
+  "route_recall": 0.0,
+  "run_id": "dryrun-cond-dcf39752daff",
+  "schema": "tmcp-benchmark-route-v0.1",
+  "selected_modules": [
+    "testing"
+  ],
+  "shortcut_state": "NONE"
+}

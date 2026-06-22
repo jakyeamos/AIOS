@@ -1,0 +1,12 @@
+{
+  "hidden_tests_passed": 1,
+  "hidden_tests_total": 1,
+  "public_tests_passed": 1,
+  "public_tests_total": 1,
+  "quality_score_adjusted": 100,
+  "quality_score_raw": 100,
+  "run_id": "dryrun-cond-a0eaf13e81dc",
+  "schema": "tmcp-benchmark-automated-evaluation-v0.1",
+  "speed_token_claim_allowed": true,
+  "task_completed": true
+}

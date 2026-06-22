@@ -1,0 +1,465 @@
+{
+  "created_at": "2026-06-21T18:58:17.950068+00:00",
+  "results": [
+    {
+      "checks": {
+        "clean_worktree": false,
+        "has_lockfile": true,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "AIOS",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/AIOS"
+    },
+    {
+      "checks": {
+        "clean_worktree": false,
+        "has_lockfile": false,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "BBDSE",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/BBDSE"
+    },
+    {
+      "checks": {
+        "clean_worktree": false,
+        "has_lockfile": true,
+        "has_start_commit": true,
+        "has_test_command": true,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "BIP-Console",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/BIP-Console"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": true,
+        "has_start_commit": true,
+        "has_test_command": true,
+        "repo_exists": true
+      },
+      "eligible": true,
+      "project_id": "Bballedu",
+      "reason": "eligible",
+      "repo_path": "/Users/jakyeamos/projects/Bballedu"
+    },
+    {
+      "checks": {
+        "clean_worktree": false,
+        "has_lockfile": true,
+        "has_start_commit": true,
+        "has_test_command": true,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "Book",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/Book"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": false,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "Book",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/Documents/GitHub/Book"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": false,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "Dsci-proj",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/Dsci-proj"
+    },
+    {
+      "checks": {
+        "clean_worktree": false,
+        "has_lockfile": false,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "Fantasy",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/Fantasy"
+    },
+    {
+      "checks": {
+        "clean_worktree": false,
+        "has_lockfile": true,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "GitNexus",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/Not-mine/GitNexus"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": true,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "Hoopscout",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/Hoopscout"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": true,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "LaxDS",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/LaxDS"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": false,
+        "has_start_commit": false,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "New project",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/Documents/New project"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": false,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "R-Project",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/R-Project"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": true,
+        "has_start_commit": true,
+        "has_test_command": true,
+        "repo_exists": true
+      },
+      "eligible": true,
+      "project_id": "Terrace",
+      "reason": "eligible",
+      "repo_path": "/Users/jakyeamos/projects/Terrace"
+    },
+    {
+      "checks": {
+        "clean_worktree": false,
+        "has_lockfile": false,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "Vaults",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/Vaults"
+    },
+    {
+      "checks": {
+        "clean_worktree": false,
+        "has_lockfile": false,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "agent-router",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/agent-router"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": true,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "amos-saas",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/amos-saas"
+    },
+    {
+      "checks": {
+        "clean_worktree": false,
+        "has_lockfile": true,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "career-ops",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/career-ops"
+    },
+    {
+      "checks": {
+        "clean_worktree": false,
+        "has_lockfile": false,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "claude-config",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/Desktop/claude-config"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": true,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "claude-improvement-lab",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/claude-improvement-lab"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": true,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "code-review-graph",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/Knowledge-Graph/code-review-graph"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": false,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "csds391-s26-6",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/csds391-s26-6"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": true,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "dispatches-from-cyberspace",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/dispatches-from-cyberspace"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": false,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "dotfiles",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/dotfiles"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": false,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "eslint-plugin-anti-slop",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/eslint-plugin-anti-slop"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": true,
+        "has_start_commit": true,
+        "has_test_command": true,
+        "repo_exists": true
+      },
+      "eligible": true,
+      "project_id": "frmwrklabs",
+      "reason": "eligible",
+      "repo_path": "/Users/jakyeamos/projects/frmwrklabs"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": false,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "manga-sync",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/manga-sync"
+    },
+    {
+      "checks": {
+        "clean_worktree": false,
+        "has_lockfile": true,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "portfolio",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/portfolio"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": true,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "praxis",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/Not-mine/praxis"
+    },
+    {
+      "checks": {
+        "clean_worktree": false,
+        "has_lockfile": true,
+        "has_start_commit": true,
+        "has_test_command": true,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "pre-cr-suite-lsp",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/pre-cr-suite-lsp"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": true,
+        "has_start_commit": true,
+        "has_test_command": true,
+        "repo_exists": true
+      },
+      "eligible": true,
+      "project_id": "remodelvision",
+      "reason": "eligible",
+      "repo_path": "/Users/jakyeamos/projects/remodelvision"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": true,
+        "has_start_commit": true,
+        "has_test_command": true,
+        "repo_exists": true
+      },
+      "eligible": true,
+      "project_id": "soundscape-app",
+      "reason": "eligible",
+      "repo_path": "/Users/jakyeamos/projects/soundscape-app"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": true,
+        "has_start_commit": true,
+        "has_test_command": true,
+        "repo_exists": true
+      },
+      "eligible": true,
+      "project_id": "tm",
+      "reason": "eligible",
+      "repo_path": "/Users/jakyeamos/projects/tm"
+    },
+    {
+      "checks": {
+        "clean_worktree": false,
+        "has_lockfile": false,
+        "has_start_commit": false,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "untitled1",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/IdeaProjects/untitled1"
+    },
+    {
+      "checks": {
+        "clean_worktree": true,
+        "has_lockfile": true,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "video-pipeline",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/video-pipeline"
+    }
+  ],
+  "schema": "tmcp-benchmark-preflight-v0.1",
+  "selected_projects": [
+    "Bballedu",
+    "Terrace"
+  ]
+}

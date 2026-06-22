@@ -1,0 +1,16 @@
+{
+  "condition_actual": "tmcp_validated_shortcut",
+  "expected_modules": [
+    "@task:implementation",
+    "@module:test_gate"
+  ],
+  "route_precision": 1.0,
+  "route_recall": 1.0,
+  "run_id": "dryrun-cond-bccf610f1c01",
+  "schema": "tmcp-benchmark-route-v0.1",
+  "selected_modules": [
+    "@task:implementation",
+    "@module:test_gate"
+  ],
+  "shortcut_state": "VALIDATED_SELECTED"
+}

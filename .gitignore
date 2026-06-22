@@ -12,6 +12,7 @@ logs/closed/
 staging/
 skills-library/
 .worktrees/
+tmcp-benchmark/runs/worktrees/
 .pytest_cache/
 .superpowers/
 config/cli-keys.env

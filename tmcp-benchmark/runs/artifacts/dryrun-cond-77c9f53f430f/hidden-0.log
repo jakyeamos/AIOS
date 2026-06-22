@@ -1,0 +1,7 @@
+$ python3 -c 'print("hidden dry run")'
+
+STDOUT:
+hidden dry run
+
+
+STDERR:
