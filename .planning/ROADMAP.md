@@ -567,6 +567,15 @@ This milestone makes AIOS's effectiveness measurable and falsifiable. It convert
 - External benchmark adapters
 - Eval UI panels on existing operator surfaces
 
+**Progress:**
+- Plan 11-01 complete: durable eval task/run/score/failure/gold-set tables, `services.eval_run_service`, `aios eval` record/list/summary commands, and focused service/CLI contract tests are in place.
+- Plan 11-02 complete: second-brain retrieval logging, retrieval metrics, deterministic gold-set context evaluation, Second Brain Lift computation, four second-brain ablation policies, and focused service/CLI tests are in place.
+- Plan 11-03 complete: isolated shadow branch worktrees, contamination checks, diff/test deltas, Shadow Branch Delta scoring, and shadow CLI commands are in place.
+- Plan 11-04 complete: feature ablation policies, ablation run execution, score comparison, and ablation CLI commands are in place.
+- Plan 11-05 complete: observation-only peer trace capture, redacted trace metadata, shadow candidate scoring, and peer/shadow queue CLI surfaces are in place.
+- Plan 11-06 complete: approval-gated automated shadow benchmark state transitions, contamination blocking, report creation, backlog follow-up creation, and shadow automation CLI commands are in place.
+- Plan 11-07 complete: portable context packet generation, external benchmark adapters, external clean-room normalization, eval UI panels, and packet/benchmark CLI commands are in place.
+
 **Dependencies:**
 - Phase 10 (Plans 07–08): Agent eval foundation docs, templates, schemas, AGENTS.md rules
 
@@ -806,6 +815,391 @@ This milestone audits the local Claude Code skill portfolio against seven target
 - No existing skill is deleted; merged skills retain a superseded-by header.
 - The canonical `write-a-skill` skill is itself a good example of the principles it teaches.
 
+### Milestone 11: Harness Determinism, Evidence, And Independent Verification
+
+This milestone performs a cross-cutting integrity pass over the AIOS execution and evaluation harness. It borrows the strongest ideas from Case without creating a second harness: task state should be durable, phase transitions should be deterministic, evidence should be hard to fake, verification should be independent, context should be routed rather than dumped, retrospectives should become reviewable harness improvements, and model/agent selection should be inspectable.
+
+#### Phase 16: Harness Determinism, Evidence, And Independent Verification
+
+**Goal:** Audit the existing AIOS harness end to end, then implement targeted deltas that harden evidence, verifier gates, context routing, deterministic phase control, retrospective artifacts, model-selection instrumentation, and shadow-branch parity metadata.
+
+**Requirements:** HARN-01, HARN-02, HARN-03, HARN-04, HARN-05, HARN-06, HARN-07, HARN-08
+
+**Detailed Scope:**
+- Produce an existing-harness audit mapping entrypoints, orchestration, lifecycle state, prompts/templates, model routing, context, second-brain usage, evaluation, evidence, recovery, shadow branches, retrospectives, docs, scripts, CI, and WIP areas
+- Map current sources of truth for task objective, phase, owner/agent, context received, commands run, evidence produced, verification result, changed state, and future learning
+- Compare AIOS lifecycle behavior against intake, context routing, planning, implementation, verification, review, closeout, and retrospective phases, then identify minimal deterministic patches
+- Bind completion markers to durable evidence artifacts with command provenance, output paths/hashes, exit codes, parsed summaries, diff/commit hashes, status, and caveats
+- Add independent verifier artifacts for implementation-bearing governed workflows, reviewing task spec, diff or changed files, and evidence before closeout
+- Add context routing manifests that record loaded/skipped sources, reasons, second-brain availability, fallback behavior, context budget, and retrieval reasons
+- Audit prompts/templates for duplicated instructions, stale rules, unclear boundaries, missing output schemas, and prompt-only state-machine responsibilities; move obvious gates into code/config where feasible
+- Add structured retrospective artifacts, model-selection logs, and shadow parity metadata without silently mutating harness policy
+
+**Current Surfaces To Evolve:**
+- `bin/aios.py`
+- `bin/aios-managed-run.py`
+- `bin/aios_orchestration_runtime.py`
+- `bin/hook-session-start.py`
+- `bin/hook-prompt-submit.py`
+- `bin/hook-post-tool-use.py`
+- `bin/hook-stop.py`
+- `services/workflow_orchestration.py`
+- `services/task_routing.py`
+- `services/invocation_backends.py`
+- `services/success_criteria.py`
+- `services/harness_eval.py`
+- `services/standards_health.py`
+- `services/workflow_learning.py`
+- `services/execution_strategy.py`
+- `services/shadow_branch_runner.py`
+- `tools/context-compile.mjs`
+- `config/workflows/registry.json`
+- `prompts/registry.json`
+- `schema.sql`
+- `services/aios_cli.py`
+
+**Expected Outputs:**
+- Harness determinism audit report
+- Evidence artifact persistence and closeout freshness validation
+- Independent verifier artifact persistence and closeout gate
+- Context routing manifest with second-brain fallback coverage
+- Prompt/template boundary audit and targeted deterministic gate metadata
+- Retrospective artifact schema and model-selection logging
+- Shadow branch parity metadata and replay guidance
+
+**Dependencies:**
+- Phase 3 (run lifecycle and closeout semantics)
+- Phase 6 (standards and evidence-backed evaluation)
+- Phase 8 (workflow/prompt/skill contracts)
+- Phase 9 (learning loop and governed proposals)
+- Phase 11 (eval, ablation, and shadow-branch infrastructure)
+- Phase 12 (context/memory routing and packet contract)
+
+**Observable Success Criteria:**
+- The audit identifies concrete AIOS components and files for every major harness concern before any implementation patch lands.
+- Completion gates reject empty markers, stale evidence, and implementer-only "tests passed" claims for implementation-bearing governed workflows.
+- Verifier artifacts are required or explicitly exempted before closeout, and verifier failures deterministically route to retry or human review.
+- Context manifests can show with-second-brain and no-second-brain behavior without requiring peers to have the user's second brain.
+- At least one prompt-only phase gate is moved into deterministic config/code, or the audit records why no safe minimal target exists.
+- Retrospectives and model-selection records are queryable and reviewable; no major harness policy changes auto-apply.
+- Shadow branch metadata can explain start SHA, condition, branch/worktree, comparison refs, parity checklist status, failure classification, and replay path.
+
+### Milestone 12: Developer Experience Capability Pack
+
+This milestone adds a measurable Developer Experience capability pack to AIOS. It adapts the strongest ideas from the `developer-experience` plugin without copying static agents or hardcoded model choices. The pack audits developer friction, improves onboarding and docs, reviews API/SDK/CLI ergonomics, performs contextual security review, invokes TypeScript expertise only when useful, routes spec-to-code work through a fidelity-preserving implementation mode, and records metrics and findings for future agents.
+
+#### Phase 17: Developer Experience Capability Pack
+
+**Goal:** Add a routed, measurable, context-aware Developer Experience capability pack with six capabilities, dynamic mode/model selection, second-brain parity, eval fixtures, and developer-first documentation.
+
+**Requirements:** DXPK-01, DXPK-02, DXPK-03, DXPK-04, DXPK-05, DXPK-06, DXPK-07, DXPK-08
+
+**Detailed Scope:**
+- Audit current AIOS skills, agents, commands, routing rules, telemetry, eval specs, shadow-branch testing, second-brain integration, docs, generated concepts, quality gates, equivalents, duplication risks, conventions, and implementation seams
+- Define DX optimizer, interface DX reviewer, documentation writer, security reviewer, TypeScript specialist, and spec-fidelity coder capabilities with purpose, responsibilities, triggers, modes, output schemas, assumptions policy, and evidence expectations
+- Define measurable DX metrics for setup, clone-to-run, dev loop, validation commands, README quickstart, setup validation, ambiguous instructions, and agent/token cost where telemetry supports it
+- Add capability routing metadata with compact audit, full audit, implementation, and review-only modes, plus dynamic reasoning/model metadata instead of fixed model-per-agent choices
+- Support second-brain available and unavailable modes without making peer-run workflows depend on personal knowledge stores
+- Integrate contextual security review, targeted TypeScript specialist routing, documentation style rules, and spec-fidelity implementation behavior without checklist bloat
+- Add DX eval hooks and fixtures for poor onboarding repo, public CLI change, and TypeScript package boundary change
+- Document pack usage, shadow-branch support, second-brain parity, metrics, routing, overrides, validation, and final implementation report format
+
+**Current Surfaces To Evolve:**
+- `config/workflows/registry.json`
+- `config/workflows/skills.json`
+- `prompts/registry.json`
+- `config/execution-strategies/model-routing-policy.json`
+- `services/workflow_orchestration.py`
+- `services/execution_strategy.py`
+- `services/harness_eval.py`
+- `services/aios_cli.py`
+- `config/agent-eval/**`
+- `docs/audits/**`
+- `docs/specs/**`
+- `docs/evals/**`
+- `docs/aios/**`
+
+**Expected Outputs:**
+- DX pack audit report
+- Developer Experience pack contract
+- Machine-readable capability metadata
+- DX routing and mode-selection policy
+- Dynamic model/reasoning metadata for DX task classes
+- DX eval spec and three fixture scenarios
+- Developer Experience pack documentation
+- Validation and final report workflow
+
+**Dependencies:**
+- Phase 8 (asset/workflow lifecycle and registry conventions)
+- Phase 14 (quality gate and simplification standards)
+- Phase 15 (agent-facing skill portfolio integration patterns)
+- Phase 16 (evidence, verifier, context manifest, and model-selection instrumentation)
+
+**Observable Success Criteria:**
+- The audit maps each desired DX capability to existing AIOS surfaces or a justified gap before implementation.
+- Capability metadata is machine-readable and does not encode fixed model choices.
+- DX metrics are measured when possible and honestly marked `not_measured` with measurement method when unavailable.
+- Routing invokes TypeScript and security specialists only when justified by task context.
+- Peer-run paths work without second-brain context.
+- Evals cover poor onboarding, CLI change, and TypeScript package boundary scenarios.
+- Documentation is concrete, developer-first, and avoids marketing language.
+
+### Milestone 13: Meta-Learning Proposal Layer
+
+This milestone adds a review-first meta-learning layer to AIOS. It adapts the strongest ideas from the `meta` plugin without copying the plugin shape: AIOS detects durable signals from user corrections, approvals, repeated commands, tool friction, context misses, model mismatch, and contradictions; scores and filters them; routes them to the right target layer; generates reversible proposals; separates auto-allow permission recommendations; and creates shadow-eval plans before durable promotion.
+
+#### Phase 18: Meta-Learning Proposal Layer
+
+**Goal:** Make AIOS self-improving but not self-mutating by adding session signal extraction, confidence scoring, quality filtering, target-layer routing, reviewable proposals, conflict resolution, auto-allow safety, shadow-eval plans, and a minimal meta CLI.
+
+**Requirements:** META-01, META-02, META-03, META-04, META-05, META-06, META-07, META-08
+
+**Detailed Scope:**
+- Audit current instruction, skill, agent, command, memory, shadow-branch, session transcript, eval, model-routing, sub-agent, and preference/correction capture surfaces
+- Extract normalized session signals from logs, transcript exports, or structured workflow traces
+- Detect explicit corrections, repeated corrections, approvals, repeated manual commands, failed tool loops, context misses, model mismatches, contradictions, scope restatements, second-brain misses, and irrelevant context
+- Score signals using weighted confidence, recency, explicit remember requests, multi-project evidence, project-specific scope, blast radius, security sensitivity, permission risk, and contradictions
+- Filter out generic best practices, obvious framework rules, one-off preferences, contradictory weak signals, unsafe permission changes, and vague preferences
+- Route accepted signals to global rules, project rules, skills, commands, agents, second-brain notes, eval/test cases, or observe-only with justification
+- Generate reviewable proposals with rollback instructions and manual approval requirements
+- Separate auto-allow permission recommendations from workflow-learning proposals with explicit risk scoring
+- Generate shadow-branch eval plans for medium/high-impact proposals
+- Expose minimal `aios meta` commands or equivalent script fallback
+- Document routing, scoring, proposal format, auto-allow safety, and limitations
+
+**Current Surfaces To Evolve:**
+- `services/workflow_learning.py`
+- `services/execution_strategy.py`
+- `services/aios_cli.py`
+- `services/harness_eval.py`
+- `services/shadow_branch_runner.py`
+- `schema.sql` only if the audit proves existing persistence is insufficient
+- `data/meta-learning/**`
+- `docs/audits/**`
+- `docs/meta-learning/**`
+- `tests/test_meta_learning_*.py`
+
+**Expected Outputs:**
+- Meta-learning audit report
+- Session signal extractor
+- Confidence scoring and quality filter
+- Target-layer router
+- Reviewable proposal generator
+- Conflict resolver
+- Auto-allow safety gate
+- Shadow eval plan generator
+- Minimal `aios meta` CLI
+- Meta-learning docs and tests
+
+**Dependencies:**
+- Phase 9 (learning signal taxonomy and conservative improvement proposals)
+- Phase 11 (shadow-branch eval and parity comparison)
+- Phase 13 (session ingestion and transcript surfaces)
+- Phase 16 (evidence, context manifests, verifier, model-selection instrumentation)
+- Phase 17 (capability-pack routing patterns)
+
+**Observable Success Criteria:**
+- AIOS can analyze at least one session transcript or mock transcript.
+- AIOS can detect explicit corrections and repeated patterns.
+- AIOS can score signals and route them to target layers.
+- AIOS can generate reviewable proposals and detect conflicts.
+- Auto-allow recommendations are separated from ordinary learnings and dangerous actions are never auto-allowed by default.
+- AIOS can produce a shadow-branch eval plan for meaningful proposals.
+- Tests cover scoring, routing, conflict, proposal formatting, auto-allow risk, and shadow eval behavior.
+- No core AIOS behavior is silently changed without a proposal.
+
+### Milestone 14: Native Workflow Command Pack
+
+This milestone adds AIOS-native workflow commands inspired by the essentials plugin without cloning it. The first command core is read-only: `zoom-out` for orientation, `handoff` for continuity, and `review squad` for multi-lane review. It then adds contextual `audit security`, guarded `cleanup de-slopify`, sandboxed `prototype`, lightweight command metadata logging, tests, and command documentation.
+
+#### Phase 19: Native Workflow Command Pack
+
+**Goal:** Implement a small, composable native command pack that improves context efficiency, continuity, review quality, security review, conservative cleanup, and sandboxed experimentation while preserving AIOS architecture and safety rules.
+
+**Requirements:** CMDP-01, CMDP-02, CMDP-03, CMDP-04, CMDP-05, CMDP-06, CMDP-07, CMDP-08
+
+**Detailed Scope:**
+- Audit current command, skill, prompt, agent, workflow, CLI, sub-agent, model-routing, second-brain, and eval harness architecture
+- Define command contracts, input/output schemas, safety classes, second-brain behavior, reviewer lane representation, validation gates, logging metadata, rollback expectations, and MVP order
+- Implement read-only `aios zoom-out` for file, directory, and module orientation
+- Implement `aios handoff` for compact continuation artifacts
+- Implement read-only `aios review squad` with security, correctness, testing, architecture, maintainability, and project-alignment lanes
+- Implement read-only `aios audit security` with strict and practical modes
+- Implement guarded `aios cleanup de-slopify` that preserves behavior and applies only low-risk cleanup
+- Implement sandboxed `aios prototype` for disposable experiments outside production code
+- Add lightweight command metadata logging for eval and shadow comparison
+- Add tests and docs for command registration, schemas, read-only guarantees, safety gates, and recommended workflows
+
+**Current Surfaces To Evolve:**
+- `services/aios_cli.py`
+- `services/native_commands.py`
+- `services/native_command_logging.py`
+- `config/commands/native-workflow-commands.json`
+- `docs/audits/aios-native-command-pack-audit.md`
+- `docs/specs/native-workflow-command-contracts.md`
+- `docs/aios/native-workflow-commands.md`
+- `tests/test_native_commands.py`
+- `tests/test_native_command_logging.py`
+- `tests/test_aios_cli.py`
+
+**Expected Outputs:**
+- Native command pack audit
+- Command contract and safety spec
+- Machine-readable command metadata
+- `aios zoom-out`
+- `aios handoff`
+- `aios review squad`
+- `aios audit security`
+- `aios cleanup de-slopify`
+- `aios prototype`
+- Local command metadata logging
+- Tests and docs
+
+**Dependencies:**
+- Phase 15 (handoff skill and agent-facing command concepts)
+- Phase 16 (evidence, verifier, context manifest, and command metadata patterns)
+- Phase 17 (DX/security/docs capability semantics)
+- Phase 18 (review-first proposal and safety patterns)
+
+**Observable Success Criteria:**
+- `zoom-out`, `handoff`, and `review squad` are read-only except for handoff writing to an established artifact location if configured.
+- `squad-review` includes all six reviewer lanes and produces actionable severity-grouped findings.
+- `audit security` supports strict and practical modes without generic checklist-only output.
+- `de-slopify` refuses or flags risky structural changes and preserves public APIs unless explicitly approved.
+- `prototype` writes only to allowed prototype locations and includes cleanup/promotion guidance.
+- Command metadata is logged locally and is usable for future eval/shadow comparison.
+- Tests cover registration, schemas, read-only behavior, required sections, reviewer lanes, safety refusals, prototype location restrictions, and security modes.
+
+### Milestone 15: Execution-Symmetric Planning
+
+This milestone makes AIOS and GSD planning execution-grade by construction. Plans are not lightweight prose; plans that guide execution are execution artifacts. They should inherit the relevant standards, risks, validation strategy, rollback concerns, delegation strategy, handoff requirements, and definition of done that execution will later require, while avoiding over-planning trivial work.
+
+#### Phase 20: Execution-Symmetric Planning
+
+**Goal:** Ensure AIOS-generated plans, GSD phase plans, slash-command-triggered plans, natural-language plans, generated implementation prompts, and audit-to-implementation prompts are directly usable by executors and shaped by relevant execution standards.
+
+**Requirements:** ESPL-01, ESPL-02, ESPL-03, ESPL-04, ESPL-05, ESPL-06, ESPL-07, ESPL-08
+
+**Detailed Scope:**
+- Audit existing plan generation, GSD planning workflows, slash command handling, workflow routing, skill invocation, plan artifacts, validation strategy generation, and handoff formats
+- Add Execution-Symmetric Planning as a core AIOS principle
+- Define complexity-sensitive planning behavior for trivial, simple, moderate, complex, and high-risk tasks
+- Recognize GSD workflow phases through a configurable phase registry
+- Ensure `/gsdplanphase` and equivalents generate GSD-ready executor plans
+- Add a planning lens registry mapping task types and workflow phases to execution standards
+- Support review, validation, audit, and execution skills as planning lenses
+- Update plan generation so non-trivial plans include mission, scope, constraints, assumptions, lenses, affected areas, ordered steps, validation, failure modes, rollback/recovery, delegation, escalation, and definition of done
+- Add structured planning context and plan logs for evaluation
+- Add tests/evals for natural-language planning, `/gsdplanphase`, explicit planning-lens requests, audit-to-implementation prompts, GSD handoff generation, simple task non-overplanning, and complex task planning
+
+**Current Surfaces To Evolve:**
+- `config/agent-rules.md`
+- `config/planning/execution-symmetric-planning.json`
+- `config/planning/gsd-workflow-phases.json`
+- `config/planning/planning-lenses.json`
+- `config/planning/skill-planning-lenses.json`
+- `services/planning_workflow_detection.py`
+- `services/planning_lenses.py`
+- `services/planning_skill_lenses.py`
+- `services/execution_symmetric_planner.py`
+- `services/planning_context.py`
+- `services/planning_log.py`
+- `services/aios_cli.py`
+- `docs/audits/aios-execution-symmetric-planning-audit.md`
+- `docs/specs/execution-symmetric-planning.md`
+- `docs/aios/execution-symmetric-planning.md`
+- `docs/evals/execution-symmetric-planning-eval.md`
+- `tests/test_planning_*.py`
+- `tests/test_execution_symmetric_planner.py`
+
+**Expected Outputs:**
+- Planning-system audit
+- Core planning principle and complexity contract
+- GSD workflow phase registry
+- Planning lens registry
+- Skill-as-planning-lens registry
+- Executor-ready plan generator
+- Structured planning context and logs
+- Documentation and evaluation coverage
+
+**Dependencies:**
+- Phase 1 (routing and workflow selection)
+- Phase 2 (context/briefing compilation)
+- Phase 8 (workflow contracts and stage metadata)
+- Phase 16 (evidence, verifier, model-selection instrumentation)
+- Phase 19 (native workflow command surfaces)
+
+**Observable Success Criteria:**
+- AIOS-generated plans reflect relevant execution standards.
+- GSD planning phases produce executor-ready plans usable by implementation agents without major rewriting.
+- Natural-language planning requests also benefit from automatic planning lenses.
+- Slash commands remain supported as workflow hints and overrides.
+- CLI-shaped internal routing is used only as structure, not as a replacement for GSD.
+- Trivial/simple tasks are not over-planned.
+- Plans include validation, risks, rollback, and definition of done when complexity warrants them.
+- Plan logs can evaluate whether execution-symmetric planning reduces rework and clarification burden.
+
+### Milestone 16: macOS Native App Skill Pack
+
+This milestone adds a native macOS app development skill pack to AIOS by transforming the strongest production patterns from `fayazara/macos-app-skills` into AIOS/TMCP-compliant task skills. It preserves concrete command patterns and macOS domain knowledge while adding task-first routing, environment detection, permission gates, provenance, behavioral tests, validation, conflict detection, repair recommendations, and minimal context loading.
+
+#### Phase 21: macOS Native App Skill Pack
+
+**Goal:** Add an AIOS-native macOS platform skill pack covering project detection, build verification, native pattern modules, settings windows, Sparkle auto-updates, notch overlays, and dry-run-first release pipelines with TMCP routing, provenance, tests, and validation.
+
+**Requirements:** MACS-01, MACS-02, MACS-03, MACS-04, MACS-05, MACS-06, MACS-07, MACS-08, MACS-09
+
+**Detailed Scope:**
+- Audit current AIOS skill, instruction, router, TMCP, manifest, validation, provenance, dependency-map, permission-gate, and behavioral-test conventions
+- Audit `fayazara/macos-app-skills` and transform donor patterns into AIOS/TMCP task skills rather than copying donor files directly
+- Add macOS project detection for native apps, Swift Packages, Xcode projects, Xcode workspaces, mixed apps, and not-applicable projects
+- Add macOS build verification using workspace-first xcodebuild logic, scheme discovery, macOS destinations, signing-disabled local fallback, repair guidance, and post-fix rebuild
+- Add a native macOS patterns router with small semantic modules for menu bar, windows/panels, screen geometry, keyboard shortcuts, file picker, pasteboard, drag/drop, navigation/inspector, launch/login, Quick Look/workspace, ScreenCaptureKit, and UserDefaults/AppStorage
+- Add guarded settings window, Sparkle auto-update, and notch overlay skills with environment detection, permission gates, fallback behavior, and validation
+- Add dry-run-first macOS release pipeline skill with hard approval gates for git, GitHub release, appcast, signing, notarization, publishing, and version/build changes
+- Add TMCP routes, strict node IDs, manifests, provenance, dependency maps, related modules, behavioral tests, and validation command
+- Add docs and final report workflow covering adopted, changed, rejected, and risky donor patterns
+
+**Current Surfaces To Evolve:**
+- `skills/macos/**`
+- `config/tmcp/macos-skills-router.json`
+- `config/skills/macos-manifest.json`
+- `docs/audits/aios-skill-system-macos-pack-audit.md`
+- `docs/audits/macos-app-skills-audit.md`
+- `docs/skills/macos-dependency-map.md`
+- `docs/skills/macos-native-app-skill-pack.md`
+- `docs/skills/platform-skill-pack-pattern.md`
+- `tests/skills/macos/**`
+- `scripts/validate-skills.sh`
+
+**Expected Outputs:**
+- AIOS skill-system audit for macOS pack conventions
+- Donor repository audit
+- macOS project detection skill
+- macOS build verification skill
+- Native macOS pattern router and semantic modules
+- Settings window skill
+- Sparkle auto-update skill
+- Notch overlay skill
+- macOS release pipeline skill
+- TMCP routing and manifest/provenance files
+- Behavioral tests and validation command
+- Documentation and final report workflow
+
+**Dependencies:**
+- Phase 15 (general skill portfolio and external skill integration patterns)
+- Phase 17 (capability-pack routing patterns)
+- Phase 19 (native command safety/logging patterns)
+- Phase 20 (skill-as-planning-lens and execution-symmetric planning)
+
+**Observable Success Criteria:**
+- Donor repo audit records what was adopted, changed, rejected, and why.
+- macOS skills use task-first triggers, anti-triggers, permission gates, provenance, and validation commands.
+- Broad macOS knowledge is split into semantic modules and not loaded by default.
+- Release, Sparkle, signing, notarization, appcast, dependency, and Info.plist mutations require explicit approval where specified.
+- Behavioral tests cover routing, permission gates, validation steps, and repair recommendations.
+- Validation checks unique IDs, TMCP pointer resolution, provenance, permission gates, private-key patterns, broad triggers, and release publish gates.
+
 ## Phase Dependency Chain
 
 | Phase | Depends On | Unlocks |
@@ -825,6 +1219,12 @@ This milestone audits the local Claude Code skill portfolio against seven target
 | Phase 13 | Phases 4, 5, 12 | normalized session data from all four providers feeding Layer A raw sources |
 | Phase 14 | Plan 10-08 (quality-eval.sh) | mandatory complexity+simplification gate in all agent workflows; cross-project backfill inventories; hotspot findings feeding Phase 6/7 delta scoring |
 | Phase 15 | Phases 8, 13 | upgraded agent skill portfolio; AIOS-backed issue decomposition and session handoff persistence |
+| Phase 16 | Phases 3, 6, 8, 9, 11, 12 | integrated harness determinism, hard evidence gates, independent verification, context manifests, retrospectives, model-selection logs, and shadow parity metadata |
+| Phase 17 | Phases 8, 14, 15, 16 | measurable Developer Experience capability pack with routed DX, interface, docs, security, TypeScript, and spec-fidelity modes |
+| Phase 18 | Phases 9, 11, 13, 16, 17 | review-first meta-learning proposals, session signal extraction, confidence scoring, target-layer routing, auto-allow safety, and shadow-eval plans |
+| Phase 19 | Phases 15, 16, 17, 18 | native AIOS workflow commands for orientation, handoff, squad review, security audit, guarded cleanup, prototype, and command eval logging |
+| Phase 20 | Phases 1, 2, 8, 16, 19 | execution-symmetric plan generation, GSD-ready planning, planning lenses, skill-as-planning-lens behavior, and plan-quality evals |
+| Phase 21 | Phases 15, 17, 19, 20 | AIOS/TMCP-native macOS app skill pack with task routing, provenance, behavioral tests, validation, and guarded release workflows |
 
 ## Requirement Coverage
 
@@ -845,12 +1245,18 @@ This milestone audits the local Claude Code skill portfolio against seven target
 | Phase 13 | SESS-01, SESS-02, SESS-03, SESS-04, SESS-05, SESS-06, SESS-07, SESS-08 | 8 |
 | Phase 14 | QUAL-01, QUAL-02, QUAL-03, QUAL-04, QUAL-05, QUAL-06, QUAL-07, QUAL-08 | 8 |
 | Phase 15 | SKIL-01, SKIL-02, SKIL-03, SKIL-04, SKIL-05, SKIL-06, SKIL-07, SKIL-08 | 8 |
+| Phase 16 | HARN-01, HARN-02, HARN-03, HARN-04, HARN-05, HARN-06, HARN-07, HARN-08 | 8 |
+| Phase 17 | DXPK-01, DXPK-02, DXPK-03, DXPK-04, DXPK-05, DXPK-06, DXPK-07, DXPK-08 | 8 |
+| Phase 18 | META-01, META-02, META-03, META-04, META-05, META-06, META-07, META-08 | 8 |
+| Phase 19 | CMDP-01, CMDP-02, CMDP-03, CMDP-04, CMDP-05, CMDP-06, CMDP-07, CMDP-08 | 8 |
+| Phase 20 | ESPL-01, ESPL-02, ESPL-03, ESPL-04, ESPL-05, ESPL-06, ESPL-07, ESPL-08 | 8 |
+| Phase 21 | MACS-01, MACS-02, MACS-03, MACS-04, MACS-05, MACS-06, MACS-07, MACS-08, MACS-09 | 9 |
 
 **Coverage Validation:**
-- v1 requirements: 84 (76 prior + 8 SKIL)
-- Mapped to phases: 84
+- v1 requirements: 133 (124 prior + 9 MACS)
+- Mapped to phases: 133
 - Unmapped: 0
 - Multi-mapped: 0
 
 ---
-*Last updated: 2026-05-23 after adding Phase 15 Agent Skill Portfolio Audit And External Library Integration*
+*Last updated: 2026-06-04 after adding Phase 21 macOS Native App Skill Pack*

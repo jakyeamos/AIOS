@@ -60,6 +60,14 @@ When triggered:
 
 Do not rely solely on static reasoning in these cases.
 
+## Rule: Subsystem Extraction Governance
+
+AIOS is a monorepo incubator for local-first agent operating-system functionality. Do not split subsystems into packages or repos just because a feature area is large, and do not preserve overlapping subsystems just because they already exist. First prove whether the work should be consolidated, kept product-integrated, packaged, or repo-extracted based on stable contracts, clear data ownership, focused tests, independent reuse pressure, and coordination cost.
+
+Use `.planning/SUBSYSTEM_EXTRACTION_PLAN.md` as the living boundary, consolidation, and extraction roadmap. Update it whenever work changes subsystem maturity, public contracts, storage ownership, overlap/consolidation posture, extraction posture, dependency direction, or the decision to keep a subsystem inside AIOS. Record the date, evidence, changed subsystem, and next decision point.
+
+Every new roadmap phase must include a `Subsystem consolidation goal` entry and a `Subsystem extraction posture goal` entry. These entries must name the affected subsystem or state `none`, declare the target posture, identify any consolidation candidates, and explain what evidence would justify consolidating, keeping, packaging, or repo-extracting that subsystem after the phase.
+
 ## Agent Eval Workflow
 
 Run this eval workflow after large tasks: PRD implementation, major refactors, test-suite generation, architecture changes, cross-file feature work, quality audits, shadow-branch comparisons, and peer-run benchmark candidates. Apply proportionality: small edits, typo fixes, narrow doc updates, and isolated one-file changes do not require a full eval record unless they affect success criteria, governance, security, privacy, or project truth.

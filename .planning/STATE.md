@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-06-02T00:00:00.000Z"
+last_updated: "2026-06-22T00:00:00.000Z"
 progress:
-  total_phases: 19
-  completed_phases: 10
-  total_plans: 105
-  completed_plans: 37
-  percent: 35
+  total_phases: 21
+  completed_phases: 11
+  total_plans: 122
+  completed_plans: 47
+  percent: 39
 ---
 
 # AIOS Planning State
@@ -25,16 +25,16 @@ progress:
 - Canonical planning intent: make AIOS the default operating layer for serious project work by tightening routing, context, lifecycle, truth, governance, evaluation, learning, and operator visibility into one governed loop.
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
-- Latest completed phase: Phase 10, Operator Surfaces, Query, And Daily-Flow Visibility, shipped operator search, next-action fusion, daily-flow traces, rendered operator surfaces, Agent Eval Foundation docs, and the quality hotspot backfill baseline.
-- Latest completed plan: Phase 10 Plan 08 shipped `pnpm quality:eval`, the read-only quality hotspot script, and the first factual Agent Eval backfill inventory.
+- Latest completed phase: Phase 11, Testing, Benchmark Evaluation, And Shadow Workflows, shipped durable eval records, second-brain lift, shadow branches, ablations, peer trace/candidate scoring, automated shadow pipeline, portable packets, external adapters, and eval UI panels.
+- Latest completed plan: Phase 11 Plan 11-07 shipped privacy-filtered portable context packets, external benchmark adapters, external clean-room result normalization, eval UI panels, and packet/benchmark CLI commands.
 
 ## Current Roadmap Position
 
-- Active milestone: Milestone 6, Testing, Benchmark Evaluation, And Shadow Workflows
-- Active phase: Phase 11, Testing, Benchmark Evaluation, And Shadow Workflows
-- Active plan: Phase 11 Plan 11-01
-- Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10
-- Next dependency chain: Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19
+- Active milestone: Milestone 7, Graph-Native Memory Architecture
+- Active phase: Phase 12, Graph-Native Memory Architecture And Cache-Aware Context Compilation
+- Active plan: Phase 12 Plan 12-01
+- Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11
+- Next dependency chain: Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
 
 ## Known Constraints To Preserve
@@ -72,10 +72,21 @@ progress:
 | 2026-06-01 | Add Phase 17 Developer Experience Capability Pack | Phase 17 directory created with 17-RESEARCH.md and plans 17-01 through 17-06 (DX pack audit, capability contract and metrics, capability assets and routing metadata, dynamic mode/model routing, DX eval hooks and fixtures, documentation and validation report workflow). REQUIREMENTS.md extended with DXPK-01 through DXPK-08. ROADMAP.md extended with Milestone 12 and Phase 17 scope. Total phases: 17, total plans: 91. |
 | 2026-06-01 | Add Phase 18 Meta-Learning Proposal Layer | Phase 18 directory created with 18-RESEARCH.md and plans 18-01 through 18-07 (meta-learning audit, session signal extractor, confidence scoring and router, proposal generator, auto-allow safety, shadow eval plans and meta CLI, documentation and tests). REQUIREMENTS.md extended with META-01 through META-08. ROADMAP.md extended with Milestone 13 and Phase 18 scope. Total phases: 18, total plans: 98. |
 | 2026-06-01 | Add Phase 19 Native Workflow Command Pack | Phase 19 directory created with 19-RESEARCH.md and plans 19-01 through 19-07 (native command audit, command contracts and safety classes, read-only MVP commands, security audit, guarded cleanup and prototype, command metadata logging, tests and docs). REQUIREMENTS.md extended with CMDP-01 through CMDP-08. ROADMAP.md extended with Milestone 14 and Phase 19 scope. Total phases: 19, total plans: 105. |
+| 2026-06-01 | Add Phase 20 Execution-Symmetric Planning | Phase 20 directory created with 20-RESEARCH.md and plans 20-01 through 20-08 (planning audit, core principle and complexity contract, GSD workflow phase recognition, planning lens registry, skill-as-planning-lens behavior, executor-ready plan generation, internal planning schema/logs, eval coverage and docs). REQUIREMENTS.md extended with ESPL-01 through ESPL-08. ROADMAP.md extended with Milestone 15 and Phase 20 scope. Total phases: 20, total plans: 113. |
+| 2026-06-04 | Add Phase 21 macOS Native App Skill Pack | Phase 21 directory created with 21-RESEARCH.md and plans 21-01 through 21-09 (AIOS skill-system audit, donor repo audit, project/build skills, native pattern modules, settings/Sparkle/notch skills, release pipeline, TMCP routing and provenance, behavioral tests and validation, docs). REQUIREMENTS.md extended with MACS-01 through MACS-09. ROADMAP.md extended with Milestone 16 and Phase 21 scope. Total phases: 21, total plans: 122. |
 | 2026-05-24 | Add Refero Styles design-reference workflow guidance | Planned in `.planning/quick/260524-refero-styles-design-reference-workflow`; global design standards now allow Refero Styles as an optional cited design-reference source while preserving AIOS operational UI constraints. |
 | 2026-05-24 | Complete Phase 6 Standards Resolution And Evidence-Based Evaluation | Phase 6 shipped registry-backed standards resolution, briefing packet criteria/standards persistence, durable workflow-stage criteria findings, closeout stage evaluation aggregation, broader execution-first evidence ingestion, and CLI lifecycle controls for criteria findings plus standards preview. |
 | 2026-05-24 | Complete Phase 7 Delta Scoring And Health Backfill | Phase 7 shipped ten-domain standards health coverage, read-time delta explanations, provenance and contradiction classification, health-derived workflow recommendations, UI/CLI drill-down surfaces, governance-audit recommendations, and durable standards manual overrides. |
 | 2026-06-01 | Finish workflow promotion runtime evidence path | Planned in `.planning/quick/260601-workflow-promotion-runtime-evidence`; managed governed workflow runs now persist stage findings and workflow report evidence through the same runtime path consumed by `workflow-compare` and workflow promotion candidates. |
+| 2026-06-05 | Add subsystem consolidation and extraction governance plan | Planned in `.planning/quick/260605-aios-subsystem-extraction-governance`; `.planning/SUBSYSTEM_EXTRACTION_PLAN.md` now defines subsystem maturity states, consolidation posture states, extraction gates, candidate boundaries, consolidation candidates, maintenance rules, and the requirement that new roadmap phases declare subsystem consolidation and extraction posture goals, while `AGENTS.md` requires updates as subsystem contracts, overlap, consolidation posture, and extraction posture evolve. |
+| 2026-06-13 | Complete Phase 11 Plan 01 eval-run record infrastructure | `.planning/phases/11-testing-benchmark-evaluation-and-shadow-workflows/11-01-SUMMARY.md` records the new eval task/run/score/failure/gold-set tables, `services.eval_run_service`, `aios eval` record/list/summary CLI commands, and 11 focused passing service/CLI tests. |
+| 2026-06-13 | Add NotebookLM MCP bounded synthesis route | Planned in `.planning/quick/260612-wyv-audit-and-implement-notebooklm-mcp-optio`; AIOS now has an optional NotebookLM route classifier, source-bundle metadata builder, unavailable-by-default adapter, provenance/staging templates, policy docs, context packet, and 12 focused routing/source-bundle tests. |
+| 2026-06-13 | Add jacob-bd NotebookLM MCP backend contract | Planned in `.planning/quick/260613-c39-implement-jacob-bd-notebooklm-mcp-cli-ba`; AIOS now records the experimental `jacob_bd_notebooklm_mcp_cli` backend contract, maps synthesis modes to MCP tools, checks executable readiness, and validates the contract with 16 focused tests. |
+| 2026-06-13 | Enable guarded NotebookLM agent automation | Planned in `.planning/quick/260613-cdf-enable-automated-agent-use-of-notebooklm`; AIOS now has a guarded `NotebookLMCLIAdapter`, manual fallback export, installed `notebooklm-mcp-cli` executables, Codex MCP setup, and Codex/agents skill install, with live use blocked only on completing `nlm login`. |
+| 2026-06-18 | Add TMCP multi-project benchmark scaffold | Planned in `.planning/quick/260618-05k-implement-tmcp-multi-project-benchmark-f`; `services.tmcp_benchmark` and `bin/tmcp-benchmark.py init` now create the benchmark directory/manifests/report stubs, encode the four conditions and shortcut states, preserve nulls for unavailable token metrics, and inventory 35 non-hidden local Git repositories read-only without synchronization or benchmark execution. |
+| 2026-06-21 | Add TMCP paired-run benchmark pipeline | Planned in `.planning/quick/260621-koa-implement-tmcp-benchmark-paired-run-pipe`; `tmcp-benchmark.py` now supports discovery, preflight, task import, condition randomization, freeze, isolated stub runs, and aggregation, with dry-run artifacts for 8 runs across Bballedu/Terrace and conservative claim gates that require quality non-inferiority plus positive speed/token deltas. |
+| 2026-06-22 | Add portable TMCP dev-process skill graph | Planned in `.planning/quick/260622-bf4-create-portable-tmcp-dev-process-skill-g`; `config/tmcp/portable-dev-process/` now defines a portable graph for repo detection, quality checks, debugging, review, tests, CI, frontend verification, git hygiene, dependency audits, docs, and hook guidance without downstream AIOS truth/eval/governance requirements. |
+| 2026-06-21 | Complete Phase 11 Testing, Benchmark Evaluation, And Shadow Workflows | `.planning/phases/11-testing-benchmark-evaluation-and-shadow-workflows/11-VERIFICATION.md` verifies EVAL-01 through EVAL-08 with durable eval records, second-brain lift, shadow branches, ablations, peer traces, automated shadow benchmark state transitions, portable packets, external adapters, eval UI panels, and 52 targeted passing tests. |
 | 2026-06-01 | Complete Phase 8 Plan 04 workflow promotion evidence | `.planning/phases/08-prompt-skill-workflow-contracts-and-asset-lifecycle/08-04-SUMMARY.md` records durable stage evaluation rollups, workflow comparison metrics, governed promotion proposals, asset lifecycle CLI commands, and advisory closeout promotion candidates. |
 | 2026-06-01 | Complete Phase 8 Plan 05 planned workflow contracts | `.planning/phases/08-prompt-skill-workflow-contracts-and-asset-lifecycle/08-05-SUMMARY.md` records candidate contracts for audit-only, audit-and-implement, standards-backfill, and security-review plus draft executor stubs and strict prompt lifecycle validation. |
 | 2026-06-01 | Complete Phase 8 Prompt, Skill, Workflow Contracts, And Asset Lifecycle | `.planning/phases/08-prompt-skill-workflow-contracts-and-asset-lifecycle/08-VERIFICATION.md` verifies ASSET-01 through ASSET-04 and WFLO-01 through WFLO-04 with 145 passing targeted tests plus lint, type, and prompt-registry validation. |
@@ -96,4 +107,4 @@ progress:
 | 2026-06-02 | Complete Phase 10 Plan 08 quality hotspot backfill baseline | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-08-SUMMARY.md` records `pnpm quality:eval`, the read-only hotspot detection script, and the first factual Agent Eval backfill inventory for Python services, CLI scripts, tests, aios-ui, config, and eval docs. |
 
 ---
-*Last updated: 2026-06-02 after completing Phase 10 Plan 08*
+*Last updated: 2026-06-22 after adding the portable TMCP dev-process skill graph*

@@ -84,8 +84,8 @@
 
 ### Testing, Benchmark Evaluation, And Shadow Workflows
 
-- [ ] **EVAL-01**: Every AIOS eval run is recorded in a durable, queryable eval_runs table with context profile, condition, model, harness, result, cost, and failure labels; eval tasks are replayable from the recorded start SHA and acceptance criteria
-- [ ] **EVAL-02**: AIOS can run the same task in full-second-brain mode and repo-only mode and compute Second Brain Lift; AIOS detects stale context retrievals and proposes writebacks; gold-set tasks have known-required-context so recall is measured deterministically
+- [x] **EVAL-01**: Every AIOS eval run is recorded in a durable, queryable eval_runs table with context profile, condition, model, harness, result, cost, and failure labels; eval tasks are replayable from the recorded start SHA and acceptance criteria
+- [x] **EVAL-02**: AIOS can run the same task in full-second-brain mode and repo-only mode and compute Second Brain Lift; AIOS detects stale context retrievals and proposes writebacks; gold-set tasks have known-required-context so recall is measured deterministically
 - [ ] **EVAL-03**: AIOS can run a task from the same starting SHA on an isolated branch/worktree under a specified condition and compare the result against a baseline using shared acceptance criteria, tests, lint, and typecheck without contaminating the baseline branch
 - [ ] **EVAL-04**: AIOS can disable individual features (context packets, second brain, success criteria, subagents, model routing, personal corpus, project truth) and produce an EvalRun per variant from the same starting SHA; ablation scorecard comparison identifies which features contribute measurable lift
 - [ ] **EVAL-05**: AIOS can observe peer workflow sessions without modifying prompts, injecting context, spawning subagents, or changing model selection; trace captures are privacy-safe by default; shadow candidate detection automatically scores each observed task
@@ -170,6 +170,29 @@
 - [ ] **CMDP-07**: AIOS implements guarded `aios cleanup de-slopify` and sandboxed `aios prototype`, preserving behavior/public APIs, applying only low-risk cleanup, isolating prototype artifacts, and documenting cleanup or promotion steps
 - [ ] **CMDP-08**: AIOS adds lightweight native command metadata logging, tests for registration/schema/read-only/safety behavior, and docs covering command purpose, safety class, sub-agent use, second-brain behavior, examples, and recommended workflows
 
+### Execution-Symmetric Planning
+
+- [ ] **ESPL-01**: AIOS audits current plan generation, GSD planning workflows, slash command handling, workflow routing, skill invocation, plan artifacts, validation strategy generation, and handoff formats before implementation
+- [ ] **ESPL-02**: AIOS documents Execution-Symmetric Planning as a core principle and defines complexity-sensitive planning behavior for trivial, simple, moderate, complex, and high-risk tasks
+- [ ] **ESPL-03**: AIOS recognizes GSD workflow phases through a configurable registry so `/gsdplanphase` and equivalents produce GSD-ready plans rather than generic planning prose
+- [ ] **ESPL-04**: AIOS defines a planning lens registry mapping task types and workflow phases to execution standards such as testing, maintainability, regression safety, architecture, rollback safety, interface contracts, orchestration, security, data validation, reproducibility, and executor readiness
+- [ ] **ESPL-05**: AIOS supports execution, review, validation, and audit skills as planning lenses that convert skill principles into planning constraints instead of completed-work reviews
+- [ ] **ESPL-06**: AIOS generates executor-ready non-trivial plans with objective/mission, scope, constraints, assumptions, selected lenses, affected areas, ordered steps, validation strategy, failure modes, rollback/recovery, delegation strategy, escalation conditions, and definition of done when relevant
+- [ ] **ESPL-07**: AIOS represents planning context and logs with structured fields for source invocation, workflow, phase, task type, complexity, risk, selected lenses, handoff target, validation depth, output format, sub-agent strategy, model strategy, execution result, validation result, rework required, and notes
+- [ ] **ESPL-08**: AIOS adds tests or eval cases for natural-language planning, `/gsdplanphase`, explicit planning-lens requests, audit-to-implementation prompts, GSD handoff generation, simple task non-overplanning, and complex tasks requiring validation and rollback
+
+### macOS Native App Skill Pack
+
+- [ ] **MACS-01**: AIOS audits current skill, instruction, router, TMCP, manifest, validation, provenance, dependency-map, permission-gate, and behavioral-test conventions before adding macOS skills
+- [ ] **MACS-02**: AIOS audits `fayazara/macos-app-skills` and records donor summary, adoption candidates, direct-copy rejections, compatibility gaps, safety risks, freshness/version risks, transformed skill/module list, TMCP routing changes, and implementation checklist
+- [ ] **MACS-03**: AIOS adds task-shaped macOS project detection and xcodebuild verification skills with project/workspace/package detection, scheme discovery, Xcode/SDK checks, destination/configuration selection, signing fallback, repair recommendations, and post-fix rebuild requirements
+- [ ] **MACS-04**: AIOS splits native macOS pattern knowledge into small task-routed modules for menu bar, window/panel, screen geometry, keyboard shortcuts, file picker, pasteboard, drag/drop, navigation/inspector, launch/login, Quick Look/workspace, ScreenCaptureKit, and UserDefaults/AppStorage
+- [ ] **MACS-05**: AIOS adds guarded skills for settings windows, Sparkle auto-update, and notch overlays with environment guards, permission gates, architecture preservation, validation commands, fallback behavior, and repair recommendations
+- [ ] **MACS-06**: AIOS adds a dry-run-first macOS release pipeline skill with hard permission gates for git, GitHub release, appcast mutation, signing, notarization, publishing, and version/build changes plus release validation and secret-safety checks
+- [ ] **MACS-07**: AIOS adds or updates TMCP routing, strict node IDs, manifests, dependency maps, related-module pointers, source provenance, source freshness/version notes, transformation type, license notes, and audited dates for every macOS skill/module
+- [ ] **MACS-08**: AIOS adds behavioral tests and a validation command for macOS project detection, build verification, native pattern routing, settings UI, Sparkle, notch overlay, release safety, TMCP pointer resolution, permission gates, private-key patterns, broad triggers, and release publish gates
+- [ ] **MACS-09**: AIOS documents the macOS skill pack, routing behavior, safety gates, validation command, future platform-skill pattern, donor pattern note, assumptions, adopted/changed/rejected donor ideas, remaining risks, and final implementation report format
+
 ## v2 Requirements
 
 None currently. The full operating-system vision is intentionally being planned into v1 and sequenced through milestones rather than deferred into a later release bucket.
@@ -228,8 +251,8 @@ None currently. The full operating-system vision is intentionally being planned 
 | OPER-02 | Phase 10: Operator Surfaces, Query, And Daily-Flow Visibility | Pending |
 | OPER-03 | Phase 10: Operator Surfaces, Query, And Daily-Flow Visibility | Pending |
 | OPER-04 | Phase 10: Operator Surfaces, Query, And Daily-Flow Visibility | Pending |
-| EVAL-01 | Phase 11: Testing, Benchmark Evaluation, And Shadow Workflows | Pending |
-| EVAL-02 | Phase 11: Testing, Benchmark Evaluation, And Shadow Workflows | Pending |
+| EVAL-01 | Phase 11: Testing, Benchmark Evaluation, And Shadow Workflows | Complete |
+| EVAL-02 | Phase 11: Testing, Benchmark Evaluation, And Shadow Workflows | Complete |
 | EVAL-03 | Phase 11: Testing, Benchmark Evaluation, And Shadow Workflows | Pending |
 | EVAL-04 | Phase 11: Testing, Benchmark Evaluation, And Shadow Workflows | Pending |
 | EVAL-05 | Phase 11: Testing, Benchmark Evaluation, And Shadow Workflows | Pending |
@@ -301,12 +324,29 @@ None currently. The full operating-system vision is intentionally being planned 
 | CMDP-06 | Phase 19: Native Workflow Command Pack | Pending |
 | CMDP-07 | Phase 19: Native Workflow Command Pack | Pending |
 | CMDP-08 | Phase 19: Native Workflow Command Pack | Pending |
+| ESPL-01 | Phase 20: Execution-Symmetric Planning | Pending |
+| ESPL-02 | Phase 20: Execution-Symmetric Planning | Pending |
+| ESPL-03 | Phase 20: Execution-Symmetric Planning | Pending |
+| ESPL-04 | Phase 20: Execution-Symmetric Planning | Pending |
+| ESPL-05 | Phase 20: Execution-Symmetric Planning | Pending |
+| ESPL-06 | Phase 20: Execution-Symmetric Planning | Pending |
+| ESPL-07 | Phase 20: Execution-Symmetric Planning | Pending |
+| ESPL-08 | Phase 20: Execution-Symmetric Planning | Pending |
+| MACS-01 | Phase 21: macOS Native App Skill Pack | Pending |
+| MACS-02 | Phase 21: macOS Native App Skill Pack | Pending |
+| MACS-03 | Phase 21: macOS Native App Skill Pack | Pending |
+| MACS-04 | Phase 21: macOS Native App Skill Pack | Pending |
+| MACS-05 | Phase 21: macOS Native App Skill Pack | Pending |
+| MACS-06 | Phase 21: macOS Native App Skill Pack | Pending |
+| MACS-07 | Phase 21: macOS Native App Skill Pack | Pending |
+| MACS-08 | Phase 21: macOS Native App Skill Pack | Pending |
+| MACS-09 | Phase 21: macOS Native App Skill Pack | Pending |
 
 **Coverage:**
-- v1 requirements: 116 total (108 prior + 8 CMDP)
-- Mapped to phases: 116
+- v1 requirements: 133 total (124 prior + 9 MACS)
+- Mapped to phases: 133
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-13*
-*Last updated: 2026-06-01 after adding Phase 19 CMDP requirements*
+*Last updated: 2026-06-04 after adding Phase 21 MACS requirements*
