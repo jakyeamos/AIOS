@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 import sys
 from pathlib import Path
 from typing import get_args
@@ -10,6 +11,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from services import success_criteria  # noqa: E402
 from services.asset_lifecycle import AssetLifecycleState  # noqa: E402
 from services.workflow_orchestration import (  # noqa: E402
     HEALTH_TO_WORKFLOW_RULES,
@@ -462,6 +464,40 @@ def test_stage_evaluation_summary_in_report() -> None:
     first_stage = report["stage_evaluations"][0]
     assert first_stage["stage_key"] == report["stages"][0]["stage_key"]
     assert first_stage["outcome"] in {"completed", "failed", "blocked"}
+
+
+def test_divergent_judge_stage_satisfies_required_validation_with_stage_findings(
+    tmp_path: Path,
+) -> None:
+    conn = sqlite3.connect(":memory:")
+    success_criteria.ensure_success_criteria_schema(conn)
+
+    context = WorkflowExecutionContext(
+        objective="Evaluate multiple plausible workflow strategies before implementation",
+        workflow_key="divergent-strategy",
+        surface="codex",
+        run_id="run-divergent-validation-accounting",
+        invocation_id="invoke-divergent-validation-accounting",
+    )
+
+    report = execute_workflow(
+        context,
+        conn=conn,
+        stage_artifact_root=tmp_path / "success-criteria",
+    )
+
+    judge_stage = next(
+        stage for stage in report["stages"] if stage["stage_key"] == "judge_candidates"
+    )
+    assert judge_stage["status"] == "completed"
+    assert judge_stage["stage_evaluation"]["stage_finding_ids"]
+    assert report["validations"] == []
+    assert report["required_validations"] == ["divergent_judge_panel"]
+    assert report["failed_required_validations"] == []
+    assert "Required validation did not run: divergent_judge_panel" not in report[
+        "unresolved_issues"
+    ]
+    assert report["status"] == "completed"
 
 
 def test_unknown_workflow_raises(tmp_path: Path) -> None:
