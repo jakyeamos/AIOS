@@ -28,7 +28,11 @@ from aios_orchestration_runtime import (  # noqa: E402
     update_invocation,
 )
 from aios_paths import get_vault_root  # noqa: E402
-from hook_lifecycle import get_or_create_project, load_hook_payload  # noqa: E402
+from hook_lifecycle import (  # noqa: E402
+    get_or_create_project,
+    load_hook_payload,
+    resolve_session_cwd,
+)
 
 from services.agent_rules import agent_rules_context  # noqa: E402
 from services.rtk_integration import ensure_rtk_schema, load_compression_rules  # noqa: E402
@@ -336,7 +340,8 @@ def main() -> None:
 
     try:
         conn = sqlite3.connect(DB)
-        project_id = get_or_create_project(conn, cwd)
+        resolved_cwd = resolve_session_cwd(conn, cwd)
+        project_id = get_or_create_project(conn, resolved_cwd)
         ensure_runtime_schema(conn)
         ensure_rtk_schema(conn)
 
@@ -353,7 +358,7 @@ def main() -> None:
                     invocation_id=invocation_id,
                     runtime_metadata={
                         "backend_key": backend_key,
-                        "cwd": cwd,
+                        "cwd": resolved_cwd,
                     },
                     objective=objective or None,
                 )
@@ -363,7 +368,7 @@ def main() -> None:
                         invocation_id=invocation_id,
                         status="running",
                         session_id=session_id,
-                        metadata={"cwd": cwd},
+                        metadata={"cwd": resolved_cwd},
                         started_at=datetime.now(UTC).isoformat(),
                     )
                 if run_id:
@@ -409,7 +414,7 @@ def main() -> None:
               (id, project_id, tool, started_at, objective, status, cwd)
             VALUES (?, ?, 'claude-code', ?, ?, 'open', ?)
             """,
-            (session_id, project_id, datetime.now(UTC).isoformat(), objective or None, cwd),
+            (session_id, project_id, datetime.now(UTC).isoformat(), objective or None, resolved_cwd),
         )
         conn.execute(
             """
@@ -431,7 +436,7 @@ def main() -> None:
                 invocation_id=invocation_id,
                 runtime_metadata={
                     "backend_key": backend_key,
-                    "cwd": cwd,
+                    "cwd": resolved_cwd,
                 },
                 objective=objective or None,
             )
@@ -441,7 +446,7 @@ def main() -> None:
                 invocation_id=invocation_id,
                 status="running",
                 session_id=session_id,
-                metadata={"cwd": cwd},
+                metadata={"cwd": resolved_cwd},
                 started_at=datetime.now(UTC).isoformat(),
             )
         if run_id:
@@ -483,7 +488,7 @@ def main() -> None:
                     project_name=project_name,
                     project_id=project_id,
                     conn=conn,
-                    cwd=cwd,
+                    cwd=resolved_cwd,
                     objective=objective,
                     session_id=session_id,
                 )
@@ -502,7 +507,7 @@ def main() -> None:
         with open(current_path, "w") as f:
             f.write(session_id)
 
-        log(f"session {session_id} opened (project: {project_id}, cwd: {cwd})")
+        log(f"session {session_id} opened (project: {project_id}, cwd: {resolved_cwd})")
 
     except Exception as e:
         log(f"db error: {e}")

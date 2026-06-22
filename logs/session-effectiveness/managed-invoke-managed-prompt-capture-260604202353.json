@@ -1,0 +1,59 @@
+{
+  "receipt_type": "session_effectiveness",
+  "session_id": "managed-invoke-managed-prompt-capture-260604202353",
+  "project_id": "5bcd40a28db7463c",
+  "project_name": "AIOS",
+  "run_id": "run-managed-prompt-capture-260604202353",
+  "invocation_id": "invoke-managed-prompt-capture-260604202353",
+  "score": 95,
+  "rating": "working",
+  "activity_lights": {
+    "capture": {
+      "state": "green",
+      "label": "capture",
+      "reason": "4 tool event(s) captured."
+    },
+    "prompts": {
+      "state": "green",
+      "label": "prompts",
+      "reason": "1 prompt(s) captured."
+    },
+    "work": {
+      "state": "green",
+      "label": "work",
+      "reason": "2 artifact(s) captured."
+    },
+    "quality": {
+      "state": "green",
+      "label": "quality",
+      "reason": "0 failure signal(s) captured."
+    },
+    "governance": {
+      "state": "green",
+      "label": "governance",
+      "reason": "Run linkage present."
+    },
+    "receipts": {
+      "state": "green",
+      "label": "receipts",
+      "reason": "Summary receipt present."
+    }
+  },
+  "measures": {
+    "prompt_count": 1,
+    "artifact_count": 2,
+    "tool_event_count": 4,
+    "bug_count": 0,
+    "reusable_prompt_count": 1,
+    "rtk_tokens_saved": 0,
+    "run_linked": true,
+    "handoff_present": false,
+    "summary_present": true
+  },
+  "blockers": [],
+  "warnings": [
+    "No session handoff was found."
+  ],
+  "generated_at": "2026-06-05T00:23:59.560815+00:00",
+  "receipt_path": "/Users/jakyeamos/AIOS/logs/session-effectiveness/managed-invoke-managed-prompt-capture-260604202353.json"
+}

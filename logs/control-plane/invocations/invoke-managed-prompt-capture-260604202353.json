@@ -1,0 +1,14 @@
+{
+  "run_id": "run-managed-prompt-capture-260604202353",
+  "invocation_id": "invoke-managed-prompt-capture-260604202353",
+  "session_id": "managed-invoke-managed-prompt-capture-260604202353",
+  "backend_key": "aios-managed-runtime",
+  "objective": "Fix managed prompt capture runtime verification",
+  "workflow_key": "implementation-delivery",
+  "agent_key": "implementation-lead",
+  "packet_id": null,
+  "workflow_report_id": "workflow-report-19122fb4-5b07-47fa-8a0f-02cb02b381ff",
+  "workflow_report_path": "/Users/jakyeamos/AIOS/logs/control-plane/workflow-reports/invoke-managed-prompt-capture-260604202353.json",
+  "workflow_summary": "Workflow implementation-delivery finished with status=completed; stages=4; validations=1/1 passed.",
+  "recorded_at": "2026-06-05T00:23:59.266705+00:00"
+}

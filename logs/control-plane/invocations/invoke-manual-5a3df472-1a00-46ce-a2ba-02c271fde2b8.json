@@ -1,0 +1,14 @@
+{
+  "run_id": "run-c4c089f6-80d9-410c-95f9-e32076fbf2f9",
+  "invocation_id": "invoke-manual-5a3df472-1a00-46ce-a2ba-02c271fde2b8",
+  "session_id": "managed-invoke-manual-5a3df472-1a00-46ce-a2ba-02c271fde2b8",
+  "backend_key": "codex-managed-runtime",
+  "objective": "Verify patched workflow promotion evidence path writes workflow reports and stage findings",
+  "workflow_key": "implementation-delivery",
+  "agent_key": "implementation-lead",
+  "packet_id": "packet-e53ed9bf-235c-48d8-8ebb-d9415d2b7337",
+  "workflow_report_id": "workflow-report-d72d0bd5-4c1c-412a-8dfc-84e886d3b6ac",
+  "workflow_report_path": "/Users/jakyeamos/AIOS/logs/control-plane/workflow-reports/invoke-manual-5a3df472-1a00-46ce-a2ba-02c271fde2b8.json",
+  "workflow_summary": "Workflow implementation-delivery finished with status=completed; stages=4; validations=1/1 passed.",
+  "recorded_at": "2026-06-01T17:12:59.463004+00:00"
+}

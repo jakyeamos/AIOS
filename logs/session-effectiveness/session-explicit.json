@@ -1,0 +1,61 @@
+{
+  "receipt_type": "session_effectiveness",
+  "session_id": "session-explicit",
+  "project_id": "project-aios",
+  "project_name": "AIOS",
+  "run_id": "run-explicit",
+  "invocation_id": "invoke-explicit",
+  "score": 70,
+  "rating": "mixed",
+  "activity_lights": {
+    "capture": {
+      "state": "green",
+      "label": "capture",
+      "reason": "1 tool event(s) captured."
+    },
+    "prompts": {
+      "state": "red",
+      "label": "prompts",
+      "reason": "0 prompt(s) captured."
+    },
+    "work": {
+      "state": "green",
+      "label": "work",
+      "reason": "2 artifact(s) captured."
+    },
+    "quality": {
+      "state": "green",
+      "label": "quality",
+      "reason": "0 failure signal(s) captured."
+    },
+    "governance": {
+      "state": "green",
+      "label": "governance",
+      "reason": "Run linkage present."
+    },
+    "receipts": {
+      "state": "green",
+      "label": "receipts",
+      "reason": "Summary receipt present."
+    }
+  },
+  "measures": {
+    "prompt_count": 0,
+    "artifact_count": 2,
+    "tool_event_count": 1,
+    "bug_count": 0,
+    "reusable_prompt_count": 0,
+    "rtk_tokens_saved": 0,
+    "run_linked": true,
+    "handoff_present": false,
+    "summary_present": true
+  },
+  "blockers": [
+    "No prompts were captured for the session."
+  ],
+  "warnings": [
+    "No session handoff was found."
+  ],
+  "generated_at": "2026-06-01T23:26:25.521147+00:00",
+  "receipt_path": "/Users/jakyeamos/AIOS/logs/session-effectiveness/session-explicit.json"
+}

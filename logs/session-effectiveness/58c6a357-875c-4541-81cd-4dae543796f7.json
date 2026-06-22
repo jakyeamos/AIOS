@@ -1,0 +1,61 @@
+{
+  "receipt_type": "session_effectiveness",
+  "session_id": "58c6a357-875c-4541-81cd-4dae543796f7",
+  "project_id": "6ee3720828a2deff",
+  "project_name": ".claude",
+  "run_id": null,
+  "invocation_id": null,
+  "score": 75,
+  "rating": "mixed",
+  "activity_lights": {
+    "capture": {
+      "state": "green",
+      "label": "capture",
+      "reason": "6 tool event(s) captured."
+    },
+    "prompts": {
+      "state": "green",
+      "label": "prompts",
+      "reason": "1 prompt(s) captured."
+    },
+    "work": {
+      "state": "yellow",
+      "label": "work",
+      "reason": "0 artifact(s) captured."
+    },
+    "quality": {
+      "state": "green",
+      "label": "quality",
+      "reason": "0 failure signal(s) captured."
+    },
+    "governance": {
+      "state": "yellow",
+      "label": "governance",
+      "reason": "Run linkage missing."
+    },
+    "receipts": {
+      "state": "green",
+      "label": "receipts",
+      "reason": "Summary receipt present."
+    }
+  },
+  "measures": {
+    "prompt_count": 1,
+    "artifact_count": 0,
+    "tool_event_count": 6,
+    "bug_count": 0,
+    "reusable_prompt_count": 1,
+    "rtk_tokens_saved": 0,
+    "run_linked": false,
+    "handoff_present": false,
+    "summary_present": true
+  },
+  "blockers": [],
+  "warnings": [
+    "Session is not linked to a governed run or invocation.",
+    "No durable artifacts were captured.",
+    "No session handoff was found."
+  ],
+  "generated_at": "2026-05-26T16:18:30.515536+00:00",
+  "receipt_path": "/Users/jakyeamos/AIOS/logs/session-effectiveness/58c6a357-875c-4541-81cd-4dae543796f7.json"
+}

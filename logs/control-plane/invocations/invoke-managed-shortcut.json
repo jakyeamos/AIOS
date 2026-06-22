@@ -1,0 +1,14 @@
+{
+  "run_id": "run-managed-shortcut",
+  "invocation_id": "invoke-managed-shortcut",
+  "session_id": "managed-invoke-managed-shortcut",
+  "backend_key": "codex-managed-runtime",
+  "objective": "Managed runtime handshake integration",
+  "workflow_key": "implementation-delivery",
+  "agent_key": "implementation-lead",
+  "packet_id": "packet-managed-shortcut",
+  "workflow_report_id": "workflow-report-8149ac46-7ac1-40b8-9b99-b3f09d8ae699",
+  "workflow_report_path": "/Users/jakyeamos/AIOS/logs/control-plane/workflow-reports/invoke-managed-shortcut.json",
+  "workflow_summary": "Workflow implementation-delivery finished with status=completed; stages=4; validations=1/1 passed.",
+  "recorded_at": "2026-06-13T03:31:37.698895+00:00"
+}

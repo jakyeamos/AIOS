@@ -1,0 +1,256 @@
+{
+  "report_id": "workflow-report-1cab0848-c802-46f4-adea-95e44875ea23",
+  "run_id": "run-managed-failed-workflow",
+  "invocation_id": "invoke-managed-failed-workflow",
+  "workflow_key": "divergent-strategy",
+  "workflow_name": "Divergent Strategy Workflow",
+  "objective": "Compare workflow promotion strategies",
+  "status": "completed",
+  "stages": [
+    {
+      "stage_key": "classify_task",
+      "kind": "parse_request",
+      "status": "completed",
+      "rtk_mode": "compressed",
+      "skills": [
+        {
+          "skill_key": "divergent_task_classifier",
+          "execution_mode": "deterministic",
+          "status": "completed",
+          "output_keys": [],
+          "source_path": null,
+          "installed_name": null
+        }
+      ],
+      "issues": [],
+      "stage_evaluation": {
+        "stage_key": "classify_task",
+        "passed_validations": 0,
+        "total_validations": 0,
+        "blocker_count": 0,
+        "warning_count": 0,
+        "stage_finding_ids": [],
+        "outcome": "completed"
+      },
+      "started_at": "2026-06-05T00:24:27.337957+00:00",
+      "ended_at": "2026-06-05T00:24:27.338192+00:00"
+    },
+    {
+      "stage_key": "generate_candidates",
+      "kind": "generate",
+      "status": "completed",
+      "rtk_mode": "compressed",
+      "skills": [
+        {
+          "skill_key": "divergent_candidate_generator",
+          "execution_mode": "heuristic",
+          "status": "completed",
+          "output_keys": [],
+          "source_path": null,
+          "installed_name": null
+        }
+      ],
+      "issues": [],
+      "stage_evaluation": {
+        "stage_key": "generate_candidates",
+        "passed_validations": 0,
+        "total_validations": 0,
+        "blocker_count": 0,
+        "warning_count": 0,
+        "stage_finding_ids": [],
+        "outcome": "completed"
+      },
+      "started_at": "2026-06-05T00:24:27.338196+00:00",
+      "ended_at": "2026-06-05T00:24:27.338346+00:00"
+    },
+    {
+      "stage_key": "judge_candidates",
+      "kind": "validate",
+      "status": "completed",
+      "rtk_mode": "compressed",
+      "skills": [
+        {
+          "skill_key": "divergent_judge_panel",
+          "execution_mode": "heuristic",
+          "status": "completed",
+          "output_keys": [],
+          "source_path": null,
+          "installed_name": null
+        }
+      ],
+      "issues": [],
+      "stage_evaluation": {
+        "stage_key": "judge_candidates",
+        "passed_validations": 0,
+        "total_validations": 0,
+        "blocker_count": 0,
+        "warning_count": 0,
+        "stage_finding_ids": [
+          "criteria-stage-finding-d9ff3fa2-f52b-4ac6-8f83-3ee3cf77ef17",
+          "criteria-stage-finding-3bf9ce9a-7950-49cd-beea-c6ffdcb06105",
+          "criteria-stage-finding-dee621ab-28ba-4c10-829d-234b2ca62bb6"
+        ],
+        "outcome": "completed"
+      },
+      "started_at": "2026-06-05T00:24:27.338349+00:00",
+      "ended_at": "2026-06-05T00:24:27.339689+00:00"
+    },
+    {
+      "stage_key": "select_portfolio",
+      "kind": "finalize",
+      "status": "completed",
+      "rtk_mode": "compressed",
+      "skills": [
+        {
+          "skill_key": "divergent_portfolio_selector",
+          "execution_mode": "deterministic",
+          "status": "completed",
+          "output_keys": [],
+          "source_path": null,
+          "installed_name": null
+        },
+        {
+          "skill_key": "memory_writeback_proposer",
+          "execution_mode": "deterministic",
+          "status": "completed",
+          "output_keys": [],
+          "source_path": null,
+          "installed_name": null
+        }
+      ],
+      "issues": [],
+      "stage_evaluation": {
+        "stage_key": "select_portfolio",
+        "passed_validations": 0,
+        "total_validations": 0,
+        "blocker_count": 0,
+        "warning_count": 0,
+        "stage_finding_ids": [],
+        "outcome": "completed"
+      },
+      "started_at": "2026-06-05T00:24:27.339692+00:00",
+      "ended_at": "2026-06-05T00:24:27.339840+00:00"
+    }
+  ],
+  "validations": [],
+  "stage_evaluations": [
+    {
+      "stage_key": "classify_task",
+      "passed_validations": 0,
+      "total_validations": 0,
+      "blocker_count": 0,
+      "warning_count": 0,
+      "stage_finding_ids": [],
+      "outcome": "completed"
+    },
+    {
+      "stage_key": "generate_candidates",
+      "passed_validations": 0,
+      "total_validations": 0,
+      "blocker_count": 0,
+      "warning_count": 0,
+      "stage_finding_ids": [],
+      "outcome": "completed"
+    },
+    {
+      "stage_key": "judge_candidates",
+      "passed_validations": 0,
+      "total_validations": 0,
+      "blocker_count": 0,
+      "warning_count": 0,
+      "stage_finding_ids": [
+        "criteria-stage-finding-d9ff3fa2-f52b-4ac6-8f83-3ee3cf77ef17",
+        "criteria-stage-finding-3bf9ce9a-7950-49cd-beea-c6ffdcb06105",
+        "criteria-stage-finding-dee621ab-28ba-4c10-829d-234b2ca62bb6"
+      ],
+      "outcome": "completed"
+    },
+    {
+      "stage_key": "select_portfolio",
+      "passed_validations": 0,
+      "total_validations": 0,
+      "blocker_count": 0,
+      "warning_count": 0,
+      "stage_finding_ids": [],
+      "outcome": "completed"
+    }
+  ],
+  "required_validations": [
+    "divergent_judge_panel"
+  ],
+  "failed_required_validations": [],
+  "unresolved_issues": [],
+  "artifacts": {
+    "template_id": null,
+    "execution_strategy": null,
+    "normalized_prompt": null,
+    "style_profile": null,
+    "evidence_notes": [],
+    "agent_rules": [
+      {
+        "title": "Surface conflicts, don't average them",
+        "body": "If two existing patterns in the codebase contradict, don't blend them.\nPick one (the more recent / more tested), explain why, and flag the other for cleanup.\n\"Average\" code that satisfies both rules is the worst code."
+      },
+      {
+        "title": "Read before you write",
+        "body": "Before adding code in a file, read the file's exports, the immediate caller, and any obvious shared utilities.\nIf you don't understand why existing code is structured the way it is, ask before adding to it.\n\"Looks orthogonal to me\" is the most dangerous phrase in this codebase."
+      },
+      {
+        "title": "Tests verify intent, not just behavior",
+        "body": "Every test must encode WHY the behavior matters, not just WHAT it does.\nA test like `expect(getUserName()).toBe('John')` is worthless if the function takes a hardcoded ID.\nIf you can't write a test that would fail when business logic changes, the function is wrong."
+      },
+      {
+        "title": "Checkpoint after every significant step",
+        "body": "After completing each step in a multi-step task: summarize what was done, what's verified, what's left.\nDon't continue from a state you can't describe back to me.\nIf you lose track, stop and restate."
+      },
+      {
+        "title": "Match the codebase's conventions, even if you disagree",
+        "body": "If the codebase uses snake_case and you'd prefer camelCase: snake_case.\nIf the codebase uses class-based components and you'd prefer hooks: class-based.\nDisagreement is a separate conversation. Inside the codebase, conformance > taste.\nIf you genuinely think the convention is harmful, surface it. Don't fork it silently."
+      },
+      {
+        "title": "Fail loud",
+        "body": "If you can't be sure something worked, say so explicitly.\n\"Migration completed\" is wrong if 30 records were skipped silently.\n\"Tests pass\" is wrong if you skipped any.\n\"Feature works\" is wrong if you didn't verify the edge case I asked about.\nDefault to surfacing uncertainty, not hiding it."
+      },
+      {
+        "title": "Prefer orchestrated subagents for non-trivial work",
+        "body": "For most non-trivial work, the orchestrator should classify the task, decompose it, control context, route execution, supervise quality gates, and own final synthesis.\nDelegate execution to specialized subagents using the lowest-cost model tier and reasoning level likely to complete the task reliably.\nDirect execution is allowed when the task is simple, likely under 5-10 minutes, affects one small file or doc, requires no repo-wide context, is a pure explanation or isolated command, or subagent setup would cost more than it saves.\nPrefer subagents when the task needs repo inspection, multiple phases, architecture, tests, security, migrations, data models, multi-file changes, parallel research, isolated review, or protection from context bloat and premium-model token waste.\nUse `config/execution-strategies/model-routing-policy.json` as the routing table for agent roles, model tiers, reasoning levels, telemetry fields, benchmark classes, and promotion statuses."
+      },
+      {
+        "title": "Reason truth-first, not agreement-first",
+        "body": "Correctness comes before agreement. Do not agree with a user claim, diagnosis, plan, or technical assumption by default. Treat it as unverified until checked against evidence, logic, code, documentation, or constraints.\n\nDo not say \"yes\", \"correct\", \"exactly\", or \"you're right\" unless the claim has been verified. If the user is wrong, say so clearly. If the user is partially right, separate the correct part from the incorrect part. If evidence is insufficient, say the answer is unknown or unproven. Do not validate confusion, reshape facts to fit the user's framing, prioritize sounding agreeable over accuracy, implement bad ideas silently, or preserve a weaker plan when a better one exists.\n\nBefore answering, silently evaluate what the user is assuming, whether each assumption is true, false, partially true, or unknown, what evidence supports the answer, what correction or better path exists, and what the user should do next.\n\nWhen evaluating a user claim, diagnosis, plan, code path, or technical decision, start with one of these verdicts when that structure improves clarity: `Correct`, `Incorrect`, `Partially correct`, `Unknown`, `Bad approach`, or `Better approach available`. Then explain why, give the corrected understanding, and name the next concrete action. Skip the formal verdict format when a simpler direct answer is clearer.\n\nFor code review and code changes, do not accept the user's diagnosis without inspecting the actual code path. Identify the real root cause, reject symptom-only fixes, reject changes that damage architecture, security, performance, maintainability, or type safety, and prefer the smallest correct fix. Before coding, establish whether the diagnosis is proven, what the real root cause is, what the smallest correct fix is, and what could break.\n\nFor strategy, architecture, product, or execution planning, challenge weak assumptions, identify missing constraints, surface hidden risks, compare alternatives, call out overcomplication or vagueness, and replace weak plans with stronger ones. Do not agree with strategy just because the user proposed it.\n\nFor factual questions, do not invent facts or guess when verification is needed. Distinguish fact, inference, and opinion; state uncertainty when evidence is weak; and use current documentation or source material when recency matters.\n\nStay neutral toward the user and opposing positions. Evaluate the claim, not the person, and take the side best supported by evidence and logic. Use direct language when correction is needed: \"No. That is not correct.\", \"This assumption is wrong.\", \"That diagnosis is unlikely.\", \"This plan has a flaw.\", \"This will create a worse system.\", or \"The better approach is...\". The tone should be calm, firm, specific, and constructive."
+      },
+      {
+        "title": "Treat memory as structured knowledge, not just search",
+        "body": "AIOS must not treat memory as only search. Memory should preserve source, time, provenance, project scope, current validity, and relationships between ideas. Internal memory may use structured facts, graph edges, embeddings, and raw source text, but model-facing memory must be compiled into clear briefing packets that the LLM can actually reason over. For API models, AIOS should optimize for stable-prefix prompt caching. Direct KV-cache injection is allowed only as a future/local-runner optimization and must never become the source of truth."
+      }
+    ],
+    "draft_text": null,
+    "humanized_text": null,
+    "result_text": null,
+    "learned_workflow_skill": null,
+    "learned_workflow_evidence": [],
+    "agentized_task_packet": null
+  },
+  "rtk": {
+    "interface": "rtk_run(command: string, mode: \"compressed\" | \"raw\" | \"adaptive\")",
+    "default_mode": "compressed",
+    "workflow_mode": "compressed",
+    "preserve": [
+      "exit codes",
+      "errors and stack traces",
+      "changed files",
+      "failing tests",
+      "key diffs",
+      "reproduction commands",
+      "raw output path when failure output is tee'd"
+    ],
+    "fallbacks": {
+      "ambiguous_failure": "adaptive",
+      "explicit_expansion_request": "raw",
+      "critical_information_hidden": "raw"
+    }
+  },
+  "created_at": "2026-06-05T00:24:27.339857+00:00",
+  "started_at": "2026-06-05T00:24:27.335777+00:00",
+  "ended_at": "2026-06-05T00:24:27.339858+00:00"
+}
