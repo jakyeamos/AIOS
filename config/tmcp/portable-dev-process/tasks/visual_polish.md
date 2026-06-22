@@ -11,12 +11,12 @@ Also use when a generated screen feels generic, over-decorated, too much like de
 ## Required Modules
 
 - `@module:visual_polish_system`
-- `@module:make_interfaces_feel_better`
 - `@module:enterprise_saas_visual_polish`
 - `@module:data_realism_polish`
 
 ## Optional Modules
 
+- `@module:make_interfaces_feel_better` when the request needs detail-level UI polish for typography, surfaces, motion, or interaction feel.
 - `@module:ai_surface_polish` when the screen contains AI responses, AI editing, citations, generated summaries, suggestions, or review flows.
 - `@module:frontend_runtime` when implementation or rendered verification is in scope.
 - `@branch:tenure_visual_identity` only when the active project is Tenure or the user explicitly asks for Tenure-specific polish.
@@ -24,6 +24,7 @@ Also use when a generated screen feels generic, over-decorated, too much like de
 ## Traversal Contract
 
 - LOAD this task for visual polish work even when the user did not ask for code changes.
+- CONSIDER `@module:make_interfaces_feel_better` when the request mentions feel, polish details, typography, hover states, animation, spacing, shadows, borders, radius, or interaction quality.
 - CONSIDER `@module:ai_surface_polish` only when AI affordances or AI-generated output appear in the UI.
 - CONSIDER `@branch:tenure_visual_identity` only after confirming the project-specific Tenure identity is relevant.
 - SKIP product-specific branches when producing a portable boilerplate polish pass.
@@ -34,7 +35,7 @@ Also use when a generated screen feels generic, over-decorated, too much like de
 1. Identify the screen archetype, primary user task, primary object, and primary action.
 2. Select the density tier needed for the work surface: comfortable, standard, or compact.
 3. Review surface hierarchy before color or decoration: canvas, panel, card, overlay.
-4. Apply the `make_interfaces_feel_better` module for detail-level checks: border radius math, optical alignment, shadows, micro-interactions, font smoothing, tabular numbers, image outlines, transition specificity, and hit areas.
+4. If detail-level feel is in scope, use the `make_interfaces_feel_better` module for checks such as border radius math, optical alignment, shadows, micro-interactions, font smoothing, tabular numbers, image outlines, transition specificity, and hit areas.
 5. Check for default-component artifacts: card quilts, excessive radius, heavy shadows, raw color utilities, decorative gradients, and placeholder data.
 6. Tighten typography, alignment, spacing, state treatment, and data realism before adding visual effects.
 7. If implementation is requested, edit the smallest set of UI files and preserve existing design-system conventions.

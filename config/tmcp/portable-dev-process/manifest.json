@@ -79,11 +79,11 @@
         ],
         "requires": [
           "modules/visual_polish_system.md",
-          "modules/make_interfaces_feel_better.md",
           "modules/enterprise_saas_visual_polish.md",
           "modules/data_realism_polish.md"
         ],
         "optional": [
+          "modules/make_interfaces_feel_better.md",
           "modules/ai_surface_polish.md",
           "modules/frontend_runtime.md",
           "branches/tenure_visual_identity.branch.md"

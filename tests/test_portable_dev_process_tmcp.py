@@ -138,3 +138,17 @@ def test_visual_polish_keeps_tenure_identity_as_optional_branch() -> None:
 
     optional = set(visual_polish["optional"])
     assert "branches/tenure_visual_identity.branch.md" in optional
+
+
+def test_visual_polish_keeps_detail_polish_skill_optional() -> None:
+    manifest = _load_manifest()
+    task_nodes = manifest["nodes"]["tasks"]
+    assert isinstance(task_nodes, dict)
+    visual_polish = task_nodes["visual_polish"]
+    assert isinstance(visual_polish, dict)
+
+    required = set(visual_polish["requires"])
+    assert "modules/make_interfaces_feel_better.md" not in required
+
+    optional = set(visual_polish["optional"])
+    assert "modules/make_interfaces_feel_better.md" in optional
