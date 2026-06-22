@@ -12,6 +12,7 @@ applies_when:
   - task_touches_obsidian
 load_if_matched:
   - packets/knowledge.obsidian-routing.md
+  - packets/knowledge.notebooklm-routing.md
 tags:
   - knowledge
   - obsidian
@@ -32,14 +33,18 @@ known_stale_areas:
   - Obsidian/vault retrieval is partly policy and hook based; verify actual vault paths before relying on page coverage.
 related_pages:
   - packets.knowledge.obsidian-routing
+  - packets.knowledge.notebooklm-routing
   - features.obsidian-search
 ---
 
 Knowledge-system work should distinguish authoritative context, graph navigation, and broad search.
 Load map-of-content nodes before traversing detailed notes.
 Receipts should show which knowledge clusters were used and which were skipped.
+NotebookLM MCP is optional and only belongs after AIOS selects a bounded source bundle for synthesis, relationship discovery, learning opportunity detection, or contradiction/drift analysis.
+It must not replace Obsidian, local operational memory, or TMCP.
 
 ## Acceptance Criteria
 
 - Retrieval starts from routing nodes or explicit source refs.
 - Broad semantic search does not replace authoritative packet selection.
+- NotebookLM synthesis, when used, runs on bounded source bundles and stages output before promotion.

@@ -1,0 +1,53 @@
+{
+  "version": "2026-06-13",
+  "default_backend": "jacob_bd_notebooklm_mcp_cli",
+  "backends": [
+    {
+      "key": "jacob_bd_notebooklm_mcp_cli",
+      "name": "jacob-bd/notebooklm-mcp-cli",
+      "lifecycle_state": "experimental",
+      "source_url": "https://github.com/jacob-bd/notebooklm-mcp-cli",
+      "install_command": "uv tool install notebooklm-mcp-cli",
+      "cli_command": "nlm",
+      "mcp_command": "notebooklm-mcp",
+      "readiness_probe": {
+        "kind": "executables_present",
+        "required_executables": ["nlm", "notebooklm-mcp"],
+        "recommended_auth_check": ["nlm", "login", "--check"],
+        "mcp_tool_probe": "server_info"
+      },
+      "required_tools": [
+        "server_info",
+        "notebook_create",
+        "source_add",
+        "notebook_query"
+      ],
+      "optional_tools": [
+        "notebook_list",
+        "notebook_get",
+        "notebook_describe",
+        "studio_create",
+        "download_artifact",
+        "cross_notebook_query",
+        "tag",
+        "batch"
+      ],
+      "mode_tool_plan": {
+        "bounded_source_synthesis": ["notebook_create", "source_add", "notebook_query"],
+        "connection_discovery": ["notebook_create", "source_add", "notebook_query"],
+        "knowledge_cartography": ["notebook_create", "source_add", "notebook_query"],
+        "tmcp_module_discovery": ["notebook_create", "source_add", "notebook_query"],
+        "learning_opportunity_detection": ["notebook_create", "source_add", "notebook_query"],
+        "contradiction_drift_detection": ["notebook_create", "source_add", "notebook_query"],
+        "project_resurfacing": ["notebook_create", "source_add", "notebook_query"],
+        "briefing_digest": ["notebook_create", "source_add", "studio_create"]
+      },
+      "security_notes": [
+        "Uses undocumented NotebookLM internal APIs according to upstream README.",
+        "Requires browser-cookie based authentication.",
+        "Must remain optional and disabled for unbounded or sensitive source bundles.",
+        "Record package/backend version and source bundle provenance when used."
+      ]
+    }
+  ]
+}

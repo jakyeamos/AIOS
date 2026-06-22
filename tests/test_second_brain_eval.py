@@ -88,6 +88,15 @@ def test_compute_retrieval_metrics_precision_recall_and_staleness() -> None:
     conn = _connect()
     task_id = _create_task(conn)
     run_id = _create_run(conn, task_id=task_id)
+    register_gold_set_task(
+        conn,
+        task_id=task_id,
+        required_sources=[
+            {"source_id": "PROJECT.md", "source_type": "project_truth"},
+            {"source_id": "required-note", "source_type": "obsidian_notes"},
+        ],
+        known_correct_outcome="Implementation uses all required context.",
+    )
     record_retrieval(
         conn,
         run_id=run_id,
@@ -130,6 +139,14 @@ def test_evaluate_gold_set_run_identifies_missed_required_sources() -> None:
         ],
         known_correct_outcome="Implementation uses the current project truth.",
     )
+    gold_row = conn.execute(
+        "SELECT required_context_sources_json FROM eval_gold_set_tasks WHERE id = ?",
+        (gold_task_id,),
+    ).fetchone()
+    assert json.loads(gold_row["required_context_sources_json"]) == [
+        {"source_id": "PROJECT.md", "source_type": "project_truth"},
+        {"source_id": "missing-note", "source_type": "obsidian_notes"},
+    ]
     record_retrieval(
         conn,
         run_id=run_id,

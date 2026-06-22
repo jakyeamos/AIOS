@@ -73,3 +73,11 @@ Stay neutral toward the user and opposing positions. Evaluate the claim, not the
 ## Rule 9 — Treat memory as structured knowledge, not just search
 
 AIOS must not treat memory as only search. Memory should preserve source, time, provenance, project scope, current validity, and relationships between ideas. Internal memory may use structured facts, graph edges, embeddings, and raw source text, but model-facing memory must be compiled into clear briefing packets that the LLM can actually reason over. For API models, AIOS should optimize for stable-prefix prompt caching. Direct KV-cache injection is allowed only as a future/local-runner optimization and must never become the source of truth.
+
+## Rule 10 — Use NotebookLM only for bounded synthesis
+
+NotebookLM MCP is not default memory and is not canonical. Use NotebookLM MCP when the task is about relationships, not just facts.
+
+Fact lookup uses local memory first. Connection discovery uses local memory to select a bounded source bundle, NotebookLM to synthesize relationships, AIOS to stage results, and reviewed promotion back into Obsidian or TMCP only after review.
+
+Do not use NotebookLM MCP for simple lookup, code execution, repo edits, raw session recovery, unbounded whole-vault requests, secrets, credentials, or raw operational memory. Raw operational memory must stay local. TMCP remains the agent-facing skill layer.
