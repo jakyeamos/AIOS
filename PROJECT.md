@@ -33,6 +33,27 @@ Root operator documentation now lives in `README.md`, including local UI launch 
 
 ## Implemented On 2026-06-22
 
+AIOS now has a versioned pre-commit quality ladder for standards enforcement:
+
+- `.githooks/pre-commit` invokes `bin/aios-quality-ladder.py`
+- `services.commit_quality_ladder` checks global standards inventory, standards-health registry coverage, context compiler validation, success-criteria registry coverage, AIOS quality-pipeline gate coverage, and staged confident-code event-loop ordering
+- staged JavaScript/TypeScript code that registers message response handlers before `postMessage()` is blocked unless it documents a real runtime reason with an explicit `aios-quality` waiver comment
+- focused tests in `tests/test_commit_quality_ladder.py` cover the standards inventory, standards-health registry, success-criteria registry, event-loop blocker, and waiver behavior
+
+AIOS also installs a portable user-level commit quality gate for repositories that are not yet running through AIOS:
+
+- global Git `core.hooksPath` points to `/Users/jakyeamos/AIOS/.githooks-user`
+- `.githooks-user/pre-commit` invokes `bin/user-commit-quality-gate.py` without requiring AIOS context, SQLite, or repo-local setup
+- the portable gate blocks staged merge conflict markers, likely secret literals, npm/yarn package-manager drift, production TypeScript `any`, oversized source files, weak Python tests, and JavaScript/TypeScript handler-before-`postMessage()` ordering without a documented runtime-reason waiver
+- source commits require `.pre-cr.json` and a `pre-cr` CLI on PATH, then run `pre-cr run --json --workspace <repo>` so the global hook bridges into Pre-CR changed-line readiness
+- AIOS itself keeps local `core.hooksPath=.githooks`, so the stricter AIOS-specific standards ladder still runs for this repository
+
+AIOS roadmap planning now makes standards-to-ladder promotion explicit:
+
+- Phase 14 owns the portable AIOS standards ladder contract and warn-only/reporting entry point for checks that are deterministic without AIOS runtime state
+- Phase 16 owns the evidence and independent-verifier prerequisites required before standards checks can block in AIOS-managed repositories
+- Phase 22 owns progressive promotion into the global user-level commit quality ladder, including backfill, false-positive review, waiver policy, and fail-closed eligibility
+
 AIOS session-start packets now inject a user-story verification loop for broad app, UI, UX, and feature verification work:
 
 - `bin/hook-session-start.py` detects user-facing verification objectives and adds a compact loop contract to the hook packet

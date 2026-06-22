@@ -7,9 +7,9 @@ last_updated: "2026-06-22T00:00:00.000Z"
 progress:
   total_phases: 22
   completed_phases: 11
-  total_plans: 122
+  total_plans: 123
   completed_plans: 47
-  percent: 39
+  percent: 38
 ---
 
 # AIOS Planning State
@@ -52,6 +52,10 @@ progress:
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-06-22 | Add user-level commit quality gate | Planned in `.planning/quick/260622-user-level-commit-quality-gate`; global Git hooks now point to `/Users/jakyeamos/AIOS/.githooks-user`, giving non-AIOS repos a portable pre-commit gate for conflict markers, likely secret literals, npm/yarn drift, production TypeScript `any`, oversized source files, weak Python tests, handler-before-send confident-code violations, and required Pre-CR changed-line readiness for source commits while AIOS keeps its stricter local hook path. |
+| 2026-06-22 | Add AIOS ladder-readiness to phase plans | Planned in `.planning/quick/260622-add-aios-ladder-readiness-to-phase-plans`; Phase 14 now owns the warn-only standards ladder contract, Phase 16 owns evidence/verifier prerequisites for blocking checks, and Phase 22 owns progressive promotion of AIOS standards into the global commit quality ladder. |
+| 2026-06-22 | Add commit hook quality ladder | Planned in `.planning/quick/260622-commit-hook-quality-ladder`; `.githooks/pre-commit` now runs the AIOS quality ladder, covering global standards inventory, standards-health registry coverage, context validation, success-criteria registry coverage, AIOS quality-pipeline gates, and staged confident-code event-loop ordering before commits can proceed once the hook path is installed. |
+| 2026-06-22 | Add confident code standard | Planned in `.planning/quick/260622-confident-code-standard`; global maintainability standards now require agents to update existing contracts, stale generic names, call sites, tests, fixtures, docs, and persisted shapes when a feature turns an implicit default into one variant among several, and to avoid defensive handler-before-send ordering for impossible event-loop races. |
 | 2026-06-22 | Strengthen dirty working tree enforcement | Planned in `.planning/quick/260622-m1d-strengthen-dirty-working-tree-enforcemen`; `git-worktree-cleanliness` now blocks session-close completion when `git status --porcelain` reports tracked or untracked changes, with stop-hook evidence recorded in success-criteria artifacts. |
 | 2026-05-13 | Bake harness durability rules into AIOS standards | Planned in `.planning/quick/260513-ljr-bake-harness-rules-into-aios-standards-d`; context standards now cover durable recurring-error fixes, bounded context for agent-facing files, and machine-readable remediation-bearing errors. |
 | 2026-05-14 | Replace fixed line-count harness rule | Planned in `.planning/quick/260513-si8-replace-fixed-line-count-harness-rule`; standards now use a qualitative bounded-context rule and responsibility-based splits instead of a fixed line count. |
@@ -75,7 +79,7 @@ progress:
 | 2026-06-01 | Add Phase 19 Native Workflow Command Pack | Phase 19 directory created with 19-RESEARCH.md and plans 19-01 through 19-07 (native command audit, command contracts and safety classes, read-only MVP commands, security audit, guarded cleanup and prototype, command metadata logging, tests and docs). REQUIREMENTS.md extended with CMDP-01 through CMDP-08. ROADMAP.md extended with Milestone 14 and Phase 19 scope. Total phases: 19, total plans: 105. |
 | 2026-06-01 | Add Phase 20 Execution-Symmetric Planning | Phase 20 directory created with 20-RESEARCH.md and plans 20-01 through 20-08 (planning audit, core principle and complexity contract, GSD workflow phase recognition, planning lens registry, skill-as-planning-lens behavior, executor-ready plan generation, internal planning schema/logs, eval coverage and docs). REQUIREMENTS.md extended with ESPL-01 through ESPL-08. ROADMAP.md extended with Milestone 15 and Phase 20 scope. Total phases: 20, total plans: 113. |
 | 2026-06-04 | Add Phase 21 macOS Native App Skill Pack | Phase 21 directory created with 21-RESEARCH.md and plans 21-01 through 21-09 (AIOS skill-system audit, donor repo audit, project/build skills, native pattern modules, settings/Sparkle/notch skills, release pipeline, TMCP routing and provenance, behavioral tests and validation, docs). REQUIREMENTS.md extended with MACS-01 through MACS-09. ROADMAP.md extended with Milestone 16 and Phase 21 scope. Total phases: 21, total plans: 122. |
-| 2026-06-22 | Add Phase 22 Progressive governance and standards backfill workflows | Phase 22 directory created for progressive governance gates across planning, execution, review, validation, and completion, plus tier-one standards intake/audit/backfill workflows. ROADMAP.md extended with Phase 22 scope placeholder. Total phases: 22, total plans: 122. |
+| 2026-06-22 | Add Phase 22 Progressive governance and standards backfill workflows | Phase 22 directory created for progressive governance gates across planning, execution, review, validation, and completion, plus tier-one standards intake/audit/backfill workflows. ROADMAP.md extended with Phase 22 scope placeholder. Total phases: 22, total plans: 123. |
 | 2026-05-24 | Add Refero Styles design-reference workflow guidance | Planned in `.planning/quick/260524-refero-styles-design-reference-workflow`; global design standards now allow Refero Styles as an optional cited design-reference source while preserving AIOS operational UI constraints. |
 | 2026-05-24 | Complete Phase 6 Standards Resolution And Evidence-Based Evaluation | Phase 6 shipped registry-backed standards resolution, briefing packet criteria/standards persistence, durable workflow-stage criteria findings, closeout stage evaluation aggregation, broader execution-first evidence ingestion, and CLI lifecycle controls for criteria findings plus standards preview. |
 | 2026-05-24 | Complete Phase 7 Delta Scoring And Health Backfill | Phase 7 shipped ten-domain standards health coverage, read-time delta explanations, provenance and contradiction classification, health-derived workflow recommendations, UI/CLI drill-down surfaces, governance-audit recommendations, and durable standards manual overrides. |

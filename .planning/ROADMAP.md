@@ -662,6 +662,7 @@ This milestone adds algorithmic complexity and code simplification as mandatory 
 - Add Rule 10 (Complexity + Simplification Gate) to `config/agent-rules.md` with full trigger conditions, Gate A (complexity/performance), Gate B (simplification/maintainability), Gate C (verification), and record-before-fix policy
 - Extend `AGENTS.md` with the gate section cross-referencing Rule 10
 - Extend `~/.claude/CLAUDE.md` Quality Ladder with Step 5 (Complexity + Simplification Gate — Hard after large work)
+- Create `docs/quality/aios-standards-ladder-contract.md` to define which AIOS standards can enter the commit quality ladder, which start warn-only, which stay AIOS-local, and which Phase 16/22 evidence gates must pass before fail-closed rollout
 - Create `docs/quality/implementation-pre-check.md` — 8 pre-check questions for during-implementation use
 - Create `docs/quality/complexity-simplification-gate.md` — root gate specification (why, when, what, how, fix-vs-defer, Definition of Done)
 - Create `docs/quality/complexity-checklist.md` — local 17-pattern algorithmic complexity checklist derived from codex-complexity-optimizer patterns; no external dependency
@@ -705,6 +706,7 @@ This milestone adds algorithmic complexity and code simplification as mandatory 
 - The backfill docs clearly distinguish "reported" from "fixed" — no silent remediations.
 - The cross-project summary table in the AIOS backfill doc shows P0/P1/P2 counts for all six external projects.
 - Quality commands (lint, typecheck, test) are run for each project and results recorded in the backfill doc.
+- AIOS standards ladder eligibility is documented with `off | warn | fail-eligible-later | AIOS-local` modes, and Phase 14 only promotes portable checks to warn-only/reporting.
 
 ### Milestone 8: Data Collection And Provider Extensibility
 
@@ -1262,13 +1264,13 @@ This milestone adds a native macOS app development skill pack to AIOS by transfo
 
 ### Phase 22: Progressive governance and standards backfill workflows
 
-**Goal:** [To be planned]
+**Goal:** Promote AIOS standards into progressive governance gates, including the global commit quality ladder, only after coverage, portability, evidence, waiver, and backfill criteria are explicit.
 **Requirements**: TBD
 **Depends on:** Phase 21
-**Plans:** 0 plans
+**Plans:** 1 plan
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 22 to break down)
+- [ ] 22-01 Promote AIOS Standards Into The Commit Quality Ladder
 
 ---
-*Last updated: 2026-06-22 after adding Phase 22 progressive governance and standards backfill workflows*
+*Last updated: 2026-06-22 after adding AIOS standards ladder readiness to Phase 14, Phase 16, and Phase 22 planning*
