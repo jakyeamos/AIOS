@@ -110,6 +110,22 @@ def test_create_eval_run_with_required_and_optional_fields() -> None:
     assert row["tests_run_json"] == '["uv run pytest -q tests/test_eval_run_service.py"]'
 
 
+def test_create_eval_run_rejects_unknown_task() -> None:
+    conn = _connect()
+
+    with pytest.raises(ValueError, match="Eval task not found"):
+        create_eval_run(
+            conn,
+            task_id="missing-task",
+            condition="full-aios",
+            mode="controlled",
+            harness="pytest",
+            model="gpt-5",
+            context_profile="jakye_repo_only",
+            final_status="partial",
+        )
+
+
 def test_record_eval_score_allows_partial_fields() -> None:
     conn = _connect()
     task_id = _create_task(conn)
@@ -225,6 +241,20 @@ def test_get_eval_summary_returns_counts_and_average_score() -> None:
     assert all_summary["by_status"] == {"failed": 1, "success": 1}
     assert project_summary["run_count"] == 1
     assert project_summary["average_score"] == 0.8
+
+
+def test_get_eval_summary_counts_runs_once_with_multiple_scores() -> None:
+    conn = _connect()
+    task_id = _create_task(conn, repo_id="p1")
+    run_id = _create_run(conn, task_id=task_id, final_status="success")
+    record_eval_score(conn, run_id=run_id, overall_score=0.2)
+    record_eval_score(conn, run_id=run_id, overall_score=0.8)
+
+    summary = get_eval_summary(conn, project_id="p1")
+
+    assert summary["run_count"] == 1
+    assert summary["task_count"] == 1
+    assert summary["average_score"] == 0.8
 
 
 def test_context_profile_validation_raises_value_error() -> None:

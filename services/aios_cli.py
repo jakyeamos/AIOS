@@ -2807,7 +2807,9 @@ def cmd_eval_gold_set_run(conn: sqlite3.Connection, args: argparse.Namespace) ->
     )
 
 
-def cmd_shadow_create_worktree(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+def cmd_shadow_create_worktree(
+    conn: sqlite3.Connection, args: argparse.Namespace
+) -> dict[str, Any]:
     branch_name = shadow_branch_name(task_id=str(args.task_id), condition=str(args.condition))
     worktree_path = create_shadow_worktree(
         repo_path=Path(args.repo_path).resolve(),
@@ -2879,7 +2881,9 @@ def cmd_shadow_score(conn: sqlite3.Connection, args: argparse.Namespace) -> dict
         (str(args.trace_id),),
     ).fetchone()
     if trace_row is None:
-        raise CLIError("shadow-score-not-found", f"Peer trace not found: {args.trace_id}", EXIT_NOT_FOUND)
+        raise CLIError(
+            "shadow-score-not-found", f"Peer trace not found: {args.trace_id}", EXIT_NOT_FOUND
+        )
     trace_record = dict(trace_row)
     score = score_shadow_candidate(trace_record)
     candidate_id = f"shadow-candidate-{uuid.uuid4()}"
@@ -2927,7 +2931,7 @@ def cmd_shadow_queue(conn: sqlite3.Connection) -> dict[str, Any]:
 
 
 def cmd_ablation_run(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
-    policy_paths = [item for item in str(args.policies).split(",") if item]
+    policy_paths: list[str | Path] = [item for item in str(args.policies).split(",") if item]
     run_ids = run_ablation_suite(
         conn,
         task_id=str(args.task_id),
@@ -2984,7 +2988,9 @@ def _eval_task_dict(conn: sqlite3.Connection, task_id: str) -> dict[str, Any]:
     return dict(row)
 
 
-def cmd_benchmark_to_swe_bench(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+def cmd_benchmark_to_swe_bench(
+    conn: sqlite3.Connection, args: argparse.Namespace
+) -> dict[str, Any]:
     return to_swe_bench_format(_eval_task_dict(conn, str(args.task_id)))
 
 
@@ -4720,7 +4726,9 @@ def create_parser() -> argparse.ArgumentParser:
     shadow_run_pipeline.add_argument("--repo-path", default=".")
     shadow_run_pipeline.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
-    shadow_status_parser = shadow_subparsers.add_parser("status", help="Show shadow candidate status")
+    shadow_status_parser = shadow_subparsers.add_parser(
+        "status", help="Show shadow candidate status"
+    )
     shadow_status_parser.add_argument("--candidate-id", required=True)
     shadow_status_parser.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 

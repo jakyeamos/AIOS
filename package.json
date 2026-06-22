@@ -9,6 +9,8 @@
     "test:wiki": "node --test tests/wiki-maintenance.test.mjs",
     "wiki:check": "node tools/wiki-check.mjs",
     "quality:eval": "bash scripts/quality-eval.sh",
-    "corpus:evaluate": "node scripts/aios-corpus-eval.cjs"
+    "corpus:evaluate": "node scripts/aios-corpus-eval.cjs",
+    "deploy:preview:watch": "bash scripts/vercel-deploy-watch.sh preview",
+    "deploy:prod:watch": "bash scripts/vercel-deploy-watch.sh prod"
   }
 }

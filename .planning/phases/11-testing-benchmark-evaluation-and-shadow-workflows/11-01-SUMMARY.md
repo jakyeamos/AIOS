@@ -13,7 +13,7 @@ key-files:
     - services/aios_cli.py
     - tests/test_aios_cli.py
 metrics:
-  focused_tests_passed: 11
+  focused_tests_passed: 14
 ---
 
 # Phase 11 Plan 01 Summary
@@ -30,7 +30,9 @@ Created the durable eval-run record foundation for Phase 11. AIOS now has SQLite
 - `services/eval_run_service.py`
   - Added `create_eval_task`, `create_eval_run`, `record_eval_score`, `record_eval_failure`, `list_eval_runs`, `get_eval_run_detail`, and `get_eval_summary`.
   - Validates context profiles, final statuses, and failure priorities with remediation-bearing `ValueError` messages.
+  - Validates that eval runs reference an existing eval task before insertion.
   - Stores list fields as JSON strings and returns decoded list fields in read APIs.
+  - Summarizes latest score-per-run without inflating run counts when a run has multiple score rows.
   - Initializes only the eval-run tables it owns, so the service works before later Phase 11 tables exist.
 
 - `services/aios_cli.py`
@@ -39,28 +41,28 @@ Created the durable eval-run record foundation for Phase 11. AIOS now has SQLite
   - Preserved global `--json` behavior while also accepting subcommand-level `--json`.
 
 - `tests/test_eval_run_service.py`
-  - Added service-contract tests for task/run round trips, score defaults, failure priority validation, condition and context-profile filters, joined run detail output, summary aggregation, context-profile validation, final-status validation, and missing-later-table tolerance.
+  - Added service-contract tests for task/run round trips, missing-task rejection, score defaults, failure priority validation, condition and context-profile filters, joined run detail output, summary aggregation, multi-score summary de-duplication, context-profile validation, final-status validation, and missing-later-table tolerance.
 
 - `tests/test_aios_cli.py`
-  - Added eval CLI coverage for record/list/summary JSON output through the real `run_cli` path.
+  - Added eval CLI coverage for record/list/summary JSON output and missing-task JSON errors through the real `run_cli` path.
 
 ## Verification
 
-- `uv run pytest -q tests/test_eval_run_service.py tests/test_aios_cli.py::test_eval_run_cli_record_list_and_summary_json` passed: 11 tests.
+- `uv run pytest -q tests/test_eval_run_service.py tests/test_aios_cli.py::test_eval_run_cli_record_list_and_summary_json tests/test_aios_cli.py::test_eval_run_cli_rejects_missing_task_json` passed: 14 tests.
 - `uv run ruff check services/eval_run_service.py services/aios_cli.py tests/test_eval_run_service.py tests/test_aios_cli.py` passed.
-- `uv run basedpyright services/eval_run_service.py tests/test_eval_run_service.py` passed with 0 errors and 1 existing environment warning for unresolved `pytest` imports.
+- `uv run ruff format --check services/eval_run_service.py services/aios_cli.py tests/test_eval_run_service.py tests/test_aios_cli.py` passed.
+- `uv run basedpyright services/eval_run_service.py services/aios_cli.py tests/test_eval_run_service.py tests/test_aios_cli.py` passed with 0 errors and 2 existing environment warnings for unresolved `pytest` imports.
 - Plan-contract grep verified the five schema blocks, service exports/validators, CLI parser/dispatch wiring, and required test cases.
 
 ## Broader Check Notes
 
-`uv run pytest -q tests/test_eval_run_service.py tests/test_aios_cli.py` was also run. The new eval tests passed, but the full CLI file still has unrelated failures in pre-existing contract/skills-harvest expectations:
+The full Python ladder was also run on 2026-06-22. The eval-run slice passed its targeted checks, but repo-level checks still fail outside this slice:
 
-- `test_contracts_audit_includes_operator_surface_row`
-- `test_contracts_audit_includes_next_action_row`
-- `test_contracts_audit_includes_daily_flow_row`
-- `test_skills_harvest_cli_dry_run`
-
-These failures were not introduced by Plan 11-01 eval-run wiring and were left out of scope.
+- `uv run pytest -q`: 10 failures in learning analysis, contract audit expectations, skills harvest validation shape, and tier-one regression expectations.
+- `uv run ruff check .`: 21 issues outside the eval-run slice.
+- `uv run ruff format --check .`: 133 files would be reformatted.
+- `uv run basedpyright`: 79 errors and 96 warnings.
+- `uv run vulture . --min-confidence 70`: passed.
 
 ## Deviations from Plan
 

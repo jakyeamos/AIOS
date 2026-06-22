@@ -71,6 +71,12 @@ AIOS now has a portable TMCP developer-process skill graph:
 
 AIOS also now vendors the `make-interfaces-feel-better` UI polish skill under `skills/`, registers it as the `make_interfaces_feel_better` candidate workflow skill, and exposes it as an optional TMCP module for detail-level UI polish inside the portable dev-process `visual_polish` route.
 
+AIOS agent completion rules now include an explicit Vercel deployment verification gate for Vercel-affecting shipping work:
+
+- `scripts/vercel-deploy-watch.sh` runs `vercel deploy` for preview or production, captures the deployment URL, and blocks on `vercel inspect --logs --wait`
+- root package scripts expose `pnpm deploy:preview:watch` and `pnpm deploy:prod:watch`
+- `AGENTS.md` instructs agents not to mark Vercel-affecting shipped work complete until the watched deployment succeeds, while keeping tokens environment-only through `VERCEL_TOKEN`
+
 AIOS success criteria now enforce git worktree cleanliness at session close:
 
 - `git-worktree-cleanliness` is a blocking global success criterion backed by `spec/success-criteria/git-worktree-cleanliness.md`

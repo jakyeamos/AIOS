@@ -3199,7 +3199,9 @@ def test_skills_harvest_cli_dry_run(tmp_path: Path, capsys) -> None:
     _seed_db(db_path)
     root = tmp_path / "project"
     root.mkdir()
-    (root / "AGENTS.md").write_text("Use pnpm and preserve local workflow rules.\n", encoding="utf-8")
+    (root / "AGENTS.md").write_text(
+        "Use pnpm and preserve local workflow rules.\n", encoding="utf-8"
+    )
     out = tmp_path / "skills-library"
 
     exit_code = run_cli(
@@ -3323,6 +3325,41 @@ def test_eval_run_cli_record_list_and_summary_json(tmp_path: Path, capsys) -> No
     assert summary_output["data"]["run_count"] == 1
     assert summary_output["data"]["task_count"] == 1
     assert summary_output["data"]["by_status"] == {"success": 1}
+
+
+def test_eval_run_cli_rejects_missing_task_json(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "eval",
+            "record-run",
+            "--task-id",
+            "missing-task",
+            "--condition",
+            "full-aios",
+            "--mode",
+            "controlled",
+            "--context-profile",
+            "jakye_repo_only",
+            "--final-status",
+            "partial",
+        ]
+    )
+
+    output = json.loads(capsys.readouterr().out)
+    assert exit_code == aios_cli.EXIT_USAGE
+    assert output["ok"] is False
+    assert output["error"]["code"] == "eval-record-invalid"
+    assert "Eval task not found" in output["error"]["message"]
 
 
 def test_packet_and_benchmark_cli_json_paths(tmp_path: Path, capsys) -> None:

@@ -1,12 +1,13 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active infra project powering Claude Code agent workflows with committed CTS backend, command-center UI, standalone query/audit utilities, design specs, and verified fixes for the latest AIOS UI/backend handoff gaps.
-healthScore: 72
-statusLabel: improving
-nextStep: Execute Phase 7 (delta scoring and health backfill) plans 07-01, 07-02, 07-03 in wave order; resume BasedPyright remediation in parallel.
-blockers: []
-lastUpdated: 2026-05-20
+summary: Active local-first agent operating system with durable eval-run recording, eval summary CLI surfaces, CTS/backend services, command-center UI, and broad but currently failing repo-level Python quality baselines.
+healthScore: 66
+statusLabel: needs_attention
+nextStep: Triage the 10 full-suite Python test failures and stale repo-wide Ruff/BasedPyright baselines before claiming repo-level quality green.
+blockers:
+  - Full Python test, Ruff, format, and BasedPyright baselines are failing outside the eval-run slice.
+lastUpdated: 2026-06-22
 tags: [infra, ai-os, hooks, automation]
 areas: [engineering]
 goals: []
@@ -16,17 +17,17 @@ primaryLanguage: Python
 activeBranch: main
 lastCommitDate: 2026-04-08
 quality:
-  lint: pass
+  lint: fail
   types: fail
-  tests: pass
-  deadCode: unknown
-  structure: pass
+  tests: fail
+  deadCode: pass
+  structure: warning
 canonicalCommands:
   install: uv sync
   dev: unknown
   lint: ruff check .
   typecheck: basedpyright
-  test: unknown
+  test: uv run pytest -q
   deadcode: vulture . --min-confidence 70
 agentExpectationsVersion: 1
 ---
@@ -35,7 +36,7 @@ agentExpectationsVersion: 1
 
 AIOS is an active, git-versioned Python/shell infrastructure project (first commit 2026-04-01, latest normalization commits on 2026-04-12). It runs continuously as the backbone of all Claude Code sessions: lifecycle hooks fire on session start, stop, prompt submit, and tool events, writing structured data to a SQLite ops database at `~/AIOS/data/aios.db`.
 
-The codebase is large — roughly 60 scripts in `bin/`, one committed test file, growing docs, and now a committed `aios-ui/` Next.js command-center app. `pyproject.toml` is now part of the repo, so Ruff, BasedPyright, and Vulture configuration live in source control instead of only existing locally. The Code Topology Service (CTS) backend is committed: `services/cts/` provides graph storage, parsing, search, impact analysis, incremental updates, and MCP/CLI entrypoints, and `hook-session-start.py` can inject CTS context when an index is current. The command-center UI is also committed and lintable, with project detail pages now exposing persisted per-project AIOS component scope controls for Taski summary, knowledge dossier, standards health, quality pipeline, learning writebacks, and active runs. Two standalone operational utilities are now committed as well: `bin/aios-query.py` exposes agent-friendly JSON views into the ops database, and `bin/token-audit.py` audits Claude transcript token usage and estimated spend. The anti-slop ESLint design spec is committed under `docs/superpowers/specs/`. The Python quality pass from 2026-04-12 still shows 20 Ruff issues and 22 BasedPyright errors plus 60 warnings.
+The codebase is large, with Python services and scripts in `services/` and `bin/`, a committed `aios-ui/` Next.js command-center app, schema-backed operational storage, growing context/planning docs, and explicit Python quality configuration in `pyproject.toml`. The Code Topology Service (CTS) backend is committed: `services/cts/` provides graph storage, parsing, search, impact analysis, incremental updates, and MCP/CLI entrypoints. Phase 11 eval-run infrastructure is now coherent end to end: `schema.sql` defines eval task/run/score/failure tables, `services/eval_run_service.py` creates and reads durable eval records, and `services/aios_cli.py` exposes `aios eval record-run`, `list-runs`, and `summary`. The latest full Python quality pass on 2026-06-22 shows repo-level failures outside the eval-run slice, while targeted eval-run service/CLI checks pass.
 
 ## Why This Matters / Intended Outcome
 
@@ -54,35 +55,36 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-04-27: Added persisted per-project AIOS component scope controls to the command-center project surface, including a dropdown selector and UI suppression for disabled sections
 - 2026-04-28: Verified and corrected latest UI/backend handoff gaps: literal-newline hook JSON recovery now has regression coverage, UI lint errors were removed, focused Python tests pass, and the Next.js production build passes after rebuilding `better-sqlite3` for the active Node ABI
 - 2026-05-20: Committed Phase 7 (delta scoring and health backfill) plans 07-01, 07-02, 07-03 covering DELT-01..DELT-04 — registry extension to 10 DELT-01 domains, explainable DeltaExplanation projection with four-state provenance (confirmed/inferred/missing/contradictory), and workflow-from-health recommender with CLI + UI surfaces.
+- 2026-06-22: Tightened Phase 11 eval-run recording so runs cannot be recorded for missing tasks, eval summaries count runs once when multiple score rows exist, and CLI JSON errors surface missing-task failures consistently.
 
 ## Open Problems
 
-1. **BasedPyright baseline still needs a fresh full pass** — earlier baseline had hook-adjacent and dynamic import issues
-2. **Anti-slop warnings remain in the UI** — `pnpm lint` exits 0, but still reports warning-level empty-state/action-copy findings
-3. **Turbopack tracing warning remains** — `pnpm build` succeeds but reports broad NFT tracing through `server/routers/prompts.ts`
-4. **Vulture dead-code scan not yet run** — `bin/` has ~60 scripts; some are likely stale or unused
+1. **Full Python test suite is not green** — `uv run pytest -q` failed on 2026-06-22 with 10 failures in learning analysis, contract audit expectations, skills harvest validation shape, and tier-one regression expectations.
+2. **Full Ruff baseline is not green** — `uv run ruff check .` failed on 2026-06-22 with 21 issues outside the eval-run slice.
+3. **Full format baseline is not green** — `uv run ruff format --check .` reported 133 files needing formatting on 2026-06-22.
+4. **Full BasedPyright baseline is not green** — `uv run basedpyright` failed on 2026-06-22 with 79 errors and 96 warnings.
 ## Next Concrete Steps
 
-1. Reduce remaining UI anti-slop warnings in the touched command-center surfaces
-2. Triage BasedPyright errors, starting with hook-adjacent scripts and dynamic import helpers
-3. Run `vulture . --min-confidence 70` and remove or annotate confirmed dead code in `bin/`
-4. Add smoke-test coverage for the remaining high-risk hooks: `hook-session-start.py` and `hook-stop.py`
+1. Fix the 10 current `uv run pytest -q` failures or update stale expectations where the underlying contract intentionally changed.
+2. Run Ruff autofix/format in planned chunks rather than broad unreviewed churn.
+3. Triage BasedPyright errors in touched/runtime-critical modules first, especially hook and managed-runtime scripts.
+4. Keep the eval-run service/CLI contract covered as later external harness adapters add more write paths.
 
 ## Risks / Blockers
 
 - Hook regressions are silent — no test safety net catches a broken stop hook until a session closes without writing its record
 - The large number of scripts in `bin/` (60+) means drift and dead code accumulation are likely without regular Vulture runs
-- Quality tooling is now explicit but failing, so the repo is at least observable but not yet at the target standard
+- Quality tooling is explicit but failing at repo level, so completion claims must distinguish targeted eval-run checks from full-repo health.
 
 ## Quality Ladder Notes
 
 | Step | Status | Notes |
 |------|--------|-------|
-| Lint (ruff) | Pass | Targeted Ruff pass on touched hook/backend files succeeded on 2026-04-28; full-repo Ruff should still be run before broad cleanup claims |
-| Type check (basedpyright) | Fail | 22 errors, 60 warnings on 2026-04-12 |
-| Dead code (vulture) | Unknown | Installed and configured via `pyproject.toml`; not yet run |
-| Tests | Pass | Focused hook/RTK/workflow synthesis tests pass; `hook-post-tool-use.py` now has literal-newline JSON regression coverage |
-| Structure | Pass | `pyproject.toml`, `schema.sql`, `bin/`, `services/`, `aios-ui/`, and `tests/` are organized, and the working tree is back to a clean committed baseline |
+| Lint (ruff) | Fail | `uv run ruff check .` failed on 2026-06-22 with 21 existing issues; targeted eval slice Ruff passed |
+| Type check (basedpyright) | Fail | `uv run basedpyright` failed on 2026-06-22 with 79 errors and 96 warnings; targeted eval slice had 0 errors and 2 pytest import warnings |
+| Dead code (vulture) | Pass | `uv run vulture . --min-confidence 70` exited 0 on 2026-06-22 |
+| Tests | Fail | `uv run pytest -q` failed on 2026-06-22 with 10 failures; eval-run focused tests passed 14/14 |
+| Structure | Warning | Full format check wants 133 files reformatted; touched eval files are formatted |
 
 ## Agent Notes
 

@@ -73,6 +73,12 @@ def _validate_priority(priority: str) -> None:
         raise ValueError(f"Invalid priority '{priority}'. Use one of: {allowed}.")
 
 
+def _validate_task_exists(conn: sqlite3.Connection, task_id: str) -> None:
+    row = conn.execute("SELECT 1 FROM eval_tasks WHERE id = ? LIMIT 1", (task_id,)).fetchone()
+    if row is None:
+        raise ValueError(f"Eval task not found: {task_id}")
+
+
 def ensure_eval_schema(conn: sqlite3.Connection) -> None:
     conn.row_factory = sqlite3.Row
     conn.executescript(
@@ -219,6 +225,7 @@ def create_eval_run(
     **kwargs: Any,
 ) -> str:
     ensure_eval_schema(conn)
+    _validate_task_exists(conn, task_id)
     _validate_context_profile(context_profile)
     final_status = str(kwargs.get("final_status", "partial"))
     _validate_final_status(final_status)
@@ -258,9 +265,7 @@ def create_eval_run(
 def record_eval_score(conn: sqlite3.Connection, *, run_id: str, **score_fields: Any) -> str:
     ensure_eval_schema(conn)
     values = {field: score_fields.get(field) for field in SCORE_FIELDS}
-    numeric_values = [
-        float(value) for value in values.values() if isinstance(value, int | float)
-    ]
+    numeric_values = [float(value) for value in values.values() if isinstance(value, int | float)]
     raw_overall_score = score_fields.get("overall_score")
     if isinstance(raw_overall_score, int | float):
         overall_score = float(raw_overall_score)
@@ -393,10 +398,13 @@ def get_eval_run_detail(conn: sqlite3.Connection, run_id: str) -> dict[str, Any]
     run = _run_row_to_dict(row)
     run["acceptance_criteria"] = _loads_list(run.pop("acceptance_criteria_json", None))
     run["success_criteria_files"] = _loads_list(run.pop("success_criteria_files_json", None))
-    run["scores"] = [dict(score) for score in conn.execute(
-        "SELECT * FROM eval_scores WHERE run_id = ? ORDER BY created_at DESC",
-        (run_id,),
-    ).fetchall()]
+    run["scores"] = [
+        dict(score)
+        for score in conn.execute(
+            "SELECT * FROM eval_scores WHERE run_id = ? ORDER BY created_at DESC",
+            (run_id,),
+        ).fetchall()
+    ]
     failures = []
     for failure in conn.execute(
         "SELECT * FROM eval_failures WHERE run_id = ? ORDER BY created_at DESC",
@@ -419,11 +427,16 @@ def get_eval_summary(conn: sqlite3.Connection, *, project_id: str | None = None)
     row = conn.execute(
         f"""
         SELECT COUNT(r.id) AS run_count,
-               AVG(s.overall_score) AS average_score,
+               AVG((
+                 SELECT s.overall_score
+                 FROM eval_scores s
+                 WHERE s.run_id = r.id
+                 ORDER BY s.created_at DESC, s.rowid DESC
+                 LIMIT 1
+               )) AS average_score,
                COUNT(DISTINCT r.task_id) AS task_count
         FROM eval_runs r
         LEFT JOIN eval_tasks t ON t.id = r.task_id
-        LEFT JOIN eval_scores s ON s.run_id = r.id
         {where_sql}
         """,
         params,
