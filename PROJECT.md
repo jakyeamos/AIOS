@@ -33,6 +33,13 @@ Root operator documentation now lives in `README.md`, including local UI launch 
 
 ## Implemented On 2026-06-22
 
+AIOS session-start packets now inject a user-story verification loop for broad app, UI, UX, and feature verification work:
+
+- `bin/hook-session-start.py` detects user-facing verification objectives and adds a compact loop contract to the hook packet
+- the loop requires one canonical `.planning/user-story-verification.csv` spreadsheet with feature source refs, user story, expected behavior, test evidence, errors, fix refs, and retest status
+- the packet instructs agents to enumerate implemented features from code, test each user story through the real UI/code path before fixing, then retest affected stories after fixes while leaving missing-evidence rows blocked or failing
+- `tests/test_agent_rules_runtime.py` covers both injection for app verification objectives and non-injection for narrow backend work
+
 AIOS now has a portable TMCP developer-process skill graph:
 
 - `config/tmcp/portable-dev-process/manifest.json` defines a repo-vendored skill graph for practical AIOS-derived development helpers without requiring AIOS runtime state, SQLite, truth-file updates, eval archives, or continuous-learning loops

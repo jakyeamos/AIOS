@@ -44,6 +44,23 @@ VAULT_SEARCH = os.path.expanduser("~/AIOS/bin/vault-search.py")
 PACKET_DIR = os.path.expanduser("~/AIOS/logs")
 MAX_PACKET_CHARS = 1800  # ~400 tokens
 
+USER_STORY_LOOP_TERMS = {
+    "app",
+    "application",
+    "feature",
+    "features",
+    "frontend",
+    "screen",
+    "screens",
+    "ui",
+    "ux",
+    "user-facing",
+    "user story",
+    "user stories",
+    "verification",
+    "verify",
+}
+
 
 def preview_applicable_criteria(*args: Any, **kwargs: Any) -> dict[str, Any]:
     if str(ROOT) not in sys.path:
@@ -182,6 +199,25 @@ def get_cts_context(cwd: str, objective: str) -> str | None:
     )
 
 
+def user_story_verification_loop_context(objective: str) -> str | None:
+    normalized = objective.lower()
+    if not any(term in normalized for term in USER_STORY_LOOP_TERMS):
+        return None
+    return (
+        "**User-story verification loop:**\n"
+        "- For broad app, UI, UX, or feature verification, keep one canonical spreadsheet at "
+        "`.planning/user-story-verification.csv`.\n"
+        "- Required columns: `feature_id`, `feature`, `source_refs`, `user_story`, "
+        "`expected_behavior`, `status`, `evidence`, `errors`, `fix_ref`, `retest_status`.\n"
+        "- First enumerate implemented features from code and write expected behavior from the "
+        "actual implementation, not assumptions.\n"
+        "- Then test each user story through the real UI/code path and document errors before "
+        "fixing them.\n"
+        "- After fixes, retest every affected story and leave rows as failing/blocked when evidence "
+        "is missing."
+    )
+
+
 def generate_packet(
     project_name: str,
     project_id: str,
@@ -197,6 +233,10 @@ def generate_packet(
     rules_context = agent_rules_context(max_rules=6)
     if rules_context:
         parts.append(rules_context)
+
+    verification_loop_context = user_story_verification_loop_context(objective)
+    if verification_loop_context:
+        parts.append(verification_loop_context)
 
     # 1. Project note — extract Current Focus section only
     note_result = vault_search(["--note", project_name])

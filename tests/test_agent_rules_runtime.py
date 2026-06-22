@@ -70,6 +70,57 @@ def test_session_packet_includes_agent_rules(monkeypatch) -> None:
     assert "Fail loud" in packet
 
 
+def test_session_packet_includes_user_story_loop_for_app_verification(monkeypatch) -> None:
+    module = _load_session_start_module()
+    monkeypatch.setattr(module, "vault_search", lambda _args: {"results": [], "count": 0})
+    monkeypatch.setattr(module, "get_active_rules", lambda _conn, max_rules=3: [])
+    monkeypatch.setattr(module, "get_review_queue_hint", lambda _conn: None)
+    monkeypatch.setattr(module, "get_open_bug", lambda _conn, _project_id: None)
+    monkeypatch.setattr(module, "get_cts_context", lambda _cwd, _objective: None)
+    monkeypatch.setattr(
+        module,
+        "resolve_task_standards",
+        lambda **_kwargs: {"criteria": [], "standards": [], "execution_first_triggers": []},
+    )
+
+    packet = module.generate_packet(
+        project_name="AIOS",
+        project_id="project-1",
+        conn=sqlite3.connect(":memory:"),
+        cwd=str(ROOT),
+        objective="Verify every feature in this app and fix UX errors",
+    )
+
+    assert "**User-story verification loop:**" in packet
+    assert ".planning/user-story-verification.csv" in packet
+    assert "`expected_behavior`" in packet
+    assert "`retest_status`" in packet
+
+
+def test_session_packet_skips_user_story_loop_for_narrow_backend_work(monkeypatch) -> None:
+    module = _load_session_start_module()
+    monkeypatch.setattr(module, "vault_search", lambda _args: {"results": [], "count": 0})
+    monkeypatch.setattr(module, "get_active_rules", lambda _conn, max_rules=3: [])
+    monkeypatch.setattr(module, "get_review_queue_hint", lambda _conn: None)
+    monkeypatch.setattr(module, "get_open_bug", lambda _conn, _project_id: None)
+    monkeypatch.setattr(module, "get_cts_context", lambda _cwd, _objective: None)
+    monkeypatch.setattr(
+        module,
+        "resolve_task_standards",
+        lambda **_kwargs: {"criteria": [], "standards": [], "execution_first_triggers": []},
+    )
+
+    packet = module.generate_packet(
+        project_name="AIOS",
+        project_id="project-1",
+        conn=sqlite3.connect(":memory:"),
+        cwd=str(ROOT),
+        objective="Rename this helper and update its unit test",
+    )
+
+    assert "**User-story verification loop:**" not in packet
+
+
 def test_session_packet_includes_resume_snapshot(monkeypatch) -> None:
     module = _load_session_start_module()
     monkeypatch.setattr(module, "vault_search", lambda _args: {"results": [], "count": 0})
