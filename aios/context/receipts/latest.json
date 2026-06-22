@@ -1,48 +1,36 @@
 {
-  "task_summary": "Add Truth-First Reasoning Rules as an AIOS agent principle",
+  "task_summary": "Give CrimClock access to the entire TMCP skill graph instead of only a namespace",
   "task_classification": {
-    "task": "Add Truth-First Reasoning Rules as an AIOS agent principle",
+    "task": "Give CrimClock access to the entire TMCP skill graph instead of only a namespace",
     "signals": [
       "all_tasks",
-      "task_touches_agent_harness"
+      "task_touches_agent_harness",
+      "task_touches_permissions",
+      "task_touches_skill_registry"
     ],
     "domains": [
       "agent-harnesses"
     ],
     "matched_terms": [
-      "agent"
+      "access",
+      "skill"
     ]
   },
   "selected_context_files": [
     {
-      "id": "context.router",
-      "path": "router.md",
-      "title": "Agent Bootloader",
+      "id": "global.security",
+      "path": "standards/global.security.md",
+      "title": "Global Security Standard",
       "tier": "global",
       "priority": "immutable",
-      "relevance_score": 0.84,
+      "relevance_score": 0.38,
       "specificity_score": 0.55,
-      "recency_score": 1,
+      "recency_score": 0.8,
       "authority_score": 1,
-      "token_cost_estimate": 298,
-      "final_score": 0.7629,
+      "token_cost_estimate": 209,
+      "final_score": 0.562,
       "load_decision": "load",
-      "reason": "Bootloader context is always loaded."
-    },
-    {
-      "id": "config.agent-rules",
-      "path": "config/agent-rules.md",
-      "title": "AIOS Agent Rules",
-      "tier": "global",
-      "priority": "immutable",
-      "relevance_score": 1,
-      "specificity_score": 0.55,
-      "recency_score": 0.25,
-      "authority_score": 1,
-      "token_cost_estimate": 1134,
-      "final_score": 0.722,
-      "load_decision": "load",
-      "reason": "1 applies_when signal(s) matched; 2 tag(s) matched; 8 title/summary term(s) matched"
+      "reason": "1 applies_when signal(s) matched"
     },
     {
       "id": "global.observability",
@@ -50,29 +38,14 @@
       "title": "Global Observability Standard",
       "tier": "global",
       "priority": "immutable",
-      "relevance_score": 0.46,
+      "relevance_score": 0.38,
       "specificity_score": 0.55,
-      "recency_score": 1,
+      "recency_score": 0.8,
       "authority_score": 1,
       "token_cost_estimate": 215,
-      "final_score": 0.6138,
+      "final_score": 0.5618,
       "load_decision": "load",
-      "reason": "1 applies_when signal(s) matched; 1 title/summary term(s) matched"
-    },
-    {
-      "id": "context.index",
-      "path": "index.md",
-      "title": "AIOS Context Compiler Index",
-      "tier": "global",
-      "priority": "high",
-      "relevance_score": 0.54,
-      "specificity_score": 0.55,
-      "recency_score": 1,
-      "authority_score": 0.85,
-      "token_cost_estimate": 305,
-      "final_score": 0.6126,
-      "load_decision": "load",
-      "reason": "Bootloader context is always loaded."
+      "reason": "1 applies_when signal(s) matched"
     },
     {
       "id": "context.schema",
@@ -80,12 +53,27 @@
       "title": "Context Frontmatter Schema",
       "tier": "global",
       "priority": "immutable",
-      "relevance_score": 0.46,
+      "relevance_score": 0.38,
       "specificity_score": 0.55,
-      "recency_score": 1,
+      "recency_score": 0.8,
       "authority_score": 1,
       "token_cost_estimate": 253,
-      "final_score": 0.6125,
+      "final_score": 0.5605,
+      "load_decision": "load",
+      "reason": "Bootloader context is always loaded."
+    },
+    {
+      "id": "context.router",
+      "path": "router.md",
+      "title": "Agent Bootloader",
+      "tier": "global",
+      "priority": "immutable",
+      "relevance_score": 0.38,
+      "specificity_score": 0.55,
+      "recency_score": 0.8,
+      "authority_score": 1,
+      "token_cost_estimate": 298,
+      "final_score": 0.5589,
       "load_decision": "load",
       "reason": "Bootloader context is always loaded."
     },
@@ -95,14 +83,44 @@
       "title": "Global Maintainability Standard",
       "tier": "global",
       "priority": "immutable",
-      "relevance_score": 0.46,
+      "relevance_score": 0.38,
       "specificity_score": 0.55,
-      "recency_score": 1,
+      "recency_score": 0.8,
       "authority_score": 1,
       "token_cost_estimate": 323,
-      "final_score": 0.61,
+      "final_score": 0.558,
       "load_decision": "load",
-      "reason": "1 applies_when signal(s) matched; 1 title/summary term(s) matched"
+      "reason": "1 applies_when signal(s) matched"
+    },
+    {
+      "id": "context.index",
+      "path": "index.md",
+      "title": "AIOS Context Compiler Index",
+      "tier": "global",
+      "priority": "high",
+      "relevance_score": 0.38,
+      "specificity_score": 0.55,
+      "recency_score": 0.8,
+      "authority_score": 0.85,
+      "token_cost_estimate": 305,
+      "final_score": 0.5286,
+      "load_decision": "load",
+      "reason": "Bootloader context is always loaded."
+    },
+    {
+      "id": "config.agent-rules",
+      "path": "config/agent-rules.md",
+      "title": "AIOS Agent Rules",
+      "tier": "global",
+      "priority": "immutable",
+      "relevance_score": 0.38,
+      "specificity_score": 0.55,
+      "recency_score": 0.25,
+      "authority_score": 1,
+      "token_cost_estimate": 1379,
+      "final_score": 0.4653,
+      "load_decision": "load",
+      "reason": "1 applies_when signal(s) matched"
     },
     {
       "id": "domains.agent-harnesses",
@@ -110,29 +128,29 @@
       "title": "Agent Harnesses Domain Standard",
       "tier": "domain",
       "priority": "high",
-      "relevance_score": 0.62,
+      "relevance_score": 0.76,
       "specificity_score": 0.65,
-      "recency_score": 1,
+      "recency_score": 0.8,
       "authority_score": 0.85,
       "token_cost_estimate": 425,
-      "final_score": 0.6653,
+      "final_score": 0.7013,
       "load_decision": "load",
-      "reason": "1 applies_when signal(s) matched; 3 title/summary term(s) matched"
+      "reason": "2 applies_when signal(s) matched"
     },
     {
-      "id": "features.context-compiler",
-      "path": "features/context-compiler.md",
-      "title": "AIOS Context Compiler Feature",
+      "id": "features.skill-registry",
+      "path": "features/skill-registry.md",
+      "title": "Skill Registry Feature",
       "tier": "feature",
-      "priority": "high",
-      "relevance_score": 0.46,
+      "priority": "normal",
+      "relevance_score": 1,
       "specificity_score": 0.9,
-      "recency_score": 1,
-      "authority_score": 0.85,
-      "token_cost_estimate": 219,
-      "final_score": 0.6712,
+      "recency_score": 0.8,
+      "authority_score": 0.65,
+      "token_cost_estimate": 124,
+      "final_score": 0.8306,
       "load_decision": "load",
-      "reason": "1 applies_when signal(s) matched; 1 title/summary term(s) matched"
+      "reason": "2 applies_when signal(s) matched; 3 title/summary term(s) matched"
     },
     {
       "id": "features.prompt-library",
@@ -142,27 +160,42 @@
       "priority": "high",
       "relevance_score": 0.38,
       "specificity_score": 0.9,
-      "recency_score": 1,
+      "recency_score": 0.8,
       "authority_score": 0.85,
       "token_cost_estimate": 130,
-      "final_score": 0.6424,
+      "final_score": 0.6224,
       "load_decision": "load",
       "reason": "1 applies_when signal(s) matched"
     },
     {
-      "id": "features.skill-registry",
-      "path": "features/skill-registry.md",
-      "title": "Skill Registry Feature",
+      "id": "features.context-compiler",
+      "path": "features/context-compiler.md",
+      "title": "AIOS Context Compiler Feature",
       "tier": "feature",
-      "priority": "normal",
-      "relevance_score": 0.46,
+      "priority": "high",
+      "relevance_score": 0.38,
       "specificity_score": 0.9,
-      "recency_score": 1,
-      "authority_score": 0.65,
-      "token_cost_estimate": 124,
-      "final_score": 0.6346,
+      "recency_score": 0.8,
+      "authority_score": 0.85,
+      "token_cost_estimate": 219,
+      "final_score": 0.6192,
       "load_decision": "load",
-      "reason": "1 applies_when signal(s) matched; 1 title/summary term(s) matched"
+      "reason": "1 applies_when signal(s) matched"
+    },
+    {
+      "id": "features.obsidian-search",
+      "path": "features/obsidian-search.md",
+      "title": "Obsidian Search Feature",
+      "tier": "feature",
+      "priority": "high",
+      "relevance_score": 0.3,
+      "specificity_score": 0.9,
+      "recency_score": 0.8,
+      "authority_score": 0.85,
+      "token_cost_estimate": 143,
+      "final_score": 0.5899,
+      "load_decision": "load",
+      "reason": "1 tag(s) matched; 1 title/summary term(s) matched"
     },
     {
       "id": "packets.workflow.approval-gates",
@@ -170,14 +203,59 @@
       "title": "Workflow Approval Gates Packet",
       "tier": "packet",
       "priority": "normal",
-      "relevance_score": 0.38,
+      "relevance_score": 0.76,
       "specificity_score": 0.95,
-      "recency_score": 1,
+      "recency_score": 0.8,
       "authority_score": 0.65,
       "token_cost_estimate": 198,
-      "final_score": 0.6124,
+      "final_score": 0.7444,
       "load_decision": "load",
-      "reason": "1 applies_when signal(s) matched"
+      "reason": "2 applies_when signal(s) matched"
+    },
+    {
+      "id": "packets.knowledge.obsidian-routing",
+      "path": "packets/knowledge.obsidian-routing.md",
+      "title": "Obsidian Graph Routing Packet",
+      "tier": "packet",
+      "priority": "high",
+      "relevance_score": 0.38,
+      "specificity_score": 0.95,
+      "recency_score": 0.8,
+      "authority_score": 0.85,
+      "token_cost_estimate": 229,
+      "final_score": 0.6313,
+      "load_decision": "load",
+      "reason": "Loaded because features.obsidian-search matched and requested this packet."
+    },
+    {
+      "id": "packets.knowledge.notebooklm-routing",
+      "path": "packets/knowledge.notebooklm-routing.md",
+      "title": "NotebookLM Bounded Synthesis Routing Packet",
+      "tier": "packet",
+      "priority": "high",
+      "relevance_score": 0.22,
+      "specificity_score": 0.95,
+      "recency_score": 1,
+      "authority_score": 0.85,
+      "token_cost_estimate": 367,
+      "final_score": 0.5824,
+      "load_decision": "load",
+      "reason": "1 tag(s) matched"
+    },
+    {
+      "id": "packets.security.oidc-secrets",
+      "path": "packets/security.oidc-secrets.md",
+      "title": "OIDC Secretless Deployment Packet",
+      "tier": "packet",
+      "priority": "high",
+      "relevance_score": 0,
+      "specificity_score": 0.95,
+      "recency_score": 0.8,
+      "authority_score": 0.85,
+      "token_cost_estimate": 148,
+      "final_score": 0.4822,
+      "load_decision": "load",
+      "reason": "Loaded because global.security matched and requested this packet."
     },
     {
       "id": "handoffs.latest",
@@ -185,12 +263,12 @@
       "title": "Latest Context Compiler Handoff",
       "tier": "handoff",
       "priority": "normal",
-      "relevance_score": 0.46,
+      "relevance_score": 0.38,
       "specificity_score": 0.75,
-      "recency_score": 1,
+      "recency_score": 0.8,
       "authority_score": 0.65,
       "token_cost_estimate": 184,
-      "final_score": 0.5949,
+      "final_score": 0.5429,
       "load_decision": "load",
       "reason": "Bootloader context is always loaded."
     }
@@ -201,62 +279,62 @@
   "writeback_candidates": [],
   "retrieval_trace": [
     {
-      "source": "context.router",
-      "reason": "Bootloader context is always loaded.",
+      "source": "global.security",
+      "reason": "1 applies_when signal(s) matched",
       "freshness": "2026-05-12",
-      "confidence": 0.76
-    },
-    {
-      "source": "config.agent-rules",
-      "reason": "1 applies_when signal(s) matched; 2 tag(s) matched; 8 title/summary term(s) matched",
-      "freshness": "unknown",
-      "confidence": 0.72
+      "confidence": 0.56
     },
     {
       "source": "global.observability",
-      "reason": "1 applies_when signal(s) matched; 1 title/summary term(s) matched",
+      "reason": "1 applies_when signal(s) matched",
       "freshness": "2026-05-12",
-      "confidence": 0.61
-    },
-    {
-      "source": "context.index",
-      "reason": "Bootloader context is always loaded.",
-      "freshness": "2026-05-12",
-      "confidence": 0.61
+      "confidence": 0.56
     },
     {
       "source": "context.schema",
       "reason": "Bootloader context is always loaded.",
       "freshness": "2026-05-12",
-      "confidence": 0.61
+      "confidence": 0.56
+    },
+    {
+      "source": "context.router",
+      "reason": "Bootloader context is always loaded.",
+      "freshness": "2026-05-12",
+      "confidence": 0.56
     },
     {
       "source": "global.maintainability",
-      "reason": "1 applies_when signal(s) matched; 1 title/summary term(s) matched",
+      "reason": "1 applies_when signal(s) matched",
       "freshness": "2026-05-12",
-      "confidence": 0.61
+      "confidence": 0.56
+    },
+    {
+      "source": "context.index",
+      "reason": "Bootloader context is always loaded.",
+      "freshness": "2026-05-12",
+      "confidence": 0.53
+    },
+    {
+      "source": "config.agent-rules",
+      "reason": "1 applies_when signal(s) matched",
+      "freshness": "unknown",
+      "confidence": 0.47
     },
     {
       "source": "domains.agent-harnesses",
-      "reason": "1 applies_when signal(s) matched; 3 title/summary term(s) matched",
+      "reason": "2 applies_when signal(s) matched",
       "freshness": "2026-05-12",
-      "confidence": 0.67
-    },
-    {
-      "source": "features.context-compiler",
-      "reason": "1 applies_when signal(s) matched; 1 title/summary term(s) matched",
-      "freshness": "2026-05-12",
-      "confidence": 0.67
+      "confidence": 0.7
     }
   ],
   "packet_contract": {
     "version": "phase2-v1",
     "route_compatible": true,
     "selection_policy": "deterministic-context-compiler",
-    "loaded_count": 12,
-    "skipped_count": 20,
+    "loaded_count": 17,
+    "skipped_count": 18,
     "missing_context_count": 0,
     "writeback_candidate_count": 0
   },
-  "context_receipt": "# Context Receipt\n\n## Task\n\nAdd Truth-First Reasoning Rules as an AIOS agent principle\n\n## Loaded Context\n\n- `router.md`\n  - Reason: Bootloader context is always loaded.\n- `config/agent-rules.md`\n  - Reason: 1 applies_when signal(s) matched; 2 tag(s) matched; 8 title/summary term(s) matched\n- `standards/global.observability.md`\n  - Reason: 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `index.md`\n  - Reason: Bootloader context is always loaded.\n- `schema.md`\n  - Reason: Bootloader context is always loaded.\n- `standards/global.maintainability.md`\n  - Reason: 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `domains/agent-harnesses.md`\n  - Reason: 1 applies_when signal(s) matched; 3 title/summary term(s) matched\n- `features/context-compiler.md`\n  - Reason: 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `features/prompt-library.md`\n  - Reason: 1 applies_when signal(s) matched\n- `features/skill-registry.md`\n  - Reason: 1 applies_when signal(s) matched; 1 title/summary term(s) matched\n- `packets/workflow.approval-gates.md`\n  - Reason: 1 applies_when signal(s) matched\n- `handoffs/latest.md`\n  - Reason: Bootloader context is always loaded.\n\n## Skipped Context\n\n- `projects/aios-ui.md` — Scored below load threshold for this task.\n- `projects/index.md` — Scored below load threshold for this task.\n- `packets/ui.command-center.md` — Scored below load threshold for this task.\n- `packets/testing.no-mock-echo.md` — Scored below load threshold for this task.\n- `packets/security.oidc-secrets.md` — Scored below load threshold for this task.\n- `packets/knowledge.obsidian-routing.md` — Scored below load threshold for this task.\n- `packets/maintainability.architecture-boundaries.md` — Scored below load threshold for this task.\n- `features/obsidian-search.md` — Scored below load threshold for this task.\n- `features/standards-delta.md` — Scored below load threshold for this task.\n- `standards/global.security.md` — Scored below load threshold for this task.\n- `features/index.md` — Scored below load threshold for this task.\n- `standards/global.design.md` — Scored below load threshold for this task.\n- `standards/global.testing.md` — Scored below load threshold for this task.\n- `domains/web-apps.md` — Scored below load threshold for this task.\n- `projects/taski.md` — Scored below load threshold for this task.\n- `projects/terrace.md` — Scored below load threshold for this task.\n- `projects/soundscape.md` — Scored below load threshold for this task.\n- `domains/knowledge-systems.md` — Scored below load threshold for this task.\n- `domains/index.md` — Scored below load threshold for this task.\n- `standards/index.md` — Scored below load threshold for this task.\n\n## Conflicts\n\nNone detected.\n\n## Missing Context\n\n- None.\n\n## Writeback Candidates\n\n- None.\n"
+  "context_receipt": "# Context Receipt\n\n## Task\n\nGive CrimClock access to the entire TMCP skill graph instead of only a namespace\n\n## Loaded Context\n\n- `standards/global.security.md`\n  - Reason: 1 applies_when signal(s) matched\n- `standards/global.observability.md`\n  - Reason: 1 applies_when signal(s) matched\n- `schema.md`\n  - Reason: Bootloader context is always loaded.\n- `router.md`\n  - Reason: Bootloader context is always loaded.\n- `standards/global.maintainability.md`\n  - Reason: 1 applies_when signal(s) matched\n- `index.md`\n  - Reason: Bootloader context is always loaded.\n- `config/agent-rules.md`\n  - Reason: 1 applies_when signal(s) matched\n- `domains/agent-harnesses.md`\n  - Reason: 2 applies_when signal(s) matched\n- `features/skill-registry.md`\n  - Reason: 2 applies_when signal(s) matched; 3 title/summary term(s) matched\n- `features/prompt-library.md`\n  - Reason: 1 applies_when signal(s) matched\n- `features/context-compiler.md`\n  - Reason: 1 applies_when signal(s) matched\n- `features/obsidian-search.md`\n  - Reason: 1 tag(s) matched; 1 title/summary term(s) matched\n- `packets/workflow.approval-gates.md`\n  - Reason: 2 applies_when signal(s) matched\n- `packets/knowledge.obsidian-routing.md`\n  - Reason: Loaded because features.obsidian-search matched and requested this packet.\n- `packets/knowledge.notebooklm-routing.md`\n  - Reason: 1 tag(s) matched\n- `packets/security.oidc-secrets.md`\n  - Reason: Loaded because global.security matched and requested this packet.\n- `handoffs/latest.md`\n  - Reason: Bootloader context is always loaded.\n\n## Skipped Context\n\n- `packets/testing.no-mock-echo.md` — Scored below load threshold for this task.\n- `packets/ui.command-center.md` — Scored below load threshold for this task.\n- `features/standards-delta.md` — Scored below load threshold for this task.\n- `packets/maintainability.architecture-boundaries.md` — Scored below load threshold for this task.\n- `projects/aios-ui.md` — Scored below load threshold for this task.\n- `domains/knowledge-systems.md` — Scored below load threshold for this task.\n- `features/index.md` — Scored below load threshold for this task.\n- `standards/global.testing.md` — Scored below load threshold for this task.\n- `domains/web-apps.md` — Scored below load threshold for this task.\n- `projects/index.md` — Scored below load threshold for this task.\n- `projects/taski.md` — Scored below load threshold for this task.\n- `projects/terrace.md` — Scored below load threshold for this task.\n- `projects/soundscape.md` — Scored below load threshold for this task.\n- `standards/index.md` — Scored below load threshold for this task.\n- `standards/global.design.md` — Scored below load threshold for this task.\n- `domains/index.md` — Scored below load threshold for this task.\n- `domains/data-projects.md` — Scored below load threshold for this task.\n- `domains/product-design.md` — Scored below load threshold for this task.\n\n## Conflicts\n\nNone detected.\n\n## Missing Context\n\n- None.\n\n## Writeback Candidates\n\n- None.\n"
 }

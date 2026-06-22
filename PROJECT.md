@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-06-13
+Last updated: 2026-06-22
 
 ## What AIOS Is
 
@@ -30,6 +30,43 @@ The repository currently contains four meaningful subsystems:
    The file-backed AIOS Context Compiler: tiered Markdown routing manifests, deterministic task compilation, generated briefings, and context receipts.
 
 Root operator documentation now lives in `README.md`, including local UI launch commands, key UI routes, store paths, workflow proposal backfill, and verification commands.
+
+## Implemented On 2026-06-22
+
+AIOS now has a portable TMCP developer-process skill graph:
+
+- `config/tmcp/portable-dev-process/manifest.json` defines a repo-vendored skill graph for practical AIOS-derived development helpers without requiring AIOS runtime state, SQLite, truth-file updates, eval archives, or continuous-learning loops
+- the pack includes router, task, module, branch, and routing-case nodes for repo detection, command discovery, quality checks, debugging, diff review, test authoring, CI triage, frontend verification, git hygiene, dependency audits, docs updates, and hook guidance
+- the default branch is read-only, while explicit mutation, network-required, and destructive-action branches preserve safe behavior when the pack is used in other projects
+- `tests/test_portable_dev_process_tmcp.py` verifies graph integrity, core capability coverage, routing-case consistency, and the no-AIOS-governance portability contract
+
+## Implemented On 2026-06-21
+
+AIOS now has a file-backed TMCP paired-run benchmark pipeline:
+
+- `bin/tmcp-benchmark.py` supports `discover`, `preflight`, `task import`, `conditions`, `freeze`, `run`, and `aggregate` commands over the `tmcp-benchmark/` scaffold
+- `services.tmcp_benchmark` now records task families, held-out task manifests, seeded anonymous condition maps, frozen hash manifests, shortcut leakage checks, isolated git-worktree dry runs, timing/token/route/patch/evaluation artifacts, and conservative aggregate comparisons
+- aggregation reports baseline, flat-skills, cold-TMCP, and validated-shortcut comparisons separately, including the required cold-vs-shortcut comparison, and refuses speed/token improvement claims unless completion and quality are non-inferior and the measured delta is positive
+- the current dry-run calibration artifact set contains 8 stub runs across `Bballedu` and `Terrace`; those records validate the harness shape only and are not promotional evidence for TMCP performance
+
+## Implemented On 2026-06-21
+
+AIOS Phase 11 is complete across Testing, Benchmark Evaluation, And Shadow Workflows:
+
+- eval-run infrastructure now records tasks, runs, scores, failures, gold-set tasks, context profiles, final status, priority, and JSON-list fields through `services.eval_run_service` and `aios eval`
+- second-brain lift, retrieval metrics, gold-set recall, feature ablations, shadow branch comparisons, passive peer traces, candidate scoring, and approval-gated shadow automation now have durable services, schema support, and CLI surfaces
+- `services.portable_context_packet_generator` creates privacy-filtered portable context packets in `config/context-packets/`, while `services.external_benchmark_adapter` maps eval tasks to SWE-bench and Terminal-Bench formats and normalizes external results as `external_clean_room`
+- the operator UI now reads eval tables through `aios-ui/server/aios/eval-data.ts`, exposes them through tRPC, and embeds collapsible eval summary and shadow candidate queue panels on the Command Center, project detail, and run detail surfaces
+- `.planning/phases/11-testing-benchmark-evaluation-and-shadow-workflows/11-VERIFICATION.md` records EVAL-01 through EVAL-08 as passed with targeted Python tests, Python lint/type checks, UI lint/typecheck, architecture lint, context validation, and live route smoke evidence
+
+## Implemented On 2026-06-18
+
+AIOS now has a non-mutating TMCP multi-project benchmark scaffold:
+
+- `services.tmcp_benchmark` discovers eligible non-hidden Git repositories read-only and records project id, branch, current commit, AIOS shadow branch, lockfiles, CI config, build/test/typecheck/lint commands, skills, TMCP graph, and shortcut registry signals
+- `bin/tmcp-benchmark.py init` creates the `tmcp-benchmark/` directory contract with manifests, task/run/evaluation/analysis/report folders, frozen condition names, shortcut states, run-record template defaults, and claims-discipline report stubs
+- the generated scaffold under `tmcp-benchmark/` currently inventories 35 non-hidden local Git repositories from `/Users/jakyeamos` without fetching, syncing, force-pushing, executing agents, or making benchmark claims
+- `tests/test_tmcp_benchmark.py` covers read-only discovery, shadow-branch detection, tooling inventory, hidden-directory exclusion, manifest generation, shortcut-state recording, and null token defaults for unavailable metrics
 
 ## Implemented On 2026-06-13
 
