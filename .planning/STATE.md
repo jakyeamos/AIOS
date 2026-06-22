@@ -5,7 +5,7 @@ milestone_name: milestone
 status: unknown
 last_updated: "2026-06-22T00:00:00.000Z"
 progress:
-  total_phases: 21
+  total_phases: 22
   completed_phases: 11
   total_plans: 122
   completed_plans: 47
@@ -34,7 +34,7 @@ progress:
 - Active phase: Phase 12, Graph-Native Memory Architecture And Cache-Aware Context Compilation
 - Active plan: Phase 12 Plan 12-01
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11
-- Next dependency chain: Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21
+- Next dependency chain: Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
 
 ## Known Constraints To Preserve
@@ -74,6 +74,7 @@ progress:
 | 2026-06-01 | Add Phase 19 Native Workflow Command Pack | Phase 19 directory created with 19-RESEARCH.md and plans 19-01 through 19-07 (native command audit, command contracts and safety classes, read-only MVP commands, security audit, guarded cleanup and prototype, command metadata logging, tests and docs). REQUIREMENTS.md extended with CMDP-01 through CMDP-08. ROADMAP.md extended with Milestone 14 and Phase 19 scope. Total phases: 19, total plans: 105. |
 | 2026-06-01 | Add Phase 20 Execution-Symmetric Planning | Phase 20 directory created with 20-RESEARCH.md and plans 20-01 through 20-08 (planning audit, core principle and complexity contract, GSD workflow phase recognition, planning lens registry, skill-as-planning-lens behavior, executor-ready plan generation, internal planning schema/logs, eval coverage and docs). REQUIREMENTS.md extended with ESPL-01 through ESPL-08. ROADMAP.md extended with Milestone 15 and Phase 20 scope. Total phases: 20, total plans: 113. |
 | 2026-06-04 | Add Phase 21 macOS Native App Skill Pack | Phase 21 directory created with 21-RESEARCH.md and plans 21-01 through 21-09 (AIOS skill-system audit, donor repo audit, project/build skills, native pattern modules, settings/Sparkle/notch skills, release pipeline, TMCP routing and provenance, behavioral tests and validation, docs). REQUIREMENTS.md extended with MACS-01 through MACS-09. ROADMAP.md extended with Milestone 16 and Phase 21 scope. Total phases: 21, total plans: 122. |
+| 2026-06-22 | Add Phase 22 Progressive governance and standards backfill workflows | Phase 22 directory created for progressive governance gates across planning, execution, review, validation, and completion, plus tier-one standards intake/audit/backfill workflows. ROADMAP.md extended with Phase 22 scope placeholder. Total phases: 22, total plans: 122. |
 | 2026-05-24 | Add Refero Styles design-reference workflow guidance | Planned in `.planning/quick/260524-refero-styles-design-reference-workflow`; global design standards now allow Refero Styles as an optional cited design-reference source while preserving AIOS operational UI constraints. |
 | 2026-05-24 | Complete Phase 6 Standards Resolution And Evidence-Based Evaluation | Phase 6 shipped registry-backed standards resolution, briefing packet criteria/standards persistence, durable workflow-stage criteria findings, closeout stage evaluation aggregation, broader execution-first evidence ingestion, and CLI lifecycle controls for criteria findings plus standards preview. |
 | 2026-05-24 | Complete Phase 7 Delta Scoring And Health Backfill | Phase 7 shipped ten-domain standards health coverage, read-time delta explanations, provenance and contradiction classification, health-derived workflow recommendations, UI/CLI drill-down surfaces, governance-audit recommendations, and durable standards manual overrides. |
@@ -107,4 +108,4 @@ progress:
 | 2026-06-02 | Complete Phase 10 Plan 08 quality hotspot backfill baseline | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-08-SUMMARY.md` records `pnpm quality:eval`, the read-only hotspot detection script, and the first factual Agent Eval backfill inventory for Python services, CLI scripts, tests, aios-ui, config, and eval docs. |
 
 ---
-*Last updated: 2026-06-22 after adding the portable TMCP dev-process skill graph*
+*Last updated: 2026-06-22 after adding Phase 22 progressive governance and standards backfill workflows*

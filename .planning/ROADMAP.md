@@ -1225,6 +1225,7 @@ This milestone adds a native macOS app development skill pack to AIOS by transfo
 | Phase 19 | Phases 15, 16, 17, 18 | native AIOS workflow commands for orientation, handoff, squad review, security audit, guarded cleanup, prototype, and command eval logging |
 | Phase 20 | Phases 1, 2, 8, 16, 19 | execution-symmetric plan generation, GSD-ready planning, planning lenses, skill-as-planning-lens behavior, and plan-quality evals |
 | Phase 21 | Phases 15, 17, 19, 20 | AIOS/TMCP-native macOS app skill pack with task routing, provenance, behavioral tests, validation, and guarded release workflows |
+| Phase 22 | Phase 21 | progressive governance gates across planning, execution, review, validation, and completion; tier-one standards intake, audit, coverage, and backfill workflows |
 
 ## Requirement Coverage
 
@@ -1251,6 +1252,7 @@ This milestone adds a native macOS app development skill pack to AIOS by transfo
 | Phase 19 | CMDP-01, CMDP-02, CMDP-03, CMDP-04, CMDP-05, CMDP-06, CMDP-07, CMDP-08 | 8 |
 | Phase 20 | ESPL-01, ESPL-02, ESPL-03, ESPL-04, ESPL-05, ESPL-06, ESPL-07, ESPL-08 | 8 |
 | Phase 21 | MACS-01, MACS-02, MACS-03, MACS-04, MACS-05, MACS-06, MACS-07, MACS-08, MACS-09 | 9 |
+| Phase 22 | TBD | 0 |
 
 **Coverage Validation:**
 - v1 requirements: 133 (124 prior + 9 MACS)
@@ -1258,5 +1260,15 @@ This milestone adds a native macOS app development skill pack to AIOS by transfo
 - Unmapped: 0
 - Multi-mapped: 0
 
+### Phase 22: Progressive governance and standards backfill workflows
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 21
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 22 to break down)
+
 ---
-*Last updated: 2026-06-04 after adding Phase 21 macOS Native App Skill Pack*
+*Last updated: 2026-06-22 after adding Phase 22 progressive governance and standards backfill workflows*
