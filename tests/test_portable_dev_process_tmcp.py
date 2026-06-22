@@ -92,6 +92,7 @@ def test_portable_dev_process_has_core_dev_process_capabilities() -> None:
         "ci_triage",
         "frontend_runtime",
         "visual_polish_system",
+        "make_interfaces_feel_better",
         "enterprise_saas_visual_polish",
         "ai_surface_polish",
         "data_realism_polish",

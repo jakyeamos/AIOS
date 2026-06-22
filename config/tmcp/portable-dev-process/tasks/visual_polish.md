@@ -11,6 +11,7 @@ Also use when a generated screen feels generic, over-decorated, too much like de
 ## Required Modules
 
 - `@module:visual_polish_system`
+- `@module:make_interfaces_feel_better`
 - `@module:enterprise_saas_visual_polish`
 - `@module:data_realism_polish`
 
@@ -33,10 +34,11 @@ Also use when a generated screen feels generic, over-decorated, too much like de
 1. Identify the screen archetype, primary user task, primary object, and primary action.
 2. Select the density tier needed for the work surface: comfortable, standard, or compact.
 3. Review surface hierarchy before color or decoration: canvas, panel, card, overlay.
-4. Check for default-component artifacts: card quilts, excessive radius, heavy shadows, raw color utilities, decorative gradients, and placeholder data.
-5. Tighten typography, alignment, spacing, state treatment, and data realism before adding visual effects.
-6. If implementation is requested, edit the smallest set of UI files and preserve existing design-system conventions.
-7. If review is requested, return prioritized findings with concrete fixes and cite the relevant file or screen region when available.
+4. Apply the `make_interfaces_feel_better` module for detail-level checks: border radius math, optical alignment, shadows, micro-interactions, font smoothing, tabular numbers, image outlines, transition specificity, and hit areas.
+5. Check for default-component artifacts: card quilts, excessive radius, heavy shadows, raw color utilities, decorative gradients, and placeholder data.
+6. Tighten typography, alignment, spacing, state treatment, and data realism before adding visual effects.
+7. If implementation is requested, edit the smallest set of UI files and preserve existing design-system conventions.
+8. If review is requested, return prioritized findings with concrete fixes and cite the relevant file or screen region when available.
 
 ## Output Contract
 

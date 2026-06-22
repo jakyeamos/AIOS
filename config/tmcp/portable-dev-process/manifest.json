@@ -79,6 +79,7 @@
         ],
         "requires": [
           "modules/visual_polish_system.md",
+          "modules/make_interfaces_feel_better.md",
           "modules/enterprise_saas_visual_polish.md",
           "modules/data_realism_polish.md"
         ],
@@ -125,6 +126,7 @@
       "ci_triage": "modules/ci_triage.md",
       "frontend_runtime": "modules/frontend_runtime.md",
       "visual_polish_system": "modules/visual_polish_system.md",
+      "make_interfaces_feel_better": "modules/make_interfaces_feel_better.md",
       "enterprise_saas_visual_polish": "modules/enterprise_saas_visual_polish.md",
       "ai_surface_polish": "modules/ai_surface_polish.md",
       "data_realism_polish": "modules/data_realism_polish.md",

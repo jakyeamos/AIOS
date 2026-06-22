@@ -27,6 +27,7 @@
       "expected_task": "visual_polish",
       "expected_modules": [
         "visual_polish_system",
+        "make_interfaces_feel_better",
         "enterprise_saas_visual_polish",
         "data_realism_polish"
       ]
@@ -36,6 +37,7 @@
       "expected_task": "visual_polish",
       "expected_modules": [
         "visual_polish_system",
+        "make_interfaces_feel_better",
         "enterprise_saas_visual_polish",
         "data_realism_polish"
       ],
