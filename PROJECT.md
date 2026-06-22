@@ -44,6 +44,7 @@ AIOS now has a portable TMCP developer-process skill graph:
 
 - `config/tmcp/portable-dev-process/manifest.json` defines a repo-vendored skill graph for practical AIOS-derived development helpers without requiring AIOS runtime state, SQLite, truth-file updates, eval archives, or continuous-learning loops
 - the pack includes router, task, module, branch, and routing-case nodes for repo detection, command discovery, quality checks, debugging, diff review, test authoring, CI triage, frontend verification, git hygiene, dependency audits, docs updates, and hook guidance
+- `planning_review` now routes read-only strategy comparison and promotion-path planning through command discovery, test-authoring, and quality-gate guidance so objectives like `Compare workflow promotion strategies` avoid the generic agent-workflow ambiguity path
 - the default branch is read-only, while explicit mutation, network-required, and destructive-action branches preserve safe behavior when the pack is used in other projects
 - `tests/test_portable_dev_process_tmcp.py` verifies graph integrity, core capability coverage, routing-case consistency, and the no-AIOS-governance portability contract
 
