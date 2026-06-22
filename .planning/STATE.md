@@ -52,6 +52,7 @@ progress:
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-06-22 | Strengthen dirty working tree enforcement | Planned in `.planning/quick/260622-m1d-strengthen-dirty-working-tree-enforcemen`; `git-worktree-cleanliness` now blocks session-close completion when `git status --porcelain` reports tracked or untracked changes, with stop-hook evidence recorded in success-criteria artifacts. |
 | 2026-05-13 | Bake harness durability rules into AIOS standards | Planned in `.planning/quick/260513-ljr-bake-harness-rules-into-aios-standards-d`; context standards now cover durable recurring-error fixes, bounded context for agent-facing files, and machine-readable remediation-bearing errors. |
 | 2026-05-14 | Replace fixed line-count harness rule | Planned in `.planning/quick/260513-si8-replace-fixed-line-count-harness-rule`; standards now use a qualitative bounded-context rule and responsibility-based splits instead of a fixed line count. |
 | 2026-05-14 | Implement AIOS harness eval v0 | Planned in `.planning/quick/260513-ss4-implement-aios-harness-eval-v0-determini`; deterministic fixture-backed scoring now covers context routing, gates, success criteria, traces, false completion, recovery evidence, and useful writebacks. |
@@ -108,4 +109,4 @@ progress:
 | 2026-06-02 | Complete Phase 10 Plan 08 quality hotspot backfill baseline | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-08-SUMMARY.md` records `pnpm quality:eval`, the read-only hotspot detection script, and the first factual Agent Eval backfill inventory for Python services, CLI scripts, tests, aios-ui, config, and eval docs. |
 
 ---
-*Last updated: 2026-06-22 after adding Phase 22 progressive governance and standards backfill workflows*
+*Last updated: 2026-06-22 after strengthening dirty working tree enforcement*

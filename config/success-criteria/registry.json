@@ -184,6 +184,26 @@
       "related": [
         "truth-file-consistency"
       ]
+    },
+    {
+      "id": "git-worktree-cleanliness",
+      "title": "Git Worktree Cleanliness at Completion",
+      "path": "spec/success-criteria/git-worktree-cleanliness.md",
+      "scope": "global",
+      "blocking": true,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "*"
+        ],
+        "domains": [
+          "*"
+        ]
+      },
+      "related": [
+        "truth-file-consistency",
+        "workflow-state-integrity"
+      ]
     }
   ]
 }

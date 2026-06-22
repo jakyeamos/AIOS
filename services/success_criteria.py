@@ -688,6 +688,56 @@ def _evaluate_workflow_state_integrity(
     )
 
 
+def _evaluate_git_worktree_cleanliness(
+    context: dict[str, Any],
+    criterion: CriterionRecord,
+) -> CriterionFinding:
+    trigger_kind = context.get("trigger_kind")
+    status_entries = [
+        str(item).strip() for item in context.get("git_status_entries", []) if str(item).strip()
+    ]
+    status_error = str(context.get("git_status_error") or "").strip()
+    if trigger_kind != "session_close":
+        return CriterionFinding(
+            criterion.id,
+            criterion.title,
+            criterion.scope,
+            "pass",
+            "Git worktree cleanliness is only enforced at session close.",
+            [],
+            {"trigger_kind": trigger_kind},
+        )
+    if status_error:
+        return CriterionFinding(
+            criterion.id,
+            criterion.title,
+            criterion.scope,
+            "warning",
+            "Git worktree cleanliness could not be evaluated.",
+            [status_error],
+            {"status_error": status_error},
+        )
+    if status_entries:
+        return CriterionFinding(
+            criterion.id,
+            criterion.title,
+            criterion.scope,
+            "blocker",
+            "Session closed with uncommitted git changes; commit or explicitly record an accepted tradeoff before claiming completion.",
+            status_entries[:12],
+            {"dirty_entry_count": len(status_entries)},
+        )
+    return CriterionFinding(
+        criterion.id,
+        criterion.title,
+        criterion.scope,
+        "pass",
+        "Git worktree was clean at session close.",
+        [],
+        {},
+    )
+
+
 def _evaluate_execution_first_verification(
     context: dict[str, Any],
     criterion: CriterionRecord,
@@ -737,6 +787,7 @@ def evaluate_criterion(
         "truth-file-consistency": _evaluate_truth_file_consistency,
         "repo-boundary-discipline": _evaluate_repo_boundary_discipline,
         "workflow-state-integrity": _evaluate_workflow_state_integrity,
+        "git-worktree-cleanliness": _evaluate_git_worktree_cleanliness,
         "execution-first-verification": _evaluate_execution_first_verification,
     }
     evaluator = evaluators.get(criterion.id)
@@ -1138,6 +1189,8 @@ def evaluate_and_record(
     changed_files: Sequence[str],
     skills: Sequence[str] | None = None,
     execution_evidence: Sequence[str] | None = None,
+    git_status_entries: Sequence[str] | None = None,
+    git_status_error: str | None = None,
     used_legacy_link: bool = False,
     accepted_tradeoffs: Sequence[str] | None = None,
 ) -> dict[str, Any]:
@@ -1155,6 +1208,8 @@ def evaluate_and_record(
     context["used_legacy_link"] = used_legacy_link
     context["trigger_kind"] = trigger_kind
     context["execution_evidence"] = [str(item) for item in (execution_evidence or []) if item]
+    context["git_status_entries"] = [str(item) for item in (git_status_entries or []) if item]
+    context["git_status_error"] = git_status_error
 
     evaluated = evaluate_context(
         registry=registry,

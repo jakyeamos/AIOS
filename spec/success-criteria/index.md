@@ -1,6 +1,6 @@
 # Success Criteria Index
 
-Last updated: 2026-04-27
+Last updated: 2026-06-22
 
 This index is the canonical discovery point for all AIOS-managed success criteria.
 
@@ -26,6 +26,7 @@ This index is the canonical discovery point for all AIOS-managed success criteri
 | `truth-file-consistency` | Project Truth File Consistency | project-domain-specific | yes | AIOS implementation, bugfix, refactor | `spec/success-criteria/truth-file-consistency.md` |
 | `repo-boundary-discipline` | Repository Boundary Discipline | global | yes | implementation, bugfix, refactor | `spec/success-criteria/repo-boundary-discipline.md` |
 | `workflow-state-integrity` | Workflow State Integrity | domain-specific | no | orchestration/workflow-affecting work | `spec/success-criteria/workflow-state-integrity.md` |
+| `git-worktree-cleanliness` | Git Worktree Cleanliness at Completion | global | yes | session close and completion closeout | `spec/success-criteria/git-worktree-cleanliness.md` |
 
 ## Runtime Resolution Rules
 

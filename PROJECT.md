@@ -50,6 +50,12 @@ AIOS now has a portable TMCP developer-process skill graph:
 
 AIOS also now vendors the `make-interfaces-feel-better` UI polish skill under `skills/`, registers it as the `make_interfaces_feel_better` candidate workflow skill, and exposes it as an optional TMCP module for detail-level UI polish inside the portable dev-process `visual_polish` route.
 
+AIOS success criteria now enforce git worktree cleanliness at session close:
+
+- `git-worktree-cleanliness` is a blocking global success criterion backed by `spec/success-criteria/git-worktree-cleanliness.md`
+- `bin/hook-stop.py` captures `git status --porcelain` for the active repository and passes it into success-criteria evaluation
+- dirty tracked or untracked files at closeout produce a blocker-level finding so completed work left uncommitted is visible in durable evaluation artifacts
+
 ## Implemented On 2026-06-21
 
 AIOS now has a file-backed TMCP paired-run benchmark pipeline:

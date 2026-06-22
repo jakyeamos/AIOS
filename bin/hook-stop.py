@@ -98,6 +98,41 @@ def _json_obj(value: str | None) -> dict[str, Any]:
     return loaded if isinstance(loaded, dict) else {}
 
 
+def _git_status_entries(cwd: str | None) -> tuple[list[str], str | None]:
+    if not cwd:
+        return [], None
+    cwd_path = Path(cwd).expanduser()
+    if not cwd_path.exists():
+        return [], f"Working directory does not exist: {cwd}"
+    try:
+        root = subprocess.run(
+            ["git", "-C", str(cwd_path), "rev-parse", "--show-toplevel"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return [], f"Unable to locate git repository: {exc}"
+    if root.returncode != 0:
+        return [], None
+    repo_root = root.stdout.strip() or str(cwd_path)
+    try:
+        status = subprocess.run(
+            ["git", "-C", repo_root, "status", "--porcelain"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return [], f"Unable to read git status: {exc}"
+    if status.returncode != 0:
+        detail = (status.stderr or status.stdout).strip()
+        return [], detail or "Unable to read git status."
+    return [line for line in status.stdout.splitlines() if line.strip()], None
+
+
 # Closeout signal priority:
 # 1. Explicit follow-up or major repair flags mean repeated_failure.
 # 2. Failed workflow report status means weak_workflow.
@@ -1008,6 +1043,7 @@ def main() -> None:
         if not isinstance(accepted_tradeoffs, list):
             accepted_tradeoffs = [str(accepted_tradeoffs)]
         execution_evidence = execution_evidence_for_session(conn, session_id)
+        git_status_entries, git_status_error = _git_status_entries(row[3])
         criteria_eval = evaluate_and_record(
             conn,
             project_id=row[1],
@@ -1022,6 +1058,8 @@ def main() -> None:
             prompt_classifications=prompt_classifications,
             changed_files=criteria_changed_paths,
             execution_evidence=execution_evidence,
+            git_status_entries=git_status_entries,
+            git_status_error=git_status_error,
             used_legacy_link=used_legacy_link,
             accepted_tradeoffs=accepted_tradeoffs,
         )

@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import sqlite3
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -285,6 +286,21 @@ def test_closeout_signal_kind_only_for_terminal_runs() -> None:
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name='workflow_learning_events'"
     ).fetchone()
     assert row is None
+
+
+def test_git_status_entries_reports_dirty_worktree(tmp_path: Path) -> None:
+    module = _load_hook_stop()
+    subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+
+    clean_entries, clean_error = module._git_status_entries(str(tmp_path))
+    assert clean_entries == []
+    assert clean_error is None
+
+    (tmp_path / "notes.txt").write_text("dirty\n", encoding="utf-8")
+    dirty_entries, dirty_error = module._git_status_entries(str(tmp_path))
+
+    assert dirty_error is None
+    assert dirty_entries == ["?? notes.txt"]
 
 
 def test_hook_stop_persists_resolved_run_before_effectiveness_receipt(tmp_path: Path) -> None:

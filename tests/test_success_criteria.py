@@ -245,6 +245,45 @@ def test_execution_first_skips_pure_doc_changes() -> None:
     assert finding.metadata["triggers"] == []
 
 
+def test_git_worktree_cleanliness_blocks_dirty_session_close() -> None:
+    context = success_criteria.infer_context(
+        objective="Implement service change",
+        prompt_classifications=["implement"],
+        changed_files=["services/example.py"],
+        skills=[],
+    )
+    context["trigger_kind"] = "session_close"
+    context["git_status_entries"] = [" M services/example.py", "?? tests/test_example.py"]
+    criterion = next(
+        item for item in success_criteria.load_registry() if item.id == "git-worktree-cleanliness"
+    )
+
+    finding = success_criteria.evaluate_criterion(criterion, context)
+
+    assert finding.level == "blocker"
+    assert "uncommitted git changes" in finding.summary
+    assert finding.metadata["dirty_entry_count"] == 2
+
+
+def test_git_worktree_cleanliness_passes_clean_session_close() -> None:
+    context = success_criteria.infer_context(
+        objective="Explain code",
+        prompt_classifications=[],
+        changed_files=[],
+        skills=[],
+    )
+    context["trigger_kind"] = "session_close"
+    context["git_status_entries"] = []
+    criterion = next(
+        item for item in success_criteria.load_registry() if item.id == "git-worktree-cleanliness"
+    )
+
+    finding = success_criteria.evaluate_criterion(criterion, context)
+
+    assert finding.level == "pass"
+    assert "clean" in finding.summary
+
+
 def test_execution_first_still_fires_on_code_under_services() -> None:
     context = success_criteria.infer_context(
         objective="Update service behavior",
