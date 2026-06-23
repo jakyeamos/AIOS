@@ -172,7 +172,7 @@
 
 ### Execution-Symmetric Planning
 
-- [ ] **ESPL-01**: AIOS audits current plan generation, GSD planning workflows, slash command handling, workflow routing, skill invocation, plan artifacts, validation strategy generation, and handoff formats before implementation
+- [x] **ESPL-01**: AIOS audits current plan generation, GSD planning workflows, slash command handling, workflow routing, skill invocation, plan artifacts, validation strategy generation, and handoff formats before implementation
 - [ ] **ESPL-02**: AIOS documents Execution-Symmetric Planning as a core principle and defines complexity-sensitive planning behavior for trivial, simple, moderate, complex, and high-risk tasks
 - [ ] **ESPL-03**: AIOS recognizes GSD workflow phases through a configurable registry so `/gsdplanphase` and equivalents produce GSD-ready plans rather than generic planning prose
 - [ ] **ESPL-04**: AIOS defines a planning lens registry mapping task types and workflow phases to execution standards such as testing, maintainability, regression safety, architecture, rollback safety, interface contracts, orchestration, security, data validation, reproducibility, and executor readiness
@@ -324,7 +324,7 @@ None currently. The full operating-system vision is intentionally being planned 
 | CMDP-06 | Phase 19: Native Workflow Command Pack | Complete |
 | CMDP-07 | Phase 19: Native Workflow Command Pack | Complete |
 | CMDP-08 | Phase 19: Native Workflow Command Pack | Complete |
-| ESPL-01 | Phase 20: Execution-Symmetric Planning | Pending |
+| ESPL-01 | Phase 20: Execution-Symmetric Planning | Complete |
 | ESPL-02 | Phase 20: Execution-Symmetric Planning | Pending |
 | ESPL-03 | Phase 20: Execution-Symmetric Planning | Pending |
 | ESPL-04 | Phase 20: Execution-Symmetric Planning | Pending |
