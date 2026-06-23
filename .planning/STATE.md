@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-last_updated: "2026-06-23T19:25:00.000Z"
+last_updated: "2026-06-23T19:45:00.000Z"
 progress:
   total_phases: 22
   completed_phases: 15
   total_plans: 123
-  completed_plans: 82
+  completed_plans: 83
   percent: 67
 ---
 
@@ -26,13 +26,13 @@ progress:
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
 - Latest completed phase: Phase 15, Agent Skill Portfolio Audit And External Library Integration, shipped the skill inventory, global intent-specific skills, issues and handoff stores, and skill-authoring consolidation.
-- Latest completed plan: Phase 16 Plan 16-03 shipped durable verifier artifacts, implementation-bearing workflow metadata, closeout verifier gating, read-only CLI inspection, and commit-ladder verifier refs for HARN-04.
+- Latest completed plan: Phase 16 Plan 16-04 shipped structured context routing manifests in compiler payloads and receipts, Python manifest validation helpers, and second-brain fallback/parity coverage for HARN-05.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 11, Harness Determinism, Evidence, And Independent Verification
 - Active phase: Phase 16, Harness Determinism, Evidence, And Independent Verification
-- Active plan: Phase 16 Plan 16-04
+- Active plan: Phase 16 Plan 16-05
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15
 - Next dependency chain: Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
@@ -52,6 +52,7 @@ progress:
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-06-23 | Complete Phase 16 Plan 16-04 context routing manifest and second-brain parity | `.planning/phases/16-harness-determinism-evidence-and-independent-verification/16-04-SUMMARY.md` records compiler-emitted `context_routing_manifest` payloads, receipt manifest rendering, Python manifest validation helpers, second-brain unavailable fallback behavior, deterministic manifest tests, and refreshed latest context receipts. |
 | 2026-06-23 | Complete Phase 16 Plan 16-03 independent verifier gate | `.planning/phases/16-harness-determinism-evidence-and-independent-verification/16-03-SUMMARY.md` records the new `verifier_artifacts` schema/service, implementation-bearing workflow metadata, hook-stop closeout verifier gate, `aios verifier` inspection, commit-ladder verifier guard, and 82 passing focused tests plus CLI smoke coverage. |
 | 2026-06-23 | Complete Phase 16 Plan 16-02 evidence chain hardening | `.planning/phases/16-harness-determinism-evidence-and-independent-verification/16-02-SUMMARY.md` records the new `evidence_artifacts` schema/service, PostToolUse Bash command evidence capture, hook-stop usable evidence refs, `aios evidence` inspection, commit-ladder fresh-evidence skip/pass behavior, and 27 passing focused tests plus CLI smoke coverage. |
 | 2026-06-23 | Complete Phase 16 Plan 16-01 existing harness determinism audit | `.planning/phases/16-harness-determinism-evidence-and-independent-verification/16-01-SUMMARY.md` records `docs/audits/aios-harness-determinism-audit.md`, including the source-of-truth map, lifecycle comparison, Case-overlap summary, top gaps/risks, targeted deltas, files to edit/not touch, rejected invasive changes, and implementation order for HARN-01 and HARN-02. |
@@ -144,4 +145,4 @@ progress:
 | 2026-06-02 | Complete Phase 10 Plan 08 quality hotspot backfill baseline | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-08-SUMMARY.md` records `pnpm quality:eval`, the read-only hotspot detection script, and the first factual Agent Eval backfill inventory for Python services, CLI scripts, tests, aios-ui, config, and eval docs. |
 
 ---
-*Last updated: 2026-06-23 after completing Phase 16 Plan 16-03 and advancing to Phase 16 Plan 16-04*
+*Last updated: 2026-06-23 after completing Phase 16 Plan 16-04 and advancing to Phase 16 Plan 16-05*

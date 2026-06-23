@@ -234,6 +234,61 @@ test("emits packet-compatible retrieval trace and contract metadata", async () =
   assert(result.retrieval_trace.every((item) => typeof item.reason === "string" && item.reason.length > 0));
 });
 
+test("emits context routing manifest with loaded and skipped reasons", async () => {
+  const result = await compileContext({
+    task: "Improve context routing receipts for agent harness work.",
+    contextRoot,
+    write: false,
+    taskId: "task-1",
+    runId: "run-1",
+    phase: "phase-16-04",
+    secondBrainAvailable: true,
+  });
+
+  const manifest = result.context_routing_manifest;
+  assert.equal(manifest.task_id, "task-1");
+  assert.equal(manifest.run_id, "run-1");
+  assert.equal(manifest.phase, "phase-16-04");
+  assert(manifest.context_sources_loaded.length > 0);
+  assert(manifest.context_sources_skipped.length > 0);
+  assert(manifest.context_sources_loaded.every((source) => source.reason));
+  assert(manifest.context_sources_skipped.every((source) => source.reason));
+  assert(manifest.estimated_context_tokens > 0);
+  assert.match(result.context_receipt, /## Context Routing Manifest/);
+});
+
+test("context routing manifest records second-brain fallback when unavailable", async () => {
+  const result = await compileContext({
+    task: "Improve Obsidian search so AIOS can answer questions from my second brain.",
+    contextRoot,
+    write: false,
+    secondBrainAvailable: false,
+  });
+
+  const manifest = result.context_routing_manifest;
+  assert.equal(manifest.second_brain_available, false);
+  assert.equal(manifest.second_brain_used, false);
+  assert.equal(manifest.fallback_used, true);
+  assert(manifest.caveats.some((item) => item.includes("second-brain-unavailable")));
+});
+
+test("context routing manifest is deterministic for equivalent inputs", async () => {
+  const input = {
+    task: "Improve context routing receipts for agent harness work.",
+    contextRoot,
+    write: false,
+    taskId: "task-deterministic",
+    runId: "run-deterministic",
+    phase: "phase-16-04",
+    secondBrainAvailable: false,
+  };
+
+  const first = await compileContext(input);
+  const second = await compileContext(input);
+
+  assert.deepEqual(first.context_routing_manifest, second.context_routing_manifest);
+});
+
 test("parses arrays, nested conflict keys, and body from frontmatter", async () => {
   const parsed = parseContextFile(
     "example.md",
