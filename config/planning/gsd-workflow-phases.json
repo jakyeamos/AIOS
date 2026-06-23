@@ -1,0 +1,97 @@
+{
+  "version": "2026-06-23",
+  "workflow": {
+    "id": "gsd",
+    "handoff_target": "gsd",
+    "description": "Configurable aliases for GSD-compatible workflow phases. Slash commands remain invocation hints and overrides, not the routing system itself."
+  },
+  "phases": {
+    "plan": {
+      "output_format": "gsd_ready_plan",
+      "aliases": [
+        "/gsdplanphase",
+        "/gsd-plan-phase",
+        "gsdplanphase",
+        "gsd-plan-phase",
+        "gsd plan phase",
+        "gsd-plan",
+        "gsd plan",
+        "/gsd-plan"
+      ],
+      "skill_names": [
+        "gsd-plan-phase",
+        "gsd-plan-complete-phase",
+        "terrace-plan-phase"
+      ]
+    },
+    "implement": {
+      "output_format": "gsd_ready_execution_plan",
+      "aliases": [
+        "/gsdimplementphase",
+        "/gsd-execute-phase",
+        "gsdimplementphase",
+        "gsd execute phase",
+        "gsd-execute-phase",
+        "gsd execute",
+        "/gsd-execute"
+      ],
+      "skill_names": [
+        "gsd-execute-phase",
+        "terrace-execute-phase",
+        "terrace-phase-execute"
+      ]
+    },
+    "review": {
+      "output_format": "gsd_ready_review_plan",
+      "aliases": [
+        "/gsdreviewphase",
+        "/gsd-review",
+        "gsdreviewphase",
+        "gsd review phase",
+        "gsd-review",
+        "gsd review"
+      ],
+      "skill_names": [
+        "gsd-review",
+        "gsd-review-backlog",
+        "terrace-review-phase",
+        "terrace-phase-review"
+      ]
+    },
+    "validate": {
+      "output_format": "gsd_ready_validation_plan",
+      "aliases": [
+        "/gsdvalidatephase",
+        "/gsd-validate-phase",
+        "gsdvalidatephase",
+        "gsd validate phase",
+        "gsd-validate-phase",
+        "gsd validate"
+      ],
+      "skill_names": [
+        "gsd-validate-phase",
+        "gsd-verify-work",
+        "terrace-validate-phase",
+        "terrace-phase-validate"
+      ]
+    }
+  },
+  "slash_overrides": {
+    "/no-subagents": {
+      "key": "no_subagents",
+      "description": "Force inline/sequential planning or execution."
+    },
+    "/subagents": {
+      "key": "subagents",
+      "description": "Allow delegated sub-agent planning or execution when the workflow supports it."
+    },
+    "/parallel": {
+      "key": "parallel",
+      "description": "Request parallel work where phase safety permits it."
+    },
+    "/sequential": {
+      "key": "sequential",
+      "description": "Request sequential work."
+    }
+  }
+}
