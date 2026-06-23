@@ -58,6 +58,7 @@ from services.invocation_backends import (
     list_invocation_backends,
 )
 from services.learning_taxonomy import LEARNING_SIGNAL_KINDS, LearningSignalKind
+from services.meta_learning_signals import extract_meta_learning_signals, signals_to_dicts
 from services.path_resolution import get_vault_root
 from services.peer_trace import (
     end_peer_session,
@@ -2832,6 +2833,18 @@ def cmd_eval_gold_set_run(conn: sqlite3.Connection, args: argparse.Namespace) ->
     )
 
 
+def _meta_analyze_session_payload(args: argparse.Namespace) -> dict[str, Any]:
+    input_path = Path(args.input).expanduser().resolve()
+    with input_path.open("r", encoding="utf-8") as handle:
+        raw = json.load(handle)
+    signals = signals_to_dicts(extract_meta_learning_signals(raw))
+    return {
+        "input_path": str(input_path),
+        "signal_count": len(signals),
+        "signals": signals,
+    }
+
+
 def cmd_shadow_create_worktree(
     conn: sqlite3.Connection, args: argparse.Namespace
 ) -> dict[str, Any]:
@@ -4486,6 +4499,9 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "eval-gold-set-run":
         print(f"recall={data['recall']} missed_sources={len(data['missed_sources'])}")
         return
+    if command == "meta-analyze-session":
+        print(f"signals={data['signal_count']} input={data['input_path']}")
+        return
     if command == "shadow-create-worktree":
         print(f"shadow_run={data['shadow_run_id']} branch={data['branch_name']}")
         return
@@ -4539,6 +4555,8 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
 def _command_name(args: argparse.Namespace) -> str:
     if args.command == "eval":
         return f"eval-{args.eval_command}"
+    if args.command == "meta":
+        return f"meta-{args.meta_command}"
     if args.command == "shadow":
         return f"shadow-{args.shadow_command}"
     if args.command == "peer-trace":
@@ -4844,6 +4862,15 @@ def create_parser() -> argparse.ArgumentParser:
     eval_gold_set_run.add_argument("--run-id", required=True)
     eval_gold_set_run.add_argument("--gold-task-id", required=True)
     eval_gold_set_run.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    meta = subparsers.add_parser("meta", help="Analyze and review meta-learning signals")
+    meta_subparsers = meta.add_subparsers(dest="meta_command", required=True)
+    meta_analyze_session = meta_subparsers.add_parser(
+        "analyze-session",
+        help="Extract normalized meta-learning signals from a JSON session trace",
+    )
+    meta_analyze_session.add_argument("--input", required=True)
+    meta_analyze_session.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     shadow_parser = subparsers.add_parser("shadow", help="Create and compare eval shadow worktrees")
     shadow_subparsers = shadow_parser.add_subparsers(dest="shadow_command", required=True)
@@ -5561,6 +5588,8 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "eval" and args.eval_command == "gold-set-run":
             assert conn is not None
             data = cmd_eval_gold_set_run(conn, args)
+        elif args.command == "meta" and args.meta_command == "analyze-session":
+            data = _meta_analyze_session_payload(args)
         elif args.command == "shadow" and args.shadow_command == "create-worktree":
             assert conn is not None
             data = cmd_shadow_create_worktree(conn, args)
