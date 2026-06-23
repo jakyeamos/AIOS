@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-06-22T00:00:00.000Z"
+last_updated: "2026-06-23T00:00:00.000Z"
 progress:
   total_phases: 22
   completed_phases: 11
@@ -52,6 +52,7 @@ progress:
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-06-23 | Add AIOS quality gates | Planned in `.planning/quick/260623-add-quality-gates`; success criteria now include diff-scoped gates for complexity, supply chain, modularity, thin display UI, test quality, data integrity, API contracts, performance, accessibility, resilience, product alignment, simplicity, and agent claim verification, with registry routing, evaluator heuristics, and project truth updated. |
 | 2026-06-22 | Add user-level commit quality gate | Planned in `.planning/quick/260622-user-level-commit-quality-gate`; global Git hooks now point to `/Users/jakyeamos/AIOS/.githooks-user`, giving non-AIOS repos a portable pre-commit gate for conflict markers, likely secret literals, npm/yarn drift, production TypeScript `any`, oversized source files, weak Python tests, handler-before-send confident-code violations, and required Pre-CR changed-line readiness for source commits while AIOS keeps its stricter local hook path. |
 | 2026-06-22 | Add AIOS ladder-readiness to phase plans | Planned in `.planning/quick/260622-add-aios-ladder-readiness-to-phase-plans`; Phase 14 now owns the warn-only standards ladder contract, Phase 16 owns evidence/verifier prerequisites for blocking checks, and Phase 22 owns progressive promotion of AIOS standards into the global commit quality ladder. |
 | 2026-06-22 | Add commit hook quality ladder | Planned in `.planning/quick/260622-commit-hook-quality-ladder`; `.githooks/pre-commit` now runs the AIOS quality ladder, covering global standards inventory, standards-health registry coverage, context validation, success-criteria registry coverage, AIOS quality-pipeline gates, and staged confident-code event-loop ordering before commits can proceed once the hook path is installed. |

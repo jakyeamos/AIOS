@@ -1,5 +1,5 @@
 {
-  "version": "2026-04-23",
+  "version": "2026-06-23",
   "criteria": [
     {
       "id": "code-simplicity",
@@ -21,7 +21,8 @@
       },
       "related": [
         "testing-trust",
-        "repo-boundary-discipline"
+        "repo-boundary-discipline",
+        "simplicity"
       ]
     },
     {
@@ -45,6 +46,7 @@
         ]
       },
       "related": [
+        "test-quality",
         "code-simplicity",
         "observability"
       ]
@@ -91,7 +93,8 @@
         ]
       },
       "related": [
-        "repo-boundary-discipline"
+        "repo-boundary-discipline",
+        "supply-chain-review"
       ]
     },
     {
@@ -203,6 +206,333 @@
       "related": [
         "truth-file-consistency",
         "workflow-state-integrity"
+      ]
+    },
+    {
+      "id": "complexity-budget",
+      "title": "Complexity and Big-O Regression Budget",
+      "path": "spec/success-criteria/complexity-budget.md",
+      "scope": "domain-specific",
+      "blocking": true,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "implementation",
+          "bugfix",
+          "refactor",
+          "review"
+        ],
+        "domains": [
+          "complexity",
+          "performance"
+        ]
+      },
+      "related": [
+        "performance-budget",
+        "test-quality",
+        "simplicity"
+      ]
+    },
+    {
+      "id": "supply-chain-review",
+      "title": "Dependency and Supply Chain Review",
+      "path": "spec/success-criteria/supply-chain-review.md",
+      "scope": "domain-specific",
+      "blocking": true,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "implementation",
+          "bugfix",
+          "refactor",
+          "review"
+        ],
+        "domains": [
+          "supply-chain",
+          "security"
+        ]
+      },
+      "related": [
+        "security-review",
+        "simplicity"
+      ]
+    },
+    {
+      "id": "architecture-boundary",
+      "title": "Architecture Boundary and Modularity Gate",
+      "path": "spec/success-criteria/architecture-boundary.md",
+      "scope": "global",
+      "blocking": true,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "implementation",
+          "bugfix",
+          "refactor",
+          "review"
+        ],
+        "domains": [
+          "*"
+        ]
+      },
+      "related": [
+        "repo-boundary-discipline",
+        "thin-display",
+        "simplicity"
+      ]
+    },
+    {
+      "id": "thin-display",
+      "title": "Thin Display UI Purity",
+      "path": "spec/success-criteria/thin-display.md",
+      "scope": "domain-specific",
+      "blocking": false,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "implementation",
+          "bugfix",
+          "refactor",
+          "review"
+        ],
+        "domains": [
+          "ui",
+          "web-apps"
+        ]
+      },
+      "related": [
+        "architecture-boundary",
+        "accessibility",
+        "performance-budget"
+      ]
+    },
+    {
+      "id": "test-quality",
+      "title": "Behavior-Proving Test Quality",
+      "path": "spec/success-criteria/test-quality.md",
+      "scope": "task-type",
+      "blocking": true,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "implementation",
+          "bugfix",
+          "refactor",
+          "testing",
+          "review"
+        ],
+        "domains": [
+          "testing",
+          "security",
+          "data",
+          "api",
+          "workflow",
+          "*"
+        ]
+      },
+      "related": [
+        "testing-trust",
+        "execution-first-verification",
+        "data-integrity"
+      ]
+    },
+    {
+      "id": "data-integrity",
+      "title": "Data Integrity and Migration Safety",
+      "path": "spec/success-criteria/data-integrity.md",
+      "scope": "domain-specific",
+      "blocking": true,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "implementation",
+          "bugfix",
+          "refactor",
+          "review"
+        ],
+        "domains": [
+          "data",
+          "migration"
+        ]
+      },
+      "related": [
+        "api-contract",
+        "test-quality",
+        "execution-first-verification"
+      ]
+    },
+    {
+      "id": "api-contract",
+      "title": "API and Caller Contract Compatibility",
+      "path": "spec/success-criteria/api-contract.md",
+      "scope": "domain-specific",
+      "blocking": true,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "implementation",
+          "bugfix",
+          "refactor",
+          "review"
+        ],
+        "domains": [
+          "api",
+          "contract"
+        ]
+      },
+      "related": [
+        "data-integrity",
+        "test-quality",
+        "architecture-boundary"
+      ]
+    },
+    {
+      "id": "performance-budget",
+      "title": "Practical Performance Budget",
+      "path": "spec/success-criteria/performance-budget.md",
+      "scope": "domain-specific",
+      "blocking": false,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "implementation",
+          "bugfix",
+          "refactor",
+          "review"
+        ],
+        "domains": [
+          "performance",
+          "ui",
+          "web-apps"
+        ]
+      },
+      "related": [
+        "complexity-budget",
+        "thin-display",
+        "accessibility"
+      ]
+    },
+    {
+      "id": "accessibility",
+      "title": "Accessibility Gate",
+      "path": "spec/success-criteria/accessibility.md",
+      "scope": "domain-specific",
+      "blocking": false,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "implementation",
+          "bugfix",
+          "refactor",
+          "review"
+        ],
+        "domains": [
+          "accessibility",
+          "ui",
+          "web-apps"
+        ]
+      },
+      "related": [
+        "thin-display",
+        "performance-budget",
+        "product-alignment"
+      ]
+    },
+    {
+      "id": "resilience",
+      "title": "Failure Mode and Resilience Gate",
+      "path": "spec/success-criteria/resilience.md",
+      "scope": "domain-specific",
+      "blocking": false,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "implementation",
+          "bugfix",
+          "refactor",
+          "review"
+        ],
+        "domains": [
+          "reliability",
+          "workflow",
+          "data",
+          "api"
+        ]
+      },
+      "related": [
+        "observability",
+        "data-integrity",
+        "execution-first-verification"
+      ]
+    },
+    {
+      "id": "product-alignment",
+      "title": "Product Alignment and Scope Discipline",
+      "path": "spec/success-criteria/product-alignment.md",
+      "scope": "task-type",
+      "blocking": false,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "planning",
+          "implementation",
+          "bugfix",
+          "refactor",
+          "review"
+        ],
+        "domains": [
+          "product",
+          "ui",
+          "web-apps",
+          "*"
+        ]
+      },
+      "related": [
+        "simplicity",
+        "accessibility",
+        "agent-claim-verification"
+      ]
+    },
+    {
+      "id": "simplicity",
+      "title": "Simplicity and De-Slop Gate",
+      "path": "spec/success-criteria/simplicity.md",
+      "scope": "global",
+      "blocking": false,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "*"
+        ],
+        "domains": [
+          "*"
+        ]
+      },
+      "related": [
+        "code-simplicity",
+        "architecture-boundary",
+        "product-alignment"
+      ]
+    },
+    {
+      "id": "agent-claim-verification",
+      "title": "Agent Claim Verification",
+      "path": "spec/success-criteria/agent-claim-verification.md",
+      "scope": "global",
+      "blocking": true,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "*"
+        ],
+        "domains": [
+          "*"
+        ]
+      },
+      "related": [
+        "execution-first-verification",
+        "test-quality",
+        "git-worktree-cleanliness"
       ]
     }
   ]

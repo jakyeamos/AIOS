@@ -2,38 +2,77 @@
 
 ## Task Summary
 
-Add a commit hook quality ladder that enforces AIOS standards before commits land
+Add AIOS quality gates for complexity, security, supply chain, modularity, thin display UI, test quality, data integrity, API contracts, performance, accessibility, observability, resilience, product alignment, simplicity, and agent claim verification
 
 ## Task Classification
 
-- Signals: all_tasks
-- Domains: none
+- Signals: all_tasks, task_touches_agent_harness, task_touches_data, task_touches_design, task_touches_permissions, task_touches_product_design, task_touches_testing, task_touches_web_app
+- Domains: web-apps, data-projects, agent-harnesses, product-design
 
 ## Selected Context Files
 
-- `standards/global.maintainability.md` (global.maintainability) — 1 applies_when signal(s) matched; 2 title/summary term(s) matched
+- `standards/global.design.md` (global.design) — 2 applies_when signal(s) matched; 1 tag(s) matched; 1 title/summary term(s) matched
+- `standards/global.security.md` (global.security) — 1 applies_when signal(s) matched; 1 tag(s) matched; 4 title/summary term(s) matched
+- `standards/global.observability.md` (global.observability) — 1 applies_when signal(s) matched; 1 tag(s) matched; 3 title/summary term(s) matched
+- `router.md` (context.router) — Bootloader context is always loaded.
+- `config/agent-rules.md` (config.agent-rules) — 1 applies_when signal(s) matched; 1 tag(s) matched; 5 title/summary term(s) matched
+- `standards/global.maintainability.md` (global.maintainability) — 1 applies_when signal(s) matched; 1 tag(s) matched; 1 title/summary term(s) matched
 - `index.md` (context.index) — Bootloader context is always loaded.
 - `schema.md` (context.schema) — Bootloader context is always loaded.
-- `router.md` (context.router) — Bootloader context is always loaded.
-- `config/agent-rules.md` (config.agent-rules) — 1 applies_when signal(s) matched; 2 title/summary term(s) matched
+- `standards/global.testing.md` (global.testing) — 1 applies_when signal(s) matched
+- `domains/product-design.md` (domains.product-design) — 2 applies_when signal(s) matched; 1 tag(s) matched; 3 title/summary term(s) matched
+- `domains/web-apps.md` (domains.web-apps) — 2 applies_when signal(s) matched
+- `domains/data-projects.md` (domains.data-projects) — 1 applies_when signal(s) matched; 1 tag(s) matched; 3 title/summary term(s) matched
+- `domains/agent-harnesses.md` (domains.agent-harnesses) — 1 applies_when signal(s) matched; 3 title/summary term(s) matched
+- `projects/aios-ui.md` (projects.aios-ui) — 2 applies_when signal(s) matched; 3 title/summary term(s) matched
+- `features/context-compiler.md` (features.context-compiler) — 1 applies_when signal(s) matched; 1 title/summary term(s) matched
+- `features/prompt-library.md` (features.prompt-library) — 1 applies_when signal(s) matched
+- `features/skill-registry.md` (features.skill-registry) — 1 applies_when signal(s) matched; 1 title/summary term(s) matched
+- `packets/workflow.approval-gates.md` (packets.workflow.approval-gates) — 2 applies_when signal(s) matched; 2 title/summary term(s) matched
+- `packets/ui.command-center.md` (packets.ui.command-center) — 1 applies_when signal(s) matched; 1 tag(s) matched; 2 title/summary term(s) matched
+- `packets/testing.no-mock-echo.md` (packets.testing.no-mock-echo) — 1 applies_when signal(s) matched
+- `packets/security.oidc-secrets.md` (packets.security.oidc-secrets) — Loaded because global.security matched and requested this packet.
 - `handoffs/latest.md` (handoffs.latest) — Bootloader context is always loaded.
 
 ## Relevant Rules
 
+- global.design: AIOS UI should expose system state clearly without decorative or low-density surfaces.
+- global.security: Baseline security expectations for all AIOS-managed work.
+- global.observability: AIOS behavior should leave inspectable traces, receipts, and failure evidence.
+- context.router: Agent bootloader for AIOS-managed projects and context receipts.
+- config.agent-rules: Behavioral rules loaded for all AIOS agent sessions and workflow execution.
 - global.maintainability: Keep AIOS changes simple, bounded, readable, and aligned to existing architecture.
 - context.index: Thin entrypoint for AIOS context routing and compiled briefing generation.
 - context.schema: Required schema for AIOS Context Compiler Markdown files.
-- context.router: Agent bootloader for AIOS-managed projects and context receipts.
-- config.agent-rules: Behavioral rules loaded for all AIOS agent sessions and workflow execution.
+- global.testing: Behavior must be validated with deterministic tests or equivalent execution evidence.
+- domains.product-design: Routing standard for product UX, operational workflows, and explainable surfaces.
+- domains.web-apps: Routing standard for Next.js, React, dashboard, and deployment work.
+- domains.data-projects: Routing standard for SQLite, corpus, metrics, and durable data flows.
+- domains.agent-harnesses: Routing standard for agent workflows, prompts, packets, skills, and orchestration.
+- projects.aios-ui: Project truth routing for the local AIOS Next.js command center.
+- features.context-compiler: Feature context for tiered Markdown routing, scoring, receipts, and writeback candidates.
+- features.prompt-library: Feature context for reusable prompt templates, validation, sync, and evaluation workflows.
+- features.skill-registry: Feature context for installed skill discovery, sync, and agent workflow routing.
+- packets.workflow.approval-gates: Packet for approval-gated writebacks, major context changes, and reviewable proposals.
+- packets.ui.command-center: UI packet for exposing AIOS operational state, drilldowns, receipts, and warnings.
+- packets.testing.no-mock-echo: Testing packet for avoiding shallow tests that only mirror mocked behavior.
+- packets.security.oidc-secrets: Deep-enough packet for routing deployment secret work toward short-lived OIDC credentials.
 - handoffs.latest: Current handoff node for the file-backed AIOS Context Compiler.
 
 ## Project State
 
+- AIOS UI Project Context: Project truth routing for the local AIOS Next.js command center.
 - Latest Context Compiler Handoff: Current handoff node for the file-backed AIOS Context Compiler.
 
 ## Feature Context
 
-- None.
+- AIOS Context Compiler Feature: Feature context for tiered Markdown routing, scoring, receipts, and writeback candidates.
+- Prompt Library Feature: Feature context for reusable prompt templates, validation, sync, and evaluation workflows.
+- Skill Registry Feature: Feature context for installed skill discovery, sync, and agent workflow routing.
+- Workflow Approval Gates Packet: Packet for approval-gated writebacks, major context changes, and reviewable proposals.
+- AIOS Command Center UI Packet: UI packet for exposing AIOS operational state, drilldowns, receipts, and warnings.
+- No Mock Echo Testing Packet: Testing packet for avoiding shallow tests that only mirror mocked behavior.
+- OIDC Secretless Deployment Packet: Deep-enough packet for routing deployment secret work toward short-lived OIDC credentials.
 
 ## Known Risks
 
@@ -41,6 +80,20 @@ Add a commit hook quality ladder that enforces AIOS standards before commits lan
 
 ## Acceptance Criteria
 
+- global.design: Users can inspect why a score, warning, or packet was produced.
+- global.design: Critical states are not collapsed into vague healthy/unhealthy labels.
+- global.design: Controls match expected operational workflows.
+- global.design: UI work that uses Refero or another external design source cites the source and
+- global.security: No new static secret path is introduced.
+- global.security: Sensitive context is scoped to the task and receipt.
+- global.security: Security tradeoffs are explicit writeback candidates when unresolved.
+- global.observability: Generated receipts include loaded and skipped context.
+- global.observability: Missing and stale context are visible as warnings.
+- global.observability: Scoring decisions are preserved in structured output.
+- global.observability: Error output includes remediation guidance that an agent can execute or propose as a follow-up.
+- context.router: Every non-trivial run has a loaded/skipped context receipt.
+- context.router: Missing, stale, and conflicting context are explicit.
+- context.router: Writebacks are proposed for missing rules or reusable patterns.
 - global.maintainability: New code has a narrow surface and deterministic behavior.
 - global.maintainability: Expanded concepts update the original contract and stale generic names instead of leaving parallel, semantically overlapping APIs.
 - global.maintainability: Existing call sites, tests, fixtures, docs, and persisted shapes are checked for implicit-default assumptions when a second variant is added.
@@ -57,9 +110,44 @@ Add a commit hook quality ladder that enforces AIOS standards before commits lan
 - context.schema: `pnpm context:validate` passes before a context file is treated as authoritative.
 - context.schema: `load_if_matched` links point to existing files relative to `aios/context/`.
 - context.schema: Thin routing files stay below the deep-packet threshold unless they declare a larger `token_budget`.
-- context.router: Every non-trivial run has a loaded/skipped context receipt.
-- context.router: Missing, stale, and conflicting context are explicit.
-- context.router: Writebacks are proposed for missing rules or reusable patterns.
+- global.testing: Schema validation is exercised against real Markdown files.
+- global.testing: Routing tests assert selected files and receipt content.
+- global.testing: Conflict precedence is covered by executable tests.
+- domains.product-design: Important system state can be inspected without reading logs.
+- domains.product-design: Warnings and blockers are visually distinct and textually precise.
+- domains.web-apps: User-facing state is source-backed and inspectable.
+- domains.web-apps: UI changes follow the existing component and routing patterns.
+- domains.data-projects: Data shape and source are explicit.
+- domains.data-projects: Missing or inferred records remain distinguishable.
+- domains.agent-harnesses: Routing decisions include reasons and skipped alternatives.
+- domains.agent-harnesses: Prompt or skill changes include validation paths.
+- domains.agent-harnesses: Repeated harness failures are promoted into durable standards, checks, or explicit backlog items.
+- domains.agent-harnesses: Agent-facing files remain small enough for agents to load and reason over without losing local context.
+- domains.agent-harnesses: Error records include parseable remediation steps.
+- domains.agent-harnesses: Packet, prompt, and workflow surfaces preserve stable machine-readable fields when adding human-facing copy.
+- domains.agent-harnesses: Writebacks are proposed for review rather than silently promoted.
+- domains.agent-harnesses: Non-trivial execution records whether direct execution or subagent execution was chosen and why.
+- domains.agent-harnesses: Model or reasoning upgrades track whether extra cost produced meaningful quality improvement.
+- projects.aios-ui: Project health and delta UI stays source-backed.
+- projects.aios-ui: New UI surfaces can explain missing, inferred, or conflicting signals.
+- projects.aios-ui: Meaningful architecture changes update `PROJECT.md`.
+- features.context-compiler: Compilation produces structured JSON and agent-readable Markdown.
+- features.context-compiler: Receipts include loaded, skipped, conflicts, missing context, and writebacks.
+- features.context-compiler: Scoring favors specific, recent, authoritative, low-cost context.
+- features.prompt-library: New prompt workflows preserve frontmatter validation and registry generation.
+- features.prompt-library: Evaluation output can be traced to prompt template IDs.
+- features.skill-registry: Skill routing remains inspectable and deterministic where possible.
+- features.skill-registry: Missing skill metadata becomes a writeback candidate.
+- packets.workflow.approval-gates: Writeback candidates include type, severity, target file, and reason.
+- packets.workflow.approval-gates: Approval needs are visible before promotion to authoritative context.
+- packets.ui.command-center: Operators can drill into source-backed evidence.
+- packets.ui.command-center: Missing and conflicting state appears as actionable warnings.
+- packets.ui.command-center: Receipts can later be attached to run history.
+- packets.testing.no-mock-echo: Tests fail before implementation when behavior is absent.
+- packets.testing.no-mock-echo: Tests inspect actual output and side effects.
+- packets.security.oidc-secrets: No static deployment secret is introduced as the default path.
+- packets.security.oidc-secrets: Provider, subject, audience, and permission scope are explicit.
+- packets.security.oidc-secrets: Exceptions include owner, reason, review date, and removal path.
 - handoffs.latest: Update this handoff when compiler output shape or routing conventions change.
 - handoffs.latest: Keep detailed implementation history in docs or project truth, not this routing node.
 

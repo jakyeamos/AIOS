@@ -31,6 +31,16 @@ The repository currently contains four meaningful subsystems:
 
 Root operator documentation now lives in `README.md`, including local UI launch commands, key UI routes, store paths, workflow proposal backfill, and verification commands.
 
+## Implemented On 2026-06-23
+
+AIOS success criteria now include diff-scoped quality gates for pre-PR review and adoption/backfill quality ratchets:
+
+- new gate specs cover `complexity-budget`, `supply-chain-review`, `architecture-boundary`, `thin-display`, `test-quality`, `data-integrity`, `api-contract`, `performance-budget`, `accessibility`, `resilience`, `product-alignment`, `simplicity`, and `agent-claim-verification`
+- `security-review` now explicitly separates application security concerns from supply-chain review while covering auth, authz, validation, injection, unsafe file handling, SSRF, XSS, CSRF, permission boundaries, and data leakage
+- success-criteria resolution now infers UI, accessibility, performance, dependency, data, migration, API contract, complexity, resilience, and product domains from objective text and changed files
+- hard-blocker heuristics now cover package-manager drift, missing critical test/execution evidence, data/API changes without integrity evidence, complexity-risk changes without benchmark/fixture evidence, and session-close code claims without validation evidence
+- the success-criteria index documents Pre-PR gate mode, Adoption/backfill mode, and diff-scoped routing so UI, DB, auth, algorithm, dependency, and large agent-generated changes get the right gates without turning every task into a universal checklist
+
 ## Implemented On 2026-06-22
 
 AIOS now has a versioned pre-commit quality ladder for standards enforcement:

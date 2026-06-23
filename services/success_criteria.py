@@ -36,6 +36,44 @@ TEST_PATH_MARKERS = ("test", "__tests__", "spec", "pytest", "integration")
 DOC_PATH_MARKERS = ("/docs/", "/.planning/", "/spec/")
 SENSITIVE_PATH_MARKERS = ("auth", "security", "secret", "token", "permission", "crypto")
 OBSERVABILITY_MARKERS = ("log", "metric", "trace", "telemetry", "observability", "monitor")
+UI_PATH_MARKERS = ("/app/", "/components/", "/pages/", "/ui/", ".tsx", ".jsx")
+DATA_PATH_MARKERS = ("schema.sql", "schema.ts", "migration", "migrations", "/db", "database", "sqlite")
+API_PATH_MARKERS = ("/api/", "/routers/", "route.ts", "server/actions", "trpc", "contract", "types.ts")
+DEPENDENCY_PATH_MARKERS = (
+    "package.json",
+    "pnpm-lock.yaml",
+    "package-lock.json",
+    "yarn.lock",
+    "pyproject.toml",
+    "uv.lock",
+    "requirements.txt",
+    "poetry.lock",
+)
+COMPLEXITY_MARKERS = (
+    "algorithm",
+    "complexity",
+    "big-o",
+    "n+1",
+    "pagination",
+    "polling",
+    "recursive",
+    "recursion",
+    "search",
+    "batch",
+    "benchmark",
+    "performance",
+    "hot path",
+)
+RESILIENCE_MARKERS = (
+    "retry",
+    "backoff",
+    "idempotent",
+    "idempotency",
+    "fallback",
+    "offline",
+    "timeout",
+    "failure mode",
+)
 EXECUTION_FIRST_PATH_MARKERS = (
     "/services/",
     "/bin/",
@@ -326,6 +364,22 @@ def infer_context(
         domains.add("observability")
     if _contains_any(objective_lower, ("workflow", "orchestration", "run", "invocation")):
         domains.add("workflow")
+    if _contains_any(objective_lower, ("ui", "component", "react", "next.js", "dashboard", "form")):
+        domains.update(("ui", "web-apps"))
+    if _contains_any(objective_lower, ("accessibility", "keyboard", "focus", "screen reader", "wcag")):
+        domains.add("accessibility")
+    if _contains_any(objective_lower, COMPLEXITY_MARKERS):
+        domains.update(("complexity", "performance"))
+    if _contains_any(objective_lower, ("dependency", "lockfile", "package manager", "supply chain")):
+        domains.add("supply-chain")
+    if _contains_any(objective_lower, ("schema", "migration", "database", "sqlite", "backfill", "data integrity")):
+        domains.update(("data", "migration"))
+    if _contains_any(objective_lower, ("api", "contract", "request", "response", "trpc", "server action")):
+        domains.update(("api", "contract"))
+    if _contains_any(objective_lower, RESILIENCE_MARKERS):
+        domains.add("reliability")
+    if _contains_any(objective_lower, ("product", "prd", "scope", "alignment", "user promise")):
+        domains.add("product")
 
     if any(_contains_any(path.lower(), TEST_PATH_MARKERS) for path in changed):
         task_types.add("testing")
@@ -334,6 +388,18 @@ def infer_context(
         domains.add("observability")
     if any(_contains_any(path.lower(), SENSITIVE_PATH_MARKERS) for path in changed):
         domains.add("security")
+    if any(_contains_any(f"/{path.lower()}", UI_PATH_MARKERS) for path in changed):
+        domains.update(("ui", "web-apps", "accessibility", "performance"))
+    if any(_contains_any(path.lower(), DEPENDENCY_PATH_MARKERS) for path in changed):
+        domains.add("supply-chain")
+    if any(_contains_any(path.lower(), DATA_PATH_MARKERS) or Path(path).suffix.lower() == ".sql" for path in changed):
+        domains.update(("data", "migration"))
+    if any(_contains_any(f"/{path.lower()}", API_PATH_MARKERS) for path in changed):
+        domains.update(("api", "contract"))
+    if any(_contains_any(path.lower(), COMPLEXITY_MARKERS) for path in changed):
+        domains.update(("complexity", "performance"))
+    if any(_contains_any(path.lower(), RESILIENCE_MARKERS) for path in changed):
+        domains.add("reliability")
 
     execution_first_triggers: set[str] = set()
     code_changes = [path for path in changed if _is_code_path(path)]
@@ -775,6 +841,209 @@ def _evaluate_execution_first_verification(
     )
 
 
+def _has_verification_evidence(context: dict[str, Any]) -> bool:
+    return bool(context.get("execution_evidence") or context.get("test_evidence"))
+
+
+def _evaluate_complexity_budget(
+    context: dict[str, Any],
+    criterion: CriterionRecord,
+) -> CriterionFinding:
+    changed = context.get("changed_files", [])
+    risky_paths = [
+        path
+        for path in changed
+        if _is_code_path(path) and _contains_any(path.lower(), COMPLEXITY_MARKERS)
+    ]
+    if "complexity" not in context.get("domains", []) and not risky_paths:
+        return CriterionFinding(
+            criterion.id,
+            criterion.title,
+            criterion.scope,
+            "pass",
+            "No complexity-risk signal was detected for the observed change set.",
+            [],
+            {},
+        )
+    if not _has_verification_evidence(context):
+        return CriterionFinding(
+            criterion.id,
+            criterion.title,
+            criterion.scope,
+            "warning",
+            "Complexity-risk change lacks benchmark, fixture, or direct execution evidence.",
+            risky_paths[:8] or changed[:8],
+            {"domains": context.get("domains", [])},
+        )
+    return CriterionFinding(
+        criterion.id,
+        criterion.title,
+        criterion.scope,
+        "pass",
+        "Complexity-risk change included verification evidence.",
+        list(context.get("execution_evidence", []))[:8],
+        {},
+    )
+
+
+def _evaluate_supply_chain_review(
+    context: dict[str, Any],
+    criterion: CriterionRecord,
+) -> CriterionFinding:
+    changed = context.get("changed_files", [])
+    dependency_changes = [
+        path for path in changed if _contains_any(path.lower(), DEPENDENCY_PATH_MARKERS)
+    ]
+    wrong_manager_files = [
+        path for path in dependency_changes if Path(path).name in {"package-lock.json", "yarn.lock"}
+    ]
+    if wrong_manager_files:
+        return CriterionFinding(
+            criterion.id,
+            criterion.title,
+            criterion.scope,
+            "blocker",
+            "Package-manager drift was detected in dependency files.",
+            wrong_manager_files[:8],
+            {"expected_js_package_manager": "pnpm"},
+        )
+    if dependency_changes and not _has_verification_evidence(context):
+        return CriterionFinding(
+            criterion.id,
+            criterion.title,
+            criterion.scope,
+            "warning",
+            "Dependency or lockfile changes need supply-chain review evidence.",
+            dependency_changes[:8],
+            {},
+        )
+    return CriterionFinding(
+        criterion.id,
+        criterion.title,
+        criterion.scope,
+        "pass",
+        "No dependency supply-chain blocker detected.",
+        dependency_changes[:8],
+        {"dependency_changes": len(dependency_changes)},
+    )
+
+
+def _evaluate_test_quality(
+    context: dict[str, Any],
+    criterion: CriterionRecord,
+) -> CriterionFinding:
+    changed = context.get("changed_files", [])
+    code_changes = [path for path in changed if _is_code_path(path)]
+    test_changes = [path for path in changed if _is_test_path(path)]
+    critical_domains = {"security", "data", "migration", "api", "workflow"}
+    is_critical = bool(critical_domains & set(context.get("domains", [])))
+    if code_changes and not test_changes and not _has_verification_evidence(context):
+        level = "blocker" if is_critical else "warning"
+        return CriterionFinding(
+            criterion.id,
+            criterion.title,
+            criterion.scope,
+            level,
+            "Changed behavior lacks focused tests or equivalent execution evidence.",
+            code_changes[:8],
+            {"critical_domains": sorted(critical_domains & set(context.get("domains", [])))},
+        )
+    return CriterionFinding(
+        criterion.id,
+        criterion.title,
+        criterion.scope,
+        "pass",
+        "Test-quality gate has direct test or execution evidence for the observed risk.",
+        (test_changes or list(context.get("execution_evidence", [])))[:8],
+        {"code_changes": len(code_changes), "test_changes": len(test_changes)},
+    )
+
+
+def _evaluate_data_integrity(
+    context: dict[str, Any],
+    criterion: CriterionRecord,
+) -> CriterionFinding:
+    changed = context.get("changed_files", [])
+    data_changes = [
+        path
+        for path in changed
+        if _contains_any(path.lower(), DATA_PATH_MARKERS) or Path(path).suffix.lower() == ".sql"
+    ]
+    if data_changes and not _has_verification_evidence(context):
+        return CriterionFinding(
+            criterion.id,
+            criterion.title,
+            criterion.scope,
+            "warning",
+            "Durable data or schema changes need migration/data-integrity execution evidence.",
+            data_changes[:8],
+            {},
+        )
+    return CriterionFinding(
+        criterion.id,
+        criterion.title,
+        criterion.scope,
+        "pass",
+        "No data-integrity blocker detected.",
+        data_changes[:8],
+        {"data_changes": len(data_changes)},
+    )
+
+
+def _evaluate_api_contract(
+    context: dict[str, Any],
+    criterion: CriterionRecord,
+) -> CriterionFinding:
+    changed = context.get("changed_files", [])
+    api_changes = [path for path in changed if _contains_any(f"/{path.lower()}", API_PATH_MARKERS)]
+    if api_changes and not _has_verification_evidence(context):
+        return CriterionFinding(
+            criterion.id,
+            criterion.title,
+            criterion.scope,
+            "warning",
+            "API or contract changes need caller compatibility evidence.",
+            api_changes[:8],
+            {},
+        )
+    return CriterionFinding(
+        criterion.id,
+        criterion.title,
+        criterion.scope,
+        "pass",
+        "No API-contract blocker detected.",
+        api_changes[:8],
+        {"api_changes": len(api_changes)},
+    )
+
+
+def _evaluate_agent_claim_verification(
+    context: dict[str, Any],
+    criterion: CriterionRecord,
+) -> CriterionFinding:
+    trigger_kind = context.get("trigger_kind")
+    code_changes = [path for path in context.get("changed_files", []) if _is_code_path(path)]
+    if trigger_kind == "session_close" and code_changes and not _has_verification_evidence(context):
+        return CriterionFinding(
+            criterion.id,
+            criterion.title,
+            criterion.scope,
+            "blocker",
+            "Code changes reached completion without validation evidence for agent claims.",
+            code_changes[:8],
+            {"trigger_kind": trigger_kind},
+        )
+    return CriterionFinding(
+        criterion.id,
+        criterion.title,
+        criterion.scope,
+        "pass",
+        "Agent claim verification has no missing-evidence blocker.",
+        list(context.get("execution_evidence", []))[:8],
+        {"trigger_kind": trigger_kind},
+    )
+
+
 def evaluate_criterion(
     criterion: CriterionRecord,
     context: dict[str, Any],
@@ -789,6 +1058,12 @@ def evaluate_criterion(
         "workflow-state-integrity": _evaluate_workflow_state_integrity,
         "git-worktree-cleanliness": _evaluate_git_worktree_cleanliness,
         "execution-first-verification": _evaluate_execution_first_verification,
+        "complexity-budget": _evaluate_complexity_budget,
+        "supply-chain-review": _evaluate_supply_chain_review,
+        "test-quality": _evaluate_test_quality,
+        "data-integrity": _evaluate_data_integrity,
+        "api-contract": _evaluate_api_contract,
+        "agent-claim-verification": _evaluate_agent_claim_verification,
     }
     evaluator = evaluators.get(criterion.id)
     if evaluator is None:

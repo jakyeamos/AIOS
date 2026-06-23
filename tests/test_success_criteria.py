@@ -40,6 +40,112 @@ def test_preview_applicable_criteria_includes_project_and_domain_rules() -> None
     assert "truth-file-consistency" in criterion_ids
     assert "workflow-state-integrity" in criterion_ids
     assert "observability" in criterion_ids
+    assert "architecture-boundary" in criterion_ids
+    assert "agent-claim-verification" in criterion_ids
+    assert "simplicity" in criterion_ids
+
+
+def test_quality_gate_registry_contains_expected_new_gates() -> None:
+    registry = success_criteria.load_registry()
+    criterion_ids = {item.id for item in registry}
+
+    assert {
+        "complexity-budget",
+        "supply-chain-review",
+        "architecture-boundary",
+        "thin-display",
+        "test-quality",
+        "data-integrity",
+        "api-contract",
+        "performance-budget",
+        "accessibility",
+        "resilience",
+        "product-alignment",
+        "simplicity",
+        "agent-claim-verification",
+    } <= criterion_ids
+
+    missing_paths = [item.path for item in registry if item.path and not (ROOT / item.path).exists()]
+    assert missing_paths == []
+
+
+def test_ui_diff_routes_to_display_accessibility_and_performance_gates() -> None:
+    result = success_criteria.resolve_task_standards(
+        project_id=None,
+        project_name=None,
+        objective="Implement dashboard component changes",
+        prompt_classifications=["implement"],
+        changed_files=["aios-ui/components/query/GroundedQueryStudio.tsx"],
+        skills=[],
+    )
+
+    criterion_ids = {item["id"] for item in result["criteria"]}
+    assert {
+        "thin-display",
+        "accessibility",
+        "performance-budget",
+        "product-alignment",
+    } <= criterion_ids
+
+
+def test_data_and_api_diffs_route_to_integrity_contract_and_resilience_gates() -> None:
+    result = success_criteria.resolve_task_standards(
+        project_id=None,
+        project_name=None,
+        objective="Update database schema and API response contract",
+        prompt_classifications=["implement"],
+        changed_files=["schema.sql", "aios-ui/server/routers/workflows.ts"],
+        skills=[],
+    )
+
+    criterion_ids = {item["id"] for item in result["criteria"]}
+    assert {"data-integrity", "api-contract", "resilience"} <= criterion_ids
+
+
+def test_dependency_diff_routes_to_supply_chain_gate() -> None:
+    result = success_criteria.resolve_task_standards(
+        project_id=None,
+        project_name=None,
+        objective="Add package dependency",
+        prompt_classifications=["implement"],
+        changed_files=["aios-ui/package.json", "aios-ui/pnpm-lock.yaml"],
+        skills=[],
+    )
+
+    criterion_ids = {item["id"] for item in result["criteria"]}
+    assert "supply-chain-review" in criterion_ids
+
+
+def test_supply_chain_blocks_package_manager_drift() -> None:
+    context = success_criteria.infer_context(
+        objective="Add package dependency",
+        prompt_classifications=["implement"],
+        changed_files=["aios-ui/package-lock.json"],
+        skills=[],
+    )
+    criterion = next(
+        item for item in success_criteria.load_registry() if item.id == "supply-chain-review"
+    )
+
+    finding = success_criteria.evaluate_criterion(criterion, context)
+
+    assert finding.level == "blocker"
+    assert "Package-manager drift" in finding.summary
+
+
+def test_critical_behavior_without_evidence_blocks_test_quality() -> None:
+    context = success_criteria.infer_context(
+        objective="Update API authorization behavior",
+        prompt_classifications=["implement"],
+        changed_files=["aios-ui/server/routers/auth.ts"],
+        skills=[],
+    )
+    criterion = next(item for item in success_criteria.load_registry() if item.id == "test-quality")
+
+    finding = success_criteria.evaluate_criterion(criterion, context)
+
+    assert finding.level == "blocker"
+    assert "lacks focused tests" in finding.summary
 
 
 def test_resolve_task_standards_merges_criteria_and_standards() -> None:
