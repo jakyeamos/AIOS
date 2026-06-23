@@ -33,6 +33,12 @@ Root operator documentation now lives in `README.md`, including local UI launch 
 
 ## Implemented On 2026-06-23
 
+AIOS planning now reflects the expanded quality-gate success criteria as landed baseline infrastructure:
+
+- Phase 14 plans now reference the registered success-criteria gate ids as the canonical vocabulary for complexity, architecture, simplicity, testing, UI, data, API, supply-chain, and agent-claim verification work
+- Phase 14 remaining scope is narrowed to agent-rule/docs/checklist/backfill surfaces instead of inventing a parallel gate taxonomy
+- Phase 22 now treats the expanded criteria as AIOS-local/runtime gates by default and scopes remaining work to portability classification, promotion policy, backfill evidence, and hook integration
+
 AIOS success criteria now include diff-scoped quality gates for pre-PR review and adoption/backfill quality ratchets:
 
 - new gate specs cover `complexity-budget`, `supply-chain-review`, `architecture-boundary`, `thin-display`, `test-quality`, `data-integrity`, `api-contract`, `performance-budget`, `accessibility`, `resilience`, `product-alignment`, `simplicity`, and `agent-claim-verification`

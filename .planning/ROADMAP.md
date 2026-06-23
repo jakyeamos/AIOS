@@ -652,6 +652,8 @@ This milestone upgrades the AIOS memory layer from grep and flat semantic search
 
 This milestone adds algorithmic complexity and code simplification as mandatory quality gates across the AIOS agent workflow layer and all first-class linked projects. It produces agent rule additions, pre-check habits, a root quality gate specification, a local complexity pattern checklist, and backfill hotspot inventories for all seven projects in the portfolio. Remediation of discovered hotspots is a follow-on pass; this milestone establishes the gate, the documentation, and the first honest snapshot of where quality debts exist.
 
+**2026-06-23 baseline:** AIOS now has first-class success criteria for the broader quality-gate stack in `config/success-criteria/registry.json` and `spec/success-criteria/`. Phase 14 should build documentation, agent-rule, checklist, and backfill surfaces on that registry baseline instead of defining a parallel taxonomy.
+
 #### Phase 14: Code Quality Gates And Cross-Project Complexity Standards
 
 **Goal:** Establish the Complexity + Simplification Gate as a mandatory agent workflow rule, create the quality gate documentation infrastructure, and produce observation-backed backfill inventories for every first-class project.
@@ -659,6 +661,7 @@ This milestone adds algorithmic complexity and code simplification as mandatory 
 **Requirements:** QUAL-01, QUAL-02, QUAL-03, QUAL-04, QUAL-05, QUAL-06, QUAL-07, QUAL-08
 
 **Detailed Scope:**
+- Reference the landed success-criteria quality gates (`complexity-budget`, `architecture-boundary`, `simplicity`, `test-quality`, `performance-budget`, `thin-display`, `data-integrity`, `api-contract`, `supply-chain-review`, `agent-claim-verification`) as the canonical gate vocabulary
 - Add Rule 10 (Complexity + Simplification Gate) to `config/agent-rules.md` with full trigger conditions, Gate A (complexity/performance), Gate B (simplification/maintainability), Gate C (verification), and record-before-fix policy
 - Extend `AGENTS.md` with the gate section cross-referencing Rule 10
 - Extend `~/.claude/CLAUDE.md` Quality Ladder with Step 5 (Complexity + Simplification Gate — Hard after large work)
@@ -1265,6 +1268,7 @@ This milestone adds a native macOS app development skill pack to AIOS by transfo
 ### Phase 22: Progressive governance and standards backfill workflows
 
 **Goal:** Promote AIOS standards into progressive governance gates, including the global commit quality ladder, only after coverage, portability, evidence, waiver, and backfill criteria are explicit.
+**2026-06-23 baseline:** Expanded success criteria are already registered. Phase 22 decides which criteria remain AIOS-local/runtime gates and which portable staged-file checks can be promoted into the global hook.
 **Requirements**: TBD
 **Depends on:** Phase 21
 **Plans:** 1 plan
@@ -1273,4 +1277,4 @@ Plans:
 - [ ] 22-01 Promote AIOS Standards Into The Commit Quality Ladder
 
 ---
-*Last updated: 2026-06-22 after adding AIOS standards ladder readiness to Phase 14, Phase 16, and Phase 22 planning*
+*Last updated: 2026-06-23 after aligning Phase 14 and Phase 22 planning with the registered AIOS quality-gate success criteria*
