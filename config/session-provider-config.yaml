@@ -1,0 +1,29 @@
+session_providers:
+  enabled:
+    - claude
+    - codex
+    - cursor
+    - antigravity
+  ignore_path_patterns:
+    - "**/.env"
+    - "**/.env.*"
+    - "**/node_modules/**"
+    - "**/.git/**"
+  retention_days:
+    claude: 365
+    codex: 365
+    cursor: 180
+    antigravity: 180
+  min_session_words:
+    claude: 50
+    codex: 50
+    cursor: 20
+    antigravity: 20
+  redaction_patterns:
+    api_key: "sk-[A-Za-z0-9]{20,}"
+    bearer_token: "Bearer [A-Za-z0-9._-]{10,}"
+    auth_header: "Authorization: [^\\n]+"
+    env_secret: "\\b[A-Z_]{3,}=[A-Za-z0-9._~\\-+/]{8,}"
+    pem_key: "-----BEGIN [^-]+-----.*?-----END [^-]+-----"
+    github_token: "ghp_[A-Za-z0-9]{36}"
+    slack_token: "xoxb-[0-9]+-[A-Za-z0-9]+"
