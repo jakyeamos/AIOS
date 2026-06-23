@@ -130,12 +130,11 @@ When a task includes committing, pushing, shipping, or release preparation for c
 
 1. Run the normal quality ladder first.
 2. Commit the changes before deployment.
-3. Push the branch only when asked or when the task explicitly includes pushing.
-4. After pushing or deploying, run one of:
+3. After pushing or deploying, run one of:
    - `pnpm deploy:preview:watch`
    - `pnpm deploy:prod:watch`
-5. Do not report the task as complete until Vercel returns a successful deployment.
-6. If Vercel deployment fails, inspect the logs, fix the issue, rerun applicable checks, redeploy, and only then report completion.
+4. Do not report the task as complete until Vercel returns a successful deployment.
+5. If Vercel deployment fails, inspect the logs, fix the issue, rerun applicable checks, redeploy, and only then report completion.
 
 Use `VERCEL_TOKEN` from the environment when non-interactive authentication is needed. Do not add static deployment tokens to repo files.
 

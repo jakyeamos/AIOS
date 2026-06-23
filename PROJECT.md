@@ -87,6 +87,11 @@ AIOS Phase 12 is complete across Graph-Native Memory Architecture And Cache-Awar
 - the phase now has a layered SQLite memory foundation, model-facing Markdown compiler, stable-prefix context compiler, packet contract, quality gates, backfill plan, and KV-cache future note
 - the planning state has advanced to Phase 13 Plan 13-01 for multi-provider session ingestion and second-brain data pipeline work
 
+AIOS deployment workflow policy no longer narrows branch pushes to only explicitly requested push tasks:
+
+- `AGENTS.md` still requires the normal quality ladder, commits before deployment, and watched Vercel deployment success for Vercel-affecting shipped work
+- the prior Vercel gate line that said to push only when asked or when the task explicitly includes pushing has been removed so push behavior follows the broader repository Git workflow policy
+
 AIOS planning now reflects the expanded quality-gate success criteria as landed baseline infrastructure:
 
 - Phase 14 plans now reference the registered success-criteria gate ids as the canonical vocabulary for complexity, architecture, simplicity, testing, UI, data, API, supply-chain, and agent-claim verification work
