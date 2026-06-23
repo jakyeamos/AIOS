@@ -9,6 +9,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from services.memory_layers import ensure_memory_layer_schema
+
 RUN_STATUSES = {
     "planned",
     "ready",
@@ -455,6 +457,7 @@ def ensure_runtime_schema(conn: sqlite3.Connection) -> None:
           ON briefing_packets(project_id, created_at DESC)
         """
     )
+    ensure_memory_layer_schema(conn)
     ensure_column(conn, "consistency_findings", "resolution_status", "TEXT NOT NULL DEFAULT 'open'")
     ensure_column(conn, "consistency_findings", "resolution_actor", "TEXT")
     ensure_column(conn, "consistency_findings", "resolution_rationale", "TEXT")

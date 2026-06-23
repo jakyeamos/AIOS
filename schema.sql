@@ -330,6 +330,84 @@ CREATE TABLE memory_updates (
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 CREATE INDEX idx_memory_updates_project ON memory_updates(project_id, created_at);
+CREATE TABLE memory_raw_sources (
+  id TEXT PRIMARY KEY,
+  source_type TEXT NOT NULL,
+  source_path TEXT,
+  project_id TEXT,
+  author TEXT,
+  confidence REAL,
+  original_content TEXT,
+  extraction_status TEXT DEFAULT 'pending',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX idx_memory_raw_sources_project
+  ON memory_raw_sources(project_id, source_type, updated_at DESC);
+CREATE TABLE memory_facts (
+  id TEXT PRIMARY KEY,
+  fact_text TEXT NOT NULL,
+  entity TEXT,
+  predicate TEXT,
+  object_value TEXT,
+  project_scope TEXT,
+  validity_status TEXT NOT NULL DEFAULT 'active',
+  source_id TEXT REFERENCES memory_raw_sources(id),
+  first_seen TEXT NOT NULL,
+  last_confirmed TEXT,
+  confidence REAL,
+  expires_at TEXT
+);
+CREATE INDEX idx_memory_facts_scope_status
+  ON memory_facts(project_scope, validity_status, first_seen DESC);
+CREATE INDEX idx_memory_facts_source ON memory_facts(source_id);
+CREATE TABLE memory_relationships (
+  id TEXT PRIMARY KEY,
+  subject_id TEXT NOT NULL,
+  predicate TEXT NOT NULL CHECK (
+    predicate IN (
+      'caused_by',
+      'depends_on',
+      'blocks',
+      'supersedes',
+      'contradicts',
+      'supports',
+      'evidence_for',
+      'belongs_to_project',
+      'decided_in',
+      'implemented_by',
+      'requested_by_user',
+      'derived_from',
+      'related_to',
+      'has_open_question',
+      'has_constraint',
+      'has_risk',
+      'has_owner',
+      'has_status'
+    )
+  ),
+  object_id TEXT NOT NULL,
+  project_scope TEXT,
+  confidence REAL DEFAULT 1.0,
+  source_id TEXT REFERENCES memory_raw_sources(id),
+  created_at TEXT NOT NULL
+);
+CREATE INDEX idx_memory_relationships_subject
+  ON memory_relationships(subject_id, predicate, object_id);
+CREATE INDEX idx_memory_relationships_object
+  ON memory_relationships(object_id, predicate);
+CREATE TABLE memory_packet_receipts (
+  id TEXT PRIMARY KEY,
+  packet_id TEXT NOT NULL,
+  compiled_at TEXT NOT NULL,
+  source_ids TEXT,
+  fact_ids TEXT,
+  relationship_ids TEXT,
+  token_count INTEGER,
+  mode TEXT
+);
+CREATE INDEX idx_memory_packet_receipts_packet
+  ON memory_packet_receipts(packet_id, compiled_at DESC);
 CREATE TABLE knowledge_topics (
   id TEXT PRIMARY KEY,
   slug TEXT NOT NULL UNIQUE,
