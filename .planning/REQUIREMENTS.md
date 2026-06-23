@@ -161,7 +161,7 @@
 
 ### Native Workflow Command Pack
 
-- [ ] **CMDP-01**: AIOS audits current command, skill, prompt, agent, workflow, CLI, sub-agent, model-routing, second-brain, and eval harness architecture and determines where each native command belongs
+- [x] **CMDP-01**: AIOS audits current command, skill, prompt, agent, workflow, CLI, sub-agent, model-routing, second-brain, and eval harness architecture and determines where each native command belongs
 - [ ] **CMDP-02**: AIOS defines native command contracts with command names, input/output schemas, safety class, read-only/modifying behavior, second-brain usage, sub-agent/reviewer lane representation, validation gates, logging metadata, rollback expectations, and MVP order
 - [ ] **CMDP-03**: AIOS implements read-only `aios zoom-out` for files, directories, or modules, returning structured orientation with purpose, system position, dependencies, sibling modules, conventions, domain vocabulary, risks, and next context
 - [ ] **CMDP-04**: AIOS implements `aios handoff` to generate compact continuation context with goal, current state, branch/workspace status, files touched, decisions, tests, failed approaches, blockers, references, and next actions
@@ -316,7 +316,7 @@ None currently. The full operating-system vision is intentionally being planned 
 | META-06 | Phase 18: Meta-Learning Proposal Layer | Complete |
 | META-07 | Phase 18: Meta-Learning Proposal Layer | Complete |
 | META-08 | Phase 18: Meta-Learning Proposal Layer | Complete |
-| CMDP-01 | Phase 19: Native Workflow Command Pack | Pending |
+| CMDP-01 | Phase 19: Native Workflow Command Pack | Complete |
 | CMDP-02 | Phase 19: Native Workflow Command Pack | Pending |
 | CMDP-03 | Phase 19: Native Workflow Command Pack | Pending |
 | CMDP-04 | Phase 19: Native Workflow Command Pack | Pending |
