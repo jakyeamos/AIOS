@@ -2292,6 +2292,120 @@
         "regression_coverage"
       ],
       "purpose_long": "Use only for mature, meaningful repos where exhaustive behavioral verification is worth the cost. Small prototypes should receive a lighter smoke, inventory, pre-PR, targeted bugfix, or test-backfill workflow instead."
+    },
+    {
+      "key": "developer-experience-pack",
+      "name": "Developer Experience Pack",
+      "workflow_family": "developer_experience",
+      "purpose": "Route Developer Experience capability requests through existing workflow stages and intent-specific capability metadata.",
+      "trigger_hints": [
+        "developer experience",
+        "dx audit",
+        "onboarding",
+        "quickstart",
+        "public api",
+        "cli usability",
+        "typescript specialist",
+        "spec fidelity"
+      ],
+      "output_contract": [
+        "selected DX capability and mode",
+        "evidence-backed findings or scoped changes",
+        "metric states with not_measured markers",
+        "second-brain availability and fallback note"
+      ],
+      "required_validations": [],
+      "stages": [
+        {
+          "key": "select_capability",
+          "kind": "parse_request",
+          "required_skills": [
+            "dx_optimizer",
+            "interface_dx_reviewer",
+            "docs_writer",
+            "security_reviewer",
+            "typescript_specialist",
+            "spec_fidelity_coder"
+          ],
+          "required_inputs": [
+            {
+              "key": "objective",
+              "source": "packet",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "dx_capability_selection",
+              "target": "report",
+              "required": true,
+              "schema_ref": "config/developer-experience/capability-pack.json"
+            }
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "execute_capability",
+          "kind": "validate",
+          "required_skills": [
+            "dx_optimizer",
+            "interface_dx_reviewer",
+            "docs_writer",
+            "security_reviewer",
+            "typescript_specialist",
+            "spec_fidelity_coder"
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "report",
+              "path_template": ".planning/runs/{run_id}/developer-experience-pack.md",
+              "required": true
+            }
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "finalize",
+          "kind": "finalize",
+          "required_skills": [],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
+        }
+      ],
+      "lifecycle_state": "draft",
+      "applicability": [
+        "developer_experience",
+        "dx_optimizer",
+        "interface_dx_review",
+        "docs_writer",
+        "security_review",
+        "typescript_specialist",
+        "spec_fidelity"
+      ],
+      "purpose_long": "Intent-specific DX pack route backed by config/developer-experience/capability-pack.json. It keeps global agent files thin by routing only DX-relevant tasks into capability metadata."
     }
   ]
 }

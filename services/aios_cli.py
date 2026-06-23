@@ -120,6 +120,8 @@ from services.success_criteria import (
 from services.task_routing import route_objective
 from services.verifier_artifacts import list_verifier_artifacts, validate_closeout_verification
 from services.workflow_orchestration import (
+    developer_experience_capability_report,
+    load_developer_experience_capability_pack,
     load_workflow_registry,
     recommend_workflow_from_health,
     workflow_stage_gate_report,
@@ -4596,6 +4598,10 @@ def _workflow_gates_payload(args: argparse.Namespace) -> dict[str, Any]:
     return {"gates": rows, "count": len(rows)}
 
 
+def _dx_pack_payload() -> dict[str, Any]:
+    return developer_experience_capability_report(load_developer_experience_capability_pack())
+
+
 def _run_corpus_command(command: str, passthrough_args: Sequence[str]) -> int:
     script = REPO_ROOT / "scripts" / "aios-corpus-eval.cjs"
     if command == "run":
@@ -4673,6 +4679,10 @@ def create_parser() -> argparse.ArgumentParser:
     )
     model_selection_parser.add_argument("--task-id", default=None)
     model_selection_parser.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    subparsers.add_parser(
+        "dx-pack", help="Inspect Developer Experience capability pack metadata"
+    ).add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     evidence_parser = subparsers.add_parser(
         "evidence", help="Inspect durable command evidence artifacts"
@@ -5399,6 +5409,8 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "model-selection":
             assert conn is not None
             data = _model_selection_payload(conn, args)
+        elif args.command == "dx-pack":
+            data = _dx_pack_payload()
         elif args.command == "evidence":
             assert conn is not None
             data = _evidence_payload(conn, args)

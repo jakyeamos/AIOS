@@ -32,9 +32,19 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_WORKFLOW_REGISTRY = ROOT / "config" / "workflows" / "registry.json"
 DEFAULT_SKILL_REGISTRY = ROOT / "config" / "workflows" / "skills.json"
 DEFAULT_PROMPT_REGISTRY = ROOT / "prompts" / "registry.json"
+DEFAULT_DX_CAPABILITY_PACK = ROOT / "config" / "developer-experience" / "capability-pack.json"
 WORKFLOW_TASK_FAMILIES = {
     "implementation-delivery": "audit_and_implement",
     "failure-recovery": "audit_and_implement",
+    "developer-experience-pack": "developer_experience",
+}
+DX_CAPABILITY_IDS = {
+    "dx_optimizer",
+    "interface_dx_reviewer",
+    "docs_writer",
+    "security_reviewer",
+    "typescript_specialist",
+    "spec_fidelity_coder",
 }
 HealthWorkflowPredicate = Callable[[dict[str, Any]], bool]
 HEALTH_TO_WORKFLOW_RULES: list[tuple[HealthWorkflowPredicate, str, str]] = [
@@ -565,6 +575,59 @@ def load_skill_registry(path: Path | None = None) -> dict[str, SkillSpec]:
             purpose_long=str(item.get("purpose_long", "")),
         )
     return registry
+
+
+def load_developer_experience_capability_pack(path: Path | None = None) -> dict[str, Any]:
+    pack = _load_json(path or DEFAULT_DX_CAPABILITY_PACK)
+    capabilities = pack.get("capabilities")
+    if not isinstance(capabilities, list):
+        raise ValueError("Developer-experience capability pack must define capabilities.")
+    capability_ids = {
+        str(row.get("id"))
+        for row in capabilities
+        if isinstance(row, dict) and isinstance(row.get("id"), str)
+    }
+    missing = DX_CAPABILITY_IDS - capability_ids
+    if missing:
+        raise ValueError(
+            "Developer-experience capability pack missing capabilities: "
+            + ", ".join(sorted(missing))
+        )
+    routing = pack.get("routing_principles")
+    if not isinstance(routing, dict):
+        raise ValueError("Developer-experience capability pack must define routing_principles.")
+    if routing.get("fixed_model_per_capability") is not False:
+        raise ValueError("Developer-experience capabilities must not hardcode fixed models.")
+    return pack
+
+
+def developer_experience_capability_report(pack: dict[str, Any]) -> dict[str, Any]:
+    capabilities = [
+        row
+        for row in pack.get("capabilities", [])
+        if isinstance(row, dict) and isinstance(row.get("id"), str)
+    ]
+    return {
+        "pack_id": pack.get("id"),
+        "status": pack.get("status"),
+        "capabilities": [
+            {
+                "id": row["id"],
+                "default_mode": row.get("default_mode"),
+                "supported_modes": row.get("supported_modes", []),
+                "invoke_when": row.get("invoke_when", []),
+                "avoid_when": row.get("avoid_when", []),
+            }
+            for row in capabilities
+        ],
+        "metric_count": len(pack.get("metrics", []) if isinstance(pack.get("metrics"), list) else []),
+        "fixed_model_per_capability": (pack.get("routing_principles") or {}).get(
+            "fixed_model_per_capability"
+        ),
+        "peer_run_second_brain_dependency_allowed": (
+            pack.get("routing_principles") or {}
+        ).get("peer_run_second_brain_dependency_allowed"),
+    }
 
 
 def _reset_validation_caches() -> None:

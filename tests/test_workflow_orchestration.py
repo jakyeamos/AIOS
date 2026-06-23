@@ -29,7 +29,9 @@ from services.workflow_orchestration import (  # noqa: E402
     _build_stage_evaluation_summary,
     _reset_validation_caches,
     _stage_from_row,
+    developer_experience_capability_report,
     execute_workflow,
+    load_developer_experience_capability_pack,
     load_skill_registry,
     load_workflow_registry,
     rank_workflow_candidates,
@@ -95,6 +97,54 @@ def test_implementation_delivery_declares_deterministic_stage_gates() -> None:
 
     assert validate_stage.required_evidence == ("evidence_artifacts",)
     assert finalize_stage.required_verifier is True
+
+
+def test_developer_experience_pack_loads_with_required_capabilities() -> None:
+    pack = load_developer_experience_capability_pack(
+        ROOT / "config" / "developer-experience" / "capability-pack.json"
+    )
+
+    report = developer_experience_capability_report(pack)
+
+    assert report["fixed_model_per_capability"] is False
+    assert report["peer_run_second_brain_dependency_allowed"] is False
+    assert {row["id"] for row in report["capabilities"]} == {
+        "dx_optimizer",
+        "interface_dx_reviewer",
+        "docs_writer",
+        "security_reviewer",
+        "typescript_specialist",
+        "spec_fidelity_coder",
+    }
+
+
+def test_developer_experience_workflow_uses_existing_skill_registry() -> None:
+    workflows = load_workflow_registry(ROOT / "config" / "workflows" / "registry.json")
+    skills = load_skill_registry(ROOT / "config" / "workflows" / "skills.json")
+
+    workflow = workflows["developer-experience-pack"]
+    expected = {
+        "dx_optimizer",
+        "interface_dx_reviewer",
+        "docs_writer",
+        "security_reviewer",
+        "typescript_specialist",
+        "spec_fidelity_coder",
+    }
+    capability_skills = {
+        skill
+        for stage in workflow.stages
+        for skill in stage.required_skills
+        if skill in expected
+    }
+
+    assert workflow.workflow_family == "developer_experience"
+    assert capability_skills == expected
+    assert all(
+        skills[skill].source_path == "config/developer-experience/capability-pack.json"
+        for skill in capability_skills
+    )
+    assert validate_workflow_bindings({"developer-experience-pack": workflow}, skills) == []
 
 
 def test_workflow_stage_gate_report_exposes_gate_metadata() -> None:

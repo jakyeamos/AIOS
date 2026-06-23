@@ -776,6 +776,7 @@
       "purpose": "Analyze standards gaps and produce remediation plans through the learned workflow seam.",
       "purpose_long": "Analyze standards gaps and produce remediation plans through the learned workflow seam.",
       "allowed_stages": [
+        "parse_request",
         "validate",
         "generate"
       ],
@@ -807,6 +808,7 @@
       "purpose": "Run security review stages and emit risk-classified findings.",
       "purpose_long": "Run security review stages and emit risk-classified findings.",
       "allowed_stages": [
+        "parse_request",
         "validate"
       ],
       "input_schema": {
@@ -880,6 +882,223 @@
         "behavioral_specification"
       ],
       "source_path": "docs/workflows/behavioral-spec-verification-loop.md",
+      "installed_name": null
+    },
+    {
+      "key": "dx_optimizer",
+      "purpose": "Audit setup, local commands, validation loops, docs, CI, and developer workflow friction using the Developer Experience capability pack.",
+      "allowed_stages": [
+        "parse_request",
+        "validate",
+        "generate"
+      ],
+      "input_schema": {
+        "objective": "string",
+        "repo_path": "string",
+        "mode": "string"
+      },
+      "output_schema": {
+        "metrics": "object[]",
+        "findings": "object[]",
+        "verification_plan": "string[]"
+      },
+      "invariants": [
+        "Load minimum sufficient context.",
+        "Mark unavailable metrics as not_measured."
+      ],
+      "failure_conditions": [
+        "Findings lack repo-local evidence.",
+        "Metrics blend measured and inferred values."
+      ],
+      "side_effects": [],
+      "execution_mode": "heuristic",
+      "lifecycle_state": "draft",
+      "applicability": [
+        "developer_experience",
+        "dx_optimizer"
+      ],
+      "source_path": "config/developer-experience/capability-pack.json",
+      "installed_name": null
+    },
+    {
+      "key": "interface_dx_reviewer",
+      "purpose": "Review public APIs, SDKs, CLIs, config schemas, examples, errors, and migration paths from the developer-consumer perspective.",
+      "allowed_stages": [
+        "parse_request",
+        "validate"
+      ],
+      "input_schema": {
+        "objective": "string",
+        "surface": "string",
+        "mode": "string"
+      },
+      "output_schema": {
+        "surface_map": "object[]",
+        "findings": "object[]",
+        "recommended_changes": "object[]"
+      },
+      "invariants": [
+        "Cite public entrypoints, docs, tests, examples, or errors.",
+        "Do not invent consumer expectations."
+      ],
+      "failure_conditions": [
+        "Findings are not tied to a public developer-facing surface."
+      ],
+      "side_effects": [],
+      "execution_mode": "heuristic",
+      "lifecycle_state": "draft",
+      "applicability": [
+        "developer_experience",
+        "interface_dx_review"
+      ],
+      "source_path": "config/developer-experience/capability-pack.json",
+      "installed_name": null
+    },
+    {
+      "key": "docs_writer",
+      "purpose": "Create or revise developer-first documentation with working commands, limitations, and validation evidence.",
+      "allowed_stages": [
+        "parse_request",
+        "generate",
+        "validate"
+      ],
+      "input_schema": {
+        "objective": "string",
+        "docs_scope": "string",
+        "mode": "string"
+      },
+      "output_schema": {
+        "changed_docs": "string[]",
+        "commands_documented": "string[]",
+        "validation_evidence": "string[]"
+      },
+      "invariants": [
+        "Do not document speculative behavior as shipped.",
+        "Avoid marketing or placeholder prose."
+      ],
+      "failure_conditions": [
+        "Docs describe behavior not backed by source or commands."
+      ],
+      "side_effects": [
+        "May write scoped documentation changes in implementation mode."
+      ],
+      "execution_mode": "heuristic",
+      "lifecycle_state": "draft",
+      "applicability": [
+        "developer_experience",
+        "docs_writer"
+      ],
+      "source_path": "config/developer-experience/capability-pack.json",
+      "installed_name": null
+    },
+    {
+      "key": "security_reviewer",
+      "purpose": "Perform contextual DX security review for permissions, secrets, auth, dependencies, tools, CI, logs, privacy, and network or filesystem risk.",
+      "allowed_stages": [
+        "parse_request",
+        "validate"
+      ],
+      "input_schema": {
+        "objective": "string",
+        "security_surface": "string",
+        "mode": "string"
+      },
+      "output_schema": {
+        "security_surfaces": "object[]",
+        "findings": "object[]",
+        "accepted_risks": "object[]",
+        "recommended_gates": "string[]"
+      },
+      "invariants": [
+        "Findings must be contextual and evidence-backed.",
+        "Generic checklist dumping is not acceptable final output."
+      ],
+      "failure_conditions": [
+        "Findings lack exact files, config keys, commands, or data flows."
+      ],
+      "side_effects": [],
+      "execution_mode": "heuristic",
+      "lifecycle_state": "draft",
+      "applicability": [
+        "developer_experience",
+        "security_review"
+      ],
+      "source_path": "config/developer-experience/capability-pack.json",
+      "installed_name": null
+    },
+    {
+      "key": "typescript_specialist",
+      "purpose": "Review TypeScript strictness, inference, public types, package boundaries, and typecheck/build performance only when TypeScript risk justifies it.",
+      "allowed_stages": [
+        "parse_request",
+        "validate",
+        "generate"
+      ],
+      "input_schema": {
+        "objective": "string",
+        "typescript_surface": "string",
+        "mode": "string"
+      },
+      "output_schema": {
+        "type_surfaces": "object[]",
+        "findings": "object[]",
+        "typecheck_commands": "string[]"
+      },
+      "invariants": [
+        "Invoke only for TypeScript-heavy or public type surfaces.",
+        "Cite type errors, type declarations, package config, or build output."
+      ],
+      "failure_conditions": [
+        "Simple non-TypeScript-heavy changes trigger specialist routing."
+      ],
+      "side_effects": [
+        "May write focused TypeScript changes in implementation mode."
+      ],
+      "execution_mode": "heuristic",
+      "lifecycle_state": "draft",
+      "applicability": [
+        "developer_experience",
+        "typescript_specialist"
+      ],
+      "source_path": "config/developer-experience/capability-pack.json",
+      "installed_name": null
+    },
+    {
+      "key": "spec_fidelity_coder",
+      "purpose": "Implement from PRDs, ADRs, design specs, issues, or acceptance criteria with traceable requirements, assumptions, and verification.",
+      "allowed_stages": [
+        "parse_request",
+        "generate",
+        "validate"
+      ],
+      "input_schema": {
+        "objective": "string",
+        "spec_source": "string",
+        "mode": "string"
+      },
+      "output_schema": {
+        "requirements_map": "object[]",
+        "changed_files": "string[]",
+        "assumptions": "object[]",
+        "acceptance_results": "object[]"
+      },
+      "invariants": [
+        "Log low-risk assumptions.",
+        "Stop for destructive, security-sensitive, data-loss, or broad architecture decisions."
+      ],
+      "failure_conditions": [
+        "Spec is missing or conflicting and no safe bounded assumption exists."
+      ],
+      "side_effects": [
+        "May write scoped implementation changes in implementation mode."
+      ],
+      "execution_mode": "heuristic",
+      "lifecycle_state": "draft",
+      "applicability": [
+        "developer_experience",
+        "spec_fidelity"
+      ],
+      "source_path": "config/developer-experience/capability-pack.json",
       "installed_name": null
     }
   ]
