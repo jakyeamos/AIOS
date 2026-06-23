@@ -1,0 +1,246 @@
+{
+  "version": 1,
+  "pack_id": "native-workflow-command-pack",
+  "default_second_brain_mode": "disabled",
+  "safety_classes": [
+    "read_only",
+    "artifact_write",
+    "guarded_modify",
+    "sandbox_write",
+    "shadow_branch_only"
+  ],
+  "commands": [
+    {
+      "id": "zoom_out",
+      "invocation": "aios zoom-out",
+      "implementation_order": 1,
+      "safety_class": "read_only",
+      "write_behavior": "none",
+      "second_brain_usage": "disabled_by_default",
+      "subagent_or_reviewer_lanes": [],
+      "input_schema": {
+        "required": ["target"],
+        "optional": ["depth", "format"]
+      },
+      "output_schema": {
+        "required": [
+          "purpose",
+          "system_position",
+          "inbound_dependencies",
+          "outbound_dependencies",
+          "sibling_modules",
+          "conventions",
+          "domain_vocabulary",
+          "risks",
+          "next_context"
+        ]
+      },
+      "validation_gates": ["target_exists", "required_sections_present"],
+      "logging_metadata": [
+        "command_id",
+        "input_scope",
+        "files_inspected",
+        "second_brain_mode",
+        "outcome"
+      ],
+      "rollback": "not_applicable"
+    },
+    {
+      "id": "handoff",
+      "invocation": "aios handoff",
+      "implementation_order": 2,
+      "safety_class": "artifact_write",
+      "write_behavior": "preview_by_default_explicit_output_path_required",
+      "second_brain_usage": "disabled_by_default",
+      "subagent_or_reviewer_lanes": ["next_agent_skill_suggestions"],
+      "input_schema": {
+        "required": ["objective"],
+        "optional": ["project", "output_path", "include_git_status", "include_checks"]
+      },
+      "output_schema": {
+        "required": [
+          "goal",
+          "current_state",
+          "branch_workspace_status",
+          "files_touched",
+          "decisions",
+          "tests_run",
+          "failed_approaches",
+          "blockers",
+          "references",
+          "next_actions"
+        ]
+      },
+      "validation_gates": ["secret_scan", "artifact_path_allowed", "branch_status_recorded"],
+      "logging_metadata": [
+        "command_id",
+        "input_scope",
+        "files_inspected",
+        "files_written",
+        "artifact_paths",
+        "outcome"
+      ],
+      "rollback": "delete_or_supersede_generated_artifact"
+    },
+    {
+      "id": "review_squad",
+      "invocation": "aios review squad",
+      "implementation_order": 3,
+      "safety_class": "read_only",
+      "write_behavior": "none",
+      "second_brain_usage": "disabled_by_default",
+      "subagent_or_reviewer_lanes": [
+        "security",
+        "correctness",
+        "testing",
+        "architecture",
+        "maintainability",
+        "project_alignment"
+      ],
+      "input_schema": {
+        "required": ["scope_type"],
+        "optional": ["target_ref", "files", "lanes", "strictness"]
+      },
+      "output_schema": {
+        "required": [
+          "findings_by_severity",
+          "lane",
+          "file",
+          "issue",
+          "evidence",
+          "recommended_fix",
+          "confidence",
+          "non_issues_checked"
+        ]
+      },
+      "validation_gates": ["confirmed_vs_speculative_separated", "non_issues_checked_present"],
+      "logging_metadata": [
+        "command_id",
+        "input_scope",
+        "files_inspected",
+        "lanes",
+        "model_used",
+        "outcome"
+      ],
+      "rollback": "not_applicable"
+    },
+    {
+      "id": "audit_security",
+      "invocation": "aios audit security",
+      "implementation_order": 4,
+      "safety_class": "read_only",
+      "write_behavior": "none",
+      "second_brain_usage": "disabled_by_default",
+      "subagent_or_reviewer_lanes": ["security"],
+      "input_schema": {
+        "required": ["mode", "scope_type"],
+        "optional": ["target_ref", "files"]
+      },
+      "output_schema": {
+        "required": [
+          "findings",
+          "severity",
+          "affected_files",
+          "exploit_or_failure_scenario",
+          "recommended_fix",
+          "confidence",
+          "non_issues_checked",
+          "verification_suggestions"
+        ]
+      },
+      "validation_gates": ["mode_is_strict_or_practical", "non_issues_checked_present"],
+      "logging_metadata": [
+        "command_id",
+        "input_scope",
+        "files_inspected",
+        "mode",
+        "outcome"
+      ],
+      "rollback": "not_applicable"
+    },
+    {
+      "id": "cleanup_de_slopify",
+      "invocation": "aios cleanup de-slopify",
+      "implementation_order": 5,
+      "safety_class": "guarded_modify",
+      "write_behavior": "plan_only_by_default_apply_requires_confirmation",
+      "second_brain_usage": "disabled_by_default",
+      "subagent_or_reviewer_lanes": ["maintainability", "test_quality"],
+      "input_schema": {
+        "required": ["scope", "cleanup_goals"],
+        "optional": ["max_risk", "apply", "checks"]
+      },
+      "output_schema": {
+        "required": [
+          "cleanup_plan",
+          "proposed_changes",
+          "applied_changes",
+          "skipped_risky_changes",
+          "checks_run",
+          "rollback"
+        ]
+      },
+      "validation_gates": [
+        "explicit_confirmation_for_apply",
+        "behavior_public_api_preserved",
+        "scoped_diff",
+        "checks_before_after"
+      ],
+      "logging_metadata": [
+        "command_id",
+        "input_scope",
+        "files_inspected",
+        "files_written",
+        "checks_run",
+        "outcome"
+      ],
+      "rollback": "reverse_patch_or_commit_revert"
+    },
+    {
+      "id": "prototype",
+      "invocation": "aios prototype",
+      "implementation_order": 6,
+      "safety_class": "sandbox_write",
+      "write_behavior": "sandbox_only",
+      "second_brain_usage": "disabled_by_default",
+      "subagent_or_reviewer_lanes": [],
+      "input_schema": {
+        "required": ["question", "sandbox_path"],
+        "optional": ["prototype_type", "cleanup_mode"]
+      },
+      "output_schema": {
+        "required": [
+          "created_files",
+          "run_command",
+          "answer_learned",
+          "limitations",
+          "cleanup_or_promotion_guidance"
+        ]
+      },
+      "validation_gates": ["sandbox_path_required", "production_path_refused"],
+      "logging_metadata": [
+        "command_id",
+        "input_scope",
+        "files_written",
+        "artifact_paths",
+        "outcome"
+      ],
+      "rollback": "delete_sandbox_or_mark_disposable"
+    }
+  ],
+  "deferred_commands": [
+    {
+      "id": "codebase_rehab",
+      "invocation": "aios codebase-rehab",
+      "status": "deferred_to_workflow_candidate",
+      "default_behavior": "not_registered_as_mvp_command"
+    },
+    {
+      "id": "codebase_sweep",
+      "invocation": "aios codebase-sweep",
+      "status": "deferred",
+      "default_behavior": "not_default",
+      "required_future_safety": "read_only_by_default_and_shadow_branch_only_before_broad_changes"
+    }
+  ]
+}
