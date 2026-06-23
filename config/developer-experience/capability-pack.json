@@ -1,0 +1,316 @@
+{
+  "id": "developer-experience-capability-pack",
+  "version": "2026-06-23",
+  "status": "draft",
+  "routing_principles": {
+    "context_policy": "minimum_sufficient_context",
+    "model_policy": "dynamic_model_routing_required",
+    "fixed_model_per_capability": false,
+    "peer_run_second_brain_dependency_allowed": false
+  },
+  "modes": {
+    "compact": {
+      "purpose": "Fast, bounded review of obvious developer-experience friction.",
+      "expected_depth": "top_findings_only"
+    },
+    "full_audit": {
+      "purpose": "Repo-level DX audit with metrics, risks, and prioritized remediation.",
+      "expected_depth": "comprehensive"
+    },
+    "implementation": {
+      "purpose": "Scoped code or docs changes after requirements and acceptance criteria are clear.",
+      "expected_depth": "changed_files_with_verification"
+    },
+    "review_only": {
+      "purpose": "Read-only review for public interfaces, security, docs, or TypeScript risk.",
+      "expected_depth": "findings_with_evidence"
+    }
+  },
+  "metrics": [
+    {
+      "id": "clone_to_running_app",
+      "value_state": "not_measured",
+      "future_measurement_method": "time scripted fresh clone through first successful local run"
+    },
+    {
+      "id": "setup_time",
+      "value_state": "not_measured",
+      "future_measurement_method": "measure documented setup commands in an isolated environment"
+    },
+    {
+      "id": "dev_server_startup",
+      "value_state": "not_measured",
+      "future_measurement_method": "time project dev-server command until first ready signal"
+    },
+    {
+      "id": "feedback_loop_speed",
+      "value_state": "not_measured",
+      "future_measurement_method": "measure hot reload or smallest validation rerun latency"
+    },
+    {
+      "id": "unit_test_runtime",
+      "value_state": "measurable_when_command_known",
+      "future_measurement_method": "record focused test command wall-clock time"
+    },
+    {
+      "id": "typecheck_runtime",
+      "value_state": "measurable_when_command_known",
+      "future_measurement_method": "record typecheck command wall-clock time"
+    },
+    {
+      "id": "lint_runtime",
+      "value_state": "measurable_when_command_known",
+      "future_measurement_method": "record lint command wall-clock time"
+    },
+    {
+      "id": "build_runtime",
+      "value_state": "measurable_when_command_known",
+      "future_measurement_method": "record build command wall-clock time"
+    },
+    {
+      "id": "ci_runtime",
+      "value_state": "not_measured",
+      "future_measurement_method": "read CI provider run duration when authenticated metadata is available"
+    },
+    {
+      "id": "manual_setup_steps",
+      "value_state": "measurable_from_docs",
+      "future_measurement_method": "count required human-only setup steps in README or setup docs"
+    },
+    {
+      "id": "validation_command_count",
+      "value_state": "measurable_from_docs",
+      "future_measurement_method": "count commands required for local confidence"
+    },
+    {
+      "id": "readme_quickstart_presence",
+      "value_state": "measurable_from_docs",
+      "future_measurement_method": "detect explicit quickstart or equivalent setup path"
+    },
+    {
+      "id": "setup_validation_presence",
+      "value_state": "measurable_from_docs",
+      "future_measurement_method": "detect command that proves setup succeeded"
+    },
+    {
+      "id": "ambiguous_developer_instructions",
+      "value_state": "measurable_from_docs",
+      "future_measurement_method": "count unsupported, conflicting, or missing instructions with citations"
+    },
+    {
+      "id": "token_cost_and_agent_calls",
+      "value_state": "measurable_when_telemetry_available",
+      "future_measurement_method": "read model-selection and orchestration telemetry when recorded"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "dx_optimizer",
+      "purpose": "Find and prioritize developer workflow friction across setup, local commands, validation, docs, and CI.",
+      "responsibilities": [
+        "audit setup and run path",
+        "collect available DX metrics",
+        "identify quick wins and larger investments",
+        "rank findings by developer impact and implementation risk"
+      ],
+      "invoke_when": [
+        "repo_onboarding_or_setup_friction",
+        "validation_loop_is_slow_or_unclear",
+        "developer_commands_or_docs_are_ambiguous"
+      ],
+      "avoid_when": [
+        "single_file_code_fix_without_developer_workflow_impact"
+      ],
+      "default_mode": "compact",
+      "supported_modes": ["compact", "full_audit"],
+      "required_output_schema": {
+        "metrics": "object[]",
+        "findings": "object[]",
+        "quick_wins": "object[]",
+        "larger_investments": "object[]",
+        "verification_plan": "string[]"
+      },
+      "evidence_expectations": [
+        "cite commands, docs, config files, or observed timings",
+        "mark unavailable metrics as not_measured"
+      ],
+      "assumptions_policy": "State assumptions and whether they were measured, inferred, or unavailable.",
+      "second_brain_behavior": {
+        "when_available": "Use prior project conventions and known pain points as supporting context.",
+        "when_unavailable": "Use repo-local docs, configs, and command evidence only."
+      }
+    },
+    {
+      "id": "interface_dx_reviewer",
+      "purpose": "Review public APIs, SDKs, CLIs, config schemas, examples, errors, and migration paths from a developer-consumer perspective.",
+      "responsibilities": [
+        "map developer-facing surface",
+        "review naming and error clarity",
+        "check examples and migration affordances",
+        "identify breaking or confusing interface behavior"
+      ],
+      "invoke_when": [
+        "public_api_or_cli_change",
+        "configuration_schema_change",
+        "developer_facing_error_or_migration_change"
+      ],
+      "avoid_when": [
+        "private_internal_refactor_with_no_interface_change"
+      ],
+      "default_mode": "review_only",
+      "supported_modes": ["compact", "full_audit", "review_only"],
+      "required_output_schema": {
+        "surface_map": "object[]",
+        "findings": "object[]",
+        "consumer_examples": "string[]",
+        "recommended_changes": "object[]"
+      },
+      "evidence_expectations": [
+        "cite public entrypoints, docs, tests, examples, or errors"
+      ],
+      "assumptions_policy": "Do not invent consumer expectations; label inferred expectations.",
+      "second_brain_behavior": {
+        "when_available": "Use known consumer preferences only as non-blocking context.",
+        "when_unavailable": "Use repo-local public contracts and examples."
+      }
+    },
+    {
+      "id": "docs_writer",
+      "purpose": "Create or revise developer-first documentation that is accurate, practical, and validation-backed.",
+      "responsibilities": [
+        "write setup and usage docs",
+        "include working commands and limitations",
+        "remove marketing or placeholder prose",
+        "document validation commands"
+      ],
+      "invoke_when": [
+        "readme_or_docs_missing_or_stale",
+        "feature_needs_developer_usage_docs",
+        "setup_or_validation_path_changed"
+      ],
+      "avoid_when": [
+        "docs_would_describe_unimplemented_behavior"
+      ],
+      "default_mode": "implementation",
+      "supported_modes": ["compact", "implementation", "review_only"],
+      "required_output_schema": {
+        "changed_docs": "string[]",
+        "commands_documented": "string[]",
+        "limitations": "string[]",
+        "validation_evidence": "string[]"
+      },
+      "evidence_expectations": [
+        "cite source behavior or commands before documenting it"
+      ],
+      "assumptions_policy": "Do not document speculative features as shipped.",
+      "second_brain_behavior": {
+        "when_available": "Use house style preferences as supporting context.",
+        "when_unavailable": "Follow repo-local docs and observed behavior."
+      }
+    },
+    {
+      "id": "security_reviewer",
+      "purpose": "Perform contextual security review for changes involving permissions, secrets, auth, dependencies, tools, CI, logs, privacy, or network/file-system risk.",
+      "responsibilities": [
+        "identify concrete security-sensitive surfaces",
+        "review secrets and permission boundaries",
+        "check logging and privacy risks",
+        "recommend scoped mitigations"
+      ],
+      "invoke_when": [
+        "security_sensitive_change",
+        "auth_secret_permission_network_or_ci_change",
+        "dependency_or_tool_access_change"
+      ],
+      "avoid_when": [
+        "generic_owasp_checklist_without_repo_specific_surface"
+      ],
+      "default_mode": "review_only",
+      "supported_modes": ["review_only", "full_audit"],
+      "required_output_schema": {
+        "security_surfaces": "object[]",
+        "findings": "object[]",
+        "accepted_risks": "object[]",
+        "recommended_gates": "string[]"
+      },
+      "evidence_expectations": [
+        "cite exact files, config keys, commands, or data flows"
+      ],
+      "assumptions_policy": "Mark unknown threat surfaces instead of declaring them safe.",
+      "second_brain_behavior": {
+        "when_available": "Use prior security decisions as context, not as proof.",
+        "when_unavailable": "Use repo-local evidence only."
+      }
+    },
+    {
+      "id": "typescript_specialist",
+      "purpose": "Handle TypeScript-specific DX issues around strictness, inference, public types, package boundaries, and typecheck/build performance.",
+      "responsibilities": [
+        "review public TypeScript API and inferred types",
+        "inspect strict compiler or package boundary issues",
+        "assess typecheck/build performance where measurable",
+        "recommend focused type-level fixes"
+      ],
+      "invoke_when": [
+        "public_typescript_api_change",
+        "strict_type_error_or_inference_issue",
+        "typescript_package_boundary_change",
+        "typecheck_performance_issue"
+      ],
+      "avoid_when": [
+        "simple_typescript_file_edit_without_type_system_risk"
+      ],
+      "default_mode": "review_only",
+      "supported_modes": ["review_only", "implementation"],
+      "required_output_schema": {
+        "type_surfaces": "object[]",
+        "findings": "object[]",
+        "typecheck_commands": "string[]",
+        "recommended_changes": "object[]"
+      },
+      "evidence_expectations": [
+        "cite type errors, public type declarations, package config, or build output"
+      ],
+      "assumptions_policy": "Do not generalize TypeScript advice beyond observed type surfaces.",
+      "second_brain_behavior": {
+        "when_available": "Use project TypeScript conventions as supporting context.",
+        "when_unavailable": "Use tsconfig, package metadata, and local source."
+      }
+    },
+    {
+      "id": "spec_fidelity_coder",
+      "purpose": "Implement from PRDs, ADRs, design specs, issues, or acceptance criteria while preserving scope and logging assumptions.",
+      "responsibilities": [
+        "extract requirements and acceptance criteria",
+        "map required files and tests",
+        "implement small scoped changes",
+        "record assumptions, verification, and residual risk"
+      ],
+      "invoke_when": [
+        "implementation_from_prd_adr_issue_or_design_spec",
+        "acceptance_criteria_are_explicit",
+        "traceability_between_spec_and_diff_is_required"
+      ],
+      "avoid_when": [
+        "spec_is_missing_or_conflicting_without_safe_assumption"
+      ],
+      "default_mode": "implementation",
+      "supported_modes": ["implementation", "review_only"],
+      "required_output_schema": {
+        "requirements_map": "object[]",
+        "changed_files": "string[]",
+        "tests_or_checks": "string[]",
+        "assumptions": "object[]",
+        "acceptance_results": "object[]"
+      },
+      "evidence_expectations": [
+        "cite spec lines or acceptance criteria and matching verification"
+      ],
+      "assumptions_policy": "Stop for destructive, security-sensitive, data-loss, or broad architecture decisions; otherwise log bounded assumptions.",
+      "second_brain_behavior": {
+        "when_available": "Use prior decisions only to interpret ambiguous local spec context.",
+        "when_unavailable": "Use the provided spec and repo-local truth."
+      }
+    }
+  ]
+}

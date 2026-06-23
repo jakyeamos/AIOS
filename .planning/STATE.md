@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-last_updated: "2026-06-23T20:35:00.000Z"
+last_updated: "2026-06-23T20:50:00.000Z"
 progress:
   total_phases: 22
   completed_phases: 16
   total_plans: 123
-  completed_plans: 86
-  percent: 70
+  completed_plans: 87
+  percent: 71
 ---
 
 # AIOS Planning State
@@ -26,13 +26,13 @@ progress:
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
 - Latest completed phase: Phase 16, Harness Determinism, Evidence, And Independent Verification, shipped deterministic evidence, verifier, context manifest, prompt-boundary, retrospective, model-selection, and shadow parity primitives.
-- Latest completed plan: Phase 17 Plan 17-01 shipped the Developer Experience pack architecture audit for DXPK-01.
+- Latest completed plan: Phase 17 Plan 17-02 shipped the Developer Experience capability contract, machine-readable registry, metric states, and second-brain parity policy for DXPK-02, DXPK-03, and DXPK-05.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 12, Developer Experience Capability Pack
 - Active phase: Phase 17, Developer Experience Capability Pack
-- Active plan: Phase 17 Plan 17-02
+- Active plan: Phase 17 Plan 17-03
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15
 - Next dependency chain: Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
@@ -52,6 +52,7 @@ progress:
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-06-23 | Complete Phase 17 Plan 17-02 capability contract, modes, metrics, and second-brain parity | `.planning/phases/17-developer-experience-capability-pack/17-02-SUMMARY.md` records `docs/specs/developer-experience-pack-contract.md`, `config/developer-experience/capability-pack.json`, six capability contracts, compact/full_audit/implementation/review_only modes, DX metrics with `not_measured` states, and second-brain fallback behavior. |
 | 2026-06-23 | Complete Phase 17 Plan 17-01 Developer Experience pack architecture audit | `.planning/phases/17-developer-experience-capability-pack/17-01-SUMMARY.md` records `docs/audits/aios-developer-experience-pack-audit.md`, existing infrastructure, equivalents, gaps, reuse opportunities, proposed files, risks, implementation sequence, and capability map for DXPK-01. |
 | 2026-06-23 | Complete Phase 16 Plan 16-06 retrospective, model-selection, and shadow parity metadata | `.planning/phases/16-harness-determinism-evidence-and-independent-verification/16-06-SUMMARY.md` records `retrospective_artifacts`, model-selection records, shadow parity metadata, CLI inspection commands, and focused tests covering no-auto-apply, nullable provider telemetry, and queryable parity metadata. |
 | 2026-06-23 | Complete Phase 16 Plan 16-05 deterministic phase gates and prompt boundary tightening | `.planning/phases/16-harness-determinism-evidence-and-independent-verification/16-05-SUMMARY.md` records `docs/audits/aios-prompt-template-boundary-audit.md`, `required_evidence`/`required_verifier` stage metadata, loader defaults, `workflow_stage_gate_report`, `aios workflow-gates`, and focused workflow tests. |
@@ -148,4 +149,4 @@ progress:
 | 2026-06-02 | Complete Phase 10 Plan 08 quality hotspot backfill baseline | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-08-SUMMARY.md` records `pnpm quality:eval`, the read-only hotspot detection script, and the first factual Agent Eval backfill inventory for Python services, CLI scripts, tests, aios-ui, config, and eval docs. |
 
 ---
-*Last updated: 2026-06-23 after completing Phase 17 Plan 17-01 and advancing to Phase 17 Plan 17-02*
+*Last updated: 2026-06-23 after completing Phase 17 Plan 17-02 and advancing to Phase 17 Plan 17-03*
