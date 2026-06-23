@@ -1,0 +1,67 @@
+{
+  "schema": "tmcp-router-v0.1",
+  "router_id": "macos_native_app_skills",
+  "version": "2026-06-23",
+  "always_loaded": false,
+  "entry_policy": "Use only as an intent-specific overlay for native macOS app work. Select the smallest route; do not load broad macOS knowledge by default.",
+  "routes": [
+    {
+      "id": "macos_build_verify",
+      "triggers": ["build macOS app", "compile macOS app", "check build", "xcodebuild", "scheme"],
+      "anti_triggers": ["web build", "Next.js build", "iOS-only build"],
+      "sequence": ["@task:macos.project.detect", "@task:macos.build.verify"],
+      "permission_gates": []
+    },
+    {
+      "id": "macos_architecture_patterns",
+      "triggers": ["macOS architecture", "native macOS pattern", "NSPanel", "MenuBarExtra", "pasteboard", "ScreenCaptureKit"],
+      "anti_triggers": ["generic Apple advice", "web-only UI", "always load macOS"],
+      "sequence": ["@task:macos.patterns.route"],
+      "permission_gates": []
+    },
+    {
+      "id": "macos_settings_window",
+      "triggers": ["settings window", "preferences window", "macOS settings", "Settings scene"],
+      "anti_triggers": ["web settings page", "iOS settings"],
+      "sequence": ["@task:macos.project.detect", "@task:macos.settings.window", "@task:macos.build.verify"],
+      "permission_gates": ["replace_existing_settings_architecture"]
+    },
+    {
+      "id": "macos_sparkle_auto_update",
+      "triggers": ["Sparkle", "appcast", "SUFeedURL", "SUPublicEDKey", "auto update"],
+      "anti_triggers": ["Mac App Store update", "server API update"],
+      "sequence": ["@task:macos.project.detect", "@task:macos.sparkle.auto_update", "@task:macos.build.verify"],
+      "permission_gates": ["dependency_addition", "plist_edit", "appcast_mutation", "private_key_material"]
+    },
+    {
+      "id": "macos_notch_overlay",
+      "triggers": ["notch overlay", "Dynamic Island", "display top overlay", "notch UI"],
+      "anti_triggers": ["ordinary popover", "web overlay", "document window"],
+      "sequence": ["@task:macos.project.detect", "@task:macos.notch.overlay", "@task:macos.build.verify"],
+      "permission_gates": ["high_window_level", "click_through_overlay", "global_event_monitor"]
+    },
+    {
+      "id": "macos_release_pipeline",
+      "triggers": ["release macOS app", "publish macOS app", "DMG", "notarize", "GitHub release", "sign_update"],
+      "anti_triggers": ["dry documentation only", "web deploy", "npm publish"],
+      "sequence": [
+        "@task:macos.project.detect",
+        "@task:macos.release.pipeline",
+        "@branch:macos.permission.release_publish",
+        "@branch:macos.release.dry_run",
+        "@branch:macos.release.approval",
+        "@branch:macos.release.execution"
+      ],
+      "permission_gates": [
+        "git_commit",
+        "git_push",
+        "gh_release_create",
+        "appcast_mutation",
+        "signing",
+        "notarization",
+        "artifact_publishing",
+        "version_build_change"
+      ]
+    }
+  ]
+}

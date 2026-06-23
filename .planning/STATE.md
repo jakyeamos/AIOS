@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-last_updated: "2026-06-24T00:05:20.000Z"
+last_updated: "2026-06-24T00:05:55.000Z"
 progress:
   total_phases: 22
   completed_phases: 20
   total_plans: 123
-  completed_plans: 117
+  completed_plans: 118
   percent: 90
 ---
 
@@ -26,13 +26,13 @@ progress:
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
 - Latest completed phase: Phase 20, Execution-Symmetric Planning, shipped workflow-aware, complexity-scaled, GSD-ready, lens-driven, skill-aware planning with structured context/logs and eval coverage.
-- Latest completed plan: Phase 21 Plan 21-06 added a dry-run-first macOS release pipeline skill with hard gates for git, GitHub release, appcast, signing, notarization, publishing, version/build changes, and secret-safe validation.
+- Latest completed plan: Phase 21 Plan 21-07 added macOS TMCP routing, strict node IDs, manifest provenance, module dependency map, freshness notes, license notes, validation pointers, and intent-specific no-always-load routing.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 16, macOS Native App Skill Pack
 - Active phase: Phase 21, macOS Native App Skill Pack
-- Active plan: Phase 21 Plan 21-07
+- Active plan: Phase 21 Plan 21-08
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20
 - Next dependency chain: Phase 21 -> Phase 22
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
@@ -52,6 +52,7 @@ progress:
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-06-23 | Complete Phase 21 Plan 21-07 macOS TMCP routing and manifest | `config/tmcp/macos-skills-router.json`, `config/skills/macos-manifest.json`, and `docs/skills/macos-dependency-map.md` make macOS skills discoverable through strict task/module IDs, task-first routes, permission gates, source provenance, transformation types, freshness notes, license notes, behavior tests, and dependency maps without broad always-loaded macOS triggers. |
 | 2026-06-23 | Complete Phase 21 Plan 21-06 macOS release pipeline skill | `skills/macos/release-pipeline/SKILL.md` and `tests/skills/macos/test_release_pipeline.md` define a dry-run-first release skill with preflight checks, explicit mutation gates, version/build and appcast validation, tool/auth detection, notarization and Sparkle signing checks, rollback guidance, and post-publish evidence requirements. |
 | 2026-06-23 | Complete Phase 21 Plan 21-05 settings, Sparkle, and notch skills | `skills/macos/settings-window/SKILL.md`, `skills/macos/sparkle-auto-update/SKILL.md`, `skills/macos/notch-overlay/SKILL.md`, and three behavior fixtures add guarded settings, auto-update, and notch-overlay implementation guidance with project detection, build verification, explicit approval gates, private-key protection, activation/fallback checks, and repair recommendations. |
 | 2026-06-23 | Complete Phase 21 Plan 21-04 native macOS pattern router and modules | `skills/macos/native-patterns-router/SKILL.md`, twelve files under `skills/macos/modules/`, and `tests/skills/macos/test_native_pattern_routing.md` split broad donor macOS pattern knowledge into intent-routed modules with use/non-use guidance, web mental-model corrections, native patterns, minimal code, validation notes, related modules, and provenance pointers. |
@@ -184,4 +185,4 @@ progress:
 | 2026-06-02 | Complete Phase 10 Plan 08 quality hotspot backfill baseline | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-08-SUMMARY.md` records `pnpm quality:eval`, the read-only hotspot detection script, and the first factual Agent Eval backfill inventory for Python services, CLI scripts, tests, aios-ui, config, and eval docs. |
 
 ---
-*Last updated: 2026-06-23 after completing Phase 21 Plan 21-06 and advancing to Phase 21 Plan 21-07*
+*Last updated: 2026-06-23 after completing Phase 21 Plan 21-07 and advancing to Phase 21 Plan 21-08*
