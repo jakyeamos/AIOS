@@ -45,6 +45,12 @@ AIOS Phase 12 Plan 12-02 now has the first layered-memory implementation:
 - `services.memory_layers` exposes independent `RawSourceMemory`, `FactMemory`, `RelationshipMemory`, and `PacketReceiptLog` classes with insert/get/query methods and `ALLOWED_PREDICATES` validation
 - `bin/aios_orchestration_runtime.ensure_runtime_schema` installs the memory layer schema on runtime touch, and `tests/test_memory_layers.py` verifies idempotent schema setup plus all four layer modules
 
+AIOS Phase 12 Plan 12-05 now has the memory packet contract:
+
+- `docs/specs/memory-packet-contract.md` defines required and optional model-facing packet sections, section ordering, internal schema shape, Markdown rendering, provenance rules, stale/superseded and contradiction handling, confidence labels, token-budget priority, and good/bad examples
+- the contract makes raw JSON in model-facing packet output a hard violation; compiler internals may use structured JSON/rows/edges, but rendered packets must be readable Markdown for LLM reasoning
+- `services.memory_layers.FactMemory` and `schema.sql` now enforce the contract validity statuses: `active`, `superseded`, `contradicted`, `uncertain`, and `archived`
+
 AIOS planning now reflects the expanded quality-gate success criteria as landed baseline infrastructure:
 
 - Phase 14 plans now reference the registered success-criteria gate ids as the canonical vocabulary for complexity, architecture, simplicity, testing, UI, data, API, supply-chain, and agent-claim verification work
