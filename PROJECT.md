@@ -39,6 +39,12 @@ AIOS Phase 12 Plan 12-01 now has its graph-native memory architecture audit:
 - the audit identifies memory-loss hotspots and flat retrieval paths across hooks, context compilation, operator search, CTS, vault search, document importers, and UI packet assembly
 - ranked recommendations now give Plans 12-02 through 12-08 a concrete implementation contract for layered memory schema, memory compiler, context compiler, packet contract, quality checks, backfill planning, and KV-cache future work
 
+AIOS Phase 12 Plan 12-02 now has the first layered-memory implementation:
+
+- `schema.sql` defines `memory_raw_sources`, `memory_facts`, `memory_relationships`, and `memory_packet_receipts` for raw sources, normalized facts, typed relationships, and model-facing packet provenance
+- `services.memory_layers` exposes independent `RawSourceMemory`, `FactMemory`, `RelationshipMemory`, and `PacketReceiptLog` classes with insert/get/query methods and `ALLOWED_PREDICATES` validation
+- `bin/aios_orchestration_runtime.ensure_runtime_schema` installs the memory layer schema on runtime touch, and `tests/test_memory_layers.py` verifies idempotent schema setup plus all four layer modules
+
 AIOS planning now reflects the expanded quality-gate success criteria as landed baseline infrastructure:
 
 - Phase 14 plans now reference the registered success-criteria gate ids as the canonical vocabulary for complexity, architecture, simplicity, testing, UI, data, API, supply-chain, and agent-claim verification work

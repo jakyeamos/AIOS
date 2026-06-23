@@ -8,8 +8,8 @@ progress:
   total_phases: 22
   completed_phases: 11
   total_plans: 123
-  completed_plans: 48
-  percent: 39
+  completed_plans: 49
+  percent: 40
 ---
 
 # AIOS Planning State
@@ -26,13 +26,13 @@ progress:
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
 - Latest completed phase: Phase 11, Testing, Benchmark Evaluation, And Shadow Workflows, shipped durable eval records, second-brain lift, shadow branches, ablations, peer trace/candidate scoring, automated shadow pipeline, portable packets, external adapters, and eval UI panels.
-- Latest completed plan: Phase 12 Plan 12-01 shipped the graph-native memory architecture audit that maps current AIOS memory, retrieval, context-packing, provenance, staleness, graph, and prompt-caching surfaces and ranks implementation recommendations for Plans 12-02 through 12-08.
+- Latest completed plan: Phase 12 Plan 12-02 shipped the layered memory storage foundation: Layer A raw sources, Layer B normalized facts, Layer C typed relationships, Layer D packet receipt provenance, composable Python layer classes, runtime schema installation, and focused tests.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 7, Graph-Native Memory Architecture
 - Active phase: Phase 12, Graph-Native Memory Architecture And Cache-Aware Context Compilation
-- Active plan: Phase 12 Plan 12-02
+- Active plan: Phase 12 Plan 12-05
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11
 - Next dependency chain: Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
@@ -52,6 +52,7 @@ progress:
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-06-23 | Complete Phase 12 Plan 12-02 layered memory schema | `.planning/phases/12-graph-native-memory-architecture/12-02-SUMMARY.md` records the new memory layer schema and service foundation: `memory_raw_sources`, `memory_facts`, `memory_relationships`, `memory_packet_receipts`, `services.memory_layers`, runtime schema installation, and 7 focused passing tests. |
 | 2026-06-23 | Complete Phase 12 Plan 12-01 memory architecture audit | `.planning/phases/12-graph-native-memory-architecture/12-01-SUMMARY.md` records the existing `docs/audits/graph-native-memory-audit.md` closeout, including current architecture coverage, concrete file/module citations, memory-loss hotspots, provenance/staleness/conflict gaps, prompt caching opportunities, and ranked implementation recommendations for the remaining Phase 12 plans. |
 | 2026-06-23 | Update quality-gate phase plans | Planned in `.planning/quick/260623-update-quality-gate-phase-plans`; Phase 14 and Phase 22 plans now treat the expanded success-criteria registry as landed baseline infrastructure, narrowing remaining work to docs, backfill inventories, promotion policy, portability classification, and hook integration. |
 | 2026-06-23 | Add AIOS quality gates | Planned in `.planning/quick/260623-add-quality-gates`; success criteria now include diff-scoped gates for complexity, supply chain, modularity, thin display UI, test quality, data integrity, API contracts, performance, accessibility, resilience, product alignment, simplicity, and agent claim verification, with registry routing, evaluator heuristics, and project truth updated. |
@@ -118,4 +119,4 @@ progress:
 | 2026-06-02 | Complete Phase 10 Plan 08 quality hotspot backfill baseline | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-08-SUMMARY.md` records `pnpm quality:eval`, the read-only hotspot detection script, and the first factual Agent Eval backfill inventory for Python services, CLI scripts, tests, aios-ui, config, and eval docs. |
 
 ---
-*Last updated: 2026-06-23 after closing out Phase 12 Plan 12-01*
+*Last updated: 2026-06-23 after completing Phase 12 Plan 12-02*
