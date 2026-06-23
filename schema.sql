@@ -146,6 +146,34 @@ CREATE TABLE IF NOT EXISTS session_provider_cursors (
   last_scanned_at TEXT,
   PRIMARY KEY (provider_id, source_path)
 );
+CREATE TABLE IF NOT EXISTS session_imports (
+  stable_session_id TEXT PRIMARY KEY,
+  provider_id TEXT NOT NULL,
+  provider_session_id TEXT NOT NULL,
+  workspace_path TEXT,
+  workspace_id TEXT,
+  project_id TEXT,
+  started_at TEXT,
+  updated_at TEXT,
+  imported_at TEXT NOT NULL,
+  source_files_json TEXT NOT NULL DEFAULT '[]',
+  source_file_mtimes_json TEXT NOT NULL DEFAULT '{}',
+  content_hash TEXT NOT NULL,
+  title TEXT NOT NULL,
+  participants_json TEXT NOT NULL DEFAULT '[]',
+  messages_json TEXT NOT NULL DEFAULT '[]',
+  tool_calls_json TEXT NOT NULL DEFAULT '[]',
+  file_edits_json TEXT NOT NULL DEFAULT '[]',
+  commands_run_json TEXT NOT NULL DEFAULT '[]',
+  decisions_extracted_json TEXT NOT NULL DEFAULT '[]',
+  todos_extracted_json TEXT NOT NULL DEFAULT '[]',
+  errors_extracted_json TEXT NOT NULL DEFAULT '[]',
+  summary_status TEXT NOT NULL,
+  writeback_status TEXT NOT NULL,
+  confidence REAL NOT NULL,
+  provider_metadata_json TEXT NOT NULL DEFAULT '{}',
+  redaction_incomplete INTEGER NOT NULL DEFAULT 0
+);
 CREATE TABLE workflow_metrics (
   id TEXT PRIMARY KEY,
   session_id TEXT REFERENCES sessions(id),
