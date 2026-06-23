@@ -33,6 +33,12 @@ Root operator documentation now lives in `README.md`, including local UI launch 
 
 ## Implemented On 2026-06-23
 
+AIOS Phase 12 Plan 12-01 now has its graph-native memory architecture audit:
+
+- `docs/audits/graph-native-memory-audit.md` maps current raw storage, ingestion, indexing, search, prompt construction, packet generation, long-term memory update, provenance, conflict/staleness, graph, and prompt-caching surfaces
+- the audit identifies memory-loss hotspots and flat retrieval paths across hooks, context compilation, operator search, CTS, vault search, document importers, and UI packet assembly
+- ranked recommendations now give Plans 12-02 through 12-08 a concrete implementation contract for layered memory schema, memory compiler, context compiler, packet contract, quality checks, backfill planning, and KV-cache future work
+
 AIOS planning now reflects the expanded quality-gate success criteria as landed baseline infrastructure:
 
 - Phase 14 plans now reference the registered success-criteria gate ids as the canonical vocabulary for complexity, architecture, simplicity, testing, UI, data, API, supply-chain, and agent-claim verification work
