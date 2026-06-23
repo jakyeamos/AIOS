@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-last_updated: "2026-06-23T18:01:00.000Z"
+last_updated: "2026-06-23T18:20:00.000Z"
 progress:
   total_phases: 22
   completed_phases: 14
   total_plans: 123
-  completed_plans: 75
-  percent: 61
+  completed_plans: 76
+  percent: 62
 ---
 
 # AIOS Planning State
@@ -26,13 +26,13 @@ progress:
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
 - Latest completed phase: Phase 14, Code Quality Gates And Cross-Project Complexity Standards, shipped thin agent-rule pointers, complexity/simplification quality docs, and cross-project complexity backfill inventories.
-- Latest completed plan: Phase 15 Plan 15-04 shipped the global intent-specific simplifier skill with report-first architecture review, nine architecture lenses, deepening guidance, and diagnose handoff evidence for SKIL-04.
+- Latest completed plan: Phase 15 Plan 15-05 shipped the global to-issues skill plus `services/issues_store.py`, the checked-in `issues` schema, focused tests, and verification evidence for SKIL-05.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 10, Agent Skill Portfolio Audit And External Library Integration
 - Active phase: Phase 15, Agent Skill Portfolio Audit And External Library Integration
-- Active plan: Phase 15 Plan 15-05
+- Active plan: Phase 15 Plan 15-06
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14
 - Next dependency chain: Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
@@ -52,6 +52,7 @@ progress:
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-06-23 | Complete Phase 15 Plan 15-05 to-issues skill and issues store | `.planning/phases/15-agent-skill-portfolio-audit-and-external-library-integration/15-05-SUMMARY.md` records the new global `/Users/jakyeamos/.claude/skills/to-issues/SKILL.md`, `services/issues_store.py`, checked-in `issues` schema, 4 focused passing tests, and passing artifact/reference/key-link checks. |
 | 2026-06-23 | Complete Phase 15 Plan 15-04 simplifier architecture skill | `.planning/phases/15-agent-skill-portfolio-audit-and-external-library-integration/15-04-SUMMARY.md` records the new global `/Users/jakyeamos/.claude/skills/simplifier/SKILL.md`, nine architecture lenses, report-first discipline, deepening guidance, diagnose handoff, and passing artifact/reference/key-link checks. |
 | 2026-06-23 | Complete Phase 15 Plan 15-03 diagnose debugging skill | `.planning/phases/15-agent-skill-portfolio-audit-and-external-library-integration/15-03-SUMMARY.md` records the new global `/Users/jakyeamos/.claude/skills/diagnose/SKILL.md`, seven debugging behaviors, test-seam guidance, architecture handoff, and passing artifact/reference/key-link checks. |
 | 2026-06-23 | Complete Phase 15 Plan 15-02 interrogate skill upgrade | `.planning/phases/15-agent-skill-portfolio-audit-and-external-library-integration/15-02-SUMMARY.md` records the new global `/Users/jakyeamos/.claude/skills/interrogate/SKILL.md`, the Plan 15-01 backup reference, six grill-with-docs behaviors, one-question discipline, and passing artifact/reference/key-link checks. |
@@ -136,4 +137,4 @@ progress:
 | 2026-06-02 | Complete Phase 10 Plan 08 quality hotspot backfill baseline | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-08-SUMMARY.md` records `pnpm quality:eval`, the read-only hotspot detection script, and the first factual Agent Eval backfill inventory for Python services, CLI scripts, tests, aios-ui, config, and eval docs. |
 
 ---
-*Last updated: 2026-06-23 after completing Phase 15 Plan 15-04 and advancing to Phase 15 Plan 15-05*
+*Last updated: 2026-06-23 after completing Phase 15 Plan 15-05 and advancing to Phase 15 Plan 15-06*

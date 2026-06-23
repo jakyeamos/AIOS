@@ -999,6 +999,22 @@ CREATE TABLE personalized_humanizer_eval_results (
   summary_json TEXT NOT NULL DEFAULT '{}'
 );
 
+CREATE TABLE IF NOT EXISTS issues (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  project TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  acceptance_criteria TEXT NOT NULL DEFAULT '[]',
+  afk_hitl TEXT NOT NULL CHECK(afk_hitl IN ('AFK', 'HITL')),
+  dependencies TEXT NOT NULL DEFAULT '[]',
+  linked_run_id TEXT,
+  source_file TEXT,
+  status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open', 'in_progress', 'done', 'cancelled')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_issues_project_status ON issues(project, status, id);
+CREATE INDEX IF NOT EXISTS idx_issues_linked_run ON issues(linked_run_id);
+
 CREATE TABLE IF NOT EXISTS eval_tasks (
   id TEXT PRIMARY KEY,
   repo_id TEXT,
