@@ -190,7 +190,7 @@
 - [x] **MACS-05**: AIOS adds guarded skills for settings windows, Sparkle auto-update, and notch overlays with environment guards, permission gates, architecture preservation, validation commands, fallback behavior, and repair recommendations
 - [x] **MACS-06**: AIOS adds a dry-run-first macOS release pipeline skill with hard permission gates for git, GitHub release, appcast mutation, signing, notarization, publishing, and version/build changes plus release validation and secret-safety checks
 - [x] **MACS-07**: AIOS adds or updates TMCP routing, strict node IDs, manifests, dependency maps, related-module pointers, source provenance, source freshness/version notes, transformation type, license notes, and audited dates for every macOS skill/module
-- [ ] **MACS-08**: AIOS adds behavioral tests and a validation command for macOS project detection, build verification, native pattern routing, settings UI, Sparkle, notch overlay, release safety, TMCP pointer resolution, permission gates, private-key patterns, broad triggers, and release publish gates
+- [x] **MACS-08**: AIOS adds behavioral tests and a validation command for macOS project detection, build verification, native pattern routing, settings UI, Sparkle, notch overlay, release safety, TMCP pointer resolution, permission gates, private-key patterns, broad triggers, and release publish gates
 - [ ] **MACS-09**: AIOS documents the macOS skill pack, routing behavior, safety gates, validation command, future platform-skill pattern, donor pattern note, assumptions, adopted/changed/rejected donor ideas, remaining risks, and final implementation report format
 
 ## v2 Requirements
@@ -339,7 +339,7 @@ None currently. The full operating-system vision is intentionally being planned 
 | MACS-05 | Phase 21: macOS Native App Skill Pack | Complete |
 | MACS-06 | Phase 21: macOS Native App Skill Pack | Complete |
 | MACS-07 | Phase 21: macOS Native App Skill Pack | Complete |
-| MACS-08 | Phase 21: macOS Native App Skill Pack | Pending |
+| MACS-08 | Phase 21: macOS Native App Skill Pack | Complete |
 | MACS-09 | Phase 21: macOS Native App Skill Pack | Pending |
 
 **Coverage:**
