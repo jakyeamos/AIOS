@@ -145,7 +145,7 @@
 - [x] **DXPK-04**: AIOS routes DX capabilities only when justified, supports compact audit, full audit, implementation, and review-only modes, and uses dynamic model/reasoning metadata rather than fixed model-per-agent choices
 - [x] **DXPK-05**: The DX pack works with and without second-brain context; personal second-brain retrieval can improve local runs, but peer-run workflows fall back to repo-local artifacts only
 - [x] **DXPK-06**: The DX pack integrates with existing quality, security, TypeScript, docs, and implementation workflows without checklist bloat; security findings are contextual, TypeScript review is targeted, and docs avoid marketing fluff
-- [ ] **DXPK-07**: AIOS adds DX eval coverage with at least three fixture scenarios: poor onboarding repo, public CLI change, and TypeScript package boundary change, covering routing, metrics, README clarity, interface review, security context, TypeScript invocation discipline, assumptions, second-brain parity, small diffs, and before/after metrics
+- [x] **DXPK-07**: AIOS adds DX eval coverage with at least three fixture scenarios: poor onboarding repo, public CLI change, and TypeScript package boundary change, covering routing, metrics, README clarity, interface review, security context, TypeScript invocation discipline, assumptions, second-brain parity, small diffs, and before/after metrics
 - [ ] **DXPK-08**: AIOS documents the Developer Experience pack, capability invocation, static-prompt differences, shadow-branch support, second-brain parity, metric recording, model routing, override controls, validation workflow, and final implementation report format
 
 ### Meta-Learning Proposal Layer
@@ -306,7 +306,7 @@ None currently. The full operating-system vision is intentionally being planned 
 | DXPK-04 | Phase 17: Developer Experience Capability Pack | Complete |
 | DXPK-05 | Phase 17: Developer Experience Capability Pack | Complete |
 | DXPK-06 | Phase 17: Developer Experience Capability Pack | Complete |
-| DXPK-07 | Phase 17: Developer Experience Capability Pack | Pending |
+| DXPK-07 | Phase 17: Developer Experience Capability Pack | Complete |
 | DXPK-08 | Phase 17: Developer Experience Capability Pack | Pending |
 | META-01 | Phase 18: Meta-Learning Proposal Layer | Pending |
 | META-02 | Phase 18: Meta-Learning Proposal Layer | Pending |

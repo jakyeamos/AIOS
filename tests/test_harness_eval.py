@@ -11,6 +11,7 @@ sys.path.insert(0, str(ROOT))
 from services import harness_eval  # noqa: E402
 
 CONFIG = ROOT / "docs" / "aios" / "harness-eval" / "config.json"
+DX_FIXTURES = ROOT / "config" / "agent-eval" / "developer-experience-fixtures.json"
 AIOS = ROOT / "bin" / "aios.py"
 
 
@@ -79,6 +80,61 @@ def test_suite_scores_all_fixture_runs() -> None:
     assert result.totals["run_count"] == 10
     assert result.totals["failed_run_count"] >= 1
     assert result.results[0].evidence_path.endswith(".json")
+
+
+def test_load_developer_experience_fixture_registry_covers_required_scenarios() -> None:
+    config = harness_eval.load_developer_experience_fixtures(DX_FIXTURES)
+
+    assert config.eval_name == "developer_experience_pack_eval_v0"
+    assert config.category == "developer-experience"
+    assert config.spec_path == ROOT / "docs" / "evals" / "developer-experience-pack-eval.md"
+    assert {fixture.id for fixture in config.fixtures} == {
+        "poor_onboarding_repo",
+        "public_cli_change",
+        "typescript_package_boundary_change",
+    }
+    assert "record_before_after_metrics_or_mark_not_measured" in config.criteria
+    assert all(
+        {"available", "unavailable"} <= set(fixture.second_brain_modes)
+        for fixture in config.fixtures
+    )
+
+
+def test_developer_experience_fixtures_encode_capability_discipline() -> None:
+    config = harness_eval.load_developer_experience_fixtures(DX_FIXTURES)
+    fixtures = {fixture.id: fixture for fixture in config.fixtures}
+
+    poor_onboarding = fixtures["poor_onboarding_repo"]
+    assert poor_onboarding.expected_capabilities == ["dx_optimizer", "docs_writer"]
+    assert "typescript_specialist" in poor_onboarding.forbidden_capabilities
+    assert "improve_readme_clarity_without_marketing_fluff" in poor_onboarding.criteria
+
+    public_cli = fixtures["public_cli_change"]
+    assert public_cli.expected_capabilities == ["interface_dx_reviewer", "docs_writer"]
+    assert "typescript_specialist" in public_cli.forbidden_capabilities
+    assert (
+        "invoke_security_review_only_for_contextual_shell_network_filesystem_risk"
+        in public_cli.criteria
+    )
+
+    typescript_boundary = fixtures["typescript_package_boundary_change"]
+    assert typescript_boundary.expected_capabilities == [
+        "typescript_specialist",
+        "spec_fidelity_coder",
+    ]
+    assert (
+        "invoke_typescript_specialist_only_when_api_or_type_surface_justifies_it"
+        in typescript_boundary.criteria
+    )
+
+
+def test_developer_experience_fixture_summary_is_machine_readable() -> None:
+    summary = harness_eval.developer_experience_fixture_summary(DX_FIXTURES)
+
+    assert summary["category"] == "developer-experience"
+    assert summary["fixture_count"] == 3
+    assert summary["criteria_count"] >= 12
+    assert summary["required_scenarios_present"] is True
 
 
 def test_harness_eval_cli_emits_json_envelope() -> None:

@@ -1,0 +1,132 @@
+{
+  "version": 1,
+  "eval_name": "developer_experience_pack_eval_v0",
+  "category": "developer-experience",
+  "spec_path": "docs/evals/developer-experience-pack-eval.md",
+  "goal": "Verify that the Developer Experience capability pack improves repo usability while keeping routing task-specific and avoiding checklist bloat.",
+  "criteria": [
+    "detect_missing_setup_instructions",
+    "detect_missing_validation_commands",
+    "identify_dev_loop_bottlenecks",
+    "produce_impact_effort_priority_matrix",
+    "improve_readme_clarity_without_marketing_fluff",
+    "review_interface_naming_defaults_errors_examples_migration",
+    "invoke_security_review_only_for_contextual_shell_network_filesystem_risk",
+    "invoke_typescript_specialist_only_when_api_or_type_surface_justifies_it",
+    "route_spec_to_code_tasks_to_implementation_mode",
+    "log_assumptions_without_unnecessary_blocking",
+    "run_with_second_brain_available",
+    "run_with_second_brain_unavailable",
+    "produce_small_reviewable_diffs",
+    "record_before_after_metrics_or_mark_not_measured"
+  ],
+  "fixtures": [
+    {
+      "id": "poor_onboarding_repo",
+      "category": "developer-experience",
+      "title": "Poor onboarding repo",
+      "task": "Improve first-run developer onboarding for a repo with stale README setup steps, missing validation commands, and unclear clone-to-run expectations.",
+      "second_brain_modes": ["available", "unavailable"],
+      "expected_mode": "implementation",
+      "expected_capabilities": ["dx_optimizer", "docs_writer"],
+      "forbidden_capabilities": ["typescript_specialist"],
+      "conditional_capabilities": [],
+      "criteria": [
+        "detect_missing_setup_instructions",
+        "detect_missing_validation_commands",
+        "identify_dev_loop_bottlenecks",
+        "produce_impact_effort_priority_matrix",
+        "improve_readme_clarity_without_marketing_fluff",
+        "log_assumptions_without_unnecessary_blocking",
+        "produce_small_reviewable_diffs",
+        "record_before_after_metrics_or_mark_not_measured"
+      ],
+      "expected_outputs": [
+        "setup ambiguity finding with source citation",
+        "README quickstart proposal or scoped implementation",
+        "validation command list or explicit not-found note",
+        "impact/effort priority matrix",
+        "before/after setup or validation metric when measurable"
+      ],
+      "rejection_examples": [
+        "invokes TypeScript specialist despite no TypeScript API or type-boundary change",
+        "rewrites README into marketing copy",
+        "blocks on missing context instead of logging a bounded assumption"
+      ]
+    },
+    {
+      "id": "public_cli_change",
+      "category": "developer-experience",
+      "title": "Public CLI change",
+      "task": "Review and implement a user-facing CLI flag/default change while preserving consumer clarity, examples, docs, and migration expectations.",
+      "second_brain_modes": ["available", "unavailable"],
+      "expected_mode": "implementation",
+      "expected_capabilities": ["interface_dx_reviewer", "docs_writer"],
+      "forbidden_capabilities": ["typescript_specialist"],
+      "conditional_capabilities": [
+        {
+          "capability": "security_reviewer",
+          "trigger": "shell, network, filesystem, credential, destructive, or permission-sensitive behavior changes"
+        }
+      ],
+      "criteria": [
+        "review_interface_naming_defaults_errors_examples_migration",
+        "invoke_security_review_only_for_contextual_shell_network_filesystem_risk",
+        "route_spec_to_code_tasks_to_implementation_mode",
+        "log_assumptions_without_unnecessary_blocking",
+        "produce_small_reviewable_diffs",
+        "record_before_after_metrics_or_mark_not_measured"
+      ],
+      "expected_outputs": [
+        "consumer-facing interface review covering naming, defaults, errors, examples, and migration impact",
+        "docs or help-text update",
+        "security review only when the CLI change touches a risky execution surface",
+        "focused validation command or documented validation gap"
+      ],
+      "rejection_examples": [
+        "treats every CLI change as security-sensitive without evidence",
+        "changes defaults without migration notes",
+        "updates implementation without user-facing examples or help text"
+      ]
+    },
+    {
+      "id": "typescript_package_boundary_change",
+      "category": "developer-experience",
+      "title": "TypeScript package boundary change",
+      "task": "Implement a package API boundary change from a spec while preserving strict typing, inference, build behavior, and public contract clarity.",
+      "second_brain_modes": ["available", "unavailable"],
+      "expected_mode": "implementation",
+      "expected_capabilities": ["typescript_specialist", "spec_fidelity_coder"],
+      "forbidden_capabilities": [],
+      "conditional_capabilities": [
+        {
+          "capability": "docs_writer",
+          "trigger": "public package API or migration documentation changes"
+        },
+        {
+          "capability": "security_reviewer",
+          "trigger": "network, filesystem, shell, auth, secrets, or permission boundary changes"
+        }
+      ],
+      "criteria": [
+        "invoke_typescript_specialist_only_when_api_or_type_surface_justifies_it",
+        "route_spec_to_code_tasks_to_implementation_mode",
+        "review_interface_naming_defaults_errors_examples_migration",
+        "log_assumptions_without_unnecessary_blocking",
+        "produce_small_reviewable_diffs",
+        "record_before_after_metrics_or_mark_not_measured"
+      ],
+      "expected_outputs": [
+        "TypeScript review of API surface, strictness, inference, and build impact",
+        "scoped spec-fidelity implementation with explicit out-of-scope notes",
+        "tests/typecheck run or documented inability to run them",
+        "public contract or migration note when required"
+      ],
+      "rejection_examples": [
+        "implements a broader refactor than the spec asks for",
+        "skips typecheck without documenting why",
+        "adds any production any type to pass quickly"
+      ]
+    }
+  ]
+}

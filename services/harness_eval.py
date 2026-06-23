@@ -8,6 +8,16 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG_PATH = REPO_ROOT / "docs" / "aios" / "harness-eval" / "config.json"
+DEFAULT_DX_FIXTURE_CONFIG_PATH = (
+    REPO_ROOT / "config" / "agent-eval" / "developer-experience-fixtures.json"
+)
+REQUIRED_DX_FIXTURE_IDS = frozenset(
+    {
+        "poor_onboarding_repo",
+        "public_cli_change",
+        "typescript_package_boundary_change",
+    }
+)
 DIMENSION_NAMES = (
     "context_precision",
     "context_recall",
@@ -65,6 +75,27 @@ class HarnessEvalSuiteResult:
     config_path: str
     totals: dict[str, int | float]
     results: list[HarnessEvalScore]
+
+
+@dataclass(frozen=True)
+class DeveloperExperienceEvalFixture:
+    id: str
+    category: str
+    title: str
+    second_brain_modes: list[str]
+    expected_capabilities: list[str]
+    forbidden_capabilities: list[str]
+    criteria: list[str]
+
+
+@dataclass(frozen=True)
+class DeveloperExperienceEvalConfig:
+    version: int
+    eval_name: str
+    category: str
+    spec_path: Path
+    criteria: list[str]
+    fixtures: list[DeveloperExperienceEvalFixture]
 
 
 def _load_json(path: Path) -> Any:
@@ -214,6 +245,74 @@ def load_harness_eval_config(path: Path = DEFAULT_CONFIG_PATH) -> HarnessEvalCon
         goal=str(loaded.get("goal", "")),
         fixtures=fixtures,
     )
+
+
+def load_developer_experience_fixtures(
+    path: Path = DEFAULT_DX_FIXTURE_CONFIG_PATH,
+) -> DeveloperExperienceEvalConfig:
+    resolved = path.expanduser().resolve()
+    loaded = _load_json(resolved)
+    fixtures_raw = loaded.get("fixtures", [])
+    if not isinstance(fixtures_raw, list):
+        raise ValueError("developer experience fixtures must be a list")
+
+    criteria = _as_string_list(loaded.get("criteria"))
+    fixtures: list[DeveloperExperienceEvalFixture] = []
+    for item in fixtures_raw:
+        if not isinstance(item, Mapping):
+            continue
+        second_brain_modes = _as_string_list(item.get("second_brain_modes"))
+        if not {"available", "unavailable"} <= set(second_brain_modes):
+            raise ValueError("developer experience fixtures must cover both second-brain modes")
+        fixture_criteria = _as_string_list(item.get("criteria"))
+        if not fixture_criteria:
+            raise ValueError("developer experience fixture criteria must not be empty")
+        fixtures.append(
+            DeveloperExperienceEvalFixture(
+                id=str(item.get("id", "")),
+                category=str(item.get("category", "")),
+                title=str(item.get("title", "")),
+                second_brain_modes=second_brain_modes,
+                expected_capabilities=_as_string_list(item.get("expected_capabilities")),
+                forbidden_capabilities=_as_string_list(item.get("forbidden_capabilities")),
+                criteria=fixture_criteria,
+            )
+        )
+
+    fixture_ids = {fixture.id for fixture in fixtures}
+    missing = sorted(REQUIRED_DX_FIXTURE_IDS - fixture_ids)
+    if missing:
+        raise ValueError(f"missing required developer experience fixtures: {', '.join(missing)}")
+    if any(fixture.category != "developer-experience" for fixture in fixtures):
+        raise ValueError("developer experience fixtures must use category developer-experience")
+    if not criteria:
+        raise ValueError("developer experience fixture registry criteria must not be empty")
+
+    spec_path = _resolve_path(resolved, str(loaded.get("spec_path", "")))
+    return DeveloperExperienceEvalConfig(
+        version=int(loaded.get("version", 1)),
+        eval_name=str(loaded.get("eval_name", "")),
+        category=str(loaded.get("category", "")),
+        spec_path=spec_path,
+        criteria=criteria,
+        fixtures=fixtures,
+    )
+
+
+def developer_experience_fixture_summary(
+    path: Path = DEFAULT_DX_FIXTURE_CONFIG_PATH,
+) -> dict[str, Any]:
+    config = load_developer_experience_fixtures(path)
+    fixture_ids = [fixture.id for fixture in config.fixtures]
+    return {
+        "eval_name": config.eval_name,
+        "category": config.category,
+        "spec_path": str(config.spec_path),
+        "fixture_count": len(config.fixtures),
+        "fixture_ids": fixture_ids,
+        "criteria_count": len(config.criteria),
+        "required_scenarios_present": set(fixture_ids) >= REQUIRED_DX_FIXTURE_IDS,
+    }
 
 
 def load_harness_fixture(path: Path) -> HarnessEvalFixture:
