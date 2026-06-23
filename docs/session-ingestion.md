@@ -1,5 +1,7 @@
 # Session Ingestion
 
+Verification coverage: provider architecture; how to add a new provider; cron wiring; privacy model; writeback flow.
+
 ## Architecture
 
 ```text

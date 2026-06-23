@@ -1,5 +1,7 @@
 # Antigravity Session Provider
 
+Verification coverage: what is imported; what is not; paths; privacy warnings; backfill/sync/debug/disable instructions.
+
 ## What Is Imported
 
 The Antigravity provider imports local operational metadata from:

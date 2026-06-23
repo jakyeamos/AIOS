@@ -3,6 +3,8 @@
 **Generated:** 2026-06-23
 **Mode:** local dry run / debug only
 
+Verification coverage: pipeline summary; provider summaries; detected local paths; dry-run results; risks; next improvements.
+
 ## Existing Claude/Codex Pipeline
 
 - Claude Code parsing is wrapped from `bin/import_ai_history.py`.

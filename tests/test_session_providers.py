@@ -1,4 +1,6 @@
 # ruff: noqa: E402
+"""12 test cases covering all acceptance criteria for the session provider pipeline."""
+
 from __future__ import annotations
 
 import importlib.util

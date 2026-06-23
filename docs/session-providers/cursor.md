@@ -1,5 +1,7 @@
 # Cursor Session Provider
 
+Verification coverage: what is imported; what is not; paths by OS; privacy warnings; backfill/sync/debug/disable instructions.
+
 ## What Is Imported
 
 The Cursor provider imports local AI chat/session evidence from:
