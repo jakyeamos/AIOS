@@ -19,17 +19,17 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
-from aios_orchestration_runtime import (
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from aios_orchestration_runtime import (  # noqa: E402
     default_db_path,
     ensure_runtime_schema,
     insert_workflow_execution_report,
     transition_run,
     update_invocation,
 )
-
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
 
 from services.tmcp_runtime import (  # noqa: E402
     compile_tmcp_packet,

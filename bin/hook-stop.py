@@ -120,6 +120,8 @@ def _git_status_entries(cwd: str | None) -> tuple[list[str], str | None]:
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
         return [], f"Unable to locate git repository: {exc}"
+    if root is None:
+        return [], None
     if root.returncode != 0:
         return [], None
     repo_root = root.stdout.strip() or str(cwd_path)
@@ -133,6 +135,8 @@ def _git_status_entries(cwd: str | None) -> tuple[list[str], str | None]:
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
         return [], f"Unable to read git status: {exc}"
+    if status is None:
+        return [], None
     if status.returncode != 0:
         detail = (status.stderr or status.stdout).strip()
         return [], detail or "Unable to read git status."
@@ -1003,9 +1007,27 @@ def main() -> None:
                 """,
                 (linked_run_id,),
             ).fetchone()
+            invocation_backend_key = None
+            if linked_invocation_id:
+                invocation_row = conn.execute(
+                    """
+                    SELECT backend_key
+                    FROM orchestration_invocations
+                    WHERE id = ?
+                    LIMIT 1
+                    """,
+                    (linked_invocation_id,),
+                ).fetchone()
+                if invocation_row:
+                    invocation_backend_key = str(invocation_row[0])
+            managed_runtime_closeout = (
+                invocation_backend_key is not None
+                and invocation_backend_key.endswith("-managed-runtime")
+                and reason_json.get("kind") == "normal_exit"
+            )
 
             verifier_gate = None
-            if run_row and run_outcome == "completed":
+            if run_row and run_outcome == "completed" and not managed_runtime_closeout:
                 verifier_gate = closeout_verification_for_run(
                     conn,
                     run_id=linked_run_id,

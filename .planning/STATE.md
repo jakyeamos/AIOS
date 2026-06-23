@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-last_updated: "2026-06-24T00:01:50.000Z"
+last_updated: "2026-06-24T00:02:10.000Z"
 progress:
   total_phases: 22
   completed_phases: 19
   total_plans: 123
-  completed_plans: 109
+  completed_plans: 110
   percent: 86
 ---
 
@@ -26,13 +26,13 @@ progress:
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
 - Latest completed phase: Phase 19, Native Workflow Command Pack, shipped local native workflow commands for orientation, handoff, squad review, security audit, guarded cleanup, prototype sandboxes, metadata logging, tests, and docs.
-- Latest completed plan: Phase 20 Plan 20-06 added executor-ready plan generation using workflow detection, the complexity contract, selected planning lenses, and skill planning constraints.
+- Latest completed plan: Phase 20 Plan 20-07 added structured planning contexts, JSONL planning logs, managed-run TMCP evidence contract helpers, and narrowed managed-runtime closeout handling.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 15, Execution-Symmetric Planning
 - Active phase: Phase 20, Execution-Symmetric Planning
-- Active plan: Phase 20 Plan 20-07
+- Active plan: Phase 20 Plan 20-08
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19
 - Next dependency chain: Phase 20 -> Phase 21 -> Phase 22
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
@@ -52,6 +52,7 @@ progress:
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-06-23 | Complete Phase 20 Plan 20-07 internal planning schema and logs | `services/planning_context.py`, `services/planning_log.py`, `bin/aios-managed-run.py`, `bin/hook-stop.py`, `tests/test_planning_context.py`, and `tests/test_planning_log.py` provide structured planning context fields, JSONL planning logs, execution-symmetric comparison axes, TMCP packet/receipt default contract metadata, explicit bypass metadata, and managed-runtime closeout handling without adding always-loaded rules or a new schema table. |
 | 2026-06-23 | Complete Phase 20 Plan 20-06 executor-ready plan generation | `services/execution_symmetric_planner.py` and `tests/test_execution_symmetric_planner.py` generate simple non-overplanned, moderate, high-risk, and GSD-ready plans from workflow detection, complexity policy, planning lenses, and skill planning constraints. |
 | 2026-06-23 | Complete Phase 20 Plan 20-05 skill-as-planning-lens | `config/planning/skill-planning-lenses.json`, `services/planning_skill_lenses.py`, and `tests/test_planning_skill_lenses.py` translate selected workflow skills into planning constraints, validation gates, reviewable artifacts, and output expectations while disallowing completed-work review output in planning mode. |
 | 2026-06-23 | Complete Phase 20 Plan 20-04 planning lens registry | `config/planning/planning-lenses.json`, `services/planning_lenses.py`, and `tests/test_planning_lenses.py` map task types and workflow phases to planning lenses, support explicit lens requests, preserve high-risk required safety lenses, and keep planning constraints in intent-specific config/services rather than broad always-loaded instructions. |
@@ -175,4 +176,4 @@ progress:
 | 2026-06-02 | Complete Phase 10 Plan 08 quality hotspot backfill baseline | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-08-SUMMARY.md` records `pnpm quality:eval`, the read-only hotspot detection script, and the first factual Agent Eval backfill inventory for Python services, CLI scripts, tests, aios-ui, config, and eval docs. |
 
 ---
-*Last updated: 2026-06-23 after completing Phase 20 Plan 20-06 and advancing to Phase 20 Plan 20-07*
+*Last updated: 2026-06-23 after completing Phase 20 Plan 20-07 and advancing to Phase 20 Plan 20-08*
