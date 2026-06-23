@@ -96,11 +96,19 @@
           "preCommitCommands": [
             [
               "pnpm",
-              "test:quality:audit"
+              "exec",
+              "node",
+              "--import",
+              "tsx",
+              "scripts/testing/test-quality-audit.ts"
             ],
             [
               "pnpm",
-              "test:inventory"
+              "exec",
+              "node",
+              "--import",
+              "tsx",
+              "scripts/testing/inventory-tests.ts"
             ],
             [
               "pnpm",
@@ -110,7 +118,11 @@
           "fullCommands": [
             [
               "pnpm",
-              "test:quality:audit"
+              "exec",
+              "node",
+              "--import",
+              "tsx",
+              "scripts/testing/test-quality-audit.ts"
             ],
             [
               "pnpm",

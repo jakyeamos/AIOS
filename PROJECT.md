@@ -1392,3 +1392,9 @@ The spec execution roadmap has been corrected before execution:
   - broad retrieval may happen inside AIOS
   - only compact ranked output reaches the agent by default
   - targeted expansion must be explicit and traced
+
+## 2026-06-23 - Soundscape test-quality gate subprocess hardening
+
+- Updated the AIOS-controlled Soundscape `test_quality` gate commands to invoke TypeScript scripts through `pnpm exec node --import tsx ...` instead of package-script `tsx` entrypoints.
+- Rationale: AIOS captures gate subprocess output, and direct `tsx` CLI entrypoints attempted to open an IPC pipe that fails in the managed sandbox; the `node --import tsx` form preserves the vetted argv allowlist while avoiding that pipe.
+- Verification: `python3 /Users/jakyeamos/AIOS/bin/aios.py --json gate run test_quality --project soundscape-app --repo-root /Users/jakyeamos/projects/soundscape-app` passed.
