@@ -139,7 +139,7 @@
 
 ### Developer Experience Capability Pack
 
-- [ ] **DXPK-01**: AIOS audits current DX-relevant infrastructure, including skills, agents, commands, routing rules, telemetry, eval specs, shadow-branch testing, second-brain integration, docs, generated concepts, quality gates, existing equivalents, duplication risks, conventions, proposed files, risks, and implementation plan
+- [x] **DXPK-01**: AIOS audits current DX-relevant infrastructure, including skills, agents, commands, routing rules, telemetry, eval specs, shadow-branch testing, second-brain integration, docs, generated concepts, quality gates, existing equivalents, duplication risks, conventions, proposed files, risks, and implementation plan
 - [ ] **DXPK-02**: AIOS defines a Developer Experience capability pack with six capabilities: DX optimizer, interface DX reviewer, documentation writer, security reviewer, TypeScript specialist, and spec-fidelity coder; each capability has purpose, responsibilities, triggers, modes, output schemas, assumptions policy, and evidence expectations
 - [ ] **DXPK-03**: AIOS measures or explicitly marks as not measured core DX metrics including setup, clone-to-run, dev server startup, feedback loop speed, test/typecheck/lint/build/CI runtime, manual setup steps, validation command count, README quickstart, setup validation, ambiguous instructions, and agent/token cost where telemetry supports it
 - [ ] **DXPK-04**: AIOS routes DX capabilities only when justified, supports compact audit, full audit, implementation, and review-only modes, and uses dynamic model/reasoning metadata rather than fixed model-per-agent choices
@@ -300,7 +300,7 @@ None currently. The full operating-system vision is intentionally being planned 
 | HARN-06 | Phase 16: Harness Determinism, Evidence, And Independent Verification | Complete |
 | HARN-07 | Phase 16: Harness Determinism, Evidence, And Independent Verification | Complete |
 | HARN-08 | Phase 16: Harness Determinism, Evidence, And Independent Verification | Complete |
-| DXPK-01 | Phase 17: Developer Experience Capability Pack | Pending |
+| DXPK-01 | Phase 17: Developer Experience Capability Pack | Complete |
 | DXPK-02 | Phase 17: Developer Experience Capability Pack | Pending |
 | DXPK-03 | Phase 17: Developer Experience Capability Pack | Pending |
 | DXPK-04 | Phase 17: Developer Experience Capability Pack | Pending |
