@@ -69,6 +69,12 @@ AIOS Phase 12 Plan 12-03 now has the Layer D memory compiler:
 - compiled packets preserve the required section order while omitting empty sections, keep Current Truth limited to active facts, label superseded/contradicted/uncertain facts outside current truth, and cap causal/dependency traversal at three hops
 - Sources / Provenance is always included, `current_truth_only` mode omits history sections, and token-budget enforcement drops lower-priority sections before higher-priority context
 
+AIOS Phase 12 Plan 12-04 now has the cache-aware context compiler:
+
+- `services.context_compiler.ContextCompiler` returns ordered provider-agnostic `role`/`content` prompt sections with stable project context before dynamic task context
+- stable prefix sections cover system/developer instructions, AIOS operating rules, user preferences, project memory summary, and project truth packet, and remain deterministic across task changes for the same project context
+- dynamic suffix sections compose task-specific memory through `MemoryCompiler`, deduplicate facts already present in project truth, filter stale facts by default, and compress lower-priority dynamic content before stable project truth and memory summary
+
 AIOS planning now reflects the expanded quality-gate success criteria as landed baseline infrastructure:
 
 - Phase 14 plans now reference the registered success-criteria gate ids as the canonical vocabulary for complexity, architecture, simplicity, testing, UI, data, API, supply-chain, and agent-claim verification work
