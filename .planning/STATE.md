@@ -8,8 +8,8 @@ progress:
   total_phases: 22
   completed_phases: 11
   total_plans: 123
-  completed_plans: 51
-  percent: 41
+  completed_plans: 52
+  percent: 42
 ---
 
 # AIOS Planning State
@@ -26,13 +26,13 @@ progress:
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
 - Latest completed phase: Phase 11, Testing, Benchmark Evaluation, And Shadow Workflows, shipped durable eval records, second-brain lift, shadow branches, ablations, peer trace/candidate scoring, automated shadow pipeline, portable packets, external adapters, and eval UI panels.
-- Latest completed plan: Phase 12 Plan 12-07 shipped the prioritized graph-native memory backfill plan, mapping existing AIOS truth, rules, prompts, skills, specs, context, decisions, preferences, and long-term memory hotspots to recommended Layer B facts and Layer C relationships.
+- Latest completed plan: Phase 12 Plan 12-08 shipped the KV-cache-aware local runner future note, positioning KV-cache memory as an optional optimization layer and documenting API-model limits, local-runner prerequisites, and the stable-prefix ContextCompiler bridge.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 7, Graph-Native Memory Architecture
 - Active phase: Phase 12, Graph-Native Memory Architecture And Cache-Aware Context Compilation
-- Active plan: Phase 12 Plan 12-08
+- Active plan: Phase 12 Plan 12-03
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11
 - Next dependency chain: Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
@@ -52,6 +52,7 @@ progress:
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-06-23 | Complete Phase 12 Plan 12-08 KV-cache local runner future note | `.planning/phases/12-graph-native-memory-architecture/12-08-SUMMARY.md` records the new `docs/future/kv-cache-aware-local-runner.md`, including API-model cache limits, vLLM/LMCache local-runner context, prerequisites, stable-prefix bridge, and no-code/no-schema scope. |
 | 2026-06-23 | Complete Phase 12 Plan 12-07 memory backfill plan | `.planning/phases/12-graph-native-memory-architecture/12-07-SUMMARY.md` records the new `docs/backfills/graph-native-memory-backfill.md`, including P0/P1/P2 hotspot inventory, recommended Layer B fact extraction, recommended Layer C relationships, stable-prefix classification, and project/global scope. |
 | 2026-06-23 | Complete Phase 12 Plan 12-05 memory packet contract | `.planning/phases/12-graph-native-memory-architecture/12-05-SUMMARY.md` records the new `docs/specs/memory-packet-contract.md`, validity-status enforcement in `services.memory_layers`, schema-level status checks, 8 focused passing tests, and the compiler/quality contract for Plans 12-03 and 12-06. |
 | 2026-06-23 | Complete Phase 12 Plan 12-02 layered memory schema | `.planning/phases/12-graph-native-memory-architecture/12-02-SUMMARY.md` records the new memory layer schema and service foundation: `memory_raw_sources`, `memory_facts`, `memory_relationships`, `memory_packet_receipts`, `services.memory_layers`, runtime schema installation, and 7 focused passing tests. |
@@ -121,4 +122,4 @@ progress:
 | 2026-06-02 | Complete Phase 10 Plan 08 quality hotspot backfill baseline | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-08-SUMMARY.md` records `pnpm quality:eval`, the read-only hotspot detection script, and the first factual Agent Eval backfill inventory for Python services, CLI scripts, tests, aios-ui, config, and eval docs. |
 
 ---
-*Last updated: 2026-06-23 after completing Phase 12 Plan 12-07*
+*Last updated: 2026-06-23 after completing Phase 12 Plan 12-08*

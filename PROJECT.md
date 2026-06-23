@@ -57,6 +57,12 @@ AIOS Phase 12 Plan 12-07 now has a memory backfill plan:
 - each hotspot maps current memory value, missing structure, recommended Layer B facts, recommended Layer C relationships, stable/dynamic prefix classification, project/global scope, and priority
 - the first recommended backfill run targets the Plan 12-01 audit’s P0 memory-loss areas: project truth, state, audit recommendations, prompt-time retrieval, closeout memory, and agent rules
 
+AIOS Phase 12 Plan 12-08 now has the KV-cache-aware local runner future note:
+
+- `docs/future/kv-cache-aware-local-runner.md` states that KV-cache-level memory is an optional optimization layer, not the source of truth
+- the note documents why closed API models should be optimized through stable prompt prefixes rather than direct client-controlled KV-cache injection
+- it defines local-runner prerequisites and explains how the future stable-prefix ContextCompiler can bridge API prompt caching today with vLLM/LMCache-style cache reuse later
+
 AIOS planning now reflects the expanded quality-gate success criteria as landed baseline infrastructure:
 
 - Phase 14 plans now reference the registered success-criteria gate ids as the canonical vocabulary for complexity, architecture, simplicity, testing, UI, data, API, supply-chain, and agent-claim verification work
