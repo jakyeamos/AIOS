@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-last_updated: "2026-06-23T16:58:15.249Z"
+last_updated: "2026-06-23T17:16:00.000Z"
 progress:
   total_phases: 22
   completed_phases: 14
   total_plans: 123
-  completed_plans: 71
-  percent: 58
+  completed_plans: 72
+  percent: 59
 ---
 
 # AIOS Planning State
@@ -25,16 +25,16 @@ progress:
 - Canonical planning intent: make AIOS the default operating layer for serious project work by tightening routing, context, lifecycle, truth, governance, evaluation, learning, and operator visibility into one governed loop.
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
-- Latest completed phase: Phase 12, Graph-Native Memory Architecture And Cache-Aware Context Compilation, shipped the layered memory schema, memory compiler, cache-aware context compiler, memory packet contract, retrieval quality gates, backfill plan, and KV-cache future note.
-- Latest completed plan: Phase 12 Plan 12-06 shipped memory packet quality gates, including integration tests for the nine retrieval quality constraints, ContextCompiler quality tests, and a standalone packet Markdown validator.
+- Latest completed phase: Phase 14, Code Quality Gates And Cross-Project Complexity Standards, shipped thin agent-rule pointers, complexity/simplification quality docs, and cross-project complexity backfill inventories.
+- Latest completed plan: Phase 15 Plan 15-01 shipped the skill inventory audit, pre-change backup, seven-target merge/add decision matrix, and verification evidence for SKIL-01.
 
 ## Current Roadmap Position
 
-- Active milestone: Milestone 8, Multi-Provider Session Ingestion And Second Brain Data Pipeline
-- Active phase: Phase 13, Multi-Provider Session Ingestion And Second Brain Data Pipeline
-- Active plan: Phase 13 Plan 13-01
-- Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12
-- Next dependency chain: Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22
+- Active milestone: Milestone 10, Agent Skill Portfolio Audit And External Library Integration
+- Active phase: Phase 15, Agent Skill Portfolio Audit And External Library Integration
+- Active plan: Phase 15 Plan 15-02
+- Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14
+- Next dependency chain: Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
 
 ## Known Constraints To Preserve
@@ -52,6 +52,7 @@ progress:
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-06-23 | Complete Phase 15 Plan 15-01 skill inventory audit | `.planning/phases/15-agent-skill-portfolio-audit-and-external-library-integration/15-01-SUMMARY.md` records the pre-change backup at `/Users/jakyeamos/.claude/skills-backup-20260623-130623`, 535 scanned Markdown files, the seven upstream target decisions, and passing artifact/reference/key-link checks. |
 | 2026-06-23 | Remove push-only-when-asked deployment rule | Planned in `.planning/quick/260623-remove-push-only-when-asked-rule`; `AGENTS.md` no longer restricts branch pushes to only explicitly requested push tasks inside the Vercel deployment completion gate, while the watched Vercel deployment success requirement remains intact. |
 | 2026-06-23 | Add allowlisted global quality gates | Global user commit gating now validates repo-local `.aios-quality-gate.json` contracts as gate IDs only, runs allowlisted argv adapters from AIOS-owned `config/quality-gates.json`, exposes `aios gate run`, and dogfoods the contract through AIOS's quality ladder. Soundscape is registered for `test_quality`, `architecture`, and `pre_cr`, with pre-commit test quality mapped to `pnpm test:quality:audit`, `pnpm test:inventory`, and `pnpm test:scripts`. |
 | 2026-06-23 | Tighten Soundscape test-quality gate | AIOS `config/quality-gates.json` now runs Soundscape `pnpm test:quality:audit` before inventory and script-policy checks, making `test_quality` fail closed on vacuous assertions, skipped/focused default tests, stochastic default tests, and raw console output until the weak tests are fixed, moved, or removed. |
@@ -130,4 +131,4 @@ progress:
 | 2026-06-02 | Complete Phase 10 Plan 08 quality hotspot backfill baseline | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-08-SUMMARY.md` records `pnpm quality:eval`, the read-only hotspot detection script, and the first factual Agent Eval backfill inventory for Python services, CLI scripts, tests, aios-ui, config, and eval docs. |
 
 ---
-*Last updated: 2026-06-23 after completing Phase 12 and advancing to Phase 13 Plan 13-01*
+*Last updated: 2026-06-23 after completing Phase 15 Plan 15-01 and advancing to Phase 15 Plan 15-02*
