@@ -63,6 +63,12 @@ AIOS Phase 12 Plan 12-08 now has the KV-cache-aware local runner future note:
 - the note documents why closed API models should be optimized through stable prompt prefixes rather than direct client-controlled KV-cache injection
 - it defines local-runner prerequisites and explains how the future stable-prefix ContextCompiler can bridge API prompt caching today with vLLM/LMCache-style cache reuse later
 
+AIOS Phase 12 Plan 12-03 now has the Layer D memory compiler:
+
+- `services.memory_compiler.MemoryCompiler` accepts prefetched raw source, fact, and relationship rows and compiles retrieved ids into model-facing Markdown briefing packets without hidden disk, network, or database reads
+- compiled packets preserve the required section order while omitting empty sections, keep Current Truth limited to active facts, label superseded/contradicted/uncertain facts outside current truth, and cap causal/dependency traversal at three hops
+- Sources / Provenance is always included, `current_truth_only` mode omits history sections, and token-budget enforcement drops lower-priority sections before higher-priority context
+
 AIOS planning now reflects the expanded quality-gate success criteria as landed baseline infrastructure:
 
 - Phase 14 plans now reference the registered success-criteria gate ids as the canonical vocabulary for complexity, architecture, simplicity, testing, UI, data, API, supply-chain, and agent-claim verification work
