@@ -124,6 +124,14 @@ Portability label rule: any run using `jakye_second_brain_full` or `jakye_second
 
 Do not mark implementation complete when blocker-level criteria fail unless accepted tradeoffs are explicitly recorded in evaluation metadata.
 
+## Complexity + Simplification Gate
+
+After any large piece of work, run Rule 12 in `config/agent-rules.md`: the Complexity + Simplification Gate.
+
+Large work includes changes touching 5+ files, 300+ lines, new feature implementation, cross-package or cross-layer changes, DB/schema/query changes, data pipeline/analytics/scoring/model logic, UI with meaningful state or rendering logic, agent/workflow/orchestration changes, performance-sensitive paths, or reusable infrastructure code.
+
+Keep this always-loaded surface thin. Run Gate A, Gate B, and Gate C; report before fixing; load `docs/quality/complexity-simplification-gate.md` for the full checklist only when this gate is triggered.
+
 ## Deployment Completion Gate
 
 When a task includes committing, pushing, shipping, or release preparation for changes that affect the Vercel app:

@@ -81,3 +81,17 @@ NotebookLM MCP is not default memory and is not canonical. Use NotebookLM MCP wh
 Fact lookup uses local memory first. Connection discovery uses local memory to select a bounded source bundle, NotebookLM to synthesize relationships, AIOS to stage results, and reviewed promotion back into Obsidian or TMCP only after review.
 
 Do not use NotebookLM MCP for simple lookup, code execution, repo edits, raw session recovery, unbounded whole-vault requests, secrets, credentials, or raw operational memory. Raw operational memory must stay local. TMCP remains the agent-facing skill layer.
+
+## Rule 11 — Keep always-loaded agent files thin
+
+When changing agent instruction files, decide whether the instruction must be always loaded or should be an intent-specific pointer. Always-loaded files should contain only routing rules, safety boundaries, and short triggers that apply broadly across work.
+
+Before adding detail to `AGENTS.md`, `config/agent-rules.md`, user-level agent files, or skill defaults, record why it belongs in the always-loaded surface. If the instruction applies only to a specific intent, workflow, stack, project, tool, or quality pass, keep the always-loaded text to a trigger and link to the relevant skill, TMCP route, packet, checklist, or doc.
+
+Do not expand always-loaded instructions just because the guidance is useful. Prefer intent-specific retrieval unless the rule is needed to route work safely before intent is known.
+
+## Rule 12 — Run the Complexity + Simplification Gate after large work
+
+After large work, run the Complexity + Simplification Gate before claiming completion. Large work includes 5+ files, 300+ lines, new features, cross-layer changes, DB/schema/query changes, data pipelines, UI state/rendering logic, agent/workflow/orchestration changes, performance-sensitive paths, or reusable infrastructure.
+
+The always-loaded rule is intentionally thin: run the complexity/performance review, simplification/maintainability review, and verification pass; record hotspots before fixing; fix immediately only when the fix is fewer than 5 lines with no behavior risk. Load `docs/quality/complexity-simplification-gate.md` for the full checklist when this gate is triggered.
