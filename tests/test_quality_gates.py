@@ -8,7 +8,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from services.quality_gates import run_gate, validate_commit_quality_gate  # noqa: E402
+from services.quality_gates import (  # noqa: E402
+    TEST_QUALITY_NON_REGRESSION_POLICY,
+    run_gate,
+    validate_commit_quality_gate,
+)
 
 
 def _write_registry(path: Path, repo_root: Path) -> None:
@@ -97,3 +101,27 @@ def test_run_gate_executes_registry_argv_not_repo_shell(tmp_path: Path, monkeypa
 
     assert result["status"] == "pass"
     assert seen == [["python", "--version"]]
+    assert result["nonRegressionPolicy"] == TEST_QUALITY_NON_REGRESSION_POLICY
+
+
+def test_failed_test_quality_gate_includes_non_regression_policy(
+    tmp_path: Path, monkeypatch
+) -> None:
+    registry = tmp_path / "quality-gates.json"
+    _write_registry(registry, tmp_path)
+
+    def fake_run(command: list[str], **_: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(command, 1, stdout="", stderr="audit failed")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    result = run_gate(
+        project_id="demo",
+        gate_id="test_quality",
+        mode="pre-commit",
+        repo_root=tmp_path,
+        registry_path=registry,
+    )
+
+    assert result["status"] == "fail"
+    assert TEST_QUALITY_NON_REGRESSION_POLICY in result["summary"]

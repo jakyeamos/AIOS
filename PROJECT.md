@@ -114,6 +114,7 @@ AIOS now owns a global allowlisted project quality-gate runner:
 - `python3 bin/aios.py --json gate run <gate_id> --project <project_id> --repo-root <path>` runs a single allowlisted adapter for pre-commit or full mode
 - `services.commit_quality_ladder` now verifies that AIOS itself has the allowlisted quality-gate registry and local contract, making this an AIOS quality-ladder gate
 - Soundscape `test_quality` now runs `pnpm test:quality:audit` before inventory and script-policy checks, so known weak-test patterns fail the gate instead of being hidden behind a narrower command
+- the AIOS `test_quality` runner now carries the global non-regression policy: fixes must preserve or improve behavior coverage, and deletion is valid only for obsolete tests, duplicate stronger coverage, or pure noise
 
 ## Implemented On 2026-06-22
 

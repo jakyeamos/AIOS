@@ -121,6 +121,11 @@ python3 bin/aios.py --json gate run test_quality --project soundscape-app --repo
 
 Linked projects declare only gate IDs in `.aios-quality-gate.json`. Executable argv arrays live in AIOS-owned `config/quality-gates.json`; the global user commit hook rejects missing, malformed, or unknown gate declarations for registered source commits and never executes shell from repo-local config.
 
+Global non-regression rule for `test_quality`: make the suite more meaningful,
+not merely green. Fixes must preserve or improve behavior coverage. Delete tests
+only when they are proven obsolete, redundant with stronger coverage, or pure
+noise.
+
 Python test suite:
 
 ```bash

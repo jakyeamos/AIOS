@@ -10,6 +10,10 @@ from typing import Any, Literal
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REGISTRY_PATH = REPO_ROOT / "config" / "quality-gates.json"
 LOCAL_CONTRACT_NAME = ".aios-quality-gate.json"
+TEST_QUALITY_NON_REGRESSION_POLICY = (
+    "test_quality fixes must preserve or improve behavior coverage; delete tests only when "
+    "they are proven obsolete, redundant with stronger coverage, or pure noise."
+)
 SOURCE_EXTENSIONS = {
     ".py",
     ".js",
@@ -250,8 +254,22 @@ def run_gate(
         }
         results.append(result)
         if completed.returncode != 0:
-            return _gate_payload(project_id, gate_id, mode, "fail", summary, results)
-    return _gate_payload(project_id, gate_id, mode, "pass", f"{gate_id} passed", results)
+            return _gate_payload(
+                project_id,
+                gate_id,
+                mode,
+                "fail",
+                _summary_with_policy(gate_id, summary),
+                results,
+            )
+    return _gate_payload(
+        project_id,
+        gate_id,
+        mode,
+        "pass",
+        _summary_with_policy(gate_id, f"{gate_id} passed"),
+        results,
+    )
 
 
 def _load_registry(path: Path) -> dict[str, Any]:
@@ -364,7 +382,7 @@ def _gate_payload(
     summary: str,
     commands: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    return {
+    payload = {
         "status": status,
         "projectId": project_id,
         "gateId": gate_id,
@@ -372,3 +390,12 @@ def _gate_payload(
         "summary": summary,
         "commands": commands,
     }
+    if gate_id == "test_quality":
+        payload["nonRegressionPolicy"] = TEST_QUALITY_NON_REGRESSION_POLICY
+    return payload
+
+
+def _summary_with_policy(gate_id: str, summary: str) -> str:
+    if gate_id != "test_quality" or TEST_QUALITY_NON_REGRESSION_POLICY in summary:
+        return summary
+    return f"{summary}. {TEST_QUALITY_NON_REGRESSION_POLICY}"
