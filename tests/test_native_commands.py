@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from services.aios_cli import EXIT_OK, run_cli  # noqa: E402
-from services.native_commands import handoff, review_squad, zoom_out  # noqa: E402
+from services.native_commands import handoff, review_squad, security_audit, zoom_out  # noqa: E402
 
 
 def _write_repo(tmp_path: Path) -> Path:
@@ -160,3 +160,81 @@ def test_native_commands_are_available_from_cli_json(tmp_path: Path, capsys) -> 
         "maintainability",
         "project_alignment",
     }
+
+
+def test_security_audit_strict_reports_only_critical_and_high(tmp_path: Path) -> None:
+    repo = _write_repo(tmp_path)
+    target = repo / "services" / "security.py"
+    target.write_text(
+        "\n".join(
+            [
+                'API_KEY = "abc123"',
+                "import subprocess",
+                "def run(user_arg: str) -> None:",
+                "    subprocess.run('rm -rf ' + user_arg, shell=True)",
+                "    token = user_arg",
+                "    email = 'person@example.com'",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    report = security_audit(mode="strict", repo_root=repo, files=[target])
+
+    severities = {finding["severity"] for finding in report["findings"]}
+    assert severities == {"critical", "high"}
+    for finding in report["findings"]:
+        assert finding["affected_file"] == "services/security.py"
+        assert finding["issue"]
+        assert finding["why_it_matters"]
+        assert finding["exploit_or_failure_scenario"]
+        assert finding["recommended_fix"]
+        assert finding["confidence"]
+
+
+def test_security_audit_practical_includes_contextual_medium_findings(tmp_path: Path) -> None:
+    repo = _write_repo(tmp_path)
+    target = repo / "services" / "privacy.py"
+    target.write_text(
+        "\n".join(
+            [
+                "from pathlib import Path",
+                "def save_profile(email: str, token: str, path: Path) -> None:",
+                "    path.write_text(email + token)",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    report = security_audit(mode="practical", repo_root=repo, files=[target])
+
+    assert {finding["severity"] for finding in report["findings"]} == {"medium"}
+    assert report["non_issues_checked"]
+    assert report["verification_suggestions"]
+    assert "generic" not in report["markdown"].lower()
+
+
+def test_audit_security_cli_json(tmp_path: Path, capsys) -> None:
+    repo = _write_repo(tmp_path)
+    target = repo / "services" / "security.py"
+    target.write_text('SECRET = "abc123"\n', encoding="utf-8")
+
+    assert (
+        run_cli(
+            [
+                "--json",
+                "audit",
+                "security",
+                "--mode",
+                "strict",
+                "--repo-root",
+                str(repo),
+                "--file",
+                str(target),
+            ]
+        )
+        == EXIT_OK
+    )
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["data"]["markdown"].startswith("# Security Audit")
+    assert payload["data"]["findings_by_severity"]["high"]

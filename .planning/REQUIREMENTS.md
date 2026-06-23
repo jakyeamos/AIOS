@@ -166,7 +166,7 @@
 - [x] **CMDP-03**: AIOS implements read-only `aios zoom-out` for files, directories, or modules, returning structured orientation with purpose, system position, dependencies, sibling modules, conventions, domain vocabulary, risks, and next context
 - [x] **CMDP-04**: AIOS implements `aios handoff` to generate compact continuation context with goal, current state, branch/workspace status, files touched, decisions, tests, failed approaches, blockers, references, and next actions
 - [x] **CMDP-05**: AIOS implements read-only `aios review squad` with security, correctness, testing, architecture, maintainability, and project-alignment reviewer lanes, supporting branch diff or selected file scopes and severity-grouped actionable findings
-- [ ] **CMDP-06**: AIOS implements read-only `aios audit security` with strict and practical modes, contextual findings, affected files, exploit/failure scenario, recommended fix, confidence, non-issues checked, and verification suggestions
+- [x] **CMDP-06**: AIOS implements read-only `aios audit security` with strict and practical modes, contextual findings, affected files, exploit/failure scenario, recommended fix, confidence, non-issues checked, and verification suggestions
 - [ ] **CMDP-07**: AIOS implements guarded `aios cleanup de-slopify` and sandboxed `aios prototype`, preserving behavior/public APIs, applying only low-risk cleanup, isolating prototype artifacts, and documenting cleanup or promotion steps
 - [ ] **CMDP-08**: AIOS adds lightweight native command metadata logging, tests for registration/schema/read-only/safety behavior, and docs covering command purpose, safety class, sub-agent use, second-brain behavior, examples, and recommended workflows
 
@@ -321,7 +321,7 @@ None currently. The full operating-system vision is intentionally being planned 
 | CMDP-03 | Phase 19: Native Workflow Command Pack | Complete |
 | CMDP-04 | Phase 19: Native Workflow Command Pack | Complete |
 | CMDP-05 | Phase 19: Native Workflow Command Pack | Complete |
-| CMDP-06 | Phase 19: Native Workflow Command Pack | Pending |
+| CMDP-06 | Phase 19: Native Workflow Command Pack | Complete |
 | CMDP-07 | Phase 19: Native Workflow Command Pack | Pending |
 | CMDP-08 | Phase 19: Native Workflow Command Pack | Pending |
 | ESPL-01 | Phase 20: Execution-Symmetric Planning | Pending |

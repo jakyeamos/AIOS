@@ -66,6 +66,9 @@ from services.native_commands import (
     review_squad as native_review_squad,
 )
 from services.native_commands import (
+    security_audit as native_security_audit,
+)
+from services.native_commands import (
     zoom_out as native_zoom_out,
 )
 from services.path_resolution import get_vault_root
@@ -2895,6 +2898,20 @@ def cmd_native_review_squad(args: argparse.Namespace) -> dict[str, Any]:
         raise CLIError("native-target-not-found", str(exc), EXIT_NOT_FOUND) from exc
 
 
+def cmd_native_audit_security(args: argparse.Namespace) -> dict[str, Any]:
+    try:
+        return native_security_audit(
+            mode=args.mode,
+            repo_root=Path(args.repo_root).expanduser().resolve(),
+            files=[Path(path) for path in args.file],
+            base_ref=args.base,
+        )
+    except FileNotFoundError as exc:
+        raise CLIError("native-target-not-found", str(exc), EXIT_NOT_FOUND) from exc
+    except ValueError as exc:
+        raise CLIError("native-invalid-mode", str(exc), EXIT_USAGE) from exc
+
+
 def cmd_shadow_create_worktree(
     conn: sqlite3.Connection, args: argparse.Namespace
 ) -> dict[str, Any]:
@@ -4552,7 +4569,7 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "meta-analyze-session":
         print(f"signals={data['signal_count']} input={data['input_path']}")
         return
-    if command in {"zoom-out", "handoff", "review-squad"}:
+    if command in {"zoom-out", "handoff", "review-squad", "audit-security"}:
         print(data["markdown"])
         return
     if command == "shadow-create-worktree":
@@ -4612,6 +4629,8 @@ def _command_name(args: argparse.Namespace) -> str:
         return f"meta-{args.meta_command}"
     if args.command == "review":
         return f"review-{args.review_command}"
+    if args.command == "audit":
+        return f"audit-{args.audit_command}"
     if args.command == "shadow":
         return f"shadow-{args.shadow_command}"
     if args.command == "peer-trace":
@@ -4897,6 +4916,15 @@ def create_parser() -> argparse.ArgumentParser:
     review_squad.add_argument("--file", action="append", default=[])
     review_squad.add_argument("--base", default="HEAD")
     review_squad.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    audit_parser = subparsers.add_parser("audit", help="Run native audit commands")
+    audit_subparsers = audit_parser.add_subparsers(dest="audit_command", required=True)
+    audit_security = audit_subparsers.add_parser("security", help="Read-only security audit")
+    audit_security.add_argument("--mode", choices=["strict", "practical"], default="practical")
+    audit_security.add_argument("--repo-root", default=".")
+    audit_security.add_argument("--file", action="append", default=[])
+    audit_security.add_argument("--base", default="HEAD")
+    audit_security.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     eval_parser = subparsers.add_parser("eval", help="Record and inspect AIOS eval runs")
     eval_subparsers = eval_parser.add_subparsers(dest="eval_command", required=True)
@@ -5587,6 +5615,8 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             data = cmd_native_handoff(args)
         elif args.command == "review" and args.review_command == "squad":
             data = cmd_native_review_squad(args)
+        elif args.command == "audit" and args.audit_command == "security":
+            data = cmd_native_audit_security(args)
         elif args.command == "contracts-audit":
             assert conn is not None
             data = _contracts_audit_payload(conn)

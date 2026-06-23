@@ -31,6 +31,7 @@ REVIEW_LANES = (
     "maintainability",
     "project_alignment",
 )
+SECURITY_SEVERITIES = ("critical", "high", "medium")
 
 
 def zoom_out(target: Path, *, repo_root: Path | None = None, depth: int = 2) -> dict[str, Any]:
@@ -128,6 +129,44 @@ def review_squad(
     return payload
 
 
+def security_audit(
+    *,
+    mode: str,
+    repo_root: Path | None = None,
+    files: Sequence[Path] = (),
+    base_ref: str = "HEAD",
+) -> dict[str, Any]:
+    if mode not in {"strict", "practical"}:
+        raise ValueError("Security audit mode must be strict or practical.")
+    root = (repo_root or Path.cwd()).resolve()
+    inspected = _review_files(root, files=files, base_ref=base_ref)
+    findings = _security_findings(inspected, root)
+    if mode == "strict":
+        findings = [finding for finding in findings if finding["severity"] in {"critical", "high"}]
+    payload = {
+        "command_id": "audit_security",
+        "mode": mode,
+        "scope": {
+            "repo_root": str(root),
+            "files": [str(path) for path in inspected],
+            "base_ref": base_ref,
+        },
+        "findings": findings,
+        "findings_by_severity": _group_security_findings(findings),
+        "non_issues_checked": [
+            "Hardcoded secret assignment patterns",
+            "Shell execution with shell=True and destructive command markers",
+            "Authentication and authorization vocabulary in changed files",
+            "Privacy-sensitive field handling",
+            "Local filesystem write/read automation",
+            "Dependency manifest risk markers",
+        ],
+        "verification_suggestions": _security_verification_suggestions(findings),
+    }
+    payload["markdown"] = render_security_audit(payload)
+    return payload
+
+
 def render_zoom_out(payload: dict[str, Any]) -> str:
     return "\n".join(
         [
@@ -200,6 +239,30 @@ def render_squad_review(payload: dict[str, Any]) -> str:
         for item in result["non_issues_checked"]:
             lines.append(f"- Checked: {item}")
     lines.extend(["", _list_section("Non-Issues Checked", payload["non_issues_checked"])])
+    return "\n".join(lines)
+
+
+def render_security_audit(payload: dict[str, Any]) -> str:
+    lines = ["# Security Audit", "", "## Scope"]
+    lines.append(f"- Mode: {payload['mode']}")
+    lines.append(f"- Repo root: {payload['scope']['repo_root']}")
+    lines.append(f"- Base ref: {payload['scope']['base_ref']}")
+    lines.append(f"- Files inspected: {len(payload['scope']['files'])}")
+    lines.extend(["", "## Findings"])
+    for severity in SECURITY_SEVERITIES:
+        lines.append(f"### {severity.title()}")
+        findings = payload["findings_by_severity"][severity]
+        if not findings:
+            lines.append("- None.")
+            continue
+        for finding in findings:
+            lines.append(f"- {finding['affected_file']}: {finding['issue']}")
+            lines.append(f"  - Why it matters: {finding['why_it_matters']}")
+            lines.append(f"  - Scenario: {finding['exploit_or_failure_scenario']}")
+            lines.append(f"  - Recommended fix: {finding['recommended_fix']}")
+            lines.append(f"  - Confidence: {finding['confidence']}")
+    lines.extend(["", _list_section("Non-Issues Checked", payload["non_issues_checked"])])
+    lines.extend(["", _list_section("Suggested Verification", payload["verification_suggestions"])])
     return "\n".join(lines)
 
 
@@ -485,6 +548,131 @@ def _lane_non_issues(lane: str) -> list[str]:
             "PRD/design-spec fit when supplied in scope",
         ],
     }[lane]
+
+
+def _security_findings(files: Sequence[Path], root: Path) -> list[dict[str, str]]:
+    findings: list[dict[str, str]] = []
+    for path in files:
+        text = _read_text(path)
+        rel = str(path.relative_to(root)) if path.is_relative_to(root) else str(path)
+        lowered = text.lower()
+        if re.search(r"(api[_-]?key|secret|password|private[_-]?key)\s*=\s*['\"][^'\"]+", text, re.I):
+            findings.append(
+                _security_finding(
+                    severity="high",
+                    affected_file=rel,
+                    issue="Possible hardcoded credential assignment.",
+                    why_it_matters="Credentials committed to source can be reused outside the local workflow.",
+                    scenario="A copied repo, log excerpt, or artifact exposes the credential to another environment.",
+                    recommended_fix="Move the value to a local secret store or environment variable and rotate it.",
+                    confidence="confirmed",
+                )
+            )
+        if "shell=True" in text:
+            severity = "critical" if re.search(r"rm\s+-rf|chmod\s+777|sudo\s+", text) else "high"
+            findings.append(
+                _security_finding(
+                    severity=severity,
+                    affected_file=rel,
+                    issue="Shell command execution uses shell=True.",
+                    why_it_matters="Shell interpolation can turn user-controlled input into command execution.",
+                    scenario="A crafted path or argument changes the command that local automation executes.",
+                    recommended_fix="Pass argv as a sequence, validate inputs, and avoid shell=True.",
+                    confidence="confirmed",
+                )
+            )
+        if any(term in lowered for term in ("auth", "authorization", "permission", "token")):
+            findings.append(
+                _security_finding(
+                    severity="medium",
+                    affected_file=rel,
+                    issue="Authentication or permission-sensitive logic is in scope.",
+                    why_it_matters="Access-control changes can silently widen local or remote privileges.",
+                    scenario="A missing check lets a caller read or mutate data outside its intended scope.",
+                    recommended_fix="Verify caller identity, authorization boundary, and denial behavior with tests.",
+                    confidence="contextual",
+                )
+            )
+        if any(term in lowered for term in ("email", "phone", "address", "ssn", "personal")):
+            findings.append(
+                _security_finding(
+                    severity="medium",
+                    affected_file=rel,
+                    issue="Privacy-sensitive data fields are handled in scope.",
+                    why_it_matters="Personal data needs minimization, redaction, and explicit retention behavior.",
+                    scenario="A local artifact, log, or debug output stores private data longer than intended.",
+                    recommended_fix="Redact logs/artifacts and document retention or deletion behavior.",
+                    confidence="contextual",
+                )
+            )
+        if re.search(r"\b(write_text|open\(.+['\"]w|unlink\(|rmtree\(|remove\()", text):
+            findings.append(
+                _security_finding(
+                    severity="medium",
+                    affected_file=rel,
+                    issue="Local filesystem write or delete behavior is in scope.",
+                    why_it_matters="Agent-run filesystem automation can overwrite user data if paths are too broad.",
+                    scenario="An unchecked path argument writes outside the intended workspace or artifact directory.",
+                    recommended_fix="Resolve paths, enforce allowed roots, and test refusal for unsafe locations.",
+                    confidence="confirmed",
+                )
+            )
+        if path.name in {"package.json", "pyproject.toml", "requirements.txt"}:
+            findings.append(
+                _security_finding(
+                    severity="medium",
+                    affected_file=rel,
+                    issue="Dependency manifest is in scope.",
+                    why_it_matters="Dependency changes alter the supply-chain trust boundary.",
+                    scenario="A new package introduces install scripts, vulnerable transitive code, or network access.",
+                    recommended_fix="Review package source, lockfile delta, install scripts, and vulnerability status.",
+                    confidence="contextual",
+                )
+            )
+    return findings
+
+
+def _security_finding(
+    *,
+    severity: str,
+    affected_file: str,
+    issue: str,
+    why_it_matters: str,
+    scenario: str,
+    recommended_fix: str,
+    confidence: str,
+) -> dict[str, str]:
+    return {
+        "severity": severity,
+        "affected_file": affected_file,
+        "issue": issue,
+        "why_it_matters": why_it_matters,
+        "exploit_or_failure_scenario": scenario,
+        "recommended_fix": recommended_fix,
+        "confidence": confidence,
+    }
+
+
+def _group_security_findings(
+    findings: Sequence[dict[str, str]],
+) -> dict[str, list[dict[str, str]]]:
+    return {
+        severity: [finding for finding in findings if finding["severity"] == severity]
+        for severity in SECURITY_SEVERITIES
+    }
+
+
+def _security_verification_suggestions(findings: Sequence[dict[str, str]]) -> list[str]:
+    suggestions = ["Confirm audited commands made no source changes."]
+    if any(finding["severity"] in {"critical", "high"} for finding in findings):
+        suggestions.append("Run a secret scan and inspect git history before merging.")
+    if any("shell=True" in finding["issue"] for finding in findings):
+        suggestions.append("Add a regression test proving shell execution rejects crafted input.")
+    if any("filesystem" in finding["issue"].lower() for finding in findings):
+        suggestions.append("Add allowed-root and path traversal tests.")
+    if any("Privacy" in finding["issue"] for finding in findings):
+        suggestions.append("Check generated logs and artifacts for redaction.")
+    return suggestions
 
 
 def _group_findings(findings: Sequence[dict[str, str]]) -> dict[str, list[dict[str, str]]]:
