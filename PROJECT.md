@@ -51,6 +51,12 @@ AIOS Phase 12 Plan 12-05 now has the memory packet contract:
 - the contract makes raw JSON in model-facing packet output a hard violation; compiler internals may use structured JSON/rows/edges, but rendered packets must be readable Markdown for LLM reasoning
 - `services.memory_layers.FactMemory` and `schema.sql` now enforce the contract validity statuses: `active`, `superseded`, `contradicted`, `uncertain`, and `archived`
 
+AIOS Phase 12 Plan 12-07 now has a memory backfill plan:
+
+- `docs/backfills/graph-native-memory-backfill.md` inventories P0/P1/P2 memory hotspots across project truth, tracker truth, PRD-style docs, agent rules, user preferences, long-term memory, decisions, code quality rules, prompt libraries, skills, design specs, and wiki/context pages
+- each hotspot maps current memory value, missing structure, recommended Layer B facts, recommended Layer C relationships, stable/dynamic prefix classification, project/global scope, and priority
+- the first recommended backfill run targets the Plan 12-01 audit’s P0 memory-loss areas: project truth, state, audit recommendations, prompt-time retrieval, closeout memory, and agent rules
+
 AIOS planning now reflects the expanded quality-gate success criteria as landed baseline infrastructure:
 
 - Phase 14 plans now reference the registered success-criteria gate ids as the canonical vocabulary for complexity, architecture, simplicity, testing, UI, data, API, supply-chain, and agent-claim verification work
