@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import sqlite3
 import subprocess
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
+
+from services.evidence_artifacts import validate_fresh_evidence
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONTEXT_ROOT = REPO_ROOT / "aios" / "context"
@@ -57,6 +61,16 @@ def run_ladder(
     ]
     if run_context_validation:
         checks.insert(2, check_context_validation(repo_root))
+    run_id = os.environ.get("AIOS_RUN_ID")
+    session_id = os.environ.get("AIOS_SESSION_ID")
+    if run_id or session_id:
+        checks.append(
+            check_aios_evidence_artifacts(
+                db_path=Path(os.environ.get("AIOS_DB", "~/AIOS/data/aios.db")).expanduser(),
+                run_id=run_id,
+                session_id=session_id,
+            )
+        )
     return checks
 
 
@@ -401,6 +415,54 @@ def check_confident_event_loop_ordering(repo_root: Path, files: Sequence[str]) -
         "No impossible handler-before-send races",
         "pass",
         "No staged handler-before-send violations found.",
+    )
+
+
+def check_aios_evidence_artifacts(
+    *,
+    db_path: Path | None = None,
+    run_id: str | None = None,
+    session_id: str | None = None,
+) -> LadderCheck:
+    if not run_id and not session_id:
+        return LadderCheck(
+            "aios.evidence_artifacts",
+            "Fresh AIOS evidence artifacts are available",
+            "skip",
+            "AIOS evidence check unknown outside a managed run/session.",
+        )
+    resolved_db = db_path or Path("~/AIOS/data/aios.db").expanduser()
+    if not resolved_db.exists():
+        return LadderCheck(
+            "aios.evidence_artifacts",
+            "Fresh AIOS evidence artifacts are available",
+            "skip",
+            f"AIOS evidence check unknown; database missing at {resolved_db}.",
+        )
+    try:
+        with sqlite3.connect(resolved_db) as conn:
+            validation = validate_fresh_evidence(conn, run_id=run_id, session_id=session_id)
+    except sqlite3.Error as exc:
+        return LadderCheck(
+            "aios.evidence_artifacts",
+            "Fresh AIOS evidence artifacts are available",
+            "skip",
+            f"AIOS evidence check unknown; database query failed: {exc}.",
+        )
+    evidence = tuple(str(item) for item in validation.get("evidence", []))
+    if evidence:
+        return LadderCheck(
+            "aios.evidence_artifacts",
+            "Fresh AIOS evidence artifacts are available",
+            "pass",
+            f"{validation.get('usable_count', len(evidence))} fresh evidence artifact(s) found.",
+            evidence,
+        )
+    return LadderCheck(
+        "aios.evidence_artifacts",
+        "Fresh AIOS evidence artifacts are available",
+        "skip",
+        "AIOS evidence check unknown; no fresh usable evidence artifacts found.",
     )
 
 

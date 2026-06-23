@@ -260,6 +260,71 @@ def test_closeout_signal_kind_null_when_clean_run() -> None:
     assert _latest_signal_kind(conn) is None
 
 
+def test_execution_evidence_prefers_usable_evidence_artifacts(tmp_path: Path) -> None:
+    module = _load_hook_stop()
+    conn = sqlite3.connect(":memory:")
+    conn.execute(
+        """
+        CREATE TABLE evidence_artifacts (
+          evidence_id TEXT PRIMARY KEY,
+          task_id TEXT,
+          run_id TEXT,
+          session_id TEXT,
+          phase TEXT,
+          timestamp TEXT,
+          agent TEXT,
+          model TEXT,
+          command TEXT,
+          exit_code INTEGER,
+          stdout_path TEXT,
+          stderr_path TEXT,
+          output_hash TEXT,
+          parsed_summary TEXT,
+          diff_hash TEXT,
+          commit_hash TEXT,
+          status TEXT,
+          caveats_json TEXT NOT NULL DEFAULT '[]',
+          created_at TEXT
+        )
+        """
+    )
+    stdout = tmp_path / "pytest.log"
+    stdout.write_text("passed\n", encoding="utf-8")
+    conn.execute(
+        """
+        INSERT INTO evidence_artifacts (
+          evidence_id, task_id, run_id, session_id, phase, timestamp, agent, model,
+          command, exit_code, stdout_path, stderr_path, output_hash, parsed_summary,
+          diff_hash, commit_hash, status, caveats_json, created_at
+        )
+        VALUES (
+          'ev-pass', 'task', 'run-1', 'session-1', 'verify', '2026-06-23T00:00:00Z',
+          'codex', 'gpt', 'uv run pytest -q', 0, ?, NULL, 'abc', 'tests passed',
+          NULL, NULL, 'pass', '[]', '2026-06-23T00:00:00Z'
+        )
+        """,
+        (str(stdout),),
+    )
+    conn.execute(
+        """
+        INSERT INTO evidence_artifacts (
+          evidence_id, task_id, run_id, session_id, phase, timestamp, agent, model,
+          command, exit_code, stdout_path, stderr_path, output_hash, parsed_summary,
+          diff_hash, commit_hash, status, caveats_json, created_at
+        )
+        VALUES (
+          'ev-empty', 'task', 'run-1', 'session-1', 'verify', '2026-06-23T00:00:00Z',
+          'codex', 'gpt', NULL, NULL, NULL, NULL, NULL, 'tests passed',
+          NULL, NULL, 'unknown', '["empty-marker"]', '2026-06-23T00:00:00Z'
+        )
+        """
+    )
+
+    evidence = module.execution_evidence_for_session(conn, "session-1")
+
+    assert evidence == ["evidence-artifact: ev-pass status=pass command=uv run pytest -q"]
+
+
 def test_closeout_signal_kind_priority_order() -> None:
     module = _load_hook_stop()
     conn = _closeout_signal_conn()

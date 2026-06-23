@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 import sys
 from pathlib import Path
 
@@ -9,10 +10,11 @@ sys.path.insert(0, str(ROOT))
 
 from services.commit_quality_ladder import (  # noqa: E402
     _handler_before_send_findings,
+    check_aios_evidence_artifacts,
     check_confident_event_loop_ordering,
     check_global_standards_inventory,
-    check_quality_pipeline_includes_aios,
     check_quality_gate_registry,
+    check_quality_pipeline_includes_aios,
     check_standards_health_registry,
     check_success_criteria_registry,
 )
@@ -267,3 +269,79 @@ def test_success_criteria_registry_requires_thermo_spec_path(tmp_path: Path) -> 
         "thermo-nuclear-simplification path missing: "
         "spec/success-criteria/thermo-nuclear-simplification.md"
     ) in result.evidence
+
+
+def _create_evidence_table(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE evidence_artifacts (
+          evidence_id TEXT PRIMARY KEY,
+          task_id TEXT,
+          run_id TEXT,
+          session_id TEXT,
+          phase TEXT,
+          timestamp TEXT,
+          agent TEXT,
+          model TEXT,
+          command TEXT,
+          exit_code INTEGER,
+          stdout_path TEXT,
+          stderr_path TEXT,
+          output_hash TEXT,
+          parsed_summary TEXT,
+          diff_hash TEXT,
+          commit_hash TEXT,
+          status TEXT,
+          caveats_json TEXT NOT NULL DEFAULT '[]',
+          created_at TEXT
+        )
+        """
+    )
+
+
+def test_aios_evidence_check_is_unknown_without_fresh_artifacts(tmp_path: Path) -> None:
+    db_path = tmp_path / "aios.db"
+    conn = sqlite3.connect(db_path)
+    _create_evidence_table(conn)
+    conn.commit()
+    conn.close()
+
+    result = check_aios_evidence_artifacts(
+        db_path=db_path,
+        run_id="run-1",
+        session_id="session-1",
+    )
+
+    assert result.status == "skip"
+    assert "unknown" in result.detail
+
+
+def test_aios_evidence_check_attaches_fresh_refs(tmp_path: Path) -> None:
+    db_path = tmp_path / "aios.db"
+    conn = sqlite3.connect(db_path)
+    _create_evidence_table(conn)
+    conn.execute(
+        """
+        INSERT INTO evidence_artifacts (
+          evidence_id, task_id, run_id, session_id, phase, timestamp, agent, model,
+          command, exit_code, stdout_path, stderr_path, output_hash, parsed_summary,
+          diff_hash, commit_hash, status, caveats_json, created_at
+        )
+        VALUES (
+          'ev-1', 'task', 'run-1', 'session-1', 'verify', '2026-06-23T00:00:00Z',
+          'codex', 'gpt', 'pnpm test', 0, NULL, NULL, 'abc', 'passed',
+          NULL, NULL, 'pass', '[]', '2026-06-23T00:00:00Z'
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    result = check_aios_evidence_artifacts(
+        db_path=db_path,
+        run_id="run-1",
+        session_id="session-1",
+    )
+
+    assert result.status == "pass"
+    assert result.evidence == ("evidence-artifact: ev-1 status=pass command=pnpm test",)

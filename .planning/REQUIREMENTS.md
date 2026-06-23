@@ -130,7 +130,7 @@
 
 - [x] **HARN-01**: AIOS produces a concise existing-harness audit that maps entrypoints, orchestration, lifecycle state, prompt/template system, model selection, context routing, second-brain integration, evaluation, evidence/logging, recovery, shadow branches, learning, docs, scripts, CI checks, WIP areas, and current sources of truth
 - [x] **HARN-02**: AIOS compares current lifecycle behavior against intake, context routing, planning, implementation, verification, review, closeout, and retrospective phases, then identifies deterministic transition logic, completion artifacts, failure modes, and minimal reliability patches
-- [ ] **HARN-03**: AIOS binds completion markers to fresh durable evidence artifacts with timestamp, task id, phase, agent/model, command, exit code, stdout/stderr path or hash, parsed summary, diff/commit hash, status, and caveats; empty markers and agent-authored "tests passed" claims do not satisfy completion
+- [x] **HARN-03**: AIOS binds completion markers to fresh durable evidence artifacts with timestamp, task id, phase, agent/model, command, exit code, stdout/stderr path or hash, parsed summary, diff/commit hash, status, and caveats; empty markers and agent-authored "tests passed" claims do not satisfy completion
 - [ ] **HARN-04**: Implementation-bearing governed workflows require a structurally independent verifier artifact before closeout, reviewing task spec, diff or changed files, and evidence artifacts with structured pass/fail/needs-work output and concrete citations
 - [ ] **HARN-05**: Context routing records manifests with loaded/skipped sources, reasons, second-brain availability, fallback behavior, context budget, and retrieval reasons; tests cover both second-brain and no-second-brain conditions
 - [ ] **HARN-06**: Prompt and template audits identify duplicated instructions, stale rules, unclear phase boundaries, missing output schemas, and prose-only state-machine responsibilities; targeted patches move obvious gates into code or config where feasible
@@ -294,7 +294,7 @@ None currently. The full operating-system vision is intentionally being planned 
 | SKIL-08 | Phase 15: Agent Skill Portfolio Audit And External Library Integration | Complete |
 | HARN-01 | Phase 16: Harness Determinism, Evidence, And Independent Verification | Complete |
 | HARN-02 | Phase 16: Harness Determinism, Evidence, And Independent Verification | Complete |
-| HARN-03 | Phase 16: Harness Determinism, Evidence, And Independent Verification | Pending |
+| HARN-03 | Phase 16: Harness Determinism, Evidence, And Independent Verification | Complete |
 | HARN-04 | Phase 16: Harness Determinism, Evidence, And Independent Verification | Pending |
 | HARN-05 | Phase 16: Harness Determinism, Evidence, And Independent Verification | Pending |
 | HARN-06 | Phase 16: Harness Determinism, Evidence, And Independent Verification | Pending |

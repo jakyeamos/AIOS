@@ -31,6 +31,7 @@ from services.eval_run_service import (
     get_eval_summary,
     list_eval_runs,
 )
+from services.evidence_artifacts import list_evidence_artifacts, validate_fresh_evidence
 from services.external_benchmark_adapter import (
     normalize_external_result,
     to_swe_bench_format,
@@ -4525,6 +4526,20 @@ def _command_name(args: argparse.Namespace) -> str:
     return args.command
 
 
+def _evidence_payload(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    run_id = str(args.run_id).strip() if args.run_id else None
+    session_id = str(args.session_id).strip() if args.session_id else None
+    return {
+        "artifacts": list_evidence_artifacts(
+            conn,
+            run_id=run_id,
+            session_id=session_id,
+            limit=max(1, int(args.limit)),
+        ),
+        "validation": validate_fresh_evidence(conn, run_id=run_id, session_id=session_id),
+    }
+
+
 def _run_corpus_command(command: str, passthrough_args: Sequence[str]) -> int:
     script = REPO_ROOT / "scripts" / "aios-corpus-eval.cjs"
     if command == "run":
@@ -4585,6 +4600,14 @@ def create_parser() -> argparse.ArgumentParser:
     subparsers.add_parser(
         "workflow-learning-audit", help="Workflow learning evidence and proposal audit"
     )
+    evidence_parser = subparsers.add_parser(
+        "evidence", help="Inspect durable command evidence artifacts"
+    )
+    evidence_parser.add_argument("--run-id", default=None)
+    evidence_parser.add_argument("--session-id", default=None)
+    evidence_parser.add_argument("--limit", type=int, default=50)
+    evidence_parser.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
     learning_analyze = subparsers.add_parser(
         "learning-analyze", help="Analyze recurring learning patterns"
     )
@@ -5193,6 +5216,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "lifecycle-audit",
             "knowledge-objects",
             "workflow-learning-audit",
+            "evidence",
             "learning-analyze",
             "learning-propose",
             "learning-impact",
@@ -5272,6 +5296,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "workflow-learning-audit":
             assert conn is not None
             data = _workflow_learning_payload(conn)
+        elif args.command == "evidence":
+            assert conn is not None
+            data = _evidence_payload(conn, args)
         elif args.command == "learning-analyze":
             assert conn is not None
             data = _learning_analyze_payload(conn, args)

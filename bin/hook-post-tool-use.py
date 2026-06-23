@@ -19,6 +19,7 @@ if str(ROOT) not in sys.path:
 
 from hook_lifecycle import resolve_hook_session_id  # noqa: E402
 
+from services.evidence_artifacts import record_evidence_artifact  # noqa: E402
 from services.rtk_integration import (  # noqa: E402
     compress_tool_output,
     load_compression_rules,
@@ -201,6 +202,15 @@ def get_project_id(conn: sqlite3.Connection, session_id: str) -> str:
         return ""
 
 
+def get_run_id(conn: sqlite3.Connection, session_id: str) -> str:
+    try:
+        cur = conn.execute("SELECT run_id FROM sessions WHERE id = ?", (session_id,))
+        row = cur.fetchone()
+        return row[0] if row and row[0] else ""
+    except Exception:
+        return ""
+
+
 def bug_already_logged(conn: sqlite3.Connection, session_id: str, symptom: str) -> bool:
     """Prevent duplicate entries for the same error within one session."""
     try:
@@ -315,6 +325,7 @@ def main() -> None:
         if tool_name == "Bash":
             command = (data.get("tool_input") or {}).get("command", "")
             raw_text, exit_code = parse_tool_response(tool_response)
+            run_id = get_run_id(conn, session_id)
             if raw_text:
                 rules = load_compression_rules()
                 mode = rules.get("default_mode", "compressed")
@@ -332,8 +343,38 @@ def main() -> None:
                     conn,
                     result=rtk_result,
                     session_id=session_id,
+                    run_id=run_id or None,
                     source_kind="PostToolUse",
                     metadata={"hook": "post-tool-use", "tool_name": tool_name},
+                )
+                record_evidence_artifact(
+                    conn,
+                    task_id=run_id or session_id,
+                    run_id=run_id or None,
+                    session_id=session_id,
+                    phase="tool-use",
+                    agent=os.environ.get("AIOS_AGENT") or os.environ.get("AIOS_BACKEND_KEY"),
+                    model=os.environ.get("AIOS_MODEL"),
+                    command=command,
+                    exit_code=exit_code,
+                    stdout_path=rtk_result.raw_output_path,
+                    parsed_summary=rtk_result.output[:500],
+                    status="fail" if exit_code is not None and exit_code != 0 else "pass",
+                    caveats=[] if rtk_result.raw_output_path else ["output-absent:inline-output"],
+                )
+            else:
+                record_evidence_artifact(
+                    conn,
+                    task_id=run_id or session_id,
+                    run_id=run_id or None,
+                    session_id=session_id,
+                    phase="tool-use",
+                    agent=os.environ.get("AIOS_AGENT") or os.environ.get("AIOS_BACKEND_KEY"),
+                    model=os.environ.get("AIOS_MODEL"),
+                    command=command,
+                    exit_code=exit_code,
+                    status="unknown",
+                    caveats=["output-absent:empty-tool-response"],
                 )
 
         symptom = detect_bug(tool_name, data.get("tool_input") or {}, tool_response)

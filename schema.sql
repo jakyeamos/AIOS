@@ -240,6 +240,29 @@ CREATE TABLE rtk_compression_events (
 );
 CREATE INDEX idx_rtk_compression_events_session ON rtk_compression_events(session_id, created_at DESC);
 CREATE INDEX idx_rtk_compression_events_workflow ON rtk_compression_events(workflow_key, created_at DESC);
+CREATE TABLE evidence_artifacts (
+  evidence_id TEXT PRIMARY KEY,
+  task_id TEXT,
+  run_id TEXT REFERENCES orchestration_runs(id),
+  session_id TEXT REFERENCES sessions(id),
+  phase TEXT,
+  timestamp TEXT NOT NULL,
+  agent TEXT,
+  model TEXT,
+  command TEXT,
+  exit_code INTEGER,
+  stdout_path TEXT,
+  stderr_path TEXT,
+  output_hash TEXT,
+  parsed_summary TEXT,
+  diff_hash TEXT,
+  commit_hash TEXT,
+  status TEXT NOT NULL,
+  caveats_json TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX idx_evidence_artifacts_run ON evidence_artifacts(run_id, created_at DESC);
+CREATE INDEX idx_evidence_artifacts_session ON evidence_artifacts(session_id, created_at DESC);
 CREATE INDEX idx_prompts_retrieval ON prompts_used(retrieval_fired);
 CREATE TABLE orchestration_runs (
   id TEXT PRIMARY KEY,

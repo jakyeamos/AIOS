@@ -11,6 +11,7 @@ import sqlite3
 import subprocess
 import sys
 import uuid
+from contextlib import suppress
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -37,6 +38,7 @@ from hook_lifecycle import (  # noqa: E402
     resolve_session_cwd,
 )
 
+from services.evidence_artifacts import usable_evidence_refs  # noqa: E402
 from services.rtk_integration import ensure_rtk_schema, rtk_metrics_log  # noqa: E402
 from services.session_effectiveness import write_session_effectiveness_receipt  # noqa: E402
 
@@ -474,6 +476,24 @@ def ensure_memory_updates_table(conn: sqlite3.Connection) -> None:
 
 def execution_evidence_for_session(conn: sqlite3.Connection, session_id: str) -> list[str]:
     evidence: list[str] = []
+    try:
+        run_rows = conn.execute(
+            """
+            SELECT run_id
+            FROM sessions
+            WHERE id = ? AND run_id IS NOT NULL
+            """,
+            (session_id,),
+        ).fetchall()
+        run_ids = [str(row[0]) for row in run_rows if row[0]]
+        for run_id in run_ids:
+            evidence.extend(usable_evidence_refs(conn, run_id=run_id, session_id=session_id))
+        if not run_ids:
+            evidence.extend(usable_evidence_refs(conn, session_id=session_id))
+    except sqlite3.Error:
+        with suppress(sqlite3.Error):
+            evidence.extend(usable_evidence_refs(conn, session_id=session_id))
+
     try:
         rows = conn.execute(
             """
