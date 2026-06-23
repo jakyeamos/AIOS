@@ -117,14 +117,14 @@
 
 ### Code Quality Gates And Cross-Project Complexity Standards
 
-- [ ] **QUAL-01**: After any large piece of work (5+ files, 300+ lines, new feature, cross-package, DB/schema, pipeline/model logic, UI with state, agent/workflow change, performance-sensitive path, or infrastructure code), agents run a mandatory Complexity + Simplification Gate covering Gate A (algorithmic complexity/performance), Gate B (simplification/maintainability), and Gate C (verification)
-- [ ] **QUAL-02**: Agent workflows include 8 pre-check implementation questions that surface the most common complexity and simplification issues during coding — before the post-work gate runs — reducing the number of findings that reach the gate
-- [ ] **QUAL-03**: A root quality gate specification exists at `docs/quality/complexity-simplification-gate.md` explaining why the gate exists, when it runs, what agents must check, how to use available tools, how to write backfill findings, how to decide fix-vs-defer, and the Definition of Done for a completed gate pass
-- [ ] **QUAL-04**: A local complexity pattern checklist at `docs/quality/complexity-checklist.md` covers 17 named algorithmic patterns across three categories (algorithmic, render/UI, data access), each with code signature, why-it-matters, and preferred remedy — no external dependencies
-- [ ] **QUAL-05**: AIOS has a complexity+simplification backfill inventory at `docs/backfill/complexity-simplification-backfill.md` with observation-backed findings across all major source areas (services, bin scripts, aios-ui, config, tests), a remediation order, and a Definition of Done for the quality standard
-- [ ] **QUAL-06**: Every first-class linked project (soundscape-app, portfolio, amos-saas, GitNexus, tm, Terrace) has a `docs/complexity-simplification-backfill.md` with observation-backed findings or an honest "no major hotspots" statement, quality command results, and a Definition of Done
-- [ ] **QUAL-07**: The quality gate explicitly distinguishes "report hotspot" from "fix hotspot" — agents record every finding before any fix attempt; fixes are permitted only for sub-5-line, no-behavior-risk changes; all other findings are deferred to a dedicated remediation pass
-- [ ] **QUAL-08**: The cross-project summary table in the AIOS backfill doc links all six external project backfill inventories with P0/P1/P2 hotspot counts, providing the operator a portfolio-level view for prioritizing remediation across all projects
+- [x] **QUAL-01**: After any large piece of work (5+ files, 300+ lines, new feature, cross-package, DB/schema, pipeline/model logic, UI with state, agent/workflow change, performance-sensitive path, or infrastructure code), agents run a mandatory Complexity + Simplification Gate covering Gate A (algorithmic complexity/performance), Gate B (simplification/maintainability), and Gate C (verification)
+- [x] **QUAL-02**: Agent workflows include 8 pre-check implementation questions that surface the most common complexity and simplification issues during coding — before the post-work gate runs — reducing the number of findings that reach the gate
+- [x] **QUAL-03**: A root quality gate specification exists at `docs/quality/complexity-simplification-gate.md` explaining why the gate exists, when it runs, what agents must check, how to use available tools, how to write backfill findings, how to decide fix-vs-defer, and the Definition of Done for a completed gate pass
+- [x] **QUAL-04**: A local complexity pattern checklist at `docs/quality/complexity-checklist.md` covers 17 named algorithmic patterns across three categories (algorithmic, render/UI, data access), each with code signature, why-it-matters, and preferred remedy — no external dependencies
+- [x] **QUAL-05**: AIOS has a complexity+simplification backfill inventory at `docs/backfill/complexity-simplification-backfill.md` with observation-backed findings across all major source areas (services, bin scripts, aios-ui, config, tests), a remediation order, and a Definition of Done for the quality standard
+- [x] **QUAL-06**: Every first-class linked project (soundscape-app, portfolio, BidCamp formerly amos-saas, GitNexus, tm, Terrace) has a `docs/complexity-simplification-backfill.md` with observation-backed findings or an honest "no major hotspots" statement, quality command results, and a Definition of Done
+- [x] **QUAL-07**: The quality gate explicitly distinguishes "report hotspot" from "fix hotspot" — agents record every finding before any fix attempt; fixes are permitted only for sub-5-line, no-behavior-risk changes; all other findings are deferred to a dedicated remediation pass
+- [x] **QUAL-08**: The cross-project summary table in the AIOS backfill doc links all six external project backfill inventories with P0/P1/P2 hotspot counts, providing the operator a portfolio-level view for prioritizing remediation across all projects
 
 ### Harness Determinism, Evidence, And Independent Verification
 
@@ -276,14 +276,14 @@ None currently. The full operating-system vision is intentionally being planned 
 | SESS-06 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Complete |
 | SESS-07 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Complete |
 | SESS-08 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Complete |
-| QUAL-01 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Pending |
-| QUAL-02 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Pending |
-| QUAL-03 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Pending |
-| QUAL-04 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Pending |
-| QUAL-05 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Pending |
-| QUAL-06 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Pending |
-| QUAL-07 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Pending |
-| QUAL-08 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Pending |
+| QUAL-01 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Complete |
+| QUAL-02 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Complete |
+| QUAL-03 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Complete |
+| QUAL-04 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Complete |
+| QUAL-05 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Complete |
+| QUAL-06 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Complete |
+| QUAL-07 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Complete |
+| QUAL-08 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Complete |
 | SKIL-01 | Phase 15: Agent Skill Portfolio Audit And External Library Integration | Pending |
 | SKIL-02 | Phase 15: Agent Skill Portfolio Audit And External Library Integration | Pending |
 | SKIL-03 | Phase 15: Agent Skill Portfolio Audit And External Library Integration | Pending |

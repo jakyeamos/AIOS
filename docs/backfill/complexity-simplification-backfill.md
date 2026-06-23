@@ -225,14 +225,14 @@ These are package marker files, so the quality-eval finding is informational rat
 |---------|--------------|------------|----|----|----|
 | soundscape-app | `/Users/jakyeamos/projects/soundscape-app/docs/complexity-simplification-backfill.md` | 2026-06-23 | 0 | 3 | 2 |
 | portfolio | `/Users/jakyeamos/projects/portfolio/docs/complexity-simplification-backfill.md` | 2026-06-23 | 0 | 2 | 1 |
-| amos-saas | blocked: live repo not found at planned path | 2026-06-23 | n/a | n/a | n/a |
+| BidCamp (formerly amos-saas) | `/Users/jakyeamos/projects/BidCamp/docs/complexity-simplification-backfill.md` | 2026-06-23 | 0 | 3 | 2 |
 | GitNexus | `/Users/jakyeamos/projects/Not-mine/GitNexus/docs/complexity-simplification-backfill.md` | 2026-06-23 | 0 | 4 | 2 |
 | tm | `/Users/jakyeamos/projects/tm/docs/complexity-simplification-backfill.md` | 2026-06-23 | 0 | 2 | 3 |
 | Terrace | `/Users/jakyeamos/projects/Terrace/docs/complexity-simplification-backfill.md` | 2026-06-23 | 3 | 2 | 1 |
 
 Notes:
 
-- `amos-saas` was not audited because the live repository was not present. Old Terrace corpus-run copies were intentionally excluded because they are not authoritative source trees.
+- `amos-saas` has been renamed to `BidCamp`; the live BidCamp repository is the authoritative source for that backfill.
 - P0/P1/P2 counts are based on explicit hotspot headings in each project backfill doc.
 - Terrace P0 items are elevated because Terrace is the framework layer for agent workflow execution.
 

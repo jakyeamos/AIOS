@@ -8,7 +8,7 @@ The summary includes all six planned external projects:
 
 - `soundscape-app`
 - `portfolio`
-- `amos-saas` as blocked because the live repo was not found
+- `BidCamp` as the renamed live project for the planned `amos-saas` backfill
 - `GitNexus`
 - `tm`
 - `Terrace`
