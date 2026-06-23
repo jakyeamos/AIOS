@@ -1,0 +1,104 @@
+{
+  "version": "2026-06-23",
+  "mode": "planning",
+  "default_disallowed_outputs": [
+    "completed_work_review",
+    "final_review_findings",
+    "pass_fail_claim",
+    "implementation_output"
+  ],
+  "request_aliases": {
+    "testing principles": "structure_checker",
+    "test planning": "structure_checker",
+    "validation principles": "scope_check",
+    "security review principles": "security_review_executor",
+    "security planning": "security_review_executor",
+    "audit principles": "audit_only_executor"
+  },
+  "skill_lenses": {
+    "structure_checker": {
+      "planning_behavior": "Convert structure validation into plan requirements for explicit sections, measurable acceptance, and testable output shape.",
+      "constraints": [
+        "Plan the expected output structure before execution.",
+        "Define checks that can prove required sections are present.",
+        "Avoid relying on visual or prose inspection alone when a structural check is practical."
+      ],
+      "validation_gates": [
+        "section_presence_check",
+        "explicit_pass_fail_evidence"
+      ],
+      "reviewable_artifacts": [
+        "plan_sections",
+        "validation_notes"
+      ],
+      "output_expectations": [
+        "planning_constraints",
+        "validation_strategy"
+      ]
+    },
+    "scope_check": {
+      "planning_behavior": "Convert scope validation into plan requirements for preserving the original objective and avoiding silent scope drift.",
+      "constraints": [
+        "State scope and non-scope before execution.",
+        "Map every task step back to the original objective.",
+        "Record scope expansion as an escalation condition."
+      ],
+      "validation_gates": [
+        "objective_scope_check",
+        "non_scope_check"
+      ],
+      "reviewable_artifacts": [
+        "scope_statement",
+        "definition_of_done"
+      ],
+      "output_expectations": [
+        "scope_constraints",
+        "escalation_conditions"
+      ]
+    },
+    "security_review_executor": {
+      "planning_behavior": "Convert security review principles into pre-implementation threat, permission, evidence, and mitigation constraints.",
+      "constraints": [
+        "Identify trust boundaries and sensitive data before execution.",
+        "Plan least-privilege access and secret-safety checks.",
+        "Define security evidence needed for closeout."
+      ],
+      "validation_gates": [
+        "threat_model_check",
+        "secret_leak_check",
+        "permission_scope_check",
+        "security_evidence_check"
+      ],
+      "reviewable_artifacts": [
+        "threat_model",
+        "security_findings_log",
+        "accepted_risk_record"
+      ],
+      "output_expectations": [
+        "planning_constraints",
+        "risk_controls",
+        "validation_strategy"
+      ]
+    },
+    "audit_only_executor": {
+      "planning_behavior": "Convert audit behavior into plan requirements for evidence gathering and finding-to-action mapping without implementing fixes.",
+      "constraints": [
+        "Separate observations from implementation actions.",
+        "Require evidence citations for every planned finding.",
+        "Convert findings into scoped follow-up tasks only after the audit is complete."
+      ],
+      "validation_gates": [
+        "evidence_citation_check",
+        "finding_action_mapping_check"
+      ],
+      "reviewable_artifacts": [
+        "audit_report",
+        "finding_map"
+      ],
+      "output_expectations": [
+        "audit_plan",
+        "evidence_requirements"
+      ]
+    }
+  }
+}

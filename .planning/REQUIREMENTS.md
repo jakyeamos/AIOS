@@ -176,7 +176,7 @@
 - [x] **ESPL-02**: AIOS documents Execution-Symmetric Planning as a core principle and defines complexity-sensitive planning behavior for trivial, simple, moderate, complex, and high-risk tasks
 - [x] **ESPL-03**: AIOS recognizes GSD workflow phases through a configurable registry so `/gsdplanphase` and equivalents produce GSD-ready plans rather than generic planning prose
 - [x] **ESPL-04**: AIOS defines a planning lens registry mapping task types and workflow phases to execution standards such as testing, maintainability, regression safety, architecture, rollback safety, interface contracts, orchestration, security, data validation, reproducibility, and executor readiness
-- [ ] **ESPL-05**: AIOS supports execution, review, validation, and audit skills as planning lenses that convert skill principles into planning constraints instead of completed-work reviews
+- [x] **ESPL-05**: AIOS supports execution, review, validation, and audit skills as planning lenses that convert skill principles into planning constraints instead of completed-work reviews
 - [ ] **ESPL-06**: AIOS generates executor-ready non-trivial plans with objective/mission, scope, constraints, assumptions, selected lenses, affected areas, ordered steps, validation strategy, failure modes, rollback/recovery, delegation strategy, escalation conditions, and definition of done when relevant
 - [ ] **ESPL-07**: AIOS represents planning context and logs with structured fields for source invocation, workflow, phase, task type, complexity, risk, selected lenses, handoff target, validation depth, output format, sub-agent strategy, model strategy, execution result, validation result, rework required, and notes
 - [ ] **ESPL-08**: AIOS adds tests or eval cases for natural-language planning, `/gsdplanphase`, explicit planning-lens requests, audit-to-implementation prompts, GSD handoff generation, simple task non-overplanning, and complex tasks requiring validation and rollback
@@ -328,7 +328,7 @@ None currently. The full operating-system vision is intentionally being planned 
 | ESPL-02 | Phase 20: Execution-Symmetric Planning | Complete |
 | ESPL-03 | Phase 20: Execution-Symmetric Planning | Complete |
 | ESPL-04 | Phase 20: Execution-Symmetric Planning | Complete |
-| ESPL-05 | Phase 20: Execution-Symmetric Planning | Pending |
+| ESPL-05 | Phase 20: Execution-Symmetric Planning | Complete |
 | ESPL-06 | Phase 20: Execution-Symmetric Planning | Pending |
 | ESPL-07 | Phase 20: Execution-Symmetric Planning | Pending |
 | ESPL-08 | Phase 20: Execution-Symmetric Planning | Pending |
