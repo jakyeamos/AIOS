@@ -106,14 +106,14 @@
 
 ### Session Ingestion And Provider Extensibility
 
-- [ ] **SESS-01**: AIOS defines a `SessionProvider` abstract interface with nine methods (discover_sources, scan_since, extract_raw_session, normalize_session, compute_fingerprint, upsert_session, summarize_session, emit_writeback_candidates, health_check) and a `NormalizedSession` model with full provenance, timestamp, workspace, participant, message, tool-call, file-edit, command, decision, and status fields; existing Claude and Codex ingestion is wrapped as conforming providers
-- [ ] **SESS-02**: AIOS can discover and ingest Cursor sessions from local SQLite workspace storage databases (opened read-only with temp-copy safety) and agent-transcript JSONL files; workspace hash and resolved folder path are both preserved; SQLite and JSONL sources for the same session are deduplicated
-- [ ] **SESS-03**: AIOS can discover and ingest Antigravity CLI sessions from brain/session directories; file formats are detected before parsing (JSON, JSONL, SQLite, Markdown, text, unknown binary); unknown binary files are stored as metadata-only with a health warning; reasoning traces are stored as raw artifact pointers only and never promoted to vault content
-- [ ] **SESS-04**: Session sync is incremental and idempotent; a `session_provider_cursors` table tracks last mtime, size, hash, and provider session ID per source path; dry-run mode makes no DB writes; backfill mode rescans all sources without duplication; repair mode re-normalizes sessions with stale or missing fields
-- [ ] **SESS-05**: Raw session content is stored in the operational SQLite database, not in the curated Obsidian vault; secret redaction (API keys, tokens, .env values, auth headers, PEM keys) runs before any summary or writeback is generated; sessions with redaction failures are held with a flag and excluded from writeback candidates; per-provider ignore-path patterns and retention policies are configurable
-- [ ] **SESS-06**: Each imported session produces a structured `SessionSummary` with 16 defined fields: what I was trying to do, project/repo involved, important context used, decisions made, files/modules touched, commands/tools used, bugs/failures encountered, successful fixes, unresolved follow-ups, reusable patterns, candidate skills to extract, whether to update a truth file, whether to create an Obsidian note, confidence, source provenance, and writeback proposal status
-- [ ] **SESS-07**: Session writeback follows the governed proposal flow (proposal → approval → vault mutation); raw transcripts and reasoning traces never appear in writeback candidate content; truth file update proposals are generated only for high-confidence sessions that clearly changed project state; skillification candidates are detected when the same pattern appears in 3+ sessions across any providers within 30 days
-- [ ] **SESS-08**: The CLI exposes `aios sessions sync`, `status`, `backfill`, `repair`, and `debug` sub-commands; a cron-friendly wrapper script runs all-provider sync hourly; operator documentation covers all four providers with what is imported, what is not imported, default paths by OS, privacy warnings, backfill and sync instructions, debug instructions, and provider disable instructions; a `docs/backfills/session-provider-backfill.md` report is generated from a dry run on the live machine
+- [x] **SESS-01**: AIOS defines a `SessionProvider` abstract interface with nine methods (discover_sources, scan_since, extract_raw_session, normalize_session, compute_fingerprint, upsert_session, summarize_session, emit_writeback_candidates, health_check) and a `NormalizedSession` model with full provenance, timestamp, workspace, participant, message, tool-call, file-edit, command, decision, and status fields; existing Claude and Codex ingestion is wrapped as conforming providers
+- [x] **SESS-02**: AIOS can discover and ingest Cursor sessions from local SQLite workspace storage databases (opened read-only with temp-copy safety) and agent-transcript JSONL files; workspace hash and resolved folder path are both preserved; SQLite and JSONL sources for the same session are deduplicated
+- [x] **SESS-03**: AIOS can discover and ingest Antigravity CLI sessions from brain/session directories; file formats are detected before parsing (JSON, JSONL, SQLite, Markdown, text, unknown binary); unknown binary files are stored as metadata-only with a health warning; reasoning traces are stored as raw artifact pointers only and never promoted to vault content
+- [x] **SESS-04**: Session sync is incremental and idempotent; a `session_provider_cursors` table tracks last mtime, size, hash, and provider session ID per source path; dry-run mode makes no DB writes; backfill mode rescans all sources without duplication; repair mode re-normalizes sessions with stale or missing fields
+- [x] **SESS-05**: Raw session content is stored in the operational SQLite database, not in the curated Obsidian vault; secret redaction (API keys, tokens, .env values, auth headers, PEM keys) runs before any summary or writeback is generated; sessions with redaction failures are held with a flag and excluded from writeback candidates; per-provider ignore-path patterns and retention policies are configurable
+- [x] **SESS-06**: Each imported session produces a structured `SessionSummary` with 16 defined fields: what I was trying to do, project/repo involved, important context used, decisions made, files/modules touched, commands/tools used, bugs/failures encountered, successful fixes, unresolved follow-ups, reusable patterns, candidate skills to extract, whether to update a truth file, whether to create an Obsidian note, confidence, source provenance, and writeback proposal status
+- [x] **SESS-07**: Session writeback follows the governed proposal flow (proposal → approval → vault mutation); raw transcripts and reasoning traces never appear in writeback candidate content; truth file update proposals are generated only for high-confidence sessions that clearly changed project state; skillification candidates are detected when the same pattern appears in 3+ sessions across any providers within 30 days
+- [x] **SESS-08**: The CLI exposes `aios sessions sync`, `status`, `backfill`, `repair`, and `debug` sub-commands; a cron-friendly wrapper script runs all-provider sync hourly; operator documentation covers all four providers with what is imported, what is not imported, default paths by OS, privacy warnings, backfill and sync instructions, debug instructions, and provider disable instructions; a `docs/backfills/session-provider-backfill.md` report is generated from a dry run on the live machine
 
 ### Code Quality Gates And Cross-Project Complexity Standards
 
@@ -268,14 +268,14 @@ None currently. The full operating-system vision is intentionally being planned 
 | MEM-06 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Complete |
 | MEM-07 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Complete |
 | MEM-08 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Complete |
-| SESS-01 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Pending |
-| SESS-02 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Pending |
-| SESS-03 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Pending |
-| SESS-04 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Pending |
-| SESS-05 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Pending |
-| SESS-06 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Pending |
-| SESS-07 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Pending |
-| SESS-08 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Pending |
+| SESS-01 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Complete |
+| SESS-02 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Complete |
+| SESS-03 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Complete |
+| SESS-04 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Complete |
+| SESS-05 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Complete |
+| SESS-06 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Complete |
+| SESS-07 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Complete |
+| SESS-08 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Complete |
 | QUAL-01 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Pending |
 | QUAL-02 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Pending |
 | QUAL-03 | Phase 14: Code Quality Gates And Cross-Project Complexity Standards | Pending |

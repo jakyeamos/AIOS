@@ -721,6 +721,8 @@ This milestone extends the AIOS data collection layer from a Claude/Codex-only i
 
 **Requirements:** SESS-01, SESS-02, SESS-03, SESS-04, SESS-05, SESS-06, SESS-07, SESS-08
 
+**Plans:** 8/8 plans complete
+
 **Detailed Scope:**
 - Audit the existing Claude/Codex ingestion pipeline (entry points, DB schema, dedup strategy, writeback flow, abstraction gaps)
 - Introduce `SessionProvider` abstract interface with nine methods and a `NormalizedSession` model; wrap Claude and Codex as conforming providers without changing their behavior
