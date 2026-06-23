@@ -24,7 +24,9 @@ from services.shadow_branch_runner import (  # noqa: E402
     cleanup_shadow_worktree,
     compute_shadow_branch_delta,
     create_shadow_worktree,
+    list_shadow_parity_metadata,
     shadow_branch_name,
+    update_shadow_parity_metadata,
     verify_no_contamination,
 )
 
@@ -168,3 +170,42 @@ def test_shadow_branch_schema_available_with_eval_scores() -> None:
     row = conn.execute("SELECT overall_score FROM eval_scores WHERE run_id = ?", (run_id,)).fetchone()
 
     assert row["overall_score"] == 0.7
+
+
+def test_shadow_parity_metadata_is_queryable_without_branch_mutation() -> None:
+    conn = _connect()
+    shadow_run_id = "shadow-run-1"
+    conn.execute(
+        """
+        INSERT INTO shadow_branch_runs (
+          id, task_id, condition, start_sha, baseline_branch, aios_branch,
+          worktree_path, contamination_check_passed, created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)
+        """,
+        (
+            shadow_run_id,
+            "task-1",
+            "peer_repo_only",
+            "abc123",
+            "main",
+            "aios/eval/task/peer-repo-only",
+            "/tmp/worktree",
+            "2026-06-23T00:00:00Z",
+        ),
+    )
+
+    update_shadow_parity_metadata(
+        conn,
+        shadow_run_id=shadow_run_id,
+        comparison_refs={"diff": "diff.txt", "tests": "pytest.txt"},
+        parity_checklist_status="needs_review",
+        failure_classification="weak_verification",
+        replay_command="uv run pytest -q",
+    )
+    rows = list_shadow_parity_metadata(conn, task_id="task-1")
+
+    assert rows[0]["id"] == shadow_run_id
+    assert rows[0]["comparison_refs"] == {"diff": "diff.txt", "tests": "pytest.txt"}
+    assert rows[0]["parity_checklist_status"] == "needs_review"
+    assert rows[0]["replay_command"] == "uv run pytest -q"

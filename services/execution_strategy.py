@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+import sqlite3
+import uuid
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -157,6 +160,10 @@ class StrategyCandidate:
     status: str
     strategy_version: str
     rank: int
+
+
+def _now_iso() -> str:
+    return datetime.now(UTC).isoformat()
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -753,3 +760,103 @@ def build_strategy_registry_snapshot(
         "task_family_count": len(task_specs),
         "strategy_selection": rows,
     }
+
+
+def ensure_model_selection_schema(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS model_selection_records (
+          id TEXT PRIMARY KEY,
+          task_id TEXT NOT NULL,
+          phase TEXT,
+          task_type TEXT NOT NULL,
+          selected_model TEXT NOT NULL,
+          reasoning_level TEXT NOT NULL,
+          selection_reason TEXT NOT NULL,
+          fallback_model TEXT,
+          tokens_used INTEGER,
+          cost_estimate REAL,
+          latency_ms INTEGER,
+          outcome TEXT,
+          caveat TEXT,
+          created_at TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_model_selection_records_task
+          ON model_selection_records(task_id, created_at DESC)
+        """
+    )
+
+
+def record_model_selection(
+    conn: sqlite3.Connection,
+    *,
+    task_id: str,
+    phase: str | None,
+    task_type: str,
+    selected_model: str,
+    reasoning_level: str,
+    selection_reason: str,
+    fallback_model: str | None = None,
+    tokens_used: int | None = None,
+    cost_estimate: float | None = None,
+    latency_ms: int | None = None,
+    outcome: str | None = None,
+    caveat: str | None = None,
+) -> str:
+    ensure_model_selection_schema(conn)
+    record_id = f"model-selection-{uuid.uuid4()}"
+    conn.execute(
+        """
+        INSERT INTO model_selection_records (
+          id, task_id, phase, task_type, selected_model, reasoning_level,
+          selection_reason, fallback_model, tokens_used, cost_estimate,
+          latency_ms, outcome, caveat, created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            record_id,
+            task_id,
+            phase,
+            task_type,
+            selected_model,
+            reasoning_level,
+            selection_reason,
+            fallback_model,
+            tokens_used,
+            cost_estimate,
+            latency_ms,
+            outcome,
+            caveat,
+            _now_iso(),
+        ),
+    )
+    return record_id
+
+
+def list_model_selection_records(
+    conn: sqlite3.Connection, *, task_id: str | None = None
+) -> list[dict[str, Any]]:
+    ensure_model_selection_schema(conn)
+    params: tuple[str, ...] = ()
+    where = ""
+    if task_id:
+        where = "WHERE task_id = ?"
+        params = (task_id,)
+    return [
+        dict(row)
+        for row in conn.execute(
+            f"""
+            SELECT *
+            FROM model_selection_records
+            {where}
+            ORDER BY created_at DESC
+            LIMIT 100
+            """,
+            params,
+        ).fetchall()
+    ]

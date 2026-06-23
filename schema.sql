@@ -1171,9 +1171,50 @@ CREATE TABLE IF NOT EXISTS shadow_branch_runs (
   test_delta_json TEXT,
   shadow_branch_delta REAL,
   comparison_report_path TEXT,
+  comparison_refs_json TEXT NOT NULL DEFAULT '{}',
+  parity_checklist_status TEXT,
+  failure_classification TEXT,
+  replay_command TEXT,
+  replay_unavailable_reason TEXT,
   contamination_check_passed INTEGER NOT NULL DEFAULT 0,
   created_at TEXT
 );
+CREATE TABLE IF NOT EXISTS retrospective_artifacts (
+  id TEXT PRIMARY KEY,
+  task_id TEXT NOT NULL,
+  outcome TEXT NOT NULL,
+  failed_phase TEXT,
+  root_cause_category TEXT NOT NULL,
+  evidence_refs_json TEXT NOT NULL DEFAULT '[]',
+  harness_gap TEXT NOT NULL,
+  proposed_change TEXT NOT NULL,
+  target_file_or_component TEXT NOT NULL,
+  risk TEXT NOT NULL,
+  auto_apply INTEGER NOT NULL DEFAULT 0,
+  should_become TEXT NOT NULL,
+  learning_proposal_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_retrospective_artifacts_task
+  ON retrospective_artifacts(task_id, created_at DESC);
+CREATE TABLE IF NOT EXISTS model_selection_records (
+  id TEXT PRIMARY KEY,
+  task_id TEXT NOT NULL,
+  phase TEXT,
+  task_type TEXT NOT NULL,
+  selected_model TEXT NOT NULL,
+  reasoning_level TEXT NOT NULL,
+  selection_reason TEXT NOT NULL,
+  fallback_model TEXT,
+  tokens_used INTEGER,
+  cost_estimate REAL,
+  latency_ms INTEGER,
+  outcome TEXT,
+  caveat TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_model_selection_records_task
+  ON model_selection_records(task_id, created_at DESC);
 CREATE TABLE IF NOT EXISTS peer_sessions (
   id TEXT PRIMARY KEY,
   anonymous_peer_id TEXT NOT NULL,

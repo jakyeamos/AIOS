@@ -60,11 +60,27 @@ def ensure_shadow_branch_schema(conn: sqlite3.Connection) -> None:
           test_delta_json TEXT,
           shadow_branch_delta REAL,
           comparison_report_path TEXT,
+          comparison_refs_json TEXT NOT NULL DEFAULT '{}',
+          parity_checklist_status TEXT,
+          failure_classification TEXT,
+          replay_command TEXT,
+          replay_unavailable_reason TEXT,
           contamination_check_passed INTEGER NOT NULL DEFAULT 0,
           created_at TEXT
         );
         """
     )
+    columns = {str(row["name"]) for row in conn.execute("PRAGMA table_info(shadow_branch_runs)")}
+    additions = {
+        "comparison_refs_json": "TEXT NOT NULL DEFAULT '{}'",
+        "parity_checklist_status": "TEXT",
+        "failure_classification": "TEXT",
+        "replay_command": "TEXT",
+        "replay_unavailable_reason": "TEXT",
+    }
+    for column, ddl in additions.items():
+        if column not in columns:
+            conn.execute(f"ALTER TABLE shadow_branch_runs ADD COLUMN {column} {ddl}")
 
 
 def shadow_branch_name(*, task_id: str, condition: str) -> str:
@@ -179,6 +195,74 @@ def record_shadow_branch_run(
         (run_id, task_id, condition, start_sha, aios_branch, worktree_path, _now_iso()),
     )
     return run_id
+
+
+def update_shadow_parity_metadata(
+    conn: sqlite3.Connection,
+    *,
+    shadow_run_id: str,
+    baseline_branch: str | None = None,
+    comparison_refs: dict[str, Any] | None = None,
+    parity_checklist_status: str,
+    failure_classification: str | None = None,
+    replay_command: str | None = None,
+    replay_unavailable_reason: str | None = None,
+) -> None:
+    ensure_shadow_branch_schema(conn)
+    if replay_command and replay_unavailable_reason:
+        raise ValueError("Provide replay_command or replay_unavailable_reason, not both.")
+    conn.execute(
+        """
+        UPDATE shadow_branch_runs
+        SET baseline_branch = COALESCE(?, baseline_branch),
+            comparison_refs_json = ?,
+            parity_checklist_status = ?,
+            failure_classification = ?,
+            replay_command = ?,
+            replay_unavailable_reason = ?
+        WHERE id = ?
+        """,
+        (
+            baseline_branch,
+            json.dumps(comparison_refs or {}, sort_keys=True),
+            parity_checklist_status,
+            failure_classification,
+            replay_command,
+            replay_unavailable_reason,
+            shadow_run_id,
+        ),
+    )
+
+
+def list_shadow_parity_metadata(
+    conn: sqlite3.Connection, *, task_id: str | None = None
+) -> list[dict[str, Any]]:
+    ensure_shadow_branch_schema(conn)
+    params: tuple[str, ...] = ()
+    where = ""
+    if task_id:
+        where = "WHERE task_id = ?"
+        params = (task_id,)
+    return [
+        {
+            **dict(row),
+            "comparison_refs": json.loads(row["comparison_refs_json"] or "{}"),
+        }
+        for row in conn.execute(
+            f"""
+            SELECT id, task_id, condition, start_sha, baseline_branch, aios_branch,
+                   worktree_path, diff_stat_json, test_delta_json, comparison_report_path,
+                   comparison_refs_json, parity_checklist_status, failure_classification,
+                   replay_command, replay_unavailable_reason, contamination_check_passed,
+                   created_at
+            FROM shadow_branch_runs
+            {where}
+            ORDER BY created_at DESC
+            LIMIT 100
+            """,
+            params,
+        ).fetchall()
+    ]
 
 
 def compare_shadow_runs(

@@ -32,6 +32,7 @@ from services.eval_run_service import (
     list_eval_runs,
 )
 from services.evidence_artifacts import list_evidence_artifacts, validate_fresh_evidence
+from services.execution_strategy import list_model_selection_records
 from services.external_benchmark_adapter import (
     normalize_external_result,
     to_swe_bench_format,
@@ -73,6 +74,7 @@ from services.pre_pr_readiness import (
 )
 from services.project_health_proof import DEFAULT_PROVING_PROJECTS, prove_project_health
 from services.quality_gates import run_gate as run_quality_gate
+from services.retrospective_artifacts import list_retrospective_artifacts
 from services.rtk_integration import (
     classify_rtk_metrics,
     ensure_rtk_schema,
@@ -93,6 +95,7 @@ from services.shadow_branch_runner import (
     cleanup_shadow_worktree,
     compare_shadow_runs,
     create_shadow_worktree,
+    list_shadow_parity_metadata,
     record_shadow_branch_run,
     shadow_branch_name,
 )
@@ -2851,6 +2854,21 @@ def cmd_shadow_compare(conn: sqlite3.Connection, args: argparse.Namespace) -> di
     return result
 
 
+def _retrospective_payload(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    artifacts = list_retrospective_artifacts(conn, task_id=args.task_id)
+    return {"artifacts": artifacts, "count": len(artifacts)}
+
+
+def _model_selection_payload(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    records = list_model_selection_records(conn, task_id=args.task_id)
+    return {"records": records, "count": len(records)}
+
+
+def cmd_shadow_parity(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    rows = list_shadow_parity_metadata(conn, task_id=args.task_id)
+    return {"shadow_parity": rows, "count": len(rows)}
+
+
 def cmd_shadow_cleanup(args: argparse.Namespace) -> dict[str, Any]:
     cleanup_shadow_worktree(
         worktree_path=Path(args.worktree_path).resolve(),
@@ -4644,6 +4662,18 @@ def create_parser() -> argparse.ArgumentParser:
     workflow_gates.add_argument("--workflow", default=None)
     workflow_gates.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
+    retrospective_parser = subparsers.add_parser(
+        "retrospectives", help="Inspect structured retrospective artifacts"
+    )
+    retrospective_parser.add_argument("--task-id", default=None)
+    retrospective_parser.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    model_selection_parser = subparsers.add_parser(
+        "model-selection", help="Inspect model-selection telemetry records"
+    )
+    model_selection_parser.add_argument("--task-id", default=None)
+    model_selection_parser.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
     evidence_parser = subparsers.add_parser(
         "evidence", help="Inspect durable command evidence artifacts"
     )
@@ -4785,6 +4815,12 @@ def create_parser() -> argparse.ArgumentParser:
     shadow_compare.add_argument("--shadow-run-id", required=True)
     shadow_compare.add_argument("--baseline-run-id", required=True)
     shadow_compare.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    shadow_parity = shadow_subparsers.add_parser(
+        "parity", help="Inspect shadow branch parity metadata"
+    )
+    shadow_parity.add_argument("--task-id", default=None)
+    shadow_parity.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     shadow_cleanup = shadow_subparsers.add_parser(
         "cleanup", help="Remove an isolated eval worktree"
@@ -5272,6 +5308,8 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "lifecycle-audit",
             "knowledge-objects",
             "workflow-learning-audit",
+            "retrospectives",
+            "model-selection",
             "evidence",
             "verifier",
             "learning-analyze",
@@ -5355,6 +5393,12 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             data = _workflow_learning_payload(conn)
         elif args.command == "workflow-gates":
             data = _workflow_gates_payload(args)
+        elif args.command == "retrospectives":
+            assert conn is not None
+            data = _retrospective_payload(conn, args)
+        elif args.command == "model-selection":
+            assert conn is not None
+            data = _model_selection_payload(conn, args)
         elif args.command == "evidence":
             assert conn is not None
             data = _evidence_payload(conn, args)
@@ -5474,6 +5518,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "shadow" and args.shadow_command == "compare":
             assert conn is not None
             data = cmd_shadow_compare(conn, args)
+        elif args.command == "shadow" and args.shadow_command == "parity":
+            assert conn is not None
+            data = cmd_shadow_parity(conn, args)
         elif args.command == "shadow" and args.shadow_command == "cleanup":
             data = cmd_shadow_cleanup(args)
         elif args.command == "shadow" and args.shadow_command == "score":

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sqlite3
 import sys
 from pathlib import Path
 
@@ -12,11 +13,13 @@ from services.execution_strategy import (  # noqa: E402
     StrategySelectionError,
     build_strategy_registry_snapshot,
     compile_execution_strategy,
+    list_model_selection_records,
     list_strategy_candidates,
     load_model_routing_policy,
     load_strategy_catalog,
     load_task_specs,
     recommend_execution_surface,
+    record_model_selection,
     validate_model_routing_policy,
     validate_strategy_catalog,
 )
@@ -106,3 +109,31 @@ def test_recommend_execution_surface_prefers_codex_first() -> None:
     assert recommendation["selected_surface"] == "codex"
     assert recommendation["selected_strategy_id"] == "audit_and_implement_codex_v1"
     assert recommendation["alternatives"][0]["surface"] == "claude_code"
+
+
+def test_model_selection_records_allow_unavailable_cost_and_token_data() -> None:
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+
+    record_id = record_model_selection(
+        conn,
+        task_id="task-1",
+        phase="16-06",
+        task_type="multi_file_feature_implementation",
+        selected_model="gpt-5-codex",
+        reasoning_level="high",
+        selection_reason="Non-trivial multi-file harness persistence change.",
+        fallback_model=None,
+        tokens_used=None,
+        cost_estimate=None,
+        latency_ms=None,
+        outcome="success",
+        caveat="Provider did not expose token or cost usage.",
+    )
+
+    rows = list_model_selection_records(conn, task_id="task-1")
+
+    assert rows[0]["id"] == record_id
+    assert rows[0]["tokens_used"] is None
+    assert rows[0]["cost_estimate"] is None
+    assert rows[0]["caveat"] == "Provider did not expose token or cost usage."
