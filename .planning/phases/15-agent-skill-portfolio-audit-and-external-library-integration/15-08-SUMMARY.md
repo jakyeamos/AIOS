@@ -11,6 +11,7 @@ The skill produces compact cold-start briefs for the next session, saves readabl
 - `services/handoff_store.py` provides `write_handoff(...)` and `list_handoffs(project=None, limit=10)`.
 - `schema.sql` now includes the `handoffs` table and indexes as checked-in schema authority.
 - The skill includes `handoff-store` and `issues-reference` markers linking it to local AIOS storage and the Plan 15-05 to-issues store.
+- A 2026-06-23 correction pass aligned the skill frontmatter with the exact required trigger phrases: `create a handoff`, `I'm done for now`, `hand this off to another agent`, `context for next session`, `end of session summary`, `pick this up later`, and `continue this in a new session`.
 - Existing GSD pause/resume/thread skills were read before creating the global skill.
 
 ## Verification
@@ -22,6 +23,7 @@ The skill produces compact cold-start briefs for the next session, saves readabl
 - `node /Users/jakyeamos/.claude/get-shit-done/bin/gsd-tools.cjs verify key-links .planning/phases/15-agent-skill-portfolio-audit-and-external-library-integration/15-08-PLAN.md` passed.
 - `node /Users/jakyeamos/.claude/get-shit-done/bin/gsd-tools.cjs verify phase-completeness 15` passed with 8 plans, 8 summaries, no incomplete plans, and no orphan summaries.
 - `rg` confirmed start-here, intended-focus, suggested-skills, files-to-read-first, redaction, handoff-store, and issues-reference content in the global skill.
+- `rg` confirmed all required trigger phrases are present in the global skill description.
 - `git diff --check` passed.
 
 ## Notes
