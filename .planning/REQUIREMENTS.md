@@ -156,7 +156,7 @@
 - [x] **META-04**: AIOS routes accepted signals to the right target layer: global rule, project rule, skill instruction, command, agent/sub-agent suggestion, second-brain note, eval/test case, or observe-only, with justification and project-vs-global safeguards
 - [x] **META-05**: AIOS generates reviewable meta-learning proposals with stable IDs, target layer/file, confidence, risk, evidence, layer justification, proposed patch or markdown, rollback instructions, manual approval requirement, and explicit conflict resolution output
 - [x] **META-06**: AIOS separates auto-allow permission recommendations from ordinary learning proposals and scores them by read/write capability, filesystem and network access, credential exposure, destructive potential, reversibility, repo sensitivity, sandboxability, and dry-run support; dangerous actions are never auto-allowed by default
-- [ ] **META-07**: AIOS generates shadow-branch eval plans for medium/high-impact proposals and exposes a minimal `aios meta` command interface for audit, session analysis, proposal listing, approval/rejection, and eval plan generation, or equivalent script fallback
+- [x] **META-07**: AIOS generates shadow-branch eval plans for medium/high-impact proposals and exposes a minimal `aios meta` command interface for audit, session analysis, proposal listing, approval/rejection, and eval plan generation, or equivalent script fallback
 - [ ] **META-08**: AIOS documents the meta-learning layer, routing policy, scoring policy, auto-allow safety, proposal format, limitations, and tests for correction detection, scoring, routing, conflicts, proposal formatting, auto-allow risk, and shadow eval planning
 
 ### Native Workflow Command Pack
@@ -314,7 +314,7 @@ None currently. The full operating-system vision is intentionally being planned 
 | META-04 | Phase 18: Meta-Learning Proposal Layer | Complete |
 | META-05 | Phase 18: Meta-Learning Proposal Layer | Complete |
 | META-06 | Phase 18: Meta-Learning Proposal Layer | Complete |
-| META-07 | Phase 18: Meta-Learning Proposal Layer | Pending |
+| META-07 | Phase 18: Meta-Learning Proposal Layer | Complete |
 | META-08 | Phase 18: Meta-Learning Proposal Layer | Pending |
 | CMDP-01 | Phase 19: Native Workflow Command Pack | Pending |
 | CMDP-02 | Phase 19: Native Workflow Command Pack | Pending |

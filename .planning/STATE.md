@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-last_updated: "2026-06-23T23:35:00.000Z"
+last_updated: "2026-06-23T23:50:00.000Z"
 progress:
   total_phases: 22
   completed_phases: 17
@@ -26,13 +26,13 @@ progress:
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
 - Latest completed phase: Phase 17, Developer Experience Capability Pack, shipped routed DX capabilities, dynamic mode/model metadata, eval fixtures, and developer-first documentation.
-- Latest completed plan: Phase 18 Plan 18-05 added separated auto-allow risk scoring and permission recommendation policy.
+- Latest completed plan: Phase 18 Plan 18-06 added shadow eval plans and a fallback meta-learning CLI surface.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 13, Meta-Learning Proposal Layer
 - Active phase: Phase 18, Meta-Learning Proposal Layer
-- Active plan: Phase 18 Plan 18-06
+- Active plan: Phase 18 Plan 18-07
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17
 - Next dependency chain: Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
@@ -52,6 +52,7 @@ progress:
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-06-23 | Complete Phase 18 Plan 18-06 shadow eval plans and meta CLI fallback | `.planning/phases/18-meta-learning-proposal-layer/18-06-SUMMARY.md` records `services/meta_learning_shadow_eval.py`, `services/meta_learning_cli.py`, `scripts/meta-learning-cli.py`, medium/high-impact promotion gating, required eval metrics, fallback command parsing for analyze-session/proposals/eval, and focused coverage for META-07. |
 | 2026-06-23 | Complete Phase 18 Plan 18-05 auto-allow safety gate | `.planning/phases/18-meta-learning-proposal-layer/18-05-SUMMARY.md` records `services/meta_learning_auto_allow.py`, separated auto-allow recommendation channel, read-only/test/lint safe-to-suggest classification, manual review for write/git/package/network/dynamic commands, never-auto-allow destructive/secret/deploy/external-write classifications, and focused coverage for META-06. |
 | 2026-06-23 | Complete Phase 18 Plan 18-04 meta-learning proposal generator | `.planning/phases/18-meta-learning-proposal-layer/18-04-SUMMARY.md` records `services/meta_learning_proposals.py`, file-backed JSONL proposal persistence, stable proposal IDs, review-only generated patches, rollback text, conflict records, and focused proposal tests for META-05. |
 | 2026-06-23 | Complete Phase 18 Plan 18-03 meta-learning scoring and routing | `.planning/phases/18-meta-learning-proposal-layer/18-03-SUMMARY.md` records `services/meta_learning_scoring.py`, `services/meta_learning_router.py`, weighted confidence bands, four-question quality filtering, risk flags, conflict handling, project-vs-global safeguards, and focused scoring/routing coverage for META-03 and META-04. |
@@ -158,4 +159,4 @@ progress:
 | 2026-06-02 | Complete Phase 10 Plan 08 quality hotspot backfill baseline | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-08-SUMMARY.md` records `pnpm quality:eval`, the read-only hotspot detection script, and the first factual Agent Eval backfill inventory for Python services, CLI scripts, tests, aios-ui, config, and eval docs. |
 
 ---
-*Last updated: 2026-06-23 after completing Phase 18 Plan 18-05 and advancing to Phase 18 Plan 18-06*
+*Last updated: 2026-06-23 after completing Phase 18 Plan 18-06 and advancing to Phase 18 Plan 18-07*
