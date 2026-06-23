@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-06-22
+Last updated: 2026-06-23
 
 ## What AIOS Is
 
@@ -105,6 +105,14 @@ AIOS success criteria now include diff-scoped quality gates for pre-PR review an
 - success-criteria resolution now infers UI, accessibility, performance, dependency, data, migration, API contract, complexity, resilience, and product domains from objective text and changed files
 - hard-blocker heuristics now cover package-manager drift, missing critical test/execution evidence, data/API changes without integrity evidence, complexity-risk changes without benchmark/fixture evidence, and session-close code claims without validation evidence
 - the success-criteria index documents Pre-PR gate mode, Adoption/backfill mode, and diff-scoped routing so UI, DB, auth, algorithm, dependency, and large agent-generated changes get the right gates without turning every task into a universal checklist
+
+AIOS now owns a global allowlisted project quality-gate runner:
+
+- `config/quality-gates.json` registers known gate IDs and vetted argv arrays per project, with Soundscape mapped to `trusted_tests`, `architecture`, and `pre_cr`
+- repo-local `.aios-quality-gate.json` files declare only gate IDs; they cannot provide shell commands
+- `bin/user-commit-quality-gate.py` blocks registered source commits when the local gate contract is missing, malformed, unknown, or failing, after the existing Pre-CR requirement
+- `python3 bin/aios.py --json gate run <gate_id> --project <project_id> --repo-root <path>` runs a single allowlisted adapter for pre-commit or full mode
+- `services.commit_quality_ladder` now verifies that AIOS itself has the allowlisted quality-gate registry and local contract, making this an AIOS quality-ladder gate
 
 ## Implemented On 2026-06-22
 

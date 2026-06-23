@@ -1003,6 +1003,40 @@ def test_pre_pr_readiness_json(monkeypatch, capsys) -> None:
     assert payload["data"]["status"] == "pass"
 
 
+def test_gate_run_json(monkeypatch, capsys, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        aios_cli,
+        "run_quality_gate",
+        lambda **_: {
+            "status": "pass",
+            "projectId": "demo",
+            "gateId": "trusted_tests",
+            "mode": "pre-commit",
+            "summary": "trusted_tests passed",
+            "commands": [],
+        },
+    )
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "gate",
+            "run",
+            "trusted_tests",
+            "--project",
+            "demo",
+            "--repo-root",
+            str(tmp_path),
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ok"] is True
+    assert payload["command"] == "gate-run"
+    assert payload["data"]["gateId"] == "trusted_tests"
+
+
 def test_capability_audit_reports_missing_and_no_data_signals(tmp_path: Path, capsys) -> None:
     db_path = tmp_path / "aios.db"
     logs_dir = tmp_path / "logs"

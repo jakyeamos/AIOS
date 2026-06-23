@@ -112,6 +112,15 @@ UV_CACHE_DIR=/tmp/uv-cache uv run python bin/aios.py --json pre-pr-readiness
 
 This gate shells into the built `pre-cr-suite-lsp` server at `/Users/jakyeamos/projects/pre-cr-suite-lsp`, runs the repo-level `.pre-cr.json`, and fails if the current diff touches unsupported JS/TS or shell surfaces that AIOS does not yet cover with `pre-cr`.
 
+Allowlisted project quality gate runner:
+
+```bash
+cd /Users/jakyeamos/AIOS
+python3 bin/aios.py --json gate run trusted_tests --project soundscape-app --repo-root /Users/jakyeamos/projects/soundscape-app
+```
+
+Linked projects declare only gate IDs in `.aios-quality-gate.json`. Executable argv arrays live in AIOS-owned `config/quality-gates.json`; the global user commit hook rejects missing, malformed, or unknown gate declarations for registered source commits and never executes shell from repo-local config.
+
 Python test suite:
 
 ```bash

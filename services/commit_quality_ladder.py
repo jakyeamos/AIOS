@@ -12,6 +12,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONTEXT_ROOT = REPO_ROOT / "aios" / "context"
 SUCCESS_CRITERIA_REGISTRY = REPO_ROOT / "config" / "success-criteria" / "registry.json"
 QUALITY_PIPELINE_CONFIG = REPO_ROOT / "config" / "quality-pipeline.json"
+QUALITY_GATES_CONFIG = REPO_ROOT / "config" / "quality-gates.json"
 STANDARDS_REGISTRY = REPO_ROOT / "config" / "standards" / "registry.json"
 
 CHECK_STATUS = Literal["pass", "fail", "skip"]
@@ -51,6 +52,7 @@ def run_ladder(
         check_standards_health_registry(repo_root),
         check_success_criteria_registry(repo_root),
         check_quality_pipeline_includes_aios(repo_root),
+        check_quality_gate_registry(repo_root),
         check_confident_event_loop_ordering(repo_root, files),
     ]
     if run_context_validation:
@@ -298,6 +300,76 @@ def check_quality_pipeline_includes_aios(repo_root: Path) -> LadderCheck:
         "AIOS quality pipeline covers required gates",
         "pass",
         f"{len(gate_keys)} quality gate(s) registered.",
+    )
+
+
+def check_quality_gate_registry(repo_root: Path) -> LadderCheck:
+    registry_path = repo_root / QUALITY_GATES_CONFIG.relative_to(REPO_ROOT)
+    contract_path = repo_root / ".aios-quality-gate.json"
+    if not registry_path.exists():
+        return LadderCheck(
+            "quality_gates.registry",
+            "AIOS allowlisted quality gates are registered",
+            "fail",
+            "config/quality-gates.json is missing.",
+        )
+    if not contract_path.exists():
+        return LadderCheck(
+            "quality_gates.registry",
+            "AIOS allowlisted quality gates are registered",
+            "fail",
+            ".aios-quality-gate.json is missing.",
+        )
+    registry = _json_file(registry_path)
+    contract = _json_file(contract_path)
+    known_gates = registry.get("knownGates") if isinstance(registry.get("knownGates"), list) else []
+    projects = registry.get("projects") if isinstance(registry.get("projects"), list) else []
+    failures: list[str] = []
+    for required in ("trusted_tests", "architecture", "pre_cr"):
+        if required not in known_gates:
+            failures.append(f"known gate missing: {required}")
+    aios_project = next(
+        (
+            project
+            for project in projects
+            if isinstance(project, dict) and project.get("projectId") == "aios"
+        ),
+        None,
+    )
+    if aios_project is None:
+        failures.append("quality gate registry has no projectId=aios entry")
+    else:
+        configured = aios_project.get("gates") if isinstance(aios_project.get("gates"), dict) else {}
+        for required in ("trusted_tests", "architecture", "pre_cr"):
+            gate = configured.get(required) if isinstance(configured.get(required), dict) else None
+            if gate is None:
+                failures.append(f"aios gate not configured: {required}")
+                continue
+            if not isinstance(gate.get("preCommitCommands"), list):
+                failures.append(f"aios gate missing preCommitCommands: {required}")
+    if contract.get("projectId") != "aios":
+        failures.append(".aios-quality-gate.json projectId must be aios")
+    declared = contract.get("preCommitGates")
+    if not isinstance(declared, list):
+        failures.append(".aios-quality-gate.json preCommitGates must be a list")
+    else:
+        for required in ("trusted_tests", "architecture", "pre_cr"):
+            if required not in declared:
+                failures.append(f".aios-quality-gate.json missing preCommit gate: {required}")
+    if failures:
+        return LadderCheck(
+            "quality_gates.registry",
+            "AIOS allowlisted quality gates are registered",
+            "fail",
+            "AIOS quality gate registry is incomplete.",
+            tuple(failures),
+        )
+    return LadderCheck(
+        "quality_gates.registry",
+        "AIOS allowlisted quality gates are registered",
+        "pass",
+        "AIOS quality gates require named allowlisted adapters.",
+        tuple(str(gate) for gate in known_gates),
     )
 
 

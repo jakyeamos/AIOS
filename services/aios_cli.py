@@ -71,6 +71,7 @@ from services.pre_pr_readiness import (
     DEFAULT_TIMEOUT_SECONDS as DEFAULT_PRE_PR_TIMEOUT_SECONDS,
 )
 from services.project_health_proof import DEFAULT_PROVING_PROJECTS, prove_project_health
+from services.quality_gates import run_gate as run_quality_gate
 from services.rtk_integration import (
     classify_rtk_metrics,
     ensure_rtk_schema,
@@ -4491,6 +4492,9 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command.startswith("benchmark-"):
         print(json.dumps(data, sort_keys=True))
         return
+    if command == "gate-run":
+        print(f"status={data['status']} gate={data['gateId']} summary={data['summary']}")
+        return
 
 
 def _command_name(args: argparse.Namespace) -> str:
@@ -4506,6 +4510,8 @@ def _command_name(args: argparse.Namespace) -> str:
         return f"packet-{args.packet_command}"
     if args.command == "benchmark":
         return f"benchmark-{args.benchmark_command}"
+    if args.command == "gate":
+        return f"gate-{args.gate_command}"
     if args.command == "skills":
         return f"skills-{args.skills_command}"
     if args.command == "corpus":
@@ -5033,6 +5039,19 @@ def create_parser() -> argparse.ArgumentParser:
         help="Timeout for the readiness run",
     )
 
+    gate = subparsers.add_parser("gate", help="Run AIOS allowlisted project gates")
+    gate_subparsers = gate.add_subparsers(dest="gate_command", required=True)
+    gate_run = gate_subparsers.add_parser("run", help="Run one named quality gate")
+    gate_run.add_argument("gate_id", help="Named gate id, e.g. trusted_tests")
+    gate_run.add_argument("--project", required=True, help="AIOS quality-gates project id")
+    gate_run.add_argument("--repo-root", default=".", help="Repository root to run from")
+    gate_run.add_argument(
+        "--mode",
+        choices=["pre-commit", "full"],
+        default="pre-commit",
+        help="Gate command set to run",
+    )
+
     skills_parser = subparsers.add_parser("skills", help="Instruction/skills registry surfaces")
     skills_subparsers = skills_parser.add_subparsers(dest="skills_command", required=True)
 
@@ -5430,6 +5449,19 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
                 server_entry=args.server_entry,
                 timeout_seconds=max(1, int(args.timeout_seconds)),
             )
+        elif args.command == "gate" and args.gate_command == "run":
+            data = run_quality_gate(
+                project_id=args.project,
+                gate_id=args.gate_id,
+                mode=args.mode,
+                repo_root=Path(args.repo_root).expanduser().resolve(),
+            )
+            if data["status"] == "fail":
+                raise CLIError(
+                    "gate-failed",
+                    str(data["summary"]),
+                    EXIT_RUNTIME,
+                )
         elif args.command == "skills" and args.skills_command == "status":
             data = _instruction_status(config_root, vault_root, project_id=args.project)
         elif args.command == "skills" and args.skills_command == "refresh":

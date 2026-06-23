@@ -5,6 +5,7 @@ import json
 import re
 import shutil
 import subprocess
+import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -72,6 +73,11 @@ PRE_CR_SOURCE_EXTENSIONS = {
     ".rs",
     ".swift",
 }
+AIOS_ROOT = Path(__file__).resolve().parents[1]
+if str(AIOS_ROOT) not in sys.path:
+    sys.path.insert(0, str(AIOS_ROOT))
+
+from services.quality_gates import validate_commit_quality_gate  # noqa: E402
 
 
 @dataclass(frozen=True)
@@ -420,6 +426,10 @@ def run_gate(paths: Sequence[str] | None = None) -> list[Finding]:
         findings.extend(find_weak_python_test(path, text))
         findings.extend(find_handler_before_send(path, text))
     findings.extend(check_pre_cr_requirement(root, selected_paths))
+    findings.extend(
+        Finding(finding.path, finding.line, finding.rule, finding.message)
+        for finding in validate_commit_quality_gate(root, selected_paths)
+    )
     return findings
 
 

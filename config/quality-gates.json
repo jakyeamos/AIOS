@@ -1,0 +1,150 @@
+{
+  "version": 1,
+  "knownGates": [
+    "trusted_tests",
+    "architecture",
+    "pre_cr"
+  ],
+  "projects": [
+    {
+      "projectId": "aios",
+      "roots": [
+        "/Users/jakyeamos/AIOS"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "trusted_tests": {
+          "preCommitCommands": [
+            [
+              "uv",
+              "run",
+              "pytest",
+              "-q",
+              "tests/test_user_commit_quality_gate.py",
+              "tests/test_commit_quality_ladder.py",
+              "tests/test_pre_pr_readiness.py"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "uv",
+              "run",
+              "pytest",
+              "-q"
+            ],
+            [
+              "node",
+              "--test",
+              "tests/context-compiler.test.mjs"
+            ]
+          ]
+        },
+        "architecture": {
+          "preCommitCommands": [
+            [
+              "uv",
+              "run",
+              "python",
+              "bin/architecture-enforcement.py",
+              "--project",
+              "aios"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "uv",
+              "run",
+              "python",
+              "bin/architecture-enforcement.py",
+              "--project",
+              "aios"
+            ]
+          ]
+        },
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "uv",
+              "run",
+              "python",
+              "bin/aios.py",
+              "--json",
+              "pre-pr-readiness"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "uv",
+              "run",
+              "python",
+              "bin/aios.py",
+              "--json",
+              "pre-pr-readiness"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "projectId": "soundscape-app",
+      "roots": [
+        "/Users/jakyeamos/projects/soundscape-app"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "trusted_tests": {
+          "preCommitCommands": [
+            [
+              "pnpm",
+              "test:inventory"
+            ],
+            [
+              "pnpm",
+              "test:scripts"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pnpm",
+              "test:trusted"
+            ]
+          ]
+        },
+        "architecture": {
+          "preCommitCommands": [
+            [
+              "node",
+              "scripts/aios-architecture-check.mjs"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "node",
+              "scripts/aios-architecture-check.mjs"
+            ]
+          ]
+        },
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        }
+      }
+    }
+  ]
+}
