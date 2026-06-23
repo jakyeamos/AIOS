@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-last_updated: "2026-06-24T00:02:30.000Z"
+last_updated: "2026-06-24T00:02:50.000Z"
 progress:
   total_phases: 22
   completed_phases: 20
   total_plans: 123
-  completed_plans: 111
+  completed_plans: 112
   percent: 90
 ---
 
@@ -26,13 +26,13 @@ progress:
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
 - Latest completed phase: Phase 20, Execution-Symmetric Planning, shipped workflow-aware, complexity-scaled, GSD-ready, lens-driven, skill-aware planning with structured context/logs and eval coverage.
-- Latest completed plan: Phase 20 Plan 20-08 added operator docs, eval docs, explicit lens and audit-to-implementation planner tests, and Phase 20 verification.
+- Latest completed plan: Phase 21 Plan 21-01 audited current AIOS skill, TMCP, router, manifest, provenance, permission-gate, dependency-map, and behavioral-test conventions for the macOS skill pack.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 16, macOS Native App Skill Pack
 - Active phase: Phase 21, macOS Native App Skill Pack
-- Active plan: Phase 21 Plan 21-01
+- Active plan: Phase 21 Plan 21-02
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20
 - Next dependency chain: Phase 21 -> Phase 22
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
@@ -52,6 +52,7 @@ progress:
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-06-23 | Complete Phase 21 Plan 21-01 AIOS skill-system audit | `docs/audits/aios-skill-system-macos-pack-audit.md` maps existing skill files, workflow skill registry, TMCP overlay manifest/router conventions, runtime/harvest provenance, permission gates, dependency maps, behavioral tests, missing lightweight conventions, and exact target paths for the macOS skill pack without adding broad always-loaded macOS context. |
 | 2026-06-23 | Complete Phase 20 Execution-Symmetric Planning | Phase 20 completed ESPL-01 through ESPL-08 with planning audit, complexity contract, GSD workflow detection, planning lenses, skill-as-planning-lens behavior, executor-ready plan generation, structured planning context/logs, docs, eval plan, and verification in `.planning/phases/20-execution-symmetric-planning/20-VERIFICATION.md`. |
 | 2026-06-23 | Complete Phase 20 Plan 20-08 evaluation coverage and documentation | `docs/aios/execution-symmetric-planning.md`, `docs/evals/execution-symmetric-planning-eval.md`, and extended planner tests cover natural-language planning, `/gsdplanphase`, explicit planning-lens requests, audit-to-implementation prompts, GSD handoff generation, simple non-overplanning, and complex/high-risk validation plus rollback planning. |
 | 2026-06-23 | Complete Phase 20 Plan 20-07 internal planning schema and logs | `services/planning_context.py`, `services/planning_log.py`, `bin/aios-managed-run.py`, `bin/hook-stop.py`, `tests/test_planning_context.py`, and `tests/test_planning_log.py` provide structured planning context fields, JSONL planning logs, execution-symmetric comparison axes, TMCP packet/receipt default contract metadata, explicit bypass metadata, and managed-runtime closeout handling without adding always-loaded rules or a new schema table. |
@@ -178,4 +179,4 @@ progress:
 | 2026-06-02 | Complete Phase 10 Plan 08 quality hotspot backfill baseline | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-08-SUMMARY.md` records `pnpm quality:eval`, the read-only hotspot detection script, and the first factual Agent Eval backfill inventory for Python services, CLI scripts, tests, aios-ui, config, and eval docs. |
 
 ---
-*Last updated: 2026-06-23 after completing Phase 20 and advancing to Phase 21 Plan 21-01*
+*Last updated: 2026-06-23 after completing Phase 21 Plan 21-01 and advancing to Phase 21 Plan 21-02*
