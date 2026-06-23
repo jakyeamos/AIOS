@@ -1,0 +1,3 @@
+{"sessionId": "cursor-jsonl-1", "workspacePath": "/Users/test/my-project", "title": "JSONL session", "role": "user", "text": "Run a task", "timestamp": "2026-06-23T11:00:00Z"}
+{"sessionId": "cursor-jsonl-1", "type": "tool", "command": "python -m pytest"}
+{"sessionId": "cursor-jsonl-1", "role": "assistant", "text": "Task complete", "timestamp": "2026-06-23T11:01:00Z"}

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "pytest tests/test_session_providers.py"
+  ],
+  "decisions": [
+    "Use metadata-only binary handling"
+  ],
+  "files": [
+    "services/session_providers/antigravity.py"
+  ],
+  "outcome": "passed",
+  "repo": "/Users/test/my-project",
+  "task": "Summarize Antigravity fixture"
+}
