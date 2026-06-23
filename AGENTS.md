@@ -29,6 +29,16 @@ Useful commands:
 3. Evaluate final changed files against applicable criteria before completion.
 4. Record blockers, warnings, passes, and accepted tradeoffs in durable artifacts.
 
+## Rule: Dependency And Lockfile Authority
+
+Do not infer project capabilities from `node_modules`; it is not authoritative. First determine the repo's canonical package manager from committed lockfiles, the `packageManager` field, CI config, and existing scripts.
+
+If `package-lock.json` exists and no `pnpm-lock.yaml` exists, use npm. Do not introduce `pnpm-lock.yaml` unless the task explicitly includes package-manager migration. Do not create multiple lockfiles, and do not add or remove dependencies casually.
+
+If required test coverage cannot be achieved with existing tooling, state the missing capability, check whether the dependency already exists in `package.json`, propose the minimal dependency addition if absent, explain why compile-only coverage is insufficient or acceptable, and do not silently downgrade test scope.
+
+If acceptance criteria require frontend behavior coverage, missing tooling is a blocker unless a minimal dependency addition is approved or implemented.
+
 ## Rule: Orchestrated Sub-Agent Development
 
 Prefer sub-agent-driven development for most non-trivial tasks. Use the orchestrator for task decomposition, routing, context control, supervision, quality gates, and final synthesis. Delegate execution to specialized subagents with the lowest-cost model tier and reasoning level likely to complete the task reliably.

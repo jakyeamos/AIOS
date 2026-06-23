@@ -95,3 +95,13 @@ Do not expand always-loaded instructions just because the guidance is useful. Pr
 After large work, run the Complexity + Simplification Gate before claiming completion. Large work includes 5+ files, 300+ lines, new features, cross-layer changes, DB/schema/query changes, data pipelines, UI state/rendering logic, agent/workflow/orchestration changes, performance-sensitive paths, or reusable infrastructure.
 
 The always-loaded rule is intentionally thin: run the complexity/performance review, simplification/maintainability review, and verification pass; record hotspots before fixing; fix immediately only when the fix is fewer than 5 lines with no behavior risk. Load `docs/quality/complexity-simplification-gate.md` for the full checklist when this gate is triggered.
+
+## Rule 13 — Respect dependency and lockfile authority
+
+Do not infer project capabilities from `node_modules`. Installed packages are cache state, not authoritative project configuration. First determine the canonical package manager from committed lockfiles, the `packageManager` field, CI config, and existing scripts.
+
+If `package-lock.json` exists and no `pnpm-lock.yaml` exists, use npm. Do not introduce `pnpm-lock.yaml` unless the task explicitly includes package-manager migration. Do not create multiple lockfiles, and do not add or remove dependencies casually.
+
+If required test coverage cannot be achieved with existing tooling, state the missing capability, check whether the dependency already exists in `package.json`, propose the minimal dependency addition if absent, explain why compile-only coverage is insufficient or acceptable, and do not silently downgrade test scope.
+
+If acceptance criteria require frontend behavior coverage, missing tooling is a blocker unless a minimal dependency addition is approved or implemented.

@@ -33,6 +33,11 @@ Root operator documentation now lives in `README.md`, including local UI launch 
 
 ## Implemented On 2026-06-23
 
+AIOS now has an always-loaded dependency and lockfile authority rule:
+
+- `config/agent-rules.md` Rule 13 requires agents to treat committed lockfiles, `packageManager`, CI config, and existing scripts as the package-manager source of truth rather than inferring capability from `node_modules`
+- `AGENTS.md` mirrors the rule for repository-local execution, including the npm fallback when only `package-lock.json` exists, the ban on casual lockfile/dependency churn, and the frontend behavior coverage blocker when required tooling is missing
+
 AIOS now has an optional mature-repo behavioral spec verification loop:
 
 - `services.project_maturity` classifies mature-repo eligibility for `behavioral-spec-verification-loop` using route/screen count, API/server-action surface, auth/permission logic, persistent data models, test infrastructure, user-facing feature surface, background/notification jobs, source size, admin/settings/search/import/export/payment flows, and web-app/product-platform signals
