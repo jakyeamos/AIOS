@@ -4,6 +4,7 @@ import json
 import sqlite3
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
@@ -396,6 +397,26 @@ def _memory_conn() -> sqlite3.Connection:
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def test_dx_pack_report_template_matches_required_closeout_sections() -> None:
+    payload = aios_cli._dx_pack_payload(SimpleNamespace(report_template=True))
+
+    template = payload["implementation_report_template"]
+    assert template["title"] == "Developer Experience Pack Implementation Report"
+    assert template["sections"] == [
+        "Summary",
+        "Files Added",
+        "Files Modified",
+        "Capabilities Added",
+        "Routing Changes",
+        "Eval Coverage",
+        "Validation Results",
+        "Assumptions Made",
+        "Known Limitations",
+        "Recommended Next Steps",
+    ]
+    assert "### Validation Results" in template["markdown"]
 
 
 def test_record_learning_event_persists_signal_kind() -> None:

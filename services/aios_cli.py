@@ -131,6 +131,19 @@ from services.workflow_promotion import (
     propose_workflow_promotion,
 )
 
+DX_PACK_IMPLEMENTATION_REPORT_SECTIONS = (
+    "Summary",
+    "Files Added",
+    "Files Modified",
+    "Capabilities Added",
+    "Routing Changes",
+    "Eval Coverage",
+    "Validation Results",
+    "Assumptions Made",
+    "Known Limitations",
+    "Recommended Next Steps",
+)
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG_ROOT = REPO_ROOT / "config"
 DEFAULT_DB_PATH = Path.home() / "AIOS" / "data" / "aios.db"
@@ -4598,8 +4611,26 @@ def _workflow_gates_payload(args: argparse.Namespace) -> dict[str, Any]:
     return {"gates": rows, "count": len(rows)}
 
 
-def _dx_pack_payload() -> dict[str, Any]:
-    return developer_experience_capability_report(load_developer_experience_capability_pack())
+def _dx_pack_report_template() -> dict[str, Any]:
+    return {
+        "title": "Developer Experience Pack Implementation Report",
+        "format": "markdown",
+        "sections": list(DX_PACK_IMPLEMENTATION_REPORT_SECTIONS),
+        "markdown": "\n".join(
+            [
+                "## Developer Experience Pack Implementation Report",
+                "",
+                *[f"### {section}\n" for section in DX_PACK_IMPLEMENTATION_REPORT_SECTIONS],
+            ]
+        ).rstrip(),
+    }
+
+
+def _dx_pack_payload(args: argparse.Namespace) -> dict[str, Any]:
+    payload = developer_experience_capability_report(load_developer_experience_capability_pack())
+    if bool(getattr(args, "report_template", False)):
+        payload["implementation_report_template"] = _dx_pack_report_template()
+    return payload
 
 
 def _run_corpus_command(command: str, passthrough_args: Sequence[str]) -> int:
@@ -4680,9 +4711,15 @@ def create_parser() -> argparse.ArgumentParser:
     model_selection_parser.add_argument("--task-id", default=None)
     model_selection_parser.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
-    subparsers.add_parser(
+    dx_pack = subparsers.add_parser(
         "dx-pack", help="Inspect Developer Experience capability pack metadata"
-    ).add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    )
+    dx_pack.add_argument(
+        "--report-template",
+        action="store_true",
+        help="Include the standard DX pack implementation report format",
+    )
+    dx_pack.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     evidence_parser = subparsers.add_parser(
         "evidence", help="Inspect durable command evidence artifacts"
@@ -5410,7 +5447,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             assert conn is not None
             data = _model_selection_payload(conn, args)
         elif args.command == "dx-pack":
-            data = _dx_pack_payload()
+            data = _dx_pack_payload(args)
         elif args.command == "evidence":
             assert conn is not None
             data = _evidence_payload(conn, args)
