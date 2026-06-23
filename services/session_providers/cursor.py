@@ -464,6 +464,11 @@ class CursorProvider(SessionProvider):
                 session_counts[str(source.path)] = 0
 
         warnings = self._platform_warnings()
+        if self._read_errors:
+            warnings.extend(
+                f"Unreadable Cursor source skipped: {error}" for error in self._read_errors
+            )
+        readable_sources = len(sources) - len(self._read_errors)
         missing_roots = self._missing_source_roots()
         warnings.extend(f"Missing source root: {root}" for root in missing_roots)
         if session_counts:
@@ -475,10 +480,10 @@ class CursorProvider(SessionProvider):
                 source_counts[f"sessions:{source_path}"] = count
         return HealthStatus(
             provider_id=self.provider_id,
-            ok=not self._read_errors,
+            ok=readable_sources > 0 or not sources,
             source_counts=source_counts,
             warnings=warnings,
-            errors=self._read_errors.copy(),
+            errors=[] if readable_sources > 0 else self._read_errors.copy(),
         )
 
     def _cursor_paths(self) -> tuple[list[Path], Path, list[Path]]:

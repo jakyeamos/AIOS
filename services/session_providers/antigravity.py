@@ -356,7 +356,9 @@ class AntigravityProvider(SessionProvider):
         db_path: Path | None = None,
     ) -> None:
         self.gemini_root = gemini_root or Path.home() / ".gemini"
-        self.antigravity_config_root = antigravity_config_root or Path.home() / ".config" / "Antigravity"
+        self.antigravity_config_root = (
+            antigravity_config_root or Path.home() / ".config" / "Antigravity"
+        )
         self.db_path = db_path or AIOS_DB_PATH
 
     def discover_sources(self) -> list[SourcePath]:
@@ -398,13 +400,17 @@ class AntigravityProvider(SessionProvider):
         return changed
 
     def extract_raw_session(self, source: SourcePath) -> RawSession:
-        payload = self._extract_directory(source) if source.path.is_dir() else self._extract_file(source)
+        payload = (
+            self._extract_directory(source) if source.path.is_dir() else self._extract_file(source)
+        )
         return RawSession(provider=self.provider_id, source=source, payload=payload, raw_text=None)
 
     def normalize_session(self, raw: RawSession) -> NormalizedSession:
         provider_session_id = self._provider_session_id(raw)
         files = self._payload_files(raw.payload)
-        source_files = [str(item.get("path")) for item in files if isinstance(item.get("path"), str)]
+        source_files = [
+            str(item.get("path")) for item in files if isinstance(item.get("path"), str)
+        ]
         if not source_files:
             source_files = [str(raw.source.path)]
         source_file_mtimes = self._source_file_mtimes(files, raw.source.path)
@@ -445,7 +451,9 @@ class AntigravityProvider(SessionProvider):
             errors_extracted=errors,
             summary_status="pending",
             writeback_status="pending",
-            confidence=0.5 if any((tasks, commands, files_touched, decisions, errors, outcomes)) else 0.2,
+            confidence=0.5
+            if any((tasks, commands, files_touched, decisions, errors, outcomes))
+            else 0.2,
             provider_metadata=self._provider_metadata(raw.payload),
         )
 
@@ -516,7 +524,9 @@ class AntigravityProvider(SessionProvider):
                     counts["directory"] += 1
                     session_candidates += 1
                     continue
-                detected_format = str(source.metadata.get("format") or _detect_file_format(source.path))
+                detected_format = str(
+                    source.metadata.get("format") or _detect_file_format(source.path)
+                )
                 counts[detected_format] += 1
                 if detected_format == "unknown_binary":
                     unknown_paths.append(str(source.path))
@@ -697,7 +707,9 @@ class AntigravityProvider(SessionProvider):
         return '"' + value.replace('"', '""') + '"'
 
     def _provider_session_id(self, raw: RawSession) -> str:
-        raw_id = raw.payload.get("provider_session_id") or raw.source.metadata.get("provider_session_id")
+        raw_id = raw.payload.get("provider_session_id") or raw.source.metadata.get(
+            "provider_session_id"
+        )
         if isinstance(raw_id, str) and raw_id:
             return raw_id
         for parent in [raw.source.path, *raw.source.path.parents]:
@@ -725,7 +737,9 @@ class AntigravityProvider(SessionProvider):
             mtimes[str(fallback)] = stat.st_mtime
         return mtimes
 
-    def _session_bounds(self, source_file_mtimes: dict[str, float]) -> tuple[str | None, str | None]:
+    def _session_bounds(
+        self, source_file_mtimes: dict[str, float]
+    ) -> tuple[str | None, str | None]:
         if not source_file_mtimes:
             return None, None
         mtimes = list(source_file_mtimes.values())
@@ -736,7 +750,9 @@ class AntigravityProvider(SessionProvider):
         if tasks:
             messages.append({"role": "user", "phase": "operational_metadata", "text": tasks[0]})
         if outcomes:
-            messages.append({"role": "assistant", "phase": "operational_metadata", "text": outcomes[0]})
+            messages.append(
+                {"role": "assistant", "phase": "operational_metadata", "text": outcomes[0]}
+            )
         return messages
 
     def _provider_metadata(self, payload: JsonObject) -> JsonObject:
