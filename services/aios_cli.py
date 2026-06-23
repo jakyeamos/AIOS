@@ -59,6 +59,7 @@ from services.invocation_backends import (
 )
 from services.learning_taxonomy import LEARNING_SIGNAL_KINDS, LearningSignalKind
 from services.meta_learning_signals import extract_meta_learning_signals, signals_to_dicts
+from services.native_command_logging import native_command_metadata, write_native_command_metadata
 from services.native_commands import (
     de_slopify as native_de_slopify,
 )
@@ -199,6 +200,15 @@ CANONICAL_RUN_STATUSES = [
     "canceled",
     "superseded",
 ]
+NATIVE_COMMAND_SAFETY_CLASSES = {
+    "zoom-out": "read_only",
+    "handoff": "artifact_write",
+    "review-squad": "read_only",
+    "audit-security": "read_only",
+    "cleanup-de-slopify": "guarded_modify",
+    "prototype": "sandbox_write",
+}
+
 ATTENTION_RUN_STATUSES = [
     "blocked",
     "waiting_for_user",
@@ -2944,6 +2954,79 @@ def cmd_native_prototype(args: argparse.Namespace) -> dict[str, Any]:
         raise CLIError("native-prototype-path-not-allowed", str(exc), EXIT_USAGE) from exc
 
 
+def _add_native_logging_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--log-metadata", action="store_true")
+    parser.add_argument("--metadata-log-path", default=None)
+    parser.add_argument("--run-id", default=None)
+    parser.add_argument("--session-id", default=None)
+    parser.add_argument("--model", default=None)
+    parser.add_argument("--reasoning-level", default=None)
+    parser.add_argument("--token-cost-estimate", type=float, default=None)
+    parser.add_argument("--runtime-ms", type=int, default=None)
+    parser.add_argument("--test-run", action="append", default=[])
+
+
+def _maybe_log_native_command(
+    args: argparse.Namespace,
+    command: str,
+    data: dict[str, Any],
+) -> None:
+    if not getattr(args, "log_metadata", False):
+        return
+    repo_root = Path(getattr(args, "repo_root", ".")).expanduser().resolve()
+    safety_class = NATIVE_COMMAND_SAFETY_CLASSES[command]
+    record = native_command_metadata(
+        command_name=command,
+        repo_root=repo_root,
+        scope=data.get("scope", {}),
+        safety_class=safety_class,
+        status="pass",
+        read_only=safety_class == "read_only",
+        modifying=safety_class != "read_only",
+        reviewer_lanes=_native_reviewer_lanes(data),
+        files_touched=_native_files_touched(data),
+        tests_run=list(getattr(args, "test_run", []) or []),
+        user_confirmation_required=safety_class in {"guarded_modify", "sandbox_write"},
+        user_confirmation_received=bool(getattr(args, "apply", False) or command == "prototype"),
+        model=args.model,
+        reasoning_level=args.reasoning_level,
+        token_cost_estimate=args.token_cost_estimate,
+        runtime_ms=args.runtime_ms,
+        run_id=args.run_id,
+        session_id=args.session_id,
+    )
+    log_path = Path(args.metadata_log_path) if args.metadata_log_path else None
+    try:
+        written = write_native_command_metadata(record, repo_root=repo_root, log_path=log_path)
+    except ValueError as exc:
+        raise CLIError("native-metadata-log-path-not-allowed", str(exc), EXIT_USAGE) from exc
+    data["metadata_log_path"] = str(written)
+    data["metadata_record"] = record
+
+
+def _native_reviewer_lanes(data: dict[str, Any]) -> list[str]:
+    lanes = data.get("lanes")
+    if isinstance(lanes, dict):
+        return list(lanes)
+    scope_lanes = data.get("reviewer_lanes")
+    if isinstance(scope_lanes, list):
+        return [str(lane) for lane in scope_lanes]
+    return []
+
+
+def _native_files_touched(data: dict[str, Any]) -> list[str]:
+    touched = data.get("applied_changes", [])
+    if not isinstance(touched, list):
+        return []
+    files: list[str] = []
+    for item in touched:
+        if isinstance(item, dict) and "file" in item:
+            files.append(str(item["file"]))
+        elif isinstance(item, str):
+            files.append(item)
+    return files
+
+
 def cmd_shadow_create_worktree(
     conn: sqlite3.Connection, args: argparse.Namespace
 ) -> dict[str, Any]:
@@ -4936,6 +5019,7 @@ def create_parser() -> argparse.ArgumentParser:
     zoom_out.add_argument("--repo-root", default=".")
     zoom_out.add_argument("--depth", type=int, default=2)
     zoom_out.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    _add_native_logging_args(zoom_out)
 
     handoff_parser = subparsers.add_parser("handoff", help="Generate an AIOS handoff packet")
     handoff_parser.add_argument("--objective", required=True)
@@ -4949,6 +5033,7 @@ def create_parser() -> argparse.ArgumentParser:
     handoff_parser.add_argument("--reference", action="append", default=[])
     handoff_parser.add_argument("--next-action", action="append", default=[])
     handoff_parser.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    _add_native_logging_args(handoff_parser)
 
     review_parser = subparsers.add_parser("review", help="Run native review commands")
     review_subparsers = review_parser.add_subparsers(dest="review_command", required=True)
@@ -4957,6 +5042,7 @@ def create_parser() -> argparse.ArgumentParser:
     review_squad.add_argument("--file", action="append", default=[])
     review_squad.add_argument("--base", default="HEAD")
     review_squad.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    _add_native_logging_args(review_squad)
 
     audit_parser = subparsers.add_parser("audit", help="Run native audit commands")
     audit_subparsers = audit_parser.add_subparsers(dest="audit_command", required=True)
@@ -4966,6 +5052,7 @@ def create_parser() -> argparse.ArgumentParser:
     audit_security.add_argument("--file", action="append", default=[])
     audit_security.add_argument("--base", default="HEAD")
     audit_security.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    _add_native_logging_args(audit_security)
 
     cleanup_parser = subparsers.add_parser("cleanup", help="Run guarded cleanup commands")
     cleanup_subparsers = cleanup_parser.add_subparsers(dest="cleanup_command", required=True)
@@ -4978,6 +5065,7 @@ def create_parser() -> argparse.ArgumentParser:
     cleanup_de_slopify.add_argument("--goal", action="append", default=[])
     cleanup_de_slopify.add_argument("--apply", action="store_true")
     cleanup_de_slopify.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    _add_native_logging_args(cleanup_de_slopify)
 
     prototype_parser = subparsers.add_parser("prototype", help="Create an isolated prototype")
     prototype_parser.add_argument("--question", required=True)
@@ -4986,6 +5074,7 @@ def create_parser() -> argparse.ArgumentParser:
     prototype_parser.add_argument("--prototype-type", default="notes")
     prototype_parser.add_argument("--cleanup-mode", default="delete_when_done")
     prototype_parser.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    _add_native_logging_args(prototype_parser)
 
     eval_parser = subparsers.add_parser("eval", help="Record and inspect AIOS eval runs")
     eval_subparsers = eval_parser.add_subparsers(dest="eval_command", required=True)
@@ -5887,6 +5976,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             )
         else:
             raise CLIError("unknown-command", f"Unsupported command: {args.command}", EXIT_USAGE)
+
+        if command in NATIVE_COMMAND_SAFETY_CLASSES:
+            _maybe_log_native_command(args, command, data)
 
         if conn is not None:
             conn.close()
