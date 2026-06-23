@@ -17,6 +17,7 @@ from aios_orchestration_runtime import ensure_runtime_schema  # noqa: E402
 
 from services.memory_layers import (  # noqa: E402
     ALLOWED_PREDICATES,
+    VALIDITY_STATUSES,
     FactMemory,
     PacketReceiptLog,
     RawSourceMemory,
@@ -78,9 +79,18 @@ def test_fact_validity_status() -> None:
     active = facts.get(active_id)
     assert active is not None
     assert active["validity_status"] == "active"
+    assert "superseded" in VALIDITY_STATUSES
     assert [row["fact_text"] for row in facts.query(validity_status="active")] == [
         "AIOS has a layered memory model."
     ]
+
+
+def test_fact_unknown_validity_status_raises() -> None:
+    conn = _connect()
+    facts = FactMemory(conn)
+
+    with pytest.raises(ValueError, match="Unsupported memory fact validity_status"):
+        facts.insert(fact_text="Unclear memory.", validity_status="maybe")
 
 
 def test_relationship_predicate_validation() -> None:

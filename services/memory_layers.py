@@ -28,6 +28,9 @@ ALLOWED_PREDICATES: frozenset[str] = frozenset(
         "has_status",
     }
 )
+VALIDITY_STATUSES: frozenset[str] = frozenset(
+    {"active", "superseded", "contradicted", "uncertain", "archived"}
+)
 
 RowDict = dict[str, object]
 
@@ -119,7 +122,9 @@ def ensure_memory_layer_schema(conn: sqlite3.Connection) -> None:
           predicate TEXT,
           object_value TEXT,
           project_scope TEXT,
-          validity_status TEXT NOT NULL DEFAULT 'active',
+          validity_status TEXT NOT NULL DEFAULT 'active' CHECK (
+            validity_status IN ('active', 'superseded', 'contradicted', 'uncertain', 'archived')
+          ),
           source_id TEXT REFERENCES memory_raw_sources(id),
           first_seen TEXT NOT NULL,
           last_confirmed TEXT,
@@ -269,6 +274,11 @@ class FactMemory:
         confidence: float | None = None,
         expires_at: str | None = None,
     ) -> str:
+        if validity_status not in VALIDITY_STATUSES:
+            allowed = ", ".join(sorted(VALIDITY_STATUSES))
+            raise ValueError(
+                f"Unsupported memory fact validity_status '{validity_status}'. Use: {allowed}."
+            )
         fact_id = id or _new_id("fact")
         self.conn.execute(
             """

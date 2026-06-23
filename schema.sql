@@ -351,7 +351,9 @@ CREATE TABLE memory_facts (
   predicate TEXT,
   object_value TEXT,
   project_scope TEXT,
-  validity_status TEXT NOT NULL DEFAULT 'active',
+  validity_status TEXT NOT NULL DEFAULT 'active' CHECK (
+    validity_status IN ('active', 'superseded', 'contradicted', 'uncertain', 'archived')
+  ),
   source_id TEXT REFERENCES memory_raw_sources(id),
   first_seen TEXT NOT NULL,
   last_confirmed TEXT,
