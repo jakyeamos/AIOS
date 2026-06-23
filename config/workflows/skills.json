@@ -831,6 +831,56 @@
       ],
       "source_path": null,
       "installed_name": null
+    },
+    {
+      "key": "behavioral_spec_rehabilitation_operator",
+      "purpose": "Operate the mature-repo behavioral spec verification loop with single-writer spreadsheet discipline, test/fix/re-test iterations, regression coverage, and complexity review.",
+      "purpose_long": "Use this only inside the behavioral-spec-verification-loop workflow. It coordinates code-derived cataloging, canonical spreadsheet updates, evidence-backed testing, defect remediation, re-testing, regression coverage, and boundary audit without making the heavy loop a default path.",
+      "allowed_stages": [
+        "parse_request",
+        "enrich_context",
+        "generate",
+        "validate",
+        "finalize"
+      ],
+      "input_schema": {
+        "objective": "string",
+        "repo_path": "string",
+        "maturity_report": "object"
+      },
+      "output_schema": {
+        "spreadsheet_path": "string",
+        "status_counts": "object",
+        "evidence": "object[]",
+        "remaining_risk": "string[]"
+      },
+      "invariants": [
+        "Use exactly one canonical .xlsx artifact as the source of truth.",
+        "Keep the main thread as the single spreadsheet writer.",
+        "Derive expected behavior from source citations rather than guesses.",
+        "Do not mark rows Verified without command/action evidence and last tested commit.",
+        "Do not mark rows Regression-Covered without automated coverage or a documented infeasibility note.",
+        "Run thermo-nuclear-simplification as the complexity gate for fixes."
+      ],
+      "failure_conditions": [
+        "Maturity gate is not eligible and no explicit override is present.",
+        "Canonical spreadsheet is missing, forked, or mutated by multiple writers.",
+        "Verified or Regression-Covered status is unsupported by evidence.",
+        "A fix exceeds the three-iteration safety cap for a story."
+      ],
+      "side_effects": [
+        "Writes one canonical behavioral-spec.xlsx artifact under the run planning directory.",
+        "May write tests and scoped fixes for defects logged in the spreadsheet."
+      ],
+      "execution_mode": "heuristic",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "mature_repo_rehabilitation",
+        "quality_loop",
+        "behavioral_specification"
+      ],
+      "source_path": "docs/workflows/behavioral-spec-verification-loop.md",
+      "installed_name": null
     }
   ]
 }

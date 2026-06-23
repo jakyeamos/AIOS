@@ -12,6 +12,11 @@ from services.asset_recommendation import (
 )
 from services.invocation_backends import Surface, get_backend_for_surface
 from services.project_inventory import ProjectCandidate, rank_project_candidates
+from services.project_maturity import (
+    BEHAVIORAL_SPEC_WORKFLOW_KEY,
+    assess_behavioral_spec_eligibility,
+    objective_has_manual_maturity_override,
+)
 from services.workflow_orchestration import recommend_route_primitives
 
 ProjectOutcome = Literal["exact", "likely", "ambiguous", "unsupported"]
@@ -50,6 +55,7 @@ class RouteResult:
     rationale: str
     skill_recommendations: tuple[AssetRecommendation, ...] = ()
     workflow_alternatives: tuple[AssetRecommendation, ...] = ()
+    maturity_report: dict[str, Any] | None = None
 
     def to_json(self) -> dict[str, Any]:
         payload = asdict(self)
@@ -197,6 +203,42 @@ def route_objective(
             blocked_reason="No governed workflow matched the objective strongly enough.",
             rationale="Routing blocked because workflow selection returned no viable governed route.",
         )
+    maturity_report: dict[str, Any] | None = None
+    if selected_workflow.get("workflow_key") == BEHAVIORAL_SPEC_WORKFLOW_KEY:
+        selected_project = next(
+            (
+                candidate
+                for candidate in project.candidates
+                if candidate.id == project.selected_project_id
+            ),
+            None,
+        )
+        report = assess_behavioral_spec_eligibility(
+            Path(selected_project.repo_path if selected_project else cwd or "."),
+            explicit_opt_in=objective_has_manual_maturity_override(objective),
+        )
+        maturity_report = report.to_json()
+        if not report.eligible:
+            return RouteResult(
+                status="blocked",
+                objective=objective,
+                surface=surface,
+                project=project,
+                selected_workflow=selected_workflow,
+                workflow_candidates=workflow_candidates,
+                prompt_recommendation=prompt_recommendation,
+                backend_recommendation=backend_recommendation,
+                agent_recommendation=None,
+                skill_recommendations=(),
+                workflow_alternatives=(),
+                task_family=selected_workflow.get("workflow_family"),
+                blocked_reason=(
+                    f"{BEHAVIORAL_SPEC_WORKFLOW_KEY} is gated to mature repos; "
+                    f"{report.rationale}"
+                ),
+                rationale="Routing blocked by mature-repo eligibility gate.",
+                maturity_report=maturity_report,
+            )
 
     workflow_family = str(selected_workflow.get("workflow_family", ""))
     enriched_backend = backend_recommendation
@@ -267,4 +309,5 @@ def route_objective(
             f"{selected_workflow.get('workflow_key')} with prompt family "
             f"{prompt_recommendation.get('prompt_family') if prompt_recommendation else None}."
         ),
+        maturity_report=maturity_report,
     )

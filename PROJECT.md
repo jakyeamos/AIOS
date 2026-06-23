@@ -33,6 +33,14 @@ Root operator documentation now lives in `README.md`, including local UI launch 
 
 ## Implemented On 2026-06-23
 
+AIOS now has an optional mature-repo behavioral spec verification loop:
+
+- `services.project_maturity` classifies mature-repo eligibility for `behavioral-spec-verification-loop` using route/screen count, API/server-action surface, auth/permission logic, persistent data models, test infrastructure, user-facing feature surface, background/notification jobs, source size, admin/settings/search/import/export/payment flows, and web-app/product-platform signals
+- `services.task_routing` now blocks explicit behavioral-spec loop requests for small or unclear repos with a maturity eligibility report and lighter recommendations, while manual override can intentionally enable the workflow
+- `config/workflows/registry.json`, `config/workflows/skills.json`, `prompts/registry.json`, `prompts/behavioral_spec_verification.md`, and `docs/workflows/behavioral-spec-verification-loop.md` register the candidate workflow, its prompt, single-writer `.xlsx` artifact contract, required phases, status schema, evidence rules, three-iteration safety cap, and Thermo simplification complexity gate reuse
+- `docs/audits/behavioral-spec-verification-loop-aios-audit.md` records the implementation audit of existing AIOS workflows, gates, maturity detection, artifacts, shadow branches, subagents, and Thermo gate reuse
+- `tests/test_behavioral_spec_workflow.py` covers mature eligibility, small-repo rejection, explicit opt-in, workflow schema/rules, route blocking, and the guarantee that normal lightweight implementation routing does not default to the heavy loop
+
 AIOS Phase 12 Plan 12-01 now has its graph-native memory architecture audit:
 
 - `docs/audits/graph-native-memory-audit.md` maps current raw storage, ingestion, indexing, search, prompt construction, packet generation, long-term memory update, provenance, conflict/staleness, graph, and prompt-caching surfaces

@@ -2065,6 +2065,229 @@
           ]
         }
       ]
+    },
+    {
+      "key": "behavioral-spec-verification-loop",
+      "name": "Behavioral Spec Verification Loop",
+      "workflow_family": "mature_repo_rehabilitation",
+      "purpose": "Optional mature-repo rehabilitation loop that derives a behavioral spec from code, tracks it in one canonical spreadsheet, tests every story, fixes defects, re-tests, regression-covers, and audits complexity.",
+      "trigger_hints": [
+        "behavioral-spec-verification-loop",
+        "behavioral spec verification loop",
+        "mature repo rehabilitation",
+        "repo rehabilitation loop",
+        "canonical spreadsheet",
+        "verified behavioral spec"
+      ],
+      "output_contract": [
+        "Gated workflow: disabled by default and eligible only by explicit opt-in or mature project eligibility report.",
+        "Canonical artifact: exactly one .xlsx updated in place across all phases and loop iterations; default path .planning/runs/{run_id}/behavioral-spec.xlsx.",
+        "Spreadsheet columns: Feature ID | Area | Surface | User story | Persona / role | Auth state | Data precondition | Viewport | Expected behavior from code | User-acceptable behavior | Source files/functions | Test method | Test command/actions | Observed behavior | Status | Defect ID | Defect type | Root cause | Fix summary | Regression test added | Complexity review | Evidence | Iteration | Last tested commit | Open question / notes.",
+        "Status flow: Discovered -> Spec'd -> Test-Blocked / Tested-Pass / Tested-Fail -> Fixing -> Fixed -> Verified -> Regression-Covered; additional statuses Needs-Product-Decision, Needs-Environment, Won't-Fix-With-Reason.",
+        "No row may be marked Verified unless it has evidence, source file/function citation, test method, exact command or browser action, observed result, iteration number, last tested commit, and no open functional, UX, permission, security, data-integrity, or logistical defect for that story.",
+        "No row may be marked Regression-Covered unless the verified behavior has automated regression coverage, or automation is genuinely not feasible and a manual verification note explains why.",
+        "Main thread is the single writer to the spreadsheet; subagents may inspect, test, and report but must not mutate the canonical spreadsheet.",
+        "Complexity gate: reuse thermo-nuclear-simplification for every fix and record Complexity review as Pass, Fail, or N/A.",
+        "Safety cap: stop a story after 3 full fix/re-test iterations, preserve evidence and root-cause notes, then continue other stories when safe.",
+        "Final report includes spreadsheet path, current commit, feature counts by status, defects fixed by type, regression tests, commands run, skipped tests, remaining risk, and complexity-gate result."
+      ],
+      "required_validations": [],
+      "stages": [
+        {
+          "key": "plan",
+          "kind": "parse_request",
+          "required_skills": [
+            "behavioral_spec_rehabilitation_operator"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          },
+          "prompt_bindings": [
+            {
+              "template_id": "behavioral_spec_verification",
+              "role": "primary"
+            }
+          ]
+        },
+        {
+          "key": "catalog_and_spec",
+          "kind": "enrich_context",
+          "required_skills": [
+            "behavioral_spec_rehabilitation_operator"
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "evidence",
+              "path_template": ".planning/runs/{run_id}/behavioral-spec.xlsx",
+              "required": true
+            }
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "coverage_audit",
+          "kind": "validate",
+          "required_skills": [
+            "behavioral_spec_rehabilitation_operator"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "test",
+          "kind": "validate",
+          "required_skills": [
+            "behavioral_spec_rehabilitation_operator"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "fix",
+          "kind": "generate",
+          "required_skills": [
+            "behavioral_spec_rehabilitation_operator"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "re_test",
+          "kind": "validate",
+          "required_skills": [
+            "behavioral_spec_rehabilitation_operator"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "regression_cover",
+          "kind": "validate",
+          "required_skills": [
+            "behavioral_spec_rehabilitation_operator"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "boundary_audit",
+          "kind": "validate",
+          "required_skills": [
+            "behavioral_spec_rehabilitation_operator"
+          ],
+          "validations": [
+            {
+              "criterion_id": "code-simplicity",
+              "blocking": true
+            },
+            {
+              "criterion_id": "complexity-budget",
+              "blocking": true
+            }
+          ],
+          "standards_bindings": [
+            "code_quality.lint_ratchet"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "final_report",
+          "kind": "finalize",
+          "required_skills": [
+            "behavioral_spec_rehabilitation_operator"
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "summary",
+              "path_template": ".planning/runs/{run_id}/behavioral-spec-final-report.md",
+              "required": true
+            }
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          }
+        }
+      ],
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "mature_repo_rehabilitation",
+        "quality_loop",
+        "behavioral_specification",
+        "regression_coverage"
+      ],
+      "purpose_long": "Use only for mature, meaningful repos where exhaustive behavioral verification is worth the cost. Small prototypes should receive a lighter smoke, inventory, pre-PR, targeted bugfix, or test-backfill workflow instead."
     }
   ]
 }

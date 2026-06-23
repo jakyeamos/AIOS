@@ -158,7 +158,7 @@ def test_validate_prompts_accepts_canonical_prompts_post_plan_01() -> None:
 
     rows, errors, _warnings = module.validate_templates(ROOT / "prompts")
     assert errors == []
-    assert len(rows) == 5
+    assert len(rows) == 6
 
 
 def test_validate_prompts_requires_applicability(tmp_path: Path) -> None:

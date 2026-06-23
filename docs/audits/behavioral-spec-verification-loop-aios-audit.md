@@ -1,0 +1,14 @@
+# Behavioral Spec Verification Loop AIOS Audit
+
+Date: 2026-06-23
+
+## Phase 0 Findings
+
+1. AIOS workflows and skills are defined in `config/workflows/registry.json` and `config/workflows/skills.json`, loaded and validated by `services/workflow_orchestration.py`. Prompt-library templates live in `prompts/` plus `prompts/registry.json`. Quality gates are defined through `config/quality-gates.json`, `config/quality-pipeline.json`, `services/quality_gates.py`, `services/quality_pipeline.py`, `services/commit_quality_ladder.py`, and the success-criteria registry under `config/success-criteria/`.
+2. Gates are invoked through the commit quality ladder, quality-gate CLI adapters, success-criteria evaluation, hook closeout, and workflow stage validation bindings. The route layer selects workflows through `services/task_routing.py` and `services/workflow_orchestration.py`.
+3. Project metadata is currently resolved through `services/project_inventory.py`. Before this change, AIOS did not have a mature-repo surface classifier for routes, APIs, auth, data models, tests, and source size. Task size is inferred primarily from objective/routing context and success-criteria resolution rather than a single project maturity model.
+4. Existing concepts found: pre-PR gate (`docs/pre-pr/quality-ladder.md`, `services/pre_pr_readiness.py`), quality ladder (`services/commit_quality_ladder.py`), shadow branch (`services/shadow_branch_runner.py`), workflow phase/stage (`config/workflows/registry.json`), subagent delegation policy (`config/execution-strategies/model-routing-policy.json` and `docs/workflows/orchestrated-subagent-development.md`), checkpoints/artifacts (`expected_artifacts` and evidence services), repo complexity review (`docs/quality-gates/thermo-nuclear-simplification.md`), and safety caps in adjacent workflow policy docs. Spreadsheet generation existed as a project need, but no reusable mature-loop `.xlsx` artifact contract was registered.
+5. `/thermo-nuclear-code-quality-review` was not present by that exact name. The existing equivalent is `thermo-nuclear-simplification`.
+6. The new workflow reuses `thermo-nuclear-simplification` as its complexity gate rather than duplicating structural review logic.
+7. Workflow routing and gate selection coverage exists in `tests/test_workflow_orchestration.py`, `tests/test_task_routing.py`, `tests/test_commit_quality_ladder.py`, `tests/test_quality_gates.py`, `tests/test_quality_pipeline.py`, and related success-criteria tests. This change adds focused coverage in `tests/test_behavioral_spec_workflow.py`.
+8. Updated docs and prompt-library surfaces: `docs/workflows/behavioral-spec-verification-loop.md`, `prompts/behavioral_spec_verification.md`, `prompts/registry.json`, `PROJECT.md`, and `.planning/SUBSYSTEM_EXTRACTION_PLAN.md`.
