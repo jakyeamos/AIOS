@@ -26,7 +26,7 @@ progress:
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
 - Latest completed phase: Phase 21, macOS Native App Skill Pack, shipped task-routed macOS project/build, native-pattern, settings, Sparkle, notch, release, manifest, validation, and documentation coverage without broad always-loaded macOS rules.
-- Latest completed plan: Phase 21 Plan 21-09 documented the macOS skill pack, future platform-skill pattern, donor transformations, safety gates, validation command, remaining risks, and final report workflow.
+- Latest completed plan: Phase 22 Plan 22-01 defined the standards-ladder rollout contract and read-only backfill evidence for portable global-hook candidates versus AIOS-local gates.
 
 ## Current Roadmap Position
 
@@ -52,6 +52,7 @@ progress:
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-06-23 | Complete Phase 22 Plan 22-01 standards ladder rollout contract | `docs/quality/aios-standards-ladder-contract.md`, `docs/backfill/aios-standards-ladder-backfill.md`, and `.planning/phases/22-progressive-governance-and-standards-backfill-workflows/22-01-SUMMARY.md` define Phase 22 rule IDs, modes, evidence requirements, waiver expectations, promotion blockers, project scan evidence, and AIOS-local boundaries without staging unrelated in-flight hook implementation edits. |
 | 2026-06-23 | Complete Phase 21 macOS Native App Skill Pack | `.planning/phases/21-macos-native-app-skill-pack/21-VERIFICATION.md` verifies MACS-01 through MACS-09 with audits, task-shaped skills, semantic modules, guarded settings/Sparkle/notch/release skills, TMCP routing, manifest provenance, dependency map, behavior fixtures, validation command, operator docs, and reusable future platform-skill pattern. |
 | 2026-06-23 | Complete Phase 21 Plan 21-09 macOS skill pack docs | `docs/skills/macos-native-app-skill-pack.md`, `docs/skills/platform-skill-pack-pattern.md`, and `21-VERIFICATION.md` document added skills/modules, routing behavior, triggers, anti-triggers, safety gates, validation, donor adoption/change/rejection decisions, remaining risks, future platform pack pattern, and final report workflow. |
 | 2026-06-23 | Complete Phase 21 Plan 21-08 macOS skill validation | `scripts/validate-skills.sh` validates the macOS skill manifest, router, node paths, route pointers, provenance entries, task fields, behavioral test scenarios, release gates, private-key patterns, and broad-trigger exclusions, with existing behavior fixtures under `tests/skills/macos/` covering build detection, routing, settings, Sparkle, notch, and release safety. |

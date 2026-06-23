@@ -102,3 +102,58 @@ Every ladder finding must include:
 ## Current Phase 14 Posture
 
 The Complexity + Simplification Gate is mandatory for agents after large work, but commit-ladder enforcement is warn-only/reporting in Phase 14. This preserves visibility while avoiding premature fail-closed behavior before evidence binding and governance rollout are complete.
+
+## Phase 22 Rollout Contract
+
+Phase 22 promotes only deterministic portable checks into the user-level commit
+hook. Criteria that need AIOS runtime state, SQLite, context receipts, truth
+files, verifier artifacts, or workflow evidence remain AIOS-local.
+
+The global hook may fail only on checks that can run from staged files and
+produce an actionable message without reading AIOS-private state. All other
+criteria may appear as `warn`, `off`, or `AIOS-local`.
+
+## Coverage Matrix
+
+| Rule id | Source | Check summary | Portability | Evidence | Mode | Waiver format | False-positive risk | Promotion blocker |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `global.security.secret-literal` | `aios/context/standards/security.md`, `security-review` | Detect likely committed secrets. | portable | staged-file | fail | `AIOS-WAIVER security-review owner expiry reason` | Medium; test fixtures can contain tokens. | Keep allowlist narrow and require owner/expiry. |
+| `global.maintainability.typescript-any` | `aios/context/standards/maintainability.md`, `code-simplicity` | Flag production TypeScript `any`. | portable | staged-file | warn | `AIOS-WAIVER code-simplicity owner expiry reason` | Medium; generated/vendor files need exclusions. | Backfill false positives across first-class projects. |
+| `global.maintainability.oversized-source` | `aios/context/standards/maintainability.md`, `complexity-budget` | Report oversized source files. | portable | staged-file | warn | `AIOS-WAIVER complexity-budget owner expiry reason` | High; size is a proxy, not semantic complexity. | Requires backfill and remediation candidates. |
+| `global.testing.weak-test` | `aios/context/standards/testing.md`, `test-quality` | Flag test files with no assertions. | portable | staged-file | warn | `AIOS-WAIVER test-quality owner expiry reason` | Medium; snapshot/smoke tests may be valid. | Requires documented smoke-test waiver format. |
+| `global.release.package-manager` | `aios/context/standards/maintainability.md`, `supply-chain-review` | Block npm/yarn drift in pnpm repos. | portable | staged-file | fail | `AIOS-WAIVER supply-chain-review owner expiry reason` | Low when package manager is configured. | None for pnpm-governed repos. |
+| `global.maintainability.handler-before-send` | `aios/context/standards/maintainability.md`, `code-simplicity` | Detect handler-before-send event-loop ordering. | portable | staged-file | warn | Inline `aios-quality: allow handler-before-send` plus reason | Medium; some runtimes require early handler registration. | Needs project backfill and runtime-specific waiver examples. |
+| `global.testing.pre-cr` | `test-quality`, `agent-claim-verification` | Require changed-line readiness where `.pre-cr.json` exists. | portable | command-evidence | warn | `AIOS-WAIVER pre-cr owner expiry reason` | Medium; Pre-CR may not be installed. | Tool availability and first-class project backfill. |
+| `aios.context.validate` | `truth-file-consistency`, `repo-boundary-discipline` | Validate AIOS context compiler receipts and selected context. | AIOS-local | AIOS-state | AIOS-local | Evaluation metadata accepted tradeoff | Low inside AIOS; invalid outside AIOS. | Requires AIOS repo/runtime state. |
+| `aios.criteria.registry` | `spec/success-criteria/index.md` | Validate success criteria registry paths and blocking criteria. | AIOS-local | AIOS-state | AIOS-local | Evaluation metadata accepted tradeoff | Low inside AIOS. | Registry is AIOS-specific. |
+| `aios.evidence.fresh` | `agent-claim-verification`, `execution-first-verification` | Bind claims to fresh evidence/verifier artifacts. | AIOS-local | verifier-artifact | AIOS-local | Evaluation metadata accepted tradeoff | Medium; evidence can be absent for valid doc-only work. | Requires Phase 16 evidence/verifier artifacts. |
+| `aios.truth.writeback` | `truth-file-consistency` | Require project truth updates after substantive changes. | AIOS-local | AIOS-state | AIOS-local | Evaluation metadata accepted tradeoff | Medium outside managed AIOS workflows. | Requires project truth files and workflow context. |
+
+## Promotion Rules
+
+1. `off` to `warn`: allowed when the check has deterministic output and an
+   actionable message.
+2. `warn` to `fail`: allowed only after a backfill run records acceptable false
+   positives, waivers, and remediation candidates.
+3. Evidence-dependent checks may block only inside AIOS-local gates when fresh
+   Phase 16 evidence/verifier artifacts are cited.
+4. The global user-level hook must not require AIOS SQLite, context receipts, or
+   project truth files for repos that have not opted into AIOS-managed
+   operation.
+
+## Fail-Closed Message Requirements
+
+Every fail-closed finding must include:
+
+- file
+- rule id
+- reason
+- waiver format
+- next command or doc reference
+
+Example:
+
+```text
+[FAIL] src/config.ts:3 [global.security.secret-literal]
+Possible secret literal. Waive with AIOS-WAIVER security-review <owner> <expiry> <reason>, or move the value to environment configuration.
+```
