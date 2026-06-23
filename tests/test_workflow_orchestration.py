@@ -39,6 +39,7 @@ from services.workflow_orchestration import (  # noqa: E402
     summarize_execution_report,
     validate_workflow_bindings,
     workflow_requires_independent_verification,
+    workflow_stage_gate_report,
 )
 
 
@@ -84,6 +85,37 @@ def test_implementation_workflows_require_independent_verification() -> None:
 
     assert workflows["implementation-delivery"].implementation_bearing is True
     assert workflow_requires_independent_verification(workflows["implementation-delivery"]) is True
+
+
+def test_implementation_delivery_declares_deterministic_stage_gates() -> None:
+    workflows = load_workflow_registry(ROOT / "config" / "workflows" / "registry.json")
+    workflow = workflows["implementation-delivery"]
+    validate_stage = next(stage for stage in workflow.stages if stage.key == "validate")
+    finalize_stage = next(stage for stage in workflow.stages if stage.key == "finalize")
+
+    assert validate_stage.required_evidence == ("evidence_artifacts",)
+    assert finalize_stage.required_verifier is True
+
+
+def test_workflow_stage_gate_report_exposes_gate_metadata() -> None:
+    workflows = load_workflow_registry(ROOT / "config" / "workflows" / "registry.json")
+
+    report = workflow_stage_gate_report(workflows)
+
+    assert {
+        "workflow_key": "implementation-delivery",
+        "stage_key": "validate",
+        "stage_kind": "validate",
+        "required_evidence": ["evidence_artifacts"],
+        "required_verifier": False,
+        "prompt_templates": [],
+    } in report
+    assert any(
+        row["workflow_key"] == "implementation-delivery"
+        and row["stage_key"] == "finalize"
+        and row["required_verifier"] is True
+        for row in report
+    )
 
 
 def test_verification_exempt_workflow_requires_reason() -> None:
@@ -248,6 +280,8 @@ def test_stage_spec_loads_vnext_bindings() -> None:
     assert isinstance(stage.learning_signals[0], LearningSignalBinding)
     assert isinstance(stage.prompt_bindings[0], PromptBinding)
     assert stage.standards_bindings == ("code_quality.lint_ratchet",)
+    assert stage.required_evidence == ()
+    assert stage.required_verifier is False
 
 
 def test_stage_spec_defaults_when_bindings_omitted() -> None:
@@ -264,6 +298,8 @@ def test_stage_spec_defaults_when_bindings_omitted() -> None:
     assert stage.learning_signals == ()
     assert stage.prompt_bindings == ()
     assert stage.standards_bindings == ()
+    assert stage.required_evidence == ()
+    assert stage.required_verifier is False
 
 
 def test_existing_six_workflows_load_with_default_bindings() -> None:

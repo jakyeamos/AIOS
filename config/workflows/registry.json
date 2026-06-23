@@ -320,6 +320,9 @@
               "blocking": true
             }
           ],
+          "required_evidence": [
+            "evidence_artifacts"
+          ],
           "approval_gates": [
             {
               "impact_scope": "workflow-default",
@@ -343,6 +346,7 @@
           "key": "finalize",
           "kind": "finalize",
           "required_skills": [],
+          "required_verifier": true,
           "writeback_behavior": {
             "on_success": [
               "workflow_learning_event"

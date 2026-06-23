@@ -209,6 +209,8 @@ class StageSpec:
     learning_signals: tuple[LearningSignalBinding, ...] = ()
     prompt_bindings: tuple[PromptBinding, ...] = ()
     standards_bindings: tuple[str, ...] = ()
+    required_evidence: tuple[str, ...] = ()
+    required_verifier: bool = False
 
 
 @dataclass(frozen=True)
@@ -379,6 +381,9 @@ def _stage_from_row(row: dict[str, Any], *, workflow_key: str) -> StageSpec:
     standards_bindings = row.get("standards_bindings") or []
     if not isinstance(standards_bindings, list):
         raise ValueError(f"Workflow {workflow_key} stage standards_bindings must be a list.")
+    required_evidence = row.get("required_evidence") or []
+    if not isinstance(required_evidence, list):
+        raise ValueError(f"Workflow {workflow_key} stage required_evidence must be a list.")
     return StageSpec(
         key=str(row.get("key", "")).strip(),
         kind=str(row.get("kind", "")).strip(),
@@ -410,6 +415,10 @@ def _stage_from_row(row: dict[str, Any], *, workflow_key: str) -> StageSpec:
         standards_bindings=tuple(
             str(item).strip() for item in standards_bindings if str(item).strip()
         ),
+        required_evidence=tuple(
+            str(item).strip() for item in required_evidence if str(item).strip()
+        ),
+        required_verifier=bool(row.get("required_verifier", False)),
     )
 
 
@@ -468,6 +477,25 @@ def load_workflow_registry(path: Path | None = None) -> dict[str, WorkflowSpec]:
 
 def workflow_requires_independent_verification(workflow: WorkflowSpec) -> bool:
     return workflow.implementation_bearing and not workflow.verification_exempt
+
+
+def workflow_stage_gate_report(workflows: dict[str, WorkflowSpec]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for workflow in sorted(workflows.values(), key=lambda item: item.key):
+        for stage in workflow.stages:
+            if not stage.required_evidence and not stage.required_verifier:
+                continue
+            rows.append(
+                {
+                    "workflow_key": workflow.key,
+                    "stage_key": stage.key,
+                    "stage_kind": stage.kind,
+                    "required_evidence": list(stage.required_evidence),
+                    "required_verifier": stage.required_verifier,
+                    "prompt_templates": [binding.template_id for binding in stage.prompt_bindings],
+                }
+            )
+    return rows
 
 
 def _workflow_implementation_bearing(item: dict[str, Any], stages: list[StageSpec]) -> bool:

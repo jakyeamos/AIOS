@@ -116,7 +116,11 @@ from services.success_criteria import (
 )
 from services.task_routing import route_objective
 from services.verifier_artifacts import list_verifier_artifacts, validate_closeout_verification
-from services.workflow_orchestration import load_workflow_registry, recommend_workflow_from_health
+from services.workflow_orchestration import (
+    load_workflow_registry,
+    recommend_workflow_from_health,
+    workflow_stage_gate_report,
+)
 from services.workflow_promotion import (
     compare_workflow_effectiveness,
     propose_workflow_promotion,
@@ -4566,6 +4570,14 @@ def _verifier_payload(conn: sqlite3.Connection, args: argparse.Namespace) -> dic
     return {"artifacts": artifacts, "validation": validation}
 
 
+def _workflow_gates_payload(args: argparse.Namespace) -> dict[str, Any]:
+    workflows = load_workflow_registry()
+    rows = workflow_stage_gate_report(workflows)
+    if args.workflow:
+        rows = [row for row in rows if row["workflow_key"] == args.workflow]
+    return {"gates": rows, "count": len(rows)}
+
+
 def _run_corpus_command(command: str, passthrough_args: Sequence[str]) -> int:
     script = REPO_ROOT / "scripts" / "aios-corpus-eval.cjs"
     if command == "run":
@@ -4626,6 +4638,12 @@ def create_parser() -> argparse.ArgumentParser:
     subparsers.add_parser(
         "workflow-learning-audit", help="Workflow learning evidence and proposal audit"
     )
+    workflow_gates = subparsers.add_parser(
+        "workflow-gates", help="Inspect deterministic workflow stage gate metadata"
+    )
+    workflow_gates.add_argument("--workflow", default=None)
+    workflow_gates.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
     evidence_parser = subparsers.add_parser(
         "evidence", help="Inspect durable command evidence artifacts"
     )
@@ -5335,6 +5353,8 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "workflow-learning-audit":
             assert conn is not None
             data = _workflow_learning_payload(conn)
+        elif args.command == "workflow-gates":
+            data = _workflow_gates_payload(args)
         elif args.command == "evidence":
             assert conn is not None
             data = _evidence_payload(conn, args)
