@@ -41,6 +41,10 @@ from hook_lifecycle import (  # noqa: E402
 from services.evidence_artifacts import usable_evidence_refs  # noqa: E402
 from services.rtk_integration import ensure_rtk_schema, rtk_metrics_log  # noqa: E402
 from services.session_effectiveness import write_session_effectiveness_receipt  # noqa: E402
+from services.verifier_artifacts import validate_closeout_verification  # noqa: E402
+from services.workflow_orchestration import (  # noqa: E402
+    load_workflow_registry,
+)
 
 DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
@@ -611,6 +615,37 @@ def execution_evidence_for_session(conn: sqlite3.Connection, session_id: str) ->
     return deduped
 
 
+def closeout_verification_for_run(
+    conn: sqlite3.Connection,
+    *,
+    run_id: str,
+    session_id: str,
+    workflow_key: str,
+) -> dict[str, Any]:
+    try:
+        workflow = load_workflow_registry().get(workflow_key)
+    except (OSError, ValueError):
+        workflow = None
+    if workflow is None:
+        implementation_bearing = workflow_key in {"implementation-delivery", "failure-recovery"}
+        verification_exempt = False
+        exemption_reason = None
+    else:
+        implementation_bearing = workflow.implementation_bearing
+        verification_exempt = workflow.verification_exempt
+        exemption_reason = workflow.verification_exempt_reason
+    return validate_closeout_verification(
+        conn,
+        task_id=run_id,
+        run_id=run_id,
+        session_id=session_id,
+        workflow_key=workflow_key,
+        implementation_bearing=implementation_bearing,
+        verification_exempt=verification_exempt,
+        exemption_reason=exemption_reason,
+    )
+
+
 def _tokenize(text: str | None) -> set[str]:
     if not text:
         return set()
@@ -957,6 +992,7 @@ def main() -> None:
 
         run_row = None
         consistency_eval_id = None
+        verifier_gate = None
         if linked_run_id:
             run_row = conn.execute(
                 """
@@ -967,6 +1003,22 @@ def main() -> None:
                 """,
                 (linked_run_id,),
             ).fetchone()
+
+            verifier_gate = None
+            if run_row and run_outcome == "completed":
+                verifier_gate = closeout_verification_for_run(
+                    conn,
+                    run_id=linked_run_id,
+                    session_id=session_id,
+                    workflow_key=str(run_row[0]),
+                )
+                if not verifier_gate["allowed"]:
+                    run_outcome = "failed"
+                    reason_json = {**reason_json, "verifier_gate": verifier_gate}
+                    explicit_result_summary = (
+                        explicit_result_summary
+                        or f"Closeout blocked by verifier gate: {verifier_gate['reason']}"
+                    )
 
             runtime_summary = explicit_result_summary or memory_summary
             transition_run(
@@ -1141,6 +1193,7 @@ def main() -> None:
                 },
                 "governance": {
                     **governance_summary,
+                    "verifier_gate": verifier_gate,
                     "stage_evaluations": stage_evaluations,
                     "unresolved_follow_up_count": len(risk_items) + len(open_questions),
                     "requires_review": pending_approval_count > 0

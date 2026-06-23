@@ -11,6 +11,7 @@ sys.path.insert(0, str(ROOT))
 from services.commit_quality_ladder import (  # noqa: E402
     _handler_before_send_findings,
     check_aios_evidence_artifacts,
+    check_aios_verifier_artifacts,
     check_confident_event_loop_ordering,
     check_global_standards_inventory,
     check_quality_gate_registry,
@@ -299,6 +300,29 @@ def _create_evidence_table(conn: sqlite3.Connection) -> None:
     )
 
 
+def _create_verifier_table(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE verifier_artifacts (
+          verifier_id TEXT PRIMARY KEY,
+          task_id TEXT,
+          run_id TEXT,
+          session_id TEXT,
+          verifier_agent TEXT,
+          model TEXT,
+          inputs_reviewed_json TEXT NOT NULL DEFAULT '[]',
+          checks_performed_json TEXT NOT NULL DEFAULT '[]',
+          result TEXT NOT NULL,
+          blocking_issues_json TEXT NOT NULL DEFAULT '[]',
+          non_blocking_issues_json TEXT NOT NULL DEFAULT '[]',
+          recommended_next_phase TEXT NOT NULL,
+          evidence_refs_json TEXT NOT NULL DEFAULT '[]',
+          created_at TEXT
+        )
+        """
+    )
+
+
 def test_aios_evidence_check_is_unknown_without_fresh_artifacts(tmp_path: Path) -> None:
     db_path = tmp_path / "aios.db"
     conn = sqlite3.connect(db_path)
@@ -345,3 +369,53 @@ def test_aios_evidence_check_attaches_fresh_refs(tmp_path: Path) -> None:
 
     assert result.status == "pass"
     assert result.evidence == ("evidence-artifact: ev-1 status=pass command=pnpm test",)
+
+
+def test_aios_verifier_check_is_unknown_without_fresh_artifacts(tmp_path: Path) -> None:
+    db_path = tmp_path / "aios.db"
+    conn = sqlite3.connect(db_path)
+    _create_verifier_table(conn)
+    conn.commit()
+    conn.close()
+
+    result = check_aios_verifier_artifacts(
+        db_path=db_path,
+        run_id="run-1",
+        session_id="session-1",
+    )
+
+    assert result.status == "skip"
+    assert "warn-only" in result.detail
+
+
+def test_aios_verifier_check_attaches_fresh_refs(tmp_path: Path) -> None:
+    db_path = tmp_path / "aios.db"
+    conn = sqlite3.connect(db_path)
+    _create_verifier_table(conn)
+    conn.execute(
+        """
+        INSERT INTO verifier_artifacts (
+          verifier_id, task_id, run_id, session_id, verifier_agent, model,
+          inputs_reviewed_json, checks_performed_json, result, blocking_issues_json,
+          non_blocking_issues_json, recommended_next_phase, evidence_refs_json, created_at
+        )
+        VALUES (
+          'ver-1', 'run-1', 'run-1', 'session-1', 'reviewer', 'gpt',
+          '["task_spec", "changed_files", "evidence_artifacts"]', '["diff"]',
+          'pass', '[]', '[]', 'closeout',
+          '["evidence-artifact: ev-1 status=pass command=pnpm test"]',
+          '2026-06-23T00:00:00Z'
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    result = check_aios_verifier_artifacts(
+        db_path=db_path,
+        run_id="run-1",
+        session_id="session-1",
+    )
+
+    assert result.status == "pass"
+    assert result.evidence == ("verifier artifact: ver-1 result=pass next=closeout",)

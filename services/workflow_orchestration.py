@@ -224,6 +224,9 @@ class WorkflowSpec:
     lifecycle_state: AssetLifecycleState = "candidate"
     applicability: tuple[str, ...] = ()
     purpose_long: str = ""
+    implementation_bearing: bool = False
+    verification_exempt: bool = False
+    verification_exempt_reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -452,8 +455,37 @@ def load_workflow_registry(path: Path | None = None) -> dict[str, WorkflowSpec]:
                 str(row) for row in item.get("applicability", []) if isinstance(row, str)
             ),
             purpose_long=str(item.get("purpose_long", "")),
+            implementation_bearing=_workflow_implementation_bearing(item, stages),
+            verification_exempt=bool(item.get("verification_exempt", False)),
+            verification_exempt_reason=(
+                str(item["verification_exempt_reason"])
+                if item.get("verification_exempt_reason")
+                else None
+            ),
         )
     return registry
+
+
+def workflow_requires_independent_verification(workflow: WorkflowSpec) -> bool:
+    return workflow.implementation_bearing and not workflow.verification_exempt
+
+
+def _workflow_implementation_bearing(item: dict[str, Any], stages: list[StageSpec]) -> bool:
+    explicit = item.get("implementation_bearing")
+    if isinstance(explicit, bool):
+        return explicit
+    text = " ".join(
+        [
+            str(item.get("key", "")),
+            str(item.get("workflow_family", "")),
+            str(item.get("purpose", "")),
+            str(item.get("purpose_long", "")),
+            " ".join(str(row) for row in item.get("output_contract", []) if isinstance(row, str)),
+            " ".join(stage.key for stage in stages),
+            " ".join(stage.kind for stage in stages),
+        ]
+    ).lower()
+    return "implement" in text or "scoped code changes" in text
 
 
 def load_skill_registry(path: Path | None = None) -> dict[str, SkillSpec]:
@@ -650,6 +682,10 @@ def validate_workflow_bindings(
         if workflow.lifecycle_state in {"approved", "active"} and validation_count == 0:
             errors.append(
                 f"workflow={workflow.key} lifecycle_state={workflow.lifecycle_state} declares zero validations across its stages; approved/active workflows must declare at least one validation (RESEARCH Pitfall 1)"
+            )
+        if workflow.verification_exempt and not workflow.verification_exempt_reason:
+            errors.append(
+                f"workflow={workflow.key} verification_exempt=true requires verification_exempt_reason"
             )
     return errors
 

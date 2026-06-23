@@ -325,6 +325,72 @@ def test_execution_evidence_prefers_usable_evidence_artifacts(tmp_path: Path) ->
     assert evidence == ["evidence-artifact: ev-pass status=pass command=uv run pytest -q"]
 
 
+def test_closeout_verification_blocks_missing_implementation_verifier() -> None:
+    module = _load_hook_stop()
+    conn = sqlite3.connect(":memory:")
+
+    result = module.closeout_verification_for_run(
+        conn,
+        run_id="run-1",
+        session_id="session-1",
+        workflow_key="implementation-delivery",
+    )
+
+    assert result["allowed"] is False
+    assert result["code"] == "missing_verifier_artifact"
+
+
+def test_closeout_verification_allows_fresh_passing_verifier() -> None:
+    module = _load_hook_stop()
+    conn = sqlite3.connect(":memory:")
+    conn.execute(
+        """
+        CREATE TABLE verifier_artifacts (
+          verifier_id TEXT PRIMARY KEY,
+          task_id TEXT,
+          run_id TEXT,
+          session_id TEXT,
+          verifier_agent TEXT,
+          model TEXT,
+          inputs_reviewed_json TEXT NOT NULL DEFAULT '[]',
+          checks_performed_json TEXT NOT NULL DEFAULT '[]',
+          result TEXT NOT NULL,
+          blocking_issues_json TEXT NOT NULL DEFAULT '[]',
+          non_blocking_issues_json TEXT NOT NULL DEFAULT '[]',
+          recommended_next_phase TEXT NOT NULL,
+          evidence_refs_json TEXT NOT NULL DEFAULT '[]',
+          created_at TEXT
+        )
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO verifier_artifacts (
+          verifier_id, task_id, run_id, session_id, verifier_agent, model,
+          inputs_reviewed_json, checks_performed_json, result, blocking_issues_json,
+          non_blocking_issues_json, recommended_next_phase, evidence_refs_json, created_at
+        )
+        VALUES (
+          'ver-1', 'run-1', 'run-1', 'session-1', 'reviewer', 'gpt',
+          '["task_spec", "changed_files", "evidence_artifacts"]', '["diff"]',
+          'pass', '[]', '[]', 'closeout',
+          '["evidence-artifact: ev-1 status=pass command=pytest"]',
+          '2026-06-23T00:00:00Z'
+        )
+        """
+    )
+
+    result = module.closeout_verification_for_run(
+        conn,
+        run_id="run-1",
+        session_id="session-1",
+        workflow_key="implementation-delivery",
+    )
+
+    assert result["allowed"] is True
+    assert result["verifier_id"] == "ver-1"
+
+
 def test_closeout_signal_kind_priority_order() -> None:
     module = _load_hook_stop()
     conn = _closeout_signal_conn()

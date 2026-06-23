@@ -115,6 +115,7 @@ from services.success_criteria import (
     resolve_task_standards,
 )
 from services.task_routing import route_objective
+from services.verifier_artifacts import list_verifier_artifacts, validate_closeout_verification
 from services.workflow_orchestration import load_workflow_registry, recommend_workflow_from_health
 from services.workflow_promotion import (
     compare_workflow_effectiveness,
@@ -4540,6 +4541,31 @@ def _evidence_payload(conn: sqlite3.Connection, args: argparse.Namespace) -> dic
     }
 
 
+def _verifier_payload(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    run_id = str(args.run_id).strip() if args.run_id else None
+    session_id = str(args.session_id).strip() if args.session_id else None
+    workflow_key = str(args.workflow_key).strip() if args.workflow_key else None
+    artifacts = list_verifier_artifacts(
+        conn,
+        run_id=run_id,
+        session_id=session_id,
+        limit=max(1, int(args.limit)),
+    )
+    validation = None
+    if workflow_key:
+        validation = validate_closeout_verification(
+            conn,
+            task_id=run_id or session_id,
+            run_id=run_id,
+            session_id=session_id,
+            workflow_key=workflow_key,
+            implementation_bearing=bool(args.implementation_bearing),
+            verification_exempt=bool(args.verification_exempt),
+            exemption_reason=args.exemption_reason,
+        )
+    return {"artifacts": artifacts, "validation": validation}
+
+
 def _run_corpus_command(command: str, passthrough_args: Sequence[str]) -> int:
     script = REPO_ROOT / "scripts" / "aios-corpus-eval.cjs"
     if command == "run":
@@ -4607,6 +4633,18 @@ def create_parser() -> argparse.ArgumentParser:
     evidence_parser.add_argument("--session-id", default=None)
     evidence_parser.add_argument("--limit", type=int, default=50)
     evidence_parser.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    verifier_parser = subparsers.add_parser(
+        "verifier", help="Inspect durable verifier artifacts"
+    )
+    verifier_parser.add_argument("--run-id", default=None)
+    verifier_parser.add_argument("--session-id", default=None)
+    verifier_parser.add_argument("--workflow-key", default=None)
+    verifier_parser.add_argument("--implementation-bearing", action="store_true")
+    verifier_parser.add_argument("--verification-exempt", action="store_true")
+    verifier_parser.add_argument("--exemption-reason", default=None)
+    verifier_parser.add_argument("--limit", type=int, default=50)
+    verifier_parser.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     learning_analyze = subparsers.add_parser(
         "learning-analyze", help="Analyze recurring learning patterns"
@@ -5217,6 +5255,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "knowledge-objects",
             "workflow-learning-audit",
             "evidence",
+            "verifier",
             "learning-analyze",
             "learning-propose",
             "learning-impact",
@@ -5299,6 +5338,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "evidence":
             assert conn is not None
             data = _evidence_payload(conn, args)
+        elif args.command == "verifier":
+            assert conn is not None
+            data = _verifier_payload(conn, args)
         elif args.command == "learning-analyze":
             assert conn is not None
             data = _learning_analyze_payload(conn, args)

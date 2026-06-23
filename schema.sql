@@ -263,6 +263,24 @@ CREATE TABLE evidence_artifacts (
 );
 CREATE INDEX idx_evidence_artifacts_run ON evidence_artifacts(run_id, created_at DESC);
 CREATE INDEX idx_evidence_artifacts_session ON evidence_artifacts(session_id, created_at DESC);
+CREATE TABLE verifier_artifacts (
+  verifier_id TEXT PRIMARY KEY,
+  task_id TEXT,
+  run_id TEXT REFERENCES orchestration_runs(id),
+  session_id TEXT REFERENCES sessions(id),
+  verifier_agent TEXT,
+  model TEXT,
+  inputs_reviewed_json TEXT NOT NULL DEFAULT '[]',
+  checks_performed_json TEXT NOT NULL DEFAULT '[]',
+  result TEXT NOT NULL,
+  blocking_issues_json TEXT NOT NULL DEFAULT '[]',
+  non_blocking_issues_json TEXT NOT NULL DEFAULT '[]',
+  recommended_next_phase TEXT NOT NULL,
+  evidence_refs_json TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX idx_verifier_artifacts_run ON verifier_artifacts(run_id, created_at DESC);
+CREATE INDEX idx_verifier_artifacts_session ON verifier_artifacts(session_id, created_at DESC);
 CREATE INDEX idx_prompts_retrieval ON prompts_used(retrieval_fired);
 CREATE TABLE orchestration_runs (
   id TEXT PRIMARY KEY,

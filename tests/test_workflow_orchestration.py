@@ -38,6 +38,7 @@ from services.workflow_orchestration import (  # noqa: E402
     recommend_workflow_from_health,
     summarize_execution_report,
     validate_workflow_bindings,
+    workflow_requires_independent_verification,
 )
 
 
@@ -57,6 +58,8 @@ def test_load_registry_normalizes_lifecycle_fields() -> None:
     assert all(workflow.lifecycle_state in states for workflow in workflows.values())
     assert all(isinstance(workflow.applicability, tuple) for workflow in workflows.values())
     assert all(isinstance(workflow.purpose_long, str) for workflow in workflows.values())
+    assert all(isinstance(workflow.implementation_bearing, bool) for workflow in workflows.values())
+    assert all(isinstance(workflow.verification_exempt, bool) for workflow in workflows.values())
     assert all(skill.lifecycle_state in states for skill in skills.values())
     assert all(isinstance(skill.applicability, tuple) for skill in skills.values())
     assert all(isinstance(skill.purpose_long, str) for skill in skills.values())
@@ -74,6 +77,34 @@ def test_existing_six_workflows_load_with_defaults() -> None:
     } <= set(workflows)
     assert workflows["implementation-delivery"].lifecycle_state == "active"
     assert workflows["failure-recovery"].lifecycle_state == "active"
+
+
+def test_implementation_workflows_require_independent_verification() -> None:
+    workflows = load_workflow_registry(ROOT / "config" / "workflows" / "registry.json")
+
+    assert workflows["implementation-delivery"].implementation_bearing is True
+    assert workflow_requires_independent_verification(workflows["implementation-delivery"]) is True
+
+
+def test_verification_exempt_workflow_requires_reason() -> None:
+    workflows = {
+        "synthetic": WorkflowSpec(
+            key="synthetic",
+            name="Synthetic",
+            workflow_family="implementation",
+            purpose="Implement",
+            trigger_hints=(),
+            output_contract=(),
+            required_validations=(),
+            stages=(),
+            implementation_bearing=True,
+            verification_exempt=True,
+        )
+    }
+
+    errors = validate_workflow_bindings(workflows, {})
+
+    assert "workflow=synthetic verification_exempt=true requires verification_exempt_reason" in errors
 
 
 def test_prompt_registry_accepts_legacy_route_status_alias(tmp_path: Path) -> None:

@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from services.evidence_artifacts import validate_fresh_evidence
+from services.verifier_artifacts import fresh_verifier_refs
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONTEXT_ROOT = REPO_ROOT / "aios" / "context"
@@ -66,6 +67,13 @@ def run_ladder(
     if run_id or session_id:
         checks.append(
             check_aios_evidence_artifacts(
+                db_path=Path(os.environ.get("AIOS_DB", "~/AIOS/data/aios.db")).expanduser(),
+                run_id=run_id,
+                session_id=session_id,
+            )
+        )
+        checks.append(
+            check_aios_verifier_artifacts(
                 db_path=Path(os.environ.get("AIOS_DB", "~/AIOS/data/aios.db")).expanduser(),
                 run_id=run_id,
                 session_id=session_id,
@@ -463,6 +471,53 @@ def check_aios_evidence_artifacts(
         "Fresh AIOS evidence artifacts are available",
         "skip",
         "AIOS evidence check unknown; no fresh usable evidence artifacts found.",
+    )
+
+
+def check_aios_verifier_artifacts(
+    *,
+    db_path: Path | None = None,
+    run_id: str | None = None,
+    session_id: str | None = None,
+) -> LadderCheck:
+    if not run_id and not session_id:
+        return LadderCheck(
+            "aios.verifier_artifacts",
+            "Fresh AIOS verifier artifact is available",
+            "skip",
+            "AIOS verifier check unknown outside a managed run/session.",
+        )
+    resolved_db = db_path or Path("~/AIOS/data/aios.db").expanduser()
+    if not resolved_db.exists():
+        return LadderCheck(
+            "aios.verifier_artifacts",
+            "Fresh AIOS verifier artifact is available",
+            "skip",
+            f"AIOS verifier check unknown; database missing at {resolved_db}.",
+        )
+    try:
+        with sqlite3.connect(resolved_db) as conn:
+            refs = tuple(fresh_verifier_refs(conn, run_id=run_id, session_id=session_id))
+    except sqlite3.Error as exc:
+        return LadderCheck(
+            "aios.verifier_artifacts",
+            "Fresh AIOS verifier artifact is available",
+            "skip",
+            f"AIOS verifier check unknown; database query failed: {exc}.",
+        )
+    if refs:
+        return LadderCheck(
+            "aios.verifier_artifacts",
+            "Fresh AIOS verifier artifact is available",
+            "pass",
+            f"{len(refs)} fresh verifier artifact(s) found for fail-closed eligibility.",
+            refs,
+        )
+    return LadderCheck(
+        "aios.verifier_artifacts",
+        "Fresh AIOS verifier artifact is available",
+        "skip",
+        "AIOS verifier check unknown; verifier-dependent standards remain warn-only.",
     )
 
 
