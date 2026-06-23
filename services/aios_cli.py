@@ -60,7 +60,13 @@ from services.invocation_backends import (
 from services.learning_taxonomy import LEARNING_SIGNAL_KINDS, LearningSignalKind
 from services.meta_learning_signals import extract_meta_learning_signals, signals_to_dicts
 from services.native_commands import (
+    de_slopify as native_de_slopify,
+)
+from services.native_commands import (
     handoff as native_handoff,
+)
+from services.native_commands import (
+    prototype as native_prototype,
 )
 from services.native_commands import (
     review_squad as native_review_squad,
@@ -2912,6 +2918,32 @@ def cmd_native_audit_security(args: argparse.Namespace) -> dict[str, Any]:
         raise CLIError("native-invalid-mode", str(exc), EXIT_USAGE) from exc
 
 
+def cmd_native_cleanup_de_slopify(args: argparse.Namespace) -> dict[str, Any]:
+    try:
+        return native_de_slopify(
+            repo_root=Path(args.repo_root).expanduser().resolve(),
+            files=[Path(path) for path in args.file],
+            base_ref=args.base,
+            cleanup_goals=list(args.goal or []),
+            apply=bool(args.apply),
+        )
+    except FileNotFoundError as exc:
+        raise CLIError("native-target-not-found", str(exc), EXIT_NOT_FOUND) from exc
+
+
+def cmd_native_prototype(args: argparse.Namespace) -> dict[str, Any]:
+    try:
+        return native_prototype(
+            question=args.question,
+            sandbox_path=Path(args.sandbox_path),
+            repo_root=Path(args.repo_root).expanduser().resolve(),
+            prototype_type=args.prototype_type,
+            cleanup_mode=args.cleanup_mode,
+        )
+    except ValueError as exc:
+        raise CLIError("native-prototype-path-not-allowed", str(exc), EXIT_USAGE) from exc
+
+
 def cmd_shadow_create_worktree(
     conn: sqlite3.Connection, args: argparse.Namespace
 ) -> dict[str, Any]:
@@ -4569,7 +4601,14 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "meta-analyze-session":
         print(f"signals={data['signal_count']} input={data['input_path']}")
         return
-    if command in {"zoom-out", "handoff", "review-squad", "audit-security"}:
+    if command in {
+        "zoom-out",
+        "handoff",
+        "review-squad",
+        "audit-security",
+        "cleanup-de-slopify",
+        "prototype",
+    }:
         print(data["markdown"])
         return
     if command == "shadow-create-worktree":
@@ -4631,6 +4670,8 @@ def _command_name(args: argparse.Namespace) -> str:
         return f"review-{args.review_command}"
     if args.command == "audit":
         return f"audit-{args.audit_command}"
+    if args.command == "cleanup":
+        return f"cleanup-{args.cleanup_command}"
     if args.command == "shadow":
         return f"shadow-{args.shadow_command}"
     if args.command == "peer-trace":
@@ -4925,6 +4966,26 @@ def create_parser() -> argparse.ArgumentParser:
     audit_security.add_argument("--file", action="append", default=[])
     audit_security.add_argument("--base", default="HEAD")
     audit_security.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    cleanup_parser = subparsers.add_parser("cleanup", help="Run guarded cleanup commands")
+    cleanup_subparsers = cleanup_parser.add_subparsers(dest="cleanup_command", required=True)
+    cleanup_de_slopify = cleanup_subparsers.add_parser(
+        "de-slopify", help="Plan or apply low-risk cleanup"
+    )
+    cleanup_de_slopify.add_argument("--repo-root", default=".")
+    cleanup_de_slopify.add_argument("--file", action="append", default=[])
+    cleanup_de_slopify.add_argument("--base", default="HEAD")
+    cleanup_de_slopify.add_argument("--goal", action="append", default=[])
+    cleanup_de_slopify.add_argument("--apply", action="store_true")
+    cleanup_de_slopify.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    prototype_parser = subparsers.add_parser("prototype", help="Create an isolated prototype")
+    prototype_parser.add_argument("--question", required=True)
+    prototype_parser.add_argument("--sandbox-path", required=True)
+    prototype_parser.add_argument("--repo-root", default=".")
+    prototype_parser.add_argument("--prototype-type", default="notes")
+    prototype_parser.add_argument("--cleanup-mode", default="delete_when_done")
+    prototype_parser.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     eval_parser = subparsers.add_parser("eval", help="Record and inspect AIOS eval runs")
     eval_subparsers = eval_parser.add_subparsers(dest="eval_command", required=True)
@@ -5617,6 +5678,10 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             data = cmd_native_review_squad(args)
         elif args.command == "audit" and args.audit_command == "security":
             data = cmd_native_audit_security(args)
+        elif args.command == "cleanup" and args.cleanup_command == "de-slopify":
+            data = cmd_native_cleanup_de_slopify(args)
+        elif args.command == "prototype":
+            data = cmd_native_prototype(args)
         elif args.command == "contracts-audit":
             assert conn is not None
             data = _contracts_audit_payload(conn)

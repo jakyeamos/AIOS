@@ -167,6 +167,106 @@ def security_audit(
     return payload
 
 
+def de_slopify(
+    *,
+    repo_root: Path | None = None,
+    files: Sequence[Path] = (),
+    base_ref: str = "HEAD",
+    cleanup_goals: Sequence[str] = (),
+    apply: bool = False,
+) -> dict[str, Any]:
+    root = (repo_root or Path.cwd()).resolve()
+    inspected = _review_files(root, files=files, base_ref=base_ref)
+    proposed: list[dict[str, str]] = []
+    applied: list[dict[str, str]] = []
+    skipped: list[dict[str, str]] = []
+    for path in inspected:
+        text = _read_text(path)
+        rel = str(path.relative_to(root)) if path.is_relative_to(root) else str(path)
+        cleaned = _format_only_cleanup(text)
+        if cleaned != text:
+            change = {
+                "file": rel,
+                "kind": "formatting",
+                "summary": "Remove trailing whitespace and collapse excessive blank lines.",
+                "risk": "low",
+            }
+            proposed.append(change)
+            if apply:
+                path.write_text(cleaned, encoding="utf-8")
+                applied.append(change)
+        skipped.extend(_risky_cleanup_findings(rel, text))
+    payload = {
+        "command_id": "cleanup_de_slopify",
+        "mode": "apply" if apply else "plan",
+        "scope": {"repo_root": str(root), "files": [str(path) for path in inspected]},
+        "cleanup_goals": list(cleanup_goals) or ["general conservative cleanup"],
+        "cleanup_plan": _cleanup_plan(proposed, skipped, apply),
+        "proposed_changes": proposed,
+        "applied_changes": applied,
+        "skipped_risky_changes": skipped,
+        "checks_run": ["static cleanup scan", "format-only apply guard"],
+        "rollback": "Revert the generated diff or restore affected files from git.",
+    }
+    payload["markdown"] = render_de_slopify(payload)
+    return payload
+
+
+def prototype(
+    *,
+    question: str,
+    sandbox_path: Path,
+    repo_root: Path | None = None,
+    prototype_type: str = "notes",
+    cleanup_mode: str = "delete_when_done",
+) -> dict[str, Any]:
+    root = (repo_root or Path.cwd()).resolve()
+    sandbox = _allowed_prototype_path(sandbox_path, root)
+    sandbox.mkdir(parents=True, exist_ok=True)
+    readme = sandbox / "README.md"
+    content = render_prototype_markdown(
+        {
+            "question_tested": question,
+            "prototype_location": str(sandbox),
+            "experiment": f"Create a {prototype_type} prototype artifact isolated from production code.",
+            "result": "Prototype scaffold created; run or extend experiments inside this directory only.",
+            "what_this_proves": "The question has an isolated place for disposable investigation.",
+            "what_this_does_not_prove": "It does not prove production readiness or justify promotion.",
+            "recommendation": "Promote only after review, tests, and a scoped production plan.",
+            "required_promotion_steps": [
+                "Summarize findings.",
+                "Create a separate implementation plan.",
+                "Move only reviewed code into production paths.",
+                "Run relevant tests before committing.",
+            ],
+            "cleanup_instructions": f"Cleanup mode `{cleanup_mode}`: delete `{sandbox}` when finished.",
+        }
+    )
+    readme.write_text(content + "\n", encoding="utf-8")
+    payload = {
+        "command_id": "prototype",
+        "question_tested": question,
+        "prototype_location": str(sandbox),
+        "experiment": f"{prototype_type} prototype scaffold",
+        "result": "created",
+        "what_this_proves": "An isolated sandbox can hold the experiment.",
+        "what_this_does_not_prove": "No production behavior has been validated.",
+        "recommendation": "Keep experimentation isolated until explicit promotion.",
+        "required_promotion_steps": [
+            "Review prototype output.",
+            "Write a scoped implementation plan.",
+            "Port only necessary pieces.",
+            "Run tests.",
+        ],
+        "cleanup_instructions": f"Delete `{sandbox}` when the experiment is complete.",
+        "created_files": [str(readme)],
+        "run_command": f"cd {sandbox}",
+        "cleanup_or_promotion_guidance": "Delete the sandbox or promote through a separate reviewed change.",
+    }
+    payload["markdown"] = render_prototype_markdown(payload)
+    return payload
+
+
 def render_zoom_out(payload: dict[str, Any]) -> str:
     return "\n".join(
         [
@@ -263,6 +363,38 @@ def render_security_audit(payload: dict[str, Any]) -> str:
             lines.append(f"  - Confidence: {finding['confidence']}")
     lines.extend(["", _list_section("Non-Issues Checked", payload["non_issues_checked"])])
     lines.extend(["", _list_section("Suggested Verification", payload["verification_suggestions"])])
+    return "\n".join(lines)
+
+
+def render_de_slopify(payload: dict[str, Any]) -> str:
+    lines = ["# De-Slopify Report", "", f"## Mode\n- {payload['mode']}"]
+    lines.extend(["", _list_section("Cleanup Plan", payload["cleanup_plan"])])
+    lines.extend(["", "## Proposed Changes"])
+    lines.extend(_change_lines(payload["proposed_changes"]))
+    lines.extend(["", "## Applied Changes"])
+    lines.extend(_change_lines(payload["applied_changes"]))
+    lines.extend(["", "## Skipped Risky Changes"])
+    lines.extend(_change_lines(payload["skipped_risky_changes"]))
+    lines.extend(["", _list_section("Checks Run", payload["checks_run"])])
+    lines.extend(["", f"## Rollback\n- {payload['rollback']}"])
+    return "\n".join(lines)
+
+
+def render_prototype_markdown(payload: dict[str, Any]) -> str:
+    sections = [
+        ("Question Tested", [payload["question_tested"]]),
+        ("Prototype Location", [payload["prototype_location"]]),
+        ("Experiment", [payload["experiment"]]),
+        ("Result", [payload["result"]]),
+        ("What This Proves", [payload["what_this_proves"]]),
+        ("What This Does Not Prove", [payload["what_this_does_not_prove"]]),
+        ("Recommendation", [payload["recommendation"]]),
+        ("Required Promotion Steps", payload["required_promotion_steps"]),
+        ("Cleanup Instructions", [payload["cleanup_instructions"]]),
+    ]
+    lines = ["# Prototype Report"]
+    for title, items in sections:
+        lines.extend(["", _list_section(title, items)])
     return "\n".join(lines)
 
 
@@ -482,12 +614,110 @@ def _allowed_artifact_path(path: Path, root: Path) -> Path:
     return resolved
 
 
+def _allowed_prototype_path(path: Path, root: Path) -> Path:
+    resolved = (root / path).resolve() if not path.is_absolute() else path.resolve()
+    allowed_roots = [
+        (root / ".planning" / "prototypes").resolve(),
+        (root / "prototypes").resolve(),
+        Path("/private/tmp").resolve(),
+    ]
+    if not any(resolved.is_relative_to(allowed) for allowed in allowed_roots):
+        allowed = ", ".join(str(path) for path in allowed_roots)
+        raise ValueError(f"Prototype path must be under one of: {allowed}")
+    return resolved
+
+
 def _review_files(root: Path, *, files: Sequence[Path], base_ref: str) -> list[Path]:
     if files:
         return [_resolve_existing_target(path, root) for path in files if _resolve_existing_target(path, root).is_file()]
     diff_files = _git_lines(root, "diff", "--name-only", base_ref)
     resolved = [root / name for name in diff_files if (root / name).is_file()]
     return [path.resolve() for path in resolved if _is_text_file(path.resolve())][:100]
+
+
+def _format_only_cleanup(text: str) -> str:
+    lines = [line.rstrip() for line in text.splitlines()]
+    collapsed: list[str] = []
+    blank_count = 0
+    for line in lines:
+        if line:
+            blank_count = 0
+            collapsed.append(line)
+            continue
+        blank_count += 1
+        if blank_count <= 2:
+            collapsed.append(line)
+    suffix = "\n" if text.endswith("\n") else ""
+    return "\n".join(collapsed) + suffix
+
+
+def _risky_cleanup_findings(file: str, text: str) -> list[dict[str, str]]:
+    skipped: list[dict[str, str]] = []
+    if "except Exception" in text:
+        skipped.append(
+            _cleanup_change(
+                file,
+                "broad_error_handling",
+                "Broad exception handling needs behavior-aware review.",
+                "medium",
+            )
+        )
+    if re.search(r"^\s*(def|class)\s+\w+", text, re.MULTILINE):
+        skipped.append(
+            _cleanup_change(
+                file,
+                "public_api",
+                "Function/class structure is treated as public behavior and not modified.",
+                "high",
+            )
+        )
+    if re.search(r"(TODO|FIXME|agent-created)", text, re.I):
+        skipped.append(
+            _cleanup_change(
+                file,
+                "todo_or_agent_marker",
+                "TODO or agent-created marker requires human decision before removal.",
+                "medium",
+            )
+        )
+    if re.search(r"\b(helper|manager|thing|stuff|data)\b", text):
+        skipped.append(
+            _cleanup_change(
+                file,
+                "generic_naming",
+                "Generic naming may be cleanup-worthy but needs semantic rename review.",
+                "low",
+            )
+        )
+    return skipped
+
+
+def _cleanup_change(file: str, kind: str, summary: str, risk: str) -> dict[str, str]:
+    return {"file": file, "kind": kind, "summary": summary, "risk": risk}
+
+
+def _cleanup_plan(
+    proposed: Sequence[dict[str, str]],
+    skipped: Sequence[dict[str, str]],
+    apply: bool,
+) -> list[str]:
+    plan = ["Inspect selected files for conservative cleanup opportunities."]
+    if proposed:
+        action = "Apply" if apply else "Report"
+        plan.append(f"{action} {len(proposed)} low-risk format-only cleanup item(s).")
+    if skipped:
+        plan.append(f"List {len(skipped)} risky structural cleanup item(s) without applying them.")
+    plan.append("Preserve behavior, public APIs, config keys, and meaningful state.")
+    return plan
+
+
+def _change_lines(changes: Sequence[dict[str, str]]) -> list[str]:
+    if not changes:
+        return ["- None."]
+    return [
+        f"- {change['file']} [{change['risk']}:{change['kind']}]: {change['summary']}"
+        for change in changes
+    ]
 
 
 def _review_lane(lane: str, files: Sequence[Path], root: Path) -> dict[str, Any]:

@@ -8,7 +8,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from services.aios_cli import EXIT_OK, run_cli  # noqa: E402
-from services.native_commands import handoff, review_squad, security_audit, zoom_out  # noqa: E402
+from services.native_commands import (  # noqa: E402
+    de_slopify,
+    handoff,
+    prototype,
+    review_squad,
+    security_audit,
+    zoom_out,
+)
 
 
 def _write_repo(tmp_path: Path) -> Path:
@@ -238,3 +245,111 @@ def test_audit_security_cli_json(tmp_path: Path, capsys) -> None:
     payload = json.loads(capsys.readouterr().out)
     assert payload["data"]["markdown"].startswith("# Security Audit")
     assert payload["data"]["findings_by_severity"]["high"]
+
+
+def test_de_slopify_flags_risky_structural_changes_without_applying(tmp_path: Path) -> None:
+    repo = _write_repo(tmp_path)
+    target = repo / "services" / "cleanup_target.py"
+    target.write_text(
+        "\n".join(
+            [
+                "def helper(data):  ",
+                "    # TODO: remove agent-created branch",
+                "    try:",
+                "        return data",
+                "    except Exception:",
+                "        return None",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    before = target.read_text(encoding="utf-8")
+
+    report = de_slopify(repo_root=repo, files=[target], cleanup_goals=["remove slop"])
+
+    assert target.read_text(encoding="utf-8") == before
+    assert report["proposed_changes"]
+    assert {change["kind"] for change in report["skipped_risky_changes"]} >= {
+        "broad_error_handling",
+        "public_api",
+        "todo_or_agent_marker",
+    }
+    assert report["applied_changes"] == []
+    assert report["markdown"].startswith("# De-Slopify Report")
+
+
+def test_de_slopify_apply_only_changes_low_risk_formatting(tmp_path: Path) -> None:
+    repo = _write_repo(tmp_path)
+    target = repo / "notes.md"
+    target.write_text("alpha   \n\n\n\nbeta\n", encoding="utf-8")
+
+    report = de_slopify(repo_root=repo, files=[target], apply=True)
+
+    assert target.read_text(encoding="utf-8") == "alpha\n\n\nbeta\n"
+    assert report["applied_changes"]
+    assert report["skipped_risky_changes"] == []
+
+
+def test_prototype_writes_only_to_allowed_sandbox_locations(tmp_path: Path) -> None:
+    repo = _write_repo(tmp_path)
+    report = prototype(
+        question="Can a disposable parser work?",
+        repo_root=repo,
+        sandbox_path=Path(".planning/prototypes/parser-spike"),
+    )
+
+    created = Path(report["created_files"][0])
+    assert created.is_file()
+    assert created.read_text(encoding="utf-8").startswith("# Prototype Report")
+
+    disallowed = repo / "services" / "prototype"
+    try:
+        prototype(question="bad path", repo_root=repo, sandbox_path=disallowed)
+    except ValueError as exc:
+        assert "Prototype path must be under" in str(exc)
+    else:
+        raise AssertionError("prototype accepted a production path")
+
+
+def test_cleanup_and_prototype_cli_json(tmp_path: Path, capsys) -> None:
+    repo = _write_repo(tmp_path)
+    target = repo / "notes.md"
+    target.write_text("alpha   \n", encoding="utf-8")
+
+    assert (
+        run_cli(
+            [
+                "--json",
+                "cleanup",
+                "de-slopify",
+                "--repo-root",
+                str(repo),
+                "--file",
+                str(target),
+            ]
+        )
+        == EXIT_OK
+    )
+    cleanup_payload = json.loads(capsys.readouterr().out)
+    assert cleanup_payload["data"]["markdown"].startswith("# De-Slopify Report")
+    assert cleanup_payload["data"]["applied_changes"] == []
+
+    assert (
+        run_cli(
+            [
+                "--json",
+                "prototype",
+                "--repo-root",
+                str(repo),
+                "--question",
+                "Can sandbox writes stay isolated?",
+                "--sandbox-path",
+                ".planning/prototypes/cli-spike",
+            ]
+        )
+        == EXIT_OK
+    )
+    prototype_payload = json.loads(capsys.readouterr().out)
+    assert prototype_payload["data"]["markdown"].startswith("# Prototype Report")
+    assert Path(prototype_payload["data"]["created_files"][0]).is_file()
