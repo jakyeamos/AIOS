@@ -113,6 +113,7 @@ AIOS now owns a global allowlisted project quality-gate runner:
 - `bin/user-commit-quality-gate.py` blocks registered source commits when the local gate contract is missing, malformed, unknown, or failing, after the existing Pre-CR requirement
 - `python3 bin/aios.py --json gate run <gate_id> --project <project_id> --repo-root <path>` runs a single allowlisted adapter for pre-commit or full mode
 - `services.commit_quality_ladder` now verifies that AIOS itself has the allowlisted quality-gate registry and local contract, making this an AIOS quality-ladder gate
+- Soundscape `test_quality` now runs `pnpm test:quality:audit` before inventory and script-policy checks, so known weak-test patterns fail the gate instead of being hidden behind a narrower command
 
 ## Implemented On 2026-06-22
 

@@ -96,6 +96,10 @@
           "preCommitCommands": [
             [
               "pnpm",
+              "test:quality:audit"
+            ],
+            [
+              "pnpm",
               "test:inventory"
             ],
             [
@@ -104,6 +108,10 @@
             ]
           ],
           "fullCommands": [
+            [
+              "pnpm",
+              "test:quality:audit"
+            ],
             [
               "pnpm",
               "-w",
