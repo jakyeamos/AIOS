@@ -75,6 +75,12 @@ AIOS Phase 12 Plan 12-04 now has the cache-aware context compiler:
 - stable prefix sections cover system/developer instructions, AIOS operating rules, user preferences, project memory summary, and project truth packet, and remain deterministic across task changes for the same project context
 - dynamic suffix sections compose task-specific memory through `MemoryCompiler`, deduplicate facts already present in project truth, filter stale facts by default, and compress lower-priority dynamic content before stable project truth and memory summary
 
+AIOS Phase 12 Plan 12-06 now has retrieval quality checks:
+
+- `tests/memory/test_packet_quality.py` enforces the nine memory packet quality constraints from the contract using integration-level compiler fixtures
+- `tests/context/test_context_quality.py` verifies deterministic stable prefixes, dynamic-after-stable ordering, and deduplication in `ContextCompiler`
+- `scripts/validate-memory-packets.py` is an executable standalone validator for generated packet Markdown files, checking section order, provenance, raw JSON leakage, validity markers, and token limits
+
 AIOS planning now reflects the expanded quality-gate success criteria as landed baseline infrastructure:
 
 - Phase 14 plans now reference the registered success-criteria gate ids as the canonical vocabulary for complexity, architecture, simplicity, testing, UI, data, API, supply-chain, and agent-claim verification work
