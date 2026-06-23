@@ -1015,6 +1015,20 @@ CREATE TABLE IF NOT EXISTS issues (
 CREATE INDEX IF NOT EXISTS idx_issues_project_status ON issues(project, status, id);
 CREATE INDEX IF NOT EXISTS idx_issues_linked_run ON issues(linked_run_id);
 
+CREATE TABLE IF NOT EXISTS handoffs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id TEXT,
+  project TEXT NOT NULL,
+  focus TEXT,
+  suggested_skills TEXT NOT NULL DEFAULT '[]',
+  source_run_id TEXT,
+  content_path TEXT,
+  redacted INTEGER NOT NULL DEFAULT 0 CHECK(redacted IN (0, 1)),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_handoffs_project_created ON handoffs(project, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_handoffs_source_run ON handoffs(source_run_id);
+
 CREATE TABLE IF NOT EXISTS eval_tasks (
   id TEXT PRIMARY KEY,
   repo_id TEXT,

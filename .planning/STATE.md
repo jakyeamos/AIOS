@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-last_updated: "2026-06-23T18:42:00.000Z"
+last_updated: "2026-06-23T18:58:00.000Z"
 progress:
   total_phases: 22
-  completed_phases: 14
+  completed_phases: 15
   total_plans: 123
-  completed_plans: 78
-  percent: 63
+  completed_plans: 79
+  percent: 64
 ---
 
 # AIOS Planning State
@@ -25,16 +25,16 @@ progress:
 - Canonical planning intent: make AIOS the default operating layer for serious project work by tightening routing, context, lifecycle, truth, governance, evaluation, learning, and operator visibility into one governed loop.
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
-- Latest completed phase: Phase 14, Code Quality Gates And Cross-Project Complexity Standards, shipped thin agent-rule pointers, complexity/simplification quality docs, and cross-project complexity backfill inventories.
-- Latest completed plan: Phase 15 Plan 15-07 shipped the skill-authoring comparison matrix and canonical global `write-a-skill` skill with progressive disclosure, trigger discipline, scripts/references guidance, and intent-specific routing for SKIL-07.
+- Latest completed phase: Phase 15, Agent Skill Portfolio Audit And External Library Integration, shipped the skill inventory, global intent-specific skills, issues and handoff stores, and skill-authoring consolidation.
+- Latest completed plan: Phase 15 Plan 15-08 shipped the global handoff skill plus `services/handoff_store.py`, the checked-in `handoffs` schema, focused tests, and verification evidence for SKIL-08.
 
 ## Current Roadmap Position
 
-- Active milestone: Milestone 10, Agent Skill Portfolio Audit And External Library Integration
-- Active phase: Phase 15, Agent Skill Portfolio Audit And External Library Integration
-- Active plan: Phase 15 Plan 15-08
-- Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14
-- Next dependency chain: Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22
+- Active milestone: Milestone 11, Harness Determinism, Evidence, And Independent Verification
+- Active phase: Phase 16, Harness Determinism, Evidence, And Independent Verification
+- Active plan: Phase 16 Plan 16-01
+- Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15
+- Next dependency chain: Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
 
 ## Known Constraints To Preserve
@@ -52,6 +52,8 @@ progress:
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-06-23 | Complete Phase 15 Agent Skill Portfolio Audit And External Library Integration | Phase 15 completed SKIL-01 through SKIL-08 with skill inventory and backup, global `interrogate`, `diagnose`, `simplifier`, `to-issues`, `prototype`, `write-a-skill`, and `handoff` skills, AIOS `issues` and `handoffs` stores, focused service tests, and per-plan verification summaries. |
+| 2026-06-23 | Complete Phase 15 Plan 15-08 handoff skill and handoff store | `.planning/phases/15-agent-skill-portfolio-audit-and-external-library-integration/15-08-SUMMARY.md` records the new global `/Users/jakyeamos/.claude/skills/handoff/SKILL.md`, `services/handoff_store.py`, checked-in `handoffs` schema, 7 focused passing store tests, and passing artifact/reference/key-link checks. |
 | 2026-06-23 | Complete Phase 15 Plan 15-07 canonical write-a-skill workflow | `.planning/phases/15-agent-skill-portfolio-audit-and-external-library-integration/15-07-SUMMARY.md` records `docs/phase-15-skill-authoring-comparison.md`, the new global `/Users/jakyeamos/.claude/skills/write-a-skill/SKILL.md`, progressive disclosure, trigger discipline, scripts/reference guidance, and passing artifact/reference/key-link checks. |
 | 2026-06-23 | Complete Phase 15 Plan 15-06 prototype skill | `.planning/phases/15-agent-skill-portfolio-audit-and-external-library-integration/15-06-SUMMARY.md` records the new global `/Users/jakyeamos/.claude/skills/prototype/SKILL.md`, question-first gate, throwaway/no-persistence rules, state exposure, delete-or-absorb closeout, and passing artifact/reference checks. |
 | 2026-06-23 | Complete Phase 15 Plan 15-05 to-issues skill and issues store | `.planning/phases/15-agent-skill-portfolio-audit-and-external-library-integration/15-05-SUMMARY.md` records the new global `/Users/jakyeamos/.claude/skills/to-issues/SKILL.md`, `services/issues_store.py`, checked-in `issues` schema, 4 focused passing tests, and passing artifact/reference/key-link checks. |
@@ -139,4 +141,4 @@ progress:
 | 2026-06-02 | Complete Phase 10 Plan 08 quality hotspot backfill baseline | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-08-SUMMARY.md` records `pnpm quality:eval`, the read-only hotspot detection script, and the first factual Agent Eval backfill inventory for Python services, CLI scripts, tests, aios-ui, config, and eval docs. |
 
 ---
-*Last updated: 2026-06-23 after completing Phase 15 Plan 15-07 and advancing to Phase 15 Plan 15-08*
+*Last updated: 2026-06-23 after completing Phase 15 and advancing to Phase 16 Plan 16-01*

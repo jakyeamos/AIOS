@@ -291,7 +291,7 @@ None currently. The full operating-system vision is intentionally being planned 
 | SKIL-05 | Phase 15: Agent Skill Portfolio Audit And External Library Integration | Complete |
 | SKIL-06 | Phase 15: Agent Skill Portfolio Audit And External Library Integration | Complete |
 | SKIL-07 | Phase 15: Agent Skill Portfolio Audit And External Library Integration | Complete |
-| SKIL-08 | Phase 15: Agent Skill Portfolio Audit And External Library Integration | Pending |
+| SKIL-08 | Phase 15: Agent Skill Portfolio Audit And External Library Integration | Complete |
 | HARN-01 | Phase 16: Harness Determinism, Evidence, And Independent Verification | Pending |
 | HARN-02 | Phase 16: Harness Determinism, Evidence, And Independent Verification | Pending |
 | HARN-03 | Phase 16: Harness Determinism, Evidence, And Independent Verification | Pending |
