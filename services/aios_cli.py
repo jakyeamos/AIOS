@@ -59,6 +59,15 @@ from services.invocation_backends import (
 )
 from services.learning_taxonomy import LEARNING_SIGNAL_KINDS, LearningSignalKind
 from services.meta_learning_signals import extract_meta_learning_signals, signals_to_dicts
+from services.native_commands import (
+    handoff as native_handoff,
+)
+from services.native_commands import (
+    review_squad as native_review_squad,
+)
+from services.native_commands import (
+    zoom_out as native_zoom_out,
+)
 from services.path_resolution import get_vault_root
 from services.peer_trace import (
     end_peer_session,
@@ -2845,6 +2854,47 @@ def _meta_analyze_session_payload(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def cmd_native_zoom_out(args: argparse.Namespace) -> dict[str, Any]:
+    try:
+        return native_zoom_out(
+            Path(args.target),
+            repo_root=Path(args.repo_root).expanduser().resolve(),
+            depth=max(0, int(args.depth)),
+        )
+    except FileNotFoundError as exc:
+        raise CLIError("native-target-not-found", str(exc), EXIT_NOT_FOUND) from exc
+
+
+def cmd_native_handoff(args: argparse.Namespace) -> dict[str, Any]:
+    output_path = Path(args.output) if args.output else None
+    try:
+        return native_handoff(
+            objective=args.objective,
+            repo_root=Path(args.repo_root).expanduser().resolve(),
+            output_path=output_path,
+            decision=list(args.decision or []),
+            test=list(args.test or []),
+            worked=list(args.worked or []),
+            failed=list(args.failed or []),
+            blocker=list(args.blocker or []),
+            reference=list(args.reference or []),
+            next_action=list(args.next_action or []),
+        )
+    except ValueError as exc:
+        raise CLIError("native-output-not-allowed", str(exc), EXIT_USAGE) from exc
+
+
+def cmd_native_review_squad(args: argparse.Namespace) -> dict[str, Any]:
+    try:
+        return native_review_squad(
+            repo_root=Path(args.repo_root).expanduser().resolve(),
+            files=[Path(path) for path in args.file],
+            base_ref=args.base,
+        )
+    except FileNotFoundError as exc:
+        raise CLIError("native-target-not-found", str(exc), EXIT_NOT_FOUND) from exc
+
+
 def cmd_shadow_create_worktree(
     conn: sqlite3.Connection, args: argparse.Namespace
 ) -> dict[str, Any]:
@@ -4502,6 +4552,9 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "meta-analyze-session":
         print(f"signals={data['signal_count']} input={data['input_path']}")
         return
+    if command in {"zoom-out", "handoff", "review-squad"}:
+        print(data["markdown"])
+        return
     if command == "shadow-create-worktree":
         print(f"shadow_run={data['shadow_run_id']} branch={data['branch_name']}")
         return
@@ -4557,6 +4610,8 @@ def _command_name(args: argparse.Namespace) -> str:
         return f"eval-{args.eval_command}"
     if args.command == "meta":
         return f"meta-{args.meta_command}"
+    if args.command == "review":
+        return f"review-{args.review_command}"
     if args.command == "shadow":
         return f"shadow-{args.shadow_command}"
     if args.command == "peer-trace":
@@ -4815,6 +4870,33 @@ def create_parser() -> argparse.ArgumentParser:
     daily_flow.add_argument("--project", default=None)
     daily_flow.add_argument("--dry-run", action="store_true")
     daily_flow.add_argument("--json", action="store_true", default=True)
+
+    zoom_out = subparsers.add_parser("zoom-out", help="Read-only orientation for a target")
+    zoom_out.add_argument("target")
+    zoom_out.add_argument("--repo-root", default=".")
+    zoom_out.add_argument("--depth", type=int, default=2)
+    zoom_out.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    handoff_parser = subparsers.add_parser("handoff", help="Generate an AIOS handoff packet")
+    handoff_parser.add_argument("--objective", required=True)
+    handoff_parser.add_argument("--repo-root", default=".")
+    handoff_parser.add_argument("--output", default=None)
+    handoff_parser.add_argument("--decision", action="append", default=[])
+    handoff_parser.add_argument("--test", action="append", default=[])
+    handoff_parser.add_argument("--worked", action="append", default=[])
+    handoff_parser.add_argument("--failed", action="append", default=[])
+    handoff_parser.add_argument("--blocker", action="append", default=[])
+    handoff_parser.add_argument("--reference", action="append", default=[])
+    handoff_parser.add_argument("--next-action", action="append", default=[])
+    handoff_parser.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    review_parser = subparsers.add_parser("review", help="Run native review commands")
+    review_subparsers = review_parser.add_subparsers(dest="review_command", required=True)
+    review_squad = review_subparsers.add_parser("squad", help="Read-only squad review")
+    review_squad.add_argument("--repo-root", default=".")
+    review_squad.add_argument("--file", action="append", default=[])
+    review_squad.add_argument("--base", default="HEAD")
+    review_squad.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     eval_parser = subparsers.add_parser("eval", help="Record and inspect AIOS eval runs")
     eval_subparsers = eval_parser.add_subparsers(dest="eval_command", required=True)
@@ -5499,6 +5581,12 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "daily-flow":
             assert conn is not None
             data = cmd_daily_flow(conn, args)
+        elif args.command == "zoom-out":
+            data = cmd_native_zoom_out(args)
+        elif args.command == "handoff":
+            data = cmd_native_handoff(args)
+        elif args.command == "review" and args.review_command == "squad":
+            data = cmd_native_review_squad(args)
         elif args.command == "contracts-audit":
             assert conn is not None
             data = _contracts_audit_payload(conn)
