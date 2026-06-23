@@ -106,10 +106,13 @@ This gate follows `docs/quality/aios-standards-ladder-contract.md`:
 
 Use `spec/success-criteria/index.md` as the canonical quality-mode and criterion index. It defines diff-scoped Pre-PR gate mode, Adoption/backfill mode, and the criterion IDs this gate maps to.
 
+For strict Pre-PR structural review, use `docs/quality-gates/thermo-nuclear-simplification.md`. The Complexity + Simplification gate is the general post-work checklist; the Thermo-Nuclear gate is the named blocking ratchet for working-but-messy code.
+
 Primary criteria:
 
 - `complexity-budget`
 - `simplicity`
+- `thermo-nuclear-simplification`
 - `code-simplicity`
 - `test-quality`
 - `architecture-boundary`

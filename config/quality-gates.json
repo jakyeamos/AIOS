@@ -3,7 +3,8 @@
   "knownGates": [
     "test_quality",
     "architecture",
-    "pre_cr"
+    "pre_cr",
+    "thermo_nuclear_simplification"
   ],
   "projects": [
     {
@@ -80,6 +81,27 @@
               "bin/aios.py",
               "--json",
               "pre-pr-readiness"
+            ]
+          ]
+        },
+        "thermo_nuclear_simplification": {
+          "preCommitCommands": [
+            [
+              "uv",
+              "run",
+              "pytest",
+              "-q",
+              "tests/test_commit_quality_ladder.py"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "uv",
+              "run",
+              "pytest",
+              "-q",
+              "tests/test_commit_quality_ladder.py",
+              "tests/test_pre_pr_readiness.py"
             ]
           ]
         }

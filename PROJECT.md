@@ -116,6 +116,14 @@ AIOS now owns a global allowlisted project quality-gate runner:
 - Soundscape `test_quality` now runs `pnpm test:quality:audit` before inventory and script-policy checks, so known weak-test patterns fail the gate instead of being hidden behind a narrower command
 - the AIOS `test_quality` runner now carries the global non-regression policy: fixes must preserve or improve behavior coverage, and deletion is valid only for obsolete tests, duplicate stronger coverage, or pure noise
 
+AIOS now registers the Thermo-Nuclear Simplification gate as a first-class structural quality ratchet:
+
+- `thermo_nuclear_simplification` is allowlisted in `config/quality-gates.json`, declared in `.aios-quality-gate.json`, and required in the AIOS quality pipeline
+- `thermo-nuclear-simplification` is a blocking success criterion for planning, implementation, bugfix, refactor, and review work
+- `docs/quality-gates/thermo-nuclear-simplification.md` defines the strict Pre-PR/adoption/shadow-eval review contract, including severity, scorecard, output template, waiver rules, file-sprawl checks, thin-wrapper rejection, type-boundary protection, and canonical-layer reuse
+- `docs/pre-pr/quality-ladder.md` places Thermo after correctness checks and before merge recommendation, while `docs/adoption/backfill-quality-ratchet.md` defines the adoption-mode ratchet for legacy debt
+- `services.commit_quality_ladder` now verifies that AIOS keeps the Thermo gate registered, configured, and declared locally
+
 ## Implemented On 2026-06-22
 
 AIOS now has a versioned pre-commit quality ladder for standards enforcement:

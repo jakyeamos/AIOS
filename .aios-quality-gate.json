@@ -4,11 +4,13 @@
   "preCommitGates": [
     "test_quality",
     "architecture",
-    "pre_cr"
+    "pre_cr",
+    "thermo_nuclear_simplification"
   ],
   "fullGates": [
     "test_quality",
     "architecture",
-    "pre_cr"
+    "pre_cr",
+    "thermo_nuclear_simplification"
   ]
 }

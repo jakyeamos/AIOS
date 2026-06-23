@@ -284,7 +284,13 @@ def check_quality_pipeline_includes_aios(repo_root: Path) -> LadderCheck:
         failures.append("quality pipeline has no project_id=aios entry")
     else:
         configured = aios_project.get("gates") if isinstance(aios_project.get("gates"), dict) else {}
-        for required in ("lint", "test", "architecture", "pre_pr_readiness"):
+        for required in (
+            "lint",
+            "test",
+            "architecture",
+            "pre_pr_readiness",
+            "thermo_nuclear_simplification",
+        ):
             if required not in configured:
                 failures.append(f"aios gate not configured: {required}")
     if failures:
@@ -325,7 +331,7 @@ def check_quality_gate_registry(repo_root: Path) -> LadderCheck:
     known_gates = registry.get("knownGates") if isinstance(registry.get("knownGates"), list) else []
     projects = registry.get("projects") if isinstance(registry.get("projects"), list) else []
     failures: list[str] = []
-    for required in ("test_quality", "architecture", "pre_cr"):
+    for required in ("test_quality", "architecture", "pre_cr", "thermo_nuclear_simplification"):
         if required not in known_gates:
             failures.append(f"known gate missing: {required}")
     aios_project = next(
@@ -340,7 +346,7 @@ def check_quality_gate_registry(repo_root: Path) -> LadderCheck:
         failures.append("quality gate registry has no projectId=aios entry")
     else:
         configured = aios_project.get("gates") if isinstance(aios_project.get("gates"), dict) else {}
-        for required in ("test_quality", "architecture", "pre_cr"):
+        for required in ("test_quality", "architecture", "pre_cr", "thermo_nuclear_simplification"):
             gate = configured.get(required) if isinstance(configured.get(required), dict) else None
             if gate is None:
                 failures.append(f"aios gate not configured: {required}")
@@ -353,7 +359,7 @@ def check_quality_gate_registry(repo_root: Path) -> LadderCheck:
     if not isinstance(declared, list):
         failures.append(".aios-quality-gate.json preCommitGates must be a list")
     else:
-        for required in ("test_quality", "architecture", "pre_cr"):
+        for required in ("test_quality", "architecture", "pre_cr", "thermo_nuclear_simplification"):
             if required not in declared:
                 failures.append(f".aios-quality-gate.json missing preCommit gate: {required}")
     if failures:

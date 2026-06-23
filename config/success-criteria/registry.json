@@ -515,6 +515,32 @@
       ]
     },
     {
+      "id": "thermo-nuclear-simplification",
+      "title": "Thermo-Nuclear Simplification Gate",
+      "path": "spec/success-criteria/thermo-nuclear-simplification.md",
+      "scope": "global",
+      "blocking": true,
+      "evaluation_method": "heuristic",
+      "applies_when": {
+        "task_types": [
+          "planning",
+          "implementation",
+          "bugfix",
+          "refactor",
+          "review"
+        ],
+        "domains": [
+          "*"
+        ]
+      },
+      "related": [
+        "code-simplicity",
+        "architecture-boundary",
+        "thin-display",
+        "complexity-budget"
+      ]
+    },
+    {
       "id": "agent-claim-verification",
       "title": "Agent Claim Verification",
       "path": "spec/success-criteria/agent-claim-verification.md",

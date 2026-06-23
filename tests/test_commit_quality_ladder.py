@@ -11,6 +11,7 @@ from services.commit_quality_ladder import (  # noqa: E402
     _handler_before_send_findings,
     check_confident_event_loop_ordering,
     check_global_standards_inventory,
+    check_quality_pipeline_includes_aios,
     check_quality_gate_registry,
     check_standards_health_registry,
     check_success_criteria_registry,
@@ -159,3 +160,110 @@ def test_quality_gate_registry_requires_aios_contract(tmp_path: Path) -> None:
 
     assert result.status == "fail"
     assert ".aios-quality-gate.json is missing" in result.detail
+
+
+def test_quality_gate_registry_requires_thermo_gate(tmp_path: Path) -> None:
+    config = tmp_path / "config"
+    config.mkdir()
+    (config / "quality-gates.json").write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "knownGates": ["test_quality", "architecture", "pre_cr"],
+                "projects": [
+                    {
+                        "projectId": "aios",
+                        "gates": {
+                            "test_quality": {"preCommitCommands": [["true"]]},
+                            "architecture": {"preCommitCommands": [["true"]]},
+                            "pre_cr": {"preCommitCommands": [["true"]]},
+                        },
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / ".aios-quality-gate.json").write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "projectId": "aios",
+                "preCommitGates": ["test_quality", "architecture", "pre_cr"],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = check_quality_gate_registry(tmp_path)
+
+    assert result.status == "fail"
+    assert "known gate missing: thermo_nuclear_simplification" in result.evidence
+
+
+def test_quality_pipeline_includes_thermo_gate_for_aios(tmp_path: Path) -> None:
+    config = tmp_path / "config"
+    config.mkdir()
+    (config / "quality-pipeline.json").write_text(
+        json.dumps(
+            {
+                "standard": {
+                    "gates": [
+                        {"key": "lint"},
+                        {"key": "test"},
+                        {"key": "architecture"},
+                        {"key": "pre_pr_readiness"},
+                        {"key": "thermo_nuclear_simplification"},
+                    ]
+                },
+                "projects": [
+                    {
+                        "project_id": "aios",
+                        "gates": {
+                            "lint": {},
+                            "test": {},
+                            "architecture": {},
+                            "pre_pr_readiness": {},
+                        },
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = check_quality_pipeline_includes_aios(tmp_path)
+
+    assert result.status == "fail"
+    assert "aios gate not configured: thermo_nuclear_simplification" in result.evidence
+
+
+def test_success_criteria_registry_requires_thermo_spec_path(tmp_path: Path) -> None:
+    registry = tmp_path / "config" / "success-criteria"
+    registry.mkdir(parents=True)
+    (registry / "registry.json").write_text(
+        json.dumps(
+            {
+                "criteria": [
+                    {
+                        "id": "thermo-nuclear-simplification",
+                        "title": "Thermo",
+                        "path": "spec/success-criteria/thermo-nuclear-simplification.md",
+                        "scope": "global",
+                        "blocking": True,
+                        "evaluation_method": "heuristic",
+                        "applies_when": {"task_types": ["*"], "domains": ["*"]},
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = check_success_criteria_registry(tmp_path)
+
+    assert result.status == "fail"
+    assert (
+        "thermo-nuclear-simplification path missing: "
+        "spec/success-criteria/thermo-nuclear-simplification.md"
+    ) in result.evidence

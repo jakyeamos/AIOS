@@ -39,6 +39,7 @@ This index is the canonical discovery point for all AIOS-managed success criteri
 | `resilience` | Failure Mode and Resilience Gate | domain-specific | no | IO, external service, retry, DB write, job, offline/slow-path changes | `spec/success-criteria/resilience.md` |
 | `product-alignment` | Product Alignment and Scope Discipline | task-type | no | planning, implementation, review, UI/product work | `spec/success-criteria/product-alignment.md` |
 | `simplicity` | Simplicity and De-Slop Gate | global | no | all agent-managed work | `spec/success-criteria/simplicity.md` |
+| `thermo-nuclear-simplification` | Thermo-Nuclear Simplification Gate | global | yes | planning, implementation, bugfix, refactor, review | `spec/success-criteria/thermo-nuclear-simplification.md` |
 | `agent-claim-verification` | Agent Claim Verification | global | yes | all agent-managed work | `spec/success-criteria/agent-claim-verification.md` |
 
 ## Diff-Scoped Gate Routing
@@ -50,7 +51,7 @@ AIOS should prefer scoped gate selection over a universal checklist:
 - Auth, permission, secret, token, validation, and sensitive data diffs route to `security-review` in hard-blocking mode.
 - Algorithm, query, pagination, polling, recursion, and hot-path diffs route to `complexity-budget` and may require benchmarks.
 - Dependency, lockfile, package-manager, build, and deployment package diffs route to `supply-chain-review`.
-- Large or agent-generated PRs route to `simplicity`, `architecture-boundary`, and `agent-claim-verification`.
+- Large, structural, or agent-generated PRs route to `thermo-nuclear-simplification`, `simplicity`, `architecture-boundary`, and `agent-claim-verification`.
 
 ## Quality Modes
 
