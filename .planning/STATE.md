@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-last_updated: "2026-06-24T00:00:05.000Z"
+last_updated: "2026-06-24T00:00:20.000Z"
 progress:
   total_phases: 22
-  completed_phases: 18
+  completed_phases: 19
   total_plans: 123
-  completed_plans: 102
-  percent: 80
+  completed_plans: 103
+  percent: 86
 ---
 
 # AIOS Planning State
@@ -25,16 +25,16 @@ progress:
 - Canonical planning intent: make AIOS the default operating layer for serious project work by tightening routing, context, lifecycle, truth, governance, evaluation, learning, and operator visibility into one governed loop.
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
-- Latest completed phase: Phase 18, Meta-Learning Proposal Layer, shipped review-first session signal extraction, scoring, routing, proposal generation, auto-allow safety, shadow eval plans, fallback meta CLI, and documentation.
-- Latest completed plan: Phase 19 Plan 19-06 added optional local native command metadata logging.
+- Latest completed phase: Phase 19, Native Workflow Command Pack, shipped local native workflow commands for orientation, handoff, squad review, security audit, guarded cleanup, prototype sandboxes, metadata logging, tests, and docs.
+- Latest completed plan: Phase 19 Plan 19-07 completed native workflow command tests and documentation.
 
 ## Current Roadmap Position
 
-- Active milestone: Milestone 14, Native Workflow Command Pack
-- Active phase: Phase 19, Native Workflow Command Pack
-- Active plan: Phase 19 Plan 19-07
-- Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18
-- Next dependency chain: Phase 19 -> Phase 20 -> Phase 21 -> Phase 22
+- Active milestone: Milestone 15, Execution-Symmetric Planning
+- Active phase: Phase 20, Execution-Symmetric Planning
+- Active plan: Phase 20 Plan 20-01
+- Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19
+- Next dependency chain: Phase 20 -> Phase 21 -> Phase 22
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
 
 ## Known Constraints To Preserve
@@ -52,6 +52,8 @@ progress:
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-06-23 | Complete Phase 19 Native Workflow Command Pack | `.planning/phases/19-native-workflow-command-pack/19-VERIFICATION.md` verifies CMDP-01 through CMDP-08 with architecture audit, command contracts, six native commands, metadata logging, docs, focused tests, and TMCP placement discipline. |
+| 2026-06-23 | Complete Phase 19 Plan 19-07 tests and documentation | `.planning/phases/19-native-workflow-command-pack/19-07-SUMMARY.md` records `docs/aios/native-workflow-commands.md`, registry/schema tests, required workflow docs, command purpose/safety/lane/second-brain examples, and CMDP-08 completion. |
 | 2026-06-23 | Complete Phase 19 Plan 19-06 command metadata logging | `.planning/phases/19-native-workflow-command-pack/19-06-SUMMARY.md` records `services/native_command_logging.py`, optional local JSONL metadata logging flags for native commands, metadata shape, optional run/session/model/runtime fields, local-only path validation, focused tests, and CMDP-08 logging evidence. |
 | 2026-06-23 | Complete Phase 19 Plan 19-05 guarded cleanup and prototype commands | `.planning/phases/19-native-workflow-command-pack/19-05-SUMMARY.md` records `aios cleanup de-slopify`, `aios prototype`, plan-by-default cleanup, low-risk format-only apply, risky structural skip reporting, prototype sandbox path enforcement, required prototype sections, focused tests, and CMDP-07 completion. |
 | 2026-06-23 | Complete Phase 19 Plan 19-04 security audit command | `.planning/phases/19-native-workflow-command-pack/19-04-SUMMARY.md` records `aios audit security`, strict/practical mode filtering, contextual security findings, required finding fields, non-issues checked, verification suggestions, read-only behavior, focused tests, and CMDP-06 completion. |
@@ -167,4 +169,4 @@ progress:
 | 2026-06-02 | Complete Phase 10 Plan 08 quality hotspot backfill baseline | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-08-SUMMARY.md` records `pnpm quality:eval`, the read-only hotspot detection script, and the first factual Agent Eval backfill inventory for Python services, CLI scripts, tests, aios-ui, config, and eval docs. |
 
 ---
-*Last updated: 2026-06-23 after completing Phase 19 Plan 19-06 and advancing to Phase 19 Plan 19-07*
+*Last updated: 2026-06-23 after completing Phase 19 and advancing to Phase 20 Plan 20-01*

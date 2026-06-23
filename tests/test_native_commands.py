@@ -353,3 +353,44 @@ def test_cleanup_and_prototype_cli_json(tmp_path: Path, capsys) -> None:
     prototype_payload = json.loads(capsys.readouterr().out)
     assert prototype_payload["data"]["markdown"].startswith("# Prototype Report")
     assert Path(prototype_payload["data"]["created_files"][0]).is_file()
+
+
+def test_native_command_registry_covers_schema_and_safety_contracts() -> None:
+    registry = json.loads((ROOT / "config" / "commands" / "native-workflow-commands.json").read_text())
+    commands = {command["id"]: command for command in registry["commands"]}
+
+    assert set(commands) == {
+        "zoom_out",
+        "handoff",
+        "review_squad",
+        "audit_security",
+        "cleanup_de_slopify",
+        "prototype",
+    }
+    for command in commands.values():
+        assert command["safety_class"] in registry["safety_classes"]
+        assert command["input_schema"]["required"]
+        assert command["output_schema"]["required"]
+        assert command["validation_gates"]
+        assert command["logging_metadata"]
+    assert commands["cleanup_de_slopify"]["safety_class"] == "guarded_modify"
+    assert commands["prototype"]["safety_class"] == "sandbox_write"
+
+
+def test_native_workflow_command_docs_cover_required_workflows() -> None:
+    docs = (ROOT / "docs" / "aios" / "native-workflow-commands.md").read_text()
+
+    for phrase in [
+        "aios zoom-out",
+        "aios handoff",
+        "aios review squad",
+        "aios audit security",
+        "aios cleanup de-slopify",
+        "aios prototype",
+        "Unfamiliar Code",
+        "Risky Or Security-Sensitive Work",
+        "Uncertain Design Ideas",
+        "Second-brain behavior: disabled by default",
+        "Metadata logging is local JSONL only",
+    ]:
+        assert phrase in docs
