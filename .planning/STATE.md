@@ -6,10 +6,10 @@ status: Ready to plan
 last_updated: "2026-06-23T23:50:00.000Z"
 progress:
   total_phases: 22
-  completed_phases: 17
+  completed_phases: 18
   total_plans: 123
-  completed_plans: 93
-  percent: 76
+  completed_plans: 98
+  percent: 80
 ---
 
 # AIOS Planning State
@@ -25,16 +25,16 @@ progress:
 - Canonical planning intent: make AIOS the default operating layer for serious project work by tightening routing, context, lifecycle, truth, governance, evaluation, learning, and operator visibility into one governed loop.
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
-- Latest completed phase: Phase 17, Developer Experience Capability Pack, shipped routed DX capabilities, dynamic mode/model metadata, eval fixtures, and developer-first documentation.
-- Latest completed plan: Phase 18 Plan 18-06 added shadow eval plans and a fallback meta-learning CLI surface.
+- Latest completed phase: Phase 18, Meta-Learning Proposal Layer, shipped review-first session signal extraction, scoring, routing, proposal generation, auto-allow safety, shadow eval plans, fallback meta CLI, and documentation.
+- Latest completed plan: Phase 18 Plan 18-07 documented the meta-learning layer and completed core test coverage.
 
 ## Current Roadmap Position
 
-- Active milestone: Milestone 13, Meta-Learning Proposal Layer
-- Active phase: Phase 18, Meta-Learning Proposal Layer
-- Active plan: Phase 18 Plan 18-07
-- Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17
-- Next dependency chain: Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22
+- Active milestone: Milestone 14, Native Workflow Command Pack
+- Active phase: Phase 19, Native Workflow Command Pack
+- Active plan: Phase 19 Plan 19-01
+- Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18
+- Next dependency chain: Phase 19 -> Phase 20 -> Phase 21 -> Phase 22
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
 
 ## Known Constraints To Preserve
@@ -52,6 +52,8 @@ progress:
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-06-23 | Complete Phase 18 Meta-Learning Proposal Layer | `.planning/phases/18-meta-learning-proposal-layer/18-VERIFICATION.md` verifies META-01 through META-08 with audit, signal extraction, scoring, routing, proposal generation, auto-allow safety, shadow eval fallback, docs, and 41 focused passing meta-learning tests. |
+| 2026-06-23 | Complete Phase 18 Plan 18-07 meta-learning docs and tests | `.planning/phases/18-meta-learning-proposal-layer/18-07-SUMMARY.md` records docs under `docs/meta-learning/`, explicit approval-scoring coverage, full meta-learning test coverage, and completion of META-08. |
 | 2026-06-23 | Complete Phase 18 Plan 18-06 shadow eval plans and meta CLI fallback | `.planning/phases/18-meta-learning-proposal-layer/18-06-SUMMARY.md` records `services/meta_learning_shadow_eval.py`, `services/meta_learning_cli.py`, `scripts/meta-learning-cli.py`, medium/high-impact promotion gating, required eval metrics, fallback command parsing for analyze-session/proposals/eval, and focused coverage for META-07. |
 | 2026-06-23 | Complete Phase 18 Plan 18-05 auto-allow safety gate | `.planning/phases/18-meta-learning-proposal-layer/18-05-SUMMARY.md` records `services/meta_learning_auto_allow.py`, separated auto-allow recommendation channel, read-only/test/lint safe-to-suggest classification, manual review for write/git/package/network/dynamic commands, never-auto-allow destructive/secret/deploy/external-write classifications, and focused coverage for META-06. |
 | 2026-06-23 | Complete Phase 18 Plan 18-04 meta-learning proposal generator | `.planning/phases/18-meta-learning-proposal-layer/18-04-SUMMARY.md` records `services/meta_learning_proposals.py`, file-backed JSONL proposal persistence, stable proposal IDs, review-only generated patches, rollback text, conflict records, and focused proposal tests for META-05. |
@@ -159,4 +161,4 @@ progress:
 | 2026-06-02 | Complete Phase 10 Plan 08 quality hotspot backfill baseline | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-08-SUMMARY.md` records `pnpm quality:eval`, the read-only hotspot detection script, and the first factual Agent Eval backfill inventory for Python services, CLI scripts, tests, aios-ui, config, and eval docs. |
 
 ---
-*Last updated: 2026-06-23 after completing Phase 18 Plan 18-06 and advancing to Phase 18 Plan 18-07*
+*Last updated: 2026-06-23 after completing Phase 18 and advancing to Phase 19 Plan 19-01*

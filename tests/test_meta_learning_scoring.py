@@ -74,6 +74,26 @@ def test_scores_repeated_patterns_by_cross_session_evidence() -> None:
     assert "repeated correction across sessions +4" in scored.score_reasons
 
 
+def test_scores_single_and_repeated_approvals() -> None:
+    single = score_meta_learning_signal(
+        _signal(signal_type="approval", summary="Approved, ship it.", target="observe_only")
+    )
+    repeated = score_meta_learning_signal(
+        _signal(
+            signal_type="approval",
+            summary="Approved, ship it.",
+            frequency=2,
+            sessions=["s1", "s2"],
+            target="observe_only",
+        )
+    )
+
+    assert single.score == 2
+    assert "single approval +1" in single.score_reasons
+    assert repeated.score == 3
+    assert "repeated approval +2" in repeated.score_reasons
+
+
 def test_quality_filter_rejects_generic_and_vague_one_off_preferences() -> None:
     generic = score_meta_learning_signal(
         _signal(summary="User correction: Use best practice clean code.", recency=None)
