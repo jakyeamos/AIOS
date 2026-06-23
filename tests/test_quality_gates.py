@@ -16,14 +16,14 @@ def _write_registry(path: Path, repo_root: Path) -> None:
         json.dumps(
             {
                 "version": 1,
-                "knownGates": ["trusted_tests", "architecture", "pre_cr"],
+                "knownGates": ["test_quality", "architecture", "pre_cr"],
                 "projects": [
                     {
                         "projectId": "demo",
                         "roots": [str(repo_root)],
                         "preCommitRequired": True,
                         "gates": {
-                            "trusted_tests": {
+                            "test_quality": {
                                 "preCommitCommands": [["python", "--version"]],
                                 "fullCommands": [["python", "--version"]],
                             }
@@ -59,7 +59,7 @@ def test_contract_rejects_unknown_gate_ids(tmp_path: Path) -> None:
             {
                 "version": 1,
                 "projectId": "demo",
-                "preCommitGates": ["trusted_tests", "raw_shell"],
+                "preCommitGates": ["test_quality", "raw_shell"],
             }
         ),
         encoding="utf-8",
@@ -89,7 +89,7 @@ def test_run_gate_executes_registry_argv_not_repo_shell(tmp_path: Path, monkeypa
 
     result = run_gate(
         project_id="demo",
-        gate_id="trusted_tests",
+        gate_id="test_quality",
         mode="pre-commit",
         repo_root=tmp_path,
         registry_path=registry,

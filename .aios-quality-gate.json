@@ -2,12 +2,12 @@
   "version": 1,
   "projectId": "aios",
   "preCommitGates": [
-    "trusted_tests",
+    "test_quality",
     "architecture",
     "pre_cr"
   ],
   "fullGates": [
-    "trusted_tests",
+    "test_quality",
     "architecture",
     "pre_cr"
   ]

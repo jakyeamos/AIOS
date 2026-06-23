@@ -325,7 +325,7 @@ def check_quality_gate_registry(repo_root: Path) -> LadderCheck:
     known_gates = registry.get("knownGates") if isinstance(registry.get("knownGates"), list) else []
     projects = registry.get("projects") if isinstance(registry.get("projects"), list) else []
     failures: list[str] = []
-    for required in ("trusted_tests", "architecture", "pre_cr"):
+    for required in ("test_quality", "architecture", "pre_cr"):
         if required not in known_gates:
             failures.append(f"known gate missing: {required}")
     aios_project = next(
@@ -340,7 +340,7 @@ def check_quality_gate_registry(repo_root: Path) -> LadderCheck:
         failures.append("quality gate registry has no projectId=aios entry")
     else:
         configured = aios_project.get("gates") if isinstance(aios_project.get("gates"), dict) else {}
-        for required in ("trusted_tests", "architecture", "pre_cr"):
+        for required in ("test_quality", "architecture", "pre_cr"):
             gate = configured.get(required) if isinstance(configured.get(required), dict) else None
             if gate is None:
                 failures.append(f"aios gate not configured: {required}")
@@ -353,7 +353,7 @@ def check_quality_gate_registry(repo_root: Path) -> LadderCheck:
     if not isinstance(declared, list):
         failures.append(".aios-quality-gate.json preCommitGates must be a list")
     else:
-        for required in ("trusted_tests", "architecture", "pre_cr"):
+        for required in ("test_quality", "architecture", "pre_cr"):
             if required not in declared:
                 failures.append(f".aios-quality-gate.json missing preCommit gate: {required}")
     if failures:

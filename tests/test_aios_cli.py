@@ -1010,9 +1010,9 @@ def test_gate_run_json(monkeypatch, capsys, tmp_path: Path) -> None:
         lambda **_: {
             "status": "pass",
             "projectId": "demo",
-            "gateId": "trusted_tests",
+            "gateId": "test_quality",
             "mode": "pre-commit",
-            "summary": "trusted_tests passed",
+            "summary": "test_quality passed",
             "commands": [],
         },
     )
@@ -1022,7 +1022,7 @@ def test_gate_run_json(monkeypatch, capsys, tmp_path: Path) -> None:
             "--json",
             "gate",
             "run",
-            "trusted_tests",
+            "test_quality",
             "--project",
             "demo",
             "--repo-root",
@@ -1034,7 +1034,7 @@ def test_gate_run_json(monkeypatch, capsys, tmp_path: Path) -> None:
     payload = json.loads(capsys.readouterr().out)
     assert payload["ok"] is True
     assert payload["command"] == "gate-run"
-    assert payload["data"]["gateId"] == "trusted_tests"
+    assert payload["data"]["gateId"] == "test_quality"
 
 
 def test_capability_audit_reports_missing_and_no_data_signals(tmp_path: Path, capsys) -> None:

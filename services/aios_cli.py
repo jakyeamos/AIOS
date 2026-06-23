@@ -5042,7 +5042,7 @@ def create_parser() -> argparse.ArgumentParser:
     gate = subparsers.add_parser("gate", help="Run AIOS allowlisted project gates")
     gate_subparsers = gate.add_subparsers(dest="gate_command", required=True)
     gate_run = gate_subparsers.add_parser("run", help="Run one named quality gate")
-    gate_run.add_argument("gate_id", help="Named gate id, e.g. trusted_tests")
+    gate_run.add_argument("gate_id", help="Named gate id, e.g. test_quality")
     gate_run.add_argument("--project", required=True, help="AIOS quality-gates project id")
     gate_run.add_argument("--repo-root", default=".", help="Repository root to run from")
     gate_run.add_argument(

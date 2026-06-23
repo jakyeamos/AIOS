@@ -1,7 +1,7 @@
 {
   "version": 1,
   "knownGates": [
-    "trusted_tests",
+    "test_quality",
     "architecture",
     "pre_cr"
   ],
@@ -13,7 +13,7 @@
       ],
       "preCommitRequired": true,
       "gates": {
-        "trusted_tests": {
+        "test_quality": {
           "preCommitCommands": [
             [
               "uv",
@@ -92,7 +92,7 @@
       ],
       "preCommitRequired": true,
       "gates": {
-        "trusted_tests": {
+        "test_quality": {
           "preCommitCommands": [
             [
               "pnpm",
@@ -106,7 +106,27 @@
           "fullCommands": [
             [
               "pnpm",
-              "test:trusted"
+              "-w",
+              "typecheck"
+            ],
+            [
+              "pnpm",
+              "-w",
+              "lint"
+            ],
+            [
+              "pnpm",
+              "-w",
+              "test"
+            ],
+            [
+              "pnpm",
+              "e2e:seeded:smoke"
+            ],
+            [
+              "pnpm",
+              "-w",
+              "build"
             ]
           ]
         },

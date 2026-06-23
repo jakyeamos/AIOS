@@ -116,7 +116,7 @@ Allowlisted project quality gate runner:
 
 ```bash
 cd /Users/jakyeamos/AIOS
-python3 bin/aios.py --json gate run trusted_tests --project soundscape-app --repo-root /Users/jakyeamos/projects/soundscape-app
+python3 bin/aios.py --json gate run test_quality --project soundscape-app --repo-root /Users/jakyeamos/projects/soundscape-app
 ```
 
 Linked projects declare only gate IDs in `.aios-quality-gate.json`. Executable argv arrays live in AIOS-owned `config/quality-gates.json`; the global user commit hook rejects missing, malformed, or unknown gate declarations for registered source commits and never executes shell from repo-local config.

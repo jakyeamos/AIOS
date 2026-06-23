@@ -148,7 +148,7 @@ def test_quality_gate_registry_requires_aios_contract(tmp_path: Path) -> None:
         json.dumps(
             {
                 "version": 1,
-                "knownGates": ["trusted_tests", "architecture", "pre_cr"],
+                "knownGates": ["test_quality", "architecture", "pre_cr"],
                 "projects": [],
             }
         ),

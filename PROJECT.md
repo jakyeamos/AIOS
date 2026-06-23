@@ -108,7 +108,7 @@ AIOS success criteria now include diff-scoped quality gates for pre-PR review an
 
 AIOS now owns a global allowlisted project quality-gate runner:
 
-- `config/quality-gates.json` registers known gate IDs and vetted argv arrays per project, with Soundscape mapped to `trusted_tests`, `architecture`, and `pre_cr`
+- `config/quality-gates.json` registers known gate IDs and vetted argv arrays per project, with Soundscape mapped to `test_quality`, `architecture`, and `pre_cr`
 - repo-local `.aios-quality-gate.json` files declare only gate IDs; they cannot provide shell commands
 - `bin/user-commit-quality-gate.py` blocks registered source commits when the local gate contract is missing, malformed, unknown, or failing, after the existing Pre-CR requirement
 - `python3 bin/aios.py --json gate run <gate_id> --project <project_id> --repo-root <path>` runs a single allowlisted adapter for pre-commit or full mode
