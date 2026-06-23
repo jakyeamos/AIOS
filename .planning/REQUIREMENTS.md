@@ -185,7 +185,7 @@
 
 - [x] **MACS-01**: AIOS audits current skill, instruction, router, TMCP, manifest, validation, provenance, dependency-map, permission-gate, and behavioral-test conventions before adding macOS skills
 - [x] **MACS-02**: AIOS audits `fayazara/macos-app-skills` and records donor summary, adoption candidates, direct-copy rejections, compatibility gaps, safety risks, freshness/version risks, transformed skill/module list, TMCP routing changes, and implementation checklist
-- [ ] **MACS-03**: AIOS adds task-shaped macOS project detection and xcodebuild verification skills with project/workspace/package detection, scheme discovery, Xcode/SDK checks, destination/configuration selection, signing fallback, repair recommendations, and post-fix rebuild requirements
+- [x] **MACS-03**: AIOS adds task-shaped macOS project detection and xcodebuild verification skills with project/workspace/package detection, scheme discovery, Xcode/SDK checks, destination/configuration selection, signing fallback, repair recommendations, and post-fix rebuild requirements
 - [ ] **MACS-04**: AIOS splits native macOS pattern knowledge into small task-routed modules for menu bar, window/panel, screen geometry, keyboard shortcuts, file picker, pasteboard, drag/drop, navigation/inspector, launch/login, Quick Look/workspace, ScreenCaptureKit, and UserDefaults/AppStorage
 - [ ] **MACS-05**: AIOS adds guarded skills for settings windows, Sparkle auto-update, and notch overlays with environment guards, permission gates, architecture preservation, validation commands, fallback behavior, and repair recommendations
 - [ ] **MACS-06**: AIOS adds a dry-run-first macOS release pipeline skill with hard permission gates for git, GitHub release, appcast mutation, signing, notarization, publishing, and version/build changes plus release validation and secret-safety checks
@@ -334,7 +334,7 @@ None currently. The full operating-system vision is intentionally being planned 
 | ESPL-08 | Phase 20: Execution-Symmetric Planning | Complete |
 | MACS-01 | Phase 21: macOS Native App Skill Pack | Complete |
 | MACS-02 | Phase 21: macOS Native App Skill Pack | Complete |
-| MACS-03 | Phase 21: macOS Native App Skill Pack | Pending |
+| MACS-03 | Phase 21: macOS Native App Skill Pack | Complete |
 | MACS-04 | Phase 21: macOS Native App Skill Pack | Pending |
 | MACS-05 | Phase 21: macOS Native App Skill Pack | Pending |
 | MACS-06 | Phase 21: macOS Native App Skill Pack | Pending |
