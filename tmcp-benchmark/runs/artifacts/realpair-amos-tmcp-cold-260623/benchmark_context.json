@@ -1,0 +1,6 @@
+{
+  "condition_actual": "tmcp_cold_start",
+  "condition_anonymous_id": "cond-d4193170c289",
+  "executor": "stub",
+  "task_id": "amos-quality-debug-heldout"
+}

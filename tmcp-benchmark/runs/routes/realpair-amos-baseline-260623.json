@@ -1,0 +1,18 @@
+{
+  "condition_actual": "baseline",
+  "expected_modules": [
+    "@task:repo_detect",
+    "@module:tool_safety",
+    "@module:command_discovery",
+    "@task:quality_check",
+    "@module:quality_gate",
+    "@task:debug_failure",
+    "@module:reproduce_first"
+  ],
+  "route_precision": 0.0,
+  "route_recall": 0.0,
+  "run_id": "realpair-amos-baseline-260623",
+  "schema": "tmcp-benchmark-route-v0.1",
+  "selected_modules": [],
+  "shortcut_state": "NONE"
+}

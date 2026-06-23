@@ -1,0 +1,6 @@
+$ test -f package.json
+
+STDOUT:
+
+
+STDERR:

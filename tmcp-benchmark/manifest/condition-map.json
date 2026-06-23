@@ -1,60 +1,32 @@
 {
   "assignments": [
     {
-      "condition_actual": "tmcp_validated_shortcut",
-      "condition_anonymous_id": "cond-77c9f53f430f",
+      "condition_actual": "flat_skills",
+      "condition_anonymous_id": "cond-34527fe3e111",
       "order_index": 0,
       "repeat_index": 0,
-      "task_id": "bballedu-dry-heldout"
-    },
-    {
-      "condition_actual": "tmcp_cold_start",
-      "condition_anonymous_id": "cond-eaf0df033b81",
-      "order_index": 1,
-      "repeat_index": 0,
-      "task_id": "bballedu-dry-heldout"
+      "task_id": "amos-quality-debug-heldout"
     },
     {
       "condition_actual": "baseline",
-      "condition_anonymous_id": "cond-a0eaf13e81dc",
-      "order_index": 2,
-      "repeat_index": 0,
-      "task_id": "bballedu-dry-heldout"
-    },
-    {
-      "condition_actual": "flat_skills",
-      "condition_anonymous_id": "cond-3b805edddeaf",
-      "order_index": 3,
-      "repeat_index": 0,
-      "task_id": "bballedu-dry-heldout"
-    },
-    {
-      "condition_actual": "tmcp_validated_shortcut",
-      "condition_anonymous_id": "cond-bccf610f1c01",
-      "order_index": 0,
-      "repeat_index": 0,
-      "task_id": "terrace-dry-heldout"
-    },
-    {
-      "condition_actual": "baseline",
-      "condition_anonymous_id": "cond-45cd79cdc98a",
+      "condition_anonymous_id": "cond-5c24ee2a983f",
       "order_index": 1,
       "repeat_index": 0,
-      "task_id": "terrace-dry-heldout"
-    },
-    {
-      "condition_actual": "flat_skills",
-      "condition_anonymous_id": "cond-dcf39752daff",
-      "order_index": 2,
-      "repeat_index": 0,
-      "task_id": "terrace-dry-heldout"
+      "task_id": "amos-quality-debug-heldout"
     },
     {
       "condition_actual": "tmcp_cold_start",
-      "condition_anonymous_id": "cond-f0097a453781",
+      "condition_anonymous_id": "cond-d4193170c289",
+      "order_index": 2,
+      "repeat_index": 0,
+      "task_id": "amos-quality-debug-heldout"
+    },
+    {
+      "condition_actual": "tmcp_validated_shortcut",
+      "condition_anonymous_id": "cond-c73f00239007",
       "order_index": 3,
       "repeat_index": 0,
-      "task_id": "terrace-dry-heldout"
+      "task_id": "amos-quality-debug-heldout"
     }
   ],
   "conditions": [
@@ -63,9 +35,9 @@
     "tmcp_cold_start",
     "tmcp_validated_shortcut"
   ],
-  "created_at": "deterministic-seed-260621",
+  "created_at": "deterministic-seed-260623",
   "include_development": false,
   "repeats": 1,
   "schema": "tmcp-benchmark-condition-map-v0.1",
-  "seed": 260621
+  "seed": 260623
 }

@@ -5,12 +5,12 @@
   "comparisons": {
     "baseline__flat_skills": {
       "baseline": {
-        "completion_rate": 1.0,
+        "completion_rate": 0.6667,
         "median_estimated_loaded_context_tokens": 0.0,
         "median_quality_score": 100.0,
-        "median_total_benchmark_seconds": 0.3746625,
+        "median_total_benchmark_seconds": 0.51132,
         "median_total_tokens": null,
-        "run_count": 2,
+        "run_count": 3,
         "success_count": 2
       },
       "challenger": {
@@ -25,44 +25,44 @@
       "estimated_loaded_context_token_delta": -1400.0,
       "quality_claim_allowed": true,
       "reason": "quality_noninferior",
-      "speed_claim_allowed": false,
-      "speed_delta_seconds": -0.029318,
+      "speed_claim_allowed": true,
+      "speed_delta_seconds": 0.10734,
       "token_claim_allowed": false
     },
     "baseline__tmcp_cold_start": {
       "baseline": {
-        "completion_rate": 1.0,
+        "completion_rate": 0.6667,
         "median_estimated_loaded_context_tokens": 0.0,
         "median_quality_score": 100.0,
-        "median_total_benchmark_seconds": 0.3746625,
+        "median_total_benchmark_seconds": 0.51132,
         "median_total_tokens": null,
-        "run_count": 2,
+        "run_count": 3,
         "success_count": 2
       },
       "challenger": {
-        "completion_rate": 1.0,
+        "completion_rate": 0.6667,
         "median_estimated_loaded_context_tokens": 900.0,
         "median_quality_score": 100.0,
-        "median_total_benchmark_seconds": 0.48366200000000004,
+        "median_total_benchmark_seconds": 0.487317,
         "median_total_tokens": null,
-        "run_count": 2,
+        "run_count": 3,
         "success_count": 2
       },
       "estimated_loaded_context_token_delta": -900.0,
       "quality_claim_allowed": true,
       "reason": "quality_noninferior",
-      "speed_claim_allowed": false,
-      "speed_delta_seconds": -0.109,
+      "speed_claim_allowed": true,
+      "speed_delta_seconds": 0.024003,
       "token_claim_allowed": false
     },
     "baseline__tmcp_validated_shortcut": {
       "baseline": {
-        "completion_rate": 1.0,
+        "completion_rate": 0.6667,
         "median_estimated_loaded_context_tokens": 0.0,
         "median_quality_score": 100.0,
-        "median_total_benchmark_seconds": 0.3746625,
+        "median_total_benchmark_seconds": 0.51132,
         "median_total_tokens": null,
-        "run_count": 2,
+        "run_count": 3,
         "success_count": 2
       },
       "challenger": {
@@ -78,7 +78,7 @@
       "quality_claim_allowed": true,
       "reason": "quality_noninferior",
       "speed_claim_allowed": false,
-      "speed_delta_seconds": -0.254872,
+      "speed_delta_seconds": -0.118215,
       "token_claim_allowed": false
     },
     "flat_skills__tmcp_cold_start": {
@@ -92,20 +92,20 @@
         "success_count": 2
       },
       "challenger": {
-        "completion_rate": 1.0,
+        "completion_rate": 0.6667,
         "median_estimated_loaded_context_tokens": 900.0,
         "median_quality_score": 100.0,
-        "median_total_benchmark_seconds": 0.48366200000000004,
+        "median_total_benchmark_seconds": 0.487317,
         "median_total_tokens": null,
-        "run_count": 2,
+        "run_count": 3,
         "success_count": 2
       },
-      "estimated_loaded_context_token_delta": 500.0,
-      "quality_claim_allowed": true,
-      "reason": "quality_noninferior",
+      "estimated_loaded_context_token_delta": null,
+      "quality_claim_allowed": false,
+      "reason": "quality_or_completion_regression",
       "speed_claim_allowed": false,
-      "speed_delta_seconds": -0.079682,
-      "token_claim_allowed": true
+      "speed_delta_seconds": null,
+      "token_claim_allowed": false
     },
     "flat_skills__tmcp_validated_shortcut": {
       "baseline": {
@@ -135,12 +135,12 @@
     },
     "tmcp_cold_start__tmcp_validated_shortcut": {
       "baseline": {
-        "completion_rate": 1.0,
+        "completion_rate": 0.6667,
         "median_estimated_loaded_context_tokens": 900.0,
         "median_quality_score": 100.0,
-        "median_total_benchmark_seconds": 0.48366200000000004,
+        "median_total_benchmark_seconds": 0.487317,
         "median_total_tokens": null,
-        "run_count": 2,
+        "run_count": 3,
         "success_count": 2
       },
       "challenger": {
@@ -156,18 +156,18 @@
       "quality_claim_allowed": true,
       "reason": "quality_noninferior",
       "speed_claim_allowed": false,
-      "speed_delta_seconds": -0.145873,
+      "speed_delta_seconds": -0.142218,
       "token_claim_allowed": true
     }
   },
   "conditions": {
     "baseline": {
-      "completion_rate": 1.0,
+      "completion_rate": 0.6667,
       "median_estimated_loaded_context_tokens": 0.0,
       "median_quality_score": 100.0,
-      "median_total_benchmark_seconds": 0.3746625,
+      "median_total_benchmark_seconds": 0.51132,
       "median_total_tokens": null,
-      "run_count": 2,
+      "run_count": 3,
       "success_count": 2
     },
     "flat_skills": {
@@ -180,12 +180,12 @@
       "success_count": 2
     },
     "tmcp_cold_start": {
-      "completion_rate": 1.0,
+      "completion_rate": 0.6667,
       "median_estimated_loaded_context_tokens": 900.0,
       "median_quality_score": 100.0,
-      "median_total_benchmark_seconds": 0.48366200000000004,
+      "median_total_benchmark_seconds": 0.487317,
       "median_total_tokens": null,
-      "run_count": 2,
+      "run_count": 3,
       "success_count": 2
     },
     "tmcp_validated_shortcut": {
@@ -198,6 +198,6 @@
       "success_count": 2
     }
   },
-  "run_count": 8
+  "run_count": 10
 }
 ```

@@ -1,58 +1,38 @@
 {
-  "created_at": "2026-06-21T18:59:33.773801+00:00",
+  "created_at": "2026-06-23T17:13:22.256399+00:00",
   "schema": "tmcp-benchmark-task-families-v0.1",
   "task_families": [
     {
-      "description": "Dry-run family for validating benchmark artifact flow in Bballedu.",
+      "description": "Portable dev-process benchmark for repository detection, local quality command execution, and debug triage when the discovered command is not runnable.",
       "development_tasks": [
-        "bballedu-dry-dev"
+        "amos-quality-debug-dev"
       ],
       "expected_modules": [
-        "context_gathering",
-        "test_gate"
+        "tool_safety",
+        "command_discovery",
+        "quality_gate",
+        "reproduce_first"
       ],
       "expected_quality_gates": [
-        "public_tests",
-        "hidden_tests"
+        "repo_detection",
+        "public_quality_command",
+        "hidden_debug_log_capture"
       ],
       "held_out_tasks": [
-        "bballedu-dry-heldout"
+        "amos-quality-debug-heldout"
       ],
-      "known_invalidating_differences": [],
+      "known_invalidating_differences": [
+        "Package-manager lockfile mismatch changes command selection semantics."
+      ],
       "shared_process_structure": [
-        "inspect",
-        "route",
-        "test"
+        "inspect_repo_surface",
+        "select_quality_command",
+        "run_quality_command",
+        "capture_failure_for_debug"
       ],
       "shortcut_eligible": true,
       "shortcut_transfer_scope": "same_repository",
-      "task_family_id": "bballedu-deterministic-loop"
-    },
-    {
-      "description": "Dry-run family for validating benchmark artifact flow in Terrace.",
-      "development_tasks": [
-        "terrace-dry-dev"
-      ],
-      "expected_modules": [
-        "context_gathering",
-        "test_gate"
-      ],
-      "expected_quality_gates": [
-        "public_tests",
-        "hidden_tests"
-      ],
-      "held_out_tasks": [
-        "terrace-dry-heldout"
-      ],
-      "known_invalidating_differences": [],
-      "shared_process_structure": [
-        "inspect",
-        "route",
-        "test"
-      ],
-      "shortcut_eligible": true,
-      "shortcut_transfer_scope": "same_repository",
-      "task_family_id": "terrace-deterministic-loop"
+      "task_family_id": "amos-portable-quality-debug"
     }
   ]
 }

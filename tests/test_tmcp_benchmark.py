@@ -68,7 +68,23 @@ def test_discover_repositories_records_shadow_branch_and_tooling(tmp_path: Path)
     assert repo["has_tmcp_graph"] is True
     assert repo["dependency_lockfiles"] == ["pnpm-lock.yaml"]
     assert repo["test_commands"] == ["pnpm test"]
+    assert repo["package_manager"] == "pnpm"
     assert repo["ci_configuration"] == [".github/workflows/ci.yml"]
+
+
+def test_discover_repositories_uses_lockfile_package_manager_for_scripts(tmp_path: Path) -> None:
+    parent = tmp_path / "portfolio"
+    repo = parent / "npm-project"
+    repo.mkdir(parents=True)
+    subprocess.run(["git", "init", "-b", "main"], cwd=repo, check=True, capture_output=True)
+    (repo / "package-lock.json").write_text('{"lockfileVersion": 3}\n', encoding="utf-8")
+    (repo / "package.json").write_text('{"scripts":{"lint":"eslint"}}\n', encoding="utf-8")
+
+    repositories = discover_repositories(parent)
+
+    assert repositories[0]["package_manager"] == "npm"
+    assert repositories[0]["lint_commands"] == ["npm run lint"]
+    assert repositories[0]["dependency_lockfiles"] == ["package-lock.json"]
 
 
 def test_create_benchmark_scaffold_writes_required_manifests_and_reports(tmp_path: Path) -> None:
@@ -211,6 +227,41 @@ def test_preflight_import_randomize_and_freeze_are_reproducible(tmp_path: Path) 
     assert freeze["systems_frozen"] is True
     assert freeze["hashes"]["tasks_json"]
     assert (output_root / "manifest" / "model-config.json").exists()
+
+
+def test_preflight_accepts_clean_repo_with_lint_quality_command(tmp_path: Path) -> None:
+    parent = tmp_path / "portfolio"
+    repo = parent / "lint-only"
+    _init_repo(repo)
+    package_path = repo / "package.json"
+    package_path.write_text('{"scripts":{"lint":"eslint"}}\n', encoding="utf-8")
+    subprocess.run(["git", "add", "."], cwd=repo, check=True, capture_output=True)
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.email=test@example.com",
+            "-c",
+            "user.name=Test User",
+            "commit",
+            "-m",
+            "switch to lint quality command",
+        ],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+    )
+    output_root = tmp_path / "tmcp-benchmark"
+    create_benchmark_scaffold(parent_dir=parent, output_root=output_root)
+
+    preflight = preflight_benchmark(output_root=output_root, preferred_projects=("lint-only",))
+
+    assert preflight["selected_projects"] == ["lint-only"]
+    result = preflight["results"][0]
+    assert result["eligible"] is True
+    assert result["checks"]["has_quality_command"] is True
+    assert result["checks"]["has_test_command"] is False
+    assert result["checks"]["has_lint_command"] is True
 
 
 def test_shortcut_leakage_guard_rejects_held_out_task_source(tmp_path: Path) -> None:

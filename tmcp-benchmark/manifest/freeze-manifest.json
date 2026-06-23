@@ -5,7 +5,7 @@
     "tmcp_cold_start",
     "tmcp_validated_shortcut"
   ],
-  "created_at": "2026-06-21T18:59:51.978952+00:00",
+  "created_at": "2026-06-23T17:18:08.132667+00:00",
   "freeze_required_before_held_out": [
     "tmcp_compiler",
     "skill_corpus",
@@ -18,13 +18,13 @@
     "hidden_tests"
   ],
   "hashes": {
-    "condition_map_json": "9d990595bde4e18570bb6490dc8382538eaab4c3608246e353c78ceb67199c60",
+    "condition_map_json": "9a0c3cb4abb21e4a621312799af5135db8a652f338a978145fc9ab27e5e1ed2a",
     "model_config_json": "f166438bd92618c78a7b8e165e57e7ee850f6fcfaf8828c23cfef94cb0eb2552",
-    "repositories_json": "5b95c653ab12fdc2792300d8db6bdc1c5498de1ae287d7cbbd6c81231bbae0ab",
+    "repositories_json": "8f49be634ed7c93011fdb7565bbc210bd4c2e601fc487f2e799ed4856e30c3a2",
     "shortcut_registry_json": "d0e97349bdcba0cfa756aee8e57ebed815eae1811c0735ba51ebac0f16f132ff",
     "skill_equivalence_json": "895ff85803c79186b1bda4f21bf274f2f439fb18f7783bde4c7dfd081f552e42",
-    "task_families_json": "f79fec1b1c7a83dc6997f0f2d9c478536aa1182efde8c4e43d12fc9285cff2fc",
-    "tasks_json": "aad0dadbc89fb149d70eaea492aedb68585d4b02589d227bc8f3bd597a4430ab"
+    "task_families_json": "47706b2a028a3d6e088e96798e9897ff2aa6b12193d1761681efa4b16606db6e",
+    "tasks_json": "c86878dd6b90ba2858fdb30159fc4ece7393d23f958c514053bf0227d2d872d9"
   },
   "model_config": {
     "model": "unset",

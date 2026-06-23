@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-06-21T18:58:34.132792+00:00",
+  "created_at": "2026-06-23T17:15:38.979271+00:00",
   "parent_dir": "/Users/jakyeamos",
   "repositories": [
     {
@@ -9,7 +9,7 @@
         ".github/workflows/aios-python-quality.yml",
         ".github/workflows/aios-ui-quality.yml"
       ],
-      "current_commit": "fea7797231631df2b6d887f2bf4fa4a3848fecb7",
+      "current_commit": "6ce5842d4e62aeee209d167b660fcf013b16ca50",
       "default_branch": "codex/project-aios-component-scope",
       "dependency_lockfiles": [
         "uv.lock"
@@ -23,6 +23,7 @@
       "framework": null,
       "has_tmcp_graph": true,
       "lint_commands": [],
+      "package_manager": "pnpm",
       "project_id": "AIOS",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/AIOS",
@@ -36,7 +37,7 @@
       "aios_shadow_branch": null,
       "build_system": null,
       "ci_configuration": [],
-      "current_commit": "610d397c67600bf9abe6f12832dceb8c76f27f4b",
+      "current_commit": "8e39ed8ec5bb1023941fbcaf0b7f3c5afd935f58",
       "default_branch": "codex/lis-findings-ready-after-core",
       "dependency_lockfiles": [],
       "existing_shortcut_registry": [],
@@ -44,6 +45,7 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": null,
       "project_id": "BBDSE",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/BBDSE",
@@ -57,8 +59,8 @@
       "aios_shadow_branch": null,
       "build_system": "node",
       "ci_configuration": [],
-      "current_commit": "18bda9c201b6ea6b6eab3de6f2d696b8eb3aa1ed",
-      "default_branch": "feature/cli-mvp",
+      "current_commit": "c48f15127af7cb7658cde5c152274635a0716010",
+      "default_branch": "codex/backfill-progress-posts",
       "dependency_lockfiles": [
         "pnpm-lock.yaml"
       ],
@@ -67,6 +69,7 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": "pnpm",
       "project_id": "BIP-Console",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/BIP-Console",
@@ -84,7 +87,7 @@
       "aios_shadow_branch": null,
       "build_system": "node",
       "ci_configuration": [],
-      "current_commit": "53dffcc2f0fbcae307b12fbec4b7d8758379e0a3",
+      "current_commit": "7819d135a422fe29a087d076bbf1d986b1723ef4",
       "default_branch": "codex/live-ui-refresh-shell-port",
       "dependency_lockfiles": [
         "pnpm-lock.yaml"
@@ -96,6 +99,7 @@
       "lint_commands": [
         "pnpm lint"
       ],
+      "package_manager": "pnpm",
       "project_id": "Bballedu",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/Bballedu",
@@ -106,8 +110,40 @@
       "typecheck_commands": [
         "pnpm typecheck"
       ],
-      "uncommitted_changes": false,
+      "uncommitted_changes": true,
       "upstream_remote": "https://github.com/jakyeamos/Bball.git"
+    },
+    {
+      "aios_shadow_branch": null,
+      "build_system": "node",
+      "ci_configuration": [
+        ".github/workflows/aios-quality.yml"
+      ],
+      "current_commit": "d5d15734d6bbd0d2505f049c780aa43f138f5728",
+      "default_branch": "chore/pre-cr-aios-hooks",
+      "dependency_lockfiles": [
+        "pnpm-lock.yaml"
+      ],
+      "existing_shortcut_registry": [],
+      "existing_skills": [
+        ".agents/skills"
+      ],
+      "framework": "nextjs",
+      "has_tmcp_graph": false,
+      "lint_commands": [
+        "pnpm lint"
+      ],
+      "package_manager": "pnpm",
+      "project_id": "BidCamp",
+      "project_language": "typescript",
+      "repo_path": "/Users/jakyeamos/projects/BidCamp",
+      "test_commands": [
+        "pnpm test"
+      ],
+      "testing_framework": "vitest",
+      "typecheck_commands": [],
+      "uncommitted_changes": true,
+      "upstream_remote": "https://github.com/LayerC0de/amos-saas.git"
     },
     {
       "aios_shadow_branch": null,
@@ -116,7 +152,7 @@
         ".github/workflows/chapter-validation.yml",
         ".github/workflows/jekyll-gh-pages.yml"
       ],
-      "current_commit": "2acb1b760431586dfc2783f8565501ad750296cc",
+      "current_commit": "7b9268bd85fe2b1154c1490d8b0913a6fa886374",
       "default_branch": "codex/fix-login-route",
       "dependency_lockfiles": [
         "pnpm-lock.yaml"
@@ -126,6 +162,7 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": "pnpm",
       "project_id": "Book",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/Book",
@@ -149,6 +186,7 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": null,
       "project_id": "Book",
       "project_language": null,
       "repo_path": "/Users/jakyeamos/Documents/GitHub/Book",
@@ -164,18 +202,21 @@
       "ci_configuration": [
         ".github/workflows/ci.yml"
       ],
-      "current_commit": "480d93dcbe80e275b500be9104ef130601f5f269",
-      "default_branch": "main",
+      "current_commit": "07cbc7df0feb77156577d77cc2bb4e8ffe637ffa",
+      "default_branch": "codex/phase-0-security-gate",
       "dependency_lockfiles": [
-        "package-lock.json"
+        "pnpm-lock.yaml"
       ],
       "existing_shortcut_registry": [],
-      "existing_skills": [],
+      "existing_skills": [
+        ".agents/skills"
+      ],
       "framework": null,
-      "has_tmcp_graph": false,
+      "has_tmcp_graph": true,
       "lint_commands": [
         "pnpm lint"
       ],
+      "package_manager": "pnpm",
       "project_id": "Crimclock",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/Crimclock",
@@ -201,20 +242,21 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": null,
       "project_id": "Dsci-proj",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/Dsci-proj",
       "test_commands": [],
       "testing_framework": null,
       "typecheck_commands": [],
-      "uncommitted_changes": false,
+      "uncommitted_changes": true,
       "upstream_remote": "https://github.com/jakyeamos/Dsci-proj.git"
     },
     {
       "aios_shadow_branch": null,
       "build_system": null,
       "ci_configuration": [],
-      "current_commit": "d5b6aa0acf63d661ab227d35de42a5719c0770bd",
+      "current_commit": "8a450d48b8ae4d205bbdc4fd704c1d2bad9e69a4",
       "default_branch": "codex/snapshot-refresh-fix",
       "dependency_lockfiles": [],
       "existing_shortcut_registry": [],
@@ -222,6 +264,7 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": null,
       "project_id": "Fantasy",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/Fantasy",
@@ -246,7 +289,7 @@
         ".github/workflows/publish.yml",
         ".github/workflows/triage-sweep.yml"
       ],
-      "current_commit": "8757c78c6f058fd44a0fe98aea3ecc698fc85133",
+      "current_commit": "66353c3347a5fbe33e4dec4f9322cf76ecb42266",
       "default_branch": "main",
       "dependency_lockfiles": [
         "package-lock.json"
@@ -256,8 +299,9 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [
-        "pnpm lint"
+        "npm run lint"
       ],
+      "package_manager": "npm",
       "project_id": "GitNexus",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/Not-mine/GitNexus",
@@ -271,7 +315,7 @@
       "aios_shadow_branch": null,
       "build_system": "node",
       "ci_configuration": [],
-      "current_commit": "69e5f5ba47957af6d47b73b11c02d01dcd02ba32",
+      "current_commit": "c33128e94fb20a5a009e0f6b3ab21b8bf682efbd",
       "default_branch": "codex/thin-v1-coach-demo",
       "dependency_lockfiles": [
         "pnpm-lock.yaml"
@@ -283,6 +327,7 @@
       "lint_commands": [
         "pnpm lint"
       ],
+      "package_manager": "pnpm",
       "project_id": "Hoopscout",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/Hoopscout",
@@ -291,7 +336,7 @@
       "typecheck_commands": [
         "pnpm typecheck"
       ],
-      "uncommitted_changes": false,
+      "uncommitted_changes": true,
       "upstream_remote": "git@github.com:jakyeamos/Hoopscout.git"
     },
     {
@@ -308,14 +353,15 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": null,
       "project_id": "LaxDS",
       "project_language": "python",
       "repo_path": "/Users/jakyeamos/projects/LaxDS",
       "test_commands": [],
       "testing_framework": null,
       "typecheck_commands": [],
-      "uncommitted_changes": false,
-      "upstream_remote": null
+      "uncommitted_changes": true,
+      "upstream_remote": "git@github.com:jakyeamos/LaxDS.git"
     },
     {
       "aios_shadow_branch": null,
@@ -329,6 +375,7 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": null,
       "project_id": "New project",
       "project_language": null,
       "repo_path": "/Users/jakyeamos/Documents/New project",
@@ -350,13 +397,14 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": null,
       "project_id": "R-Project",
       "project_language": null,
       "repo_path": "/Users/jakyeamos/projects/R-Project",
       "test_commands": [],
       "testing_framework": null,
       "typecheck_commands": [],
-      "uncommitted_changes": false,
+      "uncommitted_changes": true,
       "upstream_remote": "https://github.com/jordyncall22-web/R-Project.git"
     },
     {
@@ -366,7 +414,7 @@
         ".github/workflows/ci.yml",
         ".github/workflows/release-dry-run.yml"
       ],
-      "current_commit": "7d08386c07c50d1412551b33df2974ecc6ae4847",
+      "current_commit": "9c45dfb66b9edc6da538acf22d72953e7cb91504",
       "default_branch": "codex/global-agent-installer",
       "dependency_lockfiles": [
         "package-lock.json"
@@ -378,26 +426,27 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [
-        "pnpm lint"
+        "npm run lint"
       ],
+      "package_manager": "npm",
       "project_id": "Terrace",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/Terrace",
       "test_commands": [
-        "pnpm test"
+        "npm run test"
       ],
       "testing_framework": "vitest",
       "typecheck_commands": [
-        "pnpm typecheck"
+        "npm run typecheck"
       ],
-      "uncommitted_changes": false,
+      "uncommitted_changes": true,
       "upstream_remote": "https://github.com/jakyeamos/Terrace.git"
     },
     {
       "aios_shadow_branch": null,
       "build_system": null,
       "ci_configuration": [],
-      "current_commit": "eadda79aa17e970ead53a58cc71f29d14fc339d0",
+      "current_commit": "c16ffe6f55db6c6e5c37ef9eb42b0898c96e3127",
       "default_branch": "main",
       "dependency_lockfiles": [],
       "existing_shortcut_registry": [],
@@ -405,6 +454,7 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": null,
       "project_id": "Vaults",
       "project_language": null,
       "repo_path": "/Users/jakyeamos/projects/Vaults",
@@ -412,13 +462,13 @@
       "testing_framework": null,
       "typecheck_commands": [],
       "uncommitted_changes": true,
-      "upstream_remote": null
+      "upstream_remote": "git@github.com:jakyeamos/Vaults.git"
     },
     {
       "aios_shadow_branch": null,
       "build_system": null,
       "ci_configuration": [],
-      "current_commit": "ddc5a09cae879f5b85b553c2681938308978f782",
+      "current_commit": "663c8b9d8878486aa538e1f51109ed1f1a5057b7",
       "default_branch": "main",
       "dependency_lockfiles": [],
       "existing_shortcut_registry": [],
@@ -426,6 +476,7 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": null,
       "project_id": "agent-router",
       "project_language": null,
       "repo_path": "/Users/jakyeamos/projects/agent-router",
@@ -433,15 +484,13 @@
       "testing_framework": null,
       "typecheck_commands": [],
       "uncommitted_changes": true,
-      "upstream_remote": null
+      "upstream_remote": "git@github.com:jakyeamos/agent-router.git"
     },
     {
       "aios_shadow_branch": null,
       "build_system": "node",
-      "ci_configuration": [
-        ".github/workflows/aios-quality.yml"
-      ],
-      "current_commit": "c988e31c11ec0aa973de85eb5e0280379e8b894c",
+      "ci_configuration": [],
+      "current_commit": "72148b19e4823e9ecd9751e7ec67754b79287c8d",
       "default_branch": "master",
       "dependency_lockfiles": [
         "package-lock.json"
@@ -451,16 +500,17 @@
       "framework": "nextjs",
       "has_tmcp_graph": false,
       "lint_commands": [
-        "pnpm lint"
+        "npm run lint"
       ],
+      "package_manager": "npm",
       "project_id": "amos-saas",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/amos-saas",
       "test_commands": [],
-      "testing_framework": null,
+      "testing_framework": "vitest",
       "typecheck_commands": [],
       "uncommitted_changes": false,
-      "upstream_remote": "https://github.com/LayerC0de/amos-saas.git"
+      "upstream_remote": "https://github.com/jakyeamos/amos-saas.git"
     },
     {
       "aios_shadow_branch": null,
@@ -476,6 +526,7 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": "npm",
       "project_id": "career-ops",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/career-ops",
@@ -489,7 +540,7 @@
       "aios_shadow_branch": null,
       "build_system": null,
       "ci_configuration": [],
-      "current_commit": "e6899343e2cf59ddffbaa836c204c88df94fcd63",
+      "current_commit": "5343d673b4095efcc3541ced67fb28cc1fd51eb1",
       "default_branch": "master",
       "dependency_lockfiles": [],
       "existing_shortcut_registry": [],
@@ -497,13 +548,14 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": null,
       "project_id": "claude-config",
       "project_language": null,
       "repo_path": "/Users/jakyeamos/Desktop/claude-config",
       "test_commands": [],
       "testing_framework": null,
       "typecheck_commands": [],
-      "uncommitted_changes": true,
+      "uncommitted_changes": false,
       "upstream_remote": "https://github.com/jakyeamos/claude-config.git"
     },
     {
@@ -520,13 +572,14 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": null,
       "project_id": "claude-improvement-lab",
       "project_language": "python",
       "repo_path": "/Users/jakyeamos/projects/claude-improvement-lab",
       "test_commands": [],
       "testing_framework": null,
       "typecheck_commands": [],
-      "uncommitted_changes": false,
+      "uncommitted_changes": true,
       "upstream_remote": "https://github.com/jakyeamos/autoagent.git"
     },
     {
@@ -548,13 +601,14 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": null,
       "project_id": "code-review-graph",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/Knowledge-Graph/code-review-graph",
       "test_commands": [],
       "testing_framework": null,
       "typecheck_commands": [],
-      "uncommitted_changes": false,
+      "uncommitted_changes": true,
       "upstream_remote": "https://github.com/tirth8205/code-review-graph.git"
     },
     {
@@ -569,6 +623,7 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": null,
       "project_id": "csds391-s26-6",
       "project_language": null,
       "repo_path": "/Users/jakyeamos/projects/csds391-s26-6",
@@ -597,6 +652,7 @@
       "lint_commands": [
         "pnpm lint"
       ],
+      "package_manager": "pnpm",
       "project_id": "dispatches-from-cyberspace",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/dispatches-from-cyberspace",
@@ -605,7 +661,7 @@
       "typecheck_commands": [
         "pnpm typecheck"
       ],
-      "uncommitted_changes": false,
+      "uncommitted_changes": true,
       "upstream_remote": "https://github.com/jakyeamos/Yubins-blog.git"
     },
     {
@@ -620,6 +676,7 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": null,
       "project_id": "dotfiles",
       "project_language": null,
       "repo_path": "/Users/jakyeamos/dotfiles",
@@ -627,28 +684,35 @@
       "testing_framework": null,
       "typecheck_commands": [],
       "uncommitted_changes": false,
-      "upstream_remote": null
+      "upstream_remote": "git@github.com:jakyeamos/dotfiles.git"
     },
     {
       "aios_shadow_branch": null,
       "build_system": "node",
-      "ci_configuration": [],
-      "current_commit": "420c64bd94d36a4f333c9de6d20e8e72e9f9fbc8",
-      "default_branch": "main",
-      "dependency_lockfiles": [],
+      "ci_configuration": [
+        ".github/workflows/ci.yml"
+      ],
+      "current_commit": "e0a64de1ceea07f49775a9d3875eda20ae5840c9",
+      "default_branch": "codex/tier-one-product-hardening",
+      "dependency_lockfiles": [
+        "pnpm-lock.yaml"
+      ],
       "existing_shortcut_registry": [],
       "existing_skills": [],
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": "pnpm",
       "project_id": "eslint-plugin-anti-slop",
-      "project_language": null,
+      "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/eslint-plugin-anti-slop",
-      "test_commands": [],
+      "test_commands": [
+        "pnpm test"
+      ],
       "testing_framework": null,
       "typecheck_commands": [],
       "uncommitted_changes": false,
-      "upstream_remote": null
+      "upstream_remote": "git@github.com:jakyeamos/eslint-plugin-anti-slop.git"
     },
     {
       "aios_shadow_branch": null,
@@ -664,6 +728,7 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": "pnpm",
       "project_id": "frmwrklabs",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/frmwrklabs",
@@ -672,7 +737,7 @@
       ],
       "testing_framework": null,
       "typecheck_commands": [],
-      "uncommitted_changes": false,
+      "uncommitted_changes": true,
       "upstream_remote": "https://github.com/LayerC0de/frmwrklabs.git"
     },
     {
@@ -687,14 +752,15 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": null,
       "project_id": "manga-sync",
       "project_language": null,
       "repo_path": "/Users/jakyeamos/projects/manga-sync",
       "test_commands": [],
       "testing_framework": null,
       "typecheck_commands": [],
-      "uncommitted_changes": false,
-      "upstream_remote": null
+      "uncommitted_changes": true,
+      "upstream_remote": "git@github.com:jakyeamos/manga-sync.git"
     },
     {
       "aios_shadow_branch": null,
@@ -702,8 +768,8 @@
       "ci_configuration": [
         ".github/workflows/aios-quality.yml"
       ],
-      "current_commit": "80fce685945f9d731225e1fc388ba170d5c749ea",
-      "default_branch": "codex/truth-sync-migration",
+      "current_commit": "76085f39a6fc073745954964ef62aecc3f911ad5",
+      "default_branch": "codex/portfolio-now-playing-home",
       "dependency_lockfiles": [
         "pnpm-lock.yaml"
       ],
@@ -714,6 +780,7 @@
       "lint_commands": [
         "pnpm lint"
       ],
+      "package_manager": "pnpm",
       "project_id": "portfolio",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/portfolio",
@@ -737,17 +804,18 @@
       "framework": "react",
       "has_tmcp_graph": false,
       "lint_commands": [
-        "pnpm lint"
+        "npm run lint"
       ],
+      "package_manager": "npm",
       "project_id": "praxis",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/Not-mine/praxis",
       "test_commands": [],
       "testing_framework": null,
       "typecheck_commands": [
-        "pnpm typecheck"
+        "npm run typecheck"
       ],
-      "uncommitted_changes": false,
+      "uncommitted_changes": true,
       "upstream_remote": "https://github.com/newageautomations/praxis.git"
     },
     {
@@ -756,7 +824,7 @@
       "ci_configuration": [
         ".github/workflows/ci.yml"
       ],
-      "current_commit": "2a1f9663d90607b3b15491b11d8252abc5947224",
+      "current_commit": "e84552175a0b0a2d90ae4c47be938ed803161f30",
       "default_branch": "codex/headless-cli-coverage-surfaces",
       "dependency_lockfiles": [
         "pnpm-lock.yaml"
@@ -768,6 +836,7 @@
       "lint_commands": [
         "pnpm lint"
       ],
+      "package_manager": "pnpm",
       "project_id": "pre-cr-suite-lsp",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/pre-cr-suite-lsp",
@@ -800,6 +869,7 @@
       "lint_commands": [
         "pnpm lint"
       ],
+      "package_manager": "pnpm",
       "project_id": "remodelvision",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/remodelvision",
@@ -808,7 +878,7 @@
       ],
       "testing_framework": "vitest",
       "typecheck_commands": [],
-      "uncommitted_changes": false,
+      "uncommitted_changes": true,
       "upstream_remote": "https://github.com/alec-angello/remodelvision.git"
     },
     {
@@ -823,7 +893,7 @@
         ".github/workflows/restore-drill.yml",
         ".github/workflows/staging-e2e-smoke.yml"
       ],
-      "current_commit": "0bda68e0d4a8d000f6c28e7771de9d0927b05595",
+      "current_commit": "4d1d6db0d7a4efba7f7472df94d3974ed6454cda",
       "default_branch": "codex/e2e-local-db-setup",
       "dependency_lockfiles": [
         "pnpm-lock.yaml"
@@ -835,6 +905,7 @@
       "lint_commands": [
         "pnpm lint"
       ],
+      "package_manager": "pnpm",
       "project_id": "soundscape-app",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/soundscape-app",
@@ -845,14 +916,46 @@
       "typecheck_commands": [
         "pnpm typecheck"
       ],
-      "uncommitted_changes": false,
+      "uncommitted_changes": true,
       "upstream_remote": "https://github.com/jakyeamos/soundscape-app.git"
     },
     {
       "aios_shadow_branch": null,
       "build_system": "node",
+      "ci_configuration": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/prompt-eval.yml",
+        ".github/workflows/refusal-eval.yml"
+      ],
+      "current_commit": "29217dbf96679251e9e2908f7e7001fdaaa2c9b4",
+      "default_branch": "fix/f-015-review-queue-revalidation",
+      "dependency_lockfiles": [
+        "package-lock.json"
+      ],
+      "existing_shortcut_registry": [],
+      "existing_skills": [
+        ".agents/skills"
+      ],
+      "framework": "nextjs",
+      "has_tmcp_graph": false,
+      "lint_commands": [
+        "npm run lint"
+      ],
+      "package_manager": "npm",
+      "project_id": "tenure",
+      "project_language": "typescript",
+      "repo_path": "/Users/jakyeamos/LayerC0de/tenure",
+      "test_commands": [],
+      "testing_framework": "vitest",
+      "typecheck_commands": [],
+      "uncommitted_changes": true,
+      "upstream_remote": "https://github.com/LayerC0de/tenure.git"
+    },
+    {
+      "aios_shadow_branch": null,
+      "build_system": "node",
       "ci_configuration": [],
-      "current_commit": "fe84dd86e75a2aa112bb247018ba7abc859030d2",
+      "current_commit": "88e0e1472c92fa2366faf5c42b6de78f37e939ac",
       "default_branch": "codex/planning-color-status",
       "dependency_lockfiles": [
         "pnpm-lock.yaml"
@@ -864,6 +967,7 @@
       "lint_commands": [
         "pnpm lint"
       ],
+      "package_manager": "pnpm",
       "project_id": "tm",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/tm",
@@ -874,7 +978,7 @@
       "typecheck_commands": [
         "pnpm typecheck"
       ],
-      "uncommitted_changes": false,
+      "uncommitted_changes": true,
       "upstream_remote": "https://github.com/jakyeamos/tm.git"
     },
     {
@@ -889,6 +993,7 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": null,
       "project_id": "untitled1",
       "project_language": null,
       "repo_path": "/Users/jakyeamos/IdeaProjects/untitled1",
@@ -912,15 +1017,16 @@
       "framework": null,
       "has_tmcp_graph": false,
       "lint_commands": [],
+      "package_manager": "npm",
       "project_id": "video-pipeline",
       "project_language": "typescript",
       "repo_path": "/Users/jakyeamos/projects/video-pipeline",
       "test_commands": [],
       "testing_framework": null,
       "typecheck_commands": [
-        "pnpm typecheck"
+        "npm run typecheck"
       ],
-      "uncommitted_changes": false,
+      "uncommitted_changes": true,
       "upstream_remote": "https://github.com/jakyeamos/video-pipeline.git"
     }
   ],

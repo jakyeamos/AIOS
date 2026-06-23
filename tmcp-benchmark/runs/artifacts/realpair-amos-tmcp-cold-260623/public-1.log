@@ -1,0 +1,13 @@
+$ pnpm lint
+
+STDOUT:
+
+> amos-saas@0.1.0 lint /Users/jakyeamos/AIOS/tmcp-benchmark/runs/worktrees/realpair-amos-tmcp-cold-260623
+> eslint
+
+ ELIFECYCLE  Command failed.
+ WARN   Local package.json exists, but node_modules missing, did you mean to install?
+
+
+STDERR:
+sh: eslint: command not found

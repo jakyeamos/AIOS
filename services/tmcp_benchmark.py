@@ -196,9 +196,22 @@ def preflight_benchmark(
             "clean_worktree": not bool(_git(repo_path, "status", "--porcelain")) if repo_path.exists() else False,
             "has_start_commit": bool(repo.get("current_commit")),
             "has_lockfile": bool(repo.get("dependency_lockfiles")),
+            "has_quality_command": any(
+                bool(repo.get(key))
+                for key in ("test_commands", "lint_commands", "typecheck_commands")
+            ),
             "has_test_command": bool(repo.get("test_commands")),
+            "has_lint_command": bool(repo.get("lint_commands")),
+            "has_typecheck_command": bool(repo.get("typecheck_commands")),
         }
-        eligible = all(checks.values())
+        required_checks = (
+            "repo_exists",
+            "clean_worktree",
+            "has_start_commit",
+            "has_lockfile",
+            "has_quality_command",
+        )
+        eligible = all(checks[key] for key in required_checks)
         results.append(
             {
                 "project_id": repo.get("project_id"),
@@ -522,9 +535,10 @@ def aggregate_results(*, output_root: Path) -> dict[str, object]:
 def _repository_record(repo_path: Path) -> dict[str, object]:
     package = _load_json_if_exists(repo_path / "package.json")
     scripts = package.get("scripts", {}) if isinstance(package, dict) else {}
-    test_commands = _script_commands(scripts, ("test",))
-    lint_commands = _script_commands(scripts, ("lint",))
-    typecheck_commands = _script_commands(scripts, ("typecheck", "tsc"))
+    package_manager = _package_manager(repo_path, package)
+    test_commands = _script_commands(scripts, ("test",), package_manager)
+    lint_commands = _script_commands(scripts, ("lint",), package_manager)
+    typecheck_commands = _script_commands(scripts, ("typecheck", "tsc"), package_manager)
     return {
         "project_id": repo_path.name,
         "repo_path": str(repo_path),
@@ -545,6 +559,7 @@ def _repository_record(repo_path: Path) -> dict[str, object]:
         "test_commands": test_commands,
         "lint_commands": lint_commands,
         "typecheck_commands": typecheck_commands,
+        "package_manager": package_manager,
         "ci_configuration": _ci_configuration(repo_path),
         "project_language": _project_language(repo_path),
         "framework": _framework(package),
@@ -588,13 +603,34 @@ def _load_json_if_exists(path: Path) -> object:
         return {}
 
 
-def _script_commands(scripts: object, names: tuple[str, ...]) -> list[str]:
+def _package_manager(repo_path: Path, package: object) -> str | None:
+    if isinstance(package, dict):
+        declared = package.get("packageManager")
+        if isinstance(declared, str):
+            name = declared.split("@", maxsplit=1)[0]
+            if name in {"pnpm", "npm", "yarn"}:
+                return name
+    if (repo_path / "pnpm-lock.yaml").exists():
+        return "pnpm"
+    if (repo_path / "package-lock.json").exists():
+        return "npm"
+    if (repo_path / "yarn.lock").exists():
+        return "yarn"
+    return "pnpm" if (repo_path / "package.json").exists() else None
+
+
+def _script_commands(scripts: object, names: tuple[str, ...], package_manager: str | None) -> list[str]:
     if not isinstance(scripts, dict):
         return []
     commands: list[str] = []
     for name in names:
         if name in scripts:
-            commands.append(f"pnpm {name}")
+            if package_manager == "npm":
+                commands.append(f"npm run {name}")
+            elif package_manager == "yarn":
+                commands.append(f"yarn {name}")
+            else:
+                commands.append(f"pnpm {name}")
     return commands
 
 

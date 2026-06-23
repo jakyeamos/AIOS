@@ -1,7 +1,38 @@
 {
-  "created_at": "2026-06-23T17:13:22.256499+00:00",
-  "route_visibility": "expected_tmcp_route is hidden from executing agents.",
-  "schema": "tmcp-benchmark-tasks-v0.1",
+  "task_families": [
+    {
+      "description": "Portable dev-process benchmark for repository detection, local quality command execution, and debug triage when the discovered command is not runnable.",
+      "development_tasks": [
+        "amos-quality-debug-dev"
+      ],
+      "expected_modules": [
+        "tool_safety",
+        "command_discovery",
+        "quality_gate",
+        "reproduce_first"
+      ],
+      "expected_quality_gates": [
+        "repo_detection",
+        "public_quality_command",
+        "hidden_debug_log_capture"
+      ],
+      "held_out_tasks": [
+        "amos-quality-debug-heldout"
+      ],
+      "known_invalidating_differences": [
+        "Package-manager lockfile mismatch changes command selection semantics."
+      ],
+      "shared_process_structure": [
+        "inspect_repo_surface",
+        "select_quality_command",
+        "run_quality_command",
+        "capture_failure_for_debug"
+      ],
+      "shortcut_eligible": true,
+      "shortcut_transfer_scope": "same_repository",
+      "task_family_id": "amos-portable-quality-debug"
+    }
+  ],
   "tasks": [
     {
       "compositionality_score": 3,

@@ -1,0 +1,18 @@
+{
+  "cached_input_tokens": null,
+  "estimated_cost_usd": null,
+  "estimated_loaded_context_tokens": 0,
+  "input_tokens": null,
+  "irrelevant_skill_tokens": null,
+  "output_tokens": null,
+  "reasoning_tokens": null,
+  "recovery_tokens": null,
+  "relevant_skill_tokens": null,
+  "repository_context_tokens": null,
+  "routing_tokens": null,
+  "shortcut_lookup_tokens": null,
+  "shortcut_validation_tokens": null,
+  "skill_tokens_loaded": 0,
+  "token_claim_basis": "estimated_loaded_context_tokens_only",
+  "uncached_input_tokens": null
+}

@@ -1,12 +1,15 @@
 {
-  "created_at": "2026-06-21T18:58:17.950068+00:00",
+  "created_at": "2026-06-23T17:18:17.966597+00:00",
   "results": [
     {
       "checks": {
         "clean_worktree": false,
+        "has_lint_command": false,
         "has_lockfile": true,
+        "has_quality_command": false,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
       "eligible": false,
@@ -17,9 +20,12 @@
     {
       "checks": {
         "clean_worktree": false,
+        "has_lint_command": false,
         "has_lockfile": false,
+        "has_quality_command": false,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
       "eligible": false,
@@ -30,9 +36,12 @@
     {
       "checks": {
         "clean_worktree": false,
+        "has_lint_command": false,
         "has_lockfile": true,
+        "has_quality_command": true,
         "has_start_commit": true,
         "has_test_command": true,
+        "has_typecheck_command": true,
         "repo_exists": true
       },
       "eligible": false,
@@ -42,23 +51,45 @@
     },
     {
       "checks": {
-        "clean_worktree": true,
+        "clean_worktree": false,
+        "has_lint_command": true,
         "has_lockfile": true,
+        "has_quality_command": true,
         "has_start_commit": true,
         "has_test_command": true,
+        "has_typecheck_command": true,
         "repo_exists": true
       },
-      "eligible": true,
+      "eligible": false,
       "project_id": "Bballedu",
-      "reason": "eligible",
+      "reason": "missing_required_preflight_signal",
       "repo_path": "/Users/jakyeamos/projects/Bballedu"
     },
     {
       "checks": {
         "clean_worktree": false,
+        "has_lint_command": true,
         "has_lockfile": true,
+        "has_quality_command": true,
         "has_start_commit": true,
         "has_test_command": true,
+        "has_typecheck_command": false,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "BidCamp",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/BidCamp"
+    },
+    {
+      "checks": {
+        "clean_worktree": false,
+        "has_lint_command": false,
+        "has_lockfile": true,
+        "has_quality_command": true,
+        "has_start_commit": true,
+        "has_test_command": true,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
       "eligible": false,
@@ -69,9 +100,12 @@
     {
       "checks": {
         "clean_worktree": true,
+        "has_lint_command": false,
         "has_lockfile": false,
+        "has_quality_command": false,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
       "eligible": false,
@@ -81,10 +115,29 @@
     },
     {
       "checks": {
-        "clean_worktree": true,
-        "has_lockfile": false,
+        "clean_worktree": false,
+        "has_lint_command": true,
+        "has_lockfile": true,
+        "has_quality_command": true,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": true,
+        "repo_exists": true
+      },
+      "eligible": false,
+      "project_id": "Crimclock",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/projects/Crimclock"
+    },
+    {
+      "checks": {
+        "clean_worktree": false,
+        "has_lint_command": false,
+        "has_lockfile": false,
+        "has_quality_command": false,
+        "has_start_commit": true,
+        "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
       "eligible": false,
@@ -95,9 +148,12 @@
     {
       "checks": {
         "clean_worktree": false,
+        "has_lint_command": false,
         "has_lockfile": false,
+        "has_quality_command": false,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
       "eligible": false,
@@ -108,9 +164,12 @@
     {
       "checks": {
         "clean_worktree": false,
+        "has_lint_command": true,
         "has_lockfile": true,
+        "has_quality_command": true,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
       "eligible": false,
@@ -120,10 +179,13 @@
     },
     {
       "checks": {
-        "clean_worktree": true,
+        "clean_worktree": false,
+        "has_lint_command": true,
         "has_lockfile": true,
+        "has_quality_command": true,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": true,
         "repo_exists": true
       },
       "eligible": false,
@@ -133,10 +195,13 @@
     },
     {
       "checks": {
-        "clean_worktree": true,
+        "clean_worktree": false,
+        "has_lint_command": false,
         "has_lockfile": true,
+        "has_quality_command": false,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
       "eligible": false,
@@ -147,9 +212,12 @@
     {
       "checks": {
         "clean_worktree": true,
+        "has_lint_command": false,
         "has_lockfile": false,
+        "has_quality_command": false,
         "has_start_commit": false,
         "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
       "eligible": false,
@@ -159,10 +227,13 @@
     },
     {
       "checks": {
-        "clean_worktree": true,
+        "clean_worktree": false,
+        "has_lint_command": false,
         "has_lockfile": false,
+        "has_quality_command": false,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
       "eligible": false,
@@ -172,23 +243,29 @@
     },
     {
       "checks": {
-        "clean_worktree": true,
+        "clean_worktree": false,
+        "has_lint_command": true,
         "has_lockfile": true,
+        "has_quality_command": true,
         "has_start_commit": true,
         "has_test_command": true,
+        "has_typecheck_command": true,
         "repo_exists": true
       },
-      "eligible": true,
+      "eligible": false,
       "project_id": "Terrace",
-      "reason": "eligible",
+      "reason": "missing_required_preflight_signal",
       "repo_path": "/Users/jakyeamos/projects/Terrace"
     },
     {
       "checks": {
         "clean_worktree": false,
+        "has_lint_command": false,
         "has_lockfile": false,
+        "has_quality_command": false,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
       "eligible": false,
@@ -199,9 +276,12 @@
     {
       "checks": {
         "clean_worktree": false,
+        "has_lint_command": false,
         "has_lockfile": false,
+        "has_quality_command": false,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
       "eligible": false,
@@ -212,22 +292,28 @@
     {
       "checks": {
         "clean_worktree": true,
+        "has_lint_command": true,
         "has_lockfile": true,
+        "has_quality_command": true,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
-      "eligible": false,
+      "eligible": true,
       "project_id": "amos-saas",
-      "reason": "missing_required_preflight_signal",
+      "reason": "eligible",
       "repo_path": "/Users/jakyeamos/projects/amos-saas"
     },
     {
       "checks": {
         "clean_worktree": false,
+        "has_lint_command": false,
         "has_lockfile": true,
+        "has_quality_command": false,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
       "eligible": false,
@@ -237,10 +323,13 @@
     },
     {
       "checks": {
-        "clean_worktree": false,
+        "clean_worktree": true,
+        "has_lint_command": false,
         "has_lockfile": false,
+        "has_quality_command": false,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
       "eligible": false,
@@ -250,10 +339,13 @@
     },
     {
       "checks": {
-        "clean_worktree": true,
+        "clean_worktree": false,
+        "has_lint_command": false,
         "has_lockfile": true,
+        "has_quality_command": false,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
       "eligible": false,
@@ -263,10 +355,13 @@
     },
     {
       "checks": {
-        "clean_worktree": true,
+        "clean_worktree": false,
+        "has_lint_command": false,
         "has_lockfile": true,
+        "has_quality_command": false,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
       "eligible": false,
@@ -277,9 +372,12 @@
     {
       "checks": {
         "clean_worktree": true,
+        "has_lint_command": false,
         "has_lockfile": false,
+        "has_quality_command": false,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
       "eligible": false,
@@ -289,10 +387,13 @@
     },
     {
       "checks": {
-        "clean_worktree": true,
+        "clean_worktree": false,
+        "has_lint_command": true,
         "has_lockfile": true,
+        "has_quality_command": true,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": true,
         "repo_exists": true
       },
       "eligible": false,
@@ -303,9 +404,12 @@
     {
       "checks": {
         "clean_worktree": true,
+        "has_lint_command": false,
         "has_lockfile": false,
+        "has_quality_command": false,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
       "eligible": false,
@@ -316,35 +420,44 @@
     {
       "checks": {
         "clean_worktree": true,
-        "has_lockfile": false,
+        "has_lint_command": false,
+        "has_lockfile": true,
+        "has_quality_command": true,
         "has_start_commit": true,
-        "has_test_command": false,
+        "has_test_command": true,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
-      "eligible": false,
+      "eligible": true,
       "project_id": "eslint-plugin-anti-slop",
-      "reason": "missing_required_preflight_signal",
+      "reason": "eligible",
       "repo_path": "/Users/jakyeamos/projects/eslint-plugin-anti-slop"
     },
     {
       "checks": {
-        "clean_worktree": true,
+        "clean_worktree": false,
+        "has_lint_command": false,
         "has_lockfile": true,
+        "has_quality_command": true,
         "has_start_commit": true,
         "has_test_command": true,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
-      "eligible": true,
+      "eligible": false,
       "project_id": "frmwrklabs",
-      "reason": "eligible",
+      "reason": "missing_required_preflight_signal",
       "repo_path": "/Users/jakyeamos/projects/frmwrklabs"
     },
     {
       "checks": {
-        "clean_worktree": true,
+        "clean_worktree": false,
+        "has_lint_command": false,
         "has_lockfile": false,
+        "has_quality_command": false,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
       "eligible": false,
@@ -355,9 +468,12 @@
     {
       "checks": {
         "clean_worktree": false,
+        "has_lint_command": true,
         "has_lockfile": true,
+        "has_quality_command": true,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
       "eligible": false,
@@ -367,10 +483,13 @@
     },
     {
       "checks": {
-        "clean_worktree": true,
+        "clean_worktree": false,
+        "has_lint_command": true,
         "has_lockfile": true,
+        "has_quality_command": true,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": true,
         "repo_exists": true
       },
       "eligible": false,
@@ -381,9 +500,12 @@
     {
       "checks": {
         "clean_worktree": false,
+        "has_lint_command": true,
         "has_lockfile": true,
+        "has_quality_command": true,
         "has_start_commit": true,
         "has_test_command": true,
+        "has_typecheck_command": true,
         "repo_exists": true
       },
       "eligible": false,
@@ -393,49 +515,77 @@
     },
     {
       "checks": {
-        "clean_worktree": true,
+        "clean_worktree": false,
+        "has_lint_command": true,
         "has_lockfile": true,
+        "has_quality_command": true,
         "has_start_commit": true,
         "has_test_command": true,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
-      "eligible": true,
+      "eligible": false,
       "project_id": "remodelvision",
-      "reason": "eligible",
+      "reason": "missing_required_preflight_signal",
       "repo_path": "/Users/jakyeamos/projects/remodelvision"
     },
     {
       "checks": {
-        "clean_worktree": true,
+        "clean_worktree": false,
+        "has_lint_command": true,
         "has_lockfile": true,
+        "has_quality_command": true,
         "has_start_commit": true,
         "has_test_command": true,
+        "has_typecheck_command": true,
         "repo_exists": true
       },
-      "eligible": true,
+      "eligible": false,
       "project_id": "soundscape-app",
-      "reason": "eligible",
+      "reason": "missing_required_preflight_signal",
       "repo_path": "/Users/jakyeamos/projects/soundscape-app"
     },
     {
       "checks": {
-        "clean_worktree": true,
+        "clean_worktree": false,
+        "has_lint_command": true,
         "has_lockfile": true,
+        "has_quality_command": true,
         "has_start_commit": true,
-        "has_test_command": true,
+        "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
-      "eligible": true,
+      "eligible": false,
+      "project_id": "tenure",
+      "reason": "missing_required_preflight_signal",
+      "repo_path": "/Users/jakyeamos/LayerC0de/tenure"
+    },
+    {
+      "checks": {
+        "clean_worktree": false,
+        "has_lint_command": true,
+        "has_lockfile": true,
+        "has_quality_command": true,
+        "has_start_commit": true,
+        "has_test_command": true,
+        "has_typecheck_command": true,
+        "repo_exists": true
+      },
+      "eligible": false,
       "project_id": "tm",
-      "reason": "eligible",
+      "reason": "missing_required_preflight_signal",
       "repo_path": "/Users/jakyeamos/projects/tm"
     },
     {
       "checks": {
         "clean_worktree": false,
+        "has_lint_command": false,
         "has_lockfile": false,
+        "has_quality_command": false,
         "has_start_commit": false,
         "has_test_command": false,
+        "has_typecheck_command": false,
         "repo_exists": true
       },
       "eligible": false,
@@ -445,10 +595,13 @@
     },
     {
       "checks": {
-        "clean_worktree": true,
+        "clean_worktree": false,
+        "has_lint_command": false,
         "has_lockfile": true,
+        "has_quality_command": true,
         "has_start_commit": true,
         "has_test_command": false,
+        "has_typecheck_command": true,
         "repo_exists": true
       },
       "eligible": false,
@@ -459,7 +612,7 @@
   ],
   "schema": "tmcp-benchmark-preflight-v0.1",
   "selected_projects": [
-    "Bballedu",
-    "Terrace"
+    "amos-saas",
+    "eslint-plugin-anti-slop"
   ]
 }

@@ -181,9 +181,11 @@ AIOS success criteria now enforce git worktree cleanliness at session close:
 AIOS now has a file-backed TMCP paired-run benchmark pipeline:
 
 - `bin/tmcp-benchmark.py` supports `discover`, `preflight`, `task import`, `conditions`, `freeze`, `run`, and `aggregate` commands over the `tmcp-benchmark/` scaffold
-- `services.tmcp_benchmark` now records task families, held-out task manifests, seeded anonymous condition maps, frozen hash manifests, shortcut leakage checks, isolated git-worktree dry runs, timing/token/route/patch/evaluation artifacts, and conservative aggregate comparisons
+- `services.tmcp_benchmark` now records task families, held-out task manifests, seeded anonymous condition maps, frozen hash manifests, shortcut leakage checks, isolated git-worktree dry runs, timing/token/route/patch/evaluation artifacts, package-manager-aware command discovery, and conservative aggregate comparisons
 - aggregation reports baseline, flat-skills, cold-TMCP, and validated-shortcut comparisons separately, including the required cold-vs-shortcut comparison, and refuses speed/token improvement claims unless completion and quality are non-inferior and the measured delta is positive
 - the current dry-run calibration artifact set contains 8 stub runs across `Bballedu` and `Terrace`; those records validate the harness shape only and are not promotional evidence for TMCP performance
+- the first real portable dev-process paired benchmark ran on `amos-saas` with `baseline` (`realpair-amos-baseline-260623`) and `tmcp_cold_start` (`realpair-amos-tmcp-cold-260623`); both failed the public quality command because the isolated worktree lacked runnable dependencies, and the failure is recorded in `tmcp-benchmark/reports/failure-casebook.md`
+- benchmark preflight now accepts clean repositories with at least one discovered quality command (`test`, `lint`, or `typecheck`) instead of requiring a test command specifically; Node script discovery now follows the repo's declared package manager or lockfile instead of assuming `pnpm`
 
 ## Implemented On 2026-06-21
 
