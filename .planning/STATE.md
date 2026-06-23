@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-last_updated: "2026-06-24T00:01:05.000Z"
+last_updated: "2026-06-24T00:01:20.000Z"
 progress:
   total_phases: 22
   completed_phases: 19
   total_plans: 123
-  completed_plans: 106
+  completed_plans: 107
   percent: 86
 ---
 
@@ -26,13 +26,13 @@ progress:
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
 - Latest completed phase: Phase 19, Native Workflow Command Pack, shipped local native workflow commands for orientation, handoff, squad review, security audit, guarded cleanup, prototype sandboxes, metadata logging, tests, and docs.
-- Latest completed plan: Phase 20 Plan 20-03 added configurable GSD workflow phase recognition and tested slash/natural-language/audit/prompt/CLI planning detection.
+- Latest completed plan: Phase 20 Plan 20-04 added planning lens registry and selector behavior for task types, workflow phases, risk levels, and manual lens requests.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 15, Execution-Symmetric Planning
 - Active phase: Phase 20, Execution-Symmetric Planning
-- Active plan: Phase 20 Plan 20-04
+- Active plan: Phase 20 Plan 20-05
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19
 - Next dependency chain: Phase 20 -> Phase 21 -> Phase 22
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
@@ -52,6 +52,7 @@ progress:
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-06-23 | Complete Phase 20 Plan 20-04 planning lens registry | `config/planning/planning-lenses.json`, `services/planning_lenses.py`, and `tests/test_planning_lenses.py` map task types and workflow phases to planning lenses, support explicit lens requests, preserve high-risk required safety lenses, and keep planning constraints in intent-specific config/services rather than broad always-loaded instructions. |
 | 2026-06-23 | Complete Phase 20 Plan 20-03 GSD workflow phase recognition | `config/planning/gsd-workflow-phases.json`, `services/planning_workflow_detection.py`, and `tests/test_planning_workflow_detection.py` recognize configurable GSD plan/implement/review/validate aliases, keep slash commands as invocation hints/overrides, map `/gsdplanphase` to GSD-ready plan output, and detect natural-language, audit-to-implementation, generated prompt, and CLI-shaped planning contexts. |
 | 2026-06-23 | Complete Phase 20 Plan 20-02 core principle and complexity contract | `docs/specs/execution-symmetric-planning.md`, `config/planning/execution-symmetric-planning.json`, and thin `config/agent-rules.md` Rule 14 define execution plans as execution artifacts, scale plan depth across trivial/simple/moderate/complex/high-risk work, preserve GSD compatibility, and keep detailed planning behavior in intent-specific docs/config rather than always-loaded rules. |
 | 2026-06-23 | Complete Phase 20 Plan 20-01 planning system audit | `docs/audits/aios-execution-symmetric-planning-audit.md` maps natural-language planning, GSD phase planning, slash-command handling, CLI routing, workflow/skill/prompt registries, generated implementation prompts, audit-to-implementation prompts, validation, handoff, logging gaps, and minimal implementation seams while preserving GSD compatibility and TMCP thin-rule discipline. |
@@ -172,4 +173,4 @@ progress:
 | 2026-06-02 | Complete Phase 10 Plan 08 quality hotspot backfill baseline | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-08-SUMMARY.md` records `pnpm quality:eval`, the read-only hotspot detection script, and the first factual Agent Eval backfill inventory for Python services, CLI scripts, tests, aios-ui, config, and eval docs. |
 
 ---
-*Last updated: 2026-06-23 after completing Phase 20 Plan 20-03 and advancing to Phase 20 Plan 20-04*
+*Last updated: 2026-06-23 after completing Phase 20 Plan 20-04 and advancing to Phase 20 Plan 20-05*

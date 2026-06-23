@@ -1,0 +1,202 @@
+{
+  "version": "2026-06-23",
+  "lenses": {
+    "code-quality": {
+      "purpose": "Plan for readable, typed, lintable implementation that fits local conventions.",
+      "standard_refs": ["code_quality.lint_ratchet", "global.maintainability"]
+    },
+    "maintainability": {
+      "purpose": "Plan for small cohesive changes, low duplication, and clear ownership boundaries.",
+      "standard_refs": ["maintainability.dead_code_signal", "global.maintainability"]
+    },
+    "regression-safety": {
+      "purpose": "Plan to protect existing behavior and avoid hidden regressions.",
+      "standard_refs": ["testing.trust_signal", "global.testing"]
+    },
+    "testing": {
+      "purpose": "Plan deterministic tests or evidence that would fail if the intended behavior breaks.",
+      "standard_refs": ["testing.trust_signal", "global.testing"]
+    },
+    "product-requirements": {
+      "purpose": "Plan against user-visible requirements, acceptance criteria, and truth files.",
+      "standard_refs": ["documentation.truth_file_currency"]
+    },
+    "architecture": {
+      "purpose": "Plan within existing boundaries, dependency direction, and subsystem ownership.",
+      "standard_refs": ["architecture.boundary_enforcement"]
+    },
+    "user-impact": {
+      "purpose": "Plan observable user behavior and UX/product consequences.",
+      "standard_refs": ["ux.operator_clarity", "product_readiness.command_center_operability"]
+    },
+    "data-integrity": {
+      "purpose": "Plan validation of persisted data, migrations, idempotency, and recovery.",
+      "standard_refs": ["data-integrity"]
+    },
+    "rollback-safety": {
+      "purpose": "Plan a revert, recovery, or explicit accepted-risk path for durable changes.",
+      "standard_refs": ["execution-first-verification"]
+    },
+    "observability": {
+      "purpose": "Plan durable evidence, logs, reports, receipts, or operator visibility.",
+      "standard_refs": ["observability.run_signal_integrity", "global.observability"]
+    },
+    "interface-contracts": {
+      "purpose": "Plan API/schema/type/interface compatibility and contract tests.",
+      "standard_refs": ["api-contract"]
+    },
+    "backward-compatibility": {
+      "purpose": "Plan compatibility for existing callers, data, commands, and artifacts.",
+      "standard_refs": ["api-contract", "regression-safety"]
+    },
+    "documentation": {
+      "purpose": "Plan truth-file, operator, or developer documentation updates.",
+      "standard_refs": ["documentation.truth_file_currency"]
+    },
+    "orchestration": {
+      "purpose": "Plan agent/workflow/run lifecycle state and handoff behavior.",
+      "standard_refs": ["workflow_agent_control.explicit_handshake"]
+    },
+    "routing": {
+      "purpose": "Plan deterministic workflow, skill, model, or context-routing decisions.",
+      "standard_refs": ["workflow_agent_control.explicit_handshake"]
+    },
+    "model-selection": {
+      "purpose": "Plan model/reasoning strategy and evaluation metadata when execution depends on model choice.",
+      "standard_refs": ["workflow_agent_control.explicit_handshake"]
+    },
+    "context-management": {
+      "purpose": "Plan the smallest sufficient context, receipts, and skipped-context rationale.",
+      "standard_refs": ["standards_compliance.context_selection"]
+    },
+    "token-efficiency": {
+      "purpose": "Plan concise context and avoid unnecessary always-loaded instruction growth.",
+      "standard_refs": ["standards_compliance.context_selection"]
+    },
+    "eval-design": {
+      "purpose": "Plan acceptance/eval cases and evidence needed to judge success.",
+      "standard_refs": ["testing.trust_signal"]
+    },
+    "executor-readiness": {
+      "purpose": "Plan enough concrete detail for a later executor to proceed without rediscovery.",
+      "standard_refs": ["workflow_agent_control.explicit_handshake"]
+    },
+    "constraint-preservation": {
+      "purpose": "Plan to preserve user constraints, project constraints, and non-scope.",
+      "standard_refs": ["global.maintainability"]
+    },
+    "validation-strategy": {
+      "purpose": "Plan exact checks, evidence, and acceptance criteria before execution.",
+      "standard_refs": ["testing.trust_signal", "execution-first-verification"]
+    },
+    "risk-management": {
+      "purpose": "Plan risks, failure modes, stop conditions, and accepted tradeoffs.",
+      "standard_refs": ["security.review_traceability", "workflow_agent_control.explicit_handshake"]
+    },
+    "artifact-definition": {
+      "purpose": "Plan concrete files, reports, schemas, logs, or durable outputs.",
+      "standard_refs": ["documentation.truth_file_currency"]
+    },
+    "escalation-clarity": {
+      "purpose": "Plan when to ask, stop, split scope, request approval, or hand off.",
+      "standard_refs": ["workflow_agent_control.explicit_handshake"]
+    },
+    "threat-modeling": {
+      "purpose": "Plan abuse cases, trust boundaries, mitigations, and security review evidence.",
+      "standard_refs": ["security.review_traceability", "security-review"]
+    },
+    "least-privilege": {
+      "purpose": "Plan minimum access, permissions, and scoped side effects.",
+      "standard_refs": ["security.review_traceability"]
+    },
+    "secrets-safety": {
+      "purpose": "Plan secret handling, redaction, and no-leak verification.",
+      "standard_refs": ["security.review_traceability", "security-review"]
+    },
+    "abuse-resistance": {
+      "purpose": "Plan misuse cases and protective behavior for risky user or external inputs.",
+      "standard_refs": ["security.review_traceability", "security-review"]
+    }
+  },
+  "task_type_mappings": {
+    "code_refactor": ["code-quality", "maintainability", "regression-safety", "testing"],
+    "feature_implementation": [
+      "product-requirements",
+      "architecture",
+      "testing",
+      "validation-strategy",
+      "executor-readiness"
+    ],
+    "database_migration": [
+      "data-integrity",
+      "rollback-safety",
+      "validation-strategy",
+      "backward-compatibility",
+      "observability"
+    ],
+    "api_change": [
+      "interface-contracts",
+      "backward-compatibility",
+      "testing",
+      "documentation",
+      "validation-strategy"
+    ],
+    "agent_workflow": [
+      "orchestration",
+      "routing",
+      "context-management",
+      "model-selection",
+      "eval-design",
+      "executor-readiness"
+    ],
+    "gsd_plan_phase": [
+      "executor-readiness",
+      "constraint-preservation",
+      "artifact-definition",
+      "validation-strategy",
+      "escalation-clarity"
+    ],
+    "security_sensitive_task": [
+      "threat-modeling",
+      "least-privilege",
+      "secrets-safety",
+      "abuse-resistance",
+      "rollback-safety",
+      "validation-strategy"
+    ],
+    "data_project": [
+      "data-integrity",
+      "observability",
+      "validation-strategy",
+      "documentation"
+    ]
+  },
+  "workflow_phase_mappings": {
+    "gsd:plan": ["gsd_plan_phase"],
+    "gsd:implement": ["executor-readiness", "validation-strategy", "rollback-safety"],
+    "gsd:review": ["regression-safety", "risk-management", "validation-strategy"],
+    "gsd:validate": ["testing", "validation-strategy", "artifact-definition"],
+    "aios:plan": ["executor-readiness", "constraint-preservation", "validation-strategy"]
+  },
+  "risk_level_mappings": {
+    "high": ["risk-management", "rollback-safety", "escalation-clarity"],
+    "high_risk": [
+      "risk-management",
+      "rollback-safety",
+      "escalation-clarity",
+      "threat-modeling",
+      "least-privilege",
+      "secrets-safety"
+    ]
+  },
+  "required_safety_lenses": {
+    "high_risk": [
+      "risk-management",
+      "rollback-safety",
+      "escalation-clarity",
+      "threat-modeling",
+      "least-privilege",
+      "secrets-safety"
+    ]
+  }
+}
