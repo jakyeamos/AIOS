@@ -95,14 +95,14 @@
 
 ### Graph-Native Memory Architecture
 
-- [ ] **MEM-01**: AIOS stores memory across four distinct layers: raw source (Layer A with provenance), normalized facts (Layer B with validity status), graph relationships (Layer C with typed predicates), and model-facing compiled briefing packets (Layer D)
-- [ ] **MEM-02**: AIOS compiles retrieved memory into readable markdown briefing packets — never raw JSON or graph edge rows — with sections for Current Truth, Prior Decisions, Constraints, Causal Chain, Contradictions, Open Questions, and Sources/Provenance
-- [ ] **MEM-03**: AIOS assembles prompt context in stable-prefix-first order so identical project/rule/preference sections appear early and dynamic task content appears late, maximizing API provider prompt cache hit rate
-- [ ] **MEM-04**: A formal memory packet contract governs required/optional sections, section ordering, provenance rules, staleness rules, contradiction handling, confidence levels, and token budgeting with documented good and bad packet examples
-- [ ] **MEM-05**: Integration tests and a standalone validation script enforce nine retrieval quality constraints: provenance present, superseded facts excluded from Current Truth, contradictions surfaced, project constraints included, stable/dynamic separation, no raw JSON in output, token budgets respected, deterministic stable prefix, and no unrelated memory bloat
-- [ ] **MEM-06**: A prioritized backfill plan identifies existing AIOS memory hotspots (truth files, PRDs, agent rules, skills, prompt libraries, design specs) with recommended Layer B fact extraction and Layer C relationship backfill at P0/P1/P2 priority
-- [ ] **MEM-07**: AIOS represents memory as connected knowledge using typed graph-edge relationships (caused_by, depends_on, blocks, supersedes, contradicts, supports, evidence_for, belongs_to_project, decided_in, implemented_by, requested_by_user, derived_from, related_to, has_open_question, has_constraint, has_risk, has_owner, has_status) stored in the existing SQLite operational spine
-- [ ] **MEM-08**: A future design note documents why direct KV-cache injection is not a core AIOS dependency for API models, what prerequisites would need to be true for a local-runner path, and how the stable-prefix ContextCompiler bridges today's architecture to that future without requiring it
+- [x] **MEM-01**: AIOS stores memory across four distinct layers: raw source (Layer A with provenance), normalized facts (Layer B with validity status), graph relationships (Layer C with typed predicates), and model-facing compiled briefing packets (Layer D)
+- [x] **MEM-02**: AIOS compiles retrieved memory into readable markdown briefing packets — never raw JSON or graph edge rows — with sections for Current Truth, Prior Decisions, Constraints, Causal Chain, Contradictions, Open Questions, and Sources/Provenance
+- [x] **MEM-03**: AIOS assembles prompt context in stable-prefix-first order so identical project/rule/preference sections appear early and dynamic task content appears late, maximizing API provider prompt cache hit rate
+- [x] **MEM-04**: A formal memory packet contract governs required/optional sections, section ordering, provenance rules, staleness rules, contradiction handling, confidence levels, and token budgeting with documented good and bad packet examples
+- [x] **MEM-05**: Integration tests and a standalone validation script enforce nine retrieval quality constraints: provenance present, superseded facts excluded from Current Truth, contradictions surfaced, project constraints included, stable/dynamic separation, no raw JSON in output, token budgets respected, deterministic stable prefix, and no unrelated memory bloat
+- [x] **MEM-06**: A prioritized backfill plan identifies existing AIOS memory hotspots (truth files, PRDs, agent rules, skills, prompt libraries, design specs) with recommended Layer B fact extraction and Layer C relationship backfill at P0/P1/P2 priority
+- [x] **MEM-07**: AIOS represents memory as connected knowledge using typed graph-edge relationships (caused_by, depends_on, blocks, supersedes, contradicts, supports, evidence_for, belongs_to_project, decided_in, implemented_by, requested_by_user, derived_from, related_to, has_open_question, has_constraint, has_risk, has_owner, has_status) stored in the existing SQLite operational spine
+- [x] **MEM-08**: A future design note documents why direct KV-cache injection is not a core AIOS dependency for API models, what prerequisites would need to be true for a local-runner path, and how the stable-prefix ContextCompiler bridges today's architecture to that future without requiring it
 
 ### Session Ingestion And Provider Extensibility
 
@@ -260,14 +260,14 @@ None currently. The full operating-system vision is intentionally being planned 
 | EVAL-07 | Phase 11: Testing, Benchmark Evaluation, And Shadow Workflows | Pending |
 | EVAL-08 | Phase 11: Testing, Benchmark Evaluation, And Shadow Workflows | Pending |
 
-| MEM-01 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Pending |
-| MEM-02 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Pending |
-| MEM-03 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Pending |
-| MEM-04 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Pending |
-| MEM-05 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Pending |
-| MEM-06 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Pending |
-| MEM-07 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Pending |
-| MEM-08 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Pending |
+| MEM-01 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Complete |
+| MEM-02 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Complete |
+| MEM-03 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Complete |
+| MEM-04 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Complete |
+| MEM-05 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Complete |
+| MEM-06 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Complete |
+| MEM-07 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Complete |
+| MEM-08 | Phase 12: Graph-Native Memory Architecture And Cache-Aware Context Compilation | Complete |
 | SESS-01 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Pending |
 | SESS-02 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Pending |
 | SESS-03 | Phase 13: Multi-Provider Session Ingestion And Second Brain Data Pipeline | Pending |
