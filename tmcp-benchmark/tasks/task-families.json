@@ -5,7 +5,7 @@
     {
       "description": "Portable dev-process benchmark for repository detection, local quality command execution, and debug triage when the discovered command is not runnable.",
       "development_tasks": [
-        "amos-quality-debug-dev"
+        "bidcamp-quality-debug-dev"
       ],
       "expected_modules": [
         "tool_safety",
@@ -19,7 +19,7 @@
         "hidden_debug_log_capture"
       ],
       "held_out_tasks": [
-        "amos-quality-debug-heldout"
+        "bidcamp-quality-debug-heldout"
       ],
       "known_invalidating_differences": [
         "Package-manager lockfile mismatch changes command selection semantics."
@@ -32,7 +32,7 @@
       ],
       "shortcut_eligible": true,
       "shortcut_transfer_scope": "same_repository",
-      "task_family_id": "amos-portable-quality-debug"
+      "task_family_id": "bidcamp-portable-quality-debug"
     }
   ]
 }

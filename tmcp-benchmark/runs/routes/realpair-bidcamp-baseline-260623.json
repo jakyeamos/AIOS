@@ -11,7 +11,7 @@
   ],
   "route_precision": 0.0,
   "route_recall": 0.0,
-  "run_id": "realpair-amos-baseline-260623",
+  "run_id": "realpair-bidcamp-baseline-260623",
   "schema": "tmcp-benchmark-route-v0.1",
   "selected_modules": [],
   "shortcut_state": "NONE"

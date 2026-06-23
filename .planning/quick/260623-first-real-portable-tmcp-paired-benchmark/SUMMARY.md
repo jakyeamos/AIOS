@@ -15,28 +15,28 @@ Run the first real paired benchmark for the portable dev-process TMCP graph on o
 
 ## Run
 
-- Repository: `amos-saas`
+- Repository: `BidCamp`
 - Commit: `72148b19e4823e9ecd9751e7ec67754b79287c8d`
-- Task source: `tmcp-benchmark/tasks/approved/first-real-paired-amos-quality-debug.json`
-- Held-out task: `amos-quality-debug-heldout`
+- Task source: `tmcp-benchmark/tasks/approved/first-real-paired-bidcamp-quality-debug.json`
+- Held-out task: `bidcamp-quality-debug-heldout`
 - Seed: `260623`
 - Paired conditions:
-  - `baseline`: `realpair-amos-baseline-260623`
-  - `tmcp_cold_start`: `realpair-amos-tmcp-cold-260623`
+  - `baseline`: `realpair-bidcamp-baseline-260623`
+  - `tmcp_cold_start`: `realpair-bidcamp-tmcp-cold-260623`
 
 ## Evidence
 
 - Raw run records:
-  - `tmcp-benchmark/runs/raw/realpair-amos-baseline-260623.json`
-  - `tmcp-benchmark/runs/raw/realpair-amos-tmcp-cold-260623.json`
+  - `tmcp-benchmark/runs/raw/realpair-bidcamp-baseline-260623.json`
+  - `tmcp-benchmark/runs/raw/realpair-bidcamp-tmcp-cold-260623.json`
 - Route receipts:
-  - `tmcp-benchmark/runs/routes/realpair-amos-baseline-260623.json`
-  - `tmcp-benchmark/runs/routes/realpair-amos-tmcp-cold-260623.json`
+  - `tmcp-benchmark/runs/routes/realpair-bidcamp-baseline-260623.json`
+  - `tmcp-benchmark/runs/routes/realpair-bidcamp-tmcp-cold-260623.json`
 - Automated evaluations:
-  - `tmcp-benchmark/evaluation/automated/realpair-amos-baseline-260623.json`
-  - `tmcp-benchmark/evaluation/automated/realpair-amos-tmcp-cold-260623.json`
+  - `tmcp-benchmark/evaluation/automated/realpair-bidcamp-baseline-260623.json`
+  - `tmcp-benchmark/evaluation/automated/realpair-bidcamp-tmcp-cold-260623.json`
 - Failure log:
-  - `tmcp-benchmark/runs/artifacts/realpair-amos-tmcp-cold-260623/public-1.log`
+  - `tmcp-benchmark/runs/artifacts/realpair-bidcamp-tmcp-cold-260623/public-1.log`
 
 ## Outcome
 

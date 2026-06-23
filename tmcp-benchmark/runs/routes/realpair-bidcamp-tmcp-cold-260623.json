@@ -11,7 +11,7 @@
   ],
   "route_precision": 1.0,
   "route_recall": 1.0,
-  "run_id": "realpair-amos-tmcp-cold-260623",
+  "run_id": "realpair-bidcamp-tmcp-cold-260623",
   "schema": "tmcp-benchmark-route-v0.1",
   "selected_modules": [
     "@task:repo_detect",

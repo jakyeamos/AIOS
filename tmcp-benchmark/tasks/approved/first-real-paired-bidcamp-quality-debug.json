@@ -3,7 +3,7 @@
     {
       "description": "Portable dev-process benchmark for repository detection, local quality command execution, and debug triage when the discovered command is not runnable.",
       "development_tasks": [
-        "amos-quality-debug-dev"
+        "bidcamp-quality-debug-dev"
       ],
       "expected_modules": [
         "tool_safety",
@@ -17,7 +17,7 @@
         "hidden_debug_log_capture"
       ],
       "held_out_tasks": [
-        "amos-quality-debug-heldout"
+        "bidcamp-quality-debug-heldout"
       ],
       "known_invalidating_differences": [
         "Package-manager lockfile mismatch changes command selection semantics."
@@ -30,7 +30,7 @@
       ],
       "shortcut_eligible": true,
       "shortcut_transfer_scope": "same_repository",
-      "task_family_id": "amos-portable-quality-debug"
+      "task_family_id": "bidcamp-portable-quality-debug"
     }
   ],
   "tasks": [
@@ -68,7 +68,7 @@
       "natural_language_request": "Detect the repository stack, run the narrowest quality command, and debug the first local quality-command failure.",
       "network_access": "disabled",
       "prohibited_shortcuts": [],
-      "project_id": "amos-saas",
+      "project_id": "BidCamp",
       "public_acceptance_criteria": [
         "Repository package metadata is present.",
         "The discovered quality command is run and its output is captured."
@@ -81,8 +81,8 @@
       "split": "development",
       "starting_commit": "72148b19e4823e9ecd9751e7ec67754b79287c8d",
       "task_class": "portable_dev_process_quality_debug",
-      "task_family_id": "amos-portable-quality-debug",
-      "task_id": "amos-quality-debug-dev"
+      "task_family_id": "bidcamp-portable-quality-debug",
+      "task_id": "bidcamp-quality-debug-dev"
     },
     {
       "compositionality_score": 3,
@@ -118,9 +118,9 @@
       "natural_language_request": "Held-out paired run: detect the repository stack, run the narrowest quality command, and debug the first local quality-command failure.",
       "network_access": "disabled",
       "prohibited_shortcuts": [
-        "amos-quality-debug-heldout"
+        "bidcamp-quality-debug-heldout"
       ],
-      "project_id": "amos-saas",
+      "project_id": "BidCamp",
       "public_acceptance_criteria": [
         "Repository package metadata is present.",
         "The discovered quality command is run and its output is captured."
@@ -133,8 +133,8 @@
       "split": "held_out",
       "starting_commit": "72148b19e4823e9ecd9751e7ec67754b79287c8d",
       "task_class": "portable_dev_process_quality_debug",
-      "task_family_id": "amos-portable-quality-debug",
-      "task_id": "amos-quality-debug-heldout"
+      "task_family_id": "bidcamp-portable-quality-debug",
+      "task_id": "bidcamp-quality-debug-heldout"
     }
   ]
 }

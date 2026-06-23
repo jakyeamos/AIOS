@@ -490,32 +490,6 @@
       "aios_shadow_branch": null,
       "build_system": "node",
       "ci_configuration": [],
-      "current_commit": "72148b19e4823e9ecd9751e7ec67754b79287c8d",
-      "default_branch": "master",
-      "dependency_lockfiles": [
-        "package-lock.json"
-      ],
-      "existing_shortcut_registry": [],
-      "existing_skills": [],
-      "framework": "nextjs",
-      "has_tmcp_graph": false,
-      "lint_commands": [
-        "npm run lint"
-      ],
-      "package_manager": "npm",
-      "project_id": "amos-saas",
-      "project_language": "typescript",
-      "repo_path": "/Users/jakyeamos/projects/amos-saas",
-      "test_commands": [],
-      "testing_framework": "vitest",
-      "typecheck_commands": [],
-      "uncommitted_changes": false,
-      "upstream_remote": "https://github.com/jakyeamos/amos-saas.git"
-    },
-    {
-      "aios_shadow_branch": null,
-      "build_system": "node",
-      "ci_configuration": [],
       "current_commit": "ae9d3a5a56938078ff983586f46692865cbe5880",
       "default_branch": "main",
       "dependency_lockfiles": [
