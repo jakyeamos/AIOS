@@ -1,0 +1,216 @@
+{
+  "version": "2026-06-23",
+  "principle": {
+    "id": "execution_symmetric_planning",
+    "summary": "Plans that guide execution are execution artifacts and must inherit the relevant execution standards that will later judge the work.",
+    "detail_ref": "docs/specs/execution-symmetric-planning.md",
+    "agent_rule_ref": "config/agent-rules.md#rule-14--make-execution-plans-inherit-execution-standards"
+  },
+  "supported_invocation_sources": [
+    "natural_language_planning",
+    "slash_command",
+    "gsd_workflow",
+    "cli_routing",
+    "generated_implementation_prompt",
+    "audit_to_implementation_prompt",
+    "handoff_or_resume"
+  ],
+  "non_overplanning_guardrails": {
+    "direct_response_allowed_when": [
+      "task_is_trivial",
+      "work_is_isolated_reversible_and_obvious",
+      "user_asks_for_explanation_or_command_output",
+      "exploration_has_no_durable_product_state"
+    ],
+    "deeper_planning_required_when": [
+      "changes_shared_behavior_or_contract",
+      "changes_workflow_schema_data_security_privacy_deployment_rules_prompts_skills_or_agent_instructions",
+      "later_validation_will_judge_against_standards",
+      "another_agent_or_future_session_must_execute_from_the_plan",
+      "rollback_escalation_or_handoff_would_be_costly_to_reconstruct"
+    ],
+    "always_loaded_rule_policy": {
+      "default": "Keep detailed planning behavior in intent-specific specs, registries, packets, TMCP routes, or skills.",
+      "always_loaded_allowed_for": [
+        "routing_principles",
+        "safety_boundaries",
+        "short_triggers_needed_before_intent_is_known"
+      ],
+      "detail_refs": [
+        "docs/specs/execution-symmetric-planning.md",
+        "config/planning/execution-symmetric-planning.json"
+      ]
+    }
+  },
+  "complexity_levels": {
+    "trivial": {
+      "description": "Direct answer or minimal action for tiny, obvious, low-risk work.",
+      "examples": [
+        "one_line_explanation",
+        "isolated_command",
+        "typo_fix",
+        "tiny_doc_edit"
+      ],
+      "required_sections": [
+        "answer_or_action"
+      ],
+      "optional_sections": [
+        "verification"
+      ],
+      "validation_depth": "none_or_basic",
+      "rollback_required": false,
+      "delegation_strategy": "none",
+      "escalation_required": false
+    },
+    "simple": {
+      "description": "Light plan for narrow, low-risk work with an obvious path.",
+      "examples": [
+        "one_file_edit",
+        "small_doc_update",
+        "low_risk_local_command"
+      ],
+      "required_sections": [
+        "objective",
+        "safest_next_step",
+        "validation"
+      ],
+      "optional_sections": [
+        "assumptions",
+        "affected_file",
+        "definition_of_done"
+      ],
+      "validation_depth": "basic",
+      "rollback_required": false,
+      "delegation_strategy": "inline",
+      "escalation_required": false
+    },
+    "moderate": {
+      "description": "Execution-symmetric plan for non-trivial or bounded multi-surface work.",
+      "examples": [
+        "non_trivial_code_edit",
+        "small_multi_file_change",
+        "bounded_workflow_change",
+        "task_touches_tests_criteria_standards_routing_prompts_or_skills"
+      ],
+      "required_sections": [
+        "objective",
+        "scope",
+        "constraints",
+        "assumptions",
+        "selected_planning_lenses",
+        "affected_areas",
+        "ordered_execution_steps",
+        "validation_strategy",
+        "definition_of_done"
+      ],
+      "optional_sections": [
+        "failure_modes",
+        "rollback_or_recovery",
+        "handoff_artifacts"
+      ],
+      "validation_depth": "targeted",
+      "rollback_required": "when_durable_state_or_shared_contract_changes",
+      "delegation_strategy": "inline_or_single_executor_with_rationale",
+      "escalation_required": "when_blocked_or_scope_expands"
+    },
+    "complex": {
+      "description": "Full execution plan for cross-layer, multi-phase, stateful, or shared-contract work.",
+      "examples": [
+        "cross_layer_change",
+        "data_or_schema_work",
+        "multi_phase_implementation",
+        "agent_workflow_orchestration_change",
+        "stateful_ui_change",
+        "performance_sensitive_change"
+      ],
+      "required_sections": [
+        "objective_or_mission",
+        "scope_and_non_scope",
+        "constraints",
+        "assumptions",
+        "selected_planning_lenses",
+        "affected_areas_and_ownership_boundaries",
+        "ordered_execution_steps",
+        "validation_strategy",
+        "failure_modes",
+        "rollback_or_recovery",
+        "delegation_strategy",
+        "escalation_conditions",
+        "definition_of_done",
+        "handoff_or_update_artifacts"
+      ],
+      "optional_sections": [
+        "model_strategy",
+        "review_lanes"
+      ],
+      "validation_depth": "full",
+      "rollback_required": true,
+      "delegation_strategy": "explicit_inline_sequential_parallel_or_independent_review_rationale",
+      "escalation_required": true
+    },
+    "high_risk": {
+      "description": "Full execution plan with hard constraints, review gates, rollback, and escalation.",
+      "examples": [
+        "security_sensitive_change",
+        "privacy_or_secret_handling",
+        "destructive_action",
+        "production_deployment",
+        "schema_or_data_migration",
+        "governance_or_rule_change",
+        "external_service_behavior",
+        "package_manager_change",
+        "always_loaded_agent_instruction_change"
+      ],
+      "required_sections": [
+        "objective_or_mission",
+        "scope_and_non_scope",
+        "hard_constraints",
+        "assumptions",
+        "selected_planning_lenses",
+        "affected_areas_and_ownership_boundaries",
+        "ordered_execution_steps",
+        "validation_strategy",
+        "failure_modes",
+        "rollback_owner_and_action",
+        "review_or_approval_gates",
+        "stop_conditions",
+        "escalation_criteria",
+        "accepted_risk_recording",
+        "definition_of_done",
+        "post_change_verification",
+        "handoff_or_update_artifacts"
+      ],
+      "optional_sections": [
+        "model_strategy",
+        "independent_verifier_strategy"
+      ],
+      "validation_depth": "full_with_review_gate",
+      "rollback_required": true,
+      "delegation_strategy": "explicit_with_independent_review_when_practical",
+      "escalation_required": true
+    }
+  },
+  "gsd_ready_expectations": {
+    "preserve_gsd_workflows": true,
+    "required_when_source_matches": [
+      "gsd_workflow",
+      "slash_command"
+    ],
+    "required_sections": [
+      "requirement_ids",
+      "concrete_artifacts",
+      "key_links",
+      "task_level_file_targets",
+      "task_level_action",
+      "task_level_verification",
+      "task_level_done_criteria",
+      "validation_strategy",
+      "blockers_or_missing_decisions"
+    ],
+    "compatibility_targets": [
+      ".planning/phases/**",
+      "gsd-plan-phase",
+      "gsd-execute-phase"
+    ]
+  }
+}

@@ -105,3 +105,9 @@ If `package-lock.json` exists and no `pnpm-lock.yaml` exists, use npm. Do not in
 If required test coverage cannot be achieved with existing tooling, state the missing capability, check whether the dependency already exists in `package.json`, propose the minimal dependency addition if absent, explain why compile-only coverage is insufficient or acceptable, and do not silently downgrade test scope.
 
 If acceptance criteria require frontend behavior coverage, missing tooling is a blocker unless a minimal dependency addition is approved or implemented.
+
+## Rule 14 — Make execution plans inherit execution standards
+
+Any plan that will guide implementation, review, validation, handoff, or GSD execution is an execution artifact. It must inherit the relevant standards that will later judge the work, scaled to task complexity so trivial work is not over-planned.
+
+Keep this always-loaded rule thin. Use `docs/specs/execution-symmetric-planning.md` and `config/planning/execution-symmetric-planning.json` for the full complexity contract, supported invocation sources, required plan sections, GSD-ready expectations, and non-overplanning guardrails.
