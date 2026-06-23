@@ -219,6 +219,15 @@
       "status": "approved"
     },
     {
+      "category": "developer_experience",
+      "default_model_tier": "mid",
+      "default_reasoning": "medium",
+      "preferred_agent_role": "specialist",
+      "execution_bias": "capability_specific_dynamic_mode",
+      "risk_level": "medium",
+      "status": "candidate"
+    },
+    {
       "category": "multi_file_feature_implementation",
       "default_model_tier": "mid",
       "default_reasoning": "medium",

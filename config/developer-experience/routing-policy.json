@@ -1,0 +1,78 @@
+{
+  "id": "developer-experience-routing-policy",
+  "version": "2026-06-23",
+  "status": "draft",
+  "modes": {
+    "compact_audit": {
+      "use_when": ["small_scope", "docs_cleanup", "single_surface_review"],
+      "default_reasoning_level": "low"
+    },
+    "full_audit": {
+      "use_when": ["repo_wide_dx_audit", "multiple_surfaces", "onboarding_review"],
+      "default_reasoning_level": "medium"
+    },
+    "implementation": {
+      "use_when": ["file_changes_requested", "acceptance_criteria_present"],
+      "default_reasoning_level": "medium"
+    },
+    "review_only": {
+      "use_when": ["security_review", "interface_review", "typescript_review"],
+      "default_reasoning_level": "medium"
+    }
+  },
+  "reasoning_levels": {
+    "low": ["docs cleanup", "simple README improvement", "small config explanation"],
+    "medium": ["DX audit", "TypeScript refactor", "interface review", "test addition"],
+    "high": [
+      "architecture-affecting change",
+      "security-sensitive automation",
+      "ambiguous multi-file implementation",
+      "model-routing or agent-runtime change"
+    ]
+  },
+  "escalation_triggers": [
+    "conflicting_requirements",
+    "security_sensitive_change",
+    "destructive_operation",
+    "repeated_test_failure",
+    "unclear_architecture_boundary",
+    "high_token_or_tool_cost_without_progress",
+    "public_api_compatibility_risk"
+  ],
+  "second_brain_policy": {
+    "may_use_when_available": true,
+    "peer_run_requires_second_brain": false,
+    "fallback": "repo_local_evidence"
+  },
+  "capability_rules": {
+    "dx_optimizer": {
+      "default_mode": "compact_audit",
+      "default_reasoning_level": "low"
+    },
+    "interface_dx_reviewer": {
+      "default_mode": "review_only",
+      "default_reasoning_level": "medium",
+      "escalate_on": ["public_api_compatibility_risk"]
+    },
+    "docs_writer": {
+      "default_mode": "implementation",
+      "default_reasoning_level": "low"
+    },
+    "security_reviewer": {
+      "default_mode": "review_only",
+      "default_reasoning_level": "high",
+      "human_gate_triggers": ["security_sensitive_change", "destructive_operation"]
+    },
+    "typescript_specialist": {
+      "default_mode": "review_only",
+      "default_reasoning_level": "medium",
+      "invoke_when": ["typescript_surface", "strict_type_error", "package_boundary"],
+      "avoid_when": ["simple_non_typescript_work"]
+    },
+    "spec_fidelity_coder": {
+      "default_mode": "implementation",
+      "default_reasoning_level": "medium",
+      "escalate_on": ["conflicting_requirements", "unclear_architecture_boundary"]
+    }
+  }
+}

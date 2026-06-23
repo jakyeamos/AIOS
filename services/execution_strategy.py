@@ -14,6 +14,7 @@ DEFAULT_STRATEGIES_PATH = ROOT / "config" / "execution-strategies" / "strategies
 DEFAULT_MODEL_ROUTING_POLICY_PATH = (
     ROOT / "config" / "execution-strategies" / "model-routing-policy.json"
 )
+DEFAULT_DX_ROUTING_POLICY_PATH = ROOT / "config" / "developer-experience" / "routing-policy.json"
 
 VALID_SURFACES = {"claude_code", "codex"}
 DEFAULT_STATUS_ORDER = [
@@ -240,6 +241,10 @@ def load_strategy_catalog(path: Path | None = None) -> dict[str, Any]:
 def load_model_routing_policy(path: Path | None = None) -> dict[str, Any]:
     policy = _load_json(path or DEFAULT_MODEL_ROUTING_POLICY_PATH)
     return policy
+
+
+def load_developer_experience_routing_policy(path: Path | None = None) -> dict[str, Any]:
+    return _load_json(path or DEFAULT_DX_ROUTING_POLICY_PATH)
 
 
 def validate_model_routing_policy(policy: dict[str, Any]) -> list[str]:
@@ -860,3 +865,78 @@ def list_model_selection_records(
             params,
         ).fetchall()
     ]
+
+
+def select_developer_experience_route(
+    *,
+    capability_id: str,
+    task_signals: set[str],
+    second_brain_available: bool,
+    policy_path: Path | None = None,
+) -> dict[str, Any]:
+    policy = load_developer_experience_routing_policy(policy_path)
+    rules = policy.get("capability_rules", {})
+    if not isinstance(rules, dict) or capability_id not in rules:
+        raise StrategySelectionError(f"Unknown DX capability: {capability_id}")
+    rule = rules[capability_id]
+    if not isinstance(rule, dict):
+        raise StrategySelectionError(f"Invalid DX capability rule: {capability_id}")
+
+    if capability_id == "typescript_specialist" and "simple_non_typescript_work" in task_signals:
+        return {
+            "selected_capability": "dx_optimizer",
+            "mode": "compact_audit",
+            "reasoning_level": "low",
+            "selection_reason": "Simple non-TypeScript work avoids TypeScript specialist routing.",
+            "second_brain_available": second_brain_available,
+            "second_brain_required": False,
+            "human_gate_required": False,
+        }
+
+    mode = str(rule.get("default_mode", "compact_audit"))
+    reasoning_level = str(rule.get("default_reasoning_level", "medium"))
+    escalation_triggers = set(policy.get("escalation_triggers", []))
+    matched_escalations = sorted(task_signals & escalation_triggers)
+    if matched_escalations:
+        reasoning_level = "high"
+    human_gate_triggers = set(rule.get("human_gate_triggers", []))
+    human_gate_required = bool(task_signals & human_gate_triggers)
+    if "file_changes_requested" in task_signals and mode != "review_only":
+        mode = "implementation"
+    elif "repo_wide_dx_audit" in task_signals:
+        mode = "full_audit"
+
+    return {
+        "selected_capability": capability_id,
+        "mode": mode,
+        "reasoning_level": reasoning_level,
+        "selection_reason": _dx_selection_reason(
+            capability_id=capability_id,
+            mode=mode,
+            reasoning_level=reasoning_level,
+            matched_escalations=matched_escalations,
+        ),
+        "second_brain_available": second_brain_available,
+        "second_brain_required": bool(
+            (policy.get("second_brain_policy") or {}).get("peer_run_requires_second_brain")
+        ),
+        "human_gate_required": human_gate_required,
+    }
+
+
+def _dx_selection_reason(
+    *,
+    capability_id: str,
+    mode: str,
+    reasoning_level: str,
+    matched_escalations: list[str],
+) -> str:
+    if matched_escalations:
+        return (
+            f"Selected {capability_id} in {mode} with {reasoning_level} reasoning because "
+            f"escalation triggers matched: {', '.join(matched_escalations)}."
+        )
+    return (
+        f"Selected {capability_id} in {mode} with {reasoning_level} reasoning "
+        "from DX routing metadata."
+    )

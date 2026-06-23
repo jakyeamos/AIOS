@@ -15,11 +15,13 @@ from services.execution_strategy import (  # noqa: E402
     compile_execution_strategy,
     list_model_selection_records,
     list_strategy_candidates,
+    load_developer_experience_routing_policy,
     load_model_routing_policy,
     load_strategy_catalog,
     load_task_specs,
     recommend_execution_surface,
     record_model_selection,
+    select_developer_experience_route,
     validate_model_routing_policy,
     validate_strategy_catalog,
 )
@@ -137,3 +139,45 @@ def test_model_selection_records_allow_unavailable_cost_and_token_data() -> None
     assert rows[0]["tokens_used"] is None
     assert rows[0]["cost_estimate"] is None
     assert rows[0]["caveat"] == "Provider did not expose token or cost usage."
+
+
+def test_dx_simple_docs_cleanup_uses_low_reasoning() -> None:
+    route = select_developer_experience_route(
+        capability_id="docs_writer",
+        task_signals={"docs_cleanup"},
+        second_brain_available=False,
+    )
+
+    assert route["mode"] == "implementation"
+    assert route["reasoning_level"] == "low"
+    assert route["second_brain_required"] is False
+
+
+def test_dx_security_sensitive_automation_escalates() -> None:
+    route = select_developer_experience_route(
+        capability_id="security_reviewer",
+        task_signals={"security_sensitive_change"},
+        second_brain_available=True,
+    )
+
+    assert route["reasoning_level"] == "high"
+    assert route["human_gate_required"] is True
+    assert route["second_brain_available"] is True
+
+
+def test_dx_typescript_specialist_avoids_simple_non_typescript_work() -> None:
+    route = select_developer_experience_route(
+        capability_id="typescript_specialist",
+        task_signals={"simple_non_typescript_work"},
+        second_brain_available=False,
+    )
+
+    assert route["selected_capability"] == "dx_optimizer"
+    assert route["reasoning_level"] == "low"
+
+
+def test_dx_routing_policy_loads() -> None:
+    policy = load_developer_experience_routing_policy()
+
+    assert policy["second_brain_policy"]["peer_run_requires_second_brain"] is False
+    assert "security_sensitive_change" in policy["escalation_triggers"]
