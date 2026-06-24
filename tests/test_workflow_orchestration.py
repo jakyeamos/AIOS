@@ -362,6 +362,29 @@ def test_existing_six_workflows_load_with_default_bindings() -> None:
     )
 
 
+def test_expert_review_workflow_registry_contract() -> None:
+    workflows = load_workflow_registry(ROOT / "config" / "workflows" / "registry.json")
+    skills = load_skill_registry(ROOT / "config" / "workflows" / "skills.json")
+    workflow = workflows["expert_rubric_remediation_v1"]
+
+    assert validate_workflow_bindings(workflows, skills) == []
+    assert workflow.workflow_family == "audit_and_plan"
+    assert [stage.key for stage in workflow.stages] == [
+        "expertise_compile",
+        "rubric_synthesize",
+        "evidence_audit",
+        "remediation_plan",
+        "implementation_handoff",
+        "artifact_validate",
+    ]
+    assert workflow.required_validations == (
+        "tmcp_packet_compiled",
+        "rubric_dimensions_present",
+        "findings_have_evidence",
+        "remediation_has_verification",
+    )
+
+
 def test_input_binding_rejects_unknown_source() -> None:
     with pytest.raises(ValueError, match="ether"):
         _stage_from_row(
