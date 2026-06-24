@@ -1,10 +1,10 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, and an implemented expert-rubric-remediation workflow through service artifacts, runtime, registry, routing, and `aios tmcp review-plan`, with existing Python quality baseline failures still open.
+summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, and a smoke-verified expert-rubric-remediation workflow through service artifacts, runtime, registry, routing, and `aios tmcp review-plan`, with existing Python quality baseline failures still open.
 healthScore: 68
 statusLabel: needs_attention
-nextStep: Run Phase 28 smoke verification for `aios tmcp review-plan`, then address the existing CLI learning/contracts/skills-harvest and BasedPyright baseline failures.
+nextStep: Use the smoke-verified `aios tmcp review-plan` workflow on the full Soundscape visual-polish evidence set, then address the existing CLI learning/contracts/skills-harvest and BasedPyright baseline failures.
 blockers:
   - Focused expert-workflow lint, format, new CLI/runtime tests, and Vulture pass, but the broader focused `tests/test_aios_cli.py` slice still has existing learning/contracts/skills-harvest expectation failures.
   - Focused BasedPyright still fails on existing `run_cli` complexity and an older `SimpleNamespace` test helper type mismatch.
@@ -41,7 +41,7 @@ The codebase is large, with Python services and scripts in `services/` and `bin/
 
 AIOS now also has a file-backed and SQLite-backed context-loop learning primitive: `services/context_loops.py`, `schema.sql`, and `python bin/aios.py context-loops ...` record inner-loop context/draft runs, review events, learning candidates, explicit approvals/rejections, approved lesson application, metrics, and a draft-only email pilot. Contract docs and examples live under `aios/context-loops/`.
 
-AIOS now has `expert_rubric_remediation_v1` implemented through the core artifact service, workflow runtime dispatch, active workflow/skill registry contracts, route scoring, and `aios tmcp review-plan`. The workflow compiles TMCP expertise into an explicit rubric, audits concrete evidence, produces ordered remediation slices, and writes an approval-gated implementation handoff without executing implementation.
+AIOS now has `expert_rubric_remediation_v1` implemented and smoke-verified through the core artifact service, workflow runtime dispatch, active workflow/skill registry contracts, route scoring, and `aios tmcp review-plan`. The workflow compiles TMCP expertise into an explicit rubric, audits concrete evidence, produces ordered remediation slices, and writes an approval-gated implementation handoff without executing implementation.
 
 ## Why This Matters / Intended Outcome
 
@@ -77,6 +77,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-06-24: Planned all three expert rubric remediation phases with GSD research, validation, and eight executable plans: Phase 26 has two core-artifact plans, Phase 27 has three workflow-runtime plans, and Phase 28 has three CLI/verification plans.
 - 2026-06-24: Added an AIOS-local TDD Test Value Adoption Gate across the backfill quality ratchet, standards ladder contract, testing context, and test-quality/testing-trust criteria so TDD-heavy repos are judged by behavioral test signal rather than test volume.
 - 2026-06-24: Executed expert rubric remediation through Phase 28 Plan 28-01: core artifact builders, workflow runtime dispatch, active registry entries, expert route scoring, and the read-only `aios tmcp review-plan` CLI now exist with focused regression coverage.
+- 2026-06-24: Smoke-verified `aios tmcp review-plan` against Soundscape visual-polish evidence, producing rubric, audit, remediation, and approval-gated handoff artifacts under `/tmp/aios-expert-review-smoke`.
 
 ## Open Problems
 
@@ -87,7 +88,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 ## Next Concrete Steps
 
-1. Run the Phase 28 smoke command for `aios tmcp review-plan` and record artifact paths plus implementation handoff evidence.
+1. Use `aios tmcp review-plan` on the full Soundscape visual-polish evidence set and review the generated implementation handoff before approving any remediation slice.
 2. Fix or intentionally update the 8 current focused `tests/test_aios_cli.py` expectation failures where the underlying contracts changed.
 3. Triage the focused BasedPyright failures around `run_cli` complexity and the `_dx_pack_payload` test helper type mismatch.
 4. Run Ruff autofix/format in planned chunks rather than broad unreviewed churn.
