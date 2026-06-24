@@ -168,6 +168,45 @@ def test_soundscape_standard_pipeline_uses_latest_gate_results(tmp_path: Path) -
     assert build_gate["command"] == "pnpm build"
 
 
+def test_pipeline_summary_exposes_strict_readiness_metadata(tmp_path: Path) -> None:
+    config_path = tmp_path / "quality-pipeline.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "standard": {
+                    "version": "2026-04-26",
+                    "gates": [{"key": "lint", "label": "Lint", "required": True}],
+                },
+                "projects": [
+                    {
+                        "project_id": "soundscape-app",
+                        "repo_class": "production_public_web_app",
+                        "strict_readiness_status": "blocked",
+                        "maturation_blockers": ["missing CI proof"],
+                        "non_remote_ci_exception": {
+                            "status": "not_applicable",
+                            "reason": "Remote CI is required.",
+                        },
+                        "gates": {"lint": {"command": "pnpm lint"}},
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    conn = _base_conn()
+
+    summary = get_project_quality_pipeline(conn, "soundscape-app", config_path=config_path)
+
+    assert summary["repo_class"] == "production_public_web_app"
+    assert summary["strict_readiness_status"] == "blocked"
+    assert summary["maturation_blockers"] == ["missing CI proof"]
+    assert summary["non_remote_ci_exception"] == {
+        "status": "not_applicable",
+        "reason": "Remote CI is required.",
+    }
+
+
 def test_missing_required_gate_is_visible(tmp_path: Path) -> None:
     config_path = tmp_path / "quality-pipeline.json"
     config_path.write_text(

@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-last_updated: "2026-06-24T00:07:05.000Z"
+status: Phase 23 executed; linked-repo strict readiness remains blocked
+last_updated: "2026-06-24T02:26:07Z"
 progress:
-  total_phases: 22
-  completed_phases: 21
-  total_plans: 123
-  completed_plans: 120
-  percent: 97
+  total_phases: 23
+  completed_phases: 22
+  total_plans: 131
+  completed_plans: 131
+  percent: 100
 ---
 
 # AIOS Planning State
@@ -26,15 +26,15 @@ progress:
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
 - Latest completed phase: Phase 21, macOS Native App Skill Pack, shipped task-routed macOS project/build, native-pattern, settings, Sparkle, notch, release, manifest, validation, and documentation coverage without broad always-loaded macOS rules.
-- Latest completed plan: Phase 22 Plan 22-01 defined the standards-ladder rollout contract and read-only backfill evidence for portable global-hook candidates versus AIOS-local gates.
+- Latest completed plan: Phase 23 Plan 23-08 produced the linked-repo strict readiness verification ledger, with 0 ready repos, 2 evidence-required repos, and 21 blocked repos.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 17, Progressive Governance And Standards Backfill Workflows
-- Active phase: Phase 22, Progressive Governance And Standards Backfill Workflows
-- Active plan: Phase 22 Plan 22-01
+- Active phase: Phase 23, Mature linked repositories to AIOS strict release readiness
+- Active plan: Phase 23 verification complete; readiness blockers remain open
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21
-- Next dependency chain: Phase 22
+- Next dependency chain: Phase 22 -> Phase 23
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
 
 ## Known Constraints To Preserve
@@ -48,10 +48,27 @@ progress:
 
 - Update this file when milestone ownership changes, when the active dependency chain changes, when roadmap sequencing changes, or when project-planning assumptions in [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) materially shift.
 
+## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 23 added: Mature linked repositories to AIOS strict release readiness, split into eight GSD-standard plans for audit, readiness contract, class-specific maturation, evidence reporting, and final closeout.
+- Phase 23 execution produced a full portfolio ledger in `23-VERIFICATION.md`: all 23 active repo gate contracts validate and all-inventory standards-health proof records 23 active snapshots without missing-source contamination, but no repo is adoption-ready yet.
+
 ## Quick Tasks Completed
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-06-24 | Execute Phase 23 linked-repo strict readiness maturation | Completed all eight Phase 23 plans, added class-based quality-pipeline coverage, replaced weak `floor_only`/`pre_cr_only` maturity with blocked readiness metadata, fixed all-inventory proof contamination, and wrote `23-VERIFICATION.md`; final verdict is 0 ready repos, 2 evidence-required repos, and 21 blocked repos. |
+| 2026-06-24 | Split Phase 23 into GSD-standard plans | Replaced the single umbrella Phase 23 plan with eight focused plan files covering portfolio audit, class-based readiness contracts, production web apps, developer tools, Python/data/course repos, content/container repos, evidence reporting, and final verification. |
+| 2026-06-24 | Add linked-project AIOS gate contracts and clean inventory hygiene | Added `.aios-quality-gate.json` contracts to 21 active linked source repos, registered matching allowlisted adapters in `config/quality-gates.json`, marked floor-only and `pre_cr`-only contracts with `adoptionMaturity` next steps, marked missing-source, non-repo, container, and duplicate inventory rows inactive in `projects`, and added `project_inventory_hygiene_events` to preserve the inventory cleanup trail. |
+| 2026-06-23 | Add Codex AIOS shadow prompt trigger | Planned in `.planning/quick/260623-codex-aios-shadow-trigger`; `scripts/codex-aios-shadow.py` creates an AIOS shadow lane for every non-trivial Codex task, preserving the current workspace as the baseline, creating an isolated `.aios/shadow-worktrees/` worktree through the existing shadow runner, and printing the separate Codex prompt needed for comparison; `/aios` runs the same helper with `--governed-route`, while ordinary prompts keep the AIOS route as evidence only; `AGENTS.md` and `README.md` document automatic shadowing and the no-promotion-without-review rule. |
+| 2026-06-23 | Add Codex AIOS prompt trigger | Planned in `.planning/quick/260623-codex-aios-prompt-trigger`; `scripts/codex-aios-route.py` now hides project-id lookup and AIOS start-work command plumbing, `AGENTS.md` makes `/aios` the explicit AIOS routing command and `/aios-route-only` the explicit no-shadow opt-out, and `README.md` documents the command pattern. |
+| 2026-06-23 | Run AIOS field-pressure gate | Planned in `.planning/quick/260623-aios-field-pressure-gate`; `scripts/aios-field-pressure-gate.py` copies the live DB, routes 12 mixed daily-use objectives, executes 6 managed-runtime pilots, verifies closeout artifacts, runs operator UI lint/typecheck, probes operator-search/daily-flow/next-action drilldowns, simulates context-loop and session-save learning, tests ambiguous/invalid-project/missing/stale/missing-managed-run recovery, classifies dirty-tree state, and passes 100/100; operator-search now finds run-linked writebacks and canonical findings by run id, managed-runtime missing-run preflight returns structured JSON, and managed-runtime log directories are git-ignored. |
+| 2026-06-23 | Run AIOS managed-run adoption gate | Planned in `.planning/quick/260623-aios-adoption-gate`; `scripts/aios-adoption-gate.py` copies the live DB, runs three real managed-runtime pilots (AIOS internal bugfix, non-AIOS bugfix, AIOS operator UI verification), and verifies lifecycle linkage, workflow/evaluation/writeback/TMCP artifacts, route-decision search, and daily-flow replay; the adoption gate passes. |
+| 2026-06-23 | Add AIOS readiness check | Planned in `.planning/quick/260623-aios-readiness-check`; `scripts/aios-readiness-check.py` now copies the live DB, verifies route selector stories, route-decision search, daily-flow preview/replay, and next-action structure, while `services.next_action` now supports canonical success-criteria findings via evaluations; the copied-live-DB readiness gate passes and is now complemented by the managed-run adoption gate. |
+| 2026-06-23 | Harden default route selector | Planned in `.planning/quick/260623-default-route-selector-hardening`; workflow route selection no longer treats active lifecycle as relevance, code-like bugfix/UI/API/DB/test phrasing now routes through implementation evidence and fallback, content-generation routes are guarded from code objectives, weak/tied workflow evidence blocks for clarification, and route story regression tests plus a copied-live-DB `start-work` smoke pass. |
+| 2026-06-23 | Run AIOS routing user stories | Planned in `.planning/quick/260623-aios-routing-user-stories`; copied live DB validation showed the governed run envelope, explicit project routing, route-decision search, and ambiguity blocking work, but default bugfix/UI-verification phrasing misroutes to `academic_paper_v1`, daily-flow fails against the real schema with missing `success_criteria_findings.run_id`, and AIOS should not become the default launcher for all serious runs until those blockers are fixed. |
 | 2026-06-23 | Complete Phase 22 Plan 22-01 standards ladder rollout contract | `docs/quality/aios-standards-ladder-contract.md`, `docs/backfill/aios-standards-ladder-backfill.md`, and `.planning/phases/22-progressive-governance-and-standards-backfill-workflows/22-01-SUMMARY.md` define Phase 22 rule IDs, modes, evidence requirements, waiver expectations, promotion blockers, project scan evidence, and AIOS-local boundaries without staging unrelated in-flight hook implementation edits. |
 | 2026-06-23 | Complete Phase 21 macOS Native App Skill Pack | `.planning/phases/21-macos-native-app-skill-pack/21-VERIFICATION.md` verifies MACS-01 through MACS-09 with audits, task-shaped skills, semantic modules, guarded settings/Sparkle/notch/release skills, TMCP routing, manifest provenance, dependency map, behavior fixtures, validation command, operator docs, and reusable future platform-skill pattern. |
 | 2026-06-23 | Complete Phase 21 Plan 21-09 macOS skill pack docs | `docs/skills/macos-native-app-skill-pack.md`, `docs/skills/platform-skill-pack-pattern.md`, and `21-VERIFICATION.md` document added skills/modules, routing behavior, triggers, anti-triggers, safety gates, validation, donor adoption/change/rejection decisions, remaining risks, future platform pack pattern, and final report workflow. |
@@ -77,6 +94,11 @@ progress:
 | 2026-06-23 | Complete Phase 19 Plan 19-06 command metadata logging | `.planning/phases/19-native-workflow-command-pack/19-06-SUMMARY.md` records `services/native_command_logging.py`, optional local JSONL metadata logging flags for native commands, metadata shape, optional run/session/model/runtime fields, local-only path validation, focused tests, and CMDP-08 logging evidence. |
 | 2026-06-23 | Complete Phase 19 Plan 19-05 guarded cleanup and prototype commands | `.planning/phases/19-native-workflow-command-pack/19-05-SUMMARY.md` records `aios cleanup de-slopify`, `aios prototype`, plan-by-default cleanup, low-risk format-only apply, risky structural skip reporting, prototype sandbox path enforcement, required prototype sections, focused tests, and CMDP-07 completion. |
 | 2026-06-23 | Complete Phase 19 Plan 19-04 security audit command | `.planning/phases/19-native-workflow-command-pack/19-04-SUMMARY.md` records `aios audit security`, strict/practical mode filtering, contextual security findings, required finding fields, non-issues checked, verification suggestions, read-only behavior, focused tests, and CMDP-06 completion. |
+| 2026-06-23 | Upgrade TMCP into a behavior-atom skill compiler | Planned in `.planning/quick/260623-tmcp-skill-compiler-upgrade`; TMCP graph nodes now carry behavior atoms, token cost, redundancy, and omission-risk metadata, runtime packet compilation prunes redundant low-risk nodes, source skills load relevant excerpts, receipts persist usefulness/omission fields, and shortcuts materialize compiled-packet metadata. |
+| 2026-06-23 | Advance TMCP tier-one readiness | Planned in `.planning/quick/260623-tmcp-tier-one-readiness`; Phase 20 Plan 20-07 now owns the managed-run hard-default adoption blocker, while graph verification/repair, local 99-skill `graph.json`, source-hash shortcut freshness, overlay behavior gating, and ADR tier-one candidate contract are implemented. |
+| 2026-06-23 | Implement TMCP full-potential graph traversal | Planned in `.planning/quick/260623-tmcp-full-potential`; AIOS now has a tracked canonical graph build profile, harvest-emitted `skills.tmcp/graph.json`, graph-backed packet traversal with source-skill scoring, explicit fallback warnings, and shortcut materialization from successful receipt fingerprints. |
+| 2026-06-23 | Make skills default through canonical TMCP | Planned in `.planning/quick/260623-tmcp-default-skills`; AIOS now documents `skills-library/skills.tmcp` as the default local TMCP graph, treats `config/tmcp/portable-dev-process` as an overlay, and routes operating-language objectives through `@module:operating_language`. |
+| 2026-06-23 | Add operating-language skill and artifact | Planned in `.planning/quick/260623-operating-language-skill`; AIOS now has `skills/operating-language/SKILL.md`, root `OPERATING_LANGUAGE.md`, and an `operating_language_curator` skill registry entry for canonical domain language, architecture language, and agent-control leading words. |
 | 2026-06-23 | Complete Phase 19 Plan 19-03 read-only MVP commands | `.planning/phases/19-native-workflow-command-pack/19-03-SUMMARY.md` records `services/native_commands.py`, CLI dispatch for `aios zoom-out`, `aios handoff`, and `aios review squad`, focused tests for required sections, read-only behavior, allowed handoff artifact writes, reviewer lane coverage, and CMDP-03 through CMDP-05 completion. |
 | 2026-06-23 | Complete Phase 19 Plan 19-02 native command contracts | `.planning/phases/19-native-workflow-command-pack/19-02-SUMMARY.md` records `docs/specs/native-workflow-command-contracts.md`, `config/commands/native-workflow-commands.json`, six MVP command schemas, safety classes, validation gates, logging metadata, rollback expectations, implementation order, and explicit `codebase-sweep` non-default deferral for CMDP-02. |
 | 2026-06-23 | Complete Phase 19 Plan 19-01 native command pack audit | `.planning/phases/19-native-workflow-command-pack/19-01-SUMMARY.md` records `docs/audits/aios-native-command-pack-audit.md`, command/skill/prompt/agent/workflow/CLI/model/context/eval surfaces, candidate command fit, safety classes, MVP order, and `codebase-sweep` default deferral for CMDP-01. |
@@ -90,6 +112,9 @@ progress:
 | 2026-06-23 | Complete Phase 18 Plan 18-01 meta-learning architecture audit | `.planning/phases/18-meta-learning-proposal-layer/18-01-SUMMARY.md` records `docs/audits/aios-meta-learning-audit.md`, current instruction/skill/command/session/eval/routing surfaces, target storage decisions, protected no-auto-modify areas, auto-permission safety checks, and a minimal proposal-first implementation path for META-01. |
 | 2026-06-23 | Complete Phase 17 Plan 17-06 documentation and validation report workflow | `.planning/phases/17-developer-experience-capability-pack/17-06-SUMMARY.md` records `docs/aios/developer-experience-pack.md`, `aios dx-pack --report-template`, DX invocation/override/eval/validation docs, focused CLI report-template coverage, and completion of DXPK-08. |
 | 2026-06-23 | Complete Phase 17 Plan 17-05 developer experience eval hooks and fixtures | `.planning/phases/17-developer-experience-capability-pack/17-05-SUMMARY.md` records the DX pack eval spec, machine-readable `developer-experience` fixtures for poor onboarding, public CLI, and TypeScript boundary changes, harness loader coverage, second-brain parity, and focused harness eval tests. |
+| 2026-06-23 | Add context-loop learning primitive | Planned in `.planning/quick/260623-context-loop-learning-system`; AIOS now records inner-loop context/draft runs, review events, outer-loop learning candidates, approval/rejection/application flow, draft-only email pilot behavior, metrics, and file-backed approved/rejected context-loop lessons under `aios/context-loops/`, with focused tests and CLI smoke passing. |
+| 2026-06-23 | Make quality-gate audit policy branch-aware | AIOS user commit gate and quality ladder now block on protected branches or explicit dev-environment flags, warn on detected unprotected feature branches, and record the chosen decision/severity in `.aios/audit/` with focused regression tests passing. |
+| 2026-06-23 | Add quality-gate audit trail | AIOS now writes `.aios/audit/gate-events.jsonl`, `gate-summary.md`, and `learning-lessons.md` when the AIOS ladder or portable commit gate blocks or forces iteration, with generated audit artifacts ignored by git and focused lint/type/tests passing for the audit writer. |
 | 2026-06-23 | Complete Phase 17 Plan 17-04 dynamic mode and model routing | `.planning/phases/17-developer-experience-capability-pack/17-04-SUMMARY.md` records `config/developer-experience/routing-policy.json`, the `developer_experience` model-routing category, deterministic DX route selection, second-brain availability metadata, and focused execution strategy tests. |
 | 2026-06-23 | Complete Phase 17 Plan 17-03 capability assets and routing metadata | `.planning/phases/17-developer-experience-capability-pack/17-03-SUMMARY.md` records the `developer-experience-pack` workflow, six DX capability skill entries, capability-pack loader/report helpers, `aios dx-pack`, registry validation, and focused workflow tests. |
 | 2026-06-23 | Complete Phase 17 Plan 17-02 capability contract, modes, metrics, and second-brain parity | `.planning/phases/17-developer-experience-capability-pack/17-02-SUMMARY.md` records `docs/specs/developer-experience-pack-contract.md`, `config/developer-experience/capability-pack.json`, six capability contracts, compact/full_audit/implementation/review_only modes, DX metrics with `not_measured` states, and second-brain fallback behavior. |

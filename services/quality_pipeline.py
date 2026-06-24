@@ -35,6 +35,10 @@ class PipelineGateSummary(TypedDict):
 class PipelineSummary(TypedDict):
     project_id: str
     standard_version: str
+    repo_class: str | None
+    strict_readiness_status: str | None
+    maturation_blockers: list[str]
+    non_remote_ci_exception: dict[str, Any] | None
     full_pipeline: bool
     overall_status: OverallStatus
     blocked_reason: str | None
@@ -225,6 +229,17 @@ def _string_list(value: Any, fallback: list[str]) -> list[str]:
     return items or fallback
 
 
+def _optional_string(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    stripped = value.strip()
+    return stripped or None
+
+
+def _optional_object(value: Any) -> dict[str, Any] | None:
+    return value if isinstance(value, dict) else None
+
+
 def _gate_tier(value: Any) -> GateTier:
     if value in {"tier_1_core", "production_app", "domain_specific"}:
         return value
@@ -336,6 +351,10 @@ def get_project_quality_pipeline(
     return {
         "project_id": project_id,
         "standard_version": str(standard.get("version", "unknown")),
+        "repo_class": _optional_string(project_config.get("repo_class")),
+        "strict_readiness_status": _optional_string(project_config.get("strict_readiness_status")),
+        "maturation_blockers": _string_list(project_config.get("maturation_blockers"), []),
+        "non_remote_ci_exception": _optional_object(project_config.get("non_remote_ci_exception")),
         "full_pipeline": bool(project_config.get("full_pipeline", False)),
         "overall_status": _overall_status(gates, blocked_reason),
         "blocked_reason": blocked_reason,

@@ -115,8 +115,8 @@ def test_tier_one_audits_preserve_core_contracts(tmp_path: Path, capsys) -> None
     contracts_exit = run_cli(["--json", "--db", str(db_path), "--logs-dir", str(logs_dir), "contracts-audit"])
     assert contracts_exit == EXIT_OK
     contracts = json.loads(capsys.readouterr().out)["data"]
-    assert contracts["summary"]["canonical_contract_count"] == 7
-    assert contracts["summary"]["implemented_count"] == 7
+    assert contracts["summary"]["canonical_contract_count"] == 14
+    assert contracts["summary"]["implemented_count"] == 14
     assert contracts["summary"]["partial_count"] == 0
 
     capability_exit = run_cli(["--json", "--db", str(db_path), "--logs-dir", str(logs_dir), "capability-audit"])
@@ -208,6 +208,13 @@ def test_prove_project_health_records_snapshots_and_reports_missing_sources(tmp_
         """,
         (str(repo_path), str(repo_path)),
     )
+    conn.execute(
+        """
+        INSERT INTO projects (id, name, repo_path, obsidian_path, status)
+        VALUES ('inactive-duplicate', 'AIOS', ?, ?, 'inactive')
+        """,
+        (str(repo_path), str(repo_path)),
+    )
     conn.commit()
     conn.close()
 
@@ -240,6 +247,27 @@ def test_prove_project_health_records_snapshots_and_reports_missing_sources(tmp_
     snapshot_count = conn.execute("SELECT COUNT(*) FROM standards_health_snapshots").fetchone()[0]
     conn.close()
     assert snapshot_count == 1
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "--config-root",
+            str(config_root),
+            "prove-project-health",
+            "--all-inventory",
+        ]
+    )
+    assert exit_code == EXIT_OK
+    all_inventory = json.loads(capsys.readouterr().out)["data"]
+    project_ids = {project["project_id"] for project in all_inventory["projects"]}
+    project_names = {project["name"] for project in all_inventory["projects"]}
+    assert "inactive-duplicate" not in project_ids
+    assert "GitNexus" not in project_names
+    assert all_inventory["summary"]["missing_source_count"] == 0
 
 
 def test_sync_automation_history_imports_pipeline_log_evidence(tmp_path: Path, capsys) -> None:

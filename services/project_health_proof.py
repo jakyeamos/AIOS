@@ -47,6 +47,7 @@ def _project_candidates(conn: sqlite3.Connection, name: str) -> list[sqlite3.Row
         SELECT id, name, repo_path, status
         FROM projects
         WHERE lower(name) = lower(?)
+          AND status = 'active'
         ORDER BY
           CASE WHEN repo_path IS NOT NULL AND repo_path != '' THEN 0 ELSE 1 END,
           id ASC
@@ -61,6 +62,7 @@ def _inventory_project_targets(conn: sqlite3.Connection) -> list[dict[str, str |
         SELECT id, name
         FROM projects
         WHERE name IS NOT NULL AND name != ''
+          AND status = 'active'
         ORDER BY lower(name), id
         """
     ).fetchall()
@@ -123,12 +125,6 @@ def prove_project_health(
     registry_path = config_root / "standards" / "registry.json"
     if all_inventory:
         target_entries = _inventory_project_targets(conn)
-        existing_keys = {entry["name"].casefold() for entry in target_entries if entry["name"]}
-        target_entries.extend(
-            {"name": name, "project_id": None}
-            for name in DEFAULT_PROVING_PROJECTS
-            if name.casefold() not in existing_keys
-        )
     else:
         target_entries = [
             {"name": name, "project_id": None}

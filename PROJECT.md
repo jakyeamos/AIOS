@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-06-23
+Last updated: 2026-06-24
 
 ## What AIOS Is
 
@@ -15,7 +15,7 @@ It is the orchestration layer for agents across all linked development projects,
 
 ## Current Reality
 
-The repository currently contains four meaningful subsystems:
+The repository currently contains five meaningful subsystems:
 
 1. `aios-ui/`
    A Next.js local dashboard over `~/AIOS/data/aios.db`. It is strongest at session/run observability.
@@ -29,9 +29,59 @@ The repository currently contains four meaningful subsystems:
 4. `aios/context/`
    The file-backed AIOS Context Compiler: tiered Markdown routing manifests, deterministic task compilation, generated briefings, and context receipts.
 
+5. `aios/context-loops/`
+   The file-backed contract layer for inner/outer context learning loops: approved/rejected lessons, review taxonomy, retrieval policy, examples, and email pilot guidance.
+
 Root operator documentation now lives in `README.md`, including local UI launch commands, key UI routes, store paths, workflow proposal backfill, and verification commands.
 
+## Implemented On 2026-06-24
+
+AIOS linked-project adoption contracts now cover the active source inventory:
+
+- AIOS-owned `config/quality-gates.json` registers allowlisted quality-gate adapters for 21 linked repositories beyond AIOS and soundscape-app, using existing repo-local quality surfaces such as package scripts, `.pre-cr.json`, or existing architecture scripts, with a minimal `git diff --check` floor for the BBDSE container repo that has no stronger local quality surface yet
+- floor-only and `pre_cr`-only adoption contracts have been replaced with `class_blocked` maturity where the repo is not yet strict-ready, so baseline hook coverage cannot be mistaken for mature AIOS quality-standard compliance
+- matching `.aios-quality-gate.json` contracts were added to those linked repositories so the portable user-level commit hook can validate gate IDs without executing repo-local shell from untrusted config
+- live project inventory hygiene marked missing-source rows, broad container rows, non-git config folders, and duplicate `Projects`/`projects` casing rows inactive instead of deleting historical records
+- `schema.sql` now includes `project_inventory_hygiene_events` so inventory status changes have a durable event trail aligned with the SQLite schema authority
+- `prove-project-health --all-inventory` now targets active inventory rows only, so inactive duplicates and bad paths do not reappear in adoption proof runs
+- active project inventory is now limited to actual source repos plus existing first-class source projects; known inactive rows include `.claude`, `Downloads`, `jakyeamos`, `projects`, missing repos such as `Bball`, and duplicate uppercase path rows for `Dsci-proj` and `Fantasy`
+- Phase 23 now owns linked-repository strict release-readiness maturation after Phase 22 as eight GSD-standard plans covering audit, class-based contracts, class-specific repo maturation, evidence reporting, final verification, CI/default-branch proof, and explicit treatment of dirty trees as lower-priority closeout hygiene rather than the main adoption blocker
+- Phase 23 execution produced `.planning/phases/23-mature-linked-repositories-to-aios-strict-release-readiness/23-VERIFICATION.md`: 23 active repo contracts validate, copied and live all-inventory standards-health proof record 23 snapshots with no missing-source contamination, but strict adoption readiness remains blocked with 0 ready repos, 2 evidence-required repos (`soundscape-app`, AIOS), and 21 blocked repos
+- BBDSE is no longer represented as mature by `git diff --check`; it is a blocked container repo with delegated subproject pre-cr gates and still needs aggregate evidence, child-project ownership, and CI or an explicit non-remote exception before readiness
+
 ## Implemented On 2026-06-23
+
+AIOS now has a canonical operating-language artifact and skill:
+
+- `OPERATING_LANGUAGE.md` defines AIOS domain language, architecture language, agent-control leading words, relationships, ambiguities, rejected terms, migration notes, and example usage
+- `skills/operating-language/SKILL.md` captures the reusable process for extracting and maintaining operating language as a behavioral control surface rather than a passive glossary
+- `config/workflows/skills.json` registers `operating_language_curator` as a candidate skill with source metadata for workflow routing and inspection
+- the operating-language vocabulary introduces compact leading words such as Context Compile, Truth First, Tracer Bullet, Red Gate, Thin Display, Execution-First, Approval-First, Clean Closeout, Complexity Gate, and Portable Boundary
+- local TMCP remains the default way to use skills: `services.tmcp_runtime` starts from the canonical `skills-library/skills.tmcp` graph, while `config/tmcp/portable-dev-process` is a traversable namespace overlay rather than a competing default graph
+- `config/tmcp/canonical-graph.json` now defines the tracked canonical build profile for the local graph, including source roots, excludes, output path, graph-drop protection, and the `portable_dev_process` overlay namespace
+- `aios skills harvest` now persists graph-profile metadata, source hashes, graph diffs, stale-source signals, and structured `skills.tmcp/graph.json` metadata for tasks, modules, branches, source skills, triggers, source tiers, and generated paths
+- `services.tmcp_runtime.compile_tmcp_packet()` now prefers `skills.tmcp/graph.json` traversal, scores task/module/source-skill candidates, emits selected and skipped packet evidence, includes precise source-skill excerpts when useful, and falls back to the older heuristic path with an explicit warning when graph metadata is absent
+- promoted TMCP shortcuts now materialize as Markdown under `skills.tmcp/shortcuts/` when receipt fingerprints show repeated validation success and positive token ROI, while stale or uncertain shortcuts fall back to normal graph traversal
+- Phase 20 Plan 20-07 now owns the remaining tier-one blocker: non-trivial managed runs must compile, persist, and evaluate a TMCP packet by default unless a structured bypass reason is recorded
+- `aios skills graph-verify` now verifies or repairs structured graph metadata for an existing generated skills library; the local ignored `skills-library/skills.tmcp/graph.json` has been refreshed and verifies as 99 source-skill nodes, 99 manifest skills, and 2,848 source hashes
+- TMCP runtime freshness now includes `graph.json`, `skills.lock`, and selected source-skill content hashes, so promoted shortcuts are bypassed when source skill material changes
+- overlay traversal now records matched trigger terms and behavior added, and skips namespace packs when they do not add behavior beyond canonical graph nodes
+- ADR 0003 now defines TMCP as a tier-one candidate, states the remaining managed-run adoption gate, and blocks quality/speed/token superiority claims until paired benchmark evidence shows quality non-inferiority plus positive ROI
+- TMCP graph metadata now models behavior atoms, token cost, behavior added, redundancy hints, and omission risk for tasks, modules, branches, and source skills so packet compilation can optimize for behavior instead of file matching
+- `compile_tmcp_packet()` now runs a behavior-diff optimizer, prunes redundant low-risk modules when selected source skills already cover the same behavior atoms, records negative selections in `skipped_nodes`, and emits `behavior_atoms`, `packet_optimization`, `node_usefulness`, and `omitted_requirements`
+- source-skill loading now uses relevant section excerpts before whole-file payloads, reducing token load while preserving provenance
+- `tmcp_traversal_receipts` now has additive `node_usefulness_json` and `omitted_requirements_json` fields for future routing/eval learning
+- promoted shortcuts now carry compiled-packet metadata, behavior atoms, token estimates, source hashes, and known-failure-case placeholders
+- operating-language requests now select the canonical local `@module:operating_language` TMCP module, which points back to `skills/operating-language/SKILL.md` and `OPERATING_LANGUAGE.md`
+
+AIOS now has a general outer/inner context learning primitive:
+
+- `services.context_loops` records inner-loop runs, approved lessons read before drafting, retrieved context/source refs, generated outputs, unsupported commitments, assumptions, human review events, diffs, learning candidates, approvals, rejections, application to durable lessons, and metrics
+- `schema.sql` defines `context_loop_runs`, `context_loop_review_events`, and `context_loop_learning_candidates`
+- `python bin/aios.py context-loops ...` exposes `inner-run`, `email-draft`, `record-review`, `review`, `approve`, `reject`, `apply-approved`, and `metrics`
+- `aios/context-loops/` documents the audit, schema, retrieval policy, review taxonomy, approved/rejected lesson files, example JSON records, and draft-only email pilot
+- `tests/test_context_loops.py` covers draft-only email safety, approved-lesson retrieval, unsupported commitment flags, evidence-backed candidates, no automatic memory promotion, rejected-candidate suppression, metrics, and CLI smoke behavior
+- Email support is intentionally mocked/local: AIOS creates draft records only and does not fetch, create mailbox drafts, or send email automatically
 
 AIOS now has an always-loaded dependency and lockfile authority rule:
 
@@ -136,6 +186,50 @@ AIOS now registers the Thermo-Nuclear Simplification gate as a first-class struc
 - `docs/quality-gates/thermo-nuclear-simplification.md` defines the strict Pre-PR/adoption/shadow-eval review contract, including severity, scorecard, output template, waiver rules, file-sprawl checks, thin-wrapper rejection, type-boundary protection, and canonical-layer reuse
 - `docs/pre-pr/quality-ladder.md` places Thermo after correctness checks and before merge recommendation, while `docs/adoption/backfill-quality-ratchet.md` defines the adoption-mode ratchet for legacy debt
 - `services.commit_quality_ladder` now verifies that AIOS keeps the Thermo gate registered, configured, and declared locally
+
+AIOS default workflow routing now uses explicit relevance evidence instead of active-workflow fallback:
+
+- `services.workflow_orchestration.rank_workflow_candidates` scores matched trigger phrases and family evidence rather than token overlap or lifecycle state alone
+- code-like bugfix, UI, API, DB, CI, test, and verification phrasing routes through implementation evidence and falls back to `implementation-delivery` when no more specific route wins
+- content-generation workflows require content evidence and are suppressed for code-like objectives, preventing bugfix requests from falling through to `academic_paper_v1`
+- weak or tied workflow evidence returns no selected workflow so `start-work` blocks for clarification instead of silently choosing the first active workflow
+- route story tests cover AIOS bugfix phrasing, non-AIOS login bugfix phrasing, UI user-story verification, academic-paper routing, and ambiguity blocking
+
+AIOS now has a repeatable copied-live-DB readiness gate for default routing:
+
+- `scripts/aios-readiness-check.py` copies `data/aios.db`, runs route selector stories through `start-work`, verifies route-decision search, checks daily-flow preview/replay, and confirms next-action returns structured output
+- `services.next_action` supports both older fixture-style `success_criteria_findings.run_id` rows and the canonical schema where findings link to runs through `success_criteria_evaluations`
+- `.planning/quick/260623-aios-readiness-check/readiness-report.json` and `.planning/quick/260623-aios-readiness-check/readiness-report.md` record the passing copied-live-DB gate
+- `scripts/aios-adoption-gate.py` now runs the managed-runtime adoption gate on a copied live DB across AIOS internal bugfix, non-AIOS bugfix, and AIOS operator UI verification stories
+- `.planning/quick/260623-aios-adoption-gate/adoption-gate-report.json` and `.planning/quick/260623-aios-adoption-gate/adoption-gate-report.md` record the passing gate, including completed lifecycle linkage, workflow/evaluation/writeback/TMCP artifacts, route-decision search, and daily-flow replay evidence
+- this proves copied-live-DB managed-run adoption readiness for routing representative serious work through AIOS by default; broad default-launcher use should still keep the adoption gate in the release checklist after routing/runtime changes
+
+AIOS now has a repeatable field-pressure gate for default-use confidence:
+
+- `scripts/aios-field-pressure-gate.py` copies `data/aios.db`, routes 12 mixed daily-use objectives, executes 6 managed-runtime pilots, verifies closeout artifact volume, runs operator UI lint/typecheck, probes operator-search/daily-flow/next-action drilldowns, simulates context-loop and session-save learning, and exercises ambiguous-objective, invalid-project, missing-run, stale-schema, and missing-managed-run recovery
+- `.planning/quick/260623-aios-field-pressure-gate/field-pressure-report.json` and `.planning/quick/260623-aios-field-pressure-gate/field-pressure-report.md` record the passing 100/100 gate
+- `services.operator_search` now matches run-linked writebacks by `run_id` and canonical success-criteria findings through `success_criteria_evaluations.run_id`, so operator run-id searches expose the evidence needed to inspect closeout state
+- `.gitignore` treats `logs/control-plane/` and `logs/session-effectiveness/` as runtime artifact directories, reducing dirty-tree noise from managed-run simulations and probes
+- `bin/aios-managed-run.py` now returns structured preflight JSON for missing runs instead of surfacing a Python traceback
+- the field-pressure report includes dirty-tree classification, separating source changes from ignored runtime artifacts so managed-run probes do not obscure implementation work
+
+AIOS now has a Codex command-trigger route helper:
+
+- prompts that start with `/aios` instruct Codex to route the task through AIOS before non-trivial work
+- `/aios` creates a shadow lane by default and marks the AIOS route as governing context for the baseline task
+- `/aios-route-only` is the explicit opt-out for rare cases where a routed record is wanted without a shadow
+- `scripts/codex-aios-route.py` infers the active project from the current working directory or accepts `--project`, runs `aios start-work`, and prints the follow-up operator-search, daily-flow, and next-action commands
+- `AGENTS.md` documents the command behavior so the user can start AIOS routing with a concise command instead of manually composing shell commands
+- `README.md` documents examples such as `/aios Fix the route selector bug and verify the checks`
+
+AIOS now has a Codex shadow command helper:
+
+- all non-trivial Codex tasks run `scripts/codex-aios-shadow.py` automatically, even without `/aios`, so AIOS can collect comparison evidence while normal Codex work remains the baseline
+- `/aios` runs the same helper with `--governed-route`, making the AIOS route and packet authoritative for the baseline task
+- `scripts/codex-aios-shadow.py` infers the active project, records the AIOS route, creates a shadow worktree through `aios shadow create-worktree`, and prints the prompt to run in a separate Codex thread
+- automatic non-`/aios` shadow routes are evidence only and do not govern baseline implementation
+- `.gitignore` ignores `.aios/shadow-worktrees/` so local comparison worktrees do not pollute source status
+- `AGENTS.md` states that shadow output must not be merged, copied, or promoted into the baseline workspace without explicit user review
 
 ## Implemented On 2026-06-22
 
@@ -1421,3 +1515,18 @@ The spec execution roadmap has been corrected before execution:
 - Updated the AIOS-controlled Soundscape `test_quality` gate commands to invoke TypeScript scripts through `pnpm exec node --import tsx ...` instead of package-script `tsx` entrypoints.
 - Rationale: AIOS captures gate subprocess output, and direct `tsx` CLI entrypoints attempted to open an IPC pipe that fails in the managed sandbox; the `node --import tsx` form preserves the vetted argv allowlist while avoiding that pipe.
 - Verification: `python3 /Users/jakyeamos/AIOS/bin/aios.py --json gate run test_quality --project soundscape-app --repo-root /Users/jakyeamos/projects/soundscape-app` passed.
+
+## 2026-06-23 - TMCP behavior-atom compiler controls
+
+- Added tracked TMCP behavior-atom and golden-prompt registries under `config/tmcp/` so graph generation, packet quality tests, and future evals share the same expected behavior vocabulary.
+- Extended TMCP runtime receipts with actionable feedback updates, node/behavior-atom token ROI summaries, missed-requirement repair recommendations, semantic source-skill section extraction, and packet explanation payloads.
+- Added `aios tmcp explain`, `aios tmcp learning-summary`, and `aios tmcp receipt-feedback` for local inspection and learning-loop operation.
+- Added `tmcp_behavior_optimized` as a benchmark condition between flat skill loading and validated shortcuts, with regression coverage for token-load comparison.
+- Verification: focused TMCP runtime/harvest/benchmark tests passed, managed-runtime TMCP smoke tests passed, focused Ruff passed, context validation passed, and canonical graph verification passed against the 99-skill local graph.
+
+## 2026-06-23 - TMCP packet adherence and claim discipline
+
+- Added packet-adherence evaluation so TMCP can distinguish router failure from agent compliance failure when a packet required behavior atom is not observed in the final run.
+- Added granular TMCP receipt events and intervention audit events for packet compilation, node selection, observed actions, ignored required behavior, validation commands, blockers, reruns, scope reductions, and related quality interventions.
+- Added phase-aware and domain-aware packet compilation, negative golden prompt fixtures, TMCP packet diffing, shortcut lifecycle governance recommendations, and a benchmark claim gate that blocks TMCP improvement claims unless quality, token, shortcut-separation, and missed-requirement criteria pass.
+- Verification: focused TMCP runtime/harvest/benchmark tests passed, managed-runtime TMCP smoke tests passed, focused Ruff passed, context validation passed, JSON validation passed, and canonical graph verification passed.

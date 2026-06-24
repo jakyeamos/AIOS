@@ -207,6 +207,1409 @@
           ]
         }
       }
+    },
+    {
+      "projectId": "agent-router",
+      "roots": [
+        "/Users/jakyeamos/projects/agent-router"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Only .pre-cr.json is available; no package/build/test/truth surface exists yet.",
+        "requiredNextSteps": [
+          "No package/build/test/truth surface found; only .pre-cr.json exists, so strict developer-tool readiness is blocked until real tool checks and project truth are added."
+        ]
+      }
+    },
+    {
+      "projectId": "amos-saas",
+      "roots": [
+        "/Users/jakyeamos/Projects/amos-saas"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "test_quality": {
+          "preCommitCommands": [
+            [
+              "pnpm",
+              "lint"
+            ],
+            [
+              "pnpm",
+              "build"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pnpm",
+              "lint"
+            ],
+            [
+              "pnpm",
+              "build"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Production/public web strict gates are configured only where real local surfaces exist; missing gates are tracked in config/quality-pipeline.json maturation_blockers.",
+        "requiredNextSteps": [
+          "Missing test script, typecheck script, CI workflow, secret scan, env validation, dependency security, and smoke/e2e gate; package manager ambiguity remains because both pnpm-lock.yaml and package-lock.json exist."
+        ]
+      }
+    },
+    {
+      "projectId": "Bballedu",
+      "roots": [
+        "/Users/jakyeamos/projects/Bballedu"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "test_quality": {
+          "preCommitCommands": [
+            [
+              "pnpm",
+              "lint"
+            ],
+            [
+              "pnpm",
+              "typecheck"
+            ],
+            [
+              "pnpm",
+              "test"
+            ],
+            [
+              "pnpm",
+              "build"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pnpm",
+              "lint"
+            ],
+            [
+              "pnpm",
+              "typecheck"
+            ],
+            [
+              "pnpm",
+              "test"
+            ],
+            [
+              "pnpm",
+              "build"
+            ]
+          ]
+        },
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Production/public web strict gates are configured only where real local surfaces exist; missing gates are tracked in config/quality-pipeline.json maturation_blockers.",
+        "requiredNextSteps": [
+          "Missing architecture binding, CI workflow, secret scan, env validation, and dependency security gate."
+        ]
+      }
+    },
+    {
+      "projectId": "career-ops",
+      "roots": [
+        "/Users/jakyeamos/career-ops"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "test_quality": {
+          "preCommitCommands": [
+            [
+              "npm",
+              "run",
+              "verify"
+            ],
+            [
+              "npm",
+              "run",
+              "doctor"
+            ],
+            [
+              "npm",
+              "run",
+              "sync-check"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "npm",
+              "run",
+              "verify"
+            ],
+            [
+              "npm",
+              "run",
+              "doctor"
+            ],
+            [
+              "npm",
+              "run",
+              "sync-check"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Python/data/research/course strict gates are configured only where real local surfaces exist; missing gates are tracked in config/quality-pipeline.json maturation_blockers.",
+        "requiredNextSteps": [
+          "Missing lint/static gate, architecture/structure gate, CI workflow, secret scan, dependency security, and fresh validation evidence."
+        ]
+      }
+    },
+    {
+      "projectId": "claude-improvement-lab",
+      "roots": [
+        "/Users/jakyeamos/projects/claude-improvement-lab"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        },
+        "test_quality": {
+          "preCommitCommands": [
+            [
+              "python",
+              "-m",
+              "py_compile",
+              "agent.py",
+              "agent-claude.py",
+              "apply-patch.py"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "python",
+              "-m",
+              "py_compile",
+              "agent.py",
+              "agent-claude.py",
+              "apply-patch.py"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Python/data/research/course strict gates are configured only where real local surfaces exist; missing gates are tracked in config/quality-pipeline.json maturation_blockers.",
+        "requiredNextSteps": [
+          "No real test/lint suite found; py_compile validation is only a floor until tests/static checks, CI, secret scan, and dependency security exist."
+        ]
+      }
+    },
+    {
+      "projectId": "csds391-s26-6",
+      "roots": [
+        "/Users/jakyeamos/projects/csds391-s26-6"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Only .pre-cr.json and basic truth files are visible; no class-specific validation surface exists yet.",
+        "requiredNextSteps": [
+          "No install/test/validation surface found beyond pre-cr; needs course-specific validation, CI or exception, secret scan, and project instructions."
+        ]
+      }
+    },
+    {
+      "projectId": "dispatches-from-cyberspace",
+      "roots": [
+        "/Users/jakyeamos/projects/dispatches-from-cyberspace"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "test_quality": {
+          "preCommitCommands": [
+            [
+              "pnpm",
+              "lint"
+            ],
+            [
+              "pnpm",
+              "typecheck"
+            ],
+            [
+              "pnpm",
+              "build"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pnpm",
+              "lint"
+            ],
+            [
+              "pnpm",
+              "typecheck"
+            ],
+            [
+              "pnpm",
+              "build"
+            ]
+          ]
+        },
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Production/public web strict gates are configured only where real local surfaces exist; missing gates are tracked in config/quality-pipeline.json maturation_blockers.",
+        "requiredNextSteps": [
+          "Missing test script, architecture binding, secret scan, env validation, dependency security, and smoke/e2e gate."
+        ]
+      }
+    },
+    {
+      "projectId": "Dsci-proj",
+      "roots": [
+        "/Users/jakyeamos/projects/Dsci-proj"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        },
+        "test_quality": {
+          "preCommitCommands": [
+            [
+              "make",
+              "test"
+            ],
+            [
+              "make",
+              "check-deps"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "make",
+              "test"
+            ],
+            [
+              "make",
+              "check-deps"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Python/data/research/course strict gates are configured only where real local surfaces exist; missing gates are tracked in config/quality-pipeline.json maturation_blockers.",
+        "requiredNextSteps": [
+          "Makefile still uses npm for dashboard install/test; needs package-manager cleanup or explicit exception, plus architecture/structure, secret scan, dependency security, and fresh CI/default-branch proof."
+        ]
+      }
+    },
+    {
+      "projectId": "eslint-plugin-anti-slop",
+      "roots": [
+        "/Users/jakyeamos/projects/eslint-plugin-anti-slop"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "test_quality": {
+          "preCommitCommands": [
+            [
+              "pnpm",
+              "test"
+            ],
+            [
+              "pnpm",
+              "smoke:consumer"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pnpm",
+              "test"
+            ],
+            [
+              "pnpm",
+              "smoke:consumer"
+            ]
+          ]
+        },
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Developer tool/package strict gates are configured only where real local surfaces exist; missing gates are tracked in config/quality-pipeline.json maturation_blockers.",
+        "requiredNextSteps": [
+          "Missing lint/typecheck/build scripts, substantive architecture boundary gate, dependency security evidence, and fresh CI/default-branch proof."
+        ]
+      }
+    },
+    {
+      "projectId": "Fantasy",
+      "roots": [
+        "/Users/jakyeamos/projects/Fantasy"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        },
+        "test_quality": {
+          "preCommitCommands": [
+            [
+              "uv",
+              "run",
+              "pytest",
+              "-q"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "uv",
+              "run",
+              "pytest",
+              "-q"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Python/data/research/course strict gates are configured only where real local surfaces exist; missing gates are tracked in config/quality-pipeline.json maturation_blockers.",
+        "requiredNextSteps": [
+          "Nested frontend/backend structure needs aggregate gates; backend pytest exists, but frontend validation, CI, secret scan, dependency security, and default-branch proof are missing."
+        ]
+      }
+    },
+    {
+      "projectId": "LIS",
+      "roots": [
+        "/Users/jakyeamos/projects/BBDSE/LIS"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        },
+        "test_quality": {
+          "preCommitCommands": [
+            [
+              "uv",
+              "run",
+              "ruff",
+              "check",
+              "."
+            ],
+            [
+              "uv",
+              "run",
+              "pytest",
+              "-q"
+            ],
+            [
+              "uv",
+              "run",
+              "lis",
+              "--help"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "uv",
+              "run",
+              "ruff",
+              "check",
+              "."
+            ],
+            [
+              "uv",
+              "run",
+              "pytest",
+              "-q"
+            ],
+            [
+              "uv",
+              "run",
+              "lis",
+              "--help"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Python/data/research/course strict gates are configured only where real local surfaces exist; missing gates are tracked in config/quality-pipeline.json maturation_blockers.",
+        "requiredNextSteps": [
+          "Strong Python test/static surfaces exist, but CI, architecture/structure, secret scan, dependency security, and fresh proof are missing."
+        ]
+      }
+    },
+    {
+      "projectId": "manga-sync",
+      "roots": [
+        "/Users/jakyeamos/projects/manga-sync"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Only .pre-cr.json and basic truth files are visible; no class-specific validation surface exists yet.",
+        "requiredNextSteps": [
+          "No install/test/validation surface found beyond pre-cr; needs data-sync validation, CI or exception, secret scan, and dependency security."
+        ]
+      }
+    },
+    {
+      "projectId": "portfolio",
+      "roots": [
+        "/Users/jakyeamos/projects/portfolio"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "test_quality": {
+          "preCommitCommands": [
+            [
+              "pnpm",
+              "lint"
+            ],
+            [
+              "pnpm",
+              "build"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pnpm",
+              "lint"
+            ],
+            [
+              "pnpm",
+              "build"
+            ]
+          ]
+        },
+        "architecture": {
+          "preCommitCommands": [
+            [
+              "node",
+              "scripts/aios-architecture-check.mjs"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "node",
+              "scripts/aios-architecture-check.mjs"
+            ]
+          ]
+        },
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Production/public web strict gates are configured only where real local surfaces exist; missing gates are tracked in config/quality-pipeline.json maturation_blockers.",
+        "requiredNextSteps": [
+          "Missing test script, typecheck script, secret scan, env validation, dependency security, and smoke/e2e gate."
+        ]
+      }
+    },
+    {
+      "projectId": "pre-cr-suite-lsp",
+      "roots": [
+        "/Users/jakyeamos/projects/pre-cr-suite-lsp"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "test_quality": {
+          "preCommitCommands": [
+            [
+              "pnpm",
+              "lint"
+            ],
+            [
+              "pnpm",
+              "typecheck"
+            ],
+            [
+              "pnpm",
+              "test"
+            ],
+            [
+              "pnpm",
+              "build"
+            ],
+            [
+              "pnpm",
+              "package"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pnpm",
+              "lint"
+            ],
+            [
+              "pnpm",
+              "typecheck"
+            ],
+            [
+              "pnpm",
+              "test"
+            ],
+            [
+              "pnpm",
+              "build"
+            ],
+            [
+              "pnpm",
+              "package"
+            ]
+          ]
+        },
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Developer tool/package strict gates are configured only where real local surfaces exist; missing gates are tracked in config/quality-pipeline.json maturation_blockers.",
+        "requiredNextSteps": [
+          "Missing substantive architecture boundary gate, secret scan, dependency security evidence, and fresh CI/default-branch proof."
+        ]
+      }
+    },
+    {
+      "projectId": "R-Project",
+      "roots": [
+        "/Users/jakyeamos/Projects/R-Project"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        },
+        "test_quality": {
+          "preCommitCommands": [
+            [
+              "Rscript",
+              "save_plots.R"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "Rscript",
+              "save_plots.R"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Python/data/research/course strict gates are configured only where real local surfaces exist; missing gates are tracked in config/quality-pipeline.json maturation_blockers.",
+        "requiredNextSteps": [
+          "Rscript validation is a floor; missing install/reproducibility contract, tests, CI, secret scan, and dependency security."
+        ]
+      }
+    },
+    {
+      "projectId": "remodelvision",
+      "roots": [
+        "/Users/jakyeamos/projects/remodelvision"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "test_quality": {
+          "preCommitCommands": [
+            [
+              "pnpm",
+              "lint"
+            ],
+            [
+              "pnpm",
+              "test"
+            ],
+            [
+              "pnpm",
+              "build"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pnpm",
+              "lint"
+            ],
+            [
+              "pnpm",
+              "test"
+            ],
+            [
+              "pnpm",
+              "build"
+            ]
+          ]
+        },
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Production/public web strict gates are configured only where real local surfaces exist; missing gates are tracked in config/quality-pipeline.json maturation_blockers.",
+        "requiredNextSteps": [
+          "Missing typecheck script, architecture binding, CI workflow, secret scan, env validation, and dependency security gate."
+        ]
+      }
+    },
+    {
+      "projectId": "Terrace",
+      "roots": [
+        "/Users/jakyeamos/projects/Terrace"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "test_quality": {
+          "preCommitCommands": [
+            [
+              "npm",
+              "run",
+              "lint"
+            ],
+            [
+              "npm",
+              "run",
+              "typecheck"
+            ],
+            [
+              "npm",
+              "test"
+            ],
+            [
+              "npm",
+              "run",
+              "build"
+            ],
+            [
+              "npm",
+              "run",
+              "package:dry-run"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "npm",
+              "run",
+              "lint"
+            ],
+            [
+              "npm",
+              "run",
+              "typecheck"
+            ],
+            [
+              "npm",
+              "test"
+            ],
+            [
+              "npm",
+              "run",
+              "build"
+            ],
+            [
+              "npm",
+              "run",
+              "package:dry-run"
+            ]
+          ]
+        },
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Developer tool/package strict gates are configured only where real local surfaces exist; missing gates are tracked in config/quality-pipeline.json maturation_blockers.",
+        "requiredNextSteps": [
+          "Missing substantive architecture boundary gate, secret scan, dependency security evidence, and fresh CI/default-branch proof."
+        ]
+      }
+    },
+    {
+      "projectId": "tm",
+      "roots": [
+        "/Users/jakyeamos/projects/tm"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "test_quality": {
+          "preCommitCommands": [
+            [
+              "pnpm",
+              "lint"
+            ],
+            [
+              "pnpm",
+              "typecheck"
+            ],
+            [
+              "pnpm",
+              "test"
+            ],
+            [
+              "pnpm",
+              "build"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pnpm",
+              "lint"
+            ],
+            [
+              "pnpm",
+              "typecheck"
+            ],
+            [
+              "pnpm",
+              "test"
+            ],
+            [
+              "pnpm",
+              "build"
+            ]
+          ]
+        },
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Production/public web strict gates are configured only where real local surfaces exist; missing gates are tracked in config/quality-pipeline.json maturation_blockers.",
+        "requiredNextSteps": [
+          "Missing architecture binding, CI workflow, secret scan, env validation, dependency security, and smoke/e2e gate."
+        ]
+      }
+    },
+    {
+      "projectId": "Vaults",
+      "roots": [
+        "/Users/jakyeamos/projects/Vaults"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        },
+        "test_quality": {
+          "preCommitCommands": [
+            [
+              "git",
+              "diff",
+              "--check",
+              "--cached"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "git",
+              "diff",
+              "--check"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Vault currently has pre-cr plus diff hygiene only; no mature content validation adapter exists yet.",
+        "requiredNextSteps": [
+          "No mature vault/content validator exists yet; git diff --check is only a floor. Needs link/frontmatter/protected-path/secret-free content validation plus CI or non-remote exception."
+        ]
+      }
+    },
+    {
+      "projectId": "video-pipeline",
+      "roots": [
+        "/Users/jakyeamos/projects/video-pipeline"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "test_quality": {
+          "preCommitCommands": [
+            [
+              "npm",
+              "run",
+              "lint-composition-ids"
+            ],
+            [
+              "npm",
+              "run",
+              "typecheck"
+            ],
+            [
+              "npm",
+              "run",
+              "test-render-spec-contract"
+            ],
+            [
+              "npm",
+              "run",
+              "validate-presets"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "npm",
+              "run",
+              "lint-composition-ids"
+            ],
+            [
+              "npm",
+              "run",
+              "typecheck"
+            ],
+            [
+              "npm",
+              "run",
+              "test-render-spec-contract"
+            ],
+            [
+              "npm",
+              "run",
+              "validate-presets"
+            ]
+          ]
+        },
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Developer tool/package strict gates are configured only where real local surfaces exist; missing gates are tracked in config/quality-pipeline.json maturation_blockers.",
+        "requiredNextSteps": [
+          "Missing CI workflow, substantive architecture boundary gate, lint script, secret scan, dependency security evidence, and fresh package/render smoke proof."
+        ]
+      }
+    },
+    {
+      "projectId": "BBDSE",
+      "roots": [
+        "/Users/jakyeamos/projects/BBDSE"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "test_quality": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/LIS"
+            ],
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/CLFE"
+            ],
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/Cap-Fit Builder"
+            ],
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/Coach Value Over Expected"
+            ],
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/RTE"
+            ],
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/RTE Transferable Signals"
+            ],
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/SMWI"
+            ],
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/Signal Lab"
+            ],
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/Versatility Tax"
+            ],
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/Womens Stats"
+            ],
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/BBDS-Analytics-Product-Suite"
+            ],
+            [
+              "git",
+              "diff",
+              "--check"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/LIS"
+            ],
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/CLFE"
+            ],
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/Cap-Fit Builder"
+            ],
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/Coach Value Over Expected"
+            ],
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/RTE"
+            ],
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/RTE Transferable Signals"
+            ],
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/SMWI"
+            ],
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/Signal Lab"
+            ],
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/Versatility Tax"
+            ],
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/Womens Stats"
+            ],
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}/BBDS-Analytics-Product-Suite"
+            ],
+            [
+              "git",
+              "diff",
+              "--check"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "BBDSE now delegates validation to known subproject pre-cr configs, but aggregate evidence, CI/non-remote exception, and child-project ownership still need proof before adoption readiness.",
+        "requiredNextSteps": [
+          "Run delegated subproject pre-cr checks and record quality_pipeline evidence.",
+          "Document child-project ownership and non-remote CI exception or add CI.",
+          "Keep LIS as its own active source repo; do not count BBDSE ready just because LIS has gates."
+        ]
+      }
     }
   ]
 }

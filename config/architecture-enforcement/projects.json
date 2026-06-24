@@ -18,18 +18,6 @@
       "proof_target": true
     },
     {
-      "id": "amos-saas",
-      "name": "amos-saas",
-      "path": "~/Projects/amos-saas",
-      "profile_bindings": [
-        {
-          "profile_id": "ts-nextjs-v1",
-          "working_directory": "."
-        }
-      ],
-      "proof_target": false
-    },
-    {
       "id": "soundscape-app",
       "name": "soundscape-app",
       "path": "~/Projects/soundscape-app",
@@ -42,21 +30,9 @@
       "proof_target": false
     },
     {
-      "id": "gitnexus",
-      "name": "GitNexus",
-      "path": "~/Projects/GitNexus",
-      "profile_bindings": [
-        {
-          "profile_id": "python-service-v1",
-          "working_directory": "."
-        }
-      ],
-      "proof_target": false
-    },
-    {
-      "id": "terrace",
-      "name": "Terrace",
-      "path": "~/Projects/Terrace",
+      "id": "portfolio",
+      "name": "portfolio",
+      "path": "~/Projects/portfolio",
       "profile_bindings": [
         {
           "profile_id": "ts-nextjs-v1",
@@ -66,9 +42,69 @@
       "proof_target": false
     },
     {
-      "id": "portfolio",
-      "name": "portfolio",
-      "path": "~/Projects/portfolio",
+      "id": "Terrace",
+      "name": "Terrace",
+      "path": "~/projects/Terrace",
+      "profile_bindings": [
+        {
+          "profile_id": "ts-nextjs-v1",
+          "working_directory": "."
+        }
+      ],
+      "proof_target": false
+    },
+    {
+      "id": "dispatches-from-cyberspace",
+      "name": "dispatches-from-cyberspace",
+      "path": "~/projects/dispatches-from-cyberspace",
+      "profile_bindings": [
+        {
+          "profile_id": "ts-nextjs-v1",
+          "working_directory": "."
+        }
+      ],
+      "proof_target": false
+    },
+    {
+      "id": "remodelvision",
+      "name": "remodelvision",
+      "path": "~/projects/remodelvision",
+      "profile_bindings": [
+        {
+          "profile_id": "ts-nextjs-v1",
+          "working_directory": "."
+        }
+      ],
+      "proof_target": false
+    },
+    {
+      "id": "Bballedu",
+      "name": "Bballedu",
+      "path": "~/projects/Bballedu",
+      "profile_bindings": [
+        {
+          "profile_id": "ts-nextjs-v1",
+          "working_directory": "."
+        }
+      ],
+      "proof_target": false
+    },
+    {
+      "id": "tm",
+      "name": "tm",
+      "path": "~/projects/tm",
+      "profile_bindings": [
+        {
+          "profile_id": "ts-nextjs-v1",
+          "working_directory": "."
+        }
+      ],
+      "proof_target": false
+    },
+    {
+      "id": "amos-saas",
+      "name": "amos-saas",
+      "path": "~/Projects/amos-saas",
       "profile_bindings": [
         {
           "profile_id": "ts-nextjs-v1",
