@@ -1,10 +1,10 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, differentiated branch-aware commit quality gates, gate audit artifacts, CTS/backend services, command-center UI, and broad but currently failing repo-level Python quality baselines.
+summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, differentiated branch-aware commit quality gates, TMCP expertise compilation, a review-ready expert-rubric-remediation workflow design, and broad but currently failing repo-level Python quality baselines.
 healthScore: 66
 statusLabel: needs_attention
-nextStep: Triage the 18 full-suite Python test failures and stale repo-wide Ruff/BasedPyright baselines before claiming repo-level quality green.
+nextStep: Review and approve the expert-rubric-remediation workflow design before implementing the registry entry, artifact writers, validators, and fixtures.
 blockers:
   - Full Python test, Ruff, format, and BasedPyright baselines are failing outside the gate-audit slice.
 lastUpdated: 2026-06-24
@@ -15,7 +15,7 @@ repoType: infra
 sourceOfTruth: mixed
 primaryLanguage: Python
 activeBranch: main
-lastCommitDate: 2026-04-08
+lastCommitDate: 2026-06-24
 quality:
   lint: fail
   types: fail
@@ -39,6 +39,8 @@ AIOS is an active, git-versioned Python/shell infrastructure project (first comm
 The codebase is large, with Python services and scripts in `services/` and `bin/`, a committed `aios-ui/` Next.js command-center app, schema-backed operational storage, growing context/planning docs, and explicit Python quality configuration in `pyproject.toml`. The Code Topology Service (CTS) backend is committed: `services/cts/` provides graph storage, parsing, search, impact analysis, incremental updates, and MCP/CLI entrypoints. Phase 11 eval-run infrastructure is now coherent end to end: `schema.sql` defines eval task/run/score/failure tables, `services/eval_run_service.py` creates and reads durable eval records, and `services/aios_cli.py` exposes `aios eval record-run`, `list-runs`, and `summary`. The latest full Python quality pass on 2026-06-22 shows repo-level failures outside the hook-policy slice, while targeted hook-policy checks pass.
 
 AIOS now also has a file-backed and SQLite-backed context-loop learning primitive: `services/context_loops.py`, `schema.sql`, and `python bin/aios.py context-loops ...` record inner-loop context/draft runs, review events, learning candidates, explicit approvals/rejections, approved lesson application, metrics, and a draft-only email pilot. Contract docs and examples live under `aios/context-loops/`.
+
+AIOS has a review-ready design for `expert_rubric_remediation_v1`, a general workflow that compiles TMCP expertise into an explicit rubric, audits concrete evidence, and produces ordered remediation slices before any implementation handoff.
 
 ## Why This Matters / Intended Outcome
 
@@ -67,6 +69,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-06-23: Added TMCP behavior-atom and golden-prompt registries, semantic source-skill extraction, receipt feedback and missed-requirement repair summaries, node/atom token ROI learning summaries, `aios tmcp` inspect/feedback CLI commands, and a `tmcp_behavior_optimized` benchmark condition.
 - 2026-06-23: Added TMCP packet-adherence evaluation, granular receipt/intervention events, phase-aware and domain-aware packet compilation, negative precision fixtures, packet diffing, shortcut governance recommendations, and benchmark claim gating for quality/token/missed-requirement discipline.
 - 2026-06-24: Added an AIOS agent rule requiring proactive strategic improvement suggestions when a more durable path is visible than the tactical request.
+- 2026-06-24: Added the review-ready `expert_rubric_remediation_v1` design spec for turning compiled TMCP expertise into an explicit rubric, evidence-backed audit, ordered remediation plan, and optional implementation handoff.
 
 ## Open Problems
 
@@ -76,10 +79,11 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 4. **Full BasedPyright baseline is not green** — `uv run basedpyright` failed on 2026-06-23 with 100 errors and 100 warnings.
 ## Next Concrete Steps
 
-1. Fix the 18 current `uv run pytest -q` failures or update stale expectations where the underlying contract intentionally changed.
-2. Run Ruff autofix/format in planned chunks rather than broad unreviewed churn.
-3. Triage BasedPyright errors in touched/runtime-critical modules first, especially hook and managed-runtime scripts.
-4. Keep the eval-run service/CLI contract covered as later external harness adapters add more write paths.
+1. Review `docs/superpowers/specs/2026-06-24-expert-rubric-remediation-design.md` and approve or revise the workflow boundary before implementation.
+2. Fix the 18 current `uv run pytest -q` failures or update stale expectations where the underlying contract intentionally changed.
+3. Run Ruff autofix/format in planned chunks rather than broad unreviewed churn.
+4. Triage BasedPyright errors in touched/runtime-critical modules first, especially hook and managed-runtime scripts.
+5. Keep the eval-run service/CLI contract covered as later external harness adapters add more write paths.
 
 ## Risks / Blockers
 
@@ -96,6 +100,8 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 | Dead code (vulture) | Pass | `uv run vulture . --min-confidence 70` exited 0 on 2026-06-22 |
 | Tests | Fail | `uv run pytest -q` failed on 2026-06-23 with 18 failures; focused context-loop tests passed on 2026-06-23, and a broader `tests/test_aios_cli.py tests/test_context_loops.py` run still has unrelated/stale CLI expectation failures |
 | Structure | Warning | Full format check wants 147 files reformatted; touched gate-audit files are formatted |
+
+Doc-only update note: the 2026-06-24 expert-rubric-remediation spec commit ran the staged AIOS commit-quality checks and passed the registered standards, context, success-criteria, quality-pipeline, allowlist, and staged handler-race gates. No repo-level Ruff, BasedPyright, Vulture, or pytest run was performed for that design-only commit; existing repo-level failures remain authoritative.
 
 ## Agent Notes
 
