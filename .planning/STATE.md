@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Executing Phase 25
-last_updated: "2026-06-24T19:40:24.000Z"
+last_updated: "2026-06-24T20:01:45.000Z"
 progress:
   total_phases: 28
   completed_phases: 24
-  total_plans: 145
+  total_plans: 153
   completed_plans: 141
   percent: 86
 ---
@@ -28,7 +28,7 @@ progress:
 - Latest completed phase: Phase 24, Rectify linked repo AIOS readiness blockers except agent-router, closed with 0 ready repos, 0 evidence-required repos, 20 blocked repos, and 3 excluded repos.
 - Latest completed plan: Phase 24 Plan 24-10 wrote the final verification ledger, recorded local CI replacement exceptions for the 20 in-scope repos, recorded `video-pipeline`, `manga-sync`, plus `agent-router` as excluded, and later added runnable local-CI setup plus a failure ledger without forcing all CI gates green.
 - Latest planned governed-workflow phase: Phase 25 has four executable plans to make planning a governed first-class AIOS workflow.
-- Latest added roadmap split: Phases 26-28 break the approved `expert_rubric_remediation_v1` implementation plan into core artifacts, workflow runtime, and CLI/verification chunks.
+- Latest planned expert-rubric phases: Phases 26-28 now contain eight executable plans covering core review artifacts, workflow runtime integration, route support, CLI exposure, quality closeout, and smoke verification.
 
 ## Current Roadmap Position
 
@@ -63,6 +63,9 @@ progress:
 - Phase 26 added: Expert rubric remediation core artifacts.
 - Phase 27 added: Expert rubric remediation workflow runtime.
 - Phase 28 added: Expert rubric remediation CLI and verification.
+- Phase 26 planned: two plans cover expert review service contracts, artifact writers, Soundscape evidence fixture, audit builder, remediation plan builder, and implementation handoff.
+- Phase 27 planned: three plans cover runtime context and expert skill dispatch, workflow/skill registry contracts, and expert audit-plan route completion.
+- Phase 28 planned: three plans cover read-only `aios tmcp review-plan`, focused quality/truth closeout, and smoke verification with implementation handoff evidence.
 
 ## Quick Tasks Completed
 
@@ -226,4 +229,4 @@ progress:
 | 2026-06-02 | Complete Phase 10 Plan 08 quality hotspot backfill baseline | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-08-SUMMARY.md` records `pnpm quality:eval`, the read-only hotspot detection script, and the first factual Agent Eval backfill inventory for Python services, CLI scripts, tests, aios-ui, config, and eval docs. |
 
 ---
-*Last updated: 2026-06-23 after completing Phase 21 and advancing to Phase 22 Plan 22-01*
+*Last updated: 2026-06-24 after planning Phases 26-28 as eight executable expert rubric remediation plans*

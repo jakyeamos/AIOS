@@ -1353,7 +1353,11 @@ Plans:
 **Initial scope:** Service module skeleton, schema constants, deterministic profile selection, artifact validation, artifact writing, Soundscape visual-polish fixture, evidence-backed audit builder, remediation-slice builder, and optional handoff builder.
 **Requirements**: TBD
 **Depends on:** Phase 25
-**Plans:** Not planned yet
+**Plans:** 2 plans
+
+Plans:
+- [ ] 26-01 Expert review service contracts and artifact writers
+- [ ] 26-02 Evidence fixture, audit builder, and implementation handoff
 
 ### Phase 27: Expert rubric remediation workflow runtime
 
@@ -1362,7 +1366,12 @@ Plans:
 **Initial scope:** Workflow skill dispatch, executor artifact persistence, workflow registry entry, skill registry entries, route candidate support, explicit review/remediation objective matching, and runtime regression tests.
 **Requirements**: TBD
 **Depends on:** Phase 26
-**Plans:** Not planned yet
+**Plans:** 3 plans
+
+Plans:
+- [ ] 27-01 Runtime context and expert skill dispatch
+- [ ] 27-02 Workflow and skill registry contract
+- [ ] 27-03 Expert audit-plan routing completion
 
 ### Phase 28: Expert rubric remediation CLI and verification
 
@@ -1371,7 +1380,12 @@ Plans:
 **Initial scope:** `aios tmcp review-plan`, CLI artifact output, focused Ruff/format/BasedPyright/pytest gates, Vulture check, `.tracker/PROJECT_TRUTH.md` update, manual smoke run, git status review, and final implementation summary.
 **Requirements**: TBD
 **Depends on:** Phase 27
-**Plans:** Not planned yet
+**Plans:** 3 plans
+
+Plans:
+- [ ] 28-01 Read-only TMCP review-plan CLI
+- [ ] 28-02 Focused quality gates and project truth closeout
+- [ ] 28-03 Smoke verification and implementation handoff evidence
 
 ---
-*Last updated: 2026-06-24 after splitting the expert rubric remediation implementation plan into Phases 26-28 for core artifacts, workflow runtime, and CLI/verification closeout*
+*Last updated: 2026-06-24 after planning Phases 26-28 as eight executable expert rubric remediation plans*
