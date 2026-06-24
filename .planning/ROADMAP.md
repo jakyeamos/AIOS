@@ -1235,6 +1235,7 @@ This milestone adds a native macOS app development skill pack to AIOS by transfo
 | Phase 22 | Phase 21 | progressive governance gates across planning, execution, review, validation, and completion; tier-one standards intake, audit, coverage, and backfill workflows |
 | Phase 23 | Phase 22 | strict release-readiness maturation for every active linked source repository, with class-based gates, AIOS proof, CI evidence, and explicit exceptions |
 | Phase 24 | Phase 23 | rectify all linked-repo strict-readiness blockers except agent-router, including real gates, CI/default proof, evidence capture, and recorded exceptions |
+| Phase 25 | Phase 24 | make planning a governed first-class AIOS workflow with standards surfaced before execution, executable plan contracts, and verification handoff |
 
 ## Requirement Coverage
 
@@ -1264,6 +1265,7 @@ This milestone adds a native macOS app development skill pack to AIOS by transfo
 | Phase 22 | TBD | 0 |
 | Phase 23 | TBD | 0 |
 | Phase 24 | TBD | 0 |
+| Phase 25 | TBD | 0 |
 
 **Coverage Validation:**
 - v1 requirements: 133 (124 prior + 9 MACS)
@@ -1305,13 +1307,38 @@ Plans:
 **Goal:** Resolve the Phase 23 adoption-readiness blockers for every active linked source repo except `agent-router`, moving the portfolio from configured-but-blocked gate contracts to recorded strict release-readiness evidence or explicit non-remote exceptions.
 **2026-06-24 baseline:** Phase 23 verification records 0 ready repos, 2 evidence-required repos (`soundscape-app`, AIOS), and 21 blocked repos. Phase 24 excludes `agent-router` because it needs separate product maturation before meaningful package/tool gates can be applied.
 **Subsystem consolidation goal:** AIOS linked-repo quality governance. Consolidate quality-gate, quality-pipeline, standards-health, CI/default-branch proof, and repo-truth evidence into one repeatable adoption-readiness loop instead of one-off repo notes.
-**Subsystem extraction posture goal:** Keep inside AIOS. This phase should prove the linked-repo adoption loop as AIOS control-plane behavior; extraction would only be justified later if the gate/evidence model becomes portable across non-AIOS operators without AIOS' local inventory and standards-health stores.
+**Subsystem extraction posture goal:** Keep inside AIOS. This phase should prove the linked-repo adoption loop as AIOS control-plane behavior; extraction would require proof that the gate/evidence model is portable across non-AIOS operators without AIOS' local inventory and standards-health stores.
 **Requirements**: TBD
 **Depends on:** Phase 23
-**Plans:** 0 plans
+**Plans:** 1/10 plans executed
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 24 to break down)
+- [x] 24-01 AIOS Evidence Runner And Readiness Reporting Foundation
+- [ ] 24-02 Soundscape And AIOS Evidence-Required Closeout
+- [ ] 24-03 Standard Production Web App Gate Remediation
+- [ ] 24-04 Remodelvision And Amos-SaaS Targeted Production Cleanup
+- [ ] 24-05 Developer Tool And Package Gate Remediation
+- [ ] 24-06 Structured Python Data Course Repo Remediation
+- [ ] 24-07 Floor-Replacement Python Data Course Repo Remediation
+- [ ] 24-08 Content Vault And BBDSE Container Remediation
+- [ ] 24-09 CI Default Proof And Non-Remote Exception Sweep
+- [ ] 24-10 Final Verification And Closeout Ledger
+
+### Phase 25: Make AIOS planning a governed first-class workflow
+
+**Goal:** Make planning a high-confidence governed AIOS route so phase creation, phase planning, blocker-to-roadmap work, execution-contract drafting, and verification planning surface standards before implementation begins.
+**2026-06-24 baseline:** `codex-aios-shadow.py` returned `route-blocked` for a GSD phase-add objective because no governed workflow matched strongly enough. This is a product gap: planning should be one of AIOS' strongest routes, with standards, acceptance criteria, quality gates, evidence requirements, and closeout rules established before execution.
+**Subsystem consolidation goal:** AIOS planning governance. Consolidate route selection, planning lenses, standards resolution, success criteria, GSD phase artifacts, and verification contracts into one governed planning workflow family instead of leaving planning as a weak side path around execution governance.
+**Subsystem extraction posture goal:** Keep inside AIOS. Planning governance depends on AIOS-local workflow routing, context compilation, standards-health, success criteria, project truth, and GSD artifact conventions; extraction should only be reconsidered after the route and artifact contracts become portable.
+**Requirements**: TBD
+**Depends on:** Phase 24
+**Plans:** 4 plans
+
+Plans:
+- [ ] 25-01 Planning workflow detection contract
+- [ ] 25-02 Governed planning route selection
+- [ ] 25-03 Planning packet standards and evidence contract
+- [ ] 25-04 Shadow route proof and planning truth closeout
 
 ---
-*Last updated: 2026-06-24 after adding Phase 24 to rectify linked-repo strict-readiness blockers except agent-router*
+*Last updated: 2026-06-24 after planning Phase 24 linked-repo blocker remediation and preserving Phase 25 as dependent follow-up*
