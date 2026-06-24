@@ -6,6 +6,12 @@
 For explicit governed `/aios` work, this remains a blocker. For automatic Codex shadow lanes, the
 baseline task should continue and the failure should be retained as routing evidence.
 
+Automatic shadow route failure is not the same as shadow setup failure. If the helper exits `0` and
+prints `ok: true`, `governed_route: false`, `aios_route.status: "route_failed"`, and
+`aios_route.blocking: false`, no user approval is required to continue baseline work. Approval is
+only required when automatic shadow setup exits nonzero or cannot record diagnostic evidence, such
+as project resolution failure, helper failure, or shadow worktree creation failure.
+
 ## Runtime Record
 
 Automatic shadow routing failures are appended to:
@@ -25,6 +31,9 @@ Each line is a JSON object with:
 - `code`: route error code, usually `route-blocked`.
 - `message`: route error message.
 - `payload`: original JSON payload returned by the route command.
+
+The helper payload also includes `baseline.approval_required` and
+`baseline.can_continue_without_shadow` so agents can enforce this policy without interpreting prose.
 
 ## Initial Triage
 

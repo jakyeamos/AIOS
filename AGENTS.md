@@ -34,7 +34,9 @@ If the prompt names a project while the current working directory is AIOS, pass 
 python3 /Users/jakyeamos/AIOS/scripts/codex-aios-route.py "<objective>" --project "<project name or id>"
 ```
 
-Treat the returned run, route, packet, and shadow metadata as the task's governing context only for `/aios` prompts. For ordinary prompts, use the returned metadata only as comparison evidence for AIOS usefulness. After implementation, inspect the run with `operator-search`, `daily-flow`, and `next-action` using the commands returned by the helper. If automatic shadow creation fails, report the AIOS error and continue only if the user explicitly accepts an unshadowed run; if governed `/aios` routing fails or blocks, stop and report the AIOS error instead of bypassing the route unless the user explicitly says to bypass AIOS.
+Treat the returned run, route, packet, and shadow metadata as the task's governing context only for `/aios` prompts. For ordinary prompts, use the returned metadata only as comparison evidence for AIOS usefulness. After implementation, inspect the run with `operator-search`, `daily-flow`, and `next-action` using the commands returned by the helper when they exist.
+
+Automatic shadow routing has a diagnostic failure mode. If `scripts/codex-aios-shadow.py` exits `0` with `ok: true`, `governed_route: false`, `aios_route.status: "route_failed"`, and `aios_route.blocking: false`, continue the baseline implementation normally. This means AIOS recorded the routing miss in `data/aios-route-failures.jsonl`; it is not an unshadowed-work approval gate, and no user approval is required. Only ask for explicit approval when automatic shadow setup exits nonzero or cannot record diagnostic evidence, such as project resolution failure, helper failure, or shadow worktree creation failure. If governed `/aios` routing fails or blocks, stop and report the AIOS error instead of bypassing the route unless the user explicitly says to bypass AIOS.
 
 ## AIOS Context Compiler Bootloader
 

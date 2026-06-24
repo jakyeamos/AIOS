@@ -109,6 +109,8 @@ The helper infers the project from the current working directory, creates the ro
 
 The current workspace remains the baseline source of truth. The shadow lane is comparison evidence for assessing AIOS usefulness and must not be merged or copied back without explicit review.
 
+If automatic shadow routing exits `0` with `ok: true`, `governed_route: false`, `aios_route.status: "route_failed"`, and `aios_route.blocking: false`, continue the baseline task normally. That payload means AIOS recorded a diagnostic route miss and did not create a shadow worktree; it does not require approval to continue. Explicit approval is only needed when automatic shadow setup exits nonzero or cannot record diagnostic evidence. Governed `/aios` routing failures still block unless the user explicitly bypasses AIOS.
+
 ### Durable Agent Work
 
 Use a durable workspace for recurring or long-running streams of work such as release threads, quality gate threads, TMCP skill audits, repo adoption, documentation review, and external monitoring. Durable workspace state should preserve decisions, blockers, owners, dates, useful links, verification status, known pitfalls, and next actions without copying the chat transcript.

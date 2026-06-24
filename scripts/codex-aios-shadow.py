@@ -271,6 +271,8 @@ def route_failure_payload(
         "baseline": {
             "repo_path": project.get("repo_path"),
             "instruction": baseline_instruction(governed_route),
+            "approval_required": governed_route,
+            "can_continue_without_shadow": not governed_route,
         },
         "aios_route": {
             "status": "route_failed",
@@ -285,7 +287,7 @@ def route_failure_payload(
         },
         "compare_policy": {
             "source_of_truth": "baseline current workspace",
-            "shadow_rule": "no shadow worktree was created because AIOS routing failed",
+            "shadow_rule": shadow_route_failure_rule(governed_route),
             "route_rule": route_rule(governed_route),
             "useful_evidence": [
                 "objective text",
@@ -296,6 +298,15 @@ def route_failure_payload(
             ],
         },
     }
+
+
+def shadow_route_failure_rule(governed_route: bool) -> str:
+    if governed_route:
+        return "no shadow worktree was created because governed AIOS routing failed"
+    return (
+        "no shadow worktree was created because automatic AIOS routing failed; "
+        "this is diagnostic evidence only and does not require user approval to continue"
+    )
 
 
 def record_route_failure(

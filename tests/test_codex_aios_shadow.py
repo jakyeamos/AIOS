@@ -92,7 +92,10 @@ def test_route_failure_payload_marks_automatic_shadow_non_blocking() -> None:
     assert payload["ok"] is True
     assert payload["aios_route"]["status"] == "route_failed"
     assert payload["aios_route"]["blocking"] is False
+    assert payload["baseline"]["approval_required"] is False
+    assert payload["baseline"]["can_continue_without_shadow"] is True
     assert payload["baseline"]["instruction"].startswith("Continue the baseline task normally")
+    assert "does not require user approval" in payload["compare_policy"]["shadow_rule"]
     assert payload["diagnostics"]["path"] == "/repo/data/aios-route-failures.jsonl"
 
 
