@@ -1353,10 +1353,10 @@ Plans:
 **Initial scope:** Service module skeleton, schema constants, deterministic profile selection, artifact validation, artifact writing, Soundscape visual-polish fixture, evidence-backed audit builder, remediation-slice builder, and optional handoff builder.
 **Requirements**: TBD
 **Depends on:** Phase 25
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
-- [ ] 26-01 Expert review service contracts and artifact writers
+- [x] 26-01 Expert review service contracts and artifact writers
 - [ ] 26-02 Evidence fixture, audit builder, and implementation handoff
 
 ### Phase 27: Expert rubric remediation workflow runtime
