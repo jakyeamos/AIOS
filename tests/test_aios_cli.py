@@ -3517,6 +3517,50 @@ def test_packet_and_benchmark_cli_json_paths(tmp_path: Path, capsys) -> None:
     assert normalize_output["data"]["final_status"] == "success"
 
 
+def test_tmcp_review_plan_writes_expert_review_artifacts(tmp_path: Path, capsys) -> None:
+    project = tmp_path / "target-project"
+    output_dir = tmp_path / "review-output"
+    project.mkdir()
+    (project / "README.md").write_text("# Target\n", encoding="utf-8")
+    evidence_item = {
+        "dimension_id": "source_grounding",
+        "severity": "warning",
+        "summary": "Review findings need source-backed evidence.",
+        "evidence": ["src/app/page.tsx:12"],
+        "recommended_fix": "Keep review findings tied to concrete source references.",
+    }
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "tmcp",
+            "review-plan",
+            "Review UI polish with TMCP and create a remediation plan",
+            "--project-path",
+            str(project),
+            "--output-dir",
+            str(output_dir),
+            "--evidence-json",
+            json.dumps(evidence_item),
+            "--selected-slice-id",
+            "slice-1",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    payload = json.loads(capsys.readouterr().out)
+    data = payload["data"]
+    assert data["workflow_key"] == "expert_rubric_remediation_v1"
+    assert all(row["passed"] for row in data["validations"])
+    assert data["remediation_slices"][0]["id"] == "slice-1"
+    artifact_paths = data["artifact_paths"]
+    assert Path(artifact_paths["rubric_json"]).exists()
+    assert Path(artifact_paths["audit_report_json"]).exists()
+    assert Path(artifact_paths["implementation_handoff_json"]).exists()
+    assert output_dir in Path(artifact_paths["rubric_json"]).parents
+    assert not (project / ".aios").exists()
+
+
 def test_start_work_creates_packet_and_links_current_session(tmp_path: Path, capsys) -> None:
     db_path = tmp_path / "aios.db"
     logs_dir = tmp_path / "logs"
