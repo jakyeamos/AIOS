@@ -148,14 +148,14 @@ Current strict-readiness distribution from `config/quality-pipeline.json`:
 | --- | ---: | --- |
 | `ready` | 0 | No active linked repo has complete strict evidence yet. |
 | `evidence_required` | 2 | Class gates are substantially configured, but fresh local/remote proof is still missing. |
-| `blocked` | 21 | Real gates, CI/default proof, architecture/security validation, repo truth, or aggregate evidence are still missing. |
+| `blocked` | 21 | Real gates, local CI proof, architecture/security validation, repo truth, or aggregate evidence are still missing. |
 
 Repos currently in `evidence_required`:
 
 | Repo | Reason |
 | --- | --- |
 | soundscape-app | Full class gate configuration exists, but fresh local and remote evidence is still required. |
-| AIOS | Platform-control-plane gates exist, but fresh Phase 23 quality-pipeline evidence, standards-health proof, and default-branch CI proof are still required; dirty-tree cleanup is deferred to closeout hygiene. |
+| AIOS | Platform-control-plane gates exist, but fresh Phase 23 quality-pipeline evidence, standards-health proof, and local CI proof are still required; dirty-tree cleanup is deferred to closeout hygiene. |
 
 All other active linked repos remain `blocked` until their class-specific maturation blockers in `config/quality-pipeline.json` are resolved. Dirty-tree notes remain visible for closeout hygiene but are not treated as the primary adoption-readiness blocker.
 
@@ -425,17 +425,21 @@ Neither content/container repo is ready. Plan 24-09 owns CI/default proof and no
 
 ### Phase 24 Plan 24-09 CI/Exception Decision
 
-The user selected `no-exceptions` for non-remote CI exceptions on 2026-06-24. No `non_remote_ci_exception` objects were added.
+The initial Plan 24-09 closeout recorded `no-exceptions` for non-remote CI exceptions. After the user clarified that GitHub Actions credits are constrained across the linked-repo portfolio, the policy was superseded on 2026-06-24: local CI replacement proof is allowed for the 21 in-scope repos.
+
+`config/quality-pipeline.json` now records `non_remote_ci_exception` metadata for all 21 in-scope repos. Each exception points to `python3 scripts/linked-repo-quality-runner.py --project <repo> --gate ci` and `quality_pipeline_runs.ci` as the replacement evidence path.
 
 `python3 scripts/linked-repo-quality-runner.py --report` still reports `ready_count: 0`, `blocked_count: 21`, `evidence_required_count: 0`, and `excluded_count: 2`. `video-pipeline` and `agent-router` remain excluded.
 
-Every in-scope repo still has `ci_default_proof_missing`. Existing `ci` evidence rows are local blocked records or workflow-file presence records, not default-branch pass proof. Phase 24 closeout must therefore preserve a blocked-readiness ledger rather than claiming portfolio readiness.
+No repo is made ready by the exception alone. Every in-scope repo still has `ci` in `missing_gate_keys` until its local replacement proof records a passing `ci` run. Phase 24 closeout must therefore preserve a blocked-readiness ledger rather than claiming portfolio readiness.
 
 ### Phase 24 Final Verification
 
 Phase 24 closes with `.planning/phases/24-rectify-linked-repo-aios-readiness-blockers-except-agent-router/24-VERIFICATION.md` as the final ledger.
 
 Final scope is 21 in-scope repositories and 2 excluded repositories. `agent-router` is excluded by the original Phase 24 scope, and `video-pipeline` is excluded because the user clarified on 2026-06-24 that the video pipeline is deprecated.
+
+The final ledger allows local CI replacement proof because GitHub Actions credits are constrained. This removes `ci_default_proof_missing` from the blocker set, but it does not skip CI; the local replacement `ci` gate must pass and be recorded before readiness can clear.
 
 Final readiness distribution from `python3 scripts/linked-repo-quality-runner.py --report`:
 

@@ -48,7 +48,7 @@ AIOS linked-project adoption contracts now cover the active source inventory:
 - Phase 23 now owns linked-repository strict release-readiness maturation after Phase 22 as eight GSD-standard plans covering audit, class-based contracts, class-specific repo maturation, evidence reporting, final verification, CI/default-branch proof, and explicit treatment of dirty trees as lower-priority closeout hygiene rather than the main adoption blocker
 - Phase 23 execution produced `.planning/phases/23-mature-linked-repositories-to-aios-strict-release-readiness/23-VERIFICATION.md`: 23 active repo contracts validate, copied and live all-inventory standards-health proof record 23 snapshots with no missing-source contamination, but strict adoption readiness remains blocked with 0 ready repos, 2 evidence-required repos (`soundscape-app`, AIOS), and 21 blocked repos
 - BBDSE is no longer represented as mature by `git diff --check`; it is a blocked container repo with delegated subproject pre-cr gates and still needs aggregate evidence, child-project ownership, and CI or an explicit non-remote exception before readiness
-- Phase 24 Plan 24-02 recorded fresh local evidence rows for `soundscape-app` and AIOS through `scripts/linked-repo-quality-runner.py`; both repos remain blocked rather than ready because several gates failed or remain blocked, and CI/default-branch proof was not verified locally
+- Phase 24 Plan 24-02 recorded fresh local evidence rows for `soundscape-app` and AIOS through `scripts/linked-repo-quality-runner.py`; both repos remain blocked rather than ready because several gates failed or remain blocked, and local replacement CI proof has not passed
 
 ## Implemented On 2026-06-23
 
@@ -1536,7 +1536,7 @@ The spec execution roadmap has been corrected before execution:
 
 - Added real local production-web gate surfaces in `portfolio`, `dispatches-from-cyberspace`, `Bballedu`, and `tm`, then registered matching commands in AIOS quality-pipeline and quality-gate config.
 - Recorded fresh local evidence for every attempted gate in those four repos and updated the linked-repo adoption audit with pass/fail evidence IDs.
-- Current truth: all four repos remain blocked. `portfolio` still needs CI/default, coverage, SEO, full e2e, and Pre-CR proof; `dispatches-from-cyberspace`, `Bballedu`, and `tm` still have failed gates plus architecture/CI/default proof gaps.
+- Current truth: all four repos remain blocked. `portfolio` still needs local CI, coverage, SEO, full e2e, and Pre-CR proof; `dispatches-from-cyberspace`, `Bballedu`, and `tm` still have failed gates plus architecture and local CI proof gaps.
 
 ## 2026-06-24 - Phase 24 targeted production app evidence
 
@@ -1549,38 +1549,39 @@ The spec execution roadmap has been corrected before execution:
 - Added developer-tool secret scan and dependency-security gates for `Terrace`, `pre-cr-suite-lsp`, and `eslint-plugin-anti-slop`, then registered the matching commands in AIOS quality-pipeline and quality-gate config.
 - Updated the quality-pipeline standard so `secret_scan` and `dependency_security` apply to `developer_tool` projects, making package/tool security evidence visible in readiness reports.
 - `video-pipeline` is deprecated and excluded from Phase 24 readiness targeting alongside `agent-router`; the failed local readiness migration attempt was reverted and no readiness claim is made for that repo.
-- Current truth: all three active developer-tool repos in Plan 24-05 remain blocked on architecture, CI/default proof, and repo-specific failing or missing gates.
+- Current truth: all three active developer-tool repos in Plan 24-05 remain blocked on architecture, local CI proof, and repo-specific failing or missing gates.
 
 ## 2026-06-24 - Phase 24 structured repo evidence
 
 - Registered class-specific structure, secret scan, dependency, and validation gates for `LIS`, `career-ops`, `Dsci-proj`, and `Fantasy` using AIOS-owned quality-pipeline commands.
 - `Fantasy` now uses aggregate backend/frontend install, test, and validation commands instead of backend-only proof.
 - `Dsci-proj` keeps npm as the dashboard subproject package manager because `apps/dashboard/package-lock.json` is the checked-in lockfile; no pnpm migration was introduced.
-- Current truth: all four Plan 24-06 repos remain blocked. `LIS`, `career-ops`, `Dsci-proj`, and `Fantasy` have recorded pass/fail evidence, but failed local gates and CI/default proof still prevent readiness.
+- Current truth: all four Plan 24-06 repos remain blocked. `LIS`, `career-ops`, `Dsci-proj`, and `Fantasy` have recorded pass/fail evidence, but failed local gates and local CI proof still prevent readiness.
 
 ## 2026-06-24 - Phase 24 floor-replacement repo evidence
 
 - Replaced floor-style validation for `claude-improvement-lab`, `R-Project`, `csds391-s26-6`, and `manga-sync` with bounded class-specific AIOS quality-pipeline gates.
 - Recorded evidence for runnable validation, structure, secret scan, dependency, repo-truth, and Pre-CR gates without changing external repo files.
-- Current truth: all four Plan 24-07 repos remain blocked. `manga-sync` is still only a reserved README-level workspace, and CI/default proof or explicit non-remote exceptions remain for Plan 24-09.
+- Current truth: all four Plan 24-07 repos remain blocked. `manga-sync` is still only a reserved README-level workspace, and local CI proof remains required.
 
 ## 2026-06-24 - Phase 24 content/container evidence
 
 - Added `scripts/content-container-validator.py` for AIOS-owned Vaults and BBDSE validation.
 - Documented the Vaults validation contract in external commit `26e38ed` and BBDSE child-project ownership in external commit `ffd3b4c`.
-- `Vaults` now has evidence for content/vault validation, but remains blocked on failing validator, secret scan, Pre-CR, and CI/default proof.
-- `BBDSE` now has child ownership documentation and aggregate delegated validation evidence, but remains blocked on failing delegated child Pre-CR evidence and CI/default proof.
+- `Vaults` now has evidence for content/vault validation, but remains blocked on failing validator, secret scan, Pre-CR, and local CI proof.
+- `BBDSE` now has child ownership documentation and aggregate delegated validation evidence, but remains blocked on failing delegated child Pre-CR evidence and local CI proof.
 
 ## 2026-06-24 - Phase 24 CI exception decision
 
-- Non-remote CI exceptions were not approved for Phase 24.
-- No `non_remote_ci_exception` objects were added to `config/quality-pipeline.json`.
-- Current truth: all 21 Phase 24 in-scope repos remain blocked, every in-scope repo still carries `ci_default_proof_missing`, and `video-pipeline` plus `agent-router` remain excluded.
+- Non-remote CI exceptions are approved for Phase 24 after the user clarified that GitHub Actions credits are constrained across the linked repository portfolio.
+- `config/quality-pipeline.json` now records `non_remote_ci_exception` metadata for all 21 in-scope repos with local proof commands that write to `quality_pipeline_runs.ci`.
+- Current truth: all 21 Phase 24 in-scope repos remain blocked until their local replacement `ci` gate passes, and `video-pipeline` plus `agent-router` remain excluded.
 
 ## 2026-06-24 - Phase 24 final linked-repo readiness ledger
 
 - Closed Phase 24 with `.planning/phases/24-rectify-linked-repo-aios-readiness-blockers-except-agent-router/24-VERIFICATION.md`.
 - Final Phase 24 scope is 21 in-scope repositories, with `agent-router` excluded by original scope and `video-pipeline` excluded because the user clarified the video pipeline is deprecated.
-- Final verdict distribution is 0 ready, 0 evidence-required, 21 blocked, and 2 excluded; no linked repo should be represented as adoption-ready from Phase 24 evidence.
+- Final verdict distribution remains 0 ready, 0 evidence-required, 21 blocked, and 2 excluded; no linked repo should be represented as adoption-ready from Phase 24 evidence.
+- Local CI replacement proof is allowed for the 21 in-scope repos, but it is not a CI skip: each repo still needs a passing recorded `ci` run before readiness can clear.
 - Copied and live `prove-project-health --all-inventory` both recorded 23 snapshots with 0 missing-source and 0 missing-inventory rows.
 - Fixed the Phase 24 readiness-report placeholder-row regression in commit `7f9516e5`; report generation now keeps project inventory read-only except for table creation.

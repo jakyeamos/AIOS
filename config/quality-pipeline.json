@@ -293,7 +293,7 @@
           "ci",
           "e2e_smoke"
         ],
-        "readiness_note": "Public apps require release confidence, environment checks, secret/dependency safety, smoke or e2e coverage, and CI/default-branch proof."
+        "readiness_note": "Public apps require release confidence, environment checks, secret/dependency safety, smoke or e2e coverage, and remote CI proof or approved local CI replacement proof."
       },
       "developer_tool_package": {
         "label": "Developer tool/package",
@@ -1574,7 +1574,7 @@
       },
       "repo_class": "python_data_research_course",
       "maturation_blockers": [
-        "Course structure validation replaces pre-cr-only floor proof, but assignment-specific tests/builds and CI/default or explicit non-remote exception remain required before readiness."
+        "Course structure validation replaces pre-cr-only floor proof, but assignment-specific tests/builds and local CI proof remain required before readiness."
       ],
       "strict_readiness_status": "blocked",
       "non_remote_ci_exception": {
@@ -1632,7 +1632,7 @@
       },
       "repo_class": "python_data_research_course",
       "maturation_blockers": [
-        "Reserved empty workspace has explicit README-only validation, but implementation files, data-sync tests, dependency contract, and CI/default or explicit inactive exception remain required before readiness."
+        "Reserved empty workspace has explicit README-only validation, but implementation files, data-sync tests, dependency contract, and local CI proof remain required before readiness."
       ],
       "strict_readiness_status": "blocked",
       "non_remote_ci_exception": {
@@ -1695,7 +1695,7 @@
       "repo_class": "content_vault_container",
       "strict_readiness_status": "blocked",
       "maturation_blockers": [
-        "Vault content validation is configured, but failing vault/protected-path evidence, Pre-CR status, and CI/default or explicit non-remote exception remain required before readiness."
+        "Vault content validation is configured, but failing vault/protected-path evidence, Pre-CR status, and local CI proof remain required before readiness."
       ],
       "non_remote_ci_exception": {
         "owner": "jakyeamos",
@@ -1775,7 +1775,7 @@
       "blocked_reason": "floor_only contract: requires aggregate or delegated subproject validation before adoption readiness.",
       "strict_readiness_status": "blocked",
       "maturation_blockers": [
-        "Child ownership is documented and aggregate delegated validation is configured, but any failing child Pre-CR evidence plus CI/default or explicit non-remote exception remain required before readiness."
+        "Child ownership is documented and aggregate delegated validation is configured, but any failing child Pre-CR evidence plus local CI proof remain required before readiness."
       ],
       "non_remote_ci_exception": {
         "owner": "jakyeamos",

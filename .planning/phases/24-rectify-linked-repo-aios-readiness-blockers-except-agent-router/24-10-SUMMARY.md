@@ -10,8 +10,8 @@
 
 ## Verification
 
-- `uv run pytest -q tests/test_quality_gates.py tests/test_commit_quality_ladder.py tests/test_tier_one_regressions.py tests/test_quality_pipeline.py tests/test_linked_repo_readiness.py`: pass, 36 tests in original closeout.
-- `pnpm context:validate`: pass in original closeout.
+- `uv run pytest -q tests/test_quality_gates.py tests/test_commit_quality_ladder.py tests/test_tier_one_regressions.py tests/test_quality_pipeline.py tests/test_linked_repo_readiness.py`: pass, 37 tests after local CI exception update.
+- `pnpm context:validate`: pass after local CI exception update.
 - Copied DB `prove-project-health --all-inventory`: pass, 23 snapshots, 0 missing-source, 0 missing-inventory.
 - Live DB `prove-project-health --all-inventory`: pass, 23 snapshots, 0 missing-source, 0 missing-inventory.
 - `python3 scripts/linked-repo-quality-runner.py --report`: 21 targets, 0 ready, 0 evidence-required, 21 blocked, 2 excluded.
