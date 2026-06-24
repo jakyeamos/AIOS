@@ -338,6 +338,97 @@ def validate_audit_report(report: dict[str, Any]) -> ValidationResult:
     return {"validation_key": "findings_have_evidence", "passed": not issues, "issues": issues}
 
 
+def _severity_rank(severity: str) -> int:
+    return {"blocker": 0, "warning": 1, "observation": 2}.get(severity, 1)
+
+
+def _severity_score(severity: str) -> int:
+    return {"blocker": 1, "warning": 2, "observation": 3}.get(severity, 2)
+
+
+def _rubric_dimensions(rubric: dict[str, Any]) -> list[dict[str, Any]]:
+    dimensions = rubric.get("dimensions", [])
+    if not isinstance(dimensions, list):
+        return []
+    return [dimension for dimension in dimensions if isinstance(dimension, dict)]
+
+
+def _coerce_dimension_id(dimension_id: object, dimensions: list[dict[str, Any]]) -> str:
+    known_ids = [str(dimension.get("id", "")) for dimension in dimensions]
+    candidate = str(dimension_id)
+    if candidate in known_ids:
+        return candidate
+    return next((known_id for known_id in known_ids if known_id), "general_review")
+
+
+def build_audit_report(
+    *,
+    rubric: dict[str, Any],
+    evidence_items: list[dict[str, Any]],
+    run_id: str,
+) -> dict[str, Any]:
+    dimensions = _rubric_dimensions(rubric)
+    evidence_by_dimension: dict[str, list[str]] = {}
+    gaps_by_dimension: dict[str, list[str]] = {}
+    findings: list[dict[str, Any]] = []
+    sorted_items = sorted(
+        enumerate(evidence_items),
+        key=lambda indexed_item: _severity_rank(str(indexed_item[1].get("severity", "warning"))),
+    )
+
+    for finding_index, (_, item) in enumerate(sorted_items, start=1):
+        dimension_id = _coerce_dimension_id(item.get("dimension_id", ""), dimensions)
+        severity = str(item.get("severity", "warning"))
+        if severity not in {"blocker", "warning", "observation"}:
+            severity = "warning"
+        evidence = _string_list(item.get("evidence", []))
+        evidence_by_dimension.setdefault(dimension_id, []).extend(evidence)
+        findings.append(
+            {
+                "id": f"finding-{dimension_id}-{finding_index}",
+                "severity": severity,
+                "dimension_id": dimension_id,
+                "summary": str(item.get("summary", "")),
+                "evidence": evidence,
+                "recommended_fix": str(item.get("recommended_fix", "")),
+            }
+        )
+
+    scores: list[dict[str, Any]] = []
+    for dimension in dimensions:
+        dimension_id = str(dimension.get("id", ""))
+        matching_findings = [
+            finding for finding in findings if finding.get("dimension_id") == dimension_id
+        ]
+        evidence = evidence_by_dimension.get(dimension_id, [])
+        if matching_findings:
+            score = min(_severity_score(str(finding["severity"])) for finding in matching_findings)
+            confidence = "high" if evidence else "low"
+            gaps = gaps_by_dimension.get(dimension_id, [])
+        else:
+            score = 0
+            confidence = "low"
+            gaps = [f"No evidence supplied for {dimension_id}."]
+        scores.append(
+            {
+                "dimension_id": dimension_id,
+                "score": score,
+                "confidence": confidence,
+                "evidence": evidence,
+                "gaps": gaps,
+            }
+        )
+
+    return {
+        "schema": AUDIT_REPORT_SCHEMA,
+        "run_id": run_id,
+        "rubric": "rubric.json",
+        "scores": scores,
+        "findings": findings,
+        "deferred_scope": [],
+    }
+
+
 def build_remediation_plan(*, audit_report: dict[str, Any], run_id: str) -> dict[str, Any]:
     slices: list[dict[str, Any]] = []
     for index, finding in enumerate(audit_report.get("findings", []), start=1):
@@ -366,6 +457,50 @@ def build_remediation_plan(*, audit_report: dict[str, Any], run_id: str) -> dict
         "run_id": run_id,
         "slices": slices,
         "deferred_scope": _string_list(audit_report.get("deferred_scope", [])),
+    }
+
+
+def build_implementation_handoff(
+    *,
+    remediation_plan: dict[str, Any],
+    run_id: str,
+    selected_slice_id: str | None,
+) -> dict[str, Any]:
+    slices = remediation_plan.get("slices", [])
+    remediation_slices = (
+        [item for item in slices if isinstance(item, dict)] if isinstance(slices, list) else []
+    )
+    selected_slice = next(
+        (
+            item
+            for item in remediation_slices
+            if selected_slice_id is not None and item.get("id") == selected_slice_id
+        ),
+        remediation_slices[0] if remediation_slices else {},
+    )
+    resolved_slice_id = (
+        selected_slice.get("id") if isinstance(selected_slice, dict) else selected_slice_id
+    )
+    target_files = _string_list(selected_slice.get("scope", [])) if selected_slice else []
+    verification = _string_list(selected_slice.get("verification", [])) if selected_slice else []
+    risk = str(selected_slice.get("risk", "")) if selected_slice else ""
+    return {
+        "schema": IMPLEMENTATION_HANDOFF_SCHEMA,
+        "run_id": run_id,
+        "remediation_plan": "remediation-plan.json",
+        "selected_slice_id": resolved_slice_id,
+        "selected_slice": selected_slice,
+        "requires_user_approval": True,
+        "follow_up_workflow": "implementation-delivery",
+        "artifact_inputs": [
+            "expertise-packet.json",
+            "rubric.json",
+            "audit-report.json",
+            "remediation-plan.json",
+        ],
+        "target_files": target_files,
+        "acceptance_criteria": verification,
+        "known_risks": [risk] if risk else [],
     }
 
 

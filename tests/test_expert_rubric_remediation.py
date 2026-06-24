@@ -193,9 +193,13 @@ def test_soundscape_fixture_builds_evidence_backed_audit_and_plan() -> None:
 
     assert validate_audit_report(audit)["passed"] is True
     assert validate_remediation_plan(remediation)["passed"] is True
-    assert audit["findings"][0]["evidence"] == [
-        "packages/web/src/components/feed/FeedItem.tsx:427"
-    ]
+    assert audit["findings"][0]["evidence"] == ["packages/web/src/components/feed/FeedItem.tsx:427"]
     assert remediation["slices"][0]["follow_up_workflow"] == "implementation-delivery"
     assert handoff["selected_slice_id"] == "slice-1"
     assert handoff["requires_user_approval"] is True
+    assert handoff["artifact_inputs"] == [
+        "expertise-packet.json",
+        "rubric.json",
+        "audit-report.json",
+        "remediation-plan.json",
+    ]
