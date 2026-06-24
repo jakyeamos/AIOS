@@ -158,3 +158,17 @@ Repos currently in `evidence_required`:
 | AIOS | Platform-control-plane gates exist, but fresh Phase 23 quality-pipeline evidence, standards-health proof, and default-branch CI proof are still required; dirty-tree cleanup is deferred to closeout hygiene. |
 
 All other active linked repos remain `blocked` until their class-specific maturation blockers in `config/quality-pipeline.json` are resolved. Dirty-tree notes remain visible for closeout hygiene but are not treated as the primary adoption-readiness blocker.
+
+## Phase 24 Readiness Report
+
+Phase 24 excludes `agent-router` from remediation scope and uses an AIOS-owned report surface before repo-specific fixes begin:
+
+```bash
+python3 scripts/linked-repo-quality-runner.py --report
+```
+
+The report returns JSON with `target_count`, `excluded_count`, `ready_count`, `blocked_count`, `evidence_required_count`, `excluded_projects`, and per-project verdicts. Gate execution uses the same script with commands resolved from `config/quality-pipeline.json`, for example:
+
+```bash
+python3 scripts/linked-repo-quality-runner.py --project soundscape-app --gate lint --dry-run
+```
