@@ -168,7 +168,9 @@ from services.tmcp_runtime import (
 )
 from services.verifier_artifacts import list_verifier_artifacts, validate_closeout_verification
 from services.workflow_orchestration import (
+    WorkflowExecutionContext,
     developer_experience_capability_report,
+    execute_workflow,
     load_developer_experience_capability_pack,
     load_workflow_registry,
     recommend_workflow_from_health,
@@ -441,6 +443,64 @@ def _parse_json_value(raw: str) -> Any:
         return json.loads(raw)
     except json.JSONDecodeError:
         return raw
+
+
+def _parse_review_plan_evidence(raw: str) -> tuple[dict[str, Any], ...]:
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise CLIError(
+            "invalid-evidence-json",
+            f"--evidence-json must be valid JSON: {exc.msg}",
+            EXIT_USAGE,
+        ) from exc
+    if isinstance(parsed, dict):
+        return (parsed,)
+    if isinstance(parsed, list) and all(isinstance(item, dict) for item in parsed):
+        return tuple(parsed)
+    raise CLIError(
+        "invalid-evidence-json",
+        "--evidence-json must be a JSON object or an array of objects.",
+        EXIT_USAGE,
+    )
+
+
+def _tmcp_review_plan_payload(args: argparse.Namespace) -> dict[str, Any]:
+    run_id = f"tmcp-review-plan-{uuid.uuid4().hex[:8]}"
+    project_path = Path(args.project_path).expanduser().resolve()
+    output_dir = Path(args.output_dir).expanduser().resolve()
+    evidence_items = _parse_review_plan_evidence(args.evidence_json)
+    packet = compile_tmcp_packet(
+        objective=args.objective,
+        project_path=str(project_path),
+        phase="planning",
+    )
+    report = execute_workflow(
+        WorkflowExecutionContext(
+            objective=args.objective,
+            workflow_key="expert_rubric_remediation_v1",
+            repo_path=str(output_dir),
+            run_id=run_id,
+            tmcp_packet=packet,
+            evidence_items=evidence_items,
+            selected_slice_id=args.selected_slice_id,
+        )
+    )
+    artifacts = report["artifacts"]
+    remediation_plan = artifacts.get("expert_remediation_plan")
+    remediation_slices = (
+        remediation_plan.get("slices", []) if isinstance(remediation_plan, dict) else []
+    )
+    return {
+        "schema": "aios-tmcp-review-plan-result-v0.1",
+        "workflow_key": report["workflow_key"],
+        "run_id": report["run_id"],
+        "status": report["status"],
+        "validations": report["validations"],
+        "artifact_paths": artifacts.get("expert_review_artifact_paths", {}),
+        "remediation_slices": remediation_slices,
+        "implementation_handoff": artifacts.get("expert_implementation_handoff"),
+    }
 
 
 def _resumable_runs(conn: sqlite3.Connection, limit: int = 5) -> list[dict[str, Any]]:
@@ -5130,9 +5190,7 @@ def create_parser() -> argparse.ArgumentParser:
     evidence_parser.add_argument("--limit", type=int, default=50)
     evidence_parser.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
-    verifier_parser = subparsers.add_parser(
-        "verifier", help="Inspect durable verifier artifacts"
-    )
+    verifier_parser = subparsers.add_parser("verifier", help="Inspect durable verifier artifacts")
     verifier_parser.add_argument("--run-id", default=None)
     verifier_parser.add_argument("--session-id", default=None)
     verifier_parser.add_argument("--workflow-key", default=None)
@@ -5893,9 +5951,13 @@ def create_parser() -> argparse.ArgumentParser:
         help="When used with --repair, rewrite skills.tmcp/graph.json from current library metadata",
     )
 
-    tmcp_parser = subparsers.add_parser("tmcp", help="Compile, inspect, and learn from TMCP packets")
+    tmcp_parser = subparsers.add_parser(
+        "tmcp", help="Compile, inspect, and learn from TMCP packets"
+    )
     tmcp_subparsers = tmcp_parser.add_subparsers(dest="tmcp_command", required=True)
-    tmcp_explain = tmcp_subparsers.add_parser("explain", help="Explain a prompt-specific TMCP packet")
+    tmcp_explain = tmcp_subparsers.add_parser(
+        "explain", help="Explain a prompt-specific TMCP packet"
+    )
     tmcp_explain.add_argument("objective", help="Natural language task objective")
     tmcp_explain.add_argument("--project-path", default=None, help="Optional project path scope")
     tmcp_explain.add_argument("--phase", default=None, help="Optional TMCP phase hint")
@@ -5911,7 +5973,9 @@ def create_parser() -> argparse.ArgumentParser:
         help="Summarize TMCP node and behavior-atom ROI from receipts",
     )
     tmcp_learning.add_argument("--task-id", default=None, help="Optional task id filter")
-    tmcp_learning.add_argument("--limit", type=int, default=200, help="Maximum receipts to summarize")
+    tmcp_learning.add_argument(
+        "--limit", type=int, default=200, help="Maximum receipts to summarize"
+    )
     tmcp_learning.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
     tmcp_feedback = tmcp_subparsers.add_parser(
         "receipt-feedback",
@@ -5957,7 +6021,9 @@ def create_parser() -> argparse.ArgumentParser:
         help="JSON value describing observed run evidence",
     )
     tmcp_adherence.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
-    tmcp_event = tmcp_subparsers.add_parser("record-event", help="Record a granular TMCP receipt event")
+    tmcp_event = tmcp_subparsers.add_parser(
+        "record-event", help="Record a granular TMCP receipt event"
+    )
     tmcp_event.add_argument("--receipt-id", default=None)
     tmcp_event.add_argument("--run-id", default=None)
     tmcp_event.add_argument("--invocation-id", default=None)
@@ -5991,6 +6057,32 @@ def create_parser() -> argparse.ArgumentParser:
     )
     tmcp_shortcut.add_argument("--shortcut-json", required=True)
     tmcp_shortcut.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    tmcp_review_plan = tmcp_subparsers.add_parser(
+        "review-plan",
+        help="Compile TMCP expertise and write expert rubric remediation artifacts",
+    )
+    tmcp_review_plan.add_argument("objective", help="Natural language review objective")
+    tmcp_review_plan.add_argument(
+        "--project-path",
+        default=".",
+        help="Target project path used for TMCP packet compilation",
+    )
+    tmcp_review_plan.add_argument(
+        "--output-dir",
+        required=True,
+        help="Directory where review artifacts will be written",
+    )
+    tmcp_review_plan.add_argument(
+        "--evidence-json",
+        default="[]",
+        help="JSON object or array of evidence objects",
+    )
+    tmcp_review_plan.add_argument(
+        "--selected-slice-id",
+        default=None,
+        help="Optional remediation slice id to include in the implementation handoff",
+    )
+    tmcp_review_plan.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     corpus_parser = subparsers.add_parser("corpus", help="Corpus evaluation harness")
     corpus_subparsers = corpus_parser.add_subparsers(dest="corpus_command", required=True)
@@ -6380,10 +6472,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
                 for raw in args.omitted_requirement_json
                 if _parse_json_object(raw)
             ]
-            validation_evidence = [
-                _parse_json_value(raw)
-                for raw in args.validation_evidence_json
-            ]
+            validation_evidence = [_parse_json_value(raw) for raw in args.validation_evidence_json]
             data = update_tmcp_receipt_feedback(
                 conn,
                 receipt_id=args.receipt_id,
@@ -6452,9 +6541,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
                 _parse_json_object(args.after_json),
             )
         elif args.command == "tmcp" and args.tmcp_command == "shortcut-governance":
-            data = shortcut_governance_recommendation(
-                _parse_json_object(args.shortcut_json)
-            )
+            data = shortcut_governance_recommendation(_parse_json_object(args.shortcut_json))
+        elif args.command == "tmcp" and args.tmcp_command == "review-plan":
+            data = _tmcp_review_plan_payload(args)
         elif args.command == "harness-active-readiness":
             data = active_readiness()
         elif args.command == "start-work":
@@ -6524,9 +6613,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             data = verify_tmcp_graph(
                 Path(args.library),
                 graph_profile_path=(
-                    Path(args.graph_profile).expanduser().resolve()
-                    if args.graph_profile
-                    else None
+                    Path(args.graph_profile).expanduser().resolve() if args.graph_profile else None
                 ),
                 repair=bool(args.repair),
                 refresh=bool(args.refresh),

@@ -3561,6 +3561,33 @@ def test_tmcp_review_plan_writes_expert_review_artifacts(tmp_path: Path, capsys)
     assert not (project / ".aios").exists()
 
 
+def test_tmcp_review_plan_rejects_malformed_evidence_json(tmp_path: Path, capsys) -> None:
+    project = tmp_path / "target-project"
+    output_dir = tmp_path / "review-output"
+    project.mkdir()
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "tmcp",
+            "review-plan",
+            "Review UI polish with TMCP and create a remediation plan",
+            "--project-path",
+            str(project),
+            "--output-dir",
+            str(output_dir),
+            "--evidence-json",
+            "{bad-json",
+        ]
+    )
+
+    assert exit_code == aios_cli.EXIT_USAGE
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ok"] is False
+    assert payload["error"]["code"] == "invalid-evidence-json"
+    assert "valid JSON" in payload["error"]["message"]
+
+
 def test_start_work_creates_packet_and_links_current_session(tmp_path: Path, capsys) -> None:
     db_path = tmp_path / "aios.db"
     logs_dir = tmp_path / "logs"
