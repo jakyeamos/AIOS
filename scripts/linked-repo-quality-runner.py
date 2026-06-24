@@ -140,16 +140,29 @@ def _record_result(
     return run_id
 
 
-def _run_gate(gate: ResolvedGate) -> tuple[GateStatus, list[str]]:
+def _run_gate(gate: ResolvedGate, *, timeout_seconds: int) -> tuple[GateStatus, list[str]]:
     started = datetime.now(UTC).isoformat()
-    result = subprocess.run(
-        gate["command"],
-        cwd=Path(gate["working_directory"]).expanduser(),
-        shell=True,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
+    try:
+        result = subprocess.run(
+            gate["command"],
+            cwd=Path(gate["working_directory"]).expanduser(),
+            shell=True,
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired as exc:
+        evidence = [
+            f"started_at={started}",
+            f"timeout_seconds={timeout_seconds}",
+            "result=timeout",
+        ]
+        if exc.stdout:
+            evidence.append(f"stdout={str(exc.stdout).strip()[-4000:]}")
+        if exc.stderr:
+            evidence.append(f"stderr={str(exc.stderr).strip()[-4000:]}")
+        return "blocked", evidence
     status: GateStatus = "pass" if result.returncode == 0 else "fail"
     evidence = [
         f"started_at={started}",
@@ -175,6 +188,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--report", action="store_true")
     parser.add_argument("--db", type=Path, default=DEFAULT_DB_PATH)
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    parser.add_argument("--timeout-seconds", type=int, default=900)
     parser.add_argument("--status", choices=["pass", "fail", "running", "stale", "missing", "blocked", "unknown"], default="pass")
     parser.add_argument("--evidence", action="append", default=[])
     return parser.parse_args()
@@ -198,7 +212,7 @@ def main() -> int:
             status: GateStatus = args.status
             evidence = list(args.evidence)
         else:
-            status, evidence = _run_gate(gate)
+            status, evidence = _run_gate(gate, timeout_seconds=args.timeout_seconds)
         completed_at = datetime.now(UTC).isoformat()
         with _connect(args.db) as conn:
             run_id = _record_result(
