@@ -45,7 +45,30 @@ def _load_config(path: Path) -> dict[str, Any]:
     return payload
 
 
-def _resolve_gate(config_path: Path, project_id: str, gate_key: str) -> ResolvedGate:
+def _project_repo_path(db_path: Path, project_id: str) -> Path | None:
+    if not db_path.exists():
+        return None
+    with sqlite3.connect(str(db_path)) as conn:
+        row = conn.execute(
+            "SELECT repo_path FROM projects WHERE id = ? OR name = ? LIMIT 1",
+            (project_id, project_id),
+        ).fetchone()
+    if row is None or not row[0]:
+        return None
+    return Path(str(row[0])).expanduser()
+
+
+def _resolve_working_directory(db_path: Path, project_id: str, configured: str) -> str:
+    configured_path = Path(configured).expanduser()
+    if configured_path.is_absolute():
+        return str(configured_path)
+    repo_path = _project_repo_path(db_path, project_id)
+    if repo_path is None:
+        return str(configured_path)
+    return str(repo_path / configured_path)
+
+
+def _resolve_gate(config_path: Path, db_path: Path, project_id: str, gate_key: str) -> ResolvedGate:
     if project_id in DEFAULT_EXCLUDED_PROJECT_IDS:
         raise ValueError(f"{project_id} is excluded from Phase 24 readiness execution")
     projects = _load_config(config_path).get("projects")
@@ -69,12 +92,17 @@ def _resolve_gate(config_path: Path, project_id: str, gate_key: str) -> Resolved
     if not isinstance(command, str) or not command.strip():
         raise ValueError(f"Gate {gate_key} for {project_id} has no AIOS-owned command")
     working_directory = gate.get("working_directory")
+    configured_working_directory = str(working_directory).strip() if working_directory else "."
     return {
         "project_id": project_id,
         "gate_key": gate_key,
         "repo_class": str(project.get("repo_class")) if project.get("repo_class") else None,
         "command": command.strip(),
-        "working_directory": str(working_directory).strip() if working_directory else ".",
+        "working_directory": _resolve_working_directory(
+            db_path,
+            project_id,
+            configured_working_directory,
+        ),
         "source": "config/quality-pipeline.json",
     }
 
@@ -161,7 +189,7 @@ def main() -> int:
             return 0
         if not args.project or not args.gate:
             raise ValueError("--project and --gate are required unless --report is used")
-        gate = _resolve_gate(args.config, args.project, args.gate)
+        gate = _resolve_gate(args.config, args.db, args.project, args.gate)
         if args.dry_run:
             _print_json({**gate, "mode": "dry_run"})
             return 0

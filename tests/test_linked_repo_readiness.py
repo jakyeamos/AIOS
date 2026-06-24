@@ -175,6 +175,30 @@ def test_runner_rejects_agent_router_and_unknown_projects(tmp_path: Path) -> Non
 
 def test_runner_dry_run_uses_aios_owned_config_command(tmp_path: Path) -> None:
     config_path = _write_config(tmp_path / "quality-pipeline.json")
+    db_path = tmp_path / "aios.db"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        """
+        CREATE TABLE projects (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          repo_path TEXT NOT NULL,
+          obsidian_path TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'active'
+        )
+        """
+    )
+    repo_path = tmp_path / "soundscape-app"
+    repo_path.mkdir()
+    conn.execute(
+        """
+        INSERT INTO projects (id, name, repo_path, obsidian_path, status)
+        VALUES ('soundscape-app', 'soundscape-app', ?, '.', 'active')
+        """,
+        (str(repo_path),),
+    )
+    conn.commit()
+    conn.close()
     script = ROOT / "scripts" / "linked-repo-quality-runner.py"
 
     result = subprocess.run(
@@ -188,6 +212,8 @@ def test_runner_dry_run_uses_aios_owned_config_command(tmp_path: Path) -> None:
             "--dry-run",
             "--config",
             str(config_path),
+            "--db",
+            str(db_path),
         ],
         check=False,
         text=True,
@@ -200,6 +226,7 @@ def test_runner_dry_run_uses_aios_owned_config_command(tmp_path: Path) -> None:
     assert payload["gate_key"] == "lint"
     assert payload["command"] == "pnpm lint"
     assert payload["source"] == "config/quality-pipeline.json"
+    assert payload["working_directory"] == str(repo_path)
     assert ".aios-quality-gate.json" not in result.stdout
 
 
