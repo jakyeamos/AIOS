@@ -1380,10 +1380,10 @@ Plans:
 **Initial scope:** `aios tmcp review-plan`, CLI artifact output, focused Ruff/format/BasedPyright/pytest gates, Vulture check, `.tracker/PROJECT_TRUTH.md` update, manual smoke run, git status review, and final implementation summary.
 **Requirements**: TBD
 **Depends on:** Phase 27
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
-- [ ] 28-01 Read-only TMCP review-plan CLI
+- [x] 28-01 Read-only TMCP review-plan CLI
 - [ ] 28-02 Focused quality gates and project truth closeout
 - [ ] 28-03 Smoke verification and implementation handoff evidence
 
