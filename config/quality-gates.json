@@ -1578,6 +1578,14 @@
               "diff",
               "--check",
               "--cached"
+            ],
+            [
+              "python3",
+              "/Users/jakyeamos/AIOS/scripts/content-container-validator.py",
+              "--project",
+              "Vaults",
+              "--repo-root",
+              "{repo_root}"
             ]
           ],
           "fullCommands": [
@@ -1585,15 +1593,23 @@
               "git",
               "diff",
               "--check"
+            ],
+            [
+              "python3",
+              "/Users/jakyeamos/AIOS/scripts/content-container-validator.py",
+              "--project",
+              "Vaults",
+              "--repo-root",
+              "{repo_root}"
             ]
           ]
         }
       },
       "adoptionMaturity": {
         "status": "class_blocked",
-        "reason": "Vault currently has pre-cr plus diff hygiene only; no mature content validation adapter exists yet.",
+        "reason": "Vaults now has an AIOS-owned content validator, but current validation evidence fails and CI/non-remote proof remains outstanding.",
         "requiredNextSteps": [
-          "No mature vault/content validator exists yet; git diff --check is only a floor. Needs link/frontmatter/protected-path/secret-free content validation plus CI or non-remote exception."
+          "Fix protected-path/content/secret findings, record passing validator evidence, and add CI/default proof or a reviewed non-remote exception."
         ]
       }
     },
@@ -1769,6 +1785,14 @@
               "git",
               "diff",
               "--check"
+            ],
+            [
+              "python3",
+              "/Users/jakyeamos/AIOS/scripts/content-container-validator.py",
+              "--project",
+              "BBDSE",
+              "--repo-root",
+              "{repo_root}"
             ]
           ],
           "fullCommands": [
@@ -1853,17 +1877,26 @@
               "git",
               "diff",
               "--check"
+            ],
+            [
+              "python3",
+              "/Users/jakyeamos/AIOS/scripts/content-container-validator.py",
+              "--project",
+              "BBDSE",
+              "--repo-root",
+              "{repo_root}",
+              "--run-delegated"
             ]
           ]
         }
       },
       "adoptionMaturity": {
         "status": "class_blocked",
-        "reason": "BBDSE now delegates validation to known subproject pre-cr configs, but aggregate evidence, CI/non-remote exception, and child-project ownership still need proof before adoption readiness.",
+        "reason": "BBDSE now has child-project ownership documentation and aggregate delegated validation, but delegated Pre-CR evidence fails and CI/non-remote proof remains outstanding.",
         "requiredNextSteps": [
-          "Run delegated subproject pre-cr checks and record quality_pipeline evidence.",
-          "Document child-project ownership and non-remote CI exception or add CI.",
-          "Keep LIS as its own active source repo; do not count BBDSE ready just because LIS has gates."
+          "Fix failing delegated child Pre-CR gates or record accepted child exceptions.",
+          "Keep LIS independent from BBDSE readiness proof.",
+          "Add CI/default proof or a reviewed non-remote exception."
         ]
       }
     }

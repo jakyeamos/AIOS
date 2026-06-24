@@ -102,7 +102,8 @@
         "applicability": [
           "production_app",
           "developer_tool",
-          "python_data_research_course"
+          "python_data_research_course",
+          "content_vault_container"
         ]
       },
       {
@@ -122,7 +123,8 @@
         "applicability": [
           "production_app",
           "developer_tool",
-          "python_data_research_course"
+          "python_data_research_course",
+          "content_vault_container"
         ]
       },
       {
@@ -1532,14 +1534,42 @@
           "working_directory": "."
         },
         "validation": {
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/content-container-validator.py --project Vaults --repo-root {repo_root}",
+          "working_directory": "."
+        },
+        "install": {
+          "command": "test -f README.md && test -d .obsidian && test -d Command-Center",
+          "working_directory": "."
+        },
+        "architecture": {
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/content-container-validator.py --project Vaults --repo-root {repo_root}",
+          "working_directory": "."
+        },
+        "secret_scan": {
+          "command": "! rg -n --hidden --glob '!*.csv' --glob '!node_modules/**' '(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|-----BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY-----)' .",
+          "working_directory": "."
+        },
+        "dependency_security": {
+          "command": "test ! -f package.json && test ! -f pyproject.toml && test ! -f requirements.txt",
+          "working_directory": "."
+        },
+        "ci": {
+          "command": ".github/workflows/aios-quality.yml",
+          "working_directory": "."
+        },
+        "lint": {
           "command": "git diff --check",
+          "working_directory": "."
+        },
+        "test": {
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/content-container-validator.py --project Vaults --repo-root {repo_root}",
           "working_directory": "."
         }
       },
       "repo_class": "content_vault_container",
       "strict_readiness_status": "blocked",
       "maturation_blockers": [
-        "No mature vault/content validator exists yet; git diff --check is only a floor. Needs link/frontmatter/protected-path/secret-free content validation plus CI or non-remote exception."
+        "Vault content validation is configured, but failing vault/protected-path evidence, Pre-CR status, and CI/default or explicit non-remote exception remain required before readiness."
       ]
     },
     {
@@ -1568,7 +1598,7 @@
       "full_pipeline": false,
       "gates": {
         "validation": {
-          "command": "delegated pre-cr checks for BBDSE subprojects",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/content-container-validator.py --project BBDSE --repo-root {repo_root} --run-delegated",
           "working_directory": "."
         },
         "repo_truth": {
@@ -1576,11 +1606,35 @@
           "working_directory": "."
         },
         "pre_cr": {
-          "command": "delegated subproject pre-cr checks",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/content-container-validator.py --project BBDSE --repo-root {repo_root} --run-delegated",
           "working_directory": "."
         },
         "architecture": {
-          "command": "container child-project ownership map",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/content-container-validator.py --project BBDSE --repo-root {repo_root}",
+          "working_directory": "."
+        },
+        "install": {
+          "command": "test -f README.md && test -f docs/project-truth.md && test -f docs/child-project-ownership.md",
+          "working_directory": "."
+        },
+        "secret_scan": {
+          "command": "! rg -n --hidden --glob '!*.csv' --glob '!node_modules/**' '(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|-----BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY-----)' .",
+          "working_directory": "."
+        },
+        "dependency_security": {
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/content-container-validator.py --project BBDSE --repo-root {repo_root}",
+          "working_directory": "."
+        },
+        "ci": {
+          "command": ".github/workflows/aios-quality.yml",
+          "working_directory": "."
+        },
+        "lint": {
+          "command": "git diff --check",
+          "working_directory": "."
+        },
+        "test": {
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/content-container-validator.py --project BBDSE --repo-root {repo_root} --run-delegated",
           "working_directory": "."
         }
       },
@@ -1588,7 +1642,7 @@
       "blocked_reason": "floor_only contract: requires aggregate or delegated subproject validation before adoption readiness.",
       "strict_readiness_status": "blocked",
       "maturation_blockers": [
-        "Delegated subproject gates are configured in quality-gates.json, but no aggregate evidence, CI/non-remote exception, or child-project ownership proof is recorded yet."
+        "Child ownership is documented and aggregate delegated validation is configured, but any failing child Pre-CR evidence plus CI/default or explicit non-remote exception remain required before readiness."
       ]
     },
     {
