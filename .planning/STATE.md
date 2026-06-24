@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Executing Phase 28
-last_updated: "2026-06-24T20:46:05.066Z"
+status: Phase 28 complete
+last_updated: "2026-06-24T20:51:45.092Z"
 progress:
   total_phases: 28
-  completed_phases: 26
+  completed_phases: 27
   total_plans: 153
-  completed_plans: 148
+  completed_plans: 149
   percent: 97
 ---
 
@@ -25,18 +25,18 @@ progress:
 - Canonical planning intent: make AIOS the default operating layer for serious project work by tightening routing, context, lifecycle, truth, governance, evaluation, learning, and operator visibility into one governed loop.
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
-- Latest completed phase: Phase 27, Expert rubric remediation workflow runtime, passed with runtime dispatch, registry contracts, route scoring, artifact exposure, and 53 workflow orchestration tests.
-- Latest completed plan: Phase 28 Plan 28-02 ran focused quality gates and updated project truth with the implemented expert workflow state plus remaining baseline caveats.
+- Latest completed phase: Phase 28, Expert rubric remediation CLI and verification, passed with read-only CLI exposure, focused quality/truth closeout, Soundscape smoke artifacts, and approval-gated implementation handoff evidence.
+- Latest completed plan: Phase 28 Plan 28-03 smoke-verified `aios tmcp review-plan`, wrote final verification evidence, and refreshed project truth.
 - Latest planned governed-workflow phase: Phase 25 has four executable plans to make planning a governed first-class AIOS workflow.
-- Latest planned expert-rubric phases: Phases 26-28 now contain eight executable plans covering core review artifacts, workflow runtime integration, route support, CLI exposure, quality closeout, and smoke verification.
+- Latest completed expert-rubric phases: Phases 26-28 delivered core review artifacts, workflow runtime integration, route support, CLI exposure, quality closeout, and smoke verification.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 17, Progressive Governance And Standards Backfill Workflows
-- Active phase: Phase 28, Expert rubric remediation CLI and verification
-- Active plan: Phase 28 Plan 28-03, Smoke verification and implementation handoff evidence
+- Active phase: None - Phase 28 is complete
+- Active plan: None - all Phase 28 plans are executed
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22 -> Phase 23 -> Phase 24
-- Next dependency chain: Phase 25 -> Phase 26 -> Phase 27 -> Phase 28
+- Next dependency chain: Phase 25 remains planned; the Phase 26 -> Phase 27 -> Phase 28 expert-rubric chain is complete.
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
 
 ## Known Constraints To Preserve
@@ -73,6 +73,8 @@ progress:
 - Phase 28 planned: three plans cover read-only `aios tmcp review-plan`, focused quality/truth closeout, and smoke verification with implementation handoff evidence.
 - Phase 28 Plan 28-01 completed: `services/aios_cli.py` now exposes `tmcp review-plan`, compiles TMCP against a target project path, writes expert review artifacts under an output directory through `execute_workflow`, and returns structured JSON with validations and remediation slices.
 - Phase 28 Plan 28-02 completed: focused expert workflow Ruff, format, new regression tests, and Vulture pass; project truth now records the implemented expert workflow while preserving existing broader CLI pytest and BasedPyright failures.
+- Phase 28 Plan 28-03 completed: `aios tmcp review-plan` smoke verification against Soundscape evidence produced nine review artifacts under `/tmp/aios-expert-review-smoke` and final handoff evidence in `28-VERIFICATION.md`.
+- Phase 28 completed: the expert-rubric remediation workflow is ready as a read-only review-plan generator; implementation of remediation slices remains an approval-gated follow-up workflow.
 
 ## Quick Tasks Completed
 
@@ -236,7 +238,7 @@ progress:
 | 2026-06-02 | Complete Phase 10 Plan 08 quality hotspot backfill baseline | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-08-SUMMARY.md` records `pnpm quality:eval`, the read-only hotspot detection script, and the first factual Agent Eval backfill inventory for Python services, CLI scripts, tests, aios-ui, config, and eval docs. |
 
 ---
-*Last updated: 2026-06-24 after completing Phase 28 Plan 28-02 and advancing to Plan 28-03*
+*Last updated: 2026-06-24 after completing Phase 28 and smoke-verifying the expert rubric remediation CLI*
 
 ## Performance Metrics
 
@@ -249,3 +251,4 @@ progress:
 | Phase 27 P03 | 1min | 2 tasks | 0 files |
 | Phase 28 P01 | 1min | 2 tasks | 2 files |
 | Phase 28 P02 | 3min | 2 tasks | 1 file |
+| Phase 28 P03 | 4min | 2 tasks | 2 files |
