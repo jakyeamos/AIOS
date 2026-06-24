@@ -1639,3 +1639,10 @@ The spec execution roadmap has been corrected before execution:
 - The fallback is provider-neutral: callers may inject a semantic reasoner directly, or configure `AIOS_WORKFLOW_SEMANTIC_ROUTER_CMD` to run a local/model-backed JSON command.
 - Semantic routes must name a registered workflow and meet the `0.75` confidence threshold; otherwise AIOS preserves the semantic recommendation as diagnostic evidence and keeps the governed route blocked.
 - Added `docs/diagnostics/semantic-workflow-routing.md` with the command request/response schema and confidence-gate behavior.
+
+## 2026-06-24 - Runtime-phase TMCP expansion
+
+- Workflow execution now treats TMCP as a runtime-governed active packet, not only an invocation-start packet: stage phase changes recompile a phase-specific TMCP packet, persist a new traversal receipt, diff it against the prior packet, and record a `runtime_packet_expansion` intervention event.
+- Expanded packets replace `run_state["tmcp_packet"]` for subsequent workflow stages, and workflow reports expose `tmcp_packet_expansions` plus per-stage `tmcp_expansion` evidence for operator inspection.
+- Managed runtime packet artifacts now sync to the final active TMCP receipt while superseded initial receipts remain durable evidence, including cases where a promoted shortcut was used before phase-specific expansion.
+- Verification: focused TMCP/workflow/orchestration suites passed (`97 passed`), focused Ruff passed, focused Basedpyright passed with 0 errors, and `pnpm context:validate` passed.
