@@ -7,7 +7,7 @@ statusLabel: needs_attention
 nextStep: Triage the 18 full-suite Python test failures and stale repo-wide Ruff/BasedPyright baselines before claiming repo-level quality green.
 blockers:
   - Full Python test, Ruff, format, and BasedPyright baselines are failing outside the gate-audit slice.
-lastUpdated: 2026-06-23
+lastUpdated: 2026-06-24
 tags: [infra, ai-os, hooks, automation]
 areas: [engineering]
 goals: []
@@ -66,6 +66,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-06-23: Reframed TMCP as a behavior-atom skill compiler with graph token/utility metadata, behavior-diff packet optimization, source-skill section excerpts, negative selection evidence, node usefulness and omitted-requirement receipt fields, and richer shortcut compiled-packet metadata.
 - 2026-06-23: Added TMCP behavior-atom and golden-prompt registries, semantic source-skill extraction, receipt feedback and missed-requirement repair summaries, node/atom token ROI learning summaries, `aios tmcp` inspect/feedback CLI commands, and a `tmcp_behavior_optimized` benchmark condition.
 - 2026-06-23: Added TMCP packet-adherence evaluation, granular receipt/intervention events, phase-aware and domain-aware packet compilation, negative precision fixtures, packet diffing, shortcut governance recommendations, and benchmark claim gating for quality/token/missed-requirement discipline.
+- 2026-06-24: Added an AIOS agent rule requiring proactive strategic improvement suggestions when a more durable path is visible than the tactical request.
 
 ## Open Problems
 
@@ -104,3 +105,4 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - The DB schema is append-only in practice; migration scripts exist in `bin/`. Always check `schema.sql` for current canonical table definitions before querying.
 - shellcheck skips `.py` files named like shell scripts — no action needed there.
 - zsh scripts (if any) are intentionally skipped by shellcheck; this is expected, not a gap.
+- Agents should proactively surface better long-term approaches when they see them, including tradeoffs and a recommended path, while keeping the active task moving.

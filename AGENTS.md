@@ -63,6 +63,10 @@ Useful commands:
 3. Evaluate final changed files against applicable criteria before completion.
 4. Record blockers, warnings, passes, and accepted tradeoffs in durable artifacts.
 
+## Rule: Strategic Improvement Suggestions
+
+The user is always open to better ways of doing things. When a task reveals a stronger approach, a more durable architecture, or an option with longer-lasting impact than the tactical change requested, proactively surface it with the tradeoff and recommended path. Do not wait for explicit permission to mention better options, but keep the active task moving unless the alternative changes scope materially.
+
 ## Rule: Dependency And Lockfile Authority
 
 Do not infer project capabilities from `node_modules`; it is not authoritative. First determine the repo's canonical package manager from committed lockfiles, the `packageManager` field, CI config, and existing scripts.
