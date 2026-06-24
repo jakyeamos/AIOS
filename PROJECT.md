@@ -1531,3 +1531,9 @@ The spec execution roadmap has been corrected before execution:
 - Added granular TMCP receipt events and intervention audit events for packet compilation, node selection, observed actions, ignored required behavior, validation commands, blockers, reruns, scope reductions, and related quality interventions.
 - Added phase-aware and domain-aware packet compilation, negative golden prompt fixtures, TMCP packet diffing, shortcut lifecycle governance recommendations, and a benchmark claim gate that blocks TMCP improvement claims unless quality, token, shortcut-separation, and missed-requirement criteria pass.
 - Verification: focused TMCP runtime/harvest/benchmark tests passed, managed-runtime TMCP smoke tests passed, focused Ruff passed, context validation passed, JSON validation passed, and canonical graph verification passed.
+
+## 2026-06-24 - Phase 24 production web gate evidence
+
+- Added real local production-web gate surfaces in `portfolio`, `dispatches-from-cyberspace`, `Bballedu`, and `tm`, then registered matching commands in AIOS quality-pipeline and quality-gate config.
+- Recorded fresh local evidence for every attempted gate in those four repos and updated the linked-repo adoption audit with pass/fail evidence IDs.
+- Current truth: all four repos remain blocked. `portfolio` still needs CI/default, coverage, SEO, full e2e, and Pre-CR proof; `dispatches-from-cyberspace`, `Bballedu`, and `tm` still have failed gates plus architecture/CI/default proof gaps.

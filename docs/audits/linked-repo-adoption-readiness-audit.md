@@ -196,3 +196,70 @@ AIOS currently reports `blocked`. Passing local evidence exists for:
 - `repo_truth`: `quality-aios-repo_truth-20260624031332592940`
 
 AIOS has failed or blocked evidence for `install`, `test`, `architecture`, `ci`, `divergent_strategy_standard`, and `pre_cr`. Dirty-tree state remains closeout hygiene and is separate from this readiness verdict.
+
+### Phase 24 Plan 24-03 Evidence Update
+
+Phase 24 Plan 24-03 added real production-web gate surfaces for `portfolio`, `dispatches-from-cyberspace`, `Bballedu`, and `tm`, then registered matching AIOS-owned commands in `config/quality-pipeline.json` and `config/quality-gates.json`. Repo-local implementation commits:
+
+- `portfolio`: `665821a` (`feat(24-03): add production web validation scripts`)
+- `dispatches-from-cyberspace`: `afddf2d` (`feat(24-03): add production web validation scripts`)
+- `Bballedu`: `7acad4f` (`feat(24-03): add production web validation scripts`)
+- `tm`: `07c1222` (`feat(24-03): add production web validation scripts`)
+
+`portfolio` currently reports `blocked`. Passing local evidence exists for:
+
+- `install`: `quality-portfolio-install-20260624032452263030`
+- `lint`: `quality-portfolio-lint-20260624032455322977`
+- `typecheck`: `quality-portfolio-typecheck-20260624032458464758`
+- `test`: `quality-portfolio-test-20260624032458980244`
+- `build`: `quality-portfolio-build-20260624032502512166`
+- `architecture`: `quality-portfolio-architecture-20260624032506414684`
+- `secret_scan`: `quality-portfolio-secret_scan-20260624032503535755`
+- `env_validation`: `quality-portfolio-env_validation-20260624032502978956`
+- `dependency_security`: `quality-portfolio-dependency_security-20260624032505025821`
+- `e2e_smoke`: `quality-portfolio-e2e_smoke-20260624032505648266`
+- `repo_truth`: `quality-portfolio-repo_truth-20260624032717648038`
+
+`portfolio` remains blocked on `ci`, `coverage`, `seo`, `full_e2e`, and `pre_cr`. CI workflow-file presence was recorded as blocked proof in `quality-portfolio-ci-20260624032718438878`, not default-branch pass proof. Pre-CR failure is recorded in `quality-portfolio-pre_cr-20260624032506234166`.
+
+`dispatches-from-cyberspace` currently reports `blocked`. Passing local evidence exists for:
+
+- `install`: `quality-dispatches-from-cyberspace-install-20260624032507767345`
+- `lint`: `quality-dispatches-from-cyberspace-lint-20260624032509770861`
+- `test`: `quality-dispatches-from-cyberspace-test-20260624032514593445`
+- `build`: `quality-dispatches-from-cyberspace-build-20260624032522267754`
+- `secret_scan`: `quality-dispatches-from-cyberspace-secret_scan-20260624032525060238`
+- `env_validation`: `quality-dispatches-from-cyberspace-env_validation-20260624032523918225`
+- `e2e_smoke`: `quality-dispatches-from-cyberspace-e2e_smoke-20260624032532125788`
+- `repo_truth`: `quality-dispatches-from-cyberspace-repo_truth-20260624032717873106`
+
+`dispatches-from-cyberspace` remains blocked on `typecheck`, `architecture`, `ci`, `dependency_security`, `coverage`, `seo`, `full_e2e`, and `pre_cr`. Failed or blocked evidence is recorded in `quality-dispatches-from-cyberspace-typecheck-20260624032513862355`, `quality-dispatches-from-cyberspace-dependency_security-20260624032530929952`, `quality-dispatches-from-cyberspace-ci-20260624032718599623`, and `quality-dispatches-from-cyberspace-pre_cr-20260624032532797575`.
+
+`Bballedu` currently reports `blocked`. Passing local evidence exists for:
+
+- `install`: `quality-Bballedu-install-20260624032535220734`
+- `lint`: `quality-Bballedu-lint-20260624032544997910`
+- `typecheck`: `quality-Bballedu-typecheck-20260624032557287349`
+- `test`: `quality-Bballedu-test-20260624032600696138`
+- `build`: `quality-Bballedu-build-20260624032609063990`
+- `secret_scan`: `quality-Bballedu-secret_scan-20260624032610141624`
+- `env_validation`: `quality-Bballedu-env_validation-20260624032609514313`
+- `repo_truth`: `quality-Bballedu-repo_truth-20260624032718059533`
+
+`Bballedu` remains blocked on `architecture`, `ci`, `dependency_security`, `coverage`, `e2e_smoke`, `seo`, `full_e2e`, and `pre_cr`. Failed evidence is recorded in `quality-Bballedu-dependency_security-20260624032611656430`, `quality-Bballedu-e2e_smoke-20260624032614173994`, and `quality-Bballedu-pre_cr-20260624032614759093`.
+
+`tm` currently reports `blocked`. Passing local evidence exists for:
+
+- `install`: `quality-tm-install-20260624032615788962`
+- `lint`: `quality-tm-lint-20260624032617726525`
+- `typecheck`: `quality-tm-typecheck-20260624032620734886`
+- `test`: `quality-tm-test-20260624032623534647`
+- `build`: `quality-tm-build-20260624032649964524`
+- `secret_scan`: `quality-tm-secret_scan-20260624032651051237`
+- `env_validation`: `quality-tm-env_validation-20260624032650531900`
+- `e2e_smoke`: `quality-tm-e2e_smoke-20260624032653281131`
+- `repo_truth`: `quality-tm-repo_truth-20260624032718215420`
+
+`tm` remains blocked on `architecture`, `ci`, `dependency_security`, `coverage`, `seo`, `full_e2e`, and `pre_cr`. Failed evidence is recorded in `quality-tm-dependency_security-20260624032652880198` and `quality-tm-pre_cr-20260624032653973497`.
+
+No production web app in this plan is ready. Plan 24-09 still owns CI/default proof and non-remote exception handling.
