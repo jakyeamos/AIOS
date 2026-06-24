@@ -24,6 +24,7 @@ USE `@branch:read_only_default` unless the user explicitly asked for implementat
 - IF the request asks to commit, branch, stage, inspect dirty state, or install hooks, LOAD `@task:git_hygiene`.
 - IF the request asks about packages, dependency upgrades, lockfiles, or audits, LOAD `@task:dependency_audit`.
 - IF the request asks for README, changelog, release notes, or developer docs, LOAD `@task:docs_update`.
+- IF the request asks to create or revise a skill, review agent instructions, consolidate prompts, reduce prompt size, merge instruction repositories, investigate instruction drift, or evaluate whether prose affects behavior, LOAD `@task:instruction_hygiene`.
 
 ## Cross-Task Edges
 
@@ -36,6 +37,7 @@ USE `@branch:read_only_default` unless the user explicitly asked for implementat
 - CONSIDER `@branch:tenure_visual_identity` only when the active project is Tenure or the user explicitly asks for Tenure-specific visual polish.
 - CONSIDER `@branch:network_required` before dependency install, remote CI lookup, package audit, or docs that need current external facts.
 - CONSIDER `@branch:destructive_action` before file deletion, history rewriting, force push, clean, reset, or generated artifact cleanup.
+- CONSIDER `@task:instruction_hygiene` before prompt, skill, workflow, router, or agent-facing context edits that may remove, rewrite, or consolidate instruction prose.
 
 ## Exit
 

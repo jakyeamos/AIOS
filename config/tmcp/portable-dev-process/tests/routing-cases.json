@@ -45,6 +45,15 @@
         "data_realism_polish"
       ],
       "expected_branch": "tenure_visual_identity"
+    },
+    {
+      "objective": "audit this skill and remove instruction prose that does not affect behavior",
+      "expected_task": "instruction_hygiene",
+      "expected_modules": [
+        "instruction_hygiene",
+        "diff_review",
+        "quality_gate"
+      ]
     }
   ]
 }

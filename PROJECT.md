@@ -45,6 +45,13 @@ AIOS now has an explicit durable-agent-workflow layer:
 - `config/workflows/skills.json` registers candidate `durable_workspace_state_keeper` and `durable_goal_verifier` skills with explicit invariants for verifier-backed goals, distinct steering and queueing, declared tool surfaces, meaningful memory updates, and no transcript-sprawl
 - `OPERATING_LANGUAGE.md` now includes Durable Workspace, Goal Verifier, Steering Event, Queued Work, Work Surface, and Reviewable Artifact as canonical AIOS terms
 
+AIOS now has instruction-hygiene support for behaviorally inert agent prose:
+
+- `config/tmcp/portable-dev-process/modules/instruction_hygiene.md` defines no-op criteria, candidate categories, scoring, evidence requirements, safety exclusions, dispositions, required audit records, and validation procedure
+- `config/tmcp/portable-dev-process/tasks/instruction_hygiene.md` routes future skill, prompt, router, workflow, and agent-facing instruction cleanup through the new module plus diff review and quality gates
+- `tools/no-op-instruction-scan.mjs` and `pnpm tmcp:no-op-scan` provide an advisory scan for generic instruction candidates with line-level allowlist support in `config/tmcp/no-op-scan-allowlist.json`
+- `config/tmcp/audits/no-op-cleanup/` records the discovery inventory, candidate ledger, static proof, provenance, dependency, conflict, merge, validation, and improvement reports for the initial cleanup
+
 AIOS linked-project adoption contracts now cover the active source inventory:
 
 - AIOS-owned `config/quality-gates.json` registers allowlisted quality-gate adapters for 21 linked repositories beyond AIOS and soundscape-app, using existing repo-local quality surfaces such as package scripts, `.pre-cr.json`, or existing architecture scripts, with a minimal `git diff --check` floor for the BBDSE container repo that has no stronger local quality surface yet

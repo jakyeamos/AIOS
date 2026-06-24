@@ -136,6 +136,32 @@
         "triggers": ["docs", "readme", "changelog", "release notes", "developer guide"],
         "requires": ["modules/doc_update.md", "modules/diff_review.md"],
         "outputs": ["doc_targets", "doc_changes", "staleness_notes"]
+      },
+      "instruction_hygiene": {
+        "path": "tasks/instruction_hygiene.md",
+        "triggers": [
+          "create skill",
+          "revise skill",
+          "review agent instructions",
+          "consolidate prompts",
+          "reduce prompt size",
+          "merge instruction repositories",
+          "instruction drift",
+          "prose affects behavior",
+          "no-op instructions"
+        ],
+        "requires": [
+          "modules/instruction_hygiene.md",
+          "modules/diff_review.md",
+          "modules/quality_gate.md"
+        ],
+        "outputs": [
+          "instruction_inventory",
+          "candidate_ledger",
+          "disposition_summary",
+          "validation_results",
+          "size_delta"
+        ]
       }
     },
     "modules": {
@@ -155,7 +181,8 @@
       "data_realism_polish": "modules/data_realism_polish.md",
       "dependency_policy": "modules/dependency_policy.md",
       "hook_guidance": "modules/hook_guidance.md",
-      "doc_update": "modules/doc_update.md"
+      "doc_update": "modules/doc_update.md",
+      "instruction_hygiene": "modules/instruction_hygiene.md"
     },
     "branches": {
       "read_only_default": "branches/read_only_default.branch.md",
@@ -177,7 +204,9 @@
     {"from": "visual_polish", "to": "frontend_verify", "when": "rendered_ui_changed"},
     {"from": "visual_polish", "to": "tenure_visual_identity", "when": "active_project_is_tenure"},
     {"from": "dependency_audit", "to": "quality_check", "when": "dependency_changed"},
-    {"from": "docs_update", "to": "review_diff", "when": "docs_changed"}
+    {"from": "docs_update", "to": "review_diff", "when": "docs_changed"},
+    {"from": "instruction_hygiene", "to": "quality_check", "when": "instruction_surface_changed"},
+    {"from": "instruction_hygiene", "to": "review_diff", "when": "removal_or_consolidation_changed_behavioral_surface"}
   ],
   "install_targets": [
     ".agents/skills/portable-dev-process",

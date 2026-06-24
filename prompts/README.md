@@ -7,7 +7,8 @@ Phase 2 extends this into validation-driven execution strategy bundles under
 
 ## Why this exists
 
-- Capture repeatable high-quality prompting patterns.
+- Capture repeatable prompt patterns with frontmatter, output contracts, eval
+  cases, and validation commands.
 - Keep templates versioned and inspectable.
 - Provide supporting evidence for `agentize` request compilation.
 - Enable deterministic template suggestions in `hook-prompt-submit` while that

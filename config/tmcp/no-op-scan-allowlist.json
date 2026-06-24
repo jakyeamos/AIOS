@@ -1,0 +1,35 @@
+{
+  "schema": "tmcp-no-op-scan-allowlist-v0.1",
+  "allowlist": [
+    {
+      "path": "config/workflows/skills.json",
+      "line": 728,
+      "pattern_id": "generic_quality",
+      "reason": "Retained as an imported Remotion skill title; changing it would break source provenance rather than improve instruction behavior."
+    },
+    {
+      "path": "config/workflows/skills.json",
+      "line": 742,
+      "pattern_id": "generic_quality",
+      "reason": "Retained as an imported Remotion skill title; changing it would break source provenance rather than improve instruction behavior."
+    },
+    {
+      "path": "skills/operating-language/SKILL.md",
+      "line": 57,
+      "pattern_id": "generic_thoroughness",
+      "reason": "Quoted rejected-term example inside an instruction-hygiene rule; it teaches removal rather than issuing the generic instruction."
+    },
+    {
+      "path": "skills/operating-language/SKILL.md",
+      "line": 57,
+      "pattern_id": "generic_quality",
+      "reason": "Quoted rejected-term example inside an instruction-hygiene rule; it teaches removal rather than issuing the generic instruction."
+    },
+    {
+      "path": "skills/operating-language/SKILL.md",
+      "line": 57,
+      "pattern_id": "generic_robustness",
+      "reason": "Quoted rejected-term example inside an instruction-hygiene rule; it teaches removal rather than issuing the generic instruction."
+    }
+  ]
+}
