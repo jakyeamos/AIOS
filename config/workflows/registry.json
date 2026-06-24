@@ -2406,6 +2406,174 @@
         "spec_fidelity"
       ],
       "purpose_long": "Intent-specific DX pack route backed by config/developer-experience/capability-pack.json. It keeps global agent files thin by routing only DX-relevant tasks into capability metadata."
+    },
+    {
+      "key": "durable-agent-workspace",
+      "name": "Durable Agent Workspace",
+      "workflow_family": "agent_workflow_governance",
+      "purpose": "Govern long-running or recurring agent work through durable workspace state, explicit goal verifiers, declared work surfaces, reviewable artifacts, and context-preserving checkpoints.",
+      "trigger_hints": [
+        "durable workspace",
+        "long-running agent work",
+        "release thread",
+        "quality gate thread",
+        "repo adoption thread",
+        "documentation review thread",
+        "external monitoring thread",
+        "/steer",
+        "/queue"
+      ],
+      "output_contract": [
+        "durable workspace state",
+        "goal verifier and stopping condition",
+        "declared work surfaces and out-of-scope surfaces",
+        "steering events separate from queued work",
+        "reviewable artifact source of truth",
+        "automation mode and safety limits",
+        "skill candidacy evidence"
+      ],
+      "required_validations": [
+        "durable_goal_verifier"
+      ],
+      "stages": [
+        {
+          "key": "define_goal",
+          "kind": "parse_request",
+          "required_skills": [
+            "durable_goal_verifier"
+          ],
+          "required_inputs": [
+            {
+              "key": "objective",
+              "source": "packet",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "goal_verifier",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "required_verifier": true,
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "declare_surfaces",
+          "kind": "enrich_context",
+          "required_skills": [
+            "durable_workspace_state_keeper"
+          ],
+          "required_inputs": [
+            {
+              "key": "goal_verifier",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "allowed_surfaces",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "checkpoint",
+          "kind": "validate",
+          "required_skills": [
+            "durable_workspace_state_keeper",
+            "durable_goal_verifier"
+          ],
+          "required_evidence": [
+            "durable_workspace_state"
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "checkpoint",
+              "path_template": ".planning/runs/{run_id}/durable-workspace-checkpoint.md",
+              "required": true
+            }
+          ],
+          "validations": [
+            {
+              "criterion_id": "workflow-state-integrity",
+              "blocking": true
+            },
+            {
+              "criterion_id": "agent-claim-verification",
+              "blocking": true
+            }
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "finalize",
+          "kind": "finalize",
+          "required_skills": [
+            "durable_goal_verifier"
+          ],
+          "required_verifier": true,
+          "expected_artifacts": [
+            {
+              "artifact_kind": "summary",
+              "path_template": ".planning/runs/{run_id}/durable-workspace-final.md",
+              "required": true
+            }
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event",
+              "writeback_candidate"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          }
+        }
+      ],
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "agent_workflow_governance",
+        "durable_workspace",
+        "long_running_agent_work",
+        "workflow_state",
+        "automation_monitoring",
+        "skill_candidacy"
+      ],
+      "purpose_long": "Candidate route for durable agent work loops. It adds workspace state, goal verifier, steering, queueing, artifact, automation, memory, and TMCP skill-candidacy contracts without changing existing active routing or quality gates."
     }
   ]
 }

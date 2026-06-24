@@ -36,6 +36,15 @@ Root operator documentation now lives in `README.md`, including local UI launch 
 
 ## Implemented On 2026-06-24
 
+AIOS now has an explicit durable-agent-workflow layer:
+
+- `aios/context/packets/workflow.durable-agent-workflows.md` defines the concise agent-facing contract for durable workspaces, goal verifiers, steering, queueing, declared work surfaces, reviewable artifacts, automation modes, durable memory, and TMCP skill candidacy
+- `docs/workflows/durable-agent-workflows.md` is the reviewable workflow reference with `/steer` and `/queue` patterns, artifact/source-of-truth guidance, scheduled-vs-workspace automation guidance, durable memory rules, and evidence-backed skill extraction criteria
+- `aios/context/domains/agent-harnesses.md` now loads the durable workflow packet for agent-harness work so long-running workloop guidance is selected through the normal context compiler path rather than copied into broad always-loaded prose
+- `config/workflows/registry.json` registers `durable-agent-workspace` as a candidate workflow, preserving existing active routing while making durable work loops discoverable in the workflow registry
+- `config/workflows/skills.json` registers candidate `durable_workspace_state_keeper` and `durable_goal_verifier` skills with explicit invariants for verifier-backed goals, distinct steering and queueing, declared tool surfaces, meaningful memory updates, and no transcript-sprawl
+- `OPERATING_LANGUAGE.md` now includes Durable Workspace, Goal Verifier, Steering Event, Queued Work, Work Surface, and Reviewable Artifact as canonical AIOS terms
+
 AIOS linked-project adoption contracts now cover the active source inventory:
 
 - AIOS-owned `config/quality-gates.json` registers allowlisted quality-gate adapters for 21 linked repositories beyond AIOS and soundscape-app, using existing repo-local quality surfaces such as package scripts, `.pre-cr.json`, or existing architecture scripts, with a minimal `git diff --check` floor for the BBDSE container repo that has no stronger local quality surface yet

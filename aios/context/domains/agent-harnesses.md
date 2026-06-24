@@ -18,6 +18,8 @@ tags:
   - prompts
   - skills
   - packets
+load_if_matched:
+  - packets/workflow.durable-agent-workflows.md
 last_reviewed: 2026-05-12
 ---
 
@@ -31,6 +33,7 @@ Human-readable agent guidance may clarify machine-readable data, but must not re
 For most non-trivial work, prefer orchestrated sub-agent development: the orchestrator classifies and supervises while explorer, implementer, reviewer, or specialist agents execute bounded work with the cheapest sufficient model tier and reasoning level.
 Direct execution remains appropriate for tiny local tasks where subagent setup costs more than it saves.
 Model and reasoning defaults should come from `config/execution-strategies/model-routing-policy.json`, with approved routing changes gated by repeated evidence rather than one-off results.
+Long-running or recurring agent work should use the durable agent workflow packet instead of relying on chat transcript continuity.
 
 ## Acceptance Criteria
 
@@ -43,3 +46,4 @@ Model and reasoning defaults should come from `config/execution-strategies/model
 - Writebacks are proposed for review rather than silently promoted.
 - Non-trivial execution records whether direct execution or subagent execution was chosen and why.
 - Model or reasoning upgrades track whether extra cost produced meaningful quality improvement.
+- Durable work records the active goal, verifier, declared surfaces, steering events, queued work, artifacts, memory updates, and next action outside the chat transcript.

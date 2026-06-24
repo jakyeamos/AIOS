@@ -87,6 +87,19 @@ test("selects agent prompt-library and skill-registry context for reusable promp
   assert(selectedIds.includes("features.skill-registry"));
 });
 
+test("selects durable agent workflow packet for long-running workspace work", async () => {
+  const result = await compileContext({
+    task: "Add durable agent workspaces with goal verifiers, steering, queueing, artifacts, automation, and memory rules.",
+    contextRoot,
+    write: false,
+  });
+
+  const selectedIds = result.selected_context_files.map((file) => file.id);
+  assert(selectedIds.includes("domains.agent-harnesses"));
+  assert(selectedIds.includes("packets.workflow.durable-agent-workflows"));
+  assert.match(result.context_receipt, /workflow\.durable-agent-workflows\.md/);
+});
+
 test("selects knowledge-system and Obsidian routing context for second-brain search", async () => {
   const result = await compileContext({
     task: "Improve Obsidian search so AIOS can answer questions from my second brain.",

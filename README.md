@@ -109,6 +109,28 @@ The helper infers the project from the current working directory, creates the ro
 
 The current workspace remains the baseline source of truth. The shadow lane is comparison evidence for assessing AIOS usefulness and must not be merged or copied back without explicit review.
 
+### Durable Agent Work
+
+Use a durable workspace for recurring or long-running streams of work such as release threads, quality gate threads, TMCP skill audits, repo adoption, documentation review, and external monitoring. Durable workspace state should preserve decisions, blockers, owners, dates, useful links, verification status, known pitfalls, and next actions without copying the chat transcript.
+
+Every durable goal needs a verifier and stopping condition. Prefer finish lines such as typecheck passes, lint passes, tests pass, build passes, validation matrix passes, repro is fixed, benchmark improves, deployment succeeds, or artifact audit is complete.
+
+Use steering when the current execution direction needs immediate correction:
+
+```text
+/steer Keep the existing workflow registry shape; add a candidate route instead of changing active routing.
+```
+
+Use queueing when the instruction should wait until the current checkpoint completes:
+
+```text
+/queue After the current verification checkpoint, add a follow-up to audit PR comment monitoring.
+```
+
+Steering preserves the active goal unless the operator explicitly changes it. Queued work must not interrupt in-flight verification and should be visible in the run log or durable workspace state.
+
+For substantial work, the chat transcript is not the source of truth. Use a reviewable artifact such as a validation matrix, implementation checklist, audit log, canonical spreadsheet, generated behavioral spec, PR review summary, decision ledger, failing-gate report, static HTML dashboard, or deployment verification report.
+
 Route-only mode is an explicit opt-out for rare cases:
 
 ```text

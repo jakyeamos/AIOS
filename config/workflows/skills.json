@@ -1148,6 +1148,102 @@
       ],
       "source_path": "config/developer-experience/capability-pack.json",
       "installed_name": null
+    },
+    {
+      "key": "durable_workspace_state_keeper",
+      "purpose": "Maintain durable workspace state for long-running agent work without copying transcript noise or expanding tool reach beyond declared surfaces.",
+      "allowed_stages": [
+        "enrich_context",
+        "validate"
+      ],
+      "input_schema": {
+        "objective": "string",
+        "goal_verifier": "object",
+        "workspace_state_path": "string|null"
+      },
+      "output_schema": {
+        "workspace_state": "object",
+        "allowed_surfaces": "string[]",
+        "out_of_scope_surfaces": "string[]",
+        "steering_events": "object[]",
+        "queued_work": "object[]",
+        "memory_updates": "object[]",
+        "next_action": "string"
+      },
+      "invariants": [
+        "Preserve the active goal during steering unless the operator explicitly changes the goal.",
+        "Queued work must not interrupt current checkpoint verification.",
+        "Declare allowed and out-of-scope work surfaces before expanding tool reach.",
+        "Record meaningful decisions, blockers, owners, dates, verification results, known pitfalls, useful links, and unresolved questions.",
+        "Avoid transcript dumps, duplicate summaries, speculation recorded as fact, and churn when nothing meaningful changed."
+      ],
+      "failure_conditions": [
+        "Steering and queued work are merged into one ambiguous instruction list.",
+        "Tool reach expands without a declared surface and reason.",
+        "Durable memory is updated without a meaningful state change.",
+        "Workspace state omits the next action or current verification status."
+      ],
+      "side_effects": [
+        "May update the selected durable workspace artifact.",
+        "May propose writebacks for reusable workflow patterns or missing memory files."
+      ],
+      "execution_mode": "heuristic",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "durable_workspace",
+        "workflow_state",
+        "steering",
+        "queueing",
+        "memory_work"
+      ],
+      "source_path": "docs/workflows/durable-agent-workflows.md",
+      "installed_name": null
+    },
+    {
+      "key": "durable_goal_verifier",
+      "purpose": "Turn long-running agent goals into explicit objectives with verifiers, stopping conditions, checkpoint evidence, and final completion checks.",
+      "allowed_stages": [
+        "parse_request",
+        "validate",
+        "finalize"
+      ],
+      "input_schema": {
+        "objective": "string",
+        "workspace_state": "object|null",
+        "verification_evidence": "object[]"
+      },
+      "output_schema": {
+        "normalized_goal": "string",
+        "verifier": "string",
+        "stopping_condition": "string",
+        "checkpoint_status": "string",
+        "completion_status": "string"
+      },
+      "invariants": [
+        "Every goal must have an observable verifier and stopping condition.",
+        "Reject or refine vague goals before execution begins.",
+        "A goal is complete only when the verifier reaches the stopping condition.",
+        "Final status must separate passed checks, failed checks, blockers, warnings, and accepted tradeoffs."
+      ],
+      "failure_conditions": [
+        "Goal wording has no measurable finish line.",
+        "Completion is claimed from agent assertion rather than verifier evidence.",
+        "Final verification omits failed checks or accepted tradeoffs."
+      ],
+      "side_effects": [
+        "May write verifier status into the durable workspace artifact.",
+        "May propose skill candidacy only after repeated evidence."
+      ],
+      "execution_mode": "heuristic",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "durable_workspace",
+        "goal_verifier",
+        "agent_claim_verification",
+        "skill_candidacy"
+      ],
+      "source_path": "docs/workflows/durable-agent-workflows.md",
+      "installed_name": null
     }
   ]
 }
