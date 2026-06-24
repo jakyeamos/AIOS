@@ -1557,3 +1557,9 @@ The spec execution roadmap has been corrected before execution:
 - `Fantasy` now uses aggregate backend/frontend install, test, and validation commands instead of backend-only proof.
 - `Dsci-proj` keeps npm as the dashboard subproject package manager because `apps/dashboard/package-lock.json` is the checked-in lockfile; no pnpm migration was introduced.
 - Current truth: all four Plan 24-06 repos remain blocked. `LIS`, `career-ops`, `Dsci-proj`, and `Fantasy` have recorded pass/fail evidence, but failed local gates and CI/default proof still prevent readiness.
+
+## 2026-06-24 - Phase 24 floor-replacement repo evidence
+
+- Replaced floor-style validation for `claude-improvement-lab`, `R-Project`, `csds391-s26-6`, and `manga-sync` with bounded class-specific AIOS quality-pipeline gates.
+- Recorded evidence for runnable validation, structure, secret scan, dependency, repo-truth, and Pre-CR gates without changing external repo files.
+- Current truth: all four Plan 24-07 repos remain blocked. `manga-sync` is still only a reserved README-level workspace, and CI/default proof or explicit non-remote exceptions remain for Plan 24-09.

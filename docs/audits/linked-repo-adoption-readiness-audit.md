@@ -392,3 +392,16 @@ Phase 24 Plan 24-06 registered structured Python/data/course gates for `LIS`, `c
 `Fantasy` remains blocked on aggregate backend/frontend `test`, aggregate backend/frontend `validation`, `dependency_security`, and `ci`: `quality-Fantasy-test-20260624045627439080`, `quality-Fantasy-validation-20260624045725938450`, `quality-Fantasy-dependency_security-20260624045726710884`, and `quality-Fantasy-ci-20260624045726859389`.
 
 No structured Python/data/course repo in this plan is ready. Plan 24-07 owns the remaining floor-replacement Python/data/course repos, and Plan 24-09 owns CI/default proof.
+
+### Phase 24 Plan 24-07 Evidence Update
+
+Phase 24 Plan 24-07 replaced floor-style validation for `claude-improvement-lab`, `R-Project`, `csds391-s26-6`, and `manga-sync` with bounded class-specific gates in `config/quality-pipeline.json`. No external repo files were changed.
+
+All four repos remain `blocked`:
+
+- `claude-improvement-lab`: passes install, validation, repo truth, lint, task-presence test, build, architecture, and secret scan; remains blocked on `pre_cr`, `ci`, and `dependency_security`.
+- `R-Project`: passes R script validation, repo truth, install/session info, utility tests, architecture, secret scan, and dependency/session proof; remains blocked on `pre_cr`, missing lint, and `ci`.
+- `csds391-s26-6`: passes README/course structure validation, Java source presence, architecture, secret scan, and no-manifest dependency proof; remains blocked on `pre_cr`, missing lint, and `ci`.
+- `manga-sync`: passes README-only reserved-workspace checks, secret scan, and no-manifest dependency proof; remains blocked on `pre_cr`, missing lint, `ci`, and the absence of actual manga-sync implementation files.
+
+Plan 24-09 still owns CI/default proof and non-remote exception handling.
