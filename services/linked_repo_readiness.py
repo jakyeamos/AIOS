@@ -9,8 +9,8 @@ from services.quality_pipeline import DEFAULT_CONFIG_PATH, PipelineSummary, get_
 
 ReadinessVerdict = Literal["ready", "evidence_required", "blocked", "excluded"]
 
-# Phase 24 explicitly rectifies all linked-repo readiness blockers except agent-router.
-DEFAULT_EXCLUDED_PROJECT_IDS = ("agent-router",)
+# Phase 24 explicitly rectifies all linked-repo readiness blockers except deferred/deprecated repos.
+DEFAULT_EXCLUDED_PROJECT_IDS = ("agent-router", "video-pipeline")
 
 
 class Phase24TargetProject(TypedDict):

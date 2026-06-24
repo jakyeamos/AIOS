@@ -46,6 +46,14 @@ def _write_config(path: Path) -> Path:
                 "maturation_blockers": ["missing CI proof"],
             },
             {
+                "project_id": "video-pipeline",
+                "repo_class": "developer_tool_package",
+                "strict_readiness_status": "blocked",
+                "gates": {
+                    "lint": {"command": "pnpm lint", "working_directory": "."},
+                },
+            },
+            {
                 "project_id": "agent-router",
                 "repo_class": "developer_tool_package",
                 "strict_readiness_status": "blocked",
@@ -72,7 +80,7 @@ def _conn(tmp_path: Path) -> sqlite3.Connection:
         )
         """
     )
-    for project_id in ("soundscape-app", "portfolio", "agent-router"):
+    for project_id in ("soundscape-app", "portfolio", "video-pipeline", "agent-router"):
         repo_path = tmp_path / project_id
         repo_path.mkdir()
         conn.execute(
@@ -86,12 +94,12 @@ def _conn(tmp_path: Path) -> sqlite3.Connection:
     return conn
 
 
-def test_phase24_targets_exclude_agent_router(tmp_path: Path) -> None:
+def test_phase24_targets_exclude_agent_router_and_deprecated_video_pipeline(tmp_path: Path) -> None:
     config_path = _write_config(tmp_path / "quality-pipeline.json")
 
     targets = phase24_target_projects(config_path=config_path)
 
-    assert DEFAULT_EXCLUDED_PROJECT_IDS == ("agent-router",)
+    assert DEFAULT_EXCLUDED_PROJECT_IDS == ("agent-router", "video-pipeline")
     assert [target["project_id"] for target in targets] == ["soundscape-app", "portfolio"]
 
 
@@ -230,13 +238,14 @@ def test_runner_dry_run_uses_aios_owned_config_command(tmp_path: Path) -> None:
     assert ".aios-quality-gate.json" not in result.stdout
 
 
-def test_readiness_report_real_config_has_22_targets_and_agent_router_excluded() -> None:
+def test_readiness_report_real_config_has_21_targets_and_deprecated_repos_excluded() -> None:
     conn = sqlite3.connect(":memory:")
 
     report = phase24_readiness_report(conn)
 
-    assert report["target_count"] == 22
-    assert report["excluded_count"] == 1
+    assert report["target_count"] == 21
+    assert report["excluded_count"] == 2
     assert report["excluded_projects"] == [
+        {"project_id": "video-pipeline", "reason": "excluded_by_phase24_scope"},
         {"project_id": "agent-router", "reason": "excluded_by_phase24_scope"}
     ]

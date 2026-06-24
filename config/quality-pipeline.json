@@ -100,7 +100,8 @@
         "tier": "production_app",
         "required": true,
         "applicability": [
-          "production_app"
+          "production_app",
+          "developer_tool"
         ]
       },
       {
@@ -118,7 +119,8 @@
         "tier": "production_app",
         "required": true,
         "applicability": [
-          "production_app"
+          "production_app",
+          "developer_tool"
         ]
       },
       {
@@ -570,11 +572,19 @@
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
+        },
+        "secret_scan": {
+          "command": "npm run secret:scan",
+          "working_directory": "."
+        },
+        "dependency_security": {
+          "command": "npm run dependency:security",
+          "working_directory": "."
         }
       },
       "repo_class": "developer_tool_package",
       "maturation_blockers": [
-        "Missing substantive architecture boundary gate, secret scan, dependency security evidence, and fresh CI/default-branch proof."
+        "Missing substantive architecture boundary gate, passing dependency/security evidence, and fresh CI/default-branch proof."
       ],
       "strict_readiness_status": "blocked"
     },
@@ -821,11 +831,19 @@
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
+        },
+        "secret_scan": {
+          "command": "pnpm secret:scan",
+          "working_directory": "."
+        },
+        "dependency_security": {
+          "command": "pnpm dependency:security",
+          "working_directory": "."
         }
       },
       "repo_class": "developer_tool_package",
       "maturation_blockers": [
-        "Missing substantive architecture boundary gate, secret scan, dependency security evidence, and fresh CI/default-branch proof."
+        "Missing substantive architecture boundary gate, passing dependency/security evidence, and fresh CI/default-branch proof."
       ],
       "strict_readiness_status": "blocked"
     },
@@ -1092,11 +1110,19 @@
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
+        },
+        "secret_scan": {
+          "command": "pnpm secret:scan",
+          "working_directory": "."
+        },
+        "dependency_security": {
+          "command": "pnpm dependency:security",
+          "working_directory": "."
         }
       },
       "repo_class": "developer_tool_package",
       "maturation_blockers": [
-        "Missing lint/typecheck/build scripts, substantive architecture boundary gate, dependency security evidence, and fresh CI/default-branch proof."
+        "Missing lint/typecheck/build scripts, substantive architecture boundary gate, passing dependency/security evidence, and fresh CI/default-branch proof."
       ],
       "strict_readiness_status": "blocked"
     },
