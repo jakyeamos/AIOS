@@ -98,6 +98,24 @@ The duplicate `tmcp_packet_compiled` validation is present in runtime output and
 | `uv run vulture . --min-confidence 70` | Pass. |
 | `git diff --check .tracker/PROJECT_TRUTH.md` | Pass. |
 
+## Post-Closeout Repo-Level Ladder
+
+These commands ran after the Phase 28 metadata commits so the final project truth snapshot could reflect the current full-repo baseline.
+
+| Check | Result |
+| --- | --- |
+| `uv run ruff check .` | Fail: 25 issues, including existing unused imports/variables, import ordering, `zip(strict=...)`, simplification, and ambiguous-name findings. |
+| `uv run ruff format --check .` | Fail: 178 files would be reformatted; 135 files already formatted. |
+| `uv run basedpyright` | Fail: 110 errors and 101 warnings, including existing `services/aios_cli.py` `run_cli` complexity. |
+| `uv run vulture . --min-confidence 70` | Pass: exit 0 with no output. |
+| `uv run pytest -q` | Fail: 11 failed and 950 passed. |
+
+Pytest failure groups:
+
+- 8 existing `tests/test_aios_cli.py` failures in learning analysis/proposal, contracts audit expectations, workflow learning payload, and skills harvest validation shape.
+- 1 `tests/test_learning_analysis.py` dispatcher since-bound failure.
+- 2 `tests/test_workflow_experiments.py` fixture commits blocked by the user commit quality gate requiring `.pre-cr.json`.
+
 ## Target Project Status Review
 
 The target Soundscape repo was not clean before the smoke command; `git -C /Users/jakyeamos/projects/soundscape-app status --short` showed many pre-existing modified and untracked files. The smoke command was configured with `--output-dir /tmp/aios-expert-review-smoke`, and every reported artifact path is under `/private/tmp/aios-expert-review-smoke`, not under `/Users/jakyeamos/projects/soundscape-app`.
@@ -127,6 +145,7 @@ Because the target repo was already dirty, this verification does not claim a cl
 ## Residual Risks
 
 - Full AIOS repo-level quality remains non-green; Phase 28 did not remediate the existing broader CLI pytest or BasedPyright baseline issues.
+- The latest full repo-level ladder also reports Ruff and format baseline failures outside the expert workflow slice.
 - Soundscape's target repo was already dirty, so mutation verification is limited to artifact-path inspection rather than a clean before/after git status proof.
 - Review scope is bounded to supplied evidence. A real remediation run should inspect neighboring call sites around `FeedItem.tsx:427` before editing.
 
