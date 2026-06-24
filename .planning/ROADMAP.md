@@ -1236,6 +1236,9 @@ This milestone adds a native macOS app development skill pack to AIOS by transfo
 | Phase 23 | Phase 22 | strict release-readiness maturation for every active linked source repository, with class-based gates, AIOS proof, CI evidence, and explicit exceptions |
 | Phase 24 | Phase 23 | rectify all linked-repo strict-readiness blockers except agent-router, including real gates, CI/default proof, evidence capture, and recorded exceptions |
 | Phase 25 | Phase 24 | make planning a governed first-class AIOS workflow with standards surfaced before execution, executable plan contracts, and verification handoff |
+| Phase 26 | Phase 25 | expert rubric remediation core artifact service, schemas, validators, evidence fixture, audit report builder, remediation planner, and handoff builder |
+| Phase 27 | Phase 26 | workflow runtime wiring for expert rubric remediation, including skill dispatch, artifact persistence, workflow registry, skill registry, and route selection |
+| Phase 28 | Phase 27 | read-only TMCP review-plan CLI, focused quality gates, project truth closeout, smoke verification, and implementation handoff evidence |
 
 ## Requirement Coverage
 
@@ -1266,6 +1269,9 @@ This milestone adds a native macOS app development skill pack to AIOS by transfo
 | Phase 23 | TBD | 0 |
 | Phase 24 | TBD | 0 |
 | Phase 25 | TBD | 0 |
+| Phase 26 | TBD | 0 |
+| Phase 27 | TBD | 0 |
+| Phase 28 | TBD | 0 |
 
 **Coverage Validation:**
 - v1 requirements: 133 (124 prior + 9 MACS)
@@ -1340,5 +1346,32 @@ Plans:
 - [ ] 25-03 Planning packet standards and evidence contract
 - [ ] 25-04 Shadow route proof and planning truth closeout
 
+### Phase 26: Expert rubric remediation core artifacts
+
+**Goal:** Build the core `expert_rubric_remediation_v1` artifact engine so compiled TMCP expertise can become validated rubric, audit, remediation, and implementation-handoff artifacts before workflow integration begins.
+**2026-06-24 baseline:** Derived from `docs/superpowers/plans/2026-06-24-expert-rubric-remediation.md` Tasks 1-2, which were too large to leave inside one implementation sprint.
+**Initial scope:** Service module skeleton, schema constants, deterministic profile selection, artifact validation, artifact writing, Soundscape visual-polish fixture, evidence-backed audit builder, remediation-slice builder, and optional handoff builder.
+**Requirements**: TBD
+**Depends on:** Phase 25
+**Plans:** Not planned yet
+
+### Phase 27: Expert rubric remediation workflow runtime
+
+**Goal:** Wire the expert rubric remediation artifact engine into the AIOS workflow runtime so selected skills, workflow stages, route decisions, and persisted artifacts behave as a first-class governed workflow.
+**2026-06-24 baseline:** Derived from `docs/superpowers/plans/2026-06-24-expert-rubric-remediation.md` Tasks 3-5.
+**Initial scope:** Workflow skill dispatch, executor artifact persistence, workflow registry entry, skill registry entries, route candidate support, explicit review/remediation objective matching, and runtime regression tests.
+**Requirements**: TBD
+**Depends on:** Phase 26
+**Plans:** Not planned yet
+
+### Phase 28: Expert rubric remediation CLI and verification
+
+**Goal:** Expose the workflow through a read-only TMCP review-plan CLI and close the feature with focused quality gates, truth maintenance, smoke evidence, and a final handoff.
+**2026-06-24 baseline:** Derived from `docs/superpowers/plans/2026-06-24-expert-rubric-remediation.md` Tasks 6-8.
+**Initial scope:** `aios tmcp review-plan`, CLI artifact output, focused Ruff/format/BasedPyright/pytest gates, Vulture check, `.tracker/PROJECT_TRUTH.md` update, manual smoke run, git status review, and final implementation summary.
+**Requirements**: TBD
+**Depends on:** Phase 27
+**Plans:** Not planned yet
+
 ---
-*Last updated: 2026-06-24 after closing Phase 24 with 0 ready, 20 blocked, and 3 excluded linked repositories, then advancing Phase 25 as the next dependent phase*
+*Last updated: 2026-06-24 after splitting the expert rubric remediation implementation plan into Phases 26-28 for core artifacts, workflow runtime, and CLI/verification closeout*

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Executing Phase 25
-last_updated: "2026-06-24T05:45:00.000Z"
+last_updated: "2026-06-24T19:40:24.000Z"
 progress:
-  total_phases: 25
+  total_phases: 28
   completed_phases: 24
   total_plans: 145
   completed_plans: 141
-  percent: 97
+  percent: 86
 ---
 
 # AIOS Planning State
@@ -28,6 +28,7 @@ progress:
 - Latest completed phase: Phase 24, Rectify linked repo AIOS readiness blockers except agent-router, closed with 0 ready repos, 0 evidence-required repos, 20 blocked repos, and 3 excluded repos.
 - Latest completed plan: Phase 24 Plan 24-10 wrote the final verification ledger, recorded local CI replacement exceptions for the 20 in-scope repos, recorded `video-pipeline`, `manga-sync`, plus `agent-router` as excluded, and later added runnable local-CI setup plus a failure ledger without forcing all CI gates green.
 - Latest planned governed-workflow phase: Phase 25 has four executable plans to make planning a governed first-class AIOS workflow.
+- Latest added roadmap split: Phases 26-28 break the approved `expert_rubric_remediation_v1` implementation plan into core artifacts, workflow runtime, and CLI/verification chunks.
 
 ## Current Roadmap Position
 
@@ -35,7 +36,7 @@ progress:
 - Active phase: Phase 25, Make AIOS planning a governed first-class workflow
 - Active plan: Phase 25 Plan 25-01, Planning workflow detection contract
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22 -> Phase 23 -> Phase 24
-- Next dependency chain: Phase 25
+- Next dependency chain: Phase 25 -> Phase 26 -> Phase 27 -> Phase 28
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
 
 ## Known Constraints To Preserve
@@ -59,6 +60,9 @@ progress:
 - Phase 24 completed: 10 plans added AIOS evidence tooling, evidence-required closeout, production web app gates, targeted production cleanup, developer-tool gates, Python/data/course gates, content/container validation, local CI replacement exceptions, and final verification; closeout remains blocked at portfolio readiness with 0 ready repos, 20 blocked repos, and 3 excluded repos.
 - Phase 25 added: Make AIOS planning a governed first-class workflow.
 - Phase 25 planned: four plans cover planning detection, governed route selection, packet standards/evidence, and shadow-route proof with truth closeout; Phase 25 waits on Phase 24 execution because it depends on Phase 24.
+- Phase 26 added: Expert rubric remediation core artifacts.
+- Phase 27 added: Expert rubric remediation workflow runtime.
+- Phase 28 added: Expert rubric remediation CLI and verification.
 
 ## Quick Tasks Completed
 
