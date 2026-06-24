@@ -23,6 +23,7 @@ Any task that creates, reviews, expands, or evaluates a test suite, including im
 - Convert real bugs/incidents into regression tests quickly.
 - Treat edge cases as design signals, not just opportunities to increase test count.
 - Pair test strategy with observability and failure inspection paths.
+- In TDD-heavy repos, apply the TDD Test Value Adoption Gate during adoption/backfill scans so low-signal tests become ratchet targets or backfill work instead of proof of readiness.
 
 ## Blockers
 
@@ -35,6 +36,7 @@ Any task that creates, reviews, expands, or evaluates a test suite, including im
 - Coverage percentage used without invariant/failure-mode reasoning.
 - Mock-heavy suites likely testing implementation details rather than behavior.
 - AI-generated tests accepted without hypothesis review.
+- TDD-produced tests accumulate without pruning duplicates, implementation-coupled assertions, or obsolete behavior coverage.
 
 ## Evidence To Provide
 
@@ -42,11 +44,14 @@ Any task that creates, reviews, expands, or evaluates a test suite, including im
 - Which real failure modes are covered.
 - Which regression tests map to real incidents or bugs.
 - Which adversarial/edge scenarios were considered.
+- Which test-value backfill findings were retained, rewritten, consolidated, deleted, or deferred with rationale.
 
 ## Related Criteria
 
 - `code-simplicity`
 - `observability`
+- `test-quality`
+- `docs/adoption/backfill-quality-ratchet.md`
 
 ## Example Good
 

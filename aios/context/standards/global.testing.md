@@ -23,6 +23,7 @@ last_reviewed: 2026-05-12
 Tests should verify real routing, validation, and output behavior rather than echoing mocks.
 For stateful or cross-system work, run the exact modified path before completion.
 Missing tests are a completion risk unless explicitly accepted.
+In TDD-heavy projects, adoption/backfill scans must judge test value by protected behavior and maintenance cost, not by count or coverage growth alone.
 
 ## Applicability
 

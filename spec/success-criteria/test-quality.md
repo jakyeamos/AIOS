@@ -20,6 +20,7 @@ Implementation, refactor, bugfix, testing, or review tasks that change behavior,
 - Identify the behavior changed by the task.
 - Confirm changed behavior is covered by tests or equivalent execution evidence.
 - Include edge cases, failure states, and permission paths when relevant.
+- For new or changed TDD tests, confirm each test protects behavior, a public contract, a confirmed bug, or meaningful domain branching rather than only increasing volume.
 - Avoid snapshot-heavy tests as the only proof.
 - Check that tests were not merely updated to match broken behavior.
 
@@ -34,6 +35,7 @@ Implementation, refactor, bugfix, testing, or review tasks that change behavior,
 - Non-critical behavior has partial coverage.
 - Edge or failure cases are missing but scoped follow-up is acceptable.
 - Test evidence is manual and should be automated later.
+- New tests appear redundant, implementation-coupled, snapshot-heavy, or coverage-driven and should be routed through the TDD Test Value Adoption Gate when part of backfill.
 
 ## Evidence To Provide
 
@@ -47,6 +49,7 @@ Implementation, refactor, bugfix, testing, or review tasks that change behavior,
 - `testing-trust`
 - `execution-first-verification`
 - `data-integrity`
+- `docs/adoption/backfill-quality-ratchet.md`
 
 ## Example Good
 

@@ -1,6 +1,6 @@
 # Success Criteria Index
 
-Last updated: 2026-06-23
+Last updated: 2026-06-24
 
 This index is the canonical discovery point for all AIOS-managed success criteria.
 
@@ -58,6 +58,8 @@ AIOS should prefer scoped gate selection over a universal checklist:
 Pre-PR gate mode is diff-scoped and prevents new quality debt. It should block severe regressions in touched paths without requiring unrelated legacy cleanup.
 
 Adoption/backfill mode audits an existing repository, inventories quality debt, ranks remediation by severity and return on investment, and creates backfill tasks instead of blocking every future PR on old debt. Backfill artifacts should distinguish critical backfill, high-ROI backfill, medium-ROI backfill, deferred work, and the current quality ratchet baseline.
+
+For TDD-heavy repositories, adoption/backfill mode includes the TDD Test Value Adoption Gate in `docs/adoption/backfill-quality-ratchet.md`: test suites are judged by behavioral signal, contract protection, regression value, and maintenance cost rather than test count or coverage growth alone.
 
 ## Runtime Resolution Rules
 

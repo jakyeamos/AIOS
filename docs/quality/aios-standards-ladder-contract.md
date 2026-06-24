@@ -62,6 +62,8 @@ Checks must remain AIOS-local when they depend on:
 - Project truth writebacks.
 - Local second-brain or private operator context.
 - Runtime evidence that cannot be reproduced from staged files.
+- Semantic test-value judgments that require knowing the intended behavior,
+  failing reason, contract boundary, or duplicate coverage across layers.
 
 These checks may block AIOS-managed workflows, but they must not be promoted into a portable user-level hook as if they were repo-independent.
 
@@ -121,6 +123,7 @@ criteria may appear as `warn`, `off`, or `AIOS-local`.
 | `global.maintainability.typescript-any` | `aios/context/standards/maintainability.md`, `code-simplicity` | Flag production TypeScript `any`. | portable | staged-file | warn | `AIOS-WAIVER code-simplicity owner expiry reason` | Medium; generated/vendor files need exclusions. | Backfill false positives across first-class projects. |
 | `global.maintainability.oversized-source` | `aios/context/standards/maintainability.md`, `complexity-budget` | Report oversized source files. | portable | staged-file | warn | `AIOS-WAIVER complexity-budget owner expiry reason` | High; size is a proxy, not semantic complexity. | Requires backfill and remediation candidates. |
 | `global.testing.weak-test` | `aios/context/standards/testing.md`, `test-quality` | Flag test files with no assertions. | portable | staged-file | warn | `AIOS-WAIVER test-quality owner expiry reason` | Medium; snapshot/smoke tests may be valid. | Requires documented smoke-test waiver format. |
+| `global.testing.tdd-test-value` | `aios/context/standards/global.testing.md`, `test-quality`, `testing-trust` | In adoption/backfill mode, classify low-signal, duplicate, implementation-coupled, snapshot-heavy, or mock-echo tests as hotspots, backfill candidates, ratchet targets, or do-not-touch-yet. | AIOS-local | backfill-artifact | AIOS-local | Evaluation metadata accepted tradeoff plus backfill reference | High; test intent and behavior value are semantic. | Requires behavior/contract evidence and reviewed backfill artifacts. |
 | `global.release.package-manager` | `aios/context/standards/maintainability.md`, `supply-chain-review` | Block npm/yarn drift in pnpm repos. | portable | staged-file | fail | `AIOS-WAIVER supply-chain-review owner expiry reason` | Low when package manager is configured. | None for pnpm-governed repos. |
 | `global.maintainability.handler-before-send` | `aios/context/standards/maintainability.md`, `code-simplicity` | Detect handler-before-send event-loop ordering. | portable | staged-file | warn | Inline `aios-quality: allow handler-before-send` plus reason | Medium; some runtimes require early handler registration. | Needs project backfill and runtime-specific waiver examples. |
 | `global.testing.pre-cr` | `test-quality`, `agent-claim-verification` | Require changed-line readiness where `.pre-cr.json` exists. | portable | command-evidence | warn | `AIOS-WAIVER pre-cr owner expiry reason` | Medium; Pre-CR may not be installed. | Tool availability and first-class project backfill. |
