@@ -15,6 +15,7 @@ from services.tmcp_runtime import (  # noqa: E402
     diff_tmcp_packets,
     ensure_tmcp_schema,
     evaluate_tmcp_packet_adherence,
+    expand_tmcp_packet_for_requirement_change,
     explain_tmcp_packet,
     persist_tmcp_packet_adherence,
     persist_tmcp_traversal_receipt,
@@ -885,6 +886,77 @@ def test_packet_diff_reports_nodes_atoms_and_token_delta(tmp_path: Path) -> None
     assert diff["phase_changed"] is True
     assert diff["nodes_added"] or diff["nodes_removed"]
     assert "phase changed" in diff["routing_change_reason"]
+
+
+def test_runtime_requirement_expansion_persists_new_receipt_diff_and_intervention(
+    tmp_path: Path,
+) -> None:
+    library = _seed_tmcp_library(tmp_path / "skills-library")
+    _seed_golden_graph(library)
+    conn = sqlite3.connect(":memory:")
+    ensure_tmcp_schema(conn)
+    current = compile_tmcp_packet(
+        objective="Plan the work",
+        project_path="/tmp/project",
+        skills_library_path=library,
+        phase="planning",
+    )
+    current_receipt_id = persist_tmcp_traversal_receipt(
+        conn,
+        packet=current,
+        run_id="run-1",
+        invocation_id="invoke-1",
+        session_id="session-1",
+        execution_outcome="superseded_by_runtime_expansion",
+    )
+    current["receipt_id"] = current_receipt_id
+
+    expansion = expand_tmcp_packet_for_requirement_change(
+        conn,
+        current_packet=current,
+        objective="Implement the work and run tests",
+        project_path="/tmp/project",
+        run_id="run-1",
+        invocation_id="invoke-1",
+        session_id="session-1",
+        phase="implementation",
+        reason="workflow stage moved from planning to implementation",
+    )
+
+    assert expansion["schema"] == "tmcp-runtime-expansion-v0.1"
+    assert expansion["previous_receipt_id"] == current_receipt_id
+    assert expansion["active_packet"]["phase"] == "implementation"
+    assert expansion["active_packet"]["receipt_id"] == expansion["receipt_id"]
+    assert expansion["packet_diff"]["phase_changed"] is True
+    assert "verification_gate" in expansion["active_packet"]["behavior_atoms"]
+
+    receipt_row = conn.execute(
+        """
+        SELECT task_id, phase, packet_json, execution_outcome
+        FROM tmcp_traversal_receipts
+        WHERE id = ?
+        """,
+        (expansion["receipt_id"],),
+    ).fetchone()
+    assert receipt_row is not None
+    assert receipt_row[1] == "implementation"
+    assert json.loads(receipt_row[2])["receipt_id"] == expansion["receipt_id"]
+    assert receipt_row[3] == "active_runtime_expansion"
+
+    intervention = conn.execute(
+        """
+        SELECT intervention_type, outcome, metadata_json
+        FROM tmcp_intervention_events
+        WHERE id = ?
+        """,
+        (expansion["intervention_id"],),
+    ).fetchone()
+    assert intervention is not None
+    assert intervention[0] == "runtime_packet_expansion"
+    assert intervention[1] == "expanded_packet_required"
+    metadata = json.loads(intervention[2])
+    assert metadata["previous_receipt_id"] == current_receipt_id
+    assert metadata["packet_diff"]["phase_changed"] is True
 
 
 def test_shortcut_governance_demotes_quality_harming_shortcut() -> None:

@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT))
 
 from services import success_criteria  # noqa: E402
 from services.asset_lifecycle import AssetLifecycleState  # noqa: E402
+from services.tmcp_runtime import compile_tmcp_packet, ensure_tmcp_schema  # noqa: E402
 from services.workflow_orchestration import (  # noqa: E402
     HEALTH_TO_WORKFLOW_RULES,
     ApprovalGateBinding,
@@ -581,6 +582,106 @@ def test_stage_evaluation_summary_in_report() -> None:
     first_stage = report["stage_evaluations"][0]
     assert first_stage["stage_key"] == report["stages"][0]["stage_key"]
     assert first_stage["outcome"] in {"completed", "failed", "blocked"}
+
+
+def test_workflow_runtime_expands_tmcp_packet_when_stage_phase_changes(
+    tmp_path: Path,
+) -> None:
+    workflow_registry = tmp_path / "registry.json"
+    skill_registry = tmp_path / "skills.json"
+    workflow_registry.write_text(
+        json.dumps(
+            {
+                "version": "test",
+                "stage_kinds": ["parse_request", "generate", "validate", "finalize"],
+                "workflows": [
+                    {
+                        "key": "tmcp-runtime-phase-test",
+                        "name": "TMCP Runtime Phase Test",
+                        "purpose": "Verify runtime TMCP phase expansion",
+                        "trigger_hints": ["tmcp"],
+                        "output_contract": ["phase-aware packet"],
+                        "required_validations": [],
+                        "stages": [
+                            {
+                                "key": "parse",
+                                "kind": "parse_request",
+                                "required_skills": [],
+                            },
+                            {
+                                "key": "implement",
+                                "kind": "generate",
+                                "required_skills": [],
+                            },
+                            {
+                                "key": "verify",
+                                "kind": "validate",
+                                "required_skills": [],
+                            },
+                            {
+                                "key": "close",
+                                "kind": "finalize",
+                                "required_skills": [],
+                            },
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    skill_registry.write_text(json.dumps({"version": "test", "skills": []}), encoding="utf-8")
+
+    library = tmp_path / "skills-library"
+    tmcp = library / "skills.tmcp"
+    for directory in ("tasks", "modules", "branches", "shortcuts"):
+        (tmcp / directory).mkdir(parents=True, exist_ok=True)
+    (tmcp / "router.md").write_text("# Router\n", encoding="utf-8")
+    (tmcp / "tasks" / "implementation.md").write_text("# Implementation\n", encoding="utf-8")
+    (tmcp / "modules" / "test_gate.md").write_text("# Test Gate\n", encoding="utf-8")
+    (tmcp / "modules" / "minimal_patch_policy.md").write_text(
+        "# Minimal Patch\n", encoding="utf-8"
+    )
+    (tmcp / "modules" / "output_contract.md").write_text("# Output\n", encoding="utf-8")
+    (tmcp / "branches" / "direct_implementation.branch.md").write_text(
+        "# Direct\n", encoding="utf-8"
+    )
+    (tmcp / "shortcuts" / "candidate.md").write_text("# Candidate\n", encoding="utf-8")
+    initial_packet = compile_tmcp_packet(
+        objective="Implement the feature and run tests",
+        project_path="/tmp/project",
+        skills_library_path=library,
+        phase="planning",
+    )
+
+    conn = sqlite3.connect(":memory:")
+    ensure_tmcp_schema(conn)
+    report = execute_workflow(
+        WorkflowExecutionContext(
+            objective="Implement the feature and run tests",
+            workflow_key="tmcp-runtime-phase-test",
+            tmcp_packet=initial_packet,
+            invocation_id="invoke-workflow",
+        ),
+        workflow_registry_path=workflow_registry,
+        skill_registry_path=skill_registry,
+        conn=conn,
+    )
+
+    expansions = report["artifacts"]["tmcp_packet_expansions"]
+    assert [expansion["stage_key"] for expansion in expansions] == [
+        "implement",
+        "verify",
+        "close",
+    ]
+    assert [expansion["active_packet"]["phase"] for expansion in expansions] == [
+        "implementation",
+        "testing",
+        "closeout",
+    ]
+    assert report["artifacts"]["tmcp_packet"]["phase"] == "closeout"
+    assert all(expansion["receipt_id"] for expansion in expansions)
+    assert report["stages"][1]["tmcp_expansion"]["stage_phase"] == "implementation"
 
 
 def test_divergent_judge_stage_satisfies_required_validation_with_stage_findings(

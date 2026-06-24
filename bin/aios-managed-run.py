@@ -181,6 +181,33 @@ def write_tmcp_packet_artifact(
     TMCP_PACKET_DIR.mkdir(parents=True, exist_ok=True)
     packet_path = TMCP_PACKET_DIR / f"{invocation_id}.json"
     packet_path.write_text(json.dumps(packet, indent=2, sort_keys=True), encoding="utf-8")
+    metadata_json = json.dumps(
+        {
+            "run_id": run_id,
+            "invocation_id": invocation_id,
+            "tmcp_receipt_id": receipt_id,
+            "task_id": packet.get("task_id"),
+            "traversal_fingerprint": packet.get("traversal_fingerprint"),
+        },
+        sort_keys=True,
+    )
+    updated = conn.execute(
+        """
+        UPDATE artifacts
+        SET metadata_json = ?, created_at = ?
+        WHERE session_id = ?
+          AND artifact_type = 'tmcp-packet'
+          AND path = ?
+        """,
+        (
+            metadata_json,
+            now_iso(),
+            session_id,
+            str(packet_path),
+        ),
+    )
+    if updated.rowcount:
+        return str(packet_path)
     conn.execute(
         """
         INSERT INTO artifacts (id, session_id, artifact_type, path, metadata_json, created_at)
@@ -190,16 +217,7 @@ def write_tmcp_packet_artifact(
             f"artifact-{uuid.uuid4()}",
             session_id,
             str(packet_path),
-            json.dumps(
-                {
-                    "run_id": run_id,
-                    "invocation_id": invocation_id,
-                    "tmcp_receipt_id": receipt_id,
-                    "task_id": packet.get("task_id"),
-                    "traversal_fingerprint": packet.get("traversal_fingerprint"),
-                },
-                sort_keys=True,
-            ),
+            metadata_json,
             now_iso(),
         ),
     )
@@ -208,13 +226,19 @@ def write_tmcp_packet_artifact(
 
 def _tmcp_validation_evidence(workflow_report: dict[str, object]) -> list[str]:
     evidence: list[str] = []
-    for validation in workflow_report.get("validations", []):
+    validations = workflow_report.get("validations", [])
+    if not isinstance(validations, list):
+        validations = []
+    for validation in validations:
         if not isinstance(validation, dict):
             continue
         validation_key = str(validation.get("validation_key", "validation"))
         passed = "passed" if validation.get("passed") else "failed"
         evidence.append(f"{validation_key} {passed}")
-    for stage in workflow_report.get("stage_evaluations", []):
+    stage_evaluations = workflow_report.get("stage_evaluations", [])
+    if not isinstance(stage_evaluations, list):
+        stage_evaluations = []
+    for stage in stage_evaluations:
         if not isinstance(stage, dict):
             continue
         stage_key = str(stage.get("stage_key", "stage"))
@@ -509,6 +533,7 @@ def main() -> int:
                 vault_root=context["obsidian_path"],
                 run_id=run_id,
                 invocation_id=invocation_id,
+                session_id=session_id,
                 tmcp_packet=tmcp_packet,
             )
             tmcp_receipt_id = persist_tmcp_traversal_receipt(
@@ -528,13 +553,36 @@ def main() -> int:
                 receipt_id=tmcp_receipt_id,
             )
             workflow_report = execute_workflow(workflow_context, conn=conn)
+            active_tmcp_packet = workflow_report.get("artifacts", {}).get("tmcp_packet")
+            active_tmcp_receipt_id = tmcp_receipt_id
+            if isinstance(active_tmcp_packet, dict):
+                tmcp_packet = active_tmcp_packet
+                active_tmcp_receipt_id = str(active_tmcp_packet.get("receipt_id") or tmcp_receipt_id)
+                tmcp_packet_path = write_tmcp_packet_artifact(
+                    conn,
+                    session_id=session_id,
+                    run_id=run_id,
+                    invocation_id=invocation_id,
+                    packet=tmcp_packet,
+                    receipt_id=active_tmcp_receipt_id,
+                )
             workflow_report.setdefault("artifacts", {})["tmcp_packet_path"] = tmcp_packet_path
+            if active_tmcp_receipt_id != tmcp_receipt_id:
+                update_tmcp_traversal_receipt_outcome(
+                    conn,
+                    receipt_id=tmcp_receipt_id,
+                    execution_outcome="superseded_by_runtime_expansion",
+                    validation_evidence=[
+                        f"active_receipt_id={active_tmcp_receipt_id}",
+                    ],
+                )
             update_tmcp_traversal_receipt_outcome(
                 conn,
-                receipt_id=tmcp_receipt_id,
+                receipt_id=active_tmcp_receipt_id,
                 execution_outcome=str(workflow_report.get("status", "completed")),
                 validation_evidence=_tmcp_validation_evidence(workflow_report),
             )
+            tmcp_receipt_id = active_tmcp_receipt_id
             workflow_summary = summarize_execution_report(workflow_report)
             WORKFLOW_REPORT_DIR.mkdir(parents=True, exist_ok=True)
             workflow_path = WORKFLOW_REPORT_DIR / f"{invocation_id}.json"

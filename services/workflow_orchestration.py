@@ -32,6 +32,7 @@ from services.semantic_workflow_routing import (
     configured_semantic_reasoner,
     semantic_recommendation,
 )
+from services.tmcp_runtime import expand_tmcp_packet_for_requirement_change
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_WORKFLOW_REGISTRY = ROOT / "config" / "workflows" / "registry.json"
@@ -113,6 +114,15 @@ _ALLOWED_PROMPT_ROLES = frozenset({"primary", "fallback"})
 _VALID_CRITERION_IDS_CACHE: frozenset[str] | None = None
 _VALID_PROMPT_TEMPLATE_IDS_CACHE: frozenset[str] | None = None
 _VALID_STANDARDS_IDS_CACHE: frozenset[str] | None = None
+_TMCP_STAGE_PHASES = {
+    "parse_request": "planning",
+    "normalize_prompt": "planning",
+    "enrich_context": "planning",
+    "generate": "implementation",
+    "transform": "implementation",
+    "validate": "testing",
+    "finalize": "closeout",
+}
 
 
 @dataclass(frozen=True)
@@ -283,6 +293,7 @@ class WorkflowExecutionContext:
     prompt_registry_path: str | None = None
     run_id: str | None = None
     invocation_id: str | None = None
+    session_id: str | None = None
     tmcp_packet: dict[str, Any] | None = None
 
 
@@ -1670,6 +1681,43 @@ def _build_stage_evaluation_summary(
     }
 
 
+def _expand_tmcp_packet_for_stage(
+    *,
+    conn: sqlite3.Connection | None,
+    context: WorkflowExecutionContext,
+    stage: StageSpec,
+    run_state: dict[str, Any],
+) -> dict[str, Any] | None:
+    current_packet = run_state.get("tmcp_packet")
+    stage_phase = _TMCP_STAGE_PHASES.get(stage.kind)
+    if conn is None or stage_phase is None or not isinstance(current_packet, dict):
+        return None
+    if current_packet.get("phase") == stage_phase:
+        return None
+    expansion = expand_tmcp_packet_for_requirement_change(
+        conn,
+        current_packet=current_packet,
+        objective=context.objective,
+        project_path=context.repo_path or current_packet.get("project_path"),
+        context_receipt_id=current_packet.get("context_receipt_id"),
+        run_id=context.run_id,
+        invocation_id=context.invocation_id,
+        session_id=context.session_id,
+        phase=stage_phase,
+        domain=current_packet.get("domain"),
+        reason=f"workflow stage {stage.key} ({stage.kind}) requires {stage_phase} behavior",
+    )
+    run_state["tmcp_packet"] = expansion["active_packet"]
+    expansion_summary = {
+        **expansion,
+        "stage_key": stage.key,
+        "stage_kind": stage.kind,
+        "stage_phase": stage_phase,
+    }
+    run_state.setdefault("tmcp_packet_expansions", []).append(expansion_summary)
+    return expansion_summary
+
+
 def execute_workflow(
     context: WorkflowExecutionContext,
     *,
@@ -1715,6 +1763,12 @@ def execute_workflow(
         skill_reports: list[dict[str, Any]] = []
         stage_issues: list[str] = []
         stage_validations: list[dict[str, Any]] = []
+        stage_tmcp_expansion = _expand_tmcp_packet_for_stage(
+            conn=conn,
+            context=context,
+            stage=stage,
+            run_state=run_state,
+        )
 
         for skill_key in stage.required_skills:
             spec = skills[skill_key]
@@ -1832,6 +1886,7 @@ def execute_workflow(
                 else "compressed",
                 "skills": skill_reports,
                 "issues": stage_issues,
+                "tmcp_expansion": stage_tmcp_expansion,
                 "stage_evaluation": stage_eval_summary,
                 "started_at": stage_started,
                 "ended_at": _now_iso(),
@@ -1889,6 +1944,7 @@ def execute_workflow(
             "learned_workflow_evidence": run_state.get("learned_workflow_evidence", []),
             "agentized_task_packet": run_state.get("agentized_task_packet"),
             "tmcp_packet": run_state.get("tmcp_packet"),
+            "tmcp_packet_expansions": run_state.get("tmcp_packet_expansions", []),
         },
         "rtk": {
             "interface": rtk_rules.get(

@@ -1283,18 +1283,34 @@ def test_managed_runtime_uses_promoted_tmcp_shortcut(runtime_db: Path, tmp_path:
         ).fetchone()[0]
     )
     tmcp_packet = workflow_payload["artifacts"]["tmcp_packet"]
-    assert tmcp_packet["shortcut_candidate"]["matched"] is True
-    assert tmcp_packet["shortcut_candidate"]["status"] == "active"
-    assert tmcp_packet["entry_node"].startswith("@shortcut:agent_workflow:")
+    assert tmcp_packet["phase"] == "closeout"
+    assert workflow_payload["artifacts"]["tmcp_packet_expansions"]
+
+    initial_shortcut_receipt = conn.execute(
+        """
+        SELECT packet_json, execution_outcome
+        FROM tmcp_traversal_receipts
+        WHERE run_id = ? AND invocation_id = ?
+          AND execution_outcome = 'superseded_by_runtime_expansion'
+        ORDER BY created_at ASC
+        LIMIT 1
+        """,
+        (run_id, invocation_id),
+    ).fetchone()
+    assert initial_shortcut_receipt is not None
+    initial_shortcut_packet = json.loads(initial_shortcut_receipt[0])
+    assert initial_shortcut_packet["shortcut_candidate"]["matched"] is True
+    assert initial_shortcut_packet["shortcut_candidate"]["status"] == "active"
+    assert initial_shortcut_packet["entry_node"].startswith("@shortcut:agent_workflow:")
 
     receipt = conn.execute(
         """
         SELECT execution_outcome, validation_evidence_json
         FROM tmcp_traversal_receipts
-        WHERE run_id = ? AND invocation_id = ?
+        WHERE id = ?
         LIMIT 1
         """,
-        (run_id, invocation_id),
+        (tmcp_packet["receipt_id"],),
     ).fetchone()
     conn.close()
     assert receipt[0] == "completed"

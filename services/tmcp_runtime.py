@@ -19,6 +19,7 @@ TMCP_RECEIPT_SCHEMA = "tmcp-traversal-receipt-v0.3"
 TMCP_EVENT_SCHEMA = "tmcp-receipt-event-v0.1"
 TMCP_ADHERENCE_SCHEMA = "tmcp-packet-adherence-v0.1"
 TMCP_PACKET_DIFF_SCHEMA = "tmcp-packet-diff-v0.1"
+TMCP_RUNTIME_EXPANSION_SCHEMA = "tmcp-runtime-expansion-v0.1"
 SHORTCUT_STATUSES = (
     "active",
     "stale_candidate",
@@ -70,7 +71,7 @@ TASK_PRIORITY = (
     "agent_workflow",
 )
 
-DEFAULT_MODULES = (
+DEFAULT_MODULES: tuple[str, ...] = (
     "context_gathering",
     "evidence_first",
     "provenance_policy",
@@ -541,6 +542,108 @@ def update_tmcp_traversal_receipt_outcome(
             receipt_id,
         ),
     )
+
+
+def expand_tmcp_packet_for_requirement_change(
+    conn: sqlite3.Connection,
+    *,
+    current_packet: dict[str, Any],
+    reason: str,
+    objective: str | None = None,
+    project_path: str | None = None,
+    context_receipt_id: str | None = None,
+    skills_library_path: Path | None = None,
+    run_id: str | None = None,
+    invocation_id: str | None = None,
+    session_id: str | None = None,
+    phase: str | None = None,
+    domain: str | None = None,
+) -> dict[str, Any]:
+    ensure_tmcp_schema(conn)
+    previous_receipt_id = _optional_str(current_packet.get("receipt_id"))
+    active_packet = compile_tmcp_packet(
+        objective=objective or str(current_packet.get("objective", "")),
+        project_path=project_path
+        if project_path is not None
+        else _optional_str(current_packet.get("project_path")),
+        context_receipt_id=context_receipt_id
+        if context_receipt_id is not None
+        else _optional_str(current_packet.get("context_receipt_id")),
+        skills_library_path=skills_library_path or _skills_library_from_packet(current_packet),
+        receipt_conn=conn,
+        phase=phase if phase is not None else _optional_str(current_packet.get("phase")),
+        domain=domain if domain is not None else _optional_str(current_packet.get("domain")),
+    )
+    packet_diff = diff_tmcp_packets(current_packet, active_packet)
+    receipt_id = persist_tmcp_traversal_receipt(
+        conn,
+        packet=active_packet,
+        run_id=run_id,
+        invocation_id=invocation_id,
+        session_id=session_id,
+        execution_outcome="active_runtime_expansion",
+        validation_evidence=[
+            f"runtime requirement change: {reason}",
+            f"previous_receipt_id={previous_receipt_id or 'none'}",
+        ],
+    )
+    active_packet["receipt_id"] = receipt_id
+    conn.execute(
+        """
+        UPDATE tmcp_traversal_receipts
+        SET packet_json = ?
+        WHERE id = ?
+        """,
+        (json.dumps(active_packet, sort_keys=True), receipt_id),
+    )
+    if previous_receipt_id:
+        update_tmcp_traversal_receipt_outcome(
+            conn,
+            receipt_id=previous_receipt_id,
+            execution_outcome="superseded_by_runtime_expansion",
+            validation_evidence=[
+                f"active_receipt_id={receipt_id}",
+                f"runtime requirement change: {reason}",
+            ],
+        )
+    metadata = {
+        "reason": reason,
+        "previous_receipt_id": previous_receipt_id,
+        "new_receipt_id": receipt_id,
+        "packet_diff": packet_diff,
+        "phase": active_packet.get("phase"),
+        "domain": active_packet.get("domain"),
+        "selected_nodes": active_packet.get("selected_nodes", []),
+    }
+    intervention_id = record_tmcp_intervention_event(
+        conn,
+        receipt_id=receipt_id,
+        run_id=run_id,
+        invocation_id=invocation_id,
+        intervention_type="runtime_packet_expansion",
+        summary=f"Runtime TMCP packet expanded after requirement change: {reason}",
+        outcome="expanded_packet_required",
+        metadata=metadata,
+    )
+    record_tmcp_receipt_event(
+        conn,
+        receipt_id=receipt_id,
+        run_id=run_id,
+        invocation_id=invocation_id,
+        event_type="packet_expanded",
+        summary="Runtime TMCP packet expansion became the active workflow packet.",
+        metadata=metadata,
+    )
+    return {
+        "schema": TMCP_RUNTIME_EXPANSION_SCHEMA,
+        "status": "expanded",
+        "reason": reason,
+        "previous_receipt_id": previous_receipt_id,
+        "receipt_id": receipt_id,
+        "intervention_id": intervention_id,
+        "packet_diff": packet_diff,
+        "active_packet": active_packet,
+    }
 
 
 def update_tmcp_receipt_feedback(
@@ -1686,6 +1789,23 @@ def _json_list(value: object) -> list[Any]:
     except json.JSONDecodeError:
         return []
     return parsed if isinstance(parsed, list) else []
+
+
+def _optional_str(value: object) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _skills_library_from_packet(packet: dict[str, Any]) -> Path | None:
+    source = _optional_str(packet.get("source"))
+    if source is None:
+        return None
+    source_path = Path(source)
+    if source_path.name == "skills.tmcp":
+        return source_path.parent
+    return source_path
 
 
 def _has_unresolved_shortcut_blocker(evidence: list[Any], selected_nodes: list[Any]) -> bool:
