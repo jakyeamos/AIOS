@@ -36,6 +36,12 @@ Root operator documentation now lives in `README.md`, including local UI launch 
 
 ## Implemented On 2026-06-24
 
+AIOS automatic Codex shadow routing now has an explicit nonblocking diagnostic contract:
+
+- `scripts/codex-aios-shadow.py` marks automatic route failures with machine-readable `baseline.approval_required: false` and `baseline.can_continue_without_shadow: true`
+- `AGENTS.md`, `README.md`, and `docs/diagnostics/route-blocked-failures.md` distinguish automatic route misses from shadow setup failures, so `ok: true`, non-governed `route_failed` payloads no longer require explicit user approval before baseline work continues
+- governed `/aios` route failures remain blocking, while automatic shadow route misses continue to be appended to `data/aios-route-failures.jsonl` as diagnostic evidence
+
 AIOS now has an explicit durable-agent-workflow layer:
 
 - `aios/context/packets/workflow.durable-agent-workflows.md` defines the concise agent-facing contract for durable workspaces, goal verifiers, steering, queueing, declared work surfaces, reviewable artifacts, automation modes, durable memory, and TMCP skill candidacy
