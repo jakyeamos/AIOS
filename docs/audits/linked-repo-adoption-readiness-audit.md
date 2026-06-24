@@ -422,3 +422,11 @@ Phase 24 Plan 24-08 added `scripts/content-container-validator.py` and registere
 `BBDSE` remains blocked on aggregate delegated `validation`, delegated `pre_cr`, `ci`, and mature content-container `test`: `quality-BBDSE-validation-20260624051603311263`, `quality-BBDSE-pre_cr-20260624051607234619`, `quality-BBDSE-ci-20260624051608936531`, and `quality-BBDSE-test-20260624051712334907`.
 
 Neither content/container repo is ready. Plan 24-09 owns CI/default proof and non-remote exception handling.
+
+### Phase 24 Plan 24-09 CI/Exception Decision
+
+The user selected `no-exceptions` for non-remote CI exceptions on 2026-06-24. No `non_remote_ci_exception` objects were added.
+
+`python3 scripts/linked-repo-quality-runner.py --report` still reports `ready_count: 0`, `blocked_count: 21`, `evidence_required_count: 0`, and `excluded_count: 2`. `video-pipeline` and `agent-router` remain excluded.
+
+Every in-scope repo still has `ci_default_proof_missing`. Existing `ci` evidence rows are local blocked records or workflow-file presence records, not default-branch pass proof. Phase 24 closeout must therefore preserve a blocked-readiness ledger rather than claiming portfolio readiness.

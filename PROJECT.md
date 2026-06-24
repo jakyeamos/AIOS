@@ -1570,3 +1570,9 @@ The spec execution roadmap has been corrected before execution:
 - Documented the Vaults validation contract in external commit `26e38ed` and BBDSE child-project ownership in external commit `ffd3b4c`.
 - `Vaults` now has evidence for content/vault validation, but remains blocked on failing validator, secret scan, Pre-CR, and CI/default proof.
 - `BBDSE` now has child ownership documentation and aggregate delegated validation evidence, but remains blocked on failing delegated child Pre-CR evidence and CI/default proof.
+
+## 2026-06-24 - Phase 24 CI exception decision
+
+- Non-remote CI exceptions were not approved for Phase 24.
+- No `non_remote_ci_exception` objects were added to `config/quality-pipeline.json`.
+- Current truth: all 21 Phase 24 in-scope repos remain blocked, every in-scope repo still carries `ci_default_proof_missing`, and `video-pipeline` plus `agent-router` remain excluded.
