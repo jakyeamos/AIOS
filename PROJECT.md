@@ -48,6 +48,7 @@ AIOS linked-project adoption contracts now cover the active source inventory:
 - Phase 23 now owns linked-repository strict release-readiness maturation after Phase 22 as eight GSD-standard plans covering audit, class-based contracts, class-specific repo maturation, evidence reporting, final verification, CI/default-branch proof, and explicit treatment of dirty trees as lower-priority closeout hygiene rather than the main adoption blocker
 - Phase 23 execution produced `.planning/phases/23-mature-linked-repositories-to-aios-strict-release-readiness/23-VERIFICATION.md`: 23 active repo contracts validate, copied and live all-inventory standards-health proof record 23 snapshots with no missing-source contamination, but strict adoption readiness remains blocked with 0 ready repos, 2 evidence-required repos (`soundscape-app`, AIOS), and 21 blocked repos
 - BBDSE is no longer represented as mature by `git diff --check`; it is a blocked container repo with delegated subproject pre-cr gates and still needs aggregate evidence, child-project ownership, and CI or an explicit non-remote exception before readiness
+- Phase 24 Plan 24-02 recorded fresh local evidence rows for `soundscape-app` and AIOS through `scripts/linked-repo-quality-runner.py`; both repos remain blocked rather than ready because several gates failed or remain blocked, and CI/default-branch proof was not verified locally
 
 ## Implemented On 2026-06-23
 

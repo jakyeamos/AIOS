@@ -172,3 +172,27 @@ The report returns JSON with `target_count`, `excluded_count`, `ready_count`, `b
 ```bash
 python3 scripts/linked-repo-quality-runner.py --project soundscape-app --gate lint --dry-run
 ```
+
+### Phase 24 Plan 24-02 Evidence Update
+
+Phase 24 Plan 24-02 recorded fresh local `quality_pipeline_runs` rows for `soundscape-app` and AIOS. Neither repo is ready after this pass.
+
+`soundscape-app` currently reports `blocked`. Passing local evidence exists for:
+
+- `install`: `quality-soundscape-app-install-20260624030240386207`
+- `build`: `quality-soundscape-app-build-20260624030754235748`
+- `architecture`: `quality-soundscape-app-architecture-20260624030903961084`
+- `repo_truth`: `quality-soundscape-app-repo_truth-20260624030921689608`
+
+`soundscape-app` has failed or blocked evidence for `lint`, `typecheck`, `test`, `ci`, `secret_scan`, `env_validation`, `dependency_security`, `coverage`, `e2e_smoke`, `seo`, `telemetry_utility`, `db_restore`, `pitr_monitor`, `mobile_release`, `full_e2e`, and `pre_cr`. CI/default-branch status was not verified locally; workflow-file presence was recorded only as blocked proof.
+
+AIOS currently reports `blocked`. Passing local evidence exists for:
+
+- `lint`: `quality-aios-lint-20260624031207273699`
+- `typecheck`: `quality-aios-typecheck-20260624031219178848`
+- `build`: `quality-aios-build-20260624031232586125`
+- `pre_pr_readiness`: `quality-aios-pre_pr_readiness-20260624031144459912`
+- `thermo_nuclear_simplification`: `quality-aios-thermo_nuclear_simplification-20260624031145649704`
+- `repo_truth`: `quality-aios-repo_truth-20260624031332592940`
+
+AIOS has failed or blocked evidence for `install`, `test`, `architecture`, `ci`, `divergent_strategy_standard`, and `pre_cr`. Dirty-tree state remains closeout hygiene and is separate from this readiness verdict.
