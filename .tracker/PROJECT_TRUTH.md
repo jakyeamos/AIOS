@@ -1,12 +1,11 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, and a smoke-verified expert-rubric-remediation workflow through service artifacts, runtime, registry, routing, and `aios tmcp review-plan`, with existing Python quality baseline failures still open.
-healthScore: 68
+summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, and a smoke-verified expert-rubric-remediation workflow through service artifacts, runtime, registry, routing, and `aios tmcp review-plan`; the full Python pytest baseline is green again while broader Ruff and BasedPyright baseline issues remain open.
+healthScore: 72
 statusLabel: needs_attention
-nextStep: Use the smoke-verified `aios tmcp review-plan` workflow on the full Soundscape visual-polish evidence set, then address the existing CLI learning/contracts/skills-harvest and BasedPyright baseline failures.
+nextStep: Use the smoke-verified `aios tmcp review-plan` workflow on the full Soundscape visual-polish evidence set, then triage the remaining Ruff format/check and BasedPyright baseline failures.
 blockers:
-  - Full repo pytest fails with 11 existing failures across learning analysis, stale contracts audit expectations, skills harvest validation shape, and workflow experiment fixture commits blocked by the user commit quality gate.
   - Full repo Ruff and format baselines are not green: Ruff reports 25 issues and Ruff format reports 178 files needing formatting.
   - Full repo BasedPyright is not green: 110 errors and 101 warnings, including the existing `services/aios_cli.py` `run_cli` complexity baseline.
 lastUpdated: 2026-06-24
@@ -21,7 +20,7 @@ lastCommitDate: 2026-06-24
 quality:
   lint: fail
   types: fail
-  tests: fail
+  tests: pass
   deadCode: pass
   structure: fail
 canonicalCommands:
@@ -79,21 +78,20 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-06-24: Added an AIOS-local TDD Test Value Adoption Gate across the backfill quality ratchet, standards ladder contract, testing context, and test-quality/testing-trust criteria so TDD-heavy repos are judged by behavioral test signal rather than test volume.
 - 2026-06-24: Executed expert rubric remediation through Phase 28 Plan 28-01: core artifact builders, workflow runtime dispatch, active registry entries, expert route scoring, and the read-only `aios tmcp review-plan` CLI now exist with focused regression coverage.
 - 2026-06-24: Smoke-verified `aios tmcp review-plan` against Soundscape visual-polish evidence, producing rubric, audit, remediation, and approval-gated handoff artifacts under `/tmp/aios-expert-review-smoke`.
+- 2026-06-24: Restored the full Python pytest baseline by fixing stale relative-window learning fixtures, updating implemented contract-audit expectations, restoring the skills-harvest validation boolean, generating the missing default TMCP approval branch, and making workflow-experiment temp repos satisfy the user commit quality gate without blocking artifact commits.
 
 ## Open Problems
 
-1. **Full Python test suite is not green** — `uv run pytest -q` failed on 2026-06-24 with 11 failures: 8 existing CLI/learning/contracts/skills-harvest failures, 1 learning-analysis dispatcher failure, and 2 workflow-experiment fixture commits blocked by the user commit quality gate.
-2. **Full Ruff baseline is not green** — `uv run ruff check .` failed on 2026-06-24 with 25 issues; focused expert workflow Ruff checks still pass.
-3. **Full format baseline is not green** — `uv run ruff format --check .` reported 178 files needing formatting on 2026-06-24.
-4. **Full BasedPyright baseline is not green** — `uv run basedpyright` failed on 2026-06-24 with 110 errors and 101 warnings, including existing `run_cli` complexity.
+1. **Full Ruff baseline is not green** — `uv run ruff check .` failed on 2026-06-24 with 25 issues; touched-file Ruff checks pass for the pytest-baseline fix.
+2. **Full format baseline is not green** — `uv run ruff format --check .` reported 178 files needing formatting on 2026-06-24; touched-file format checks pass for the pytest-baseline fix.
+3. **Full BasedPyright baseline is not green** — `uv run basedpyright` failed on 2026-06-24 with 110 errors and 101 warnings, including existing `run_cli` complexity.
 
 ## Next Concrete Steps
 
 1. Use `aios tmcp review-plan` on the full Soundscape visual-polish evidence set and review the generated implementation handoff before approving any remediation slice.
-2. Fix or intentionally update the 11 current full-suite pytest failures, starting with learning-analysis expectations and workflow-experiment fixture commits blocked by the user commit quality gate.
-3. Triage the full BasedPyright baseline, starting with `run_cli` complexity and optional-access/type-helper errors in runtime-critical modules.
-4. Run Ruff autofix/format in planned chunks rather than broad unreviewed churn.
-5. Keep the eval-run service/CLI contract covered as later external harness adapters add more write paths.
+2. Triage the full BasedPyright baseline, starting with `run_cli` complexity and optional-access/type-helper errors in runtime-critical modules.
+3. Run Ruff autofix/format in planned chunks rather than broad unreviewed churn.
+4. Keep the eval-run service/CLI contract covered as later external harness adapters add more write paths.
 
 ## Risks / Blockers
 
@@ -108,7 +106,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 | Lint (ruff) | Fail | `uv run ruff check .` failed on 2026-06-24 with 25 issues. Focused expert workflow Ruff checks pass. |
 | Type check (basedpyright) | Fail | `uv run basedpyright` failed on 2026-06-24 with 110 errors and 101 warnings, including existing `run_cli` complexity. |
 | Dead code (vulture) | Pass | `uv run vulture . --min-confidence 70` exited 0 on 2026-06-24. |
-| Tests | Fail | `uv run pytest -q` failed on 2026-06-24 with 11 failures and 950 passes. Focused expert workflow regressions pass. |
+| Tests | Pass | `uv run pytest -q` passed on 2026-06-24 with 961 tests. |
 | Structure | Fail | `uv run ruff format --check .` reported 178 files needing formatting on 2026-06-24. Focused expert workflow format checks pass. |
 
 Focused expert workflow checks on 2026-06-24:
