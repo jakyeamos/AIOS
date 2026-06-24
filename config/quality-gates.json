@@ -306,6 +306,22 @@
             [
               "pnpm",
               "build"
+            ],
+            [
+              "pnpm",
+              "env:check"
+            ],
+            [
+              "pnpm",
+              "secret:scan"
+            ],
+            [
+              "pnpm",
+              "dependency:security"
+            ],
+            [
+              "pnpm",
+              "smoke"
             ]
           ],
           "fullCommands": [
@@ -324,6 +340,22 @@
             [
               "pnpm",
               "build"
+            ],
+            [
+              "pnpm",
+              "env:check"
+            ],
+            [
+              "pnpm",
+              "secret:scan"
+            ],
+            [
+              "pnpm",
+              "dependency:security"
+            ],
+            [
+              "pnpm",
+              "smoke"
             ]
           ]
         },
@@ -521,7 +553,27 @@
             ],
             [
               "pnpm",
+              "test"
+            ],
+            [
+              "pnpm",
               "build"
+            ],
+            [
+              "pnpm",
+              "env:check"
+            ],
+            [
+              "pnpm",
+              "secret:scan"
+            ],
+            [
+              "pnpm",
+              "dependency:security"
+            ],
+            [
+              "pnpm",
+              "e2e:smoke"
             ]
           ],
           "fullCommands": [
@@ -535,7 +587,27 @@
             ],
             [
               "pnpm",
+              "test"
+            ],
+            [
+              "pnpm",
               "build"
+            ],
+            [
+              "pnpm",
+              "env:check"
+            ],
+            [
+              "pnpm",
+              "secret:scan"
+            ],
+            [
+              "pnpm",
+              "dependency:security"
+            ],
+            [
+              "pnpm",
+              "e2e:smoke"
             ]
           ]
         },
@@ -564,7 +636,7 @@
         "status": "class_blocked",
         "reason": "Production/public web strict gates are configured only where real local surfaces exist; missing gates are tracked in config/quality-pipeline.json maturation_blockers.",
         "requiredNextSteps": [
-          "Missing test script, architecture binding, secret scan, env validation, dependency security, and smoke/e2e gate."
+          "Fresh evidence, architecture binding, coverage proof, and CI/default-branch proof remain required."
         ]
       }
     },
@@ -865,21 +937,61 @@
           "preCommitCommands": [
             [
               "pnpm",
-              "lint"
+              "typecheck"
+            ],
+            [
+              "pnpm",
+              "test"
             ],
             [
               "pnpm",
               "build"
+            ],
+            [
+              "pnpm",
+              "env:check"
+            ],
+            [
+              "pnpm",
+              "secret:scan"
+            ],
+            [
+              "pnpm",
+              "dependency:security"
+            ],
+            [
+              "pnpm",
+              "e2e:smoke"
             ]
           ],
           "fullCommands": [
             [
               "pnpm",
-              "lint"
+              "typecheck"
+            ],
+            [
+              "pnpm",
+              "test"
             ],
             [
               "pnpm",
               "build"
+            ],
+            [
+              "pnpm",
+              "env:check"
+            ],
+            [
+              "pnpm",
+              "secret:scan"
+            ],
+            [
+              "pnpm",
+              "dependency:security"
+            ],
+            [
+              "pnpm",
+              "e2e:smoke"
             ]
           ]
         },
@@ -1238,6 +1350,22 @@
             [
               "pnpm",
               "build"
+            ],
+            [
+              "pnpm",
+              "env:check"
+            ],
+            [
+              "pnpm",
+              "secret:scan"
+            ],
+            [
+              "pnpm",
+              "dependency:security"
+            ],
+            [
+              "pnpm",
+              "e2e:smoke"
             ]
           ],
           "fullCommands": [
@@ -1256,6 +1384,22 @@
             [
               "pnpm",
               "build"
+            ],
+            [
+              "pnpm",
+              "env:check"
+            ],
+            [
+              "pnpm",
+              "secret:scan"
+            ],
+            [
+              "pnpm",
+              "dependency:security"
+            ],
+            [
+              "pnpm",
+              "e2e:smoke"
             ]
           ]
         },

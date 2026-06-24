@@ -494,11 +494,35 @@
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
+        },
+        "typecheck": {
+          "command": "pnpm typecheck",
+          "working_directory": "."
+        },
+        "test": {
+          "command": "pnpm test",
+          "working_directory": "."
+        },
+        "env_validation": {
+          "command": "pnpm env:check",
+          "working_directory": "."
+        },
+        "secret_scan": {
+          "command": "pnpm secret:scan",
+          "working_directory": "."
+        },
+        "dependency_security": {
+          "command": "pnpm dependency:security",
+          "working_directory": "."
+        },
+        "e2e_smoke": {
+          "command": "pnpm e2e:smoke",
+          "working_directory": "."
         }
       },
       "repo_class": "production_public_web_app",
       "maturation_blockers": [
-        "Missing test script, typecheck script, secret scan, env validation, dependency security, and smoke/e2e gate."
+        "Fresh local evidence, coverage proof, and CI/default-branch proof are required before final adoption-ready status."
       ],
       "strict_readiness_status": "blocked"
     },
@@ -656,11 +680,31 @@
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
+        },
+        "test": {
+          "command": "pnpm test",
+          "working_directory": "."
+        },
+        "env_validation": {
+          "command": "pnpm env:check",
+          "working_directory": "."
+        },
+        "secret_scan": {
+          "command": "pnpm secret:scan",
+          "working_directory": "."
+        },
+        "dependency_security": {
+          "command": "pnpm dependency:security",
+          "working_directory": "."
+        },
+        "e2e_smoke": {
+          "command": "pnpm e2e:smoke",
+          "working_directory": "."
         }
       },
       "repo_class": "production_public_web_app",
       "maturation_blockers": [
-        "Missing test script, substantive architecture rules, secret scan, env validation, dependency security, and smoke/e2e gate."
+        "Substantive architecture rules, coverage proof, and fresh CI/default-branch proof are still required before final adoption-ready status."
       ],
       "strict_readiness_status": "blocked"
     },
@@ -806,11 +850,23 @@
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
+        },
+        "env_validation": {
+          "command": "pnpm env:check",
+          "working_directory": "."
+        },
+        "secret_scan": {
+          "command": "pnpm secret:scan",
+          "working_directory": "."
+        },
+        "dependency_security": {
+          "command": "pnpm dependency:security",
+          "working_directory": "."
         }
       },
       "repo_class": "production_public_web_app",
       "maturation_blockers": [
-        "Missing substantive architecture rules, CI workflow, secret scan, env validation, and dependency security gate."
+        "Substantive architecture rules, CI/default-branch proof, and coverage proof are still required before final adoption-ready status."
       ],
       "strict_readiness_status": "blocked"
     },
@@ -851,11 +907,27 @@
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
+        },
+        "env_validation": {
+          "command": "pnpm env:check",
+          "working_directory": "."
+        },
+        "secret_scan": {
+          "command": "pnpm secret:scan",
+          "working_directory": "."
+        },
+        "dependency_security": {
+          "command": "pnpm dependency:security",
+          "working_directory": "."
+        },
+        "e2e_smoke": {
+          "command": "pnpm e2e:smoke",
+          "working_directory": "."
         }
       },
       "repo_class": "production_public_web_app",
       "maturation_blockers": [
-        "Missing substantive architecture rules, CI workflow, secret scan, env validation, dependency security, and smoke/e2e gate."
+        "Substantive architecture rules, CI/default-branch proof, and coverage proof are still required before final adoption-ready status."
       ],
       "strict_readiness_status": "blocked"
     },
