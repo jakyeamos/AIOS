@@ -726,6 +726,10 @@
           "command": "pnpm lint",
           "working_directory": "."
         },
+        "typecheck": {
+          "command": "pnpm typecheck",
+          "working_directory": "."
+        },
         "test": {
           "command": "pnpm test",
           "working_directory": "."
@@ -742,6 +746,22 @@
           "command": "pnpm test:e2e",
           "working_directory": "."
         },
+        "ci": {
+          "command": ".github/workflows/aios-quality.yml",
+          "working_directory": "."
+        },
+        "secret_scan": {
+          "command": "pnpm secret:scan",
+          "working_directory": "."
+        },
+        "env_validation": {
+          "command": "pnpm env:check",
+          "working_directory": "."
+        },
+        "dependency_security": {
+          "command": "pnpm dependency:security",
+          "working_directory": "."
+        },
         "repo_truth": {
           "command": "AGENTS.md / README.md",
           "working_directory": "."
@@ -753,7 +773,7 @@
       },
       "repo_class": "production_public_web_app",
       "maturation_blockers": [
-        "Missing typecheck script, CI workflow, secret scan, env validation, dependency security gate, and current architecture/lint proof fails on existing lint debt."
+        "Substantive architecture proof, passing local evidence for all configured gates, and CI/default-branch proof are still required before final adoption-ready status."
       ],
       "strict_readiness_status": "blocked"
     },
@@ -997,16 +1017,36 @@
           "command": "pnpm lint",
           "working_directory": "."
         },
+        "typecheck": {
+          "command": "pnpm typecheck",
+          "working_directory": "."
+        },
+        "test": {
+          "command": "pnpm test",
+          "working_directory": "."
+        },
         "build": {
           "command": "pnpm build",
           "working_directory": "."
         },
-        "architecture": {
-          "command": "node scripts/aios-architecture-check.mjs",
-          "working_directory": "."
-        },
         "ci": {
           "command": ".github/workflows/aios-quality.yml",
+          "working_directory": "."
+        },
+        "secret_scan": {
+          "command": "pnpm secret:scan",
+          "working_directory": "."
+        },
+        "env_validation": {
+          "command": "pnpm env:check",
+          "working_directory": "."
+        },
+        "dependency_security": {
+          "command": "pnpm dependency:security",
+          "working_directory": "."
+        },
+        "e2e_smoke": {
+          "command": "pnpm e2e:smoke",
           "working_directory": "."
         },
         "repo_truth": {
@@ -1016,7 +1056,7 @@
       },
       "repo_class": "production_public_web_app",
       "maturation_blockers": [
-        "Missing test script, typecheck script, CI workflow, secret scan, env validation, dependency security, and smoke/e2e gate; package manager ambiguity remains because both pnpm-lock.yaml and package-lock.json exist."
+        "Substantive architecture proof, passing local evidence for all configured gates, and CI/default-branch proof are still required before final adoption-ready status."
       ],
       "strict_readiness_status": "blocked"
     },

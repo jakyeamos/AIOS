@@ -259,7 +259,23 @@
             ],
             [
               "pnpm",
+              "typecheck"
+            ],
+            [
+              "pnpm",
+              "test"
+            ],
+            [
+              "pnpm",
               "build"
+            ],
+            [
+              "pnpm",
+              "secret:scan"
+            ],
+            [
+              "pnpm",
+              "dependency:security"
             ]
           ],
           "fullCommands": [
@@ -269,7 +285,27 @@
             ],
             [
               "pnpm",
+              "typecheck"
+            ],
+            [
+              "pnpm",
+              "test"
+            ],
+            [
+              "pnpm",
               "build"
+            ],
+            [
+              "pnpm",
+              "secret:scan"
+            ],
+            [
+              "pnpm",
+              "dependency:security"
+            ],
+            [
+              "pnpm",
+              "e2e:smoke"
             ]
           ]
         }
@@ -278,7 +314,7 @@
         "status": "class_blocked",
         "reason": "Production/public web strict gates are configured only where real local surfaces exist; missing gates are tracked in config/quality-pipeline.json maturation_blockers.",
         "requiredNextSteps": [
-          "Missing test script, typecheck script, CI workflow, secret scan, env validation, dependency security, and smoke/e2e gate; package manager ambiguity remains because both pnpm-lock.yaml and package-lock.json exist."
+          "Substantive architecture proof, passing local evidence for all configured gates, and CI/default-branch proof are still required before final adoption-ready status."
         ]
       }
     },
@@ -1185,11 +1221,23 @@
             ],
             [
               "pnpm",
+              "typecheck"
+            ],
+            [
+              "pnpm",
               "test"
             ],
             [
               "pnpm",
               "build"
+            ],
+            [
+              "pnpm",
+              "secret:scan"
+            ],
+            [
+              "pnpm",
+              "dependency:security"
             ]
           ],
           "fullCommands": [
@@ -1199,11 +1247,23 @@
             ],
             [
               "pnpm",
+              "typecheck"
+            ],
+            [
+              "pnpm",
               "test"
             ],
             [
               "pnpm",
               "build"
+            ],
+            [
+              "pnpm",
+              "secret:scan"
+            ],
+            [
+              "pnpm",
+              "dependency:security"
             ]
           ]
         },
@@ -1232,7 +1292,7 @@
         "status": "class_blocked",
         "reason": "Production/public web strict gates are configured only where real local surfaces exist; missing gates are tracked in config/quality-pipeline.json maturation_blockers.",
         "requiredNextSteps": [
-          "Missing typecheck script, architecture binding, CI workflow, secret scan, env validation, and dependency security gate."
+          "Substantive architecture proof, passing local evidence for all configured gates, and CI/default-branch proof are still required before final adoption-ready status."
         ]
       }
     },
