@@ -1609,3 +1609,9 @@ The spec execution roadmap has been corrected before execution:
 - Updated quality-pipeline evaluation to honor `standard.classes[*].required_gates`; class contracts now decide blocker status, while non-class global gates remain visible without creating false blockers.
 - Filled missing runnable commands for required architecture/lint/Pre-CR/local-proof gates across the 20 in-scope repos.
 - Current truth: all 20 repos remain blocked, but setup is complete for execution. The report has 0 unconfigured required gates; remaining failures are recorded in `24-VERIFICATION.md` and should be cleared repo by repo.
+
+## 2026-06-24 - Codex AIOS shadow route-blocked diagnostics
+
+- Automatic Codex shadow setup no longer blocks baseline work when `start-work` returns `route-blocked`; it records a local JSONL diagnostic event and returns a non-blocking shadow payload instead.
+- Explicit governed `/aios` routing still treats `route-blocked` as a blocker, preserving the governed workflow contract.
+- Added `docs/diagnostics/route-blocked-failures.md` as the review guide for classifying route failures and deciding whether repeated failures should become workflow, prompt-route, or context-packet work.
