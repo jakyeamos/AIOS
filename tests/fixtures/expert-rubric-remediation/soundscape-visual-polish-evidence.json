@@ -1,0 +1,30 @@
+[
+  {
+    "dimension_id": "data_realism",
+    "severity": "blocker",
+    "summary": "Feed rating card waveform uses Math.random during render.",
+    "evidence": ["packages/web/src/components/feed/FeedItem.tsx:427"],
+    "recommended_fix": "Derive waveform heights from stable rating or track data."
+  },
+  {
+    "dimension_id": "product_evidence",
+    "severity": "warning",
+    "summary": "Landing hero relies on decorative blur without first-screen product evidence.",
+    "evidence": ["packages/web/src/features/landing/components/Hero.tsx:33"],
+    "recommended_fix": "Add a real app, media, or product-state preview in the first viewport."
+  },
+  {
+    "dimension_id": "surface_hierarchy",
+    "severity": "warning",
+    "summary": "Profile refresh stacks equal raised cards instead of one dominant profile region.",
+    "evidence": ["packages/web/src/app/[locale]/(main)/profile/[id]/page-refresh.tsx:108"],
+    "recommended_fix": "Consolidate the profile header and stats into one dominant region with supporting modules."
+  },
+  {
+    "dimension_id": "interaction_architecture",
+    "severity": "warning",
+    "summary": "Analytics dashboard labels insights but does not expose freshness, owner, exception state, or next action.",
+    "evidence": ["packages/web/src/features/analytics/components/AnalyticsDashboard.tsx:71"],
+    "recommended_fix": "Add decision context, source/freshness metadata, exception state, and next action."
+  }
+]

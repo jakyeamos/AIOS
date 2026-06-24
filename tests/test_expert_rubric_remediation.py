@@ -11,6 +11,8 @@ from services.expert_rubric_remediation import (  # noqa: E402
     AUDIT_REPORT_SCHEMA,
     REMEDIATION_PLAN_SCHEMA,
     RUBRIC_SCHEMA,
+    build_audit_report,
+    build_implementation_handoff,
     build_remediation_plan,
     synthesize_rubric,
     validate_audit_report,
@@ -159,3 +161,41 @@ def test_write_review_artifacts_creates_expected_files(tmp_path: Path) -> None:
     assert paths["audit_report_json"].exists()
     assert paths["remediation_plan_markdown"].exists()
     assert json.loads(paths["rubric_json"].read_text(encoding="utf-8"))["schema"] == RUBRIC_SCHEMA
+
+
+def test_soundscape_fixture_builds_evidence_backed_audit_and_plan() -> None:
+    fixture_path = (
+        ROOT
+        / "tests"
+        / "fixtures"
+        / "expert-rubric-remediation"
+        / "soundscape-visual-polish-evidence.json"
+    )
+    evidence_items = json.loads(fixture_path.read_text(encoding="utf-8"))
+    packet = _visual_packet()
+    rubric = synthesize_rubric(
+        packet=packet,
+        run_id="soundscape-review",
+        objective=str(packet["objective"]),
+    )
+
+    audit = build_audit_report(
+        rubric=rubric,
+        evidence_items=evidence_items,
+        run_id="soundscape-review",
+    )
+    remediation = build_remediation_plan(audit_report=audit, run_id="soundscape-review")
+    handoff = build_implementation_handoff(
+        remediation_plan=remediation,
+        run_id="soundscape-review",
+        selected_slice_id="slice-1",
+    )
+
+    assert validate_audit_report(audit)["passed"] is True
+    assert validate_remediation_plan(remediation)["passed"] is True
+    assert audit["findings"][0]["evidence"] == [
+        "packages/web/src/components/feed/FeedItem.tsx:427"
+    ]
+    assert remediation["slices"][0]["follow_up_workflow"] == "implementation-delivery"
+    assert handoff["selected_slice_id"] == "slice-1"
+    assert handoff["requires_user_approval"] is True
