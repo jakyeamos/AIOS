@@ -133,10 +133,7 @@ def test_developer_experience_workflow_uses_existing_skill_registry() -> None:
         "spec_fidelity_coder",
     }
     capability_skills = {
-        skill
-        for stage in workflow.stages
-        for skill in stage.required_skills
-        if skill in expected
+        skill for stage in workflow.stages for skill in stage.required_skills if skill in expected
     }
 
     assert workflow.workflow_family == "developer_experience"
@@ -187,7 +184,9 @@ def test_verification_exempt_workflow_requires_reason() -> None:
 
     errors = validate_workflow_bindings(workflows, {})
 
-    assert "workflow=synthetic verification_exempt=true requires verification_exempt_reason" in errors
+    assert (
+        "workflow=synthetic verification_exempt=true requires verification_exempt_reason" in errors
+    )
 
 
 def test_prompt_registry_accepts_legacy_route_status_alias(tmp_path: Path) -> None:
@@ -639,9 +638,7 @@ def test_workflow_runtime_expands_tmcp_packet_when_stage_phase_changes(
     (tmcp / "router.md").write_text("# Router\n", encoding="utf-8")
     (tmcp / "tasks" / "implementation.md").write_text("# Implementation\n", encoding="utf-8")
     (tmcp / "modules" / "test_gate.md").write_text("# Test Gate\n", encoding="utf-8")
-    (tmcp / "modules" / "minimal_patch_policy.md").write_text(
-        "# Minimal Patch\n", encoding="utf-8"
-    )
+    (tmcp / "modules" / "minimal_patch_policy.md").write_text("# Minimal Patch\n", encoding="utf-8")
     (tmcp / "modules" / "output_contract.md").write_text("# Output\n", encoding="utf-8")
     (tmcp / "branches" / "direct_implementation.branch.md").write_text(
         "# Direct\n", encoding="utf-8"
@@ -712,9 +709,9 @@ def test_divergent_judge_stage_satisfies_required_validation_with_stage_findings
     assert report["validations"] == []
     assert report["required_validations"] == ["divergent_judge_panel"]
     assert report["failed_required_validations"] == []
-    assert "Required validation did not run: divergent_judge_panel" not in report[
-        "unresolved_issues"
-    ]
+    assert (
+        "Required validation did not run: divergent_judge_panel" not in report["unresolved_issues"]
+    )
     assert report["status"] == "completed"
 
 
@@ -964,7 +961,9 @@ def test_expert_review_objective_routes_to_rubric_remediation_workflow(
         ),
         encoding="utf-8",
     )
-    objective = "Write an expert rubric remediation plan from audit evidence for AIOS routing coverage"
+    objective = (
+        "Write an expert rubric remediation plan from audit evidence for AIOS routing coverage"
+    )
 
     candidates = rank_workflow_candidates(objective, workflow_registry_path=workflow_registry)
     route = recommend_route_primitives(objective, workflow_registry_path=workflow_registry)

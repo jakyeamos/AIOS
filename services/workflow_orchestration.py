@@ -19,6 +19,16 @@ from services.execution_strategy import (
     compile_execution_strategy,
     recommend_execution_surface,
 )
+from services.expert_rubric_remediation import (
+    build_audit_report,
+    build_implementation_handoff,
+    build_remediation_plan,
+    synthesize_rubric,
+    validate_audit_report,
+    validate_remediation_plan,
+    validate_rubric,
+    write_review_artifacts,
+)
 from services.personalized_humanizer import (
     VoiceMode,
     build_voice_packet,
@@ -639,13 +649,15 @@ def developer_experience_capability_report(pack: dict[str, Any]) -> dict[str, An
             }
             for row in capabilities
         ],
-        "metric_count": len(pack.get("metrics", []) if isinstance(pack.get("metrics"), list) else []),
+        "metric_count": len(
+            pack.get("metrics", []) if isinstance(pack.get("metrics"), list) else []
+        ),
         "fixed_model_per_capability": (pack.get("routing_principles") or {}).get(
             "fixed_model_per_capability"
         ),
-        "peer_run_second_brain_dependency_allowed": (
-            pack.get("routing_principles") or {}
-        ).get("peer_run_second_brain_dependency_allowed"),
+        "peer_run_second_brain_dependency_allowed": (pack.get("routing_principles") or {}).get(
+            "peer_run_second_brain_dependency_allowed"
+        ),
     }
 
 
@@ -884,11 +896,7 @@ def _has_any_word(text: str, words: set[str]) -> bool:
 
 def _matched_phrases(text: str, phrases: tuple[str, ...] | list[str]) -> list[str]:
     return sorted(
-        {
-            phrase.lower()
-            for phrase in phrases
-            if phrase.strip() and phrase.lower() in text
-        }
+        {phrase.lower() for phrase in phrases if phrase.strip() and phrase.lower() in text}
     )
 
 
@@ -997,10 +1005,7 @@ def rank_workflow_candidates(
         matched_terms = _matched_phrases(objective_text, workflow.trigger_hints)
         score = len(matched_terms) * 4
         evidence_reasons = [f"matched trigger hint {term!r}" for term in matched_terms]
-        if (
-            workflow.workflow_family == "audit_and_implement"
-            and implementation_evidence
-        ):
+        if workflow.workflow_family == "audit_and_implement" and implementation_evidence:
             score += 6
             evidence_reasons.append("implementation evidence")
         if workflow.workflow_family == "failure_recovery" and recovery_evidence:
@@ -1170,7 +1175,9 @@ def recommend_prompt_family(
             score += 2
         tags = template.get("tags") or []
         if isinstance(tags, list):
-            score += len(objective_words & {str(tag).lower() for tag in tags if isinstance(tag, str)})
+            score += len(
+                objective_words & {str(tag).lower() for tag in tags if isinstance(tag, str)}
+            )
         if score > 0:
             ranked.append((score, template))
 
@@ -1337,7 +1344,9 @@ def _select_prompt_template(
             score += 3
         tags = template.get("tags") or []
         if isinstance(tags, list):
-            score += len(objective_words & {str(tag).lower() for tag in tags if isinstance(tag, str)})
+            score += len(
+                objective_words & {str(tag).lower() for tag in tags if isinstance(tag, str)}
+            )
         if score > best_score:
             best_score = score
             best_id = template_id
@@ -1702,6 +1711,101 @@ def _execute_skill(
         )
         return {}, {"validation_key": skill.key, **result}
 
+    if skill.key == "tmcp_expertise_compiler":
+        packet = state.get("tmcp_packet")
+        if not isinstance(packet, dict):
+            raise ValueError("tmcp_expertise_compiler requires context.tmcp_packet")
+        state["expertise_packet"] = packet
+        return {"expertise_packet": packet}, {
+            "validation_key": "tmcp_packet_compiled",
+            "passed": True,
+            "issues": [],
+        }
+
+    if skill.key == "expert_rubric_synthesizer":
+        packet = state.get("expertise_packet") or state.get("tmcp_packet")
+        if not isinstance(packet, dict):
+            raise ValueError("expert_rubric_synthesizer requires expertise_packet")
+        rubric = synthesize_rubric(
+            packet=packet,
+            run_id=context.run_id or "expert-review-preview",
+            objective=context.objective,
+        )
+        state["expert_rubric"] = rubric
+        return {"rubric": rubric}, None
+
+    if skill.key == "expert_evidence_auditor":
+        rubric = state.get("expert_rubric")
+        if not isinstance(rubric, dict):
+            raise ValueError("expert_evidence_auditor requires expert_rubric")
+        evidence_items = state.get("review_evidence_items", [])
+        audit_report = build_audit_report(
+            rubric=rubric,
+            evidence_items=evidence_items if isinstance(evidence_items, list) else [],
+            run_id=context.run_id or "expert-review-preview",
+        )
+        state["expert_audit_report"] = audit_report
+        return {"audit_report": audit_report}, None
+
+    if skill.key == "expert_remediation_planner":
+        audit_report = state.get("expert_audit_report")
+        if not isinstance(audit_report, dict):
+            raise ValueError("expert_remediation_planner requires expert_audit_report")
+        remediation_plan = build_remediation_plan(
+            audit_report=audit_report,
+            run_id=context.run_id or "expert-review-preview",
+        )
+        state["expert_remediation_plan"] = remediation_plan
+        return {"remediation_plan": remediation_plan}, None
+
+    if skill.key == "expert_implementation_handoff_builder":
+        remediation_plan = state.get("expert_remediation_plan")
+        if not isinstance(remediation_plan, dict):
+            raise ValueError(
+                "expert_implementation_handoff_builder requires expert_remediation_plan"
+            )
+        run_id = context.run_id or "expert-review-preview"
+        handoff = build_implementation_handoff(
+            remediation_plan=remediation_plan,
+            run_id=run_id,
+            selected_slice_id=context.selected_slice_id,
+        )
+        output_dir = Path(context.repo_path or ".") / ".aios" / "reviews" / run_id
+        paths = write_review_artifacts(
+            output_dir=output_dir,
+            expertise_packet=state.get("expertise_packet") or state.get("tmcp_packet") or {},
+            rubric=state.get("expert_rubric") or {},
+            audit_report=state.get("expert_audit_report") or {},
+            remediation_plan=remediation_plan,
+            implementation_handoff=handoff,
+        )
+        state["expert_implementation_handoff"] = handoff
+        state["expert_review_artifact_paths"] = {key: str(path) for key, path in paths.items()}
+        return {
+            "implementation_handoff": handoff,
+            "artifact_paths": state["expert_review_artifact_paths"],
+        }, None
+
+    if skill.key == "tmcp_packet_compiled":
+        packet = state.get("expertise_packet") or state.get("tmcp_packet")
+        passed = isinstance(packet, dict) and bool(packet.get("selected_nodes"))
+        issues = [] if passed else ["TMCP expertise packet is missing selected nodes."]
+        return {}, {"validation_key": "tmcp_packet_compiled", "passed": passed, "issues": issues}
+
+    if skill.key == "rubric_dimensions_present":
+        rubric = state.get("expert_rubric")
+        return {}, validate_rubric(rubric if isinstance(rubric, dict) else {})
+
+    if skill.key == "findings_have_evidence":
+        audit_report = state.get("expert_audit_report")
+        return {}, validate_audit_report(audit_report if isinstance(audit_report, dict) else {})
+
+    if skill.key == "remediation_has_verification":
+        remediation_plan = state.get("expert_remediation_plan")
+        return {}, validate_remediation_plan(
+            remediation_plan if isinstance(remediation_plan, dict) else {}
+        )
+
     if skill.key == "scope_check":
         result = _validate_scope(
             context.objective,
@@ -2017,6 +2121,12 @@ def execute_workflow(
             "agentized_task_packet": run_state.get("agentized_task_packet"),
             "tmcp_packet": run_state.get("tmcp_packet"),
             "tmcp_packet_expansions": run_state.get("tmcp_packet_expansions", []),
+            "expertise_packet": run_state.get("expertise_packet"),
+            "expert_rubric": run_state.get("expert_rubric"),
+            "expert_audit_report": run_state.get("expert_audit_report"),
+            "expert_remediation_plan": run_state.get("expert_remediation_plan"),
+            "expert_implementation_handoff": run_state.get("expert_implementation_handoff"),
+            "expert_review_artifact_paths": run_state.get("expert_review_artifact_paths", {}),
         },
         "rtk": {
             "interface": rtk_rules.get(
