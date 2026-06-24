@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Executing Phase 24
-last_updated: "2026-06-24T03:00:48.817Z"
+last_updated: "2026-06-24T03:16:16.919Z"
 progress:
   total_phases: 25
   completed_phases: 23
   total_plans: 145
-  completed_plans: 132
-  percent: 91
+  completed_plans: 133
+  percent: 92
 ---
 
 # AIOS Planning State
@@ -26,14 +26,14 @@ progress:
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
 - Latest completed phase: Phase 21, macOS Native App Skill Pack, shipped task-routed macOS project/build, native-pattern, settings, Sparkle, notch, release, manifest, validation, and documentation coverage without broad always-loaded macOS rules.
-- Latest completed plan: Phase 24 Plan 24-01 produced the AIOS-owned evidence runner and readiness reporting foundation, with 22 Phase 24 targets, one excluded repo (`agent-router`), and JSON verdicts backed by quality_pipeline_runs evidence.
+- Latest completed plan: Phase 24 Plan 24-02 recorded fresh local evidence rows for `soundscape-app` and AIOS; both repos remain blocked because failed gates and CI/default proof gaps remain.
 - Latest planned blocker-remediation phase: Phase 24 now has 10 executable plans to rectify all linked-repo readiness blockers except `agent-router`.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 17, Progressive Governance And Standards Backfill Workflows
 - Active phase: Phase 24, Rectify linked repo AIOS readiness blockers except agent-router
-- Active plan: Phase 24 Plan 24-02, Soundscape And AIOS Evidence-Required Closeout
+- Active plan: Phase 24 Plan 24-03, Standard Production Web App Gate Remediation
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21
 - Next dependency chain: Phase 22 -> Phase 23 -> Phase 24 -> Phase 25
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
