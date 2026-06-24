@@ -101,7 +101,8 @@
         "required": true,
         "applicability": [
           "production_app",
-          "developer_tool"
+          "developer_tool",
+          "python_data_research_course"
         ]
       },
       {
@@ -120,7 +121,8 @@
         "required": true,
         "applicability": [
           "production_app",
-          "developer_tool"
+          "developer_tool",
+          "python_data_research_course"
         ]
       },
       {
@@ -1129,7 +1131,6 @@
     {
       "project_id": "career-ops",
       "applies_to": [
-        "typescript_app",
         "python_data_research_course"
       ],
       "full_pipeline": false,
@@ -1149,11 +1150,39 @@
         "repo_truth": {
           "command": "CLAUDE.md / README.md",
           "working_directory": "."
+        },
+        "lint": {
+          "command": "find . -maxdepth 1 -name '*.mjs' -print0 | xargs -0 -n1 node --check",
+          "working_directory": "."
+        },
+        "typecheck": {
+          "command": "find . -maxdepth 1 -name '*.mjs' -print0 | xargs -0 -n1 node --check",
+          "working_directory": "."
+        },
+        "architecture": {
+          "command": "test -f package.json && test -f verify-pipeline.mjs && test -f cv-sync-check.mjs",
+          "working_directory": "."
+        },
+        "secret_scan": {
+          "command": "! rg -n --hidden --glob '!uv.lock' --glob '!package-lock.json' --glob '!node_modules/**' --glob '!data/**' --glob '!public/dashboard_data/**' '(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|-----BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY-----)' .",
+          "working_directory": "."
+        },
+        "dependency_security": {
+          "command": "npm audit --audit-level=moderate",
+          "working_directory": "."
+        },
+        "ci": {
+          "command": ".github/workflows/aios-quality.yml",
+          "working_directory": "."
+        },
+        "pre_cr": {
+          "command": "pre-cr run --json --workspace {repo_root}",
+          "working_directory": "."
         }
       },
       "repo_class": "python_data_research_course",
       "maturation_blockers": [
-        "Missing lint/static gate, architecture/structure gate, CI workflow, secret scan, dependency security, and fresh validation evidence."
+        "CI/default-branch proof, passing validation/Pre-CR evidence, and deeper architecture policy remain required before final adoption-ready status."
       ],
       "strict_readiness_status": "blocked"
     },
@@ -1187,11 +1216,27 @@
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
+        },
+        "architecture": {
+          "command": "test -f Makefile && test -f pipeline/pyproject.toml && test -f apps/dashboard/package.json",
+          "working_directory": "."
+        },
+        "secret_scan": {
+          "command": "! rg -n --hidden --glob '!uv.lock' --glob '!package-lock.json' --glob '!node_modules/**' --glob '!data/**' --glob '!public/dashboard_data/**' '(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|-----BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY-----)' .",
+          "working_directory": "."
+        },
+        "dependency_security": {
+          "command": "uv run --project pipeline python -m pip check && cd apps/dashboard && npm audit --audit-level=moderate",
+          "working_directory": "."
+        },
+        "lint": {
+          "command": "uv run --project pipeline ruff check pipeline",
+          "working_directory": "."
         }
       },
       "repo_class": "python_data_research_course",
       "maturation_blockers": [
-        "Makefile still uses npm for dashboard install/test; needs package-manager cleanup or explicit exception, plus architecture/structure, secret scan, dependency security, and fresh CI/default-branch proof."
+        "Dashboard npm lockfile is canonical for the dashboard subproject; CI/default-branch proof plus passing lint/test/dependency/Pre-CR evidence remain required before final adoption-ready status."
       ],
       "strict_readiness_status": "blocked"
     },
@@ -1288,11 +1333,31 @@
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
+        },
+        "architecture": {
+          "command": "test -f pyproject.toml && test -d src && test -d tests",
+          "working_directory": "."
+        },
+        "secret_scan": {
+          "command": "! rg -n --hidden --glob '!uv.lock' --glob '!package-lock.json' --glob '!node_modules/**' --glob '!data/**' --glob '!public/dashboard_data/**' '(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|-----BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY-----)' .",
+          "working_directory": "."
+        },
+        "dependency_security": {
+          "command": "uv run python -m pip check",
+          "working_directory": "."
+        },
+        "ci": {
+          "command": ".github/workflows/aios-quality.yml",
+          "working_directory": "."
+        },
+        "build": {
+          "command": "uv build",
+          "working_directory": "."
         }
       },
       "repo_class": "python_data_research_course",
       "maturation_blockers": [
-        "Strong Python test/static surfaces exist, but CI, architecture/structure, secret scan, dependency security, and fresh proof are missing."
+        "CI/default-branch proof, passing lint/type/test/dependency evidence, and deeper architecture policy remain required before final adoption-ready status."
       ],
       "strict_readiness_status": "blocked"
     },
@@ -1426,11 +1491,11 @@
       "full_pipeline": false,
       "gates": {
         "install": {
-          "command": "uv sync",
+          "command": "uv sync && cd ../frontend && npm ci",
           "working_directory": "backend"
         },
         "validation": {
-          "command": "uv run pytest -q",
+          "command": "uv run pytest -q && cd ../frontend && npm run build && npm run test:render",
           "working_directory": "backend"
         },
         "repo_truth": {
@@ -1442,13 +1507,29 @@
           "working_directory": "."
         },
         "test": {
-          "command": "uv run pytest -q",
+          "command": "uv run pytest -q && cd ../frontend && npm run test:render",
           "working_directory": "backend"
+        },
+        "architecture": {
+          "command": "test -f backend/pyproject.toml && test -f frontend/package.json && test -d backend/src && test -d frontend/src",
+          "working_directory": "."
+        },
+        "ci": {
+          "command": ".github/workflows/aios-quality.yml",
+          "working_directory": "."
+        },
+        "secret_scan": {
+          "command": "! rg -n --hidden --glob '!uv.lock' --glob '!package-lock.json' --glob '!node_modules/**' --glob '!data/**' --glob '!public/dashboard_data/**' '(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|-----BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY-----)' .",
+          "working_directory": "."
+        },
+        "dependency_security": {
+          "command": "uv run --project backend python -m pip check && cd frontend && npm audit --audit-level=moderate",
+          "working_directory": "."
         }
       },
       "repo_class": "python_data_research_course",
       "maturation_blockers": [
-        "Nested frontend/backend structure needs aggregate gates; backend pytest exists, but frontend validation, CI, secret scan, dependency security, and default-branch proof are missing."
+        "Aggregate backend/frontend validation is configured, but CI/default-branch proof plus passing aggregate test/validation/dependency evidence remain required before final adoption-ready status."
       ],
       "strict_readiness_status": "blocked"
     }
