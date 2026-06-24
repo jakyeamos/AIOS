@@ -916,7 +916,15 @@ def rank_workflow_candidates(
         "flaky",
         "regression",
     }
-    analysis_terms = {"analyze", "architecture", "audit", "review", "strategy"}
+    analysis_terms = {
+        "analyze",
+        "architecture",
+        "audit",
+        "investigate",
+        "investigation",
+        "review",
+        "strategy",
+    }
     content_terms = {"academic", "article", "citations", "draft", "essay", "paper", "write"}
     transformation_terms = {"creative", "humanize", "outreach", "prompt", "rewrite", "voice"}
     implementation_evidence = _has_any_word(objective_text, implementation_terms)

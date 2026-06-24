@@ -167,6 +167,23 @@ def test_route_objective_selects_audit_route(tmp_path: Path) -> None:
     assert route["selected_workflow"]["workflow_family"] == "audit_only"
 
 
+def test_route_objective_routes_investigation_language_to_audit(tmp_path: Path) -> None:
+    conn = sqlite3.connect(":memory:")
+    _seed_projects(conn, tmp_path)
+
+    route = route_objective(
+        conn,
+        objective=(
+            "Investigate why route-blocked happens for unmatched objectives and determine "
+            "whether routing should be fixed"
+        ),
+        explicit_project_id="p-aios",
+    ).to_json()
+
+    assert route["status"] == "ready"
+    assert route["selected_workflow"]["workflow_family"] == "audit_only"
+
+
 def test_route_objective_reports_prompt_fallback_when_registry_lacks_match(tmp_path: Path) -> None:
     prompt_registry = tmp_path / "prompt-registry.json"
     prompt_registry.write_text(
