@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-last_updated: "2026-06-24T20:21:14.116Z"
+status: Executing Phase 27
+last_updated: "2026-06-24T20:25:49.738Z"
 progress:
   total_phases: 28
   completed_phases: 25
   total_plans: 153
-  completed_plans: 143
-  percent: 89
+  completed_plans: 144
+  percent: 94
 ---
 
 # AIOS Planning State
@@ -26,7 +26,7 @@ progress:
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
 - Latest completed phase: Phase 26, Expert rubric remediation core artifacts, passed with deterministic rubric, audit, remediation, artifact-writing, fixture, and approval-gated handoff service coverage.
-- Latest completed plan: Phase 26 Plan 26-02 added Soundscape evidence fixtures, evidence-backed audit report generation, traceable remediation slices, and approval-gated implementation handoff artifacts.
+- Latest completed plan: Phase 27 Plan 27-01 added expert-review workflow context fields, runtime skill dispatch, validation branches, artifact writing, and report artifact exposure.
 - Latest planned governed-workflow phase: Phase 25 has four executable plans to make planning a governed first-class AIOS workflow.
 - Latest planned expert-rubric phases: Phases 26-28 now contain eight executable plans covering core review artifacts, workflow runtime integration, route support, CLI exposure, quality closeout, and smoke verification.
 
@@ -34,7 +34,7 @@ progress:
 
 - Active milestone: Milestone 17, Progressive Governance And Standards Backfill Workflows
 - Active phase: Phase 27, Expert rubric remediation workflow runtime
-- Active plan: Phase 27 Plan 27-01, Workflow context and expert-review skill dispatch
+- Active plan: Phase 27 Plan 27-02, Workflow and skill registry contract
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22 -> Phase 23 -> Phase 24
 - Next dependency chain: Phase 25 -> Phase 26 -> Phase 27 -> Phase 28
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
@@ -66,6 +66,7 @@ progress:
 - Phase 26 planned: two plans cover expert review service contracts, artifact writers, Soundscape evidence fixture, audit builder, remediation plan builder, and implementation handoff.
 - Phase 26 completed: `services/expert_rubric_remediation.py`, focused pytest coverage, and the Soundscape fixture now provide deterministic rubric synthesis, evidence-backed audit reports, remediation slices with source finding traceability, stable artifact writing, and approval-gated implementation handoffs.
 - Phase 27 planned: three plans cover runtime context and expert skill dispatch, workflow/skill registry contracts, and expert audit-plan route completion.
+- Phase 27 Plan 27-01 completed: `WorkflowExecutionContext` and `execute_workflow` now carry review evidence and selected slice inputs, dispatch expert-review skills, write review artifacts, and expose expert artifacts in workflow reports; the execution test intentionally waits on Plan 27-02 registry wiring.
 - Phase 28 planned: three plans cover read-only `aios tmcp review-plan`, focused quality/truth closeout, and smoke verification with implementation handoff evidence.
 
 ## Quick Tasks Completed
@@ -230,7 +231,7 @@ progress:
 | 2026-06-02 | Complete Phase 10 Plan 08 quality hotspot backfill baseline | `.planning/phases/10-operator-surfaces-query-and-daily-flow-visibility/10-08-SUMMARY.md` records `pnpm quality:eval`, the read-only hotspot detection script, and the first factual Agent Eval backfill inventory for Python services, CLI scripts, tests, aios-ui, config, and eval docs. |
 
 ---
-*Last updated: 2026-06-24 after completing Phase 26 verification and advancing to Phase 27 Plan 27-01*
+*Last updated: 2026-06-24 after completing Phase 27 Plan 27-01 and advancing to Plan 27-02*
 
 ## Performance Metrics
 
@@ -238,3 +239,4 @@ progress:
 |-------|------|----------|-------|
 | Phase 26 P01 | 5min | 2 tasks | 2 files |
 | Phase 26 P02 | 2min | 2 tasks | 3 files |
+| Phase 27 P01 | 2min | 2 tasks | 2 files |
