@@ -401,7 +401,7 @@ def test_detect_standards_regression_single_instance_excluded() -> None:
 
 def test_dispatcher_since_bound_applies_to_all_detectors() -> None:
     conn = sqlite3.connect(":memory:")
-    _seed_all_seven(conn, include_old=True)
+    _seed_all_seven(conn, include_old=True, created_at=_recent_window_timestamp())
 
     patterns = detect_recurring_patterns(conn, since="30d", project_id=None)
     cutoff = datetime.now(UTC) - timedelta(days=30)
@@ -602,12 +602,23 @@ def _insert_packet(
     )
 
 
-def _seed_standards_regressions(conn: sqlite3.Connection, *, snapshot_count: int) -> None:
+def _recent_window_timestamp() -> str:
+    return (
+        (datetime.now(UTC) - timedelta(days=1))
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
+
+
+def _seed_standards_regressions(
+    conn: sqlite3.Connection, *, snapshot_count: int, created_at: str = RECENT
+) -> None:
     for index in range(snapshot_count):
         snapshot_id = f"snapshot-{index}"
         conn.execute(
             "INSERT INTO standards_health_snapshots (id, project_id, created_at) VALUES (?, ?, ?)",
-            (snapshot_id, "p1", RECENT),
+            (snapshot_id, "p1", created_at),
         )
         conn.execute(
             """
@@ -615,7 +626,7 @@ def _seed_standards_regressions(conn: sqlite3.Connection, *, snapshot_count: int
               (id, snapshot_id, project_id, standard_id, priority_bucket, created_at)
             VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (f"delta-{index}", snapshot_id, "p1", "STND-coverage", "regressed", RECENT),
+            (f"delta-{index}", snapshot_id, "p1", "STND-coverage", "regressed", created_at),
         )
 
 
@@ -638,15 +649,33 @@ def _seed_four_core_detectors(conn: sqlite3.Connection) -> None:
         )
 
 
-def _seed_all_seven(conn: sqlite3.Connection, *, include_old: bool = False) -> None:
+def _seed_all_seven(
+    conn: sqlite3.Connection, *, include_old: bool = False, created_at: str = RECENT
+) -> None:
     _seed_minimal_schema(conn)
-    _seed_runs(conn, [f"rf-run-{index}" for index in range(3)], project_id="p1")
+    _seed_runs(
+        conn, [f"rf-run-{index}" for index in range(3)], project_id="p1", created_at=created_at
+    )
     for index in range(3):
-        _insert_finding(conn, f"rf-finding-{index}", f"rf-run-{index}", "C-repeat")
-    _seed_runs(conn, [f"prompt-run-{index}" for index in range(5)], project_id="p1")
+        _insert_finding(
+            conn, f"rf-finding-{index}", f"rf-run-{index}", "C-repeat", created_at=created_at
+        )
+    _seed_runs(
+        conn,
+        [f"prompt-run-{index}" for index in range(5)],
+        project_id="p1",
+        created_at=created_at,
+    )
     for index in range(5):
-        _insert_prompt(conn, f"prompt-{index}", f"prompt-run-{index}", "research", 0.2)
-    _seed_runs(conn, [f"workflow-run-{index}" for index in range(5)], project_id="p1")
+        _insert_prompt(
+            conn, f"prompt-{index}", f"prompt-run-{index}", "research", 0.2, created_at=created_at
+        )
+    _seed_runs(
+        conn,
+        [f"workflow-run-{index}" for index in range(5)],
+        project_id="p1",
+        created_at=created_at,
+    )
     for index in range(5):
         _insert_workflow_report(
             conn,
@@ -654,20 +683,29 @@ def _seed_all_seven(conn: sqlite3.Connection, *, include_old: bool = False) -> N
             f"workflow-run-{index}",
             "implementation-delivery",
             "failed",
+            created_at=created_at,
         )
     packet_counts = [10, 12, 11, 9, 50, 11, 10]
-    _seed_runs(conn, [f"packet-run-{index}" for index in range(7)], project_id="p1")
+    _seed_runs(
+        conn,
+        [f"packet-run-{index}" for index in range(7)],
+        project_id="p1",
+        created_at=created_at,
+    )
     for index, count in enumerate(packet_counts):
-        _insert_packet(conn, f"packet-{index}", f"packet-run-{index}", count)
+        _insert_packet(conn, f"packet-{index}", f"packet-run-{index}", count, created_at=created_at)
     _seed_runs(
         conn,
         [f"route-run-{index}" for index in range(4)],
         project_id="p1",
         route_workflow_key="audit-only",
+        created_at=created_at,
     )
     for index in range(4):
-        _insert_finding(conn, f"route-finding-{index}", f"route-run-{index}", "C-route")
-    _seed_standards_regressions(conn, snapshot_count=3)
+        _insert_finding(
+            conn, f"route-finding-{index}", f"route-run-{index}", "C-route", created_at=created_at
+        )
+    _seed_standards_regressions(conn, snapshot_count=3, created_at=created_at)
     if include_old:
         _seed_runs(conn, ["old-run-1", "old-run-2", "old-run-3"], project_id="p1", created_at=OLD)
         for index in range(1, 4):

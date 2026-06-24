@@ -19,6 +19,86 @@ from services.workflow_experiments import (  # noqa: E402
 )
 
 
+def _init_experiment_repo(repo: Path) -> None:
+    repo.mkdir()
+    subprocess.run(["git", "-C", str(repo), "init"], check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(repo), "switch", "-c", "test-fixture"], check=True)
+    subprocess.run(
+        ["git", "-C", str(repo), "config", "user.email", "test@example.local"], check=True
+    )
+    subprocess.run(["git", "-C", str(repo), "config", "user.name", "Test"], check=True)
+    (repo / ".pre-cr.json").write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "testCommand": f"{sys.executable} scripts/pre_cr_fixture.py",
+                "coveragePaths": ["coverage/lcov.info"],
+                "excludePatterns": [
+                    ".gitignore",
+                    ".pre-cr.json",
+                    "README.md",
+                    "pyproject.toml",
+                    "scripts/**",
+                    "tests/**",
+                ],
+                "checks": {"coverage": False, "security": False, "checklist": False},
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (repo / ".gitignore").write_text(
+        ".aios/audit/\n.pytest_cache/\n__pycache__/\ncoverage/\n", encoding="utf-8"
+    )
+    (repo / "README.md").write_text("# Repo\n", encoding="utf-8")
+    (repo / "pyproject.toml").write_text(
+        "[tool.pytest.ini_options]\npythonpath = ['.']\n", encoding="utf-8"
+    )
+    (repo / "scripts").mkdir()
+    (repo / "scripts" / "pre_cr_fixture.py").write_text(
+        "\n".join(
+            [
+                "from __future__ import annotations",
+                "",
+                "import pathlib",
+                "import subprocess",
+                "import sys",
+                "",
+                "result = subprocess.run([sys.executable, '-m', 'pytest'], check=False)",
+                "coverage_dir = pathlib.Path('coverage')",
+                "coverage_dir.mkdir(exist_ok=True)",
+                "(coverage_dir / 'lcov.info').write_text('', encoding='utf-8')",
+                "raise SystemExit(result.returncode)",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (repo / "tests").mkdir()
+    (repo / "tests" / "test_smoke.py").write_text(
+        "def test_smoke():\n    assert True\n", encoding="utf-8"
+    )
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repo),
+            "add",
+            ".gitignore",
+            ".pre-cr.json",
+            "README.md",
+            "pyproject.toml",
+            "scripts/pre_cr_fixture.py",
+            "tests/test_smoke.py",
+        ],
+        check=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(repo), "commit", "-m", "init"], check=True, capture_output=True
+    )
+
+
 def test_queue_test_repo_experiments_creates_one_row_per_repo(tmp_path: Path) -> None:
     test_repos = tmp_path / "test-repos.json"
     test_repos.write_text(
@@ -169,27 +249,7 @@ def test_run_workflow_skill_experiment_records_candidate_improvement(
     tmp_path: Path, monkeypatch
 ) -> None:
     repo = tmp_path / "repo"
-    repo.mkdir()
-    subprocess.run(["git", "-C", str(repo), "init"], check=True, capture_output=True)
-    subprocess.run(
-        ["git", "-C", str(repo), "config", "user.email", "test@example.local"], check=True
-    )
-    subprocess.run(["git", "-C", str(repo), "config", "user.name", "Test"], check=True)
-    (repo / "README.md").write_text("# Repo\n", encoding="utf-8")
-    (repo / "pyproject.toml").write_text(
-        "[tool.pytest.ini_options]\npythonpath = ['.']\n", encoding="utf-8"
-    )
-    (repo / "tests").mkdir()
-    (repo / "tests" / "test_smoke.py").write_text(
-        "def test_smoke():\n    assert True\n", encoding="utf-8"
-    )
-    subprocess.run(
-        ["git", "-C", str(repo), "add", "README.md", "pyproject.toml", "tests/test_smoke.py"],
-        check=True,
-    )
-    subprocess.run(
-        ["git", "-C", str(repo), "commit", "-m", "init"], check=True, capture_output=True
-    )
+    _init_experiment_repo(repo)
     monkeypatch.setattr(workflow_experiments, "ROOT", tmp_path)
 
     conn = sqlite3.connect(":memory:")
@@ -324,27 +384,7 @@ def test_run_workflow_skill_experiment_records_candidate_improvement(
 
 def test_experiment_runtime_behavior_otherwise_unchanged(tmp_path: Path, monkeypatch) -> None:
     repo = tmp_path / "repo"
-    repo.mkdir()
-    subprocess.run(["git", "-C", str(repo), "init"], check=True, capture_output=True)
-    subprocess.run(
-        ["git", "-C", str(repo), "config", "user.email", "test@example.local"], check=True
-    )
-    subprocess.run(["git", "-C", str(repo), "config", "user.name", "Test"], check=True)
-    (repo / "README.md").write_text("# Repo\n", encoding="utf-8")
-    (repo / "pyproject.toml").write_text(
-        "[tool.pytest.ini_options]\npythonpath = ['.']\n", encoding="utf-8"
-    )
-    (repo / "tests").mkdir()
-    (repo / "tests" / "test_smoke.py").write_text(
-        "def test_smoke():\n    assert True\n", encoding="utf-8"
-    )
-    subprocess.run(
-        ["git", "-C", str(repo), "add", "README.md", "pyproject.toml", "tests/test_smoke.py"],
-        check=True,
-    )
-    subprocess.run(
-        ["git", "-C", str(repo), "commit", "-m", "init"], check=True, capture_output=True
-    )
+    _init_experiment_repo(repo)
     monkeypatch.setattr(workflow_experiments, "ROOT", tmp_path)
 
     conn = sqlite3.connect(":memory:")

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import sys
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -318,6 +319,7 @@ def _seed_learning_pattern_evidence(
     prefix: str,
 ) -> None:
     _ensure_learning_tables(conn)
+    created_at = _recent_learning_timestamp()
     for index in range(5):
         run_id = f"{prefix}-run-{index}"
         conn.execute(
@@ -326,7 +328,7 @@ def _seed_learning_pattern_evidence(
               (id, project_id, status, workflow_key, route_result_json, created_at, updated_at)
             VALUES (?, ?, 'completed', 'implementation-delivery', '{}', ?, ?)
             """,
-            (run_id, project_id, "2026-05-21T00:00:00Z", "2026-05-21T00:00:00Z"),
+            (run_id, project_id, created_at, created_at),
         )
         conn.execute(
             """
@@ -334,8 +336,17 @@ def _seed_learning_pattern_evidence(
               (id, run_id, criterion_id, workflow_key, level, resolution_status, created_at)
             VALUES (?, ?, ?, 'implementation-delivery', 'blocker', 'open', ?)
             """,
-            (f"{prefix}-finding-{index}", run_id, criterion_id, "2026-05-21T00:00:00Z"),
+            (f"{prefix}-finding-{index}", run_id, criterion_id, created_at),
         )
+
+
+def _recent_learning_timestamp() -> str:
+    return (
+        (datetime.now(UTC) - timedelta(days=1))
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
 
 
 def _seed_learning_impact_evidence(conn: sqlite3.Connection) -> None:
@@ -1840,7 +1851,7 @@ def test_contracts_audit_includes_operator_surface_row(tmp_path: Path, capsys) -
     operator_surface = next(
         contract for contract in data["contracts"] if contract["name"] == "OperatorSurface"
     )
-    assert operator_surface["status"] == "partial"
+    assert operator_surface["status"] == "implemented"
     assert "services/operator_search.py" in operator_surface["source_of_truth"]
 
 
@@ -2015,7 +2026,7 @@ def test_contracts_audit_includes_next_action_row(tmp_path: Path, capsys) -> Non
     next_action = next(
         contract for contract in data["contracts"] if contract["name"] == "NextAction"
     )
-    assert next_action["status"] == "partial"
+    assert next_action["status"] == "implemented"
     assert "services/next_action.py" in next_action["source_of_truth"]
 
 
@@ -2232,7 +2243,7 @@ def test_contracts_audit_includes_daily_flow_row(tmp_path: Path, capsys) -> None
     assert exit_code == EXIT_OK
     data = json.loads(capsys.readouterr().out)["data"]
     daily_flow = next(contract for contract in data["contracts"] if contract["name"] == "DailyFlow")
-    assert daily_flow["status"] == "partial"
+    assert daily_flow["status"] == "implemented"
     assert "services/daily_flow.py" in daily_flow["source_of_truth"]
 
 

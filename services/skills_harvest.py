@@ -488,7 +488,8 @@ def validate_generated_library(
     check("secret-redaction", True, "Secret patterns are redacted before generated writes.")
     check("dry-run-rerunnable", True, "Command accepts --dry-run and does not require output writes.")
     failures = [item for item in checks if item["status"] == "fail"]
-    return {"status": "pass" if not failures else "fail", "checks": checks}
+    passed = not failures
+    return {"status": "pass" if passed else "fail", "passed": passed, "checks": checks}
 
 
 def verify_tmcp_graph(
@@ -1340,6 +1341,14 @@ def _branches(conflicts: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "status": "active",
             "context": "User explicitly asked for implementation or the task is inside an implementation workflow.",
             "competing": ["approval_before_edit"],
+            "sources": [],
+        },
+        {
+            "id": "approval_before_edit",
+            "type": "approval",
+            "status": "active",
+            "context": "Edit permission is ambiguous or the task is review-only.",
+            "competing": ["direct_implementation"],
             "sources": [],
         },
         {
