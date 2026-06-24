@@ -592,6 +592,14 @@
           "command": "local quality gate matrix",
           "working_directory": "."
         },
+        "repo_truth": {
+          "command": "PROJECT.md / AGENTS.md / README.md",
+          "working_directory": "."
+        },
+        "pre_cr": {
+          "command": "pre-cr run --json --workspace {repo_root}",
+          "working_directory": "."
+        },
         "divergent_strategy_standard": {
           "command": "uv run pytest tests/test_divergent_strategy.py tests/test_workflow_experiments.py tests/test_corpus_eval.py -q",
           "working_directory": "."

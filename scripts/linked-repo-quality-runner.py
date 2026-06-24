@@ -93,16 +93,18 @@ def _resolve_gate(config_path: Path, db_path: Path, project_id: str, gate_key: s
         raise ValueError(f"Gate {gate_key} for {project_id} has no AIOS-owned command")
     working_directory = gate.get("working_directory")
     configured_working_directory = str(working_directory).strip() if working_directory else "."
+    resolved_working_directory = _resolve_working_directory(
+        db_path,
+        project_id,
+        configured_working_directory,
+    )
+    resolved_command = command.strip().replace("{repo_root}", resolved_working_directory)
     return {
         "project_id": project_id,
         "gate_key": gate_key,
         "repo_class": str(project.get("repo_class")) if project.get("repo_class") else None,
-        "command": command.strip(),
-        "working_directory": _resolve_working_directory(
-            db_path,
-            project_id,
-            configured_working_directory,
-        ),
+        "command": resolved_command,
+        "working_directory": resolved_working_directory,
         "source": "config/quality-pipeline.json",
     }
 
