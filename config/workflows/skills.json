@@ -1244,6 +1244,265 @@
       ],
       "source_path": "docs/workflows/durable-agent-workflows.md",
       "installed_name": null
+    },
+    {
+      "key": "tmcp_expertise_compiler",
+      "purpose": "Use a compiled TMCP packet as the explicit expertise source for expert rubric remediation workflows.",
+      "allowed_stages": [
+        "enrich_context"
+      ],
+      "input_schema": {
+        "tmcp_packet": "object"
+      },
+      "output_schema": {
+        "expertise_packet": "object"
+      },
+      "invariants": [
+        "Preserve TMCP selected nodes, skipped nodes, behavior atoms, source hashes, and traversal fingerprint."
+      ],
+      "failure_conditions": [
+        "TMCP packet is missing."
+      ],
+      "side_effects": [
+        "Writes review artifacts under the target repo when paired with the handoff builder."
+      ],
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "expert_rubric_remediation",
+        "enrich_context"
+      ],
+      "purpose_long": "Use a compiled TMCP packet as the explicit expertise source for expert rubric remediation workflows."
+    },
+    {
+      "key": "expert_rubric_synthesizer",
+      "purpose": "Synthesize a weighted, evidence-oriented rubric from a TMCP expertise packet.",
+      "allowed_stages": [
+        "generate"
+      ],
+      "input_schema": {
+        "expertise_packet": "object",
+        "objective": "string"
+      },
+      "output_schema": {
+        "rubric": "object"
+      },
+      "invariants": [
+        "Rubric dimensions must preserve TMCP provenance.",
+        "Rubric dimensions must include evidence expectations."
+      ],
+      "failure_conditions": [
+        "No rubric dimensions are produced."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "expert_rubric_remediation",
+        "generate"
+      ],
+      "purpose_long": "Synthesize a weighted, evidence-oriented rubric from a TMCP expertise packet."
+    },
+    {
+      "key": "expert_evidence_auditor",
+      "purpose": "Convert supplied evidence items into scored rubric findings and explicit evidence gaps.",
+      "allowed_stages": [
+        "generate"
+      ],
+      "input_schema": {
+        "rubric": "object",
+        "evidence_items": "object[]"
+      },
+      "output_schema": {
+        "audit_report": "object"
+      },
+      "invariants": [
+        "Findings must cite evidence or be represented as explicit gaps.",
+        "Scores must map to rubric dimensions."
+      ],
+      "failure_conditions": [
+        "A finding has no evidence."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "expert_rubric_remediation",
+        "generate"
+      ],
+      "purpose_long": "Convert supplied evidence items into scored rubric findings and explicit evidence gaps."
+    },
+    {
+      "key": "expert_remediation_planner",
+      "purpose": "Convert audit findings into independently verifiable remediation slices.",
+      "allowed_stages": [
+        "finalize"
+      ],
+      "input_schema": {
+        "audit_report": "object"
+      },
+      "output_schema": {
+        "remediation_plan": "object"
+      },
+      "invariants": [
+        "Each remediation slice must include verification.",
+        "Slices must preserve source finding IDs."
+      ],
+      "failure_conditions": [
+        "A remediation slice lacks verification."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "expert_rubric_remediation",
+        "finalize"
+      ],
+      "purpose_long": "Convert audit findings into independently verifiable remediation slices."
+    },
+    {
+      "key": "expert_implementation_handoff_builder",
+      "purpose": "Create an approval-gated handoff from a selected remediation slice into implementation-delivery.",
+      "allowed_stages": [
+        "finalize"
+      ],
+      "input_schema": {
+        "remediation_plan": "object",
+        "selected_slice_id": "string|null"
+      },
+      "output_schema": {
+        "implementation_handoff": "object",
+        "artifact_paths": "object"
+      },
+      "invariants": [
+        "Handoff must require user approval.",
+        "Handoff must not execute implementation."
+      ],
+      "failure_conditions": [
+        "Remediation plan is missing."
+      ],
+      "side_effects": [
+        "Writes review artifacts under .aios/reviews/{run_id} in the target repository."
+      ],
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "expert_rubric_remediation",
+        "finalize"
+      ],
+      "purpose_long": "Create an approval-gated handoff from a selected remediation slice into implementation-delivery."
+    },
+    {
+      "key": "tmcp_packet_compiled",
+      "purpose": "Validate that the expert workflow has a compiled TMCP expertise packet.",
+      "allowed_stages": [
+        "validate"
+      ],
+      "input_schema": {
+        "tmcp_packet": "object"
+      },
+      "output_schema": {
+        "passed": "boolean",
+        "issues": "string[]"
+      },
+      "invariants": [
+        "Validation output must be explicit pass/fail."
+      ],
+      "failure_conditions": [
+        "TMCP packet is missing."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "expert_rubric_remediation",
+        "validate"
+      ],
+      "purpose_long": "Validate that the expert workflow has a compiled TMCP expertise packet."
+    },
+    {
+      "key": "rubric_dimensions_present",
+      "purpose": "Validate that the synthesized rubric contains dimensions with provenance and evidence expectations.",
+      "allowed_stages": [
+        "validate"
+      ],
+      "input_schema": {
+        "rubric": "object"
+      },
+      "output_schema": {
+        "passed": "boolean",
+        "issues": "string[]"
+      },
+      "invariants": [
+        "Validation output must be explicit pass/fail."
+      ],
+      "failure_conditions": [
+        "Rubric dimensions are missing or lack provenance."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "expert_rubric_remediation",
+        "validate"
+      ],
+      "purpose_long": "Validate that the synthesized rubric contains dimensions with provenance and evidence expectations."
+    },
+    {
+      "key": "findings_have_evidence",
+      "purpose": "Validate that audit findings cite evidence references.",
+      "allowed_stages": [
+        "validate"
+      ],
+      "input_schema": {
+        "audit_report": "object"
+      },
+      "output_schema": {
+        "passed": "boolean",
+        "issues": "string[]"
+      },
+      "invariants": [
+        "Validation output must be explicit pass/fail."
+      ],
+      "failure_conditions": [
+        "An audit finding lacks evidence."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "expert_rubric_remediation",
+        "validate"
+      ],
+      "purpose_long": "Validate that audit findings cite evidence references."
+    },
+    {
+      "key": "remediation_has_verification",
+      "purpose": "Validate that remediation slices include verification expectations.",
+      "allowed_stages": [
+        "validate"
+      ],
+      "input_schema": {
+        "remediation_plan": "object"
+      },
+      "output_schema": {
+        "passed": "boolean",
+        "issues": "string[]"
+      },
+      "invariants": [
+        "Validation output must be explicit pass/fail."
+      ],
+      "failure_conditions": [
+        "A remediation slice lacks verification."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "expert_rubric_remediation",
+        "validate"
+      ],
+      "purpose_long": "Validate that remediation slices include verification expectations."
     }
   ]
 }

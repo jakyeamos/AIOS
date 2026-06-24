@@ -2574,6 +2574,232 @@
         "skill_candidacy"
       ],
       "purpose_long": "Candidate route for durable agent work loops. It adds workspace state, goal verifier, steering, queueing, artifact, automation, memory, and TMCP skill-candidacy contracts without changing existing active routing or quality gates."
+    },
+    {
+      "key": "expert_rubric_remediation_v1",
+      "name": "Expert Rubric Remediation v1",
+      "workflow_family": "audit_and_plan",
+      "purpose": "Compile domain expertise into an explicit rubric, audit concrete evidence, and produce an ordered remediation plan.",
+      "trigger_hints": [
+        "review using tmcp",
+        "create a rubric",
+        "remediation plan",
+        "expert rubric",
+        "audit against expert sources",
+        "turn expertise into a plan"
+      ],
+      "output_contract": [
+        "expertise packet",
+        "scored rubric",
+        "evidence-backed audit",
+        "ordered remediation plan",
+        "optional implementation handoff"
+      ],
+      "required_validations": [
+        "tmcp_packet_compiled",
+        "rubric_dimensions_present",
+        "findings_have_evidence",
+        "remediation_has_verification"
+      ],
+      "stages": [
+        {
+          "key": "expertise_compile",
+          "kind": "enrich_context",
+          "required_skills": [
+            "tmcp_expertise_compiler"
+          ],
+          "required_inputs": [
+            {
+              "key": "tmcp_packet",
+              "source": "packet",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "expertise_packet",
+              "target": "artifact",
+              "required": true
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "evidence",
+              "path_template": ".aios/reviews/{run_id}/expertise-packet.json"
+            }
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "rubric_synthesize",
+          "kind": "generate",
+          "required_skills": [
+            "expert_rubric_synthesizer"
+          ],
+          "required_outputs": [
+            {
+              "key": "rubric",
+              "target": "artifact",
+              "required": true
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "report",
+              "path_template": ".aios/reviews/{run_id}/rubric.md"
+            }
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "evidence_audit",
+          "kind": "generate",
+          "required_skills": [
+            "expert_evidence_auditor"
+          ],
+          "required_outputs": [
+            {
+              "key": "audit_report",
+              "target": "artifact",
+              "required": true
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "report",
+              "path_template": ".aios/reviews/{run_id}/audit-report.md"
+            }
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "remediation_plan",
+          "kind": "finalize",
+          "required_skills": [
+            "expert_remediation_planner"
+          ],
+          "required_outputs": [
+            {
+              "key": "remediation_plan",
+              "target": "artifact",
+              "required": true
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "summary",
+              "path_template": ".aios/reviews/{run_id}/remediation-plan.md"
+            }
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "implementation_handoff",
+          "kind": "finalize",
+          "required_skills": [
+            "expert_implementation_handoff_builder"
+          ],
+          "required_outputs": [
+            {
+              "key": "implementation_handoff",
+              "target": "artifact",
+              "required": false
+            }
+          ],
+          "approval_gates": [
+            {
+              "impact_scope": "workflow-default",
+              "condition": "always",
+              "rationale_template": "Implementation handoff from expert review requires explicit user approval before execution."
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "summary",
+              "path_template": ".aios/reviews/{run_id}/implementation-handoff.md"
+            }
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "artifact_validate",
+          "kind": "validate",
+          "required_skills": [
+            "tmcp_packet_compiled",
+            "rubric_dimensions_present",
+            "findings_have_evidence",
+            "remediation_has_verification"
+          ],
+          "validations": [
+            {
+              "criterion_id": "agent-claim-verification",
+              "blocking": true
+            }
+          ],
+          "required_evidence": [
+            "expert_review_artifacts"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
+        }
+      ],
+      "lifecycle_state": "active",
+      "applicability": [
+        "audit_and_plan",
+        "expert_review",
+        "tmcp",
+        "rubric",
+        "remediation"
+      ],
+      "purpose_long": "Compile TMCP expertise into an explicit rubric, audit concrete evidence, produce ordered remediation slices, and stop before implementation until the user approves a handoff.",
+      "implementation_bearing": false
     }
   ]
 }
