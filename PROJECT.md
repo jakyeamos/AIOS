@@ -1626,3 +1626,10 @@ The spec execution roadmap has been corrected before execution:
 
 - Added `investigate` and `investigation` as analysis-route evidence so route-blocked diagnostic objectives can select an audit workflow instead of failing with no governed workflow candidates.
 - Verified the previously blocked route-blocked investigation objective now routes through the active `divergent-strategy` audit workflow.
+
+## 2026-06-24 - Semantic workflow routing fallback
+
+- Workflow routing now supports a semantic fallback after deterministic scoring fails to produce a viable unique workflow.
+- The fallback is provider-neutral: callers may inject a semantic reasoner directly, or configure `AIOS_WORKFLOW_SEMANTIC_ROUTER_CMD` to run a local/model-backed JSON command.
+- Semantic routes must name a registered workflow and meet the `0.75` confidence threshold; otherwise AIOS preserves the semantic recommendation as diagnostic evidence and keeps the governed route blocked.
+- Added `docs/diagnostics/semantic-workflow-routing.md` with the command request/response schema and confidence-gate behavior.
