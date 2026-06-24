@@ -1576,3 +1576,11 @@ The spec execution roadmap has been corrected before execution:
 - Non-remote CI exceptions were not approved for Phase 24.
 - No `non_remote_ci_exception` objects were added to `config/quality-pipeline.json`.
 - Current truth: all 21 Phase 24 in-scope repos remain blocked, every in-scope repo still carries `ci_default_proof_missing`, and `video-pipeline` plus `agent-router` remain excluded.
+
+## 2026-06-24 - Phase 24 final linked-repo readiness ledger
+
+- Closed Phase 24 with `.planning/phases/24-rectify-linked-repo-aios-readiness-blockers-except-agent-router/24-VERIFICATION.md`.
+- Final Phase 24 scope is 21 in-scope repositories, with `agent-router` excluded by original scope and `video-pipeline` excluded because the user clarified the video pipeline is deprecated.
+- Final verdict distribution is 0 ready, 0 evidence-required, 21 blocked, and 2 excluded; no linked repo should be represented as adoption-ready from Phase 24 evidence.
+- Copied and live `prove-project-health --all-inventory` both recorded 23 snapshots with 0 missing-source and 0 missing-inventory rows.
+- Fixed the Phase 24 readiness-report placeholder-row regression in commit `7f9516e5`; report generation now keeps project inventory read-only except for table creation.

@@ -1310,7 +1310,7 @@ Plans:
 **Subsystem extraction posture goal:** Keep inside AIOS. This phase should prove the linked-repo adoption loop as AIOS control-plane behavior; extraction would require proof that the gate/evidence model is portable across non-AIOS operators without AIOS' local inventory and standards-health stores.
 **Requirements**: TBD
 **Depends on:** Phase 23
-**Plans:** 9/10 plans executed
+**Plans:** 10/10 plans executed
 
 Plans:
 - [x] 24-01 AIOS Evidence Runner And Readiness Reporting Foundation
@@ -1322,7 +1322,7 @@ Plans:
 - [x] 24-07 Floor-Replacement Python Data Course Repo Remediation
 - [x] 24-08 Content Vault And BBDSE Container Remediation
 - [x] 24-09 CI Default Proof And Non-Remote Exception Sweep
-- [ ] 24-10 Final Verification And Closeout Ledger
+- [x] 24-10 Final Verification And Closeout Ledger
 
 ### Phase 25: Make AIOS planning a governed first-class workflow
 
@@ -1341,4 +1341,4 @@ Plans:
 - [ ] 25-04 Shadow route proof and planning truth closeout
 
 ---
-*Last updated: 2026-06-24 after planning Phase 24 linked-repo blocker remediation and preserving Phase 25 as dependent follow-up*
+*Last updated: 2026-06-24 after closing Phase 24 with 0 ready, 21 blocked, and 2 excluded linked repositories, then advancing Phase 25 as the next dependent phase*

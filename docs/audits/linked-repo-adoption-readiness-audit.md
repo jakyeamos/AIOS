@@ -430,3 +430,20 @@ The user selected `no-exceptions` for non-remote CI exceptions on 2026-06-24. No
 `python3 scripts/linked-repo-quality-runner.py --report` still reports `ready_count: 0`, `blocked_count: 21`, `evidence_required_count: 0`, and `excluded_count: 2`. `video-pipeline` and `agent-router` remain excluded.
 
 Every in-scope repo still has `ci_default_proof_missing`. Existing `ci` evidence rows are local blocked records or workflow-file presence records, not default-branch pass proof. Phase 24 closeout must therefore preserve a blocked-readiness ledger rather than claiming portfolio readiness.
+
+### Phase 24 Final Verification
+
+Phase 24 closes with `.planning/phases/24-rectify-linked-repo-aios-readiness-blockers-except-agent-router/24-VERIFICATION.md` as the final ledger.
+
+Final scope is 21 in-scope repositories and 2 excluded repositories. `agent-router` is excluded by the original Phase 24 scope, and `video-pipeline` is excluded because the user clarified on 2026-06-24 that the video pipeline is deprecated.
+
+Final readiness distribution from `python3 scripts/linked-repo-quality-runner.py --report`:
+
+| Verdict | Count | Meaning |
+| --- | ---: | --- |
+| `ready` | 0 | No in-scope repository has full passing strict evidence. |
+| `evidence_required` | 0 | No repository is waiting only on fresh non-blocking evidence. |
+| `blocked` | 21 | Every in-scope repository still has blocker-level missing or failing evidence. |
+| `excluded` | 2 | `agent-router` and `video-pipeline` are out of Phase 24 remediation scope. |
+
+Copied and live `prove-project-health --all-inventory` both recorded 23 snapshots with 0 missing-source and 0 missing-inventory rows. The Phase 24 closeout also fixed the readiness-report placeholder-row regression in commit `7f9516e5`; the report helper no longer inserts empty active `projects` rows while producing a read-only report.

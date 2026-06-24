@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Executing Phase 24
-last_updated: "2026-06-24T05:28:00.000Z"
+status: Executing Phase 25
+last_updated: "2026-06-24T05:45:00.000Z"
 progress:
   total_phases: 25
-  completed_phases: 23
+  completed_phases: 24
   total_plans: 145
-  completed_plans: 140
+  completed_plans: 141
   percent: 97
 ---
 
@@ -25,17 +25,17 @@ progress:
 - Canonical planning intent: make AIOS the default operating layer for serious project work by tightening routing, context, lifecycle, truth, governance, evaluation, learning, and operator visibility into one governed loop.
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
-- Latest completed phase: Phase 21, macOS Native App Skill Pack, shipped task-routed macOS project/build, native-pattern, settings, Sparkle, notch, release, manifest, validation, and documentation coverage without broad always-loaded macOS rules.
-- Latest completed plan: Phase 24 Plan 24-09 recorded the no-exceptions decision for non-remote CI; all 21 in-scope repos remain blocked and `video-pipeline` plus `agent-router` remain excluded.
-- Latest planned blocker-remediation phase: Phase 24 now has 10 executable plans to rectify linked-repo readiness blockers except explicitly excluded repos.
+- Latest completed phase: Phase 24, Rectify linked repo AIOS readiness blockers except agent-router, closed with 0 ready repos, 0 evidence-required repos, 21 blocked repos, and 2 excluded repos.
+- Latest completed plan: Phase 24 Plan 24-10 wrote the final verification ledger, preserved the no-exceptions CI decision, and recorded `video-pipeline` plus `agent-router` as excluded.
+- Latest planned governed-workflow phase: Phase 25 has four executable plans to make planning a governed first-class AIOS workflow.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 17, Progressive Governance And Standards Backfill Workflows
-- Active phase: Phase 24, Rectify linked repo AIOS readiness blockers except agent-router
-- Active plan: Phase 24 Plan 24-10, Final Verification And Closeout Ledger
-- Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21
-- Next dependency chain: Phase 22 -> Phase 23 -> Phase 24 -> Phase 25
+- Active phase: Phase 25, Make AIOS planning a governed first-class workflow
+- Active plan: Phase 25 Plan 25-01, Planning workflow detection contract
+- Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22 -> Phase 23 -> Phase 24
+- Next dependency chain: Phase 25
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
 
 ## Known Constraints To Preserve
@@ -56,7 +56,7 @@ progress:
 - Phase 23 added: Mature linked repositories to AIOS strict release readiness, split into eight GSD-standard plans for audit, readiness contract, class-specific maturation, evidence reporting, and final closeout.
 - Phase 23 execution produced a full portfolio ledger in `23-VERIFICATION.md`: all 23 active repo gate contracts validate and all-inventory standards-health proof records 23 active snapshots without missing-source contamination, but no repo is adoption-ready yet.
 - Phase 24 added: Rectify linked repo AIOS readiness blockers except agent-router.
-- Phase 24 planned: 10 plans cover AIOS evidence tooling, evidence-required closeout, production web apps, targeted production cleanup, developer tools, Python/data/course repos, content/container repos, CI/default proof, and final verification.
+- Phase 24 completed: 10 plans added AIOS evidence tooling, evidence-required closeout, production web app gates, targeted production cleanup, developer-tool gates, Python/data/course gates, content/container validation, no-exceptions CI decision, and final verification; closeout remains blocked at portfolio readiness with 0 ready repos, 21 blocked repos, and 2 excluded repos.
 - Phase 25 added: Make AIOS planning a governed first-class workflow.
 - Phase 25 planned: four plans cover planning detection, governed route selection, packet standards/evidence, and shadow-route proof with truth closeout; Phase 25 waits on Phase 24 execution because it depends on Phase 24.
 
@@ -64,6 +64,7 @@ progress:
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-06-24 | Execute Phase 24 linked-repo readiness blocker remediation | Completed all ten Phase 24 plans, added or replaced AIOS-owned evidence gates across linked repositories, excluded deprecated `video-pipeline` alongside scoped-out `agent-router`, preserved the user-selected no-exceptions CI decision, fixed readiness-report placeholder inventory contamination, and wrote `24-VERIFICATION.md`; final verdict is 0 ready repos, 0 evidence-required repos, 21 blocked repos, and 2 excluded repos. |
 | 2026-06-24 | Execute Phase 23 linked-repo strict readiness maturation | Completed all eight Phase 23 plans, added class-based quality-pipeline coverage, replaced weak `floor_only`/`pre_cr_only` maturity with blocked readiness metadata, fixed all-inventory proof contamination, and wrote `23-VERIFICATION.md`; final verdict is 0 ready repos, 2 evidence-required repos, and 21 blocked repos. |
 | 2026-06-24 | Split Phase 23 into GSD-standard plans | Replaced the single umbrella Phase 23 plan with eight focused plan files covering portfolio audit, class-based readiness contracts, production web apps, developer tools, Python/data/course repos, content/container repos, evidence reporting, and final verification. |
 | 2026-06-24 | Add linked-project AIOS gate contracts and clean inventory hygiene | Added `.aios-quality-gate.json` contracts to 21 active linked source repos, registered matching allowlisted adapters in `config/quality-gates.json`, marked floor-only and `pre_cr`-only contracts with `adoptionMaturity` next steps, marked missing-source, non-repo, container, and duplicate inventory rows inactive in `projects`, and added `project_inventory_hygiene_events` to preserve the inventory cleanup trail. |
