@@ -17,7 +17,7 @@ from services.project_maturity import (
     assess_behavioral_spec_eligibility,
     objective_has_manual_maturity_override,
 )
-from services.workflow_orchestration import recommend_route_primitives
+from services.workflow_orchestration import SemanticWorkflowReasoner, recommend_route_primitives
 
 ProjectOutcome = Literal["exact", "likely", "ambiguous", "unsupported"]
 RouteStatus = Literal["ready", "blocked"]
@@ -53,6 +53,7 @@ class RouteResult:
     task_family: str | None
     blocked_reason: str | None
     rationale: str
+    semantic_recommendation: dict[str, Any] | None = None
     skill_recommendations: tuple[AssetRecommendation, ...] = ()
     workflow_alternatives: tuple[AssetRecommendation, ...] = ()
     maturity_report: dict[str, Any] | None = None
@@ -151,6 +152,7 @@ def route_objective(
     explicit_project_id: str | None = None,
     workflow_registry_path: Path | None = None,
     prompt_registry_path: Path | None = None,
+    semantic_reasoner: SemanticWorkflowReasoner | None = None,
 ) -> RouteResult:
     project = _resolve_project(
         conn,
@@ -181,11 +183,13 @@ def route_objective(
         surface=surface,
         workflow_registry_path=workflow_registry_path,
         prompt_registry_path=prompt_registry_path,
+        semantic_reasoner=semantic_reasoner,
     )
     selected_workflow = route_primitives.get("selected_workflow")
     workflow_candidates = route_primitives.get("workflow_candidates") or []
     prompt_recommendation = route_primitives.get("prompt_recommendation")
     backend_recommendation = route_primitives.get("backend_recommendation")
+    semantic_recommendation = route_primitives.get("semantic_recommendation")
     if selected_workflow is None:
         return RouteResult(
             status="blocked",
@@ -202,6 +206,7 @@ def route_objective(
             task_family=None,
             blocked_reason="No governed workflow matched the objective strongly enough.",
             rationale="Routing blocked because workflow selection returned no viable governed route.",
+            semantic_recommendation=semantic_recommendation,
         )
     maturity_report: dict[str, Any] | None = None
     if selected_workflow.get("workflow_key") == BEHAVIORAL_SPEC_WORKFLOW_KEY:
@@ -237,6 +242,7 @@ def route_objective(
                     f"{report.rationale}"
                 ),
                 rationale="Routing blocked by mature-repo eligibility gate.",
+                semantic_recommendation=semantic_recommendation,
                 maturity_report=maturity_report,
             )
 
@@ -309,5 +315,6 @@ def route_objective(
             f"{selected_workflow.get('workflow_key')} with prompt family "
             f"{prompt_recommendation.get('prompt_family') if prompt_recommendation else None}."
         ),
+        semantic_recommendation=semantic_recommendation,
         maturity_report=maturity_report,
     )

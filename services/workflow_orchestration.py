@@ -27,6 +27,11 @@ from services.personalized_humanizer import (
     transform_text,
 )
 from services.rtk_integration import load_compression_rules
+from services.semantic_workflow_routing import (
+    SemanticWorkflowReasoner,
+    configured_semantic_reasoner,
+    semantic_recommendation,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_WORKFLOW_REGISTRY = ROOT / "config" / "workflows" / "registry.json"
@@ -1003,6 +1008,47 @@ def rank_workflow_candidates(
     return candidates
 
 
+def _semantic_route_payload(
+    *,
+    objective: str,
+    semantic: dict[str, Any],
+    surface: str,
+    workflow_registry_path: Path | None,
+    prompt_registry_path: Path | None,
+) -> dict[str, Any]:
+    workflow_key = str(semantic["selected_workflow"])
+    workflow_family = str(semantic["workflow_family"])
+    task_family = WORKFLOW_TASK_FAMILIES.get(workflow_key)
+    prompt_recommendation = recommend_prompt_family(
+        objective=objective,
+        workflow_key=workflow_key,
+        prompt_registry_path=prompt_registry_path,
+        workflow_registry_path=workflow_registry_path,
+    )
+    backend_recommendation = (
+        recommend_execution_surface(
+            task_family=task_family, preferred_surfaces=(surface, "claude_code")
+        )
+        if task_family
+        else None
+    )
+    return {
+        "objective": objective,
+        "selected_workflow": {
+            "workflow_key": workflow_key,
+            "workflow_family": workflow_family,
+            "score": 0,
+            "routing_source": "semantic_reasoner",
+            "semantic_confidence": semantic["confidence"],
+            "rationale": semantic["rationale"],
+        },
+        "workflow_candidates": [],
+        "prompt_recommendation": prompt_recommendation,
+        "backend_recommendation": backend_recommendation,
+        "semantic_recommendation": semantic,
+    }
+
+
 def recommend_prompt_family(
     *,
     objective: str,
@@ -1084,20 +1130,57 @@ def recommend_route_primitives(
     surface: str = "codex",
     workflow_registry_path: Path | None = None,
     prompt_registry_path: Path | None = None,
+    semantic_reasoner: SemanticWorkflowReasoner | None = None,
 ) -> dict[str, Any]:
+    workflows = load_workflow_registry(workflow_registry_path)
     candidates = rank_workflow_candidates(objective, workflow_registry_path=workflow_registry_path)
+    semantic_reasoner = semantic_reasoner or configured_semantic_reasoner()
     if not candidates:
+        semantic = semantic_recommendation(
+            objective=objective,
+            workflows=workflows,
+            candidates=candidates,
+            semantic_reasoner=semantic_reasoner,
+        )
+        if semantic and semantic.get("status") == "usable":
+            return _semantic_route_payload(
+                objective=objective,
+                semantic=semantic,
+                surface=surface,
+                workflow_registry_path=workflow_registry_path,
+                prompt_registry_path=prompt_registry_path,
+            )
         return {
             "objective": objective,
             "selected_workflow": None,
             "workflow_candidates": [],
             "prompt_recommendation": None,
             "backend_recommendation": None,
+            "semantic_recommendation": semantic,
+            "blocked_reason": (
+                "Semantic workflow confidence was below the route threshold."
+                if semantic
+                else "No deterministic or semantic workflow matched the objective."
+            ),
         }
 
     selected = candidates[0]
     runner_up = candidates[1] if len(candidates) > 1 else None
     if selected.score < 4 or (runner_up is not None and runner_up.score >= selected.score):
+        semantic = semantic_recommendation(
+            objective=objective,
+            workflows=workflows,
+            candidates=candidates,
+            semantic_reasoner=semantic_reasoner,
+        )
+        if semantic and semantic.get("status") == "usable":
+            return _semantic_route_payload(
+                objective=objective,
+                semantic=semantic,
+                surface=surface,
+                workflow_registry_path=workflow_registry_path,
+                prompt_registry_path=prompt_registry_path,
+            )
         return {
             "objective": objective,
             "selected_workflow": None,
@@ -1113,6 +1196,7 @@ def recommend_route_primitives(
             ],
             "prompt_recommendation": None,
             "backend_recommendation": None,
+            "semantic_recommendation": semantic,
             "blocked_reason": "Workflow evidence was weak or tied; route needs clarification.",
         }
     task_family = WORKFLOW_TASK_FAMILIES.get(selected.workflow_key)

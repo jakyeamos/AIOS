@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from services.task_routing import route_objective  # noqa: E402
+from services.workflow_orchestration import recommend_route_primitives  # noqa: E402
 
 
 def _seed_projects(conn: sqlite3.Connection, root: Path) -> None:
@@ -182,6 +185,145 @@ def test_route_objective_routes_investigation_language_to_audit(tmp_path: Path) 
 
     assert route["status"] == "ready"
     assert route["selected_workflow"]["workflow_family"] == "audit_only"
+
+
+def test_semantic_reasoner_routes_high_confidence_no_match() -> None:
+    seen_request: dict[str, object] = {}
+
+    def reasoner(request: dict[str, object]) -> dict[str, object]:
+        seen_request.update(request)
+        return {
+            "selected_workflow": "implementation-delivery",
+            "confidence": 0.86,
+            "rationale": "The user is asking AIOS to add a new routing capability.",
+            "alternatives": [
+                {"workflow_key": "divergent-strategy", "confidence": 0.41},
+            ],
+        }
+
+    route = recommend_route_primitives(
+        "Make the router understand intent instead of depending on exact words",
+        semantic_reasoner=reasoner,
+    )
+
+    assert route["selected_workflow"]["workflow_key"] == "implementation-delivery"
+    assert route["selected_workflow"]["routing_source"] == "semantic_reasoner"
+    assert route["semantic_recommendation"]["confidence"] == 0.86
+    assert seen_request["objective"] == "Make the router understand intent instead of depending on exact words"
+    assert any(
+        item["workflow_key"] == "implementation-delivery"
+        for item in seen_request["available_workflows"]
+    )
+
+
+def test_semantic_reasoner_blocks_low_confidence_no_match() -> None:
+    def reasoner(_request: dict[str, object]) -> dict[str, object]:
+        return {
+            "selected_workflow": "implementation-delivery",
+            "confidence": 0.52,
+            "rationale": "The request could mean implementation or planning.",
+            "alternatives": [
+                {"workflow_key": "divergent-strategy", "confidence": 0.49},
+            ],
+        }
+
+    route = recommend_route_primitives(
+        "Make it more flexible somehow",
+        semantic_reasoner=reasoner,
+    )
+
+    assert route["selected_workflow"] is None
+    assert route["semantic_recommendation"]["selected_workflow"] == "implementation-delivery"
+    assert route["blocked_reason"] == "Semantic workflow confidence was below the route threshold."
+
+
+def test_route_objective_accepts_semantic_reasoner(tmp_path: Path) -> None:
+    conn = sqlite3.connect(":memory:")
+    _seed_projects(conn, tmp_path)
+
+    def reasoner(_request: dict[str, object]) -> dict[str, object]:
+        return {
+            "selected_workflow": "implementation-delivery",
+            "confidence": 0.9,
+            "rationale": "The objective asks for a routing implementation change.",
+        }
+
+    route = route_objective(
+        conn,
+        objective="Make the router understand intent instead of depending on exact words",
+        explicit_project_id="p-aios",
+        semantic_reasoner=reasoner,
+    ).to_json()
+
+    assert route["status"] == "ready"
+    assert route["selected_workflow"]["routing_source"] == "semantic_reasoner"
+    assert route["semantic_recommendation"]["confidence"] == 0.9
+
+
+def test_route_objective_uses_configured_semantic_router_command(tmp_path: Path) -> None:
+    conn = sqlite3.connect(":memory:")
+    _seed_projects(conn, tmp_path)
+
+    completed = type(
+        "Completed",
+        (),
+        {
+            "returncode": 0,
+            "stdout": json.dumps(
+                {
+                    "selected_workflow": "implementation-delivery",
+                    "confidence": 0.91,
+                    "rationale": "The objective asks for a routing implementation change.",
+                }
+            ),
+            "stderr": "",
+        },
+    )()
+
+    with (
+        patch.dict(
+            "os.environ",
+            {"AIOS_WORKFLOW_SEMANTIC_ROUTER_CMD": "semantic-router --json"},
+        ),
+        patch("services.semantic_workflow_routing.subprocess.run", return_value=completed) as run,
+    ):
+        route = route_objective(
+            conn,
+            objective="Make the router understand intent instead of depending on exact words",
+            explicit_project_id="p-aios",
+        ).to_json()
+
+    assert route["status"] == "ready"
+    assert route["selected_workflow"]["routing_source"] == "semantic_reasoner"
+    assert route["semantic_recommendation"]["confidence"] == 0.91
+    assert run.call_args.args[0] == ["semantic-router", "--json"]
+    request = json.loads(run.call_args.kwargs["input"])
+    assert request["objective"] == "Make the router understand intent instead of depending on exact words"
+
+
+def test_configured_semantic_router_command_failure_blocks_without_crashing(tmp_path: Path) -> None:
+    conn = sqlite3.connect(":memory:")
+    _seed_projects(conn, tmp_path)
+
+    with (
+        patch.dict(
+            "os.environ",
+            {"AIOS_WORKFLOW_SEMANTIC_ROUTER_CMD": "semantic-router --json"},
+        ),
+        patch(
+            "services.semantic_workflow_routing.subprocess.run",
+            side_effect=subprocess.TimeoutExpired(["semantic-router", "--json"], 20),
+        ),
+    ):
+        route = route_objective(
+            conn,
+            objective="Make the router understand intent instead of depending on exact words",
+            explicit_project_id="p-aios",
+        ).to_json()
+
+    assert route["status"] == "blocked"
+    assert route["semantic_recommendation"]["status"] == "invalid_workflow"
+    assert "timed out" in route["semantic_recommendation"]["rationale"]
 
 
 def test_route_objective_reports_prompt_fallback_when_registry_lacks_match(tmp_path: Path) -> None:
