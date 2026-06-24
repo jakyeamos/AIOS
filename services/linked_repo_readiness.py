@@ -108,7 +108,7 @@ def _table_exists(conn: sqlite3.Connection, table: str) -> bool:
     return row is not None
 
 
-def _ensure_project_rows(conn: sqlite3.Connection, project_ids: list[str]) -> None:
+def _ensure_projects_table(conn: sqlite3.Connection) -> None:
     if not _table_exists(conn, "projects"):
         conn.execute(
             """
@@ -120,14 +120,6 @@ def _ensure_project_rows(conn: sqlite3.Connection, project_ids: list[str]) -> No
               status TEXT NOT NULL DEFAULT 'active'
             )
             """
-        )
-    for project_id in project_ids:
-        conn.execute(
-            """
-            INSERT OR IGNORE INTO projects (id, name, repo_path, obsidian_path, status)
-            VALUES (?, ?, '', '', 'active')
-            """,
-            (project_id, project_id),
         )
 
 
@@ -195,7 +187,7 @@ def phase24_readiness_report(
         config_path=config_path,
         excluded_project_ids=excluded_project_ids,
     )
-    _ensure_project_rows(conn, [target["project_id"] for target in targets])
+    _ensure_projects_table(conn)
     projects = [
         _project_verdict(
             get_project_quality_pipeline(

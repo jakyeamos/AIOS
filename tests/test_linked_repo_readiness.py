@@ -249,3 +249,5 @@ def test_readiness_report_real_config_has_21_targets_and_deprecated_repos_exclud
         {"project_id": "video-pipeline", "reason": "excluded_by_phase24_scope"},
         {"project_id": "agent-router", "reason": "excluded_by_phase24_scope"}
     ]
+    placeholder_rows = conn.execute("SELECT COUNT(*) FROM projects WHERE repo_path = ''").fetchone()[0]
+    assert placeholder_rows == 0
