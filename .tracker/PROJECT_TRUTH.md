@@ -1,10 +1,10 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, an approved expert-rubric-remediation workflow now split into GSD Phases 26-28, and broad but currently failing repo-level Python quality baselines.
+summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, an approved expert-rubric-remediation workflow now split into eight executable GSD plans across Phases 26-28, and broad but currently failing repo-level Python quality baselines.
 healthScore: 66
 statusLabel: needs_attention
-nextStep: Run `/gsd-plan-phase 26` to turn the expert rubric remediation core-artifacts phase into executable plan files before implementation.
+nextStep: Run `/gsd-execute-phase 25` to continue the active dependency chain before executing the planned expert rubric remediation phases.
 blockers:
   - Full Python test, Ruff, format, and BasedPyright baselines are failing outside the gate-audit slice.
 lastUpdated: 2026-06-24
@@ -40,7 +40,7 @@ The codebase is large, with Python services and scripts in `services/` and `bin/
 
 AIOS now also has a file-backed and SQLite-backed context-loop learning primitive: `services/context_loops.py`, `schema.sql`, and `python bin/aios.py context-loops ...` record inner-loop context/draft runs, review events, learning candidates, explicit approvals/rejections, approved lesson application, metrics, and a draft-only email pilot. Contract docs and examples live under `aios/context-loops/`.
 
-AIOS has an approved design and implementation plan for `expert_rubric_remediation_v1`, a general workflow that compiles TMCP expertise into an explicit rubric, audits concrete evidence, and produces ordered remediation slices before any implementation handoff. That implementation is now split across GSD Phases 26-28 for core artifacts, workflow runtime, and CLI/verification closeout.
+AIOS has an approved design and implementation plan for `expert_rubric_remediation_v1`, a general workflow that compiles TMCP expertise into an explicit rubric, audits concrete evidence, and produces ordered remediation slices before any implementation handoff. That implementation is now planned across GSD Phases 26-28 as eight executable plans: core artifacts, workflow runtime, route support, CLI exposure, focused quality closeout, and smoke verification.
 
 ## Why This Matters / Intended Outcome
 
@@ -73,6 +73,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-06-24: Added the `expert_rubric_remediation_v1` implementation plan covering the service module, workflow/skill registry entries, routing, `aios tmcp review-plan`, fixtures, validation, and truth update sequence.
 - 2026-06-24: Split the oversized `expert_rubric_remediation_v1` implementation plan into GSD Phases 26-28: core artifacts, workflow runtime, and CLI/verification.
 - 2026-06-24: Added routing coverage for expert audit-plan/rubric-remediation objectives and suppressed diagnostic workflow-key mentions from content-generation routing.
+- 2026-06-24: Planned all three expert rubric remediation phases with GSD research, validation, and eight executable plans: Phase 26 has two core-artifact plans, Phase 27 has three workflow-runtime plans, and Phase 28 has three CLI/verification plans.
 
 ## Open Problems
 
@@ -82,7 +83,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 4. **Full BasedPyright baseline is not green** — `uv run basedpyright` failed on 2026-06-23 with 100 errors and 100 warnings.
 ## Next Concrete Steps
 
-1. Run `/gsd-plan-phase 26` for the expert rubric remediation core-artifacts phase, then implement that phase before planning Phase 27.
+1. Run `/gsd-execute-phase 25` to clear the active planning-governance dependency, then execute Phase 26 for expert rubric remediation core artifacts.
 2. Fix the 18 current `uv run pytest -q` failures or update stale expectations where the underlying contract intentionally changed.
 3. Run Ruff autofix/format in planned chunks rather than broad unreviewed churn.
 4. Triage BasedPyright errors in touched/runtime-critical modules first, especially hook and managed-runtime scripts.
@@ -104,7 +105,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 | Tests | Fail | `uv run pytest -q` failed on 2026-06-23 with 18 failures; focused context-loop tests passed on 2026-06-23, and a broader `tests/test_aios_cli.py tests/test_context_loops.py` run still has unrelated/stale CLI expectation failures |
 | Structure | Warning | Full format check wants 147 files reformatted; touched gate-audit files are formatted |
 
-Doc-only update note: the 2026-06-24 expert-rubric-remediation spec, implementation-plan, and GSD phase-split commits ran the staged AIOS commit-quality checks and passed the registered standards, context, success-criteria, quality-pipeline, allowlist, and staged handler-race gates. No repo-level Ruff, BasedPyright, Vulture, or pytest run was performed for those design/planning-only commits; existing repo-level failures remain authoritative.
+Doc-only update note: the 2026-06-24 expert-rubric-remediation spec, implementation-plan, GSD phase-split, and Phase 26-28 planning commits ran the staged AIOS commit-quality checks and passed the registered standards, context, success-criteria, quality-pipeline, allowlist, and staged handler-race gates. The Phase 26-28 planning pass also ran `verify plan-structure` and `frontmatter validate --schema plan` for all eight plan files plus `git diff --check`; `gap-analysis --phase-dir` exited 0 but warned because global `REQUIREMENTS.md` coverage is not scoped to these TBD-requirement phases. No repo-level Ruff, BasedPyright, Vulture, or pytest run was performed for those design/planning-only commits; existing repo-level failures remain authoritative.
 
 ## Agent Notes
 
