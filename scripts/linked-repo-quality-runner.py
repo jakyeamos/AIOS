@@ -88,7 +88,12 @@ def _resolve_gate(config_path: Path, db_path: Path, project_id: str, gate_key: s
     gate = gates.get(gate_key) if isinstance(gates, dict) else None
     if not isinstance(gate, dict):
         raise ValueError(f"Unknown gate for {project_id}: {gate_key}")
-    command = gate.get("command")
+    exception = project.get("non_remote_ci_exception")
+    command = (
+        exception.get("local_proof_command")
+        if gate_key == "ci" and isinstance(exception, dict)
+        else gate.get("command")
+    )
     if not isinstance(command, str) or not command.strip():
         raise ValueError(f"Gate {gate_key} for {project_id} has no AIOS-owned command")
     working_directory = gate.get("working_directory")

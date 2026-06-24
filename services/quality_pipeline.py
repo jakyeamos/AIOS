@@ -240,6 +240,21 @@ def _optional_object(value: Any) -> dict[str, Any] | None:
     return value if isinstance(value, dict) else None
 
 
+def _required_gates_for_class(standard: dict[str, Any], repo_class: str | None) -> set[str] | None:
+    if repo_class is None:
+        return None
+    classes = standard.get("classes")
+    if not isinstance(classes, dict):
+        return None
+    class_config = classes.get(repo_class)
+    if not isinstance(class_config, dict):
+        return None
+    required_gates = class_config.get("required_gates")
+    if not isinstance(required_gates, list):
+        return None
+    return {str(gate).strip() for gate in required_gates if isinstance(gate, str) and gate.strip()}
+
+
 def _gate_tier(value: Any) -> GateTier:
     if value in {"tier_1_core", "production_app", "domain_specific"}:
         return value
@@ -291,6 +306,8 @@ def get_project_quality_pipeline(
         project_config = _infer_project_config(conn, project_id)
     project_gates = project_config.get("gates") if isinstance(project_config.get("gates"), dict) else {}
     project_applicability = _string_list(project_config.get("applies_to"), ["all"])
+    repo_class = _optional_string(project_config.get("repo_class"))
+    class_required_gates = _required_gates_for_class(standard, repo_class)
     latest = _latest_runs(conn, project_id)
     blocked_reason = project_config.get("blocked_reason") if isinstance(project_config.get("blocked_reason"), str) else None
 
@@ -305,10 +322,15 @@ def get_project_quality_pipeline(
         applicable = _is_applicable(applicability, project_applicability)
         if not applicable:
             continue
+        required = (
+            gate_key in class_required_gates
+            if class_required_gates is not None
+            else bool(gate.get("required", False))
+        )
         gate_config = project_gates.get(gate_key) if isinstance(project_gates.get(gate_key), dict) else None
         latest_run = latest.get(gate_key)
         configured = gate_config is not None
-        status = "missing" if bool(gate.get("required", False)) and not configured else "stale"
+        status = "missing" if required and not configured else "stale"
         if blocked_reason and not configured:
             status = "blocked"
         if latest_run:
@@ -321,7 +343,7 @@ def get_project_quality_pipeline(
                 "tier": _gate_tier(gate.get("tier")),
                 "applicable": applicable,
                 "applicability": applicability,
-                "required": bool(gate.get("required", False)),
+                "required": required,
                 "configured": configured,
                 "status": status,  # type: ignore[typeddict-item]
                 "command": str(gate_config.get("command")) if gate_config and gate_config.get("command") else latest_run.get("command") if latest_run else None,
@@ -351,7 +373,7 @@ def get_project_quality_pipeline(
     return {
         "project_id": project_id,
         "standard_version": str(standard.get("version", "unknown")),
-        "repo_class": _optional_string(project_config.get("repo_class")),
+        "repo_class": repo_class,
         "strict_readiness_status": _optional_string(project_config.get("strict_readiness_status")),
         "maturation_blockers": _string_list(project_config.get("maturation_blockers"), []),
         "non_remote_ci_exception": _optional_object(project_config.get("non_remote_ci_exception")),

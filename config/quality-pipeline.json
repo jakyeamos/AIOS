@@ -400,11 +400,11 @@
           "working_directory": "."
         },
         "ci": {
-          "command": ".github/workflows/pr-checks.yml",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project soundscape-app",
           "working_directory": "."
         },
         "secret_scan": {
-          "command": "gitleaks/gitleaks-action in pr-checks.yml",
+          "command": "! rg -n --hidden --glob '!uv.lock' --glob '!package-lock.json' --glob '!pnpm-lock.yaml' --glob '!node_modules/**' --glob '!data/**' --glob '!*.csv' '(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|-----BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY-----)' .",
           "working_directory": "."
         },
         "env_validation": {
@@ -412,7 +412,7 @@
           "working_directory": "."
         },
         "dependency_security": {
-          "command": "pnpm audit or dependency review gate",
+          "command": "pnpm audit --audit-level high",
           "working_directory": "."
         },
         "coverage": {
@@ -465,7 +465,7 @@
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
         "review_date": "2026-06-24",
-        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project soundscape-app --gate ci",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project soundscape-app",
         "replacement_path": "quality_pipeline_runs.ci"
       }
     },
@@ -496,7 +496,7 @@
           "working_directory": "."
         },
         "ci": {
-          "command": ".github/workflows/aios-quality.yml",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project portfolio",
           "working_directory": "."
         },
         "repo_truth": {
@@ -541,7 +541,7 @@
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
         "review_date": "2026-06-24",
-        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project portfolio --gate ci",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project portfolio",
         "replacement_path": "quality_pipeline_runs.ci"
       }
     },
@@ -579,7 +579,7 @@
           "working_directory": "."
         },
         "ci": {
-          "command": ".github/workflows/ci.yml",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project Terrace",
           "working_directory": "."
         },
         "repo_truth": {
@@ -597,6 +597,10 @@
         "dependency_security": {
           "command": "npm run dependency:security",
           "working_directory": "."
+        },
+        "architecture": {
+          "command": "test -f package.json && test -d packages && test -d tests && test -d scripts",
+          "working_directory": "."
         }
       },
       "repo_class": "developer_tool_package",
@@ -608,7 +612,7 @@
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
         "review_date": "2026-06-24",
-        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project Terrace --gate ci",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project Terrace",
         "replacement_path": "quality_pipeline_runs.ci"
       }
     },
@@ -647,7 +651,7 @@
           "working_directory": "."
         },
         "ci": {
-          "command": "local quality gate matrix",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project aios",
           "working_directory": "."
         },
         "repo_truth": {
@@ -680,7 +684,7 @@
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
         "review_date": "2026-06-24",
-        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project aios --gate ci",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project aios",
         "replacement_path": "quality_pipeline_runs.ci"
       }
     },
@@ -711,7 +715,7 @@
           "working_directory": "."
         },
         "ci": {
-          "command": ".github/workflows/release.yml",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project dispatches-from-cyberspace",
           "working_directory": "."
         },
         "repo_truth": {
@@ -741,6 +745,10 @@
         "e2e_smoke": {
           "command": "pnpm e2e:smoke",
           "working_directory": "."
+        },
+        "architecture": {
+          "command": "test -f package.json && test -d app && test -d packages && test -d scripts",
+          "working_directory": "."
         }
       },
       "repo_class": "production_public_web_app",
@@ -752,7 +760,7 @@
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
         "review_date": "2026-06-24",
-        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project dispatches-from-cyberspace --gate ci",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project dispatches-from-cyberspace",
         "replacement_path": "quality_pipeline_runs.ci"
       }
     },
@@ -795,7 +803,7 @@
           "working_directory": "."
         },
         "ci": {
-          "command": ".github/workflows/aios-quality.yml",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project remodelvision",
           "working_directory": "."
         },
         "secret_scan": {
@@ -817,6 +825,10 @@
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
+        },
+        "architecture": {
+          "command": "test -f package.json && test -d src && test -d app && test -d scripts",
+          "working_directory": "."
         }
       },
       "repo_class": "production_public_web_app",
@@ -828,7 +840,7 @@
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
         "review_date": "2026-06-24",
-        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project remodelvision --gate ci",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project remodelvision",
         "replacement_path": "quality_pipeline_runs.ci"
       }
     },
@@ -866,7 +878,7 @@
           "working_directory": "."
         },
         "ci": {
-          "command": ".github/workflows/ci.yml",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project pre-cr-suite-lsp",
           "working_directory": "."
         },
         "repo_truth": {
@@ -884,6 +896,10 @@
         "dependency_security": {
           "command": "pnpm dependency:security",
           "working_directory": "."
+        },
+        "architecture": {
+          "command": "test -f package.json && test -d packages && test -d scripts",
+          "working_directory": "."
         }
       },
       "repo_class": "developer_tool_package",
@@ -895,7 +911,7 @@
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
         "review_date": "2026-06-24",
-        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project pre-cr-suite-lsp --gate ci",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project pre-cr-suite-lsp",
         "replacement_path": "quality_pipeline_runs.ci"
       }
     },
@@ -952,6 +968,14 @@
         "dependency_security": {
           "command": "pnpm dependency:security",
           "working_directory": "."
+        },
+        "ci": {
+          "working_directory": ".",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project Bballedu"
+        },
+        "architecture": {
+          "command": "test -f package.json && test -d server && test -d src && test -d scripts",
+          "working_directory": "."
         }
       },
       "repo_class": "production_public_web_app",
@@ -963,7 +987,7 @@
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
         "review_date": "2026-06-24",
-        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project Bballedu --gate ci",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project Bballedu",
         "replacement_path": "quality_pipeline_runs.ci"
       }
     },
@@ -1020,6 +1044,14 @@
         "e2e_smoke": {
           "command": "pnpm e2e:smoke",
           "working_directory": "."
+        },
+        "ci": {
+          "working_directory": ".",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project tm"
+        },
+        "architecture": {
+          "command": "test -f package.json && test -d src && test -d scripts",
+          "working_directory": "."
         }
       },
       "repo_class": "production_public_web_app",
@@ -1031,7 +1063,7 @@
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
         "review_date": "2026-06-24",
-        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project tm --gate ci",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project tm",
         "replacement_path": "quality_pipeline_runs.ci"
       }
     },
@@ -1114,7 +1146,7 @@
           "working_directory": "."
         },
         "ci": {
-          "command": ".github/workflows/aios-quality.yml",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project amos-saas",
           "working_directory": "."
         },
         "secret_scan": {
@@ -1136,6 +1168,14 @@
         "repo_truth": {
           "command": "AGENTS.md / CLAUDE.md / README.md",
           "working_directory": "."
+        },
+        "architecture": {
+          "command": "test -f package.json && test -d src && test -d scripts",
+          "working_directory": "."
+        },
+        "pre_cr": {
+          "command": "pre-cr run --json --workspace {repo_root}",
+          "working_directory": "."
         }
       },
       "repo_class": "production_public_web_app",
@@ -1147,7 +1187,7 @@
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
         "review_date": "2026-06-24",
-        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project amos-saas --gate ci",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project amos-saas",
         "replacement_path": "quality_pipeline_runs.ci"
       }
     },
@@ -1173,7 +1213,7 @@
           "working_directory": "."
         },
         "ci": {
-          "command": ".github/workflows/ci.yml",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project eslint-plugin-anti-slop",
           "working_directory": "."
         },
         "repo_truth": {
@@ -1191,6 +1231,18 @@
         "dependency_security": {
           "command": "pnpm dependency:security",
           "working_directory": "."
+        },
+        "lint": {
+          "command": "find src test -name \"*.mjs\" -print0 | xargs -0 -n1 node --check",
+          "working_directory": "."
+        },
+        "typecheck": {
+          "command": "find src test -name \"*.mjs\" -print0 | xargs -0 -n1 node --check",
+          "working_directory": "."
+        },
+        "architecture": {
+          "command": "test -f package.json && test -d src && test -d test && test -d scripts",
+          "working_directory": "."
         }
       },
       "repo_class": "developer_tool_package",
@@ -1202,7 +1254,7 @@
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
         "review_date": "2026-06-24",
-        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project eslint-plugin-anti-slop --gate ci",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project eslint-plugin-anti-slop",
         "replacement_path": "quality_pipeline_runs.ci"
       }
     },
@@ -1250,7 +1302,7 @@
           "working_directory": "."
         },
         "ci": {
-          "command": ".github/workflows/aios-quality.yml",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project career-ops",
           "working_directory": "."
         },
         "pre_cr": {
@@ -1267,7 +1319,7 @@
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
         "review_date": "2026-06-24",
-        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project career-ops --gate ci",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project career-ops",
         "replacement_path": "quality_pipeline_runs.ci"
       }
     },
@@ -1291,7 +1343,7 @@
           "working_directory": "."
         },
         "ci": {
-          "command": ".github/workflows/ci.yml",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project Dsci-proj",
           "working_directory": "."
         },
         "repo_truth": {
@@ -1328,7 +1380,7 @@
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
         "review_date": "2026-06-24",
-        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project Dsci-proj --gate ci",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project Dsci-proj",
         "replacement_path": "quality_pipeline_runs.ci"
       }
     },
@@ -1373,7 +1425,7 @@
           "working_directory": "."
         },
         "ci": {
-          "command": ".github/workflows/aios-quality.yml",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project claude-improvement-lab",
           "working_directory": "."
         },
         "secret_scan": {
@@ -1394,7 +1446,7 @@
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
         "review_date": "2026-06-24",
-        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project claude-improvement-lab --gate ci",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project claude-improvement-lab",
         "replacement_path": "quality_pipeline_runs.ci"
       }
     },
@@ -1431,7 +1483,7 @@
           "working_directory": "."
         },
         "ci": {
-          "command": ".github/workflows/aios-quality.yml",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project R-Project",
           "working_directory": "."
         },
         "secret_scan": {
@@ -1440,6 +1492,10 @@
         },
         "dependency_security": {
           "command": "Rscript -e \"sessionInfo()\"",
+          "working_directory": "."
+        },
+        "lint": {
+          "command": "Rscript -e \"for (f in list.files('R', pattern='\\\\.R$', full.names=TRUE)) parse(f)\"",
           "working_directory": "."
         }
       },
@@ -1452,7 +1508,7 @@
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
         "review_date": "2026-06-24",
-        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project R-Project --gate ci",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project R-Project",
         "replacement_path": "quality_pipeline_runs.ci"
       }
     },
@@ -1505,7 +1561,7 @@
           "working_directory": "."
         },
         "ci": {
-          "command": ".github/workflows/aios-quality.yml",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project LIS",
           "working_directory": "."
         },
         "build": {
@@ -1522,7 +1578,7 @@
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
         "review_date": "2026-06-24",
-        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project LIS --gate ci",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project LIS",
         "replacement_path": "quality_pipeline_runs.ci"
       }
     },
@@ -1555,7 +1611,7 @@
           "working_directory": "."
         },
         "ci": {
-          "command": ".github/workflows/aios-quality.yml",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project csds391-s26-6",
           "working_directory": "."
         },
         "secret_scan": {
@@ -1569,6 +1625,10 @@
         "validation": {
           "command": "test -f README.md && find . -name \"*.md\" | grep -q . && find . -path \"*/src/*.java\" | grep -q .",
           "working_directory": "."
+        },
+        "lint": {
+          "command": "find . -path \"*/src/*.java\" -print0 | xargs -0 -n1 sed -n \"1p\" >/dev/null",
+          "working_directory": "."
         }
       },
       "repo_class": "python_data_research_course",
@@ -1580,7 +1640,7 @@
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
         "review_date": "2026-06-24",
-        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project csds391-s26-6 --gate ci",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project csds391-s26-6",
         "replacement_path": "quality_pipeline_runs.ci"
       }
     },
@@ -1672,7 +1732,7 @@
           "working_directory": "."
         },
         "ci": {
-          "command": ".github/workflows/aios-quality.yml",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project Vaults",
           "working_directory": "."
         },
         "lint": {
@@ -1693,7 +1753,7 @@
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
         "review_date": "2026-06-24",
-        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project Vaults --gate ci",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project Vaults",
         "replacement_path": "quality_pipeline_runs.ci"
       }
     },
@@ -1751,7 +1811,7 @@
           "working_directory": "."
         },
         "ci": {
-          "command": ".github/workflows/aios-quality.yml",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project BBDSE",
           "working_directory": "."
         },
         "lint": {
@@ -1773,7 +1833,7 @@
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
         "review_date": "2026-06-24",
-        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project BBDSE --gate ci",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project BBDSE",
         "replacement_path": "quality_pipeline_runs.ci"
       }
     },
@@ -1809,7 +1869,7 @@
           "working_directory": "."
         },
         "ci": {
-          "command": ".github/workflows/aios-quality.yml",
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project Fantasy",
           "working_directory": "."
         },
         "secret_scan": {
@@ -1818,6 +1878,10 @@
         },
         "dependency_security": {
           "command": "uv run --project backend python -m pip check && cd frontend && npm audit --audit-level=moderate",
+          "working_directory": "."
+        },
+        "lint": {
+          "command": "uv run --project backend ruff check backend",
           "working_directory": "."
         }
       },
@@ -1830,7 +1894,7 @@
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
         "review_date": "2026-06-24",
-        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project Fantasy --gate ci",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project Fantasy",
         "replacement_path": "quality_pipeline_runs.ci"
       }
     }

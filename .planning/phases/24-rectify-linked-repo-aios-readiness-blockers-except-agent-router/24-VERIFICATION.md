@@ -79,3 +79,37 @@ BBDSE readiness counts all child repos under the container, including LIS. Any f
 Phase 24 improved the evidence surface and replaced several weak or floor-only gate contracts with class-specific validation. It did not produce any adoption-ready repositories. The blocker is explicit: all 20 in-scope repositories now have approved local CI replacement metadata, but their local `ci` gates still need passing recorded proof, and many also have failing or missing required local evidence.
 
 Phase 25 may start from a clean Phase 24 closeout state, but linked-repo adoption readiness remains blocked until local CI proof and the listed required gates pass for each in-scope repository.
+
+## Post-Closeout Setup Update - 2026-06-24
+
+The user clarified that this run does not need to make all CI gates pass. The required setup work is complete:
+
+- `scripts/linked-repo-ci-local-proof.py` now provides the local CI replacement proof command.
+- `scripts/linked-repo-quality-runner.py` resolves `ci` gates through each repo's approved `non_remote_ci_exception.local_proof_command` instead of trying to execute a GitHub workflow YAML path.
+- `services/quality_pipeline.py` now honors `standard.classes[*].required_gates`, so class-specific readiness gates drive blocker status instead of every globally applicable gate.
+- `config/quality-pipeline.json` now has runnable commands for every required gate in the 20 in-scope repos; the current report has no unconfigured required gates.
+
+Current failure ledger from `python3 scripts/linked-repo-quality-runner.py --report`:
+
+| Repository | Remaining required failing/missing gates |
+| --- | --- |
+| `soundscape-app` | `lint`, `typecheck`, `test`, `ci`, `secret_scan`, `dependency_security`, `e2e_smoke`, `pre_cr` |
+| `portfolio` | `ci`, `pre_cr` |
+| `Terrace` | `test`, `architecture`, `ci`, `dependency_security`, `pre_cr` |
+| `aios` | `install`, `test`, `architecture`, `ci`, `pre_cr` |
+| `dispatches-from-cyberspace` | `typecheck`, `architecture`, `ci`, `dependency_security`, `pre_cr` |
+| `remodelvision` | `lint`, `typecheck`, `test`, `build`, `architecture`, `ci`, `secret_scan`, `dependency_security`, `e2e_smoke`, `pre_cr` |
+| `pre-cr-suite-lsp` | `architecture`, `ci`, `dependency_security` |
+| `Bballedu` | `architecture`, `ci`, `dependency_security`, `e2e_smoke`, `pre_cr` |
+| `tm` | `architecture`, `ci`, `dependency_security`, `pre_cr` |
+| `amos-saas` | `lint`, `typecheck`, `build`, `architecture`, `ci`, `dependency_security`, `pre_cr` |
+| `eslint-plugin-anti-slop` | `lint`, `typecheck`, `architecture`, `ci` |
+| `career-ops` | `ci`, `pre_cr`, `validation` |
+| `Dsci-proj` | `lint`, `test`, `ci`, `dependency_security`, `pre_cr` |
+| `claude-improvement-lab` | `ci`, `dependency_security`, `pre_cr` |
+| `R-Project` | `lint`, `ci`, `pre_cr` |
+| `LIS` | `lint`, `test`, `ci`, `dependency_security` |
+| `csds391-s26-6` | `lint`, `ci`, `pre_cr` |
+| `Vaults` | `architecture`, `ci`, `secret_scan`, `pre_cr`, `validation` |
+| `BBDSE` | `ci`, `pre_cr`, `validation` |
+| `Fantasy` | `lint`, `test`, `ci`, `dependency_security`, `validation` |

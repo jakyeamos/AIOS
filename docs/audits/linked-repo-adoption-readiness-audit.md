@@ -453,3 +453,16 @@ Final readiness distribution from `python3 scripts/linked-repo-quality-runner.py
 Production app `env_validation` is warning-level evidence after the user clarified that missing local environment values should not block readiness by themselves.
 
 Copied and live `prove-project-health --all-inventory` both recorded 23 snapshots with 0 missing-source and 0 missing-inventory rows. The Phase 24 closeout also fixed the readiness-report placeholder-row regression in commit `7f9516e5`; the report helper no longer inserts empty active `projects` rows while producing a read-only report.
+
+### Phase 24 Post-Closeout Local CI Setup
+
+After the final ledger, the user clarified that this run should set up the remaining unblock path and note failures, not force all CI gates green.
+
+AIOS now has the setup needed to continue repo-by-repo:
+
+- `scripts/linked-repo-ci-local-proof.py` checks whether all non-`ci` required gates for a repo are passing before local CI replacement proof can pass.
+- `scripts/linked-repo-quality-runner.py` resolves approved `ci` gates through `non_remote_ci_exception.local_proof_command` instead of trying to execute GitHub workflow YAML paths.
+- `services/quality_pipeline.py` honors `standard.classes[*].required_gates`, so class-specific required gates drive blocker status.
+- Every required gate in the 20 in-scope repos has a configured runnable command; the current report has no unconfigured required gates.
+
+Current report remains `ready_count: 0`, `blocked_count: 20`, `evidence_required_count: 0`, and `excluded_count: 3`. The durable failure ledger is appended to `24-VERIFICATION.md`.

@@ -260,6 +260,68 @@ def test_runner_dry_run_uses_aios_owned_config_command(tmp_path: Path) -> None:
     assert ".aios-quality-gate.json" not in result.stdout
 
 
+def test_runner_dry_run_uses_local_ci_exception_command(tmp_path: Path) -> None:
+    config_path = _write_config(tmp_path / "quality-pipeline.json")
+    payload = json.loads(config_path.read_text())
+    soundscape = next(project for project in payload["projects"] if project["project_id"] == "soundscape-app")
+    soundscape["non_remote_ci_exception"] = {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-ci-local-proof.py --project soundscape-app",
+        "replacement_path": "quality_pipeline_runs.ci",
+    }
+    config_path.write_text(json.dumps(payload), encoding="utf-8")
+    db_path = tmp_path / "aios.db"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        """
+        CREATE TABLE projects (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          repo_path TEXT NOT NULL,
+          obsidian_path TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'active'
+        )
+        """
+    )
+    repo_path = tmp_path / "soundscape-app"
+    repo_path.mkdir()
+    conn.execute(
+        """
+        INSERT INTO projects (id, name, repo_path, obsidian_path, status)
+        VALUES ('soundscape-app', 'soundscape-app', ?, '.', 'active')
+        """,
+        (str(repo_path),),
+    )
+    conn.commit()
+    conn.close()
+    script = ROOT / "scripts" / "linked-repo-quality-runner.py"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "--project",
+            "soundscape-app",
+            "--gate",
+            "ci",
+            "--dry-run",
+            "--config",
+            str(config_path),
+            "--db",
+            str(db_path),
+        ],
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 0
+    payload = json.loads(result.stdout)
+    assert payload["command"] == "python3 scripts/linked-repo-ci-local-proof.py --project soundscape-app"
+
+
 def test_readiness_report_real_config_has_20_targets_and_deprecated_repos_excluded() -> None:
     conn = sqlite3.connect(":memory:")
 

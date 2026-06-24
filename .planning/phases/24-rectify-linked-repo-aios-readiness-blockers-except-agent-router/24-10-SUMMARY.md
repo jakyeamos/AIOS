@@ -23,3 +23,10 @@
 - Every in-scope repo still has `ci` in `missing_gate_keys` until its local replacement proof passes.
 - Several repos still have failing or missing required local gates listed in `24-VERIFICATION.md`.
 - No Phase 24 repository should be represented as adoption-ready.
+
+## Post-Closeout Setup Update
+
+- Added local CI replacement proof execution through `scripts/linked-repo-ci-local-proof.py`.
+- Updated the runner so approved `ci` exceptions execute local proof commands instead of workflow YAML paths.
+- Made class-specific required gates authoritative and filled runnable commands for every remaining required gate.
+- Current report remains 20 blocked, 0 ready, and 3 excluded, but no repo is blocked by missing AIOS runner setup.

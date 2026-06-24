@@ -26,7 +26,7 @@ progress:
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
 - Latest completed phase: Phase 24, Rectify linked repo AIOS readiness blockers except agent-router, closed with 0 ready repos, 0 evidence-required repos, 20 blocked repos, and 3 excluded repos.
-- Latest completed plan: Phase 24 Plan 24-10 wrote the final verification ledger, recorded local CI replacement exceptions for the 20 in-scope repos, and recorded `video-pipeline`, `manga-sync`, plus `agent-router` as excluded.
+- Latest completed plan: Phase 24 Plan 24-10 wrote the final verification ledger, recorded local CI replacement exceptions for the 20 in-scope repos, recorded `video-pipeline`, `manga-sync`, plus `agent-router` as excluded, and later added runnable local-CI setup plus a failure ledger without forcing all CI gates green.
 - Latest planned governed-workflow phase: Phase 25 has four executable plans to make planning a governed first-class AIOS workflow.
 
 ## Current Roadmap Position
@@ -64,6 +64,7 @@ progress:
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-06-24 | Set up Phase 24 local CI proof and note failures | Added local CI replacement proof execution, made class-specific required gates authoritative for blocker status, filled runnable commands for every required gate across the 20 in-scope repos, and recorded the current failure ledger in `24-VERIFICATION.md`; all 20 remain blocked but none are blocked by missing AIOS runner setup. |
 | 2026-06-24 | Execute Phase 24 linked-repo readiness blocker remediation | Completed all ten Phase 24 plans, added or replaced AIOS-owned evidence gates across linked repositories, excluded deprecated `video-pipeline` and `manga-sync` alongside scoped-out `agent-router`, recorded local CI replacement exceptions because GitHub Actions credits are constrained, downgraded production env validation to warning-level evidence, fixed readiness-report placeholder inventory contamination, and wrote `24-VERIFICATION.md`; final verdict is 0 ready repos, 0 evidence-required repos, 20 blocked repos, and 3 excluded repos. |
 | 2026-06-24 | Execute Phase 23 linked-repo strict readiness maturation | Completed all eight Phase 23 plans, added class-based quality-pipeline coverage, replaced weak `floor_only`/`pre_cr_only` maturity with blocked readiness metadata, fixed all-inventory proof contamination, and wrote `23-VERIFICATION.md`; final verdict is 0 ready repos, 2 evidence-required repos, and 21 blocked repos. |
 | 2026-06-24 | Split Phase 23 into GSD-standard plans | Replaced the single umbrella Phase 23 plan with eight focused plan files covering portfolio audit, class-based readiness contracts, production web apps, developer tools, Python/data/course repos, content/container repos, evidence reporting, and final verification. |

@@ -1586,3 +1586,10 @@ The spec execution roadmap has been corrected before execution:
 - Local CI replacement proof is allowed for the 20 in-scope repos, but it is not a CI skip: each repo still needs a passing recorded `ci` run before readiness can clear.
 - Copied and live `prove-project-health --all-inventory` both recorded 23 snapshots with 0 missing-source and 0 missing-inventory rows.
 - Fixed the Phase 24 readiness-report placeholder-row regression in commit `7f9516e5`; report generation now keeps project inventory read-only except for table creation.
+
+## 2026-06-24 - Phase 24 local CI setup and failure ledger
+
+- Added `scripts/linked-repo-ci-local-proof.py` and updated `scripts/linked-repo-quality-runner.py` so approved non-remote `ci` gates execute local replacement proof instead of workflow YAML paths.
+- Updated quality-pipeline evaluation to honor `standard.classes[*].required_gates`; class contracts now decide blocker status, while non-class global gates remain visible without creating false blockers.
+- Filled missing runnable commands for required architecture/lint/Pre-CR/local-proof gates across the 20 in-scope repos.
+- Current truth: all 20 repos remain blocked, but setup is complete for execution. The report has 0 unconfigured required gates; remaining failures are recorded in `24-VERIFICATION.md` and should be cleared repo by repo.
