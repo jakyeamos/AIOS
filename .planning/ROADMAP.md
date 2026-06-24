@@ -1305,7 +1305,7 @@ Plans:
 ### Phase 24: Rectify linked repo AIOS readiness blockers except agent-router
 
 **Goal:** Resolve the Phase 23 adoption-readiness blockers for every active linked source repo except `agent-router`, moving the portfolio from configured-but-blocked gate contracts to recorded strict release-readiness evidence or explicit non-remote exceptions.
-**2026-06-24 baseline:** Phase 23 verification records 0 ready repos, 2 evidence-required repos (`soundscape-app`, AIOS), and 21 blocked repos. Phase 24 excludes `agent-router` because it needs separate product maturation before meaningful package/tool gates can be applied. `video-pipeline` was later removed from Phase 24 scope because the repo is deprecated.
+**2026-06-24 baseline:** Phase 23 verification records 0 ready repos, 2 evidence-required repos (`soundscape-app`, AIOS), and 21 blocked repos. Phase 24 excludes `agent-router` because it needs separate product maturation before meaningful package/tool gates can be applied. `video-pipeline` and `manga-sync` were later removed from Phase 24 scope because the repos are deprecated.
 **Subsystem consolidation goal:** AIOS linked-repo quality governance. Consolidate quality-gate, quality-pipeline, standards-health, CI/default-branch proof, and repo-truth evidence into one repeatable adoption-readiness loop instead of one-off repo notes.
 **Subsystem extraction posture goal:** Keep inside AIOS. This phase should prove the linked-repo adoption loop as AIOS control-plane behavior; extraction would require proof that the gate/evidence model is portable across non-AIOS operators without AIOS' local inventory and standards-health stores.
 **Requirements**: TBD
@@ -1341,4 +1341,4 @@ Plans:
 - [ ] 25-04 Shadow route proof and planning truth closeout
 
 ---
-*Last updated: 2026-06-24 after closing Phase 24 with 0 ready, 21 blocked, and 2 excluded linked repositories, then advancing Phase 25 as the next dependent phase*
+*Last updated: 2026-06-24 after closing Phase 24 with 0 ready, 20 blocked, and 3 excluded linked repositories, then advancing Phase 25 as the next dependent phase*

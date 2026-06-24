@@ -16,6 +16,7 @@ BBDSE_CHILDREN = [
     "CLFE",
     "Cap-Fit Builder",
     "Coach Value Over Expected",
+    "LIS",
     "RTE",
     "RTE Transferable Signals",
     "SMWI",
@@ -23,8 +24,6 @@ BBDSE_CHILDREN = [
     "Versatility Tax",
     "Womens Stats",
 ]
-
-INDEPENDENT_CHILDREN = ["LIS"]
 
 
 def _markdown_files(root: Path) -> list[Path]:
@@ -117,12 +116,12 @@ def validate_bbdse(root: Path, *, run_delegated: bool) -> int:
     for item in required_docs:
         if not (root / item).exists():
             failures.append(f"missing_required:{item}")
-    for child in BBDSE_CHILDREN + INDEPENDENT_CHILDREN:
+    for child in BBDSE_CHILDREN:
         child_path = root / child
         if not child_path.exists():
             failures.append(f"missing_child:{child}")
             continue
-        if child in BBDSE_CHILDREN and not (child_path / ".pre-cr.json").exists():
+        if not (child_path / ".pre-cr.json").exists():
             failures.append(f"missing_child_pre_cr:{child}")
     if not failures and run_delegated:
         statuses = {child: _precr_status(root / child) for child in BBDSE_CHILDREN}
@@ -135,7 +134,7 @@ def validate_bbdse(root: Path, *, run_delegated: bool) -> int:
         return 1
     print(
         "bbdse_validation_pass "
-        f"delegated_children={len(BBDSE_CHILDREN)} independent_children={len(INDEPENDENT_CHILDREN)}"
+        f"delegated_children={len(BBDSE_CHILDREN)} independent_children=0"
     )
     return 0
 

@@ -148,7 +148,7 @@ Current strict-readiness distribution from `config/quality-pipeline.json`:
 | --- | ---: | --- |
 | `ready` | 0 | No active linked repo has complete strict evidence yet. |
 | `evidence_required` | 2 | Class gates are substantially configured, but fresh local/remote proof is still missing. |
-| `blocked` | 21 | Real gates, local CI proof, architecture/security validation, repo truth, or aggregate evidence are still missing. |
+| `blocked` | 20 | Real gates, local CI proof, architecture/security validation, repo truth, or aggregate evidence are still missing. |
 
 Repos currently in `evidence_required`:
 
@@ -184,7 +184,7 @@ Phase 24 Plan 24-02 recorded fresh local `quality_pipeline_runs` rows for `sound
 - `architecture`: `quality-soundscape-app-architecture-20260624030903961084`
 - `repo_truth`: `quality-soundscape-app-repo_truth-20260624030921689608`
 
-`soundscape-app` has failed or blocked evidence for `lint`, `typecheck`, `test`, `ci`, `secret_scan`, `env_validation`, `dependency_security`, `coverage`, `e2e_smoke`, `seo`, `telemetry_utility`, `db_restore`, `pitr_monitor`, `mobile_release`, `full_e2e`, and `pre_cr`. CI/default-branch status was not verified locally; workflow-file presence was recorded only as blocked proof.
+`soundscape-app` has failed or blocked evidence for `lint`, `typecheck`, `test`, `ci`, `secret_scan`, `dependency_security`, `coverage`, `e2e_smoke`, `seo`, `telemetry_utility`, `db_restore`, `pitr_monitor`, `mobile_release`, `full_e2e`, and `pre_cr`. `env_validation` is warning-level evidence. Local CI replacement proof has not passed; workflow-file presence was recorded only as blocked proof.
 
 AIOS currently reports `blocked`. Passing local evidence exists for:
 
@@ -262,7 +262,7 @@ Phase 24 Plan 24-03 added real production-web gate surfaces for `portfolio`, `di
 
 `tm` remains blocked on `architecture`, `ci`, `dependency_security`, `coverage`, `seo`, `full_e2e`, and `pre_cr`. Failed evidence is recorded in `quality-tm-dependency_security-20260624032652880198` and `quality-tm-pre_cr-20260624032653973497`.
 
-No production web app in this plan is ready. Plan 24-09 still owns CI/default proof and non-remote exception handling.
+No production web app in this plan is ready. Local CI replacement proof remains required for in-scope production apps.
 
 ### Phase 24 Plan 24-04 Evidence Update
 
@@ -280,7 +280,7 @@ Both repos now declare `pnpm@10.26.0` as the package manager and no longer keep 
 - `install`: `quality-remodelvision-install-20260624033731152399`
 - `repo_truth`: `quality-remodelvision-repo_truth-20260624034007273603`
 
-`remodelvision` remains blocked on `lint`, `typecheck`, `test`, `build`, `architecture`, `ci`, `secret_scan`, `env_validation`, `dependency_security`, `coverage`, `e2e_smoke`, `seo`, `full_e2e`, and `pre_cr`. Failed or blocked evidence is recorded in:
+`remodelvision` remains blocked on `lint`, `typecheck`, `test`, `build`, `architecture`, `ci`, `secret_scan`, `dependency_security`, `coverage`, `e2e_smoke`, `seo`, `full_e2e`, and `pre_cr`. `env_validation` is warning-level evidence. Failed or blocked evidence is recorded in:
 
 - `lint`: `quality-remodelvision-lint-20260624033737492463`
 - `typecheck`: `quality-remodelvision-typecheck-20260624033744444284`
@@ -304,7 +304,7 @@ Primary `remodelvision` blockers observed locally: source lint/typecheck debt, f
 - `e2e_smoke`: `quality-amos-saas-e2e_smoke-20260624033902990651`
 - `repo_truth`: `quality-amos-saas-repo_truth-20260624034007427650`
 
-`amos-saas` remains blocked on `lint`, `typecheck`, `build`, `architecture`, `ci`, `env_validation`, `dependency_security`, `coverage`, `seo`, `full_e2e`, and `pre_cr`. Failed or blocked evidence is recorded in:
+`amos-saas` remains blocked on `lint`, `typecheck`, `build`, `architecture`, `ci`, `dependency_security`, `coverage`, `seo`, `full_e2e`, and `pre_cr`. `env_validation` is warning-level evidence. Failed or blocked evidence is recorded in:
 
 - `lint`: `quality-amos-saas-lint-20260624033824558685`
 - `typecheck`: `quality-amos-saas-typecheck-20260624033834419814`
@@ -369,7 +369,7 @@ Developer-tool `secret_scan` and `dependency_security` gates now apply to `devel
 
 `eslint-plugin-anti-slop` remains blocked on `lint`, `typecheck`, `build`, `architecture`, and `ci`. The lint/typecheck/build gaps are currently explicit project-shape blockers rather than hidden pass-through scripts. CI workflow-file presence was recorded as blocked proof in `quality-eslint-plugin-anti-slop-ci-20260624035103488638`, not default-branch pass proof.
 
-The Phase 24 report now returns `target_count: 21` and `excluded_count: 2`, with `video-pipeline` and `agent-router` excluded. No developer-tool package repo in this plan is ready; Plan 24-09 still owns CI/default proof and non-remote exception handling.
+The Phase 24 report now returns `target_count: 20` and `excluded_count: 3`, with `video-pipeline`, `manga-sync`, and `agent-router` excluded. No developer-tool package repo in this plan is ready; local CI replacement proof remains required for in-scope repos.
 
 ### Phase 24 Plan 24-06 Evidence Update
 
@@ -395,16 +395,16 @@ No structured Python/data/course repo in this plan is ready. Plan 24-07 owns the
 
 ### Phase 24 Plan 24-07 Evidence Update
 
-Phase 24 Plan 24-07 replaced floor-style validation for `claude-improvement-lab`, `R-Project`, `csds391-s26-6`, and `manga-sync` with bounded class-specific gates in `config/quality-pipeline.json`. No external repo files were changed.
+Phase 24 Plan 24-07 replaced floor-style validation for `claude-improvement-lab`, `R-Project`, and `csds391-s26-6` with bounded class-specific gates in `config/quality-pipeline.json`. No external repo files were changed.
 
-All four repos remain `blocked`:
+The three active repos remain `blocked`:
 
 - `claude-improvement-lab`: passes install, validation, repo truth, lint, task-presence test, build, architecture, and secret scan; remains blocked on `pre_cr`, `ci`, and `dependency_security`.
 - `R-Project`: passes R script validation, repo truth, install/session info, utility tests, architecture, secret scan, and dependency/session proof; remains blocked on `pre_cr`, missing lint, and `ci`.
 - `csds391-s26-6`: passes README/course structure validation, Java source presence, architecture, secret scan, and no-manifest dependency proof; remains blocked on `pre_cr`, missing lint, and `ci`.
-- `manga-sync`: passes README-only reserved-workspace checks, secret scan, and no-manifest dependency proof; remains blocked on `pre_cr`, missing lint, `ci`, and the absence of actual manga-sync implementation files.
+- `manga-sync`: deprecated per the 2026-06-24 user clarification and excluded from Phase 24 readiness targeting.
 
-Plan 24-09 still owns CI/default proof and non-remote exception handling.
+Local CI replacement proof remains required for in-scope repos.
 
 ### Phase 24 Plan 24-08 Evidence Update
 
@@ -419,17 +419,17 @@ Phase 24 Plan 24-08 added `scripts/content-container-validator.py` and registere
 
 `BBDSE` currently reports `blocked`. Passing evidence exists for `repo_truth`, `architecture`, `install`, `lint`, `secret_scan`, and `dependency_security`: `quality-BBDSE-repo_truth-20260624051603599059`, `quality-BBDSE-architecture-20260624051607455182`, `quality-BBDSE-install-20260624051607635120`, `quality-BBDSE-lint-20260624051705969569`, `quality-BBDSE-secret_scan-20260624051608385672`, and `quality-BBDSE-dependency_security-20260624051608705225`.
 
-`BBDSE` remains blocked on aggregate delegated `validation`, delegated `pre_cr`, `ci`, and mature content-container `test`: `quality-BBDSE-validation-20260624051603311263`, `quality-BBDSE-pre_cr-20260624051607234619`, `quality-BBDSE-ci-20260624051608936531`, and `quality-BBDSE-test-20260624051712334907`.
+`BBDSE` remains blocked on aggregate delegated `validation`, delegated `pre_cr`, `ci`, and mature content-container `test`: `quality-BBDSE-validation-20260624051603311263`, `quality-BBDSE-pre_cr-20260624051607234619`, `quality-BBDSE-ci-20260624051608936531`, and `quality-BBDSE-test-20260624051712334907`. BBDSE readiness now counts all child repos under the container, including LIS.
 
-Neither content/container repo is ready. Plan 24-09 owns CI/default proof and non-remote exception handling.
+Neither content/container repo is ready. Local CI replacement proof remains required for both in-scope content/container repos.
 
 ### Phase 24 Plan 24-09 CI/Exception Decision
 
-The initial Plan 24-09 closeout recorded `no-exceptions` for non-remote CI exceptions. After the user clarified that GitHub Actions credits are constrained across the linked-repo portfolio, the policy was superseded on 2026-06-24: local CI replacement proof is allowed for the 21 in-scope repos.
+The initial Plan 24-09 closeout recorded `no-exceptions` for non-remote CI exceptions. After the user clarified that GitHub Actions credits are constrained across the linked-repo portfolio, the policy was superseded on 2026-06-24: local CI replacement proof is allowed for the 20 in-scope repos.
 
-`config/quality-pipeline.json` now records `non_remote_ci_exception` metadata for all 21 in-scope repos. Each exception points to `python3 scripts/linked-repo-quality-runner.py --project <repo> --gate ci` and `quality_pipeline_runs.ci` as the replacement evidence path.
+`config/quality-pipeline.json` now records `non_remote_ci_exception` metadata for all 20 in-scope repos. Each exception points to `python3 scripts/linked-repo-quality-runner.py --project <repo> --gate ci` and `quality_pipeline_runs.ci` as the replacement evidence path.
 
-`python3 scripts/linked-repo-quality-runner.py --report` still reports `ready_count: 0`, `blocked_count: 21`, `evidence_required_count: 0`, and `excluded_count: 2`. `video-pipeline` and `agent-router` remain excluded.
+`python3 scripts/linked-repo-quality-runner.py --report` still reports `ready_count: 0`, `blocked_count: 20`, `evidence_required_count: 0`, and `excluded_count: 3`. `video-pipeline`, `manga-sync`, and `agent-router` remain excluded.
 
 No repo is made ready by the exception alone. Every in-scope repo still has `ci` in `missing_gate_keys` until its local replacement proof records a passing `ci` run. Phase 24 closeout must therefore preserve a blocked-readiness ledger rather than claiming portfolio readiness.
 
@@ -437,7 +437,7 @@ No repo is made ready by the exception alone. Every in-scope repo still has `ci`
 
 Phase 24 closes with `.planning/phases/24-rectify-linked-repo-aios-readiness-blockers-except-agent-router/24-VERIFICATION.md` as the final ledger.
 
-Final scope is 21 in-scope repositories and 2 excluded repositories. `agent-router` is excluded by the original Phase 24 scope, and `video-pipeline` is excluded because the user clarified on 2026-06-24 that the video pipeline is deprecated.
+Final scope is 20 in-scope repositories and 3 excluded repositories. `agent-router` is excluded by the original Phase 24 scope, and `video-pipeline` plus `manga-sync` are excluded because the user clarified on 2026-06-24 that both are deprecated.
 
 The final ledger allows local CI replacement proof because GitHub Actions credits are constrained. This removes `ci_default_proof_missing` from the blocker set, but it does not skip CI; the local replacement `ci` gate must pass and be recorded before readiness can clear.
 
@@ -447,7 +447,9 @@ Final readiness distribution from `python3 scripts/linked-repo-quality-runner.py
 | --- | ---: | --- |
 | `ready` | 0 | No in-scope repository has full passing strict evidence. |
 | `evidence_required` | 0 | No repository is waiting only on fresh non-blocking evidence. |
-| `blocked` | 21 | Every in-scope repository still has blocker-level missing or failing evidence. |
-| `excluded` | 2 | `agent-router` and `video-pipeline` are out of Phase 24 remediation scope. |
+| `blocked` | 20 | Every in-scope repository still has blocker-level missing or failing evidence. |
+| `excluded` | 3 | `agent-router`, `video-pipeline`, and `manga-sync` are out of Phase 24 remediation scope. |
+
+Production app `env_validation` is warning-level evidence after the user clarified that missing local environment values should not block readiness by themselves.
 
 Copied and live `prove-project-health --all-inventory` both recorded 23 snapshots with 0 missing-source and 0 missing-inventory rows. The Phase 24 closeout also fixed the readiness-report placeholder-row regression in commit `7f9516e5`; the report helper no longer inserts empty active `projects` rows while producing a read-only report.

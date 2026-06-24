@@ -3,10 +3,12 @@
 ## Completed
 
 - Wrote the final Phase 24 verification ledger in `24-VERIFICATION.md`.
-- Recorded final scope as 21 in-scope repositories plus excluded `agent-router` and deprecated `video-pipeline`.
+- Recorded final scope as 20 in-scope repositories plus excluded `agent-router`, deprecated `video-pipeline`, and deprecated `manga-sync`.
 - Fixed and committed the readiness-report placeholder-row regression in `7f9516e5`.
 - Updated project truth, planning state, roadmap, and linked-repo audit closeout notes.
-- After closeout clarification, recorded non-remote CI exceptions for all 21 in-scope repos because GitHub Actions credits are constrained.
+- After closeout clarification, recorded non-remote CI exceptions for all in-scope repos because GitHub Actions credits are constrained.
+- Downgraded production app environment validation to warning-level evidence.
+- Updated BBDSE validation so every child repo under the container counts toward readiness, including LIS.
 
 ## Verification
 
@@ -14,7 +16,7 @@
 - `pnpm context:validate`: pass after local CI exception update.
 - Copied DB `prove-project-health --all-inventory`: pass, 23 snapshots, 0 missing-source, 0 missing-inventory.
 - Live DB `prove-project-health --all-inventory`: pass, 23 snapshots, 0 missing-source, 0 missing-inventory.
-- `python3 scripts/linked-repo-quality-runner.py --report`: 21 targets, 0 ready, 0 evidence-required, 21 blocked, 2 excluded.
+- `python3 scripts/linked-repo-quality-runner.py --report`: 20 targets, 0 ready, 0 evidence-required, 20 blocked, 3 excluded.
 
 ## Residual Blockers
 

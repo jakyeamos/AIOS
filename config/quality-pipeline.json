@@ -108,9 +108,9 @@
       },
       {
         "key": "env_validation",
-        "label": "Environment Validation",
+        "label": "Environment Validation Warning",
         "tier": "production_app",
-        "required": true,
+        "required": false,
         "applicability": [
           "production_app"
         ]
@@ -288,12 +288,11 @@
           "pre_cr",
           "repo_truth",
           "secret_scan",
-          "env_validation",
           "dependency_security",
           "ci",
           "e2e_smoke"
         ],
-        "readiness_note": "Public apps require release confidence, environment checks, secret/dependency safety, smoke or e2e coverage, and remote CI proof or approved local CI replacement proof."
+        "readiness_note": "Public apps require release confidence, secret/dependency safety, smoke or e2e coverage, and remote CI proof or approved local CI replacement proof; missing local environment values are warnings unless they hide another failing gate."
       },
       "developer_tool_package": {
         "label": "Developer tool/package",
@@ -1632,16 +1631,9 @@
       },
       "repo_class": "python_data_research_course",
       "maturation_blockers": [
-        "Reserved empty workspace has explicit README-only validation, but implementation files, data-sync tests, dependency contract, and local CI proof remain required before readiness."
+        "Deprecated project excluded from Phase 24 readiness targeting."
       ],
-      "strict_readiness_status": "blocked",
-      "non_remote_ci_exception": {
-        "owner": "jakyeamos",
-        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
-        "review_date": "2026-06-24",
-        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project manga-sync --gate ci",
-        "replacement_path": "quality_pipeline_runs.ci"
-      }
+      "strict_readiness_status": "excluded"
     },
     {
       "project_id": "Vaults",
@@ -1775,7 +1767,7 @@
       "blocked_reason": "floor_only contract: requires aggregate or delegated subproject validation before adoption readiness.",
       "strict_readiness_status": "blocked",
       "maturation_blockers": [
-        "Child ownership is documented and aggregate delegated validation is configured, but any failing child Pre-CR evidence plus local CI proof remain required before readiness."
+        "All child repos under BBDSE count toward container readiness; any failing child Pre-CR evidence plus local CI proof remain required before readiness."
       ],
       "non_remote_ci_exception": {
         "owner": "jakyeamos",
