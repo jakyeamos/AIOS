@@ -1305,19 +1305,19 @@ Plans:
 ### Phase 24: Rectify linked repo AIOS readiness blockers except agent-router
 
 **Goal:** Resolve the Phase 23 adoption-readiness blockers for every active linked source repo except `agent-router`, moving the portfolio from configured-but-blocked gate contracts to recorded strict release-readiness evidence or explicit non-remote exceptions.
-**2026-06-24 baseline:** Phase 23 verification records 0 ready repos, 2 evidence-required repos (`soundscape-app`, AIOS), and 21 blocked repos. Phase 24 excludes `agent-router` because it needs separate product maturation before meaningful package/tool gates can be applied.
+**2026-06-24 baseline:** Phase 23 verification records 0 ready repos, 2 evidence-required repos (`soundscape-app`, AIOS), and 21 blocked repos. Phase 24 excludes `agent-router` because it needs separate product maturation before meaningful package/tool gates can be applied. `video-pipeline` was later removed from Phase 24 scope because the repo is deprecated.
 **Subsystem consolidation goal:** AIOS linked-repo quality governance. Consolidate quality-gate, quality-pipeline, standards-health, CI/default-branch proof, and repo-truth evidence into one repeatable adoption-readiness loop instead of one-off repo notes.
 **Subsystem extraction posture goal:** Keep inside AIOS. This phase should prove the linked-repo adoption loop as AIOS control-plane behavior; extraction would require proof that the gate/evidence model is portable across non-AIOS operators without AIOS' local inventory and standards-health stores.
 **Requirements**: TBD
 **Depends on:** Phase 23
-**Plans:** 4/10 plans executed
+**Plans:** 5/10 plans executed
 
 Plans:
 - [x] 24-01 AIOS Evidence Runner And Readiness Reporting Foundation
 - [x] 24-02 Soundscape And AIOS Evidence-Required Closeout
 - [x] 24-03 Standard Production Web App Gate Remediation
 - [x] 24-04 Remodelvision And Amos-SaaS Targeted Production Cleanup
-- [ ] 24-05 Developer Tool And Package Gate Remediation
+- [x] 24-05 Developer Tool And Package Gate Remediation
 - [ ] 24-06 Structured Python Data Course Repo Remediation
 - [ ] 24-07 Floor-Replacement Python Data Course Repo Remediation
 - [ ] 24-08 Content Vault And BBDSE Container Remediation

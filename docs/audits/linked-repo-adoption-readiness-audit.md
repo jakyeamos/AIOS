@@ -316,3 +316,57 @@ Primary `remodelvision` blockers observed locally: source lint/typecheck debt, f
 Primary `amos-saas` blockers observed locally: existing lint/typecheck/build debt, missing local env values, Next.js high-severity dependency advisories, no architecture binding, no Pre-CR gate, and no verified CI/default-branch proof.
 
 No targeted production app in this plan is ready. The package-manager ambiguity blocker is resolved for both repos, but readiness remains blocked on failed evidence and Plan 24-09 CI/default proof.
+
+### Phase 24 Plan 24-05 Evidence Update
+
+Phase 24 Plan 24-05 added developer-tool security gate surfaces for the active package/tool repos in scope: `Terrace`, `pre-cr-suite-lsp`, and `eslint-plugin-anti-slop`.
+
+Repo-local implementation commits:
+
+- `Terrace`: `6b484f1` (`feat(24-05): add developer tool security gates`)
+- `pre-cr-suite-lsp`: `7bcdb51` (`feat(24-05): add developer tool security gates`)
+- `eslint-plugin-anti-slop`: `78d42c9` (`feat(24-05): add developer tool security gates`)
+
+`video-pipeline` is deprecated per the 2026-06-24 scope clarification and is now excluded from Phase 24 readiness targeting alongside `agent-router`. The failed local package-manager migration attempt was reverted in `/Users/jakyeamos/projects/video-pipeline`; no readiness claim is made for that repo.
+
+Developer-tool `secret_scan` and `dependency_security` gates now apply to `developer_tool` projects in `config/quality-pipeline.json`, so the recorded security evidence appears in the readiness report.
+
+`Terrace` currently reports `blocked`. Passing local evidence exists for:
+
+- `install`: `quality-Terrace-install-20260624034759009758`
+- `lint`: `quality-Terrace-lint-20260624034801070632`
+- `typecheck`: `quality-Terrace-typecheck-20260624034803716103`
+- `build`: `quality-Terrace-build-20260624034821324551`
+- `package`: `quality-Terrace-package-20260624034827830257`
+- `secret_scan`: `quality-Terrace-secret_scan-20260624035100914619`
+- `repo_truth`: `quality-Terrace-repo_truth-20260624035102603284`
+
+`Terrace` remains blocked on `test`, `architecture`, `ci`, `dependency_security`, and `pre_cr`. Failed or blocked evidence is recorded in `quality-Terrace-test-20260624034818999070`, `quality-Terrace-dependency_security-20260624034830346213`, `quality-Terrace-ci-20260624035103156812`, and `quality-Terrace-pre_cr-20260624034831063091`.
+
+`pre-cr-suite-lsp` currently reports `blocked`. Passing local evidence exists for:
+
+- `install`: `quality-pre-cr-suite-lsp-install-20260624034838641300`
+- `lint`: `quality-pre-cr-suite-lsp-lint-20260624034846268684`
+- `typecheck`: `quality-pre-cr-suite-lsp-typecheck-20260624034849184452`
+- `test`: `quality-pre-cr-suite-lsp-test-20260624034854621620`
+- `build`: `quality-pre-cr-suite-lsp-build-20260624034903257551`
+- `package`: `quality-pre-cr-suite-lsp-package-20260624034915195833`
+- `secret_scan`: `quality-pre-cr-suite-lsp-secret_scan-20260624035101653213`
+- `repo_truth`: `quality-pre-cr-suite-lsp-repo_truth-20260624035102742299`
+- `pre_cr`: `quality-pre-cr-suite-lsp-pre_cr-20260624034921887222`
+
+`pre-cr-suite-lsp` remains blocked on `architecture`, `ci`, and `dependency_security`. Failed or blocked evidence is recorded in `quality-pre-cr-suite-lsp-dependency_security-20260624034920983503` and `quality-pre-cr-suite-lsp-ci-20260624035103331796`.
+
+`eslint-plugin-anti-slop` currently reports `blocked`. Passing local evidence exists for:
+
+- `install`: `quality-eslint-plugin-anti-slop-install-20260624034922593819`
+- `test`: `quality-eslint-plugin-anti-slop-test-20260624034923675148`
+- `package`: `quality-eslint-plugin-anti-slop-package-20260624034925222943`
+- `secret_scan`: `quality-eslint-plugin-anti-slop-secret_scan-20260624035102055757`
+- `dependency_security`: `quality-eslint-plugin-anti-slop-dependency_security-20260624034926711496`
+- `repo_truth`: `quality-eslint-plugin-anti-slop-repo_truth-20260624035102872664`
+- `pre_cr`: `quality-eslint-plugin-anti-slop-pre_cr-20260624034927336869`
+
+`eslint-plugin-anti-slop` remains blocked on `lint`, `typecheck`, `build`, `architecture`, and `ci`. The lint/typecheck/build gaps are currently explicit project-shape blockers rather than hidden pass-through scripts. CI workflow-file presence was recorded as blocked proof in `quality-eslint-plugin-anti-slop-ci-20260624035103488638`, not default-branch pass proof.
+
+The Phase 24 report now returns `target_count: 21` and `excluded_count: 2`, with `video-pipeline` and `agent-router` excluded. No developer-tool package repo in this plan is ready; Plan 24-09 still owns CI/default proof and non-remote exception handling.

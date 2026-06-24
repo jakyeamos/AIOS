@@ -1543,3 +1543,10 @@ The spec execution roadmap has been corrected before execution:
 - Resolved package-manager ambiguity for `remodelvision` and `amos-saas` by making pnpm the explicit package contract and removing the competing npm lockfile in both linked repos.
 - Added local validation scripts and AIOS workflow files, then registered matching AIOS quality-pipeline commands.
 - Current truth: both repos remain blocked. `remodelvision` passes install and repo-truth evidence only; `amos-saas` passes install, tests, secret scan, static smoke, and repo-truth evidence, but still fails or lacks other required production-web proof.
+
+## 2026-06-24 - Phase 24 developer-tool evidence
+
+- Added developer-tool secret scan and dependency-security gates for `Terrace`, `pre-cr-suite-lsp`, and `eslint-plugin-anti-slop`, then registered the matching commands in AIOS quality-pipeline and quality-gate config.
+- Updated the quality-pipeline standard so `secret_scan` and `dependency_security` apply to `developer_tool` projects, making package/tool security evidence visible in readiness reports.
+- `video-pipeline` is deprecated and excluded from Phase 24 readiness targeting alongside `agent-router`; the failed local readiness migration attempt was reverted and no readiness claim is made for that repo.
+- Current truth: all three active developer-tool repos in Plan 24-05 remain blocked on architecture, CI/default proof, and repo-specific failing or missing gates.
