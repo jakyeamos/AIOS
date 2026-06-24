@@ -1563,3 +1563,10 @@ The spec execution roadmap has been corrected before execution:
 - Replaced floor-style validation for `claude-improvement-lab`, `R-Project`, `csds391-s26-6`, and `manga-sync` with bounded class-specific AIOS quality-pipeline gates.
 - Recorded evidence for runnable validation, structure, secret scan, dependency, repo-truth, and Pre-CR gates without changing external repo files.
 - Current truth: all four Plan 24-07 repos remain blocked. `manga-sync` is still only a reserved README-level workspace, and CI/default proof or explicit non-remote exceptions remain for Plan 24-09.
+
+## 2026-06-24 - Phase 24 content/container evidence
+
+- Added `scripts/content-container-validator.py` for AIOS-owned Vaults and BBDSE validation.
+- Documented the Vaults validation contract in external commit `26e38ed` and BBDSE child-project ownership in external commit `ffd3b4c`.
+- `Vaults` now has evidence for content/vault validation, but remains blocked on failing validator, secret scan, Pre-CR, and CI/default proof.
+- `BBDSE` now has child ownership documentation and aggregate delegated validation evidence, but remains blocked on failing delegated child Pre-CR evidence and CI/default proof.

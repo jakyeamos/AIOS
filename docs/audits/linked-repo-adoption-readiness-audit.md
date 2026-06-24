@@ -405,3 +405,20 @@ All four repos remain `blocked`:
 - `manga-sync`: passes README-only reserved-workspace checks, secret scan, and no-manifest dependency proof; remains blocked on `pre_cr`, missing lint, `ci`, and the absence of actual manga-sync implementation files.
 
 Plan 24-09 still owns CI/default proof and non-remote exception handling.
+
+### Phase 24 Plan 24-08 Evidence Update
+
+Phase 24 Plan 24-08 added `scripts/content-container-validator.py` and registered it for `Vaults` and `BBDSE`. External documentation commits:
+
+- `Vaults`: `26e38ed` (`docs(24-08): document AIOS vault validation`)
+- `BBDSE`: `ffd3b4c` (`docs(24-08): document BBDSE child ownership`)
+
+`Vaults` currently reports `blocked`. Passing evidence exists for `repo_truth`, `install`, `lint`, and `dependency_security`: `quality-Vaults-repo_truth-20260624051556780172`, `quality-Vaults-install-20260624051558051459`, `quality-Vaults-lint-20260624051703794062`, and `quality-Vaults-dependency_security-20260624051559259867`.
+
+`Vaults` remains blocked on `pre_cr`, `validation`, `architecture`, `secret_scan`, `ci`, and mature content-container `test`: `quality-Vaults-pre_cr-20260624051557295902`, `quality-Vaults-validation-20260624051557810507`, `quality-Vaults-architecture-20260624051558477285`, `quality-Vaults-secret_scan-20260624051558925066`, `quality-Vaults-ci-20260624051559557131`, and `quality-Vaults-test-20260624051705293558`.
+
+`BBDSE` currently reports `blocked`. Passing evidence exists for `repo_truth`, `architecture`, `install`, `lint`, `secret_scan`, and `dependency_security`: `quality-BBDSE-repo_truth-20260624051603599059`, `quality-BBDSE-architecture-20260624051607455182`, `quality-BBDSE-install-20260624051607635120`, `quality-BBDSE-lint-20260624051705969569`, `quality-BBDSE-secret_scan-20260624051608385672`, and `quality-BBDSE-dependency_security-20260624051608705225`.
+
+`BBDSE` remains blocked on aggregate delegated `validation`, delegated `pre_cr`, `ci`, and mature content-container `test`: `quality-BBDSE-validation-20260624051603311263`, `quality-BBDSE-pre_cr-20260624051607234619`, `quality-BBDSE-ci-20260624051608936531`, and `quality-BBDSE-test-20260624051712334907`.
+
+Neither content/container repo is ready. Plan 24-09 owns CI/default proof and non-remote exception handling.
