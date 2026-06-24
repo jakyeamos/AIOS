@@ -1395,20 +1395,85 @@ git commit -m "Register expert rubric remediation workflow"
 
 - [ ] **Step 1: Add failing routing test**
 
-Append to `tests/test_workflow_orchestration.py`:
+Append routing coverage to `tests/test_workflow_orchestration.py`:
 
 ```python
-def test_expert_review_objective_routes_to_rubric_remediation_workflow() -> None:
-    candidates = rank_workflow_candidates(
-        "Review this app using TMCP expertise, create a rubric, and produce a remediation plan"
+def test_rank_workflow_candidates_ignores_diagnostic_workflow_key_mentions() -> None:
+    ranked = rank_workflow_candidates("academic_paper_v1 doesnt really make sense here")
+
+    assert all(candidate.workflow_key != "academic_paper_v1" for candidate in ranked)
+
+
+def test_expert_review_objective_routes_to_rubric_remediation_workflow(
+    tmp_path: Path,
+) -> None:
+    workflow_registry = tmp_path / "workflows.json"
+    workflow_registry.write_text(
+        json.dumps(
+            {
+                "workflows": [
+                    {
+                        "key": "academic_paper_v1",
+                        "name": "Academic Paper v1",
+                        "workflow_family": "content_generation",
+                        "purpose": "Route paper-writing requests.",
+                        "trigger_hints": [
+                            "write a paper",
+                            "academic paper",
+                            "research paper",
+                            "essay with citations",
+                        ],
+                        "output_contract": [],
+                        "required_validations": [],
+                        "stages": [
+                            {"key": "parse_request", "kind": "parse_request", "required_skills": []}
+                        ],
+                        "lifecycle_state": "active",
+                    },
+                    {
+                        "key": "audit-only",
+                        "name": "Audit Only",
+                        "workflow_family": "audit_only",
+                        "purpose": "Review without implementation.",
+                        "trigger_hints": ["review this", "audit"],
+                        "output_contract": [],
+                        "required_validations": [],
+                        "stages": [
+                            {"key": "parse_request", "kind": "parse_request", "required_skills": []}
+                        ],
+                        "lifecycle_state": "active",
+                    },
+                    {
+                        "key": "expert_rubric_remediation_v1",
+                        "name": "Expert Rubric Remediation v1",
+                        "workflow_family": "audit_and_plan",
+                        "purpose": "Compile expertise into a rubric, audit evidence, and plan remediation.",
+                        "trigger_hints": [
+                            "expert rubric remediation",
+                            "tmcp review plan",
+                            "remediation plan",
+                        ],
+                        "output_contract": [],
+                        "required_validations": [],
+                        "stages": [
+                            {"key": "parse_request", "kind": "parse_request", "required_skills": []}
+                        ],
+                        "lifecycle_state": "active",
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
     )
+    objective = "Write an expert rubric remediation plan from audit evidence for AIOS routing coverage"
+
+    candidates = rank_workflow_candidates(
+        objective,
+        workflow_registry_path=workflow_registry,
+    )
+    route = recommend_route_primitives(objective, workflow_registry_path=workflow_registry)
 
     assert candidates[0].workflow_key == "expert_rubric_remediation_v1"
-
-    route = recommend_route_primitives(
-        "Review this app using TMCP expertise, create a rubric, and produce a remediation plan"
-    )
-
     assert route["selected_workflow"]["workflow_key"] == "expert_rubric_remediation_v1"
 ```
 
@@ -1417,10 +1482,13 @@ def test_expert_review_objective_routes_to_rubric_remediation_workflow() -> None
 Run:
 
 ```bash
-uv run pytest tests/test_workflow_orchestration.py::test_expert_review_objective_routes_to_rubric_remediation_workflow -q
+uv run pytest \
+  tests/test_workflow_orchestration.py::test_rank_workflow_candidates_ignores_diagnostic_workflow_key_mentions \
+  tests/test_workflow_orchestration.py::test_expert_review_objective_routes_to_rubric_remediation_workflow \
+  -q
 ```
 
-Expected: FAIL because current routing can select another audit or implementation workflow.
+Expected: FAIL because current routing can count diagnostic workflow-key text as content evidence, and because expert review/remediation objectives have no `audit_and_plan` evidence path.
 
 - [ ] **Step 3: Update route scoring**
 
@@ -1443,15 +1511,45 @@ Add this evidence flag:
     expert_review_evidence = _has_any_word(objective_text, expert_review_terms)
 ```
 
+Add routing-diagnostic and audit-plan evidence so workflow keys mentioned in review comments are not treated as content requests:
+
+```python
+    routing_diagnostic_evidence = _has_any_word(objective_text, routing_diagnostic_terms) or any(
+        phrase in objective_text
+        for phrase in (
+            "doesn't make sense",
+            "doesnt make sense",
+            "doesnt really make sense",
+            "incorrect workflow",
+            "wrong workflow",
+        )
+    )
+    audit_plan_evidence = any(
+        phrase in objective_text
+        for phrase in (
+            "audit and plan",
+            "audit-and-plan",
+            "audit_and_plan",
+            "remediation plan",
+        )
+    )
+```
+
 Add this branch inside the workflow loop after the `audit_only` branch:
 
 ```python
-        if workflow.workflow_family == "audit_and_plan" and analysis_evidence and expert_review_evidence:
+        if (
+            workflow.workflow_family == "audit_and_plan"
+            and (expert_review_evidence or audit_plan_evidence)
+            and (analysis_evidence or audit_plan_evidence)
+        ):
             score += 11
-            evidence_reasons.append("expert rubric remediation evidence")
+            evidence_reasons.append("expert audit-plan evidence")
             if implementation_evidence:
                 score -= 2
 ```
+
+In the `content_generation` branch, suppress content evidence when it came only from diagnostic workflow-key text or expert audit-plan language and no content trigger hint matched.
 
 Add the workflow task family mapping near `WORKFLOW_TASK_FAMILIES`:
 
@@ -1459,12 +1557,17 @@ Add the workflow task family mapping near `WORKFLOW_TASK_FAMILIES`:
     "expert_rubric_remediation_v1": "audit_and_plan",
 ```
 
+Because `audit_and_plan` execution strategies are not registered in this slice, make backend recommendation degrade to explicit missing-strategy metadata instead of throwing `StrategySelectionError`.
+
 - [ ] **Step 4: Run routing tests**
 
 Run:
 
 ```bash
-uv run pytest tests/test_workflow_orchestration.py::test_expert_review_objective_routes_to_rubric_remediation_workflow -q
+uv run pytest \
+  tests/test_workflow_orchestration.py::test_rank_workflow_candidates_ignores_diagnostic_workflow_key_mentions \
+  tests/test_workflow_orchestration.py::test_expert_review_objective_routes_to_rubric_remediation_workflow \
+  -q
 ```
 
 Expected: PASS.

@@ -42,6 +42,7 @@ DEFAULT_DX_CAPABILITY_PACK = ROOT / "config" / "developer-experience" / "capabil
 WORKFLOW_TASK_FAMILIES = {
     "implementation-delivery": "audit_and_implement",
     "failure-recovery": "audit_and_implement",
+    "expert_rubric_remediation_v1": "audit_and_plan",
     "developer-experience-pack": "developer_experience",
 }
 DX_CAPABILITY_IDS = {
@@ -941,11 +942,51 @@ def rank_workflow_candidates(
         "review",
         "strategy",
     }
+    expert_review_terms = {
+        "expert",
+        "expertise",
+        "remediation",
+        "rubric",
+        "scorecard",
+        "tmcp",
+    }
+    routing_diagnostic_terms = {
+        "candidate",
+        "coverage",
+        "evidence",
+        "picked",
+        "route",
+        "routing",
+        "scorer",
+        "scoring",
+        "selected",
+        "shadow",
+    }
     content_terms = {"academic", "article", "citations", "draft", "essay", "paper", "write"}
     transformation_terms = {"creative", "humanize", "outreach", "prompt", "rewrite", "voice"}
     implementation_evidence = _has_any_word(objective_text, implementation_terms)
     recovery_evidence = _has_any_word(objective_text, recovery_terms)
     analysis_evidence = _has_any_word(objective_text, analysis_terms)
+    expert_review_evidence = _has_any_word(objective_text, expert_review_terms)
+    routing_diagnostic_evidence = _has_any_word(objective_text, routing_diagnostic_terms) or any(
+        phrase in objective_text
+        for phrase in (
+            "doesn't make sense",
+            "doesnt make sense",
+            "doesnt really make sense",
+            "incorrect workflow",
+            "wrong workflow",
+        )
+    )
+    audit_plan_evidence = any(
+        phrase in objective_text
+        for phrase in (
+            "audit and plan",
+            "audit-and-plan",
+            "audit_and_plan",
+            "remediation plan",
+        )
+    )
     content_evidence = _has_any_word(objective_text, content_terms)
     transformation_evidence = _has_any_word(objective_text, transformation_terms)
     candidates: list[WorkflowRouteCandidate] = []
@@ -971,9 +1012,26 @@ def rank_workflow_candidates(
             if implementation_evidence or recovery_evidence:
                 score -= 3
         if (
+            workflow.workflow_family == "audit_and_plan"
+            and (expert_review_evidence or audit_plan_evidence)
+            and (analysis_evidence or audit_plan_evidence)
+        ):
+            score += 11
+            evidence_reasons.append("expert audit-plan evidence")
+            if implementation_evidence:
+                score -= 2
+        if (
             workflow.workflow_family == "content_generation"
             and content_evidence
             and not (implementation_evidence or recovery_evidence)
+            and not (
+                (
+                    expert_review_evidence
+                    or audit_plan_evidence
+                    or (workflow.key.lower() in objective_text and routing_diagnostic_evidence)
+                )
+                and not matched_terms
+            )
         ):
             score += 7
             evidence_reasons.append("content-generation evidence")
@@ -1019,6 +1077,28 @@ def rank_workflow_candidates(
     return candidates
 
 
+def _recommend_backend_for_task_family(
+    task_family: str | None,
+    *,
+    surface: str,
+) -> dict[str, Any] | None:
+    if not task_family:
+        return None
+    try:
+        return recommend_execution_surface(
+            task_family=task_family, preferred_surfaces=(surface, "claude_code")
+        )
+    except StrategySelectionError as exc:
+        return {
+            "task_family": task_family,
+            "selected_surface": None,
+            "selected_strategy_id": None,
+            "alternatives": [],
+            "route_status": "missing",
+            "rationale": f"No execution strategy is registered for task_family={task_family}: {exc}",
+        }
+
+
 def _semantic_route_payload(
     *,
     objective: str,
@@ -1036,13 +1116,7 @@ def _semantic_route_payload(
         prompt_registry_path=prompt_registry_path,
         workflow_registry_path=workflow_registry_path,
     )
-    backend_recommendation = (
-        recommend_execution_surface(
-            task_family=task_family, preferred_surfaces=(surface, "claude_code")
-        )
-        if task_family
-        else None
-    )
+    backend_recommendation = _recommend_backend_for_task_family(task_family, surface=surface)
     return {
         "objective": objective,
         "selected_workflow": {
@@ -1217,13 +1291,7 @@ def recommend_route_primitives(
         prompt_registry_path=prompt_registry_path,
         workflow_registry_path=workflow_registry_path,
     )
-    backend_recommendation = (
-        recommend_execution_surface(
-            task_family=task_family, preferred_surfaces=(surface, "claude_code")
-        )
-        if task_family
-        else None
-    )
+    backend_recommendation = _recommend_backend_for_task_family(task_family, surface=surface)
     return {
         "objective": objective,
         "selected_workflow": {

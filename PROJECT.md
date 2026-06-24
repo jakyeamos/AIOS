@@ -215,6 +215,7 @@ AIOS default workflow routing now uses explicit relevance evidence instead of ac
 - `services.workflow_orchestration.rank_workflow_candidates` scores matched trigger phrases and family evidence rather than token overlap or lifecycle state alone
 - code-like bugfix, UI, API, DB, CI, test, and verification phrasing routes through implementation evidence and falls back to `implementation-delivery` when no more specific route wins
 - content-generation workflows require content evidence and are suppressed for code-like objectives, preventing bugfix requests from falling through to `academic_paper_v1`
+- expert audit-plan/rubric-remediation objectives now have explicit routing evidence, and diagnostic mentions of workflow keys such as `academic_paper_v1` no longer count as paper-writing intent
 - weak or tied workflow evidence returns no selected workflow so `start-work` blocks for clarification instead of silently choosing the first active workflow
 - route story tests cover AIOS bugfix phrasing, non-AIOS login bugfix phrasing, UI user-story verification, academic-paper routing, and ambiguity blocking
 

@@ -859,6 +859,82 @@ def test_rank_workflow_candidates_for_recovery_objective() -> None:
     assert ranked[0].workflow_family == "failure_recovery"
 
 
+def test_rank_workflow_candidates_ignores_diagnostic_workflow_key_mentions() -> None:
+    ranked = rank_workflow_candidates("academic_paper_v1 doesnt really make sense here")
+
+    assert all(candidate.workflow_key != "academic_paper_v1" for candidate in ranked)
+
+
+def test_expert_review_objective_routes_to_rubric_remediation_workflow(
+    tmp_path: Path,
+) -> None:
+    workflow_registry = tmp_path / "workflows.json"
+    workflow_registry.write_text(
+        json.dumps(
+            {
+                "workflows": [
+                    {
+                        "key": "academic_paper_v1",
+                        "name": "Academic Paper v1",
+                        "workflow_family": "content_generation",
+                        "purpose": "Route paper-writing requests.",
+                        "trigger_hints": [
+                            "write a paper",
+                            "academic paper",
+                            "research paper",
+                            "essay with citations",
+                        ],
+                        "output_contract": [],
+                        "required_validations": [],
+                        "stages": [
+                            {"key": "parse_request", "kind": "parse_request", "required_skills": []}
+                        ],
+                        "lifecycle_state": "active",
+                    },
+                    {
+                        "key": "audit-only",
+                        "name": "Audit Only",
+                        "workflow_family": "audit_only",
+                        "purpose": "Review without implementation.",
+                        "trigger_hints": ["review this", "audit"],
+                        "output_contract": [],
+                        "required_validations": [],
+                        "stages": [
+                            {"key": "parse_request", "kind": "parse_request", "required_skills": []}
+                        ],
+                        "lifecycle_state": "active",
+                    },
+                    {
+                        "key": "expert_rubric_remediation_v1",
+                        "name": "Expert Rubric Remediation v1",
+                        "workflow_family": "audit_and_plan",
+                        "purpose": "Compile expertise into a rubric, audit evidence, and plan remediation.",
+                        "trigger_hints": [
+                            "expert rubric remediation",
+                            "tmcp review plan",
+                            "remediation plan",
+                        ],
+                        "output_contract": [],
+                        "required_validations": [],
+                        "stages": [
+                            {"key": "parse_request", "kind": "parse_request", "required_skills": []}
+                        ],
+                        "lifecycle_state": "active",
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    objective = "Write an expert rubric remediation plan from audit evidence for AIOS routing coverage"
+
+    candidates = rank_workflow_candidates(objective, workflow_registry_path=workflow_registry)
+    route = recommend_route_primitives(objective, workflow_registry_path=workflow_registry)
+
+    assert candidates[0].workflow_key == "expert_rubric_remediation_v1"
+    assert route["selected_workflow"]["workflow_key"] == "expert_rubric_remediation_v1"
+
+
 def test_recommend_prompt_family_for_implementation_workflow() -> None:
     recommendation = recommend_prompt_family(
         objective="Implement a scoped feature with a concise handoff",
