@@ -1537,3 +1537,9 @@ The spec execution roadmap has been corrected before execution:
 - Added real local production-web gate surfaces in `portfolio`, `dispatches-from-cyberspace`, `Bballedu`, and `tm`, then registered matching commands in AIOS quality-pipeline and quality-gate config.
 - Recorded fresh local evidence for every attempted gate in those four repos and updated the linked-repo adoption audit with pass/fail evidence IDs.
 - Current truth: all four repos remain blocked. `portfolio` still needs CI/default, coverage, SEO, full e2e, and Pre-CR proof; `dispatches-from-cyberspace`, `Bballedu`, and `tm` still have failed gates plus architecture/CI/default proof gaps.
+
+## 2026-06-24 - Phase 24 targeted production app evidence
+
+- Resolved package-manager ambiguity for `remodelvision` and `amos-saas` by making pnpm the explicit package contract and removing the competing npm lockfile in both linked repos.
+- Added local validation scripts and AIOS workflow files, then registered matching AIOS quality-pipeline commands.
+- Current truth: both repos remain blocked. `remodelvision` passes install and repo-truth evidence only; `amos-saas` passes install, tests, secret scan, static smoke, and repo-truth evidence, but still fails or lacks other required production-web proof.

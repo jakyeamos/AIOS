@@ -263,3 +263,56 @@ Phase 24 Plan 24-03 added real production-web gate surfaces for `portfolio`, `di
 `tm` remains blocked on `architecture`, `ci`, `dependency_security`, `coverage`, `seo`, `full_e2e`, and `pre_cr`. Failed evidence is recorded in `quality-tm-dependency_security-20260624032652880198` and `quality-tm-pre_cr-20260624032653973497`.
 
 No production web app in this plan is ready. Plan 24-09 still owns CI/default proof and non-remote exception handling.
+
+### Phase 24 Plan 24-04 Evidence Update
+
+Phase 24 Plan 24-04 added targeted validation gates for the production apps that needed cleanup before ordinary evidence capture: `remodelvision` and `amos-saas`.
+
+Repo-local implementation commits:
+
+- `remodelvision`: `64e1618` (`feat(24-04): add targeted production validation gates`)
+- `amos-saas`: `1b92195` (`feat(24-04): add targeted production validation gates`)
+
+Both repos now declare `pnpm@10.26.0` as the package manager and no longer keep `package-lock.json` as a competing lockfile. Both repos have `.github/workflows/aios-quality.yml` locally; this is workflow-file presence only, not CI/default-branch proof.
+
+`remodelvision` currently reports `blocked`. Passing local evidence exists for:
+
+- `install`: `quality-remodelvision-install-20260624033731152399`
+- `repo_truth`: `quality-remodelvision-repo_truth-20260624034007273603`
+
+`remodelvision` remains blocked on `lint`, `typecheck`, `test`, `build`, `architecture`, `ci`, `secret_scan`, `env_validation`, `dependency_security`, `coverage`, `e2e_smoke`, `seo`, `full_e2e`, and `pre_cr`. Failed or blocked evidence is recorded in:
+
+- `lint`: `quality-remodelvision-lint-20260624033737492463`
+- `typecheck`: `quality-remodelvision-typecheck-20260624033744444284`
+- `test`: `quality-remodelvision-test-20260624033748371031`
+- `build`: `quality-remodelvision-build-20260624033804028691`
+- `ci`: `quality-remodelvision-ci-20260624034007583633`
+- `secret_scan`: `quality-remodelvision-secret_scan-20260624034006512092`
+- `env_validation`: `quality-remodelvision-env_validation-20260624033807366600`
+- `dependency_security`: `quality-remodelvision-dependency_security-20260624033809737561`
+- `coverage`: `quality-remodelvision-coverage-20260624033805071075`
+- `e2e_smoke`: `quality-remodelvision-e2e_smoke-20260624033805661106`
+- `pre_cr`: `quality-remodelvision-pre_cr-20260624033810428334`
+
+Primary `remodelvision` blockers observed locally: source lint/typecheck debt, failing tests/build, `TESTING.md` secret-literal finding, missing local env values, dependency-security findings, e2e smoke failure, no architecture binding, and no verified CI/default-branch proof. `.worktrees/**` and `coverage/**` are now excluded from lint so copied/generated trees no longer dominate the lint signal.
+
+`amos-saas` currently reports `blocked`. Passing local evidence exists for:
+
+- `install`: `quality-amos-saas-install-20260624033811477990`
+- `test`: `quality-amos-saas-test-20260624033837901213`
+- `secret_scan`: `quality-amos-saas-secret_scan-20260624034007114250`
+- `e2e_smoke`: `quality-amos-saas-e2e_smoke-20260624033902990651`
+- `repo_truth`: `quality-amos-saas-repo_truth-20260624034007427650`
+
+`amos-saas` remains blocked on `lint`, `typecheck`, `build`, `architecture`, `ci`, `env_validation`, `dependency_security`, `coverage`, `seo`, `full_e2e`, and `pre_cr`. Failed or blocked evidence is recorded in:
+
+- `lint`: `quality-amos-saas-lint-20260624033824558685`
+- `typecheck`: `quality-amos-saas-typecheck-20260624033834419814`
+- `build`: `quality-amos-saas-build-20260624033902395753`
+- `ci`: `quality-amos-saas-ci-20260624034007739848`
+- `env_validation`: `quality-amos-saas-env_validation-20260624033904121881`
+- `dependency_security`: `quality-amos-saas-dependency_security-20260624033905876802`
+
+Primary `amos-saas` blockers observed locally: existing lint/typecheck/build debt, missing local env values, Next.js high-severity dependency advisories, no architecture binding, no Pre-CR gate, and no verified CI/default-branch proof.
+
+No targeted production app in this plan is ready. The package-manager ambiguity blocker is resolved for both repos, but readiness remains blocked on failed evidence and Plan 24-09 CI/default proof.
