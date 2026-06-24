@@ -1550,3 +1550,10 @@ The spec execution roadmap has been corrected before execution:
 - Updated the quality-pipeline standard so `secret_scan` and `dependency_security` apply to `developer_tool` projects, making package/tool security evidence visible in readiness reports.
 - `video-pipeline` is deprecated and excluded from Phase 24 readiness targeting alongside `agent-router`; the failed local readiness migration attempt was reverted and no readiness claim is made for that repo.
 - Current truth: all three active developer-tool repos in Plan 24-05 remain blocked on architecture, CI/default proof, and repo-specific failing or missing gates.
+
+## 2026-06-24 - Phase 24 structured repo evidence
+
+- Registered class-specific structure, secret scan, dependency, and validation gates for `LIS`, `career-ops`, `Dsci-proj`, and `Fantasy` using AIOS-owned quality-pipeline commands.
+- `Fantasy` now uses aggregate backend/frontend install, test, and validation commands instead of backend-only proof.
+- `Dsci-proj` keeps npm as the dashboard subproject package manager because `apps/dashboard/package-lock.json` is the checked-in lockfile; no pnpm migration was introduced.
+- Current truth: all four Plan 24-06 repos remain blocked. `LIS`, `career-ops`, `Dsci-proj`, and `Fantasy` have recorded pass/fail evidence, but failed local gates and CI/default proof still prevent readiness.

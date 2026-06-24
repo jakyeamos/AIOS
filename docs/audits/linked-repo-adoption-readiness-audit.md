@@ -370,3 +370,25 @@ Developer-tool `secret_scan` and `dependency_security` gates now apply to `devel
 `eslint-plugin-anti-slop` remains blocked on `lint`, `typecheck`, `build`, `architecture`, and `ci`. The lint/typecheck/build gaps are currently explicit project-shape blockers rather than hidden pass-through scripts. CI workflow-file presence was recorded as blocked proof in `quality-eslint-plugin-anti-slop-ci-20260624035103488638`, not default-branch pass proof.
 
 The Phase 24 report now returns `target_count: 21` and `excluded_count: 2`, with `video-pipeline` and `agent-router` excluded. No developer-tool package repo in this plan is ready; Plan 24-09 still owns CI/default proof and non-remote exception handling.
+
+### Phase 24 Plan 24-06 Evidence Update
+
+Phase 24 Plan 24-06 registered structured Python/data/course gates for `LIS`, `career-ops`, `Dsci-proj`, and `Fantasy`, then recorded local evidence. No external repo files were changed; the plan used existing repo surfaces and AIOS-owned commands in `config/quality-pipeline.json`.
+
+`LIS` currently reports `blocked`. Passing evidence exists for `install`, `architecture`, `build`, `secret_scan`, `validation`, `repo_truth`, and `pre_cr`: `quality-LIS-install-20260624045907337741`, `quality-LIS-architecture-20260624045507453503`, `quality-LIS-build-20260624050228348123`, `quality-LIS-secret_scan-20260624045508244223`, `quality-LIS-validation-20260624050234041466`, `quality-LIS-repo_truth-20260624050234594487`, and `quality-LIS-pre_cr-20260624050236126416`.
+
+`LIS` remains blocked on `lint`, `typecheck`, `test`, `dependency_security`, and `ci`: `quality-LIS-lint-20260624045908501234`, `quality-LIS-typecheck-20260624045926604675`, `quality-LIS-test-20260624050226953803`, `quality-LIS-dependency_security-20260624045509240579`, and `quality-LIS-ci-20260624045509611238`.
+
+`career-ops` currently reports `blocked`. Passing evidence exists for `install`, `lint`, `typecheck`, `test`, `architecture`, `secret_scan`, `dependency_security`, and `repo_truth`: `quality-career-ops-install-20260624050238846091`, `quality-career-ops-lint-20260624045510407018`, `quality-career-ops-typecheck-20260624045511165084`, `quality-career-ops-test-20260624050239677536`, `quality-career-ops-architecture-20260624050241257668`, `quality-career-ops-secret_scan-20260624045511933742`, `quality-career-ops-dependency_security-20260624045514507903`, and `quality-career-ops-repo_truth-20260624050241669419`.
+
+`career-ops` remains blocked on `validation`, `ci`, and `pre_cr`: `quality-career-ops-validation-20260624050240801712`, `quality-career-ops-ci-20260624045514819305`, and `quality-career-ops-pre_cr-20260624050319804229`.
+
+`Dsci-proj` currently reports `blocked`. Passing evidence exists for `install`, `architecture`, `secret_scan`, `validation`, and `repo_truth`: `quality-Dsci-proj-install-20260624050258087015`, `quality-Dsci-proj-architecture-20260624045515130870`, `quality-Dsci-proj-secret_scan-20260624045515516080`, `quality-Dsci-proj-validation-20260624050301212632`, and `quality-Dsci-proj-repo_truth-20260624050301535560`.
+
+`Dsci-proj` remains blocked on `lint`, `test`, `dependency_security`, `ci`, and `pre_cr`: `quality-Dsci-proj-lint-20260624050259340616`, `quality-Dsci-proj-test-20260624050300818694`, `quality-Dsci-proj-dependency_security-20260624045516653891`, `quality-Dsci-proj-ci-20260624050319294056`, and `quality-Dsci-proj-pre_cr-20260624050302116994`. The dashboard subproject keeps npm as canonical because `apps/dashboard/package-lock.json` is checked in.
+
+`Fantasy` currently reports `blocked`. Passing evidence exists for `install`, `architecture`, `secret_scan`, `repo_truth`, and `pre_cr`: `quality-Fantasy-install-20260624045525251789`, `quality-Fantasy-architecture-20260624045726228498`, `quality-Fantasy-secret_scan-20260624045726465313`, `quality-Fantasy-repo_truth-20260624050302316607`, and `quality-Fantasy-pre_cr-20260624050302978971`.
+
+`Fantasy` remains blocked on aggregate backend/frontend `test`, aggregate backend/frontend `validation`, `dependency_security`, and `ci`: `quality-Fantasy-test-20260624045627439080`, `quality-Fantasy-validation-20260624045725938450`, `quality-Fantasy-dependency_security-20260624045726710884`, and `quality-Fantasy-ci-20260624045726859389`.
+
+No structured Python/data/course repo in this plan is ready. Plan 24-07 owns the remaining floor-replacement Python/data/course repos, and Plan 24-09 owns CI/default proof.
