@@ -1621,3 +1621,8 @@ The spec execution roadmap has been corrected before execution:
 - The portable dev-process TMCP visual-polish path now includes a required `saas_interaction_architecture` module distilled from the SaaS Design Bible so container choice, overlay behavior, tables, forms, loading, empty states, toasts, AI interaction structure, and primitive-layer decisions are routed before visual styling.
 - The same path now has an optional `print_report_design` module distilled from the Treasurer's Report Design Bible for fixed-page reports, board packets, HTML-to-PDF rendering, financial number formatting, chart selection, and PDF fidelity checks.
 - Product-specific visual identity remains opt-in: Tenure stays optional, and new BidCamp and Framework Labs branches are loaded only when the active project or user request selects those identities.
+
+## 2026-06-24 - Workflow routing investigation vocabulary
+
+- Added `investigate` and `investigation` as analysis-route evidence so route-blocked diagnostic objectives can select an audit workflow instead of failing with no governed workflow candidates.
+- Verified the previously blocked route-blocked investigation objective now routes through the active `divergent-strategy` audit workflow.
