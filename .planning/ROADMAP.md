@@ -1233,6 +1233,8 @@ This milestone adds a native macOS app development skill pack to AIOS by transfo
 | Phase 20 | Phases 1, 2, 8, 16, 19 | execution-symmetric plan generation, GSD-ready planning, planning lenses, skill-as-planning-lens behavior, and plan-quality evals |
 | Phase 21 | Phases 15, 17, 19, 20 | AIOS/TMCP-native macOS app skill pack with task routing, provenance, behavioral tests, validation, and guarded release workflows |
 | Phase 22 | Phase 21 | progressive governance gates across planning, execution, review, validation, and completion; tier-one standards intake, audit, coverage, and backfill workflows |
+| Phase 23 | Phase 22 | strict release-readiness maturation for every active linked source repository, with class-based gates, AIOS proof, CI evidence, and explicit exceptions |
+| Phase 24 | Phase 23 | rectify all linked-repo strict-readiness blockers except agent-router, including real gates, CI/default proof, evidence capture, and recorded exceptions |
 
 ## Requirement Coverage
 
@@ -1260,6 +1262,8 @@ This milestone adds a native macOS app development skill pack to AIOS by transfo
 | Phase 20 | ESPL-01, ESPL-02, ESPL-03, ESPL-04, ESPL-05, ESPL-06, ESPL-07, ESPL-08 | 8 |
 | Phase 21 | MACS-01, MACS-02, MACS-03, MACS-04, MACS-05, MACS-06, MACS-07, MACS-08, MACS-09 | 9 |
 | Phase 22 | TBD | 0 |
+| Phase 23 | TBD | 0 |
+| Phase 24 | TBD | 0 |
 
 **Coverage Validation:**
 - v1 requirements: 133 (124 prior + 9 MACS)
@@ -1278,5 +1282,36 @@ This milestone adds a native macOS app development skill pack to AIOS by transfo
 Plans:
 - [ ] 22-01 Promote AIOS Standards Into The Commit Quality Ladder
 
+### Phase 23: Mature linked repositories to AIOS strict release readiness
+
+**Goal:** Mature every active linked source repository from baseline AIOS hook coverage to class-based strict release readiness, with real quality gates, AIOS-recorded evidence, standards-health proof, CI/default-branch evidence, and explicit exceptions where remote CI is not appropriate.
+**2026-06-24 baseline:** Active repo contracts exist, but `floor_only` and `pre_cr_only` markers still identify non-mature coverage. Dirty trees are widespread but are lower priority than replacing weak gates and recording evidence.
+**Requirements**: TBD
+**Depends on:** Phase 22
+**Plans:** 8 plans
+
+Plans:
+- [ ] 23-01 Portfolio Readiness Audit And Classification
+- [ ] 23-02 Class-Based Strict Readiness Contract
+- [ ] 23-03 Production And Public Web App Maturation
+- [ ] 23-04 Developer Tool And Package Maturation
+- [ ] 23-05 Python Data Research And Course Repo Maturation
+- [ ] 23-06 Content Vault And Container Repo Maturation
+- [ ] 23-07 Portfolio Evidence And Readiness Reporting
+- [ ] 23-08 Final Verification And Closeout
+
+### Phase 24: Rectify linked repo AIOS readiness blockers except agent-router
+
+**Goal:** Resolve the Phase 23 adoption-readiness blockers for every active linked source repo except `agent-router`, moving the portfolio from configured-but-blocked gate contracts to recorded strict release-readiness evidence or explicit non-remote exceptions.
+**2026-06-24 baseline:** Phase 23 verification records 0 ready repos, 2 evidence-required repos (`soundscape-app`, AIOS), and 21 blocked repos. Phase 24 excludes `agent-router` because it needs separate product maturation before meaningful package/tool gates can be applied.
+**Subsystem consolidation goal:** AIOS linked-repo quality governance. Consolidate quality-gate, quality-pipeline, standards-health, CI/default-branch proof, and repo-truth evidence into one repeatable adoption-readiness loop instead of one-off repo notes.
+**Subsystem extraction posture goal:** Keep inside AIOS. This phase should prove the linked-repo adoption loop as AIOS control-plane behavior; extraction would only be justified later if the gate/evidence model becomes portable across non-AIOS operators without AIOS' local inventory and standards-health stores.
+**Requirements**: TBD
+**Depends on:** Phase 23
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 24 to break down)
+
 ---
-*Last updated: 2026-06-23 after aligning Phase 14 and Phase 22 planning with the registered AIOS quality-gate success criteria*
+*Last updated: 2026-06-24 after adding Phase 24 to rectify linked-repo strict-readiness blockers except agent-router*

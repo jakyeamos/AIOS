@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase 23 executed; linked-repo strict readiness remains blocked
-last_updated: "2026-06-24T02:26:07Z"
+status: Phase 24 added; not planned yet
+last_updated: "2026-06-24T02:33:16Z"
 progress:
-  total_phases: 23
-  completed_phases: 22
+  total_phases: 24
+  completed_phases: 23
   total_plans: 131
   completed_plans: 131
-  percent: 100
+  percent: 96
 ---
 
 # AIOS Planning State
@@ -31,10 +31,10 @@ progress:
 ## Current Roadmap Position
 
 - Active milestone: Milestone 17, Progressive Governance And Standards Backfill Workflows
-- Active phase: Phase 23, Mature linked repositories to AIOS strict release readiness
-- Active plan: Phase 23 verification complete; readiness blockers remain open
+- Active phase: Phase 24, Rectify linked repo AIOS readiness blockers except agent-router
+- Active plan: Not planned yet
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21
-- Next dependency chain: Phase 22 -> Phase 23
+- Next dependency chain: Phase 22 -> Phase 23 -> Phase 24
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
 
 ## Known Constraints To Preserve
@@ -54,6 +54,7 @@ progress:
 
 - Phase 23 added: Mature linked repositories to AIOS strict release readiness, split into eight GSD-standard plans for audit, readiness contract, class-specific maturation, evidence reporting, and final closeout.
 - Phase 23 execution produced a full portfolio ledger in `23-VERIFICATION.md`: all 23 active repo gate contracts validate and all-inventory standards-health proof records 23 active snapshots without missing-source contamination, but no repo is adoption-ready yet.
+- Phase 24 added: Rectify linked repo AIOS readiness blockers except agent-router.
 
 ## Quick Tasks Completed
 
