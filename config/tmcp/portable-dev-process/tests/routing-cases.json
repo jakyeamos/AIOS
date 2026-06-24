@@ -31,6 +31,7 @@
       "objective": "make this generated SaaS dashboard feel polished instead of generic shadcn",
       "expected_task": "visual_polish",
       "expected_modules": [
+        "saas_interaction_architecture",
         "visual_polish_system",
         "enterprise_saas_visual_polish",
         "data_realism_polish"
@@ -40,11 +41,45 @@
       "objective": "apply the Tenure visual polish system to this SOP search screen",
       "expected_task": "visual_polish",
       "expected_modules": [
+        "saas_interaction_architecture",
         "visual_polish_system",
         "enterprise_saas_visual_polish",
         "data_realism_polish"
       ],
       "expected_branch": "tenure_visual_identity"
+    },
+    {
+      "objective": "apply the BidCamp design brief to this pursuit worklist",
+      "expected_task": "visual_polish",
+      "expected_modules": [
+        "saas_interaction_architecture",
+        "visual_polish_system",
+        "enterprise_saas_visual_polish",
+        "data_realism_polish"
+      ],
+      "expected_branch": "bidcamp_visual_identity"
+    },
+    {
+      "objective": "apply the Framework Labs editorial design bible to the research lab homepage",
+      "expected_task": "visual_polish",
+      "expected_modules": [
+        "saas_interaction_architecture",
+        "visual_polish_system",
+        "enterprise_saas_visual_polish",
+        "data_realism_polish"
+      ],
+      "expected_branch": "framework_labs_editorial_identity"
+    },
+    {
+      "objective": "polish this treasurer PDF report design for a board packet",
+      "expected_task": "visual_polish",
+      "expected_modules": [
+        "saas_interaction_architecture",
+        "visual_polish_system",
+        "enterprise_saas_visual_polish",
+        "data_realism_polish"
+      ],
+      "expected_optional_modules": ["print_report_design"]
     },
     {
       "objective": "audit this skill and remove instruction prose that does not affect behavior",

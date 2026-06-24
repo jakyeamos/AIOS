@@ -1615,3 +1615,9 @@ The spec execution roadmap has been corrected before execution:
 - Automatic Codex shadow setup no longer blocks baseline work when `start-work` returns `route-blocked`; it records a local JSONL diagnostic event and returns a non-blocking shadow payload instead.
 - Explicit governed `/aios` routing still treats `route-blocked` as a blocker, preserving the governed workflow contract.
 - Added `docs/diagnostics/route-blocked-failures.md` as the review guide for classifying route failures and deciding whether repeated failures should become workflow, prompt-route, or context-packet work.
+
+## 2026-06-24 - TMCP design-source ingestion
+
+- The portable dev-process TMCP visual-polish path now includes a required `saas_interaction_architecture` module distilled from the SaaS Design Bible so container choice, overlay behavior, tables, forms, loading, empty states, toasts, AI interaction structure, and primitive-layer decisions are routed before visual styling.
+- The same path now has an optional `print_report_design` module distilled from the Treasurer's Report Design Bible for fixed-page reports, board packets, HTML-to-PDF rendering, financial number formatting, chart selection, and PDF fidelity checks.
+- Product-specific visual identity remains opt-in: Tenure stays optional, and new BidCamp and Framework Labs branches are loaded only when the active project or user request selects those identities.

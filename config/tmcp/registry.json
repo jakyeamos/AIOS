@@ -29,6 +29,16 @@
       "from": "@namespace:portable_dev_process/@task:visual_polish",
       "to": "@namespace:portable_dev_process/@branch:tenure_visual_identity",
       "when": "active project is Tenure or user explicitly requests Tenure-specific polish"
+    },
+    {
+      "from": "@namespace:portable_dev_process/@task:visual_polish",
+      "to": "@namespace:portable_dev_process/@branch:bidcamp_visual_identity",
+      "when": "active project is BidCamp or user explicitly requests BidCamp-specific polish"
+    },
+    {
+      "from": "@namespace:portable_dev_process/@task:visual_polish",
+      "to": "@namespace:portable_dev_process/@branch:framework_labs_editorial_identity",
+      "when": "active project is Framework Labs or user explicitly requests Framework Labs-specific design"
     }
   ]
 }

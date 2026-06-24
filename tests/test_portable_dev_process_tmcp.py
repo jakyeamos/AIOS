@@ -30,6 +30,11 @@ def test_portable_dev_process_manifest_references_existing_nodes() -> None:
         for module_ref in required_modules:
             module_path = PACK_ROOT / str(module_ref)
             assert module_path.exists(), module_path
+        optional_nodes = task.get("optional", [])
+        assert isinstance(optional_nodes, list), task_id
+        for optional_ref in optional_nodes:
+            optional_path = PACK_ROOT / str(optional_ref)
+            assert optional_path.exists(), optional_path
 
     module_nodes = nodes["modules"]
     assert isinstance(module_nodes, dict)
@@ -92,10 +97,12 @@ def test_portable_dev_process_has_core_dev_process_capabilities() -> None:
         "test_authoring",
         "ci_triage",
         "frontend_runtime",
+        "saas_interaction_architecture",
         "visual_polish_system",
         "make_interfaces_feel_better",
         "enterprise_saas_visual_polish",
         "ai_surface_polish",
+        "print_report_design",
         "data_realism_polish",
         "dependency_policy",
         "hook_guidance",
@@ -122,6 +129,8 @@ def test_portable_dev_process_routing_cases_are_satisfied_by_manifest() -> None:
         assert isinstance(task, dict)
         required = {Path(module_ref).stem for module_ref in task["requires"]}
         assert set(case["expected_modules"]) <= required
+        optional = {Path(module_ref).stem for module_ref in task.get("optional", [])}
+        assert set(case.get("expected_optional_modules", [])) <= optional
         expected_branch = case.get("expected_branch")
         if expected_branch is not None:
             assert expected_branch in branch_nodes
@@ -153,3 +162,33 @@ def test_visual_polish_keeps_detail_polish_skill_optional() -> None:
 
     optional = set(visual_polish["optional"])
     assert "modules/make_interfaces_feel_better.md" in optional
+
+
+def test_visual_polish_keeps_product_identity_branches_optional() -> None:
+    manifest = _load_manifest()
+    task_nodes = manifest["nodes"]["tasks"]
+    assert isinstance(task_nodes, dict)
+    visual_polish = task_nodes["visual_polish"]
+    assert isinstance(visual_polish, dict)
+
+    required = set(visual_polish["requires"])
+    assert "branches/bidcamp_visual_identity.branch.md" not in required
+    assert "branches/framework_labs_editorial_identity.branch.md" not in required
+
+    optional = set(visual_polish["optional"])
+    assert "branches/bidcamp_visual_identity.branch.md" in optional
+    assert "branches/framework_labs_editorial_identity.branch.md" in optional
+
+
+def test_visual_polish_keeps_print_report_module_optional() -> None:
+    manifest = _load_manifest()
+    task_nodes = manifest["nodes"]["tasks"]
+    assert isinstance(task_nodes, dict)
+    visual_polish = task_nodes["visual_polish"]
+    assert isinstance(visual_polish, dict)
+
+    required = set(visual_polish["requires"])
+    assert "modules/print_report_design.md" not in required
+
+    optional = set(visual_polish["optional"])
+    assert "modules/print_report_design.md" in optional

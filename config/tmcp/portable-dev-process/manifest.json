@@ -97,10 +97,17 @@
           "enterprise SaaS polish",
           "dashboard polish",
           "AI UI polish",
+          "interaction architecture",
+          "SaaS interaction patterns",
+          "PDF report design",
+          "print report design",
           "realistic demo data",
-          "generic shadcn output"
+          "generic shadcn output",
+          "BidCamp design",
+          "Framework Labs design"
         ],
         "requires": [
+          "modules/saas_interaction_architecture.md",
           "modules/visual_polish_system.md",
           "modules/enterprise_saas_visual_polish.md",
           "modules/data_realism_polish.md"
@@ -108,8 +115,11 @@
         "optional": [
           "modules/make_interfaces_feel_better.md",
           "modules/ai_surface_polish.md",
+          "modules/print_report_design.md",
           "modules/frontend_runtime.md",
-          "branches/tenure_visual_identity.branch.md"
+          "branches/tenure_visual_identity.branch.md",
+          "branches/bidcamp_visual_identity.branch.md",
+          "branches/framework_labs_editorial_identity.branch.md"
         ],
         "outputs": [
           "archetype_and_density",
@@ -174,10 +184,12 @@
       "test_authoring": "modules/test_authoring.md",
       "ci_triage": "modules/ci_triage.md",
       "frontend_runtime": "modules/frontend_runtime.md",
+      "saas_interaction_architecture": "modules/saas_interaction_architecture.md",
       "visual_polish_system": "modules/visual_polish_system.md",
       "make_interfaces_feel_better": "modules/make_interfaces_feel_better.md",
       "enterprise_saas_visual_polish": "modules/enterprise_saas_visual_polish.md",
       "ai_surface_polish": "modules/ai_surface_polish.md",
+      "print_report_design": "modules/print_report_design.md",
       "data_realism_polish": "modules/data_realism_polish.md",
       "dependency_policy": "modules/dependency_policy.md",
       "hook_guidance": "modules/hook_guidance.md",
@@ -189,7 +201,9 @@
       "explicit_mutation": "branches/explicit_mutation.branch.md",
       "network_required": "branches/network_required.branch.md",
       "destructive_action": "branches/destructive_action.branch.md",
-      "tenure_visual_identity": "branches/tenure_visual_identity.branch.md"
+      "tenure_visual_identity": "branches/tenure_visual_identity.branch.md",
+      "bidcamp_visual_identity": "branches/bidcamp_visual_identity.branch.md",
+      "framework_labs_editorial_identity": "branches/framework_labs_editorial_identity.branch.md"
     }
   },
   "edges": [
@@ -203,6 +217,8 @@
     {"from": "frontend_verify", "to": "visual_polish", "when": "visual_quality_or_product_fit_needed"},
     {"from": "visual_polish", "to": "frontend_verify", "when": "rendered_ui_changed"},
     {"from": "visual_polish", "to": "tenure_visual_identity", "when": "active_project_is_tenure"},
+    {"from": "visual_polish", "to": "bidcamp_visual_identity", "when": "active_project_is_bidcamp"},
+    {"from": "visual_polish", "to": "framework_labs_editorial_identity", "when": "active_project_is_framework_labs"},
     {"from": "dependency_audit", "to": "quality_check", "when": "dependency_changed"},
     {"from": "docs_update", "to": "review_diff", "when": "docs_changed"},
     {"from": "instruction_hygiene", "to": "quality_check", "when": "instruction_surface_changed"},

@@ -20,7 +20,7 @@ USE `@branch:read_only_default` unless the user explicitly asked for implementat
 - IF the request asks to compare strategies, review a plan, choose a promotion path, define acceptance criteria, or make planning testable, LOAD `@task:planning_review`.
 - IF the request asks about CI or failed checks, LOAD `@task:ci_triage`.
 - IF the request asks for browser, UI, screenshot, visual, or frontend runtime verification, LOAD `@task:frontend_verify`.
-- IF the request asks for visual polish, product UI polish, enterprise SaaS presentation, dashboard polish, AI UI trust treatment, or realistic demo data, LOAD `@task:visual_polish`.
+- IF the request asks for visual polish, product UI polish, enterprise SaaS presentation, dashboard polish, SaaS interaction architecture, AI UI trust treatment, realistic demo data, fixed-page report design, PDF report design, or product-specific design identity, LOAD `@task:visual_polish`.
 - IF the request asks to commit, branch, stage, inspect dirty state, or install hooks, LOAD `@task:git_hygiene`.
 - IF the request asks about packages, dependency upgrades, lockfiles, or audits, LOAD `@task:dependency_audit`.
 - IF the request asks for README, changelog, release notes, or developer docs, LOAD `@task:docs_update`.
@@ -35,6 +35,8 @@ USE `@branch:read_only_default` unless the user explicitly asked for implementat
 - CONSIDER `@task:review_diff` before commit-oriented work.
 - CONSIDER `@task:visual_polish` after frontend generation when the screen looks generic, overly decorative, too card-heavy, or visually inconsistent with the target product.
 - CONSIDER `@branch:tenure_visual_identity` only when the active project is Tenure or the user explicitly asks for Tenure-specific visual polish.
+- CONSIDER `@branch:bidcamp_visual_identity` only when the active project is BidCamp or the user explicitly asks for BidCamp-specific visual polish.
+- CONSIDER `@branch:framework_labs_editorial_identity` only when the active project is Framework Labs or the user explicitly asks for Framework Labs-specific design.
 - CONSIDER `@branch:network_required` before dependency install, remote CI lookup, package audit, or docs that need current external facts.
 - CONSIDER `@branch:destructive_action` before file deletion, history rewriting, force push, clean, reset, or generated artifact cleanup.
 - CONSIDER `@task:instruction_hygiene` before prompt, skill, workflow, router, or agent-facing context edits that may remove, rewrite, or consolidate instruction prose.
