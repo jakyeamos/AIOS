@@ -1366,11 +1366,11 @@ Plans:
 **Initial scope:** Workflow skill dispatch, executor artifact persistence, workflow registry entry, skill registry entries, route candidate support, explicit review/remediation objective matching, and runtime regression tests.
 **Requirements**: TBD
 **Depends on:** Phase 26
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 Plans:
 - [x] 27-01 Runtime context and expert skill dispatch
-- [ ] 27-02 Workflow and skill registry contract
+- [x] 27-02 Workflow and skill registry contract
 - [ ] 27-03 Expert audit-plan routing completion
 
 ### Phase 28: Expert rubric remediation CLI and verification
