@@ -1253,7 +1253,7 @@
           "working_directory": "."
         },
         "validation": {
-          "command": "python -m py_compile agent.py agent-claude.py apply-patch.py",
+          "command": "uv run python -m compileall -q agent.py agent-claude.py apply-patch.py && test -f program.md",
           "working_directory": "."
         },
         "repo_truth": {
@@ -1263,11 +1263,39 @@
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
+        },
+        "lint": {
+          "command": "uv run python -m compileall -q agent.py agent-claude.py apply-patch.py",
+          "working_directory": "."
+        },
+        "test": {
+          "command": "test -d tasks && find tasks -name task.toml | grep -q .",
+          "working_directory": "."
+        },
+        "build": {
+          "command": "uv build",
+          "working_directory": "."
+        },
+        "architecture": {
+          "command": "test -f agent.py && test -f program.md && test -f Dockerfile.base && test -f pyproject.toml",
+          "working_directory": "."
+        },
+        "ci": {
+          "command": ".github/workflows/aios-quality.yml",
+          "working_directory": "."
+        },
+        "secret_scan": {
+          "command": "! rg -n --hidden --glob '!uv.lock' --glob '!package-lock.json' --glob '!node_modules/**' --glob '!data/**' --glob '!*.csv' '(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|-----BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY-----)' .",
+          "working_directory": "."
+        },
+        "dependency_security": {
+          "command": "uv run python -m pip check",
+          "working_directory": "."
         }
       },
       "repo_class": "python_data_research_course",
       "maturation_blockers": [
-        "No real test/lint suite found; py_compile validation is only a floor until tests/static checks, CI, secret scan, and dependency security exist."
+        "Compile/structure checks replace py_compile-only floor proof, but benchmark tasks/tests, CI/default proof, and passing dependency evidence remain required before readiness."
       ],
       "strict_readiness_status": "blocked"
     },
@@ -1290,11 +1318,35 @@
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
+        },
+        "install": {
+          "command": "Rscript -e \"sessionInfo()\"",
+          "working_directory": "."
+        },
+        "test": {
+          "command": "Rscript R/utils_data_test.R",
+          "working_directory": "."
+        },
+        "architecture": {
+          "command": "test -d R && test -f save_plots.R && test -f README_DATA_ANALYSIS.md",
+          "working_directory": "."
+        },
+        "ci": {
+          "command": ".github/workflows/aios-quality.yml",
+          "working_directory": "."
+        },
+        "secret_scan": {
+          "command": "! rg -n --hidden --glob '!uv.lock' --glob '!package-lock.json' --glob '!node_modules/**' --glob '!data/**' --glob '!*.csv' '(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|-----BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY-----)' .",
+          "working_directory": "."
+        },
+        "dependency_security": {
+          "command": "Rscript -e \"sessionInfo()\"",
+          "working_directory": "."
         }
       },
       "repo_class": "python_data_research_course",
       "maturation_blockers": [
-        "Rscript validation is a floor; missing install/reproducibility contract, tests, CI, secret scan, and dependency security."
+        "R structure and script validation are configured, but CI/default proof, reproducible dependency lock strategy, and passing local evidence remain required before readiness."
       ],
       "strict_readiness_status": "blocked"
     },
@@ -1376,11 +1428,39 @@
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
+        },
+        "install": {
+          "command": "test -f README.md",
+          "working_directory": "."
+        },
+        "test": {
+          "command": "find . -path \"*/src/*.java\" | grep -q .",
+          "working_directory": "."
+        },
+        "architecture": {
+          "command": "test -f README.md && test -d Programming1 && test -d Programming2 && test -d P5 && test -d P6",
+          "working_directory": "."
+        },
+        "ci": {
+          "command": ".github/workflows/aios-quality.yml",
+          "working_directory": "."
+        },
+        "secret_scan": {
+          "command": "! rg -n --hidden --glob '!uv.lock' --glob '!package-lock.json' --glob '!node_modules/**' --glob '!data/**' --glob '!*.csv' '(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|-----BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY-----)' .",
+          "working_directory": "."
+        },
+        "dependency_security": {
+          "command": "test ! -f package.json && test ! -f pyproject.toml && test ! -f requirements.txt",
+          "working_directory": "."
+        },
+        "validation": {
+          "command": "test -f README.md && find . -name \"*.md\" | grep -q . && find . -path \"*/src/*.java\" | grep -q .",
+          "working_directory": "."
         }
       },
       "repo_class": "python_data_research_course",
       "maturation_blockers": [
-        "No install/test/validation surface found beyond pre-cr; needs course-specific validation, CI or exception, secret scan, and project instructions."
+        "Course structure validation replaces pre-cr-only floor proof, but assignment-specific tests/builds and CI/default or explicit non-remote exception remain required before readiness."
       ],
       "strict_readiness_status": "blocked"
     },
@@ -1399,11 +1479,39 @@
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
+        },
+        "install": {
+          "command": "test -f README.md",
+          "working_directory": "."
+        },
+        "test": {
+          "command": "test -f README.md",
+          "working_directory": "."
+        },
+        "architecture": {
+          "command": "test -f README.md",
+          "working_directory": "."
+        },
+        "ci": {
+          "command": ".github/workflows/aios-quality.yml",
+          "working_directory": "."
+        },
+        "secret_scan": {
+          "command": "! rg -n --hidden --glob '!uv.lock' --glob '!package-lock.json' --glob '!node_modules/**' --glob '!data/**' --glob '!*.csv' '(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|-----BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY-----)' .",
+          "working_directory": "."
+        },
+        "dependency_security": {
+          "command": "test ! -f package.json && test ! -f pyproject.toml && test ! -f requirements.txt",
+          "working_directory": "."
+        },
+        "validation": {
+          "command": "test -f README.md",
+          "working_directory": "."
         }
       },
       "repo_class": "python_data_research_course",
       "maturation_blockers": [
-        "No install/test/validation surface found beyond pre-cr; needs data-sync validation, CI or exception, secret scan, and dependency security."
+        "Reserved empty workspace has explicit README-only validation, but implementation files, data-sync tests, dependency contract, and CI/default or explicit inactive exception remain required before readiness."
       ],
       "strict_readiness_status": "blocked"
     },
