@@ -1,7 +1,8 @@
 {
   "schema": "tmcp-global-registry-v0.1",
   "version": "2026-06-22",
-  "entry_policy": "Intent-driven traversal may cross registered namespaces. Prefer the smallest behavior-changing packet; do not treat namespace boundaries as access limits.",
+  "default_local_graph": "skills-library/skills.tmcp",
+  "entry_policy": "Start from the canonical local graph at skills-library/skills.tmcp. Intent-driven traversal may cross registered namespaces only as overlays when they add behavior-changing task, module, branch, or portability guidance. Prefer the smallest behavior-changing packet; do not treat namespace boundaries as access limits.",
   "namespaces": {
     "portable_dev_process": {
       "path": "portable-dev-process",
@@ -10,7 +11,7 @@
       "portable": true,
       "requires_aios_runtime": false,
       "project_specific": false,
-      "description": "Portable development-process graph that can be vendored into non-AIOS repositories while remaining traversable from the full local TMCP registry."
+      "description": "Portable development-process overlay that can be vendored into non-AIOS repositories while remaining traversable from the canonical local TMCP graph. It is not the default local skill graph."
     }
   },
   "cross_namespace_edges": [

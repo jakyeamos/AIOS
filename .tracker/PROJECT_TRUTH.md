@@ -1,13 +1,13 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with durable eval-run recording, differentiated commit quality gates, CTS/backend services, command-center UI, and broad but currently failing repo-level Python quality baselines.
+summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, differentiated branch-aware commit quality gates, gate audit artifacts, CTS/backend services, command-center UI, and broad but currently failing repo-level Python quality baselines.
 healthScore: 66
 statusLabel: needs_attention
-nextStep: Triage the 15 full-suite Python test failures and stale repo-wide Ruff/BasedPyright baselines before claiming repo-level quality green.
+nextStep: Triage the 18 full-suite Python test failures and stale repo-wide Ruff/BasedPyright baselines before claiming repo-level quality green.
 blockers:
-  - Full Python test, Ruff, format, and BasedPyright baselines are failing outside the hook-policy slice.
-lastUpdated: 2026-06-22
+  - Full Python test, Ruff, format, and BasedPyright baselines are failing outside the gate-audit slice.
+lastUpdated: 2026-06-23
 tags: [infra, ai-os, hooks, automation]
 areas: [engineering]
 goals: []
@@ -38,6 +38,8 @@ AIOS is an active, git-versioned Python/shell infrastructure project (first comm
 
 The codebase is large, with Python services and scripts in `services/` and `bin/`, a committed `aios-ui/` Next.js command-center app, schema-backed operational storage, growing context/planning docs, and explicit Python quality configuration in `pyproject.toml`. The Code Topology Service (CTS) backend is committed: `services/cts/` provides graph storage, parsing, search, impact analysis, incremental updates, and MCP/CLI entrypoints. Phase 11 eval-run infrastructure is now coherent end to end: `schema.sql` defines eval task/run/score/failure tables, `services/eval_run_service.py` creates and reads durable eval records, and `services/aios_cli.py` exposes `aios eval record-run`, `list-runs`, and `summary`. The latest full Python quality pass on 2026-06-22 shows repo-level failures outside the hook-policy slice, while targeted hook-policy checks pass.
 
+AIOS now also has a file-backed and SQLite-backed context-loop learning primitive: `services/context_loops.py`, `schema.sql`, and `python bin/aios.py context-loops ...` record inner-loop context/draft runs, review events, learning candidates, explicit approvals/rejections, approved lesson application, metrics, and a draft-only email pilot. Contract docs and examples live under `aios/context-loops/`.
+
 ## Why This Matters / Intended Outcome
 
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
@@ -57,16 +59,23 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-05-20: Committed Phase 7 (delta scoring and health backfill) plans 07-01, 07-02, 07-03 covering DELT-01..DELT-04 — registry extension to 10 DELT-01 domains, explainable DeltaExplanation projection with four-state provenance (confirmed/inferred/missing/contradictory), and workflow-from-health recommender with CLI + UI surfaces.
 - 2026-06-22: Tightened Phase 11 eval-run recording so runs cannot be recorded for missing tasks, eval summaries count runs once when multiple score rows exist, and CLI JSON errors surface missing-task failures consistently.
 - 2026-06-22: Evolved the user commit quality gate's oversized-source rule to distinguish production source, scripts, tests, and generated files, with focused regression coverage.
+- 2026-06-23: Added `.aios/audit/` gate audit events, summaries, and learning lessons for AIOS ladder and portable commit-gate findings, with protected branches/dev environments blocking and unprotected feature branches warning.
+- 2026-06-23: Added context-loop learning records and artifacts for inner-loop context capture, outer-loop review diffing, approval-gated lessons, metrics, and local draft-only email pilot behavior.
+- 2026-06-23: Upgraded TMCP toward graph-backed default skill composition with a tracked canonical graph profile, harvest-emitted `skills.tmcp/graph.json`, runtime source-skill scoring, fallback warnings, and receipt-promoted shortcut materialization.
+- 2026-06-23: Advanced TMCP tier-one readiness by planning the remaining managed-run default adoption blocker in Phase 20 Plan 20-07, refreshing the local 99-skill graph metadata, adding graph verification/repair, source-hash shortcut freshness, overlay behavior gating, and an explicit tier-one candidate contract.
+- 2026-06-23: Reframed TMCP as a behavior-atom skill compiler with graph token/utility metadata, behavior-diff packet optimization, source-skill section excerpts, negative selection evidence, node usefulness and omitted-requirement receipt fields, and richer shortcut compiled-packet metadata.
+- 2026-06-23: Added TMCP behavior-atom and golden-prompt registries, semantic source-skill extraction, receipt feedback and missed-requirement repair summaries, node/atom token ROI learning summaries, `aios tmcp` inspect/feedback CLI commands, and a `tmcp_behavior_optimized` benchmark condition.
+- 2026-06-23: Added TMCP packet-adherence evaluation, granular receipt/intervention events, phase-aware and domain-aware packet compilation, negative precision fixtures, packet diffing, shortcut governance recommendations, and benchmark claim gating for quality/token/missed-requirement discipline.
 
 ## Open Problems
 
-1. **Full Python test suite is not green** — `uv run pytest -q` failed on 2026-06-22 with 15 failures in learning analysis, contract audit expectations, skills harvest validation shape, hook lifecycle/orchestration runtime, tier-one regression expectations, and workflow experiment fixture commits.
-2. **Full Ruff baseline is not green** — `uv run ruff check .` failed on 2026-06-22 with 21 issues outside the hook-policy slice.
-3. **Full format baseline is not green** — `uv run ruff format --check .` reported 135 files needing formatting on 2026-06-22.
-4. **Full BasedPyright baseline is not green** — `uv run basedpyright` failed on 2026-06-22 with 86 errors and 96 warnings.
+1. **Full Python test suite is not green** — `uv run pytest -q` failed on 2026-06-23 with 18 failures in learning analysis/CLI expectations, contract audit expectations, skills harvest validation shape, hook lifecycle/orchestration runtime, tier-one regression expectations, and workflow experiment fixture commits.
+2. **Full Ruff baseline is not green** — `uv run ruff check .` failed on 2026-06-23 with 21 issues outside the gate-audit slice.
+3. **Full format baseline is not green** — `uv run ruff format --check .` reported 147 files needing formatting on 2026-06-23.
+4. **Full BasedPyright baseline is not green** — `uv run basedpyright` failed on 2026-06-23 with 100 errors and 100 warnings.
 ## Next Concrete Steps
 
-1. Fix the 15 current `uv run pytest -q` failures or update stale expectations where the underlying contract intentionally changed.
+1. Fix the 18 current `uv run pytest -q` failures or update stale expectations where the underlying contract intentionally changed.
 2. Run Ruff autofix/format in planned chunks rather than broad unreviewed churn.
 3. Triage BasedPyright errors in touched/runtime-critical modules first, especially hook and managed-runtime scripts.
 4. Keep the eval-run service/CLI contract covered as later external harness adapters add more write paths.
@@ -81,11 +90,11 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 | Step | Status | Notes |
 |------|--------|-------|
-| Lint (ruff) | Fail | `uv run ruff check .` failed on 2026-06-22 with 21 existing issues; targeted hook-policy Ruff passed |
-| Type check (basedpyright) | Fail | `uv run basedpyright` failed on 2026-06-22 with 86 errors and 96 warnings |
+| Lint (ruff) | Fail | `uv run ruff check .` failed on 2026-06-23 with 21 existing issues; targeted audit/hook Ruff passed on 2026-06-23 |
+| Type check (basedpyright) | Fail | `uv run basedpyright` failed on 2026-06-23 with 100 errors and 100 warnings; targeted audit/user-gate BasedPyright passed on 2026-06-23, while `services/commit_quality_ladder.py` still has existing optional-access errors |
 | Dead code (vulture) | Pass | `uv run vulture . --min-confidence 70` exited 0 on 2026-06-22 |
-| Tests | Fail | `uv run pytest -q` failed on 2026-06-22 with 15 failures; `uv run pytest tests/test_user_commit_quality_gate.py` passed 19/19 |
-| Structure | Warning | Full format check wants 135 files reformatted; touched hook-policy files are formatted |
+| Tests | Fail | `uv run pytest -q` failed on 2026-06-23 with 18 failures; focused context-loop tests passed on 2026-06-23, and a broader `tests/test_aios_cli.py tests/test_context_loops.py` run still has unrelated/stale CLI expectation failures |
+| Structure | Warning | Full format check wants 147 files reformatted; touched gate-audit files are formatted |
 
 ## Agent Notes
 

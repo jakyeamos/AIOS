@@ -1,0 +1,4 @@
+interface:
+  display_name: "Operating Language"
+  short_description: "Maintain canonical project vocabulary"
+  default_prompt: "Use $operating-language to create or update this project's canonical operating language."

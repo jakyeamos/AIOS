@@ -76,6 +76,54 @@
       "purpose_long": "Compile a freeform user request into a structured AgentizedTaskPacket with classification, execution mode, targeted context, standards, verification, and output contract."
     },
     {
+      "key": "operating_language_curator",
+      "purpose": "Extract and maintain canonical project operating language: domain terms, architecture terms, and agent-control leading words for prompts, specs, code review, tests, docs, and workflow gates.",
+      "allowed_stages": [
+        "enrich_context",
+        "generate",
+        "validate"
+      ],
+      "input_schema": {
+        "project_root": "string",
+        "task_objective": "string"
+      },
+      "output_schema": {
+        "operating_language_path": "string",
+        "new_terms": "string[]",
+        "rejected_terms": "string[]",
+        "ambiguities": "object[]",
+        "migration_notes": "string[]"
+      },
+      "invariants": [
+        "Use the smallest sufficient authoritative project context.",
+        "Every agent-control leading word must have a trigger and completion criterion.",
+        "Rejected synonyms must point to a preferred canonical term.",
+        "Do not keep generic quality words unless they have observable project-specific behavior."
+      ],
+      "failure_conditions": [
+        "No authoritative project sources are available.",
+        "Agent-control terms lack observable completion criteria.",
+        "The output creates overlapping canonical terms without resolving aliases."
+      ],
+      "side_effects": [
+        "May create or update OPERATING_LANGUAGE.md.",
+        "May propose migrations for prompts, docs, tests, issues, or review gates."
+      ],
+      "execution_mode": "heuristic",
+      "source_path": "skills/operating-language/SKILL.md",
+      "installed_name": "operating-language",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "enrich_context",
+        "generate",
+        "validate",
+        "agent_harness",
+        "skill_registry",
+        "prompt_vocabulary"
+      ],
+      "purpose_long": "Extract and maintain canonical project operating language: domain terms, architecture terms, and agent-control leading words for prompts, specs, code review, tests, docs, and workflow gates."
+    },
+    {
       "key": "obsidian_corpus_retriever",
       "purpose": "Retrieve bounded style profile context from the personal corpus for writing tasks.",
       "allowed_stages": [

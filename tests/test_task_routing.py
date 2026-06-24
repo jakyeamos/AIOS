@@ -93,6 +93,67 @@ def test_route_objective_selects_implementation_route(tmp_path: Path) -> None:
     assert "success_rate=" in route["prompt_recommendation"]["rationale"]
 
 
+def test_route_objective_routes_short_bugfix_to_implementation(tmp_path: Path) -> None:
+    conn = sqlite3.connect(":memory:")
+    _seed_projects(conn, tmp_path)
+
+    route = route_objective(
+        conn,
+        objective="Fix the AIOS start-work route metadata bug",
+        explicit_project_id="p-aios",
+    ).to_json()
+
+    assert route["status"] == "ready"
+    assert route["selected_workflow"]["workflow_key"] == "implementation-delivery"
+    assert route["selected_workflow"]["workflow_family"] == "audit_and_implement"
+
+
+def test_route_objective_routes_login_bugfix_to_implementation(tmp_path: Path) -> None:
+    conn = sqlite3.connect(":memory:")
+    _seed_projects(conn, tmp_path)
+
+    route = route_objective(
+        conn,
+        objective="Fix the Soundscape App login redirect bug and verify the quality checks",
+        explicit_project_id="p-soundscape-app",
+    ).to_json()
+
+    assert route["status"] == "ready"
+    assert route["selected_workflow"]["workflow_key"] in {
+        "implementation-delivery",
+        "failure-recovery",
+    }
+
+
+def test_route_objective_routes_ui_story_verification_to_code_workflow(tmp_path: Path) -> None:
+    conn = sqlite3.connect(":memory:")
+    _seed_projects(conn, tmp_path)
+
+    route = route_objective(
+        conn,
+        objective="Verify the AIOS operator UI user stories through the real interface",
+        explicit_project_id="p-aios",
+    ).to_json()
+
+    assert route["status"] == "ready"
+    assert route["selected_workflow"]["workflow_key"] == "implementation-delivery"
+    assert route["selected_workflow"]["workflow_key"] != "academic_paper_v1"
+
+
+def test_route_objective_routes_academic_paper_to_content_workflow(tmp_path: Path) -> None:
+    conn = sqlite3.connect(":memory:")
+    _seed_projects(conn, tmp_path)
+
+    route = route_objective(
+        conn,
+        objective="Write an academic paper with citations about AIOS routing",
+        explicit_project_id="p-aios",
+    ).to_json()
+
+    assert route["status"] == "ready"
+    assert route["selected_workflow"]["workflow_key"] == "academic_paper_v1"
+
+
 def test_route_objective_selects_audit_route(tmp_path: Path) -> None:
     conn = sqlite3.connect(":memory:")
     _seed_projects(conn, tmp_path)

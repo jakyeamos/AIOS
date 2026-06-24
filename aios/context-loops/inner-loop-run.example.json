@@ -1,0 +1,40 @@
+{
+  "id": "clr-example",
+  "workflow": "email_drafting",
+  "task_type": "email_reply",
+  "task_input_hash": "examplehash",
+  "triggering_event": "manual_command",
+  "prompt_version": "context-loop-email-pilot-v1",
+  "guidance_version": "approved-lessons.md",
+  "retrieved_context": [
+    {
+      "source": "manual_input",
+      "summary": "Operator-provided email request"
+    }
+  ],
+  "context_sources": [
+    {
+      "source_type": "manual_input",
+      "supports_commitments": false
+    }
+  ],
+  "approved_lessons": [
+    "Do not commit to deadlines, meetings, deliverables, scope, pricing, or availability unless directly supported."
+  ],
+  "generated_output_hash": "drafthash",
+  "uncertainty_flags": [
+    "unsupported_commitment"
+  ],
+  "unsupported_claims": [
+    "\\bI will\\b"
+  ],
+  "assumptions": [
+    "Email pilot is local draft-only."
+  ],
+  "handoff_notes": "Human must review before sending.",
+  "reversible_artifact": {
+    "artifact_kind": "draft",
+    "finalization_policy": "human_review_required",
+    "email_policy": "draft_only_never_send"
+  }
+}

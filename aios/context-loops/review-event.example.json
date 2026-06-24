@@ -1,0 +1,13 @@
+{
+  "id": "clr-review-example",
+  "run_id": "clr-example",
+  "review_outcome": "edited_and_sent",
+  "original_output_hash": "drafthash",
+  "final_output_hash": "finalhash",
+  "diff_text": "--- ai-output\n+++ human-final\n-I will send it tomorrow.\n+I will review this and follow up.",
+  "edit_distance_ratio": 0.34,
+  "reviewer_notes": "Removed unsupported deadline.",
+  "metadata": {
+    "source": "manual_review"
+  }
+}

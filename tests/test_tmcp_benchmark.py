@@ -19,6 +19,7 @@ from services.tmcp_benchmark import (  # noqa: E402
     preflight_benchmark,
     randomize_condition_map,
     run_task_condition,
+    tmcp_claim_gate,
     validate_shortcut_for_task,
 )
 
@@ -223,10 +224,51 @@ def test_preflight_import_randomize_and_freeze_are_reproducible(tmp_path: Path) 
     assert preflight["selected_projects"] == ["BIP-Console"]
     assert import_result["task_count"] == 2
     assert first_map == second_map
-    assert len(first_map["assignments"]) == 8
+    assert len(first_map["assignments"]) == 10
+    assert "tmcp_behavior_optimized" in first_map["conditions"]
     assert freeze["systems_frozen"] is True
     assert freeze["hashes"]["tasks_json"]
     assert (output_root / "manifest" / "model-config.json").exists()
+
+
+def test_optimized_tmcp_condition_measures_against_flat_skills(tmp_path: Path) -> None:
+    parent = tmp_path / "portfolio"
+    start_sha = _init_repo(parent / "BIP-Console")
+    output_root = tmp_path / "tmcp-benchmark"
+    create_benchmark_scaffold(parent_dir=parent, output_root=output_root)
+    families, tasks = _task_payload(parent / "BIP-Console", start_sha)
+    import_task_manifest(output_root=output_root, task_families=families, tasks=tasks)
+    condition_map = randomize_condition_map(output_root=output_root, seed=11, repeats=1)
+    optimized_assignment = next(
+        item
+        for item in condition_map["assignments"]
+        if item["condition_actual"] == "tmcp_behavior_optimized"
+    )
+    flat_assignment = next(
+        item
+        for item in condition_map["assignments"]
+        if item["condition_actual"] == "flat_skills"
+    )
+
+    optimized = run_task_condition(
+        output_root=output_root,
+        run_id="run-optimized",
+        task_id=str(optimized_assignment["task_id"]),
+        condition_anonymous_id=str(optimized_assignment["condition_anonymous_id"]),
+        executor="stub",
+    )
+    flat = run_task_condition(
+        output_root=output_root,
+        run_id="run-flat",
+        task_id=str(flat_assignment["task_id"]),
+        condition_anonymous_id=str(flat_assignment["condition_anonymous_id"]),
+        executor="stub",
+    )
+    aggregate = aggregate_results(output_root=output_root)
+
+    assert optimized["skill_tokens_loaded"] < flat["skill_tokens_loaded"]
+    assert optimized["routing_tokens"] == optimized["skill_tokens_loaded"]
+    assert "flat_skills__tmcp_behavior_optimized" in aggregate["comparisons"]
 
 
 def test_preflight_accepts_clean_repo_with_lint_quality_command(tmp_path: Path) -> None:
@@ -353,3 +395,65 @@ def test_aggregate_refuses_speed_or_token_win_when_quality_is_worse(tmp_path: Pa
     assert comparison["token_claim_allowed"] is False
     assert comparison["reason"] == "quality_or_completion_regression"
     assert (output_root / "analysis" / "tables" / "condition-summary.json").exists()
+
+
+def test_tmcp_claim_gate_requires_quality_tokens_missed_requirements_and_separate_shortcut() -> None:
+    runs = [
+        {
+            "condition_actual": "flat_skills",
+            "task_completed": True,
+            "quality_score_adjusted": 90,
+            "estimated_loaded_context_tokens": 1400,
+            "missed_requirement_count": 0,
+        },
+        {
+            "condition_actual": "tmcp_behavior_optimized",
+            "task_completed": True,
+            "quality_score_adjusted": 90,
+            "estimated_loaded_context_tokens": 650,
+            "missed_requirement_count": 0,
+        },
+        {
+            "condition_actual": "tmcp_validated_shortcut",
+            "task_completed": True,
+            "quality_score_adjusted": 90,
+            "estimated_loaded_context_tokens": 450,
+            "missed_requirement_count": 0,
+        },
+    ]
+
+    gate = tmcp_claim_gate(runs)
+
+    assert gate["claim_allowed"] is True
+    assert gate["reason"] == "quality_noninferior_token_positive_missed_requirements_nonregressive"
+
+
+def test_tmcp_claim_gate_blocks_when_missed_requirement_rate_regresses() -> None:
+    runs = [
+        {
+            "condition_actual": "flat_skills",
+            "task_completed": True,
+            "quality_score_adjusted": 90,
+            "estimated_loaded_context_tokens": 1400,
+            "missed_requirement_count": 0,
+        },
+        {
+            "condition_actual": "tmcp_behavior_optimized",
+            "task_completed": True,
+            "quality_score_adjusted": 90,
+            "estimated_loaded_context_tokens": 650,
+            "missed_requirement_count": 1,
+        },
+        {
+            "condition_actual": "tmcp_validated_shortcut",
+            "task_completed": True,
+            "quality_score_adjusted": 90,
+            "estimated_loaded_context_tokens": 450,
+            "missed_requirement_count": 0,
+        },
+    ]
+
+    gate = tmcp_claim_gate(runs)
+
+    assert gate["claim_allowed"] is False
+    assert gate["reason"] == "missed_requirement_rate_worse"

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -191,3 +192,75 @@ def test_reports_pre_cr_coverage_failure(tmp_path: Path, monkeypatch) -> None:
     assert findings
     assert findings[0].rule == "pre-cr-failed"
     assert "42" in findings[0].message
+
+
+def test_emits_audit_event_for_blocking_findings(tmp_path: Path) -> None:
+    gate.emit_audit_for_findings(
+        tmp_path,
+        [gate.Finding("src/config.ts", 3, "secret-literal", "possible secret literal")],
+        decision="block",
+    )
+
+    events_path = tmp_path / ".aios" / "audit" / "gate-events.jsonl"
+    event = json.loads(events_path.read_text(encoding="utf-8").splitlines()[0])
+
+    assert event["gate"] == "AIOS"
+    assert event["event_type"] == "commit_blocked"
+    assert event["decision"] == "block"
+    assert event["severity"] == "error"
+    assert event["rule_id"] == "secret-literal"
+    assert event["evidence"][0]["file"] == "src/config.ts"
+
+
+def test_emits_warning_audit_event_for_unprotected_branch_findings(tmp_path: Path) -> None:
+    gate.emit_audit_for_findings(
+        tmp_path,
+        [gate.Finding("src/page.tsx", 4, "typescript-any", "avoid any")],
+        decision="warn",
+    )
+
+    events_path = tmp_path / ".aios" / "audit" / "gate-events.jsonl"
+    event = json.loads(events_path.read_text(encoding="utf-8").splitlines()[0])
+
+    assert event["decision"] == "warn"
+    assert event["severity"] == "warning"
+    assert "warning only" in event["summary"]
+
+
+def test_main_warns_without_blocking_on_unprotected_branch(monkeypatch) -> None:
+    monkeypatch.setattr(
+        gate,
+        "run_gate",
+        lambda: [gate.Finding("src/page.tsx", 4, "typescript-any", "avoid any")],
+    )
+    monkeypatch.setattr(gate, "repo_root", lambda: ROOT)
+    monkeypatch.setattr(gate, "quality_gate_decision", lambda _root: "warn")
+    monkeypatch.setattr(gate, "emit_audit_for_findings", lambda *_args, **_kwargs: None)
+
+    assert gate.main() == 0
+
+
+def test_main_blocks_on_protected_branch(monkeypatch) -> None:
+    monkeypatch.setattr(
+        gate,
+        "run_gate",
+        lambda: [gate.Finding("src/page.tsx", 4, "typescript-any", "avoid any")],
+    )
+    monkeypatch.setattr(gate, "repo_root", lambda: ROOT)
+    monkeypatch.setattr(gate, "quality_gate_decision", lambda _root: "block")
+    monkeypatch.setattr(gate, "emit_audit_for_findings", lambda *_args, **_kwargs: None)
+
+    assert gate.main() == 1
+
+
+def test_audit_failure_does_not_mask_blocking_findings(tmp_path: Path, monkeypatch) -> None:
+    def fail_append(*args: object, **kwargs: object) -> None:
+        raise OSError("disk full")
+
+    monkeypatch.setattr(gate, "safe_append_gate_audit_event", fail_append)
+
+    gate.emit_audit_for_findings(
+        tmp_path,
+        [gate.Finding("src/app.ts", 1, "typescript-any", "avoid any")],
+        decision="block",
+    )

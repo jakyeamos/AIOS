@@ -407,7 +407,27 @@ def main() -> int:
     signal.signal(signal.SIGTERM, handle_cancel)
     signal.signal(signal.SIGINT, handle_cancel)
 
-    context = load_run_context(db_path, run_id)
+    try:
+        context = load_run_context(db_path, run_id)
+    except RuntimeError as exc:
+        print(
+            json.dumps(
+                {
+                    "ok": False,
+                    "error": {
+                        "code": "managed-run-preflight-failed",
+                        "message": str(exc),
+                    },
+                    "run_id": run_id,
+                    "invocation_id": invocation_id,
+                    "backend_key": backend_key,
+                    "generated_at": now_iso(),
+                },
+                sort_keys=True,
+            ),
+            file=sys.stderr,
+        )
+        return 2
     env = {
         **os.environ,
         "AIOS_RUN_ID": run_id,

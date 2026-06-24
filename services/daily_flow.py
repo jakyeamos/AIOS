@@ -320,23 +320,35 @@ def _fetch_finding(conn: sqlite3.Connection, run_id: str) -> dict[str, Any] | No
     if not _safe_table_exists(conn, "success_criteria_findings"):
         return None
     columns = _table_columns(conn, "success_criteria_findings")
-    if "run_id" not in columns:
+    has_direct_run = "run_id" in columns
+    has_evaluations = _safe_table_exists(conn, "success_criteria_evaluations")
+    evaluation_columns = _table_columns(conn, "success_criteria_evaluations")
+    if not has_direct_run and not (
+        has_evaluations and "evaluation_id" in columns and "run_id" in evaluation_columns
+    ):
         return None
     message_expr = (
-        "message" if "message" in columns else "summary" if "summary" in columns else "''"
+        "f.message" if "message" in columns else "f.summary" if "summary" in columns else "''"
+    )
+    run_expr = "f.run_id" if has_direct_run else "e.run_id"
+    join = (
+        "LEFT JOIN success_criteria_evaluations e ON e.id = f.evaluation_id"
+        if not has_direct_run
+        else ""
     )
     row = conn.execute(
         f"""
-        SELECT id,
-               run_id,
+        SELECT f.id,
+               {run_expr} AS run_id,
                {_selectable(columns, "criterion_id")},
                {_selectable(columns, "level", "''")},
                {message_expr} AS message,
                {_selectable(columns, "resolution_status", "'open'")},
-               {_selectable(columns, "created_at", "''")}
-        FROM success_criteria_findings
-        WHERE run_id = ?
-        ORDER BY created_at ASC
+               f.created_at AS created_at
+        FROM success_criteria_findings f
+        {join}
+        WHERE {run_expr} = ?
+        ORDER BY f.created_at ASC
         LIMIT 1
         """,
         (run_id,),

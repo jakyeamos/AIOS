@@ -231,6 +231,90 @@ def test_replay_returns_eight_step_trace_for_existing_run() -> None:
     assert trace.steps[2].evidence_ref == {"table": "briefing_packets", "id": "packet-r1"}
 
 
+def test_replay_finds_evaluation_through_canonical_schema() -> None:
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    conn.executescript(
+        """
+        CREATE TABLE orchestration_runs (
+          id TEXT PRIMARY KEY,
+          project_id TEXT,
+          objective TEXT,
+          workflow_key TEXT,
+          status TEXT,
+          route_id TEXT,
+          route_result_json TEXT DEFAULT '{}',
+          created_at TEXT,
+          updated_at TEXT
+        );
+        CREATE TABLE briefing_packets (
+          id TEXT PRIMARY KEY,
+          run_id TEXT,
+          project_id TEXT,
+          objective TEXT,
+          route_id TEXT,
+          selection_trace_json TEXT DEFAULT '[]',
+          created_at TEXT
+        );
+        CREATE TABLE success_criteria_evaluations (
+          id TEXT PRIMARY KEY,
+          project_id TEXT,
+          run_id TEXT,
+          summary TEXT,
+          created_at TEXT
+        );
+        CREATE TABLE success_criteria_findings (
+          id TEXT PRIMARY KEY,
+          evaluation_id TEXT NOT NULL,
+          criterion_id TEXT NOT NULL,
+          criterion_title TEXT NOT NULL,
+          criterion_scope TEXT NOT NULL,
+          level TEXT NOT NULL,
+          summary TEXT NOT NULL,
+          resolution_status TEXT NOT NULL DEFAULT 'open',
+          created_at TEXT NOT NULL
+        );
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO orchestration_runs (
+          id, project_id, objective, workflow_key, status, route_id, route_result_json,
+          created_at, updated_at
+        )
+        VALUES (
+          'run-1', 'project-1', 'Fix login', 'implementation-delivery', 'completed',
+          'route-1', '{"selected_workflow":{"workflow_key":"implementation-delivery"}}',
+          '2026-06-23T00:00:00Z', '2026-06-23T00:01:00Z'
+        )
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO success_criteria_evaluations (id, project_id, run_id, summary, created_at)
+        VALUES ('eval-1', 'project-1', 'run-1', 'Evaluated run', '2026-06-23T00:02:00Z')
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO success_criteria_findings (
+          id, evaluation_id, criterion_id, criterion_title, criterion_scope, level, summary,
+          resolution_status, created_at
+        )
+        VALUES (
+          'finding-1', 'eval-1', 'agent-claim-verification', 'Agent Claim Verification',
+          'global', 'warning', 'Evidence checked', 'open', '2026-06-23T00:03:00Z'
+        )
+        """
+    )
+
+    trace = replay_from_run(conn, run_id="run-1")
+
+    evaluation = next(step for step in trace.steps if step.kind == "evaluation")
+    assert evaluation.provenance == "confirmed"
+    assert evaluation.evidence_ref == {"table": "success_criteria_findings", "id": "finding-1"}
+
+
 def test_replay_is_pure_read() -> None:
     conn = _conn()
     _seed_complete_replay(conn)

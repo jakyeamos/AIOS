@@ -7,6 +7,8 @@ logs/*.log
 logs/session_packet_*.md
 logs/vault-lint-latest.json
 logs/summaries/
+logs/control-plane/
+logs/session-effectiveness/
 logs/current_session
 logs/closed/
 staging/
@@ -19,6 +21,8 @@ skills-library/
 tmcp-benchmark/runs/worktrees/
 .pytest_cache/
 .superpowers/
+.aios/audit/
+.aios/shadow-worktrees/
 config/cli-keys.env
 data/rule-artifacts/
 data/success-criteria/evaluations/

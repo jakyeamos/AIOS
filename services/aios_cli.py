@@ -25,6 +25,22 @@ from services.asset_lifecycle import (
 )
 from services.automation_history import sync_pipeline_automation_history
 from services.capability_truth import capability_truth_payload
+from services.context_loops import (
+    DEFAULT_CONTEXT_LOOP_ROOT,
+    apply_approved_candidates,
+    context_loop_metrics,
+    create_email_draft_run,
+    create_inner_loop_run,
+    propose_learning_candidates,
+    record_review_event,
+    write_metrics_report,
+)
+from services.context_loops import (
+    approve_candidate as approve_context_loop_candidate,
+)
+from services.context_loops import (
+    reject_candidate as reject_context_loop_candidate,
+)
 from services.daily_flow import preview_from_objective, replay_from_run
 from services.eval_run_service import (
     create_eval_run,
@@ -120,7 +136,7 @@ from services.shadow_branch_runner import (
     shadow_branch_name,
 )
 from services.shadow_candidate_scorer import score_shadow_candidate
-from services.skills_harvest import HarvestOptions, harvest_skills_library
+from services.skills_harvest import HarvestOptions, harvest_skills_library, verify_tmcp_graph
 from services.standards_health import (
     AssessmentStatus,
     ManualAssessmentOverride,
@@ -138,6 +154,18 @@ from services.success_criteria import (
     resolve_task_standards,
 )
 from services.task_routing import route_objective
+from services.tmcp_runtime import (
+    compile_tmcp_packet,
+    diff_tmcp_packets,
+    evaluate_tmcp_packet_adherence,
+    explain_tmcp_packet,
+    persist_tmcp_packet_adherence,
+    record_tmcp_intervention_event,
+    record_tmcp_receipt_event,
+    shortcut_governance_recommendation,
+    tmcp_learning_summary,
+    update_tmcp_receipt_feedback,
+)
 from services.verifier_artifacts import list_verifier_artifacts, validate_closeout_verification
 from services.workflow_orchestration import (
     developer_experience_capability_report,
@@ -200,6 +228,7 @@ CANONICAL_RUN_STATUSES = [
     "canceled",
     "superseded",
 ]
+
 NATIVE_COMMAND_SAFETY_CLASSES = {
     "zoom-out": "read_only",
     "handoff": "artifact_write",
@@ -208,7 +237,6 @@ NATIVE_COMMAND_SAFETY_CLASSES = {
     "cleanup-de-slopify": "guarded_modify",
     "prototype": "sandbox_write",
 }
-
 ATTENTION_RUN_STATUSES = [
     "blocked",
     "waiting_for_user",
@@ -406,6 +434,13 @@ def _parse_json_object(raw: str | None) -> dict[str, Any]:
     except json.JSONDecodeError:
         return {}
     return parsed if isinstance(parsed, dict) else {}
+
+
+def _parse_json_value(raw: str) -> Any:
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return raw
 
 
 def _resumable_runs(conn: sqlite3.Connection, limit: int = 5) -> list[dict[str, Any]]:
@@ -3027,6 +3062,124 @@ def _native_files_touched(data: dict[str, Any]) -> list[str]:
     return files
 
 
+def _read_text_arg(value: str | None, file_value: str | None) -> str:
+    if file_value:
+        return Path(file_value).expanduser().read_text(encoding="utf-8")
+    return value or ""
+
+
+def cmd_context_loops_inner_run(
+    conn: sqlite3.Connection,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    task_input = _read_text_arg(args.task_input, args.task_input_file)
+    draft_output = _read_text_arg(args.draft_output, args.draft_output_file)
+    context_root = Path(args.context_root).expanduser().resolve()
+
+    def _draft(_context: object) -> str:
+        return draft_output
+
+    return create_inner_loop_run(
+        conn,
+        workflow=args.workflow,
+        task_type=args.task_type,
+        task_input=task_input,
+        triggering_event=args.triggering_event,
+        prompt_version=args.prompt_version,
+        guidance_version=args.guidance_version,
+        retrieved_context=[],
+        context_sources=[],
+        assumptions=list(args.assumption or []),
+        draft_generator=_draft,
+        handoff_notes=args.handoff_notes,
+        context_loop_root=context_root,
+    )
+
+
+def cmd_context_loops_email_draft(
+    conn: sqlite3.Connection,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    task_input = _read_text_arg(args.task_input, args.task_input_file)
+    return create_email_draft_run(
+        conn,
+        task_input=task_input,
+        recipient=args.recipient,
+        subject=args.subject,
+        context_loop_root=Path(args.context_root).expanduser().resolve(),
+    )
+
+
+def cmd_context_loops_record_review(
+    conn: sqlite3.Connection,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    final_output = _read_text_arg(args.final_output, args.final_output_file)
+    return record_review_event(
+        conn,
+        run_id=args.run_id,
+        outcome=args.outcome,
+        final_output=final_output if args.final_output or args.final_output_file else None,
+        reviewer_notes=args.notes,
+    )
+
+
+def cmd_context_loops_review(
+    conn: sqlite3.Connection,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    return propose_learning_candidates(conn, min_reviews=max(1, int(args.min_reviews)))
+
+
+def cmd_context_loops_approve(
+    conn: sqlite3.Connection,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    return approve_context_loop_candidate(
+        conn,
+        args.candidate_id,
+        actor=args.actor,
+        note=args.note,
+    )
+
+
+def cmd_context_loops_reject(
+    conn: sqlite3.Connection,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    return reject_context_loop_candidate(
+        conn,
+        args.candidate_id,
+        actor=args.actor,
+        note=args.note,
+        context_loop_root=Path(args.context_root).expanduser().resolve(),
+    )
+
+
+def cmd_context_loops_apply_approved(
+    conn: sqlite3.Connection,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    return apply_approved_candidates(
+        conn,
+        context_loop_root=Path(args.context_root).expanduser().resolve(),
+    )
+
+
+def cmd_context_loops_metrics(
+    conn: sqlite3.Connection,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    metrics = context_loop_metrics(conn)
+    if args.write_report:
+        path = write_metrics_report(
+            conn,
+            context_loop_root=Path(args.context_root).expanduser().resolve(),
+        )
+        metrics["report_path"] = str(path)
+    return metrics
+
+
 def cmd_shadow_create_worktree(
     conn: sqlite3.Connection, args: argparse.Namespace
 ) -> dict[str, Any]:
@@ -4594,6 +4747,34 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "delta-explain":
         print(f"project={data['project_id']} explanations={len(data['delta_explanations'])}")
         return
+    if command.startswith("context-loops-"):
+        if "run_id" in data:
+            print(
+                f"run={data['run_id']} workflow={data.get('workflow', 'unknown')} "
+                f"unsupported={len(data.get('unsupported_claims', []))}"
+            )
+            return
+        if "review_event_id" in data:
+            print(
+                f"review={data['review_event_id']} outcome={data['outcome']} "
+                f"edit_distance={data['edit_distance_ratio']}"
+            )
+            return
+        if "proposed_count" in data:
+            print(f"proposed={data['proposed_count']}")
+            return
+        if "applied_count" in data:
+            print(f"applied={data['applied_count']} path={data['approved_lessons_path']}")
+            return
+        if "inner_loop_runs" in data:
+            print(
+                f"runs={data['inner_loop_runs']} drafts={data['drafts_created']} "
+                f"avg_edit={data['average_edit_distance']}"
+            )
+            return
+        if "candidate_id" in data:
+            print(f"candidate={data['candidate_id']} status={data['status']}")
+            return
     if command == "recommend-workflow":
         print(f"project={data['project_id']} recommendations={len(data['recommendations'])}")
         return
@@ -4765,10 +4946,14 @@ def _command_name(args: argparse.Namespace) -> str:
         return f"packet-{args.packet_command}"
     if args.command == "benchmark":
         return f"benchmark-{args.benchmark_command}"
+    if args.command == "context-loops":
+        return f"context-loops-{args.context_loops_command}"
     if args.command == "gate":
         return f"gate-{args.gate_command}"
     if args.command == "skills":
         return f"skills-{args.skills_command}"
+    if args.command == "tmcp":
+        return f"tmcp-{args.tmcp_command}"
     if args.command == "corpus":
         return f"corpus-{args.corpus_command}"
     if args.command == "harness-eval":
@@ -5131,6 +5316,100 @@ def create_parser() -> argparse.ArgumentParser:
     )
     meta_analyze_session.add_argument("--input", required=True)
     meta_analyze_session.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    context_loops = subparsers.add_parser(
+        "context-loops", help="Run inner/outer context learning loop commands"
+    )
+    context_loops_subparsers = context_loops.add_subparsers(
+        dest="context_loops_command", required=True
+    )
+
+    def add_context_root(parser: argparse.ArgumentParser) -> None:
+        parser.add_argument("--context-root", default=str(DEFAULT_CONTEXT_LOOP_ROOT))
+
+    inner_run = context_loops_subparsers.add_parser(
+        "inner-run", help="Record a reusable inner-loop run from supplied draft output"
+    )
+    inner_run.add_argument("--workflow", required=True)
+    inner_run.add_argument("--task-type", required=True)
+    inner_run.add_argument("--task-input", default=None)
+    inner_run.add_argument("--task-input-file", default=None)
+    inner_run.add_argument("--draft-output", default=None)
+    inner_run.add_argument("--draft-output-file", default=None)
+    inner_run.add_argument("--triggering-event", default="manual_command")
+    inner_run.add_argument("--prompt-version", default="manual-v1")
+    inner_run.add_argument("--guidance-version", default="approved-lessons.md")
+    inner_run.add_argument("--assumption", action="append", default=[])
+    inner_run.add_argument("--handoff-notes", default="")
+    inner_run.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    add_context_root(inner_run)
+
+    email_draft = context_loops_subparsers.add_parser(
+        "email-draft", help="Create a local draft-only email pilot run"
+    )
+    email_draft.add_argument("--task-input", default=None)
+    email_draft.add_argument("--task-input-file", default=None)
+    email_draft.add_argument("--recipient", default="")
+    email_draft.add_argument("--subject", default="")
+    email_draft.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    add_context_root(email_draft)
+
+    review_event = context_loops_subparsers.add_parser(
+        "record-review", help="Record a human review event for an inner-loop run"
+    )
+    review_event.add_argument("--run-id", required=True)
+    review_event.add_argument(
+        "--outcome",
+        required=True,
+        choices=[
+            "sent_unchanged",
+            "edited_and_sent",
+            "edited_not_sent",
+            "deleted",
+            "rejected",
+            "left_pending",
+            "replaced_manually",
+            "human_judgment_only",
+        ],
+    )
+    review_event.add_argument("--final-output", default=None)
+    review_event.add_argument("--final-output-file", default=None)
+    review_event.add_argument("--notes", default="")
+    review_event.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    review = context_loops_subparsers.add_parser(
+        "review", help="Propose learning candidates from reviewed context-loop outputs"
+    )
+    review.add_argument("--min-reviews", type=int, default=1)
+    review.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    approve = context_loops_subparsers.add_parser(
+        "approve", help="Approve one learning candidate for later application"
+    )
+    approve.add_argument("candidate_id")
+    approve.add_argument("--actor", default="local-user")
+    approve.add_argument("--note", default="")
+    approve.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    reject = context_loops_subparsers.add_parser("reject", help="Reject one learning candidate")
+    reject.add_argument("candidate_id")
+    reject.add_argument("--actor", default="local-user")
+    reject.add_argument("--note", default="")
+    reject.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    add_context_root(reject)
+
+    apply_approved = context_loops_subparsers.add_parser(
+        "apply-approved", help="Append approved candidates to approved-lessons.md"
+    )
+    apply_approved.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    add_context_root(apply_approved)
+
+    metrics = context_loops_subparsers.add_parser(
+        "metrics", help="Summarize context-loop review and learning metrics"
+    )
+    metrics.add_argument("--write-report", action="store_true")
+    metrics.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    add_context_root(metrics)
 
     shadow_parser = subparsers.add_parser("shadow", help="Create and compare eval shadow worktrees")
     shadow_subparsers = shadow_parser.add_subparsers(dest="shadow_command", required=True)
@@ -5584,6 +5863,134 @@ def create_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Replace an existing generated harvest output repository",
     )
+    skills_harvest.add_argument(
+        "--graph-profile",
+        default=None,
+        help="Tracked TMCP graph profile JSON to persist in generated metadata",
+    )
+    skills_graph_verify = skills_subparsers.add_parser(
+        "graph-verify",
+        help="Verify or repair structured TMCP graph metadata for an existing skills library",
+    )
+    skills_graph_verify.add_argument(
+        "--library",
+        default=str(REPO_ROOT / "skills-library"),
+        help="Existing skills library path",
+    )
+    skills_graph_verify.add_argument(
+        "--graph-profile",
+        default=None,
+        help="Tracked TMCP graph profile JSON expected by the local graph",
+    )
+    skills_graph_verify.add_argument(
+        "--repair",
+        action="store_true",
+        help="Write a missing skills.tmcp/graph.json from existing generated library metadata",
+    )
+    skills_graph_verify.add_argument(
+        "--refresh",
+        action="store_true",
+        help="When used with --repair, rewrite skills.tmcp/graph.json from current library metadata",
+    )
+
+    tmcp_parser = subparsers.add_parser("tmcp", help="Compile, inspect, and learn from TMCP packets")
+    tmcp_subparsers = tmcp_parser.add_subparsers(dest="tmcp_command", required=True)
+    tmcp_explain = tmcp_subparsers.add_parser("explain", help="Explain a prompt-specific TMCP packet")
+    tmcp_explain.add_argument("objective", help="Natural language task objective")
+    tmcp_explain.add_argument("--project-path", default=None, help="Optional project path scope")
+    tmcp_explain.add_argument("--phase", default=None, help="Optional TMCP phase hint")
+    tmcp_explain.add_argument("--domain", default=None, help="Optional TMCP domain hint")
+    tmcp_explain.add_argument(
+        "--skills-library",
+        default=str(REPO_ROOT / "skills-library"),
+        help="Skills library path containing skills.tmcp",
+    )
+    tmcp_explain.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    tmcp_learning = tmcp_subparsers.add_parser(
+        "learning-summary",
+        help="Summarize TMCP node and behavior-atom ROI from receipts",
+    )
+    tmcp_learning.add_argument("--task-id", default=None, help="Optional task id filter")
+    tmcp_learning.add_argument("--limit", type=int, default=200, help="Maximum receipts to summarize")
+    tmcp_learning.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    tmcp_feedback = tmcp_subparsers.add_parser(
+        "receipt-feedback",
+        help="Record node usefulness and missed-requirement feedback for one receipt",
+    )
+    tmcp_feedback.add_argument("--receipt-id", required=True, help="TMCP traversal receipt id")
+    tmcp_feedback.add_argument(
+        "--node-usefulness-json",
+        default="{}",
+        help="JSON object keyed by node id with usefulness feedback",
+    )
+    tmcp_feedback.add_argument(
+        "--omitted-requirement-json",
+        action="append",
+        default=[],
+        help="JSON object describing one omitted requirement",
+    )
+    tmcp_feedback.add_argument(
+        "--validation-evidence-json",
+        action="append",
+        default=[],
+        help="JSON value describing one validation evidence item",
+    )
+    tmcp_feedback.add_argument("--execution-outcome", default=None, help="Optional updated outcome")
+    tmcp_feedback.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    tmcp_adherence = tmcp_subparsers.add_parser(
+        "adherence",
+        help="Evaluate whether observed work adhered to a TMCP packet",
+    )
+    tmcp_adherence.add_argument("--packet-json", required=True, help="Compiled packet JSON object")
+    tmcp_adherence.add_argument("--receipt-id", default=None, help="Optional receipt to update")
+    tmcp_adherence.add_argument("--final-summary", default="", help="Final run summary text")
+    tmcp_adherence.add_argument(
+        "--validation-command",
+        action="append",
+        default=[],
+        help="Validation command that ran during the task",
+    )
+    tmcp_adherence.add_argument(
+        "--evidence-json",
+        action="append",
+        default=[],
+        help="JSON value describing observed run evidence",
+    )
+    tmcp_adherence.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    tmcp_event = tmcp_subparsers.add_parser("record-event", help="Record a granular TMCP receipt event")
+    tmcp_event.add_argument("--receipt-id", default=None)
+    tmcp_event.add_argument("--run-id", default=None)
+    tmcp_event.add_argument("--invocation-id", default=None)
+    tmcp_event.add_argument("--event-type", required=True)
+    tmcp_event.add_argument("--summary", required=True)
+    tmcp_event.add_argument("--node", default=None)
+    tmcp_event.add_argument("--behavior-atom", default=None)
+    tmcp_event.add_argument("--metadata-json", default="{}")
+    tmcp_event.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    tmcp_intervention = tmcp_subparsers.add_parser(
+        "record-intervention",
+        help="Record a TMCP blocker/intervention event",
+    )
+    tmcp_intervention.add_argument("--receipt-id", default=None)
+    tmcp_intervention.add_argument("--run-id", default=None)
+    tmcp_intervention.add_argument("--invocation-id", default=None)
+    tmcp_intervention.add_argument("--intervention-type", required=True)
+    tmcp_intervention.add_argument("--summary", required=True)
+    tmcp_intervention.add_argument("--node", default=None)
+    tmcp_intervention.add_argument("--behavior-atom", default=None)
+    tmcp_intervention.add_argument("--outcome", default="recorded")
+    tmcp_intervention.add_argument("--metadata-json", default="{}")
+    tmcp_intervention.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    tmcp_diff = tmcp_subparsers.add_parser("packet-diff", help="Diff two compiled TMCP packets")
+    tmcp_diff.add_argument("--before-json", required=True)
+    tmcp_diff.add_argument("--after-json", required=True)
+    tmcp_diff.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    tmcp_shortcut = tmcp_subparsers.add_parser(
+        "shortcut-governance",
+        help="Evaluate shortcut lifecycle governance for a shortcut JSON object",
+    )
+    tmcp_shortcut.add_argument("--shortcut-json", required=True)
+    tmcp_shortcut.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     corpus_parser = subparsers.add_parser("corpus", help="Corpus evaluation harness")
     corpus_subparsers = corpus_parser.add_subparsers(dest="corpus_command", required=True)
@@ -5671,6 +6078,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "harness-replay",
             "harness-shadow-evaluate",
             "eval",
+            "context-loops",
             "shadow",
             "peer-trace",
             "ablation",
@@ -5862,6 +6270,37 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             data = cmd_eval_gold_set_run(conn, args)
         elif args.command == "meta" and args.meta_command == "analyze-session":
             data = _meta_analyze_session_payload(args)
+        elif args.command == "context-loops" and args.context_loops_command == "inner-run":
+            assert conn is not None
+            data = cmd_context_loops_inner_run(conn, args)
+            conn.commit()
+        elif args.command == "context-loops" and args.context_loops_command == "email-draft":
+            assert conn is not None
+            data = cmd_context_loops_email_draft(conn, args)
+            conn.commit()
+        elif args.command == "context-loops" and args.context_loops_command == "record-review":
+            assert conn is not None
+            data = cmd_context_loops_record_review(conn, args)
+            conn.commit()
+        elif args.command == "context-loops" and args.context_loops_command == "review":
+            assert conn is not None
+            data = cmd_context_loops_review(conn, args)
+            conn.commit()
+        elif args.command == "context-loops" and args.context_loops_command == "approve":
+            assert conn is not None
+            data = cmd_context_loops_approve(conn, args)
+            conn.commit()
+        elif args.command == "context-loops" and args.context_loops_command == "reject":
+            assert conn is not None
+            data = cmd_context_loops_reject(conn, args)
+            conn.commit()
+        elif args.command == "context-loops" and args.context_loops_command == "apply-approved":
+            assert conn is not None
+            data = cmd_context_loops_apply_approved(conn, args)
+            conn.commit()
+        elif args.command == "context-loops" and args.context_loops_command == "metrics":
+            assert conn is not None
+            data = cmd_context_loops_metrics(conn, args)
         elif args.command == "shadow" and args.shadow_command == "create-worktree":
             assert conn is not None
             data = cmd_shadow_create_worktree(conn, args)
@@ -5914,6 +6353,108 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             data = cmd_benchmark_to_terminal_bench(conn, args)
         elif args.command == "benchmark" and args.benchmark_command == "normalize-result":
             data = cmd_benchmark_normalize_result(args)
+        elif args.command == "tmcp" and args.tmcp_command == "explain":
+            packet = compile_tmcp_packet(
+                objective=args.objective,
+                project_path=args.project_path,
+                skills_library_path=Path(args.skills_library).expanduser().resolve(),
+                phase=args.phase,
+                domain=args.domain,
+            )
+            data = explain_tmcp_packet(packet)
+        elif args.command == "tmcp" and args.tmcp_command == "learning-summary":
+            if conn is None:
+                conn = _connect_db(db_path)
+            assert conn is not None
+            data = tmcp_learning_summary(
+                conn,
+                task_id=args.task_id,
+                limit=max(1, int(args.limit)),
+            )
+        elif args.command == "tmcp" and args.tmcp_command == "receipt-feedback":
+            if conn is None:
+                conn = _connect_db(db_path)
+            assert conn is not None
+            omitted_requirements = [
+                _parse_json_object(raw)
+                for raw in args.omitted_requirement_json
+                if _parse_json_object(raw)
+            ]
+            validation_evidence = [
+                _parse_json_value(raw)
+                for raw in args.validation_evidence_json
+            ]
+            data = update_tmcp_receipt_feedback(
+                conn,
+                receipt_id=args.receipt_id,
+                node_usefulness=_parse_json_object(args.node_usefulness_json),
+                omitted_requirements=omitted_requirements,
+                validation_evidence=validation_evidence,
+                execution_outcome=args.execution_outcome,
+            )
+            conn.commit()
+        elif args.command == "tmcp" and args.tmcp_command == "adherence":
+            evidence = [_parse_json_value(raw) for raw in args.evidence_json]
+            data = evaluate_tmcp_packet_adherence(
+                packet=_parse_json_object(args.packet_json),
+                evidence=evidence,
+                final_summary=args.final_summary,
+                validation_commands=list(args.validation_command),
+            )
+            if args.receipt_id:
+                if conn is None:
+                    conn = _connect_db(db_path)
+                persist_tmcp_packet_adherence(
+                    conn,
+                    receipt_id=args.receipt_id,
+                    adherence=data,
+                )
+                conn.commit()
+        elif args.command == "tmcp" and args.tmcp_command == "record-event":
+            if conn is None:
+                conn = _connect_db(db_path)
+            event_id = record_tmcp_receipt_event(
+                conn,
+                receipt_id=args.receipt_id,
+                event_type=args.event_type,
+                summary=args.summary,
+                run_id=args.run_id,
+                invocation_id=args.invocation_id,
+                node=args.node,
+                behavior_atom=args.behavior_atom,
+                metadata=_parse_json_object(args.metadata_json),
+            )
+            conn.commit()
+            data = {"schema": "tmcp-record-event-result-v0.1", "event_id": event_id}
+        elif args.command == "tmcp" and args.tmcp_command == "record-intervention":
+            if conn is None:
+                conn = _connect_db(db_path)
+            intervention_id = record_tmcp_intervention_event(
+                conn,
+                receipt_id=args.receipt_id,
+                intervention_type=args.intervention_type,
+                summary=args.summary,
+                run_id=args.run_id,
+                invocation_id=args.invocation_id,
+                node=args.node,
+                behavior_atom=args.behavior_atom,
+                outcome=args.outcome,
+                metadata=_parse_json_object(args.metadata_json),
+            )
+            conn.commit()
+            data = {
+                "schema": "tmcp-record-intervention-result-v0.1",
+                "intervention_id": intervention_id,
+            }
+        elif args.command == "tmcp" and args.tmcp_command == "packet-diff":
+            data = diff_tmcp_packets(
+                _parse_json_object(args.before_json),
+                _parse_json_object(args.after_json),
+            )
+        elif args.command == "tmcp" and args.tmcp_command == "shortcut-governance":
+            data = shortcut_governance_recommendation(
+                _parse_json_object(args.shortcut_json)
+            )
         elif args.command == "harness-active-readiness":
             data = active_readiness()
         elif args.command == "start-work":
@@ -5972,7 +6513,23 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
                     interactive=bool(args.interactive),
                     report_only=bool(args.report_only),
                     force=bool(args.force),
+                    graph_profile_path=(
+                        Path(args.graph_profile).expanduser().resolve()
+                        if args.graph_profile
+                        else None
+                    ),
                 )
+            )
+        elif args.command == "skills" and args.skills_command == "graph-verify":
+            data = verify_tmcp_graph(
+                Path(args.library),
+                graph_profile_path=(
+                    Path(args.graph_profile).expanduser().resolve()
+                    if args.graph_profile
+                    else None
+                ),
+                repair=bool(args.repair),
+                refresh=bool(args.refresh),
             )
         else:
             raise CLIError("unknown-command", f"Unsupported command: {args.command}", EXIT_USAGE)

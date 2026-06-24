@@ -9,7 +9,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from services.aios_cli import EXIT_OK, run_cli  # noqa: E402
-from services.skills_harvest import HarvestOptions, harvest_skills_library  # noqa: E402
+from services.skills_harvest import (  # noqa: E402
+    HarvestOptions,
+    harvest_skills_library,
+    verify_tmcp_graph,
+)
 
 
 def _seed_project(root: Path) -> None:
@@ -50,7 +54,10 @@ def test_harvest_dry_run_plans_tmcp_without_writing(tmp_path: Path) -> None:
     assert "skills.tmcp/design-decision.md" in result["planned_files"]
     assert "skills.tmcp/traversal-receipt-schema.md" in result["planned_files"]
     assert "skills.tmcp/evaluation-plan.md" in result["planned_files"]
+    assert "skills.tmcp/graph.json" in result["planned_files"]
     assert "skills.tmcp/shortcuts/candidate.md" in result["planned_files"]
+    assert result["summary"]["graph_profile"]["profile_id"]
+    assert result["summary"]["graph_diff"]["schema"] == "tmcp-graph-diff-v0.1"
     assert not out.exists()
 
 
@@ -65,6 +72,7 @@ def test_harvest_generates_library_and_commits(tmp_path: Path) -> None:
     assert result["validation"]["status"] == "pass"
     assert result["git"]["committed"] is True
     assert (out / "skills.tmcp" / "router.md").exists()
+    assert (out / "skills.tmcp" / "graph.json").exists()
     assert (out / "skills.tmcp" / "design-decision.md").exists()
     assert (out / "skills.tmcp" / "traversal-receipt-schema.md").exists()
     assert (out / "skills.tmcp" / "evaluation-plan.md").exists()
@@ -91,6 +99,24 @@ def test_harvest_generates_library_and_commits(tmp_path: Path) -> None:
     assert "## Rebuild Outcomes" in shortcut
     assert "source graph version" in shortcut
     assert "fall back to router traversal" in shortcut
+    graph = json.loads((out / "skills.tmcp" / "graph.json").read_text(encoding="utf-8"))
+    atom_registry = json.loads((ROOT / "config" / "tmcp" / "behavior-atoms.json").read_text())
+    assert graph["schema"] == "tmcp-graph-v0.1"
+    assert atom_registry["schema"] == "tmcp-behavior-atoms-v0.1"
+    assert graph["tasks"]
+    assert graph["modules"]
+    assert graph["source_skills"]
+    implementation = graph["tasks"]["implementation"]
+    assert "behavior_atoms" in implementation
+    assert set(atom_registry["node_mappings"]["implementation"]) <= set(
+        implementation["behavior_atoms"]
+    )
+    assert "token_cost" in implementation
+    test_gate = graph["modules"]["test_gate"]
+    assert "verification_gate" in test_gate["behavior_atoms"]
+    source_skill = next(iter(graph["source_skills"].values()))
+    assert source_skill["adds_behavior"]
+    assert source_skill["risk_if_omitted"] in {"low", "medium", "high"}
     generated_agents = next((out / "instructions" / "global").glob("*.md"))
     text = generated_agents.read_text(encoding="utf-8")
     assert "ghp_123456789012345678901234567890123456" not in text
@@ -129,3 +155,60 @@ def test_skills_harvest_cli_outputs_json(tmp_path: Path, capsys) -> None:
     assert payload["command"] == "skills-harvest"
     assert payload["data"]["validation"]["status"] == "pass"
     assert payload["data"]["summary"]["dry_run"] is True
+
+
+def test_harvest_reports_stale_sources_against_existing_lock(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    _seed_project(project)
+    out = tmp_path / "skills-library"
+    harvest_skills_library(HarvestOptions(roots=(project,), out=out))
+
+    skill = project / ".agents" / "skills" / "review" / "SKILL.md"
+    skill.write_text(
+        "# Review Skill\n\nWhen to use: code review. Ask before editing. Run focused tests.\n",
+        encoding="utf-8",
+    )
+
+    result = harvest_skills_library(
+        HarvestOptions(roots=(project,), out=out, dry_run=True)
+    )
+
+    assert result["summary"]["graph_diff"]["changed_source_count"] >= 1
+
+
+def test_harvest_blocks_large_skill_count_drop(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    _seed_project(project)
+    out = tmp_path / "skills-library"
+    out.mkdir()
+    (out / "manifest.json").write_text(json.dumps({"skill_count": 10}), encoding="utf-8")
+
+    try:
+        harvest_skills_library(HarvestOptions(roots=(project,), out=out, dry_run=True))
+    except ValueError as exc:
+        assert "skill count dropped" in str(exc)
+    else:
+        raise AssertionError("expected large drop guard to fail")
+
+
+def test_graph_verify_repairs_missing_graph_json_for_existing_library(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    _seed_project(project)
+    out = tmp_path / "skills-library"
+    harvest_skills_library(HarvestOptions(roots=(project,), out=out))
+    (out / "skills.tmcp" / "graph.json").unlink()
+
+    before = verify_tmcp_graph(out)
+    repaired = verify_tmcp_graph(out, repair=True)
+
+    assert before["status"] == "fail"
+    assert before["summary"]["skill_count"] == 1
+    assert repaired["status"] == "pass"
+    assert repaired["repaired"] is True
+    assert (out / "skills.tmcp" / "graph.json").exists()
+    graph = json.loads((out / "skills.tmcp" / "graph.json").read_text(encoding="utf-8"))
+    assert len(graph["source_skills"]) == 1
+    assert next(iter(graph["source_skills"].values()))["behavior_atoms"]

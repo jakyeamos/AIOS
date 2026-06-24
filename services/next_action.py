@@ -229,26 +229,43 @@ def _from_open_blockers(conn: sqlite3.Connection, *, project_id: str | None) -> 
         logger.debug("next_action: success_criteria_findings missing; skipping")
         return []
     columns = _table_columns(conn, "success_criteria_findings")
+    evaluation_columns = _table_columns(conn, "success_criteria_evaluations")
     message_column = (
-        "message" if "message" in columns else "summary" if "summary" in columns else "''"
+        "f.message" if "message" in columns else "f.summary" if "summary" in columns else "''"
     )
-    join = (
-        "LEFT JOIN orchestration_runs r ON r.id = f.run_id"
-        if _safe_table_exists(conn, "orchestration_runs")
-        else ""
+    has_evaluations = _safe_table_exists(conn, "success_criteria_evaluations")
+    run_expr = (
+        "f.run_id"
+        if "run_id" in columns
+        else "e.run_id"
+        if has_evaluations and "run_id" in evaluation_columns
+        else "NULL"
     )
-    project_select = "r.project_id AS project_id" if join else "NULL AS project_id"
+    joins: list[str] = []
+    if has_evaluations and "run_id" not in columns and "evaluation_id" in columns:
+        joins.append("LEFT JOIN success_criteria_evaluations e ON e.id = f.evaluation_id")
+    if _safe_table_exists(conn, "orchestration_runs"):
+        joins.append(f"LEFT JOIN orchestration_runs r ON r.id = {run_expr}")
+        project_select = (
+            "COALESCE(r.project_id, e.project_id) AS project_id"
+            if has_evaluations and "project_id" in evaluation_columns
+            else "r.project_id AS project_id"
+        )
+    elif has_evaluations and "project_id" in evaluation_columns:
+        project_select = "e.project_id AS project_id"
+    else:
+        project_select = "NULL AS project_id"
     where = ["f.level = 'blocker'", "f.resolution_status = 'open'"]
     params: list[Any] = []
-    if project_id and join:
-        where.append("r.project_id = ?")
+    if project_id:
+        where.append(f"{project_select.removesuffix(' AS project_id')} = ?")
         params.append(project_id)
     rows = conn.execute(
         f"""
-        SELECT f.id, f.run_id, f.criterion_id, f.level, {message_column} AS message,
+        SELECT f.id, {run_expr} AS run_id, f.criterion_id, f.level, {message_column} AS message,
                {project_select}, f.created_at
         FROM success_criteria_findings f
-        {join}
+        {" ".join(joins)}
         WHERE {" AND ".join(where)}
         ORDER BY f.created_at DESC
         LIMIT 20

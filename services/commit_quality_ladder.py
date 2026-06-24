@@ -11,6 +11,12 @@ from pathlib import Path
 from typing import Any, Literal
 
 from services.evidence_artifacts import validate_fresh_evidence
+from services.quality_gate_audit import (
+    GateDecision,
+    build_gate_audit_event,
+    quality_gate_decision,
+    safe_append_gate_audit_event,
+)
 from services.verifier_artifacts import fresh_verifier_refs
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -23,11 +29,11 @@ STANDARDS_REGISTRY = REPO_ROOT / "config" / "standards" / "registry.json"
 CHECK_STATUS = Literal["pass", "fail", "skip"]
 CODE_EXTENSIONS = {".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"}
 HANDLER_PATTERNS = (
-    "addEventListener(\"message\"",
+    'addEventListener("message"',
     "addEventListener('message'",
-    ".on(\"message\"",
+    '.on("message"',
     ".on('message'",
-    ".once(\"message\"",
+    '.once("message"',
     ".once('message'",
     ".onmessage",
 )
@@ -305,7 +311,9 @@ def check_quality_pipeline_includes_aios(repo_root: Path) -> LadderCheck:
     if aios_project is None:
         failures.append("quality pipeline has no project_id=aios entry")
     else:
-        configured = aios_project.get("gates") if isinstance(aios_project.get("gates"), dict) else {}
+        configured = (
+            aios_project.get("gates") if isinstance(aios_project.get("gates"), dict) else {}
+        )
         for required in (
             "lint",
             "test",
@@ -367,7 +375,9 @@ def check_quality_gate_registry(repo_root: Path) -> LadderCheck:
     if aios_project is None:
         failures.append("quality gate registry has no projectId=aios entry")
     else:
-        configured = aios_project.get("gates") if isinstance(aios_project.get("gates"), dict) else {}
+        configured = (
+            aios_project.get("gates") if isinstance(aios_project.get("gates"), dict) else {}
+        )
         for required in ("test_quality", "architecture", "pre_cr", "thermo_nuclear_simplification"):
             gate = configured.get(required) if isinstance(configured.get(required), dict) else None
             if gate is None:
@@ -573,16 +583,55 @@ def _tail_lines(text: str, limit: int = 8) -> tuple[str, ...]:
     return tuple(lines[-limit:])
 
 
-def print_report(checks: Sequence[LadderCheck]) -> None:
+def print_report(checks: Sequence[LadderCheck], *, decision: GateDecision = "block") -> None:
     for check in checks:
-        marker = {"pass": "PASS", "fail": "FAIL", "skip": "SKIP"}[check.status]
+        marker = {"pass": "PASS", "fail": "WARN" if decision == "warn" else "FAIL", "skip": "SKIP"}[
+            check.status
+        ]
         print(f"[{marker}] {check.label}: {check.detail}")
         for evidence in check.evidence:
             print(f"  - {evidence}")
 
 
-def exit_code(checks: Sequence[LadderCheck]) -> int:
-    return 1 if any(check.status == "fail" for check in checks) else 0
+def exit_code(checks: Sequence[LadderCheck], *, decision: GateDecision = "block") -> int:
+    return 1 if decision == "block" and any(check.status == "fail" for check in checks) else 0
+
+
+def emit_ladder_audit(
+    repo_root: Path,
+    checks: Sequence[LadderCheck],
+    *,
+    decision: GateDecision = "block",
+) -> None:
+    is_blocking = decision == "block"
+    for check in checks:
+        if check.status != "fail":
+            continue
+        disposition = "blocked commit" if is_blocking else "warning only"
+        event = build_gate_audit_event(
+            repo_root=repo_root,
+            gate="AIOS",
+            event_type="commit_blocked",
+            severity="error" if is_blocking else "warning",
+            category=_ladder_category(check.key),
+            rule_id=check.key,
+            rule_name=check.label,
+            decision=decision,
+            summary=f"AIOS quality ladder {disposition}: {check.detail}",
+            evidence=[
+                {
+                    "file": _evidence_file(item),
+                    "line_start": 1,
+                    "reason": item,
+                }
+                for item in check.evidence[:10]
+            ],
+            failure_pattern=f"aios ladder failure: {check.key}",
+            root_cause_hypothesis="The staged change reached commit readiness before the AIOS quality ladder was satisfied.",
+            required_fix=check.detail,
+            learning_lesson=f"Resolve `{check.label}` before committing AIOS changes.",
+        )
+        safe_append_gate_audit_event(repo_root, event)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -594,5 +643,28 @@ def main(argv: Sequence[str] | None = None) -> int:
         staged_files=args.staged_file or None,
         run_context_validation=not args.no_context_validation,
     )
-    print_report(checks)
-    return exit_code(checks)
+    decision = (
+        quality_gate_decision(REPO_ROOT)
+        if any(check.status == "fail" for check in checks)
+        else "block"
+    )
+    print_report(checks, decision=decision)
+    emit_ladder_audit(REPO_ROOT, checks, decision=decision)
+    return exit_code(checks, decision=decision)
+
+
+def _ladder_category(key: str):
+    if "test" in key or "criteria" in key:
+        return "test"
+    if "context" in key or "standards" in key:
+        return "documentation"
+    if "quality" in key or "hook" in key:
+        return "process"
+    if "event_loop" in key:
+        return "maintainability"
+    return "unknown"
+
+
+def _evidence_file(evidence: str) -> str:
+    candidate = evidence.split(":", 1)[0].strip()
+    return candidate if candidate else "."

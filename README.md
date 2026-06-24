@@ -83,6 +83,44 @@ http://localhost:3000/workflows
 
 ## Routed Agent Work
 
+In Codex, AIOS shadowing is automatic for non-trivial tasks. Ordinary prompts keep the current workspace as the baseline and use the AIOS lane as evidence only:
+
+```bash
+python3 /Users/jakyeamos/AIOS/scripts/codex-aios-shadow.py "<objective>"
+```
+
+Governed AIOS routing is command-triggered. Use `/aios` at the start of the prompt when the AIOS route and packet should govern the baseline work:
+
+```text
+/aios Fix the route selector bug and verify the checks
+```
+
+Codex should run:
+
+```bash
+python3 /Users/jakyeamos/AIOS/scripts/codex-aios-shadow.py "<objective>" --governed-route
+```
+
+The helper infers the project from the current working directory, creates the routed run/packet, creates an isolated shadow worktree, and prints the follow-up inspection commands. For ordinary prompts, that route is comparison evidence only. For `/aios` prompts, that route is governing context. If the prompt is for another project while Codex is currently in the AIOS repo, include the project name:
+
+```text
+/aios for amos-saas: Fix the login redirect bug and verify the checks
+```
+
+The current workspace remains the baseline source of truth. The shadow lane is comparison evidence for assessing AIOS usefulness and must not be merged or copied back without explicit review.
+
+Route-only mode is an explicit opt-out for rare cases:
+
+```text
+/aios-route-only Fix the route selector bug and verify the checks
+```
+
+Route-only mode runs:
+
+```bash
+python3 /Users/jakyeamos/AIOS/scripts/codex-aios-route.py "<objective>"
+```
+
 Create a compact AIOS packet and strict run/session/invocation handshake before serious agent work:
 
 ```bash
@@ -120,6 +158,8 @@ python3 bin/aios.py --json gate run test_quality --project soundscape-app --repo
 ```
 
 Linked projects declare only gate IDs in `.aios-quality-gate.json`. Executable argv arrays live in AIOS-owned `config/quality-gates.json`; the global user commit hook rejects missing, malformed, or unknown gate declarations for registered source commits and never executes shell from repo-local config.
+
+AIOS, Pre-CR, and allowlisted project gate findings emit append-only audit events under `.aios/audit/` in the gated repo. Findings block on `main`, `master`, `dev`, `develop`, `development`, or when `AIOS_DEV_ENVIRONMENT`, `AIOS_DEV_ENV`, `QUALITY_GATE_DEV_ENV`, or `GATE_CONNECTED_DEV_ENV` is set; findings on detected unprotected feature branches are warnings. Unknown branches remain conservative and block. The generated `gate-events.jsonl`, `gate-summary.md`, and `learning-lessons.md` files are runtime artifacts and are ignored by git.
 
 Global non-regression rule for `test_quality`: make the suite more meaningful,
 not merely green. Fixes must preserve or improve behavior coverage. Delete tests

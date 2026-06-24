@@ -1,0 +1,20 @@
+{
+  "id": "clc-example",
+  "workflow": "email_drafting",
+  "review_event_id": "clr-review-example",
+  "observed_pattern": "Human removed unsupported deadline language.",
+  "likely_interpretation": "The draft made a commitment without trusted source support.",
+  "confidence": 0.8,
+  "affected_workflow": "email_drafting",
+  "proposed_change": "Flag commitments to deadlines, meetings, deliverables, scope, or availability unless a trusted source supports them.",
+  "help_reason": "Prevents future drafts from smuggling commitments into human review.",
+  "destination": "safety_check_policy",
+  "category": "unsupported_commitment",
+  "evidence": [
+    {
+      "type": "context_loop_review_event",
+      "id": "clr-review-example"
+    }
+  ],
+  "status": "candidate"
+}

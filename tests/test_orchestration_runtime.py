@@ -1135,6 +1135,37 @@ def test_managed_runtime_completes_via_explicit_handshake(runtime_db: Path, tmp_
     assert "completed" in event_types
 
 
+def test_managed_runtime_missing_run_fails_without_traceback(tmp_path: Path) -> None:
+    runtime_db = tmp_path / "runtime.db"
+    conn = sqlite3.connect(runtime_db)
+    _apply_base_schema(conn)
+    conn.close()
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "bin" / "aios-managed-run.py"),
+            "--run-id",
+            "run-missing",
+            "--invocation-id",
+            "invoke-missing",
+            "--db",
+            str(runtime_db),
+        ],
+        cwd=str(ROOT),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 2
+    assert "Traceback" not in result.stderr
+    payload = json.loads(result.stderr)
+    assert payload["ok"] is False
+    assert payload["error"]["code"] == "managed-run-preflight-failed"
+    assert payload["run_id"] == "run-missing"
+
+
 def test_managed_runtime_uses_promoted_tmcp_shortcut(runtime_db: Path, tmp_path: Path) -> None:
     from aios_orchestration_runtime import ensure_runtime_schema
 

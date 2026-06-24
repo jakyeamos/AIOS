@@ -1,0 +1,227 @@
+{
+  "schema": "tmcp-behavior-atoms-v0.1",
+  "description": "Canonical TMCP behavior atoms used to decide whether a node changes agent behavior enough to include in a compiled packet.",
+  "atoms": {
+    "acceptance_criteria": {
+      "description": "Define explicit completion criteria before execution.",
+      "risk_if_omitted": "medium",
+      "triggers": ["acceptance", "criteria", "done"]
+    },
+    "ambiguity_clarification": {
+      "description": "Resolve ambiguous user intent before risky execution.",
+      "risk_if_omitted": "medium",
+      "triggers": ["ambiguous", "unclear", "clarify"]
+    },
+    "approval_before_edit": {
+      "description": "Ask before editing when the request is exploratory or permission is uncertain.",
+      "risk_if_omitted": "medium",
+      "triggers": ["approval", "permission", "ask"]
+    },
+    "approval_before_risk": {
+      "description": "Require explicit approval before destructive or high-risk actions.",
+      "risk_if_omitted": "high",
+      "triggers": ["destructive", "risk", "approval"]
+    },
+    "avoid_speculative_abstraction": {
+      "description": "Avoid adding abstractions without demonstrated need.",
+      "risk_if_omitted": "medium",
+      "triggers": ["abstraction", "speculative", "complexity"]
+    },
+    "bounded_change": {
+      "description": "Keep implementation scope tightly bounded to the request.",
+      "risk_if_omitted": "medium",
+      "triggers": ["scope", "minimal", "bounded"]
+    },
+    "canonical_vocabulary": {
+      "description": "Use the project's canonical operating language.",
+      "risk_if_omitted": "medium",
+      "triggers": ["vocabulary", "glossary", "operating language"]
+    },
+    "change_execution": {
+      "description": "Make concrete code or artifact changes when intent is explicit.",
+      "risk_if_omitted": "high",
+      "triggers": ["implement", "fix", "patch", "build"]
+    },
+    "citation_discipline": {
+      "description": "Keep research claims tied to reliable citations.",
+      "risk_if_omitted": "medium",
+      "triggers": ["citation", "quote", "source"]
+    },
+    "claim_evidence": {
+      "description": "Only claim completion with supporting verification evidence.",
+      "risk_if_omitted": "high",
+      "triggers": ["evidence", "complete", "done"]
+    },
+    "clear_closeout": {
+      "description": "Close with concise changed-work and verification status.",
+      "risk_if_omitted": "low",
+      "triggers": ["summary", "closeout", "final"]
+    },
+    "command_policy": {
+      "description": "Choose commands according to repo and sandbox policy.",
+      "risk_if_omitted": "high",
+      "triggers": ["command", "shell", "policy"]
+    },
+    "conflict_branch_selection": {
+      "description": "Select the correct branch when instructions conflict.",
+      "risk_if_omitted": "medium",
+      "triggers": ["conflict", "branch", "permission"]
+    },
+    "context_selection": {
+      "description": "Load the smallest authoritative context packet for the task.",
+      "risk_if_omitted": "high",
+      "triggers": ["context", "packet", "receipt"]
+    },
+    "direct_execution_permission": {
+      "description": "Proceed directly when the user asks for implementation.",
+      "risk_if_omitted": "medium",
+      "triggers": ["execute", "implement", "make"]
+    },
+    "doc_staleness_check": {
+      "description": "Check whether durable docs or truth files need updates.",
+      "risk_if_omitted": "medium",
+      "triggers": ["docs", "truth", "stale"]
+    },
+    "evidence_trace": {
+      "description": "Preserve traceable evidence for decisions and findings.",
+      "risk_if_omitted": "medium",
+      "triggers": ["evidence", "trace", "receipt"]
+    },
+    "execution_ready_plan": {
+      "description": "Produce a plan specific enough to execute.",
+      "risk_if_omitted": "medium",
+      "triggers": ["plan", "phase", "roadmap"]
+    },
+    "finding_evidence": {
+      "description": "Ground review findings in concrete files, lines, or runtime evidence.",
+      "risk_if_omitted": "high",
+      "triggers": ["review", "finding", "audit"]
+    },
+    "minimal_context": {
+      "description": "Avoid loading broad context when narrow authoritative context is enough.",
+      "risk_if_omitted": "medium",
+      "triggers": ["minimal", "smallest", "context"]
+    },
+    "provenance_trace": {
+      "description": "Record where loaded behavior came from.",
+      "risk_if_omitted": "medium",
+      "triggers": ["provenance", "source", "trace"]
+    },
+    "read_before_edit": {
+      "description": "Inspect relevant code or source material before modifying it.",
+      "risk_if_omitted": "high",
+      "triggers": ["inspect", "read", "edit"]
+    },
+    "reproduce_first": {
+      "description": "Reproduce a bug or failure before fixing it when feasible.",
+      "risk_if_omitted": "high",
+      "triggers": ["debug", "reproduce", "failure"]
+    },
+    "risk_review": {
+      "description": "Prioritize bugs, regressions, and missing tests in reviews.",
+      "risk_if_omitted": "high",
+      "triggers": ["audit", "review", "risk"]
+    },
+    "root_cause_analysis": {
+      "description": "Explain why a failure happens before patching symptoms.",
+      "risk_if_omitted": "medium",
+      "triggers": ["root cause", "debug", "failure"]
+    },
+    "skill_routing": {
+      "description": "Route intent to the right skill or workflow surface.",
+      "risk_if_omitted": "medium",
+      "triggers": ["skill", "routing", "workflow"]
+    },
+    "source_grounding": {
+      "description": "Ground research or decisions in authoritative sources.",
+      "risk_if_omitted": "high",
+      "triggers": ["research", "source", "grounding"]
+    },
+    "source_specific_behavior": {
+      "description": "Apply behavior that only exists in a precise source skill.",
+      "risk_if_omitted": "medium",
+      "triggers": ["source skill", "specific", "custom"]
+    },
+    "source_tier_precedence": {
+      "description": "Prefer higher-authority source tiers when behavior conflicts.",
+      "risk_if_omitted": "high",
+      "triggers": ["tier", "precedence", "authority"]
+    },
+    "term_consistency": {
+      "description": "Keep names and concepts consistent with canonical language.",
+      "risk_if_omitted": "low",
+      "triggers": ["term", "language", "name"]
+    },
+    "test_authoring": {
+      "description": "Add or update tests that match the changed behavior.",
+      "risk_if_omitted": "medium",
+      "triggers": ["test", "coverage", "fixture"]
+    },
+    "tool_safety": {
+      "description": "Use tools within sandbox, approval, and safety constraints.",
+      "risk_if_omitted": "high",
+      "triggers": ["tool", "mcp", "shell"]
+    },
+    "truth_update": {
+      "description": "Update durable truth files after substantive state changes.",
+      "risk_if_omitted": "medium",
+      "triggers": ["truth", "project", "state"]
+    },
+    "ui_quality": {
+      "description": "Apply visual quality standards to UI work.",
+      "risk_if_omitted": "medium",
+      "triggers": ["ui", "visual", "polish"]
+    },
+    "validation_reporting": {
+      "description": "Report validation commands, failures, and residual risk.",
+      "risk_if_omitted": "medium",
+      "triggers": ["validate", "report", "test"]
+    },
+    "verification_gate": {
+      "description": "Run or justify the right verification before claiming completion.",
+      "risk_if_omitted": "high",
+      "triggers": ["verify", "test", "validate"]
+    },
+    "visual_verification": {
+      "description": "Use rendered visual evidence for UI changes.",
+      "risk_if_omitted": "medium",
+      "triggers": ["screenshot", "browser", "visual"]
+    },
+    "workflow_selection": {
+      "description": "Select the workflow that fits task intent and risk.",
+      "risk_if_omitted": "medium",
+      "triggers": ["workflow", "strategy", "agent"]
+    }
+  },
+  "node_mappings": {
+    "agent_workflow": ["skill_routing", "workflow_selection"],
+    "ambiguous_task_resolution": ["ambiguity_clarification"],
+    "approval_before_edit": ["approval_before_edit"],
+    "audit": ["risk_review", "finding_evidence"],
+    "conflict__editing_permission": ["conflict_branch_selection"],
+    "context_gathering": ["context_selection", "minimal_context"],
+    "debugging": ["reproduce_first", "root_cause_analysis"],
+    "direct_implementation": ["direct_execution_permission"],
+    "documentation": ["truth_update", "doc_staleness_check"],
+    "evidence_first": ["read_before_edit", "evidence_trace"],
+    "implementation": ["change_execution", "verification_gate"],
+    "minimal_patch_policy": ["bounded_change", "avoid_speculative_abstraction"],
+    "operating_language": ["canonical_vocabulary", "term_consistency"],
+    "output_contract": ["clear_closeout", "validation_reporting"],
+    "planning": ["execution_ready_plan", "acceptance_criteria"],
+    "provenance_policy": ["provenance_trace", "source_tier_precedence"],
+    "research": ["source_grounding", "citation_discipline"],
+    "test_gate": ["verification_gate", "claim_evidence"],
+    "testing": ["test_authoring", "verification_gate"],
+    "tool_use_policy": ["tool_safety", "command_policy"],
+    "user_approval_gate": ["approval_before_risk", "destructive_action_guard"],
+    "visual_polish": ["ui_quality", "visual_verification"]
+  },
+  "semantic_section_labels": {
+    "constraints": ["constraint", "do not", "avoid", "requirement", "policy"],
+    "failure_modes": ["failure", "risk", "anti-pattern", "gotcha"],
+    "procedure": ["procedure", "workflow", "steps", "process", "how to"],
+    "triggers": ["when to use", "trigger", "applies when", "use when"],
+    "validation": ["validation", "verification", "test", "evidence"]
+  }
+}

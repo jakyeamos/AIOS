@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from services.commit_quality_ladder import (  # noqa: E402
+    LadderCheck,
     _handler_before_send_findings,
     check_aios_evidence_artifacts,
     check_aios_verifier_artifacts,
@@ -18,6 +19,8 @@ from services.commit_quality_ladder import (  # noqa: E402
     check_quality_pipeline_includes_aios,
     check_standards_health_registry,
     check_success_criteria_registry,
+    emit_ladder_audit,
+    exit_code,
 )
 
 
@@ -369,6 +372,70 @@ def test_aios_evidence_check_attaches_fresh_refs(tmp_path: Path) -> None:
 
     assert result.status == "pass"
     assert result.evidence == ("evidence-artifact: ev-1 status=pass command=pnpm test",)
+
+
+def test_ladder_audit_records_failed_checks(tmp_path: Path) -> None:
+    emit_ladder_audit(
+        tmp_path,
+        [
+            LadderCheck(
+                "standards.context_validate",
+                "Context standards validate",
+                "fail",
+                "Context compiler validation failed.",
+                ("tools/context-compile.mjs failed",),
+            )
+        ],
+        decision="block",
+    )
+
+    events_path = tmp_path / ".aios" / "audit" / "gate-events.jsonl"
+    event = json.loads(events_path.read_text(encoding="utf-8").splitlines()[0])
+
+    assert event["gate"] == "AIOS"
+    assert event["rule_id"] == "standards.context_validate"
+    assert event["event_type"] == "commit_blocked"
+    assert event["decision"] == "block"
+    assert event["severity"] == "error"
+    assert event["learning_lesson"]
+
+
+def test_ladder_audit_warns_for_unprotected_branch_failures(tmp_path: Path) -> None:
+    emit_ladder_audit(
+        tmp_path,
+        [
+            LadderCheck(
+                "standards.context_validate",
+                "Context standards validate",
+                "fail",
+                "Context compiler validation failed.",
+                ("tools/context-compile.mjs failed",),
+            )
+        ],
+        decision="warn",
+    )
+
+    events_path = tmp_path / ".aios" / "audit" / "gate-events.jsonl"
+    event = json.loads(events_path.read_text(encoding="utf-8").splitlines()[0])
+
+    assert event["decision"] == "warn"
+    assert event["severity"] == "warning"
+    assert "warning only" in event["summary"]
+
+
+def test_ladder_exit_code_allows_warn_only_failures() -> None:
+    checks = [
+        LadderCheck(
+            "standards.context_validate",
+            "Context standards validate",
+            "fail",
+            "Context compiler validation failed.",
+            (),
+        )
+    ]
+
+    assert exit_code(checks, decision="warn") == 0
+    assert exit_code(checks, decision="block") == 1
 
 
 def test_aios_verifier_check_is_unknown_without_fresh_artifacts(tmp_path: Path) -> None:

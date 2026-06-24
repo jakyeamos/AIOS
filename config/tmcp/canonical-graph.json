@@ -1,0 +1,33 @@
+{
+  "schema": "tmcp-canonical-graph-profile-v0.1",
+  "profile_id": "aios-local-canonical",
+  "description": "Canonical local TMCP graph profile. The generated graph lives at skills-library/skills.tmcp and is the default skill-composition surface for AIOS-managed work.",
+  "output_path": "skills-library",
+  "source_roots": [
+    ".",
+    "~/.agents",
+    "~/.codex/skills",
+    "~/.codex/plugins/cache/openai-curated",
+    "~/.codex/plugins/cache/openai-bundled"
+  ],
+  "exclude_dirs": [
+    ".git",
+    "node_modules",
+    "skills-library",
+    ".worktrees",
+    "logs",
+    "staging"
+  ],
+  "graph_version_policy": {
+    "hash_material": [
+      "skills.tmcp/**/*.md",
+      "skills.tmcp/graph.json",
+      "skills.lock"
+    ],
+    "large_drop_threshold": 0.3,
+    "fail_on_large_drop": true
+  },
+  "overlay_namespaces": [
+    "portable_dev_process"
+  ]
+}

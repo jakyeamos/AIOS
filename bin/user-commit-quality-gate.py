@@ -77,6 +77,13 @@ AIOS_ROOT = Path(__file__).resolve().parents[1]
 if str(AIOS_ROOT) not in sys.path:
     sys.path.insert(0, str(AIOS_ROOT))
 
+from services.quality_gate_audit import (  # noqa: E402
+    Decision,
+    GateDecision,
+    build_gate_audit_event,
+    quality_gate_decision,
+    safe_append_gate_audit_event,
+)
 from services.quality_gates import validate_commit_quality_gate  # noqa: E402
 
 
@@ -433,19 +440,127 @@ def run_gate(paths: Sequence[str] | None = None) -> list[Finding]:
     return findings
 
 
-def print_report(findings: Sequence[Finding]) -> None:
+def emit_audit_for_findings(
+    root: Path,
+    findings: Sequence[Finding],
+    *,
+    decision: GateDecision,
+) -> None:
+    is_blocking = decision == "block"
+    for finding in findings:
+        gate_name = "Pre-CR" if finding.rule.startswith("pre-cr") else "AIOS"
+        event_type = "iteration_forced" if gate_name == "Pre-CR" else "commit_blocked"
+        event_decision: Decision = (
+            "force_iteration" if is_blocking and gate_name == "Pre-CR" else decision
+        )
+        disposition = "blocked commit" if is_blocking else "warning only"
+        event = build_gate_audit_event(
+            repo_root=root,
+            gate=gate_name,
+            event_type=event_type,
+            severity="error" if is_blocking else "warning",
+            category=_audit_category(finding.rule),
+            rule_id=finding.rule,
+            rule_name=finding.rule.replace("-", " ").title(),
+            decision=event_decision,
+            summary=f"{gate_name} {disposition}: {finding.message}",
+            evidence=[
+                {
+                    "file": finding.path,
+                    "line_start": finding.line,
+                    "line_end": finding.line,
+                    "reason": finding.message,
+                }
+            ],
+            failure_pattern=_failure_pattern(finding.rule),
+            root_cause_hypothesis=_root_cause(finding.rule),
+            required_fix=finding.message,
+            learning_lesson=_learning_lesson(finding.rule),
+        )
+        try:
+            safe_append_gate_audit_event(root, event)
+        except OSError:
+            continue
+        except TypeError:
+            continue
+        except ValueError:
+            continue
+
+
+def print_report(findings: Sequence[Finding], *, decision: str = "block") -> None:
     if not findings:
         print("[PASS] User commit quality gate")
         return
-    print("[FAIL] User commit quality gate")
+    marker = "FAIL" if decision == "block" else "WARN"
+    print(f"[{marker}] User commit quality gate")
     for finding in findings:
         print(f"  - {finding.path}:{finding.line} [{finding.rule}] {finding.message}")
 
 
 def main() -> int:
     findings = run_gate()
-    print_report(findings)
-    return 1 if findings else 0
+    root = repo_root()
+    decision = quality_gate_decision(root) if findings else "block"
+    print_report(findings, decision=decision)
+    if findings:
+        emit_audit_for_findings(root, findings, decision=decision)
+    return 1 if findings and decision == "block" else 0
+
+
+def _audit_category(rule: str):
+    if "secret" in rule:
+        return "security"
+    if "test" in rule or "pre-cr" in rule:
+        return "test"
+    if "typescript" in rule:
+        return "typecheck"
+    if "package-manager" in rule or "conflict" in rule:
+        return "process"
+    if "oversized" in rule or "handler" in rule:
+        return "maintainability"
+    return "unknown"
+
+
+def _failure_pattern(rule: str) -> str:
+    patterns = {
+        "conflict-marker": "merge conflict marker staged for commit",
+        "secret-literal": "possible secret literal staged for commit",
+        "package-manager": "npm or yarn usage staged in pnpm repo",
+        "typescript-any": "production TypeScript used any",
+        "oversized-source": "source file exceeded size limit",
+        "weak-test": "test file lacked assertions",
+        "handler-before-send": "message handler registered before send",
+        "pre-cr-required": "source commit missing Pre-CR config",
+        "pre-cr-unavailable": "Pre-CR CLI unavailable for source commit",
+        "pre-cr-failed": "Pre-CR changed-line readiness failed",
+        "aios-quality-gate-failed": "AIOS allowlisted quality gate failed",
+    }
+    return patterns.get(rule, f"{rule} blocked commit")
+
+
+def _root_cause(rule: str) -> str:
+    if rule.startswith("pre-cr"):
+        return "The change reached commit readiness before Pre-CR coverage/setup requirements were satisfied."
+    if rule == "aios-quality-gate-failed":
+        return "An AIOS-controlled project quality command failed during the commit gate."
+    return "A staged change violated a deterministic commit quality rule."
+
+
+def _learning_lesson(rule: str) -> str:
+    lessons = {
+        "conflict-marker": "Search staged files for conflict markers before committing.",
+        "secret-literal": "Never stage secret-looking literals; move values to environment configuration.",
+        "package-manager": "Use pnpm only in JavaScript repos governed by AIOS.",
+        "typescript-any": "Use concrete TypeScript types before staging production code.",
+        "oversized-source": "Split oversized files by responsibility before committing.",
+        "weak-test": "Tests need behavior assertions; smoke-only files should be explicit.",
+        "handler-before-send": "Send before registering response handlers unless a documented runtime reason exists.",
+        "pre-cr-required": "Add `.pre-cr.json` before source commits so changed-line readiness can run.",
+        "pre-cr-unavailable": "Confirm the Pre-CR CLI is installed before source commits.",
+        "pre-cr-failed": "Run focused tests with coverage before committing changed source lines.",
+        "aios-quality-gate-failed": "Run the AIOS allowlisted quality gate locally before committing.",
+    }
+    return lessons.get(rule, "Fix deterministic gate findings before committing.")
 
 
 if __name__ == "__main__":

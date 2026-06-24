@@ -461,7 +461,14 @@
       "maturation_blockers": [
         "Fresh local and remote evidence still required before final adoption-ready status."
       ],
-      "strict_readiness_status": "evidence_required"
+      "strict_readiness_status": "evidence_required",
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project soundscape-app --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
     },
     {
       "project_id": "portfolio",
@@ -530,7 +537,14 @@
       "maturation_blockers": [
         "Fresh local evidence, coverage proof, and CI/default-branch proof are required before final adoption-ready status."
       ],
-      "strict_readiness_status": "blocked"
+      "strict_readiness_status": "blocked",
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project portfolio --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
     },
     {
       "project_id": "Terrace",
@@ -590,7 +604,14 @@
       "maturation_blockers": [
         "Missing substantive architecture boundary gate, passing dependency/security evidence, and fresh CI/default-branch proof."
       ],
-      "strict_readiness_status": "blocked"
+      "strict_readiness_status": "blocked",
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project Terrace --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
     },
     {
       "project_id": "aios",
@@ -655,7 +676,14 @@
       "strict_readiness_status": "evidence_required",
       "maturation_blockers": [
         "Fresh Phase 23 local quality-pipeline evidence, standards-health proof, and default-branch CI proof are required before final adoption-ready status; dirty-tree cleanup is deferred to closeout hygiene."
-      ]
+      ],
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project aios --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
     },
     {
       "project_id": "dispatches-from-cyberspace",
@@ -720,7 +748,14 @@
       "maturation_blockers": [
         "Substantive architecture rules, coverage proof, and fresh CI/default-branch proof are still required before final adoption-ready status."
       ],
-      "strict_readiness_status": "blocked"
+      "strict_readiness_status": "blocked",
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project dispatches-from-cyberspace --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
     },
     {
       "project_id": "remodelvision",
@@ -789,7 +824,14 @@
       "maturation_blockers": [
         "Substantive architecture proof, passing local evidence for all configured gates, and CI/default-branch proof are still required before final adoption-ready status."
       ],
-      "strict_readiness_status": "blocked"
+      "strict_readiness_status": "blocked",
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project remodelvision --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
     },
     {
       "project_id": "pre-cr-suite-lsp",
@@ -849,7 +891,14 @@
       "maturation_blockers": [
         "Missing substantive architecture boundary gate, passing dependency/security evidence, and fresh CI/default-branch proof."
       ],
-      "strict_readiness_status": "blocked"
+      "strict_readiness_status": "blocked",
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project pre-cr-suite-lsp --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
     },
     {
       "project_id": "Bballedu",
@@ -910,7 +959,14 @@
       "maturation_blockers": [
         "Substantive architecture rules, CI/default-branch proof, and coverage proof are still required before final adoption-ready status."
       ],
-      "strict_readiness_status": "blocked"
+      "strict_readiness_status": "blocked",
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project Bballedu --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
     },
     {
       "project_id": "tm",
@@ -971,7 +1027,14 @@
       "maturation_blockers": [
         "Substantive architecture rules, CI/default-branch proof, and coverage proof are still required before final adoption-ready status."
       ],
-      "strict_readiness_status": "blocked"
+      "strict_readiness_status": "blocked",
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project tm --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
     },
     {
       "project_id": "video-pipeline",
@@ -1080,7 +1143,14 @@
       "maturation_blockers": [
         "Substantive architecture proof, passing local evidence for all configured gates, and CI/default-branch proof are still required before final adoption-ready status."
       ],
-      "strict_readiness_status": "blocked"
+      "strict_readiness_status": "blocked",
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project amos-saas --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
     },
     {
       "project_id": "eslint-plugin-anti-slop",
@@ -1128,7 +1198,14 @@
       "maturation_blockers": [
         "Missing lint/typecheck/build scripts, substantive architecture boundary gate, passing dependency/security evidence, and fresh CI/default-branch proof."
       ],
-      "strict_readiness_status": "blocked"
+      "strict_readiness_status": "blocked",
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project eslint-plugin-anti-slop --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
     },
     {
       "project_id": "career-ops",
@@ -1186,7 +1263,14 @@
       "maturation_blockers": [
         "CI/default-branch proof, passing validation/Pre-CR evidence, and deeper architecture policy remain required before final adoption-ready status."
       ],
-      "strict_readiness_status": "blocked"
+      "strict_readiness_status": "blocked",
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project career-ops --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
     },
     {
       "project_id": "Dsci-proj",
@@ -1240,7 +1324,14 @@
       "maturation_blockers": [
         "Dashboard npm lockfile is canonical for the dashboard subproject; CI/default-branch proof plus passing lint/test/dependency/Pre-CR evidence remain required before final adoption-ready status."
       ],
-      "strict_readiness_status": "blocked"
+      "strict_readiness_status": "blocked",
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project Dsci-proj --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
     },
     {
       "project_id": "claude-improvement-lab",
@@ -1299,7 +1390,14 @@
       "maturation_blockers": [
         "Compile/structure checks replace py_compile-only floor proof, but benchmark tasks/tests, CI/default proof, and passing dependency evidence remain required before readiness."
       ],
-      "strict_readiness_status": "blocked"
+      "strict_readiness_status": "blocked",
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project claude-improvement-lab --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
     },
     {
       "project_id": "R-Project",
@@ -1350,7 +1448,14 @@
       "maturation_blockers": [
         "R structure and script validation are configured, but CI/default proof, reproducible dependency lock strategy, and passing local evidence remain required before readiness."
       ],
-      "strict_readiness_status": "blocked"
+      "strict_readiness_status": "blocked",
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project R-Project --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
     },
     {
       "project_id": "LIS",
@@ -1413,7 +1518,14 @@
       "maturation_blockers": [
         "CI/default-branch proof, passing lint/type/test/dependency evidence, and deeper architecture policy remain required before final adoption-ready status."
       ],
-      "strict_readiness_status": "blocked"
+      "strict_readiness_status": "blocked",
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project LIS --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
     },
     {
       "project_id": "csds391-s26-6",
@@ -1464,7 +1576,14 @@
       "maturation_blockers": [
         "Course structure validation replaces pre-cr-only floor proof, but assignment-specific tests/builds and CI/default or explicit non-remote exception remain required before readiness."
       ],
-      "strict_readiness_status": "blocked"
+      "strict_readiness_status": "blocked",
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project csds391-s26-6 --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
     },
     {
       "project_id": "manga-sync",
@@ -1515,7 +1634,14 @@
       "maturation_blockers": [
         "Reserved empty workspace has explicit README-only validation, but implementation files, data-sync tests, dependency contract, and CI/default or explicit inactive exception remain required before readiness."
       ],
-      "strict_readiness_status": "blocked"
+      "strict_readiness_status": "blocked",
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project manga-sync --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
     },
     {
       "project_id": "Vaults",
@@ -1570,7 +1696,14 @@
       "strict_readiness_status": "blocked",
       "maturation_blockers": [
         "Vault content validation is configured, but failing vault/protected-path evidence, Pre-CR status, and CI/default or explicit non-remote exception remain required before readiness."
-      ]
+      ],
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project Vaults --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
     },
     {
       "project_id": "agent-router",
@@ -1643,7 +1776,14 @@
       "strict_readiness_status": "blocked",
       "maturation_blockers": [
         "Child ownership is documented and aggregate delegated validation is configured, but any failing child Pre-CR evidence plus CI/default or explicit non-remote exception remain required before readiness."
-      ]
+      ],
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project BBDSE --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
     },
     {
       "project_id": "Fantasy",
@@ -1693,7 +1833,14 @@
       "maturation_blockers": [
         "Aggregate backend/frontend validation is configured, but CI/default-branch proof plus passing aggregate test/validation/dependency evidence remain required before final adoption-ready status."
       ],
-      "strict_readiness_status": "blocked"
+      "strict_readiness_status": "blocked",
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project Fantasy --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
     }
   ]
 }

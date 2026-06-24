@@ -2,6 +2,40 @@
 
 This repository uses AIOS-managed success criteria as a first-class completion gate.
 
+## Codex AIOS Shadow And Command Trigger
+
+Shadow every non-trivial Codex task through AIOS, even when the user does not type `/aios`. Do not route the baseline task through AIOS just because ordinary prose mentions AIOS; governed AIOS routing still requires an explicit command prefix.
+
+For ordinary non-`/aios` tasks, create the shadow lane before doing non-trivial work:
+
+```bash
+python3 /Users/jakyeamos/AIOS/scripts/codex-aios-shadow.py "<objective>"
+```
+
+This keeps the current workspace as the baseline source of truth and creates an isolated AIOS shadow worktree for comparison. The returned AIOS route, packet, and shadow metadata are evidence only for ordinary tasks; continue the baseline implementation normally unless the user explicitly requested `/aios`. Do not merge, copy, or promote shadow output into the baseline workspace without explicit user review.
+
+When a Codex prompt starts with `/aios`, route the baseline task through AIOS before doing non-trivial work and create the same shadow lane automatically:
+
+```bash
+python3 /Users/jakyeamos/AIOS/scripts/codex-aios-shadow.py "<objective>" --governed-route
+```
+
+Use the command body, without the `/aios` prefix, as the objective. Infer the project from the current working directory when possible; otherwise use the explicit project name/id in the prompt.
+
+Only use route-only mode when the prompt starts with `/aios-route-only`. In that case, run:
+
+```bash
+python3 /Users/jakyeamos/AIOS/scripts/codex-aios-route.py "<objective>"
+```
+
+If the prompt names a project while the current working directory is AIOS, pass it explicitly:
+
+```bash
+python3 /Users/jakyeamos/AIOS/scripts/codex-aios-route.py "<objective>" --project "<project name or id>"
+```
+
+Treat the returned run, route, packet, and shadow metadata as the task's governing context only for `/aios` prompts. For ordinary prompts, use the returned metadata only as comparison evidence for AIOS usefulness. After implementation, inspect the run with `operator-search`, `daily-flow`, and `next-action` using the commands returned by the helper. If automatic shadow creation fails, report the AIOS error and continue only if the user explicitly accepts an unshadowed run; if governed `/aios` routing fails or blocks, stop and report the AIOS error instead of bypassing the route unless the user explicitly says to bypass AIOS.
+
 ## AIOS Context Compiler Bootloader
 
 Before non-trivial execution, compile or follow the smallest sufficient context packet:
@@ -358,20 +392,6 @@ The primary user is your agents. Over time, the project should become strong eno
 
 No project skills found. Add skills to any of: `.claude/skills/`, `.agents/skills/`, `.cursor/skills/`, `.github/skills/`, or `.codex/skills/` with a `SKILL.md` index file.
 <!-- GSD:skills-end -->
-
-<!-- GSD:workflow-start source:GSD defaults -->
-## GSD Workflow Enforcement
-
-Before using Edit, Write, or other file-changing tools, start work through a GSD command so planning artifacts and execution context stay in sync.
-
-Use these entry points:
-- `/gsd-quick` for small fixes, doc updates, and ad-hoc tasks
-- `/gsd-debug` for investigation and bug fixing
-- `/gsd-execute-phase` for planned phase work
-
-Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
-<!-- GSD:workflow-end -->
-
 <!-- GSD:profile-start -->
 ## Developer Profile
 

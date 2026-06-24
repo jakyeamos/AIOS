@@ -1,0 +1,80 @@
+{
+  "schema": "tmcp-golden-prompts-v0.1",
+  "description": "Golden prompt fixtures for checking TMCP behavior-atom coverage and packet quality against flat skill loading.",
+  "cases": [
+    {
+      "id": "implementation_with_tests",
+      "prompt": "Implement the feature and run the relevant tests.",
+      "expected_task": "implementation",
+      "required_behavior_atoms": ["change_execution", "verification_gate"],
+      "expected_nodes": ["@task:implementation", "@module:test_gate"],
+      "forbidden_behavior_atoms": ["source_grounding"]
+    },
+    {
+      "id": "debug_reproduce_first",
+      "prompt": "Debug the failing command, reproduce the failure, and fix the root cause.",
+      "expected_task": "debugging",
+      "required_behavior_atoms": ["reproduce_first", "root_cause_analysis", "verification_gate"],
+      "expected_nodes": ["@task:debugging", "@module:test_gate"],
+      "forbidden_behavior_atoms": ["citation_discipline"]
+    },
+    {
+      "id": "visual_polish",
+      "prompt": "Make this generated SaaS dashboard feel visually polished and verify it in the browser.",
+      "expected_task": "visual_polish",
+      "required_behavior_atoms": ["ui_quality", "visual_verification"],
+      "expected_nodes": ["@task:visual_polish"],
+      "forbidden_behavior_atoms": ["source_grounding"]
+    },
+    {
+      "id": "operating_language",
+      "prompt": "Update the operating language and canonical vocabulary for this skill graph.",
+      "expected_task": "agent_workflow",
+      "required_behavior_atoms": ["canonical_vocabulary", "term_consistency"],
+      "expected_nodes": ["@module:operating_language"],
+      "forbidden_behavior_atoms": []
+    },
+    {
+      "id": "planning_with_acceptance",
+      "prompt": "Create an execution-ready phase plan with acceptance criteria.",
+      "expected_task": "planning",
+      "required_behavior_atoms": ["execution_ready_plan", "acceptance_criteria"],
+      "expected_nodes": ["@task:planning"],
+      "forbidden_behavior_atoms": []
+    },
+    {
+      "id": "research_with_sources",
+      "prompt": "Research the current guidance and cite authoritative sources.",
+      "expected_task": "research",
+      "required_behavior_atoms": ["source_grounding", "citation_discipline"],
+      "expected_nodes": ["@task:research"],
+      "forbidden_behavior_atoms": ["change_execution"]
+    }
+  ],
+  "negative_cases": [
+    {
+      "id": "backend_fix_no_visual_polish",
+      "prompt": "Fix the backend validation bug and run the focused unit test.",
+      "forbidden_behavior_atoms": ["ui_quality", "visual_verification"],
+      "forbidden_node_prefixes": ["@namespace:portable_dev_process/@task:visual_polish"]
+    },
+    {
+      "id": "local_edit_no_source_grounding",
+      "prompt": "Rename this local helper and update the direct call sites.",
+      "forbidden_behavior_atoms": ["source_grounding", "citation_discipline"],
+      "forbidden_node_prefixes": []
+    },
+    {
+      "id": "generic_implementation_no_expensive_source_skill",
+      "prompt": "Implement the feature and run tests.",
+      "forbidden_behavior_atoms": [],
+      "forbidden_node_prefixes": ["@source_skill:"]
+    },
+    {
+      "id": "planning_no_overlay_without_added_behavior",
+      "prompt": "Plan a small internal refactor with acceptance criteria.",
+      "forbidden_behavior_atoms": [],
+      "forbidden_node_prefixes": ["@namespace:portable_dev_process/"]
+    }
+  ]
+}

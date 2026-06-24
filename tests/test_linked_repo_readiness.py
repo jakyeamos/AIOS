@@ -138,6 +138,28 @@ def test_missing_ci_without_exception_records_blocker(tmp_path: Path) -> None:
     assert "ci" in portfolio["missing_gate_keys"]
 
 
+def test_non_remote_ci_exception_requires_local_ci_evidence(tmp_path: Path) -> None:
+    config_path = _write_config(tmp_path / "quality-pipeline.json")
+    payload = json.loads(config_path.read_text())
+    portfolio = next(project for project in payload["projects"] if project["project_id"] == "portfolio")
+    portfolio["non_remote_ci_exception"] = {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained.",
+        "review_date": "2026-06-24",
+        "local_proof_command": "python3 scripts/linked-repo-quality-runner.py --project portfolio --gate ci",
+        "replacement_path": "quality_pipeline_runs.ci",
+    }
+    config_path.write_text(json.dumps(payload), encoding="utf-8")
+    conn = _conn(tmp_path)
+
+    report = phase24_readiness_report(conn, config_path=config_path)
+    portfolio = next(project for project in report["projects"] if project["project_id"] == "portfolio")
+
+    assert portfolio["verdict"] == "blocked"
+    assert "ci_default_proof_missing" not in portfolio["blockers"]
+    assert "ci" in portfolio["missing_gate_keys"]
+
+
 def test_runner_rejects_agent_router_and_unknown_projects(tmp_path: Path) -> None:
     config_path = _write_config(tmp_path / "quality-pipeline.json")
     script = ROOT / "scripts" / "linked-repo-quality-runner.py"
@@ -251,3 +273,5 @@ def test_readiness_report_real_config_has_21_targets_and_deprecated_repos_exclud
     ]
     placeholder_rows = conn.execute("SELECT COUNT(*) FROM projects WHERE repo_path = ''").fetchone()[0]
     assert placeholder_rows == 0
+    assert all("ci_default_proof_missing" not in project["blockers"] for project in report["projects"])
+    assert all("ci" in project["missing_gate_keys"] for project in report["projects"])

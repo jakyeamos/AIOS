@@ -17,6 +17,7 @@ BENCHMARK_CONDITIONS = (
     "baseline",
     "flat_skills",
     "tmcp_cold_start",
+    "tmcp_behavior_optimized",
     "tmcp_validated_shortcut",
 )
 SHORTCUT_STATES = (
@@ -507,8 +508,11 @@ def aggregate_results(*, output_root: Path) -> dict[str, object]:
     for baseline_condition, challenger_condition in (
         ("baseline", "flat_skills"),
         ("flat_skills", "tmcp_cold_start"),
-        ("tmcp_cold_start", "tmcp_validated_shortcut"),
+        ("flat_skills", "tmcp_behavior_optimized"),
+        ("tmcp_cold_start", "tmcp_behavior_optimized"),
+        ("tmcp_behavior_optimized", "tmcp_validated_shortcut"),
         ("baseline", "tmcp_cold_start"),
+        ("baseline", "tmcp_behavior_optimized"),
         ("baseline", "tmcp_validated_shortcut"),
         ("flat_skills", "tmcp_validated_shortcut"),
     ):
@@ -524,12 +528,56 @@ def aggregate_results(*, output_root: Path) -> dict[str, object]:
         "conditions": summaries,
         "comparisons": comparisons,
         "claim_policy": "Speed or token claims require task completion and quality non-inferiority.",
+        "claim_gate": tmcp_claim_gate(runs),
     }
     tables_dir = benchmark_root / "analysis" / "tables"
     tables_dir.mkdir(parents=True, exist_ok=True)
     _write_json(tables_dir / "condition-summary.json", payload)
     _write_report_summaries(benchmark_root, payload)
     return payload
+
+
+def tmcp_claim_gate(runs: list[dict[str, object]]) -> dict[str, object]:
+    by_condition: dict[str, list[dict[str, object]]] = {}
+    for run in runs:
+        by_condition.setdefault(str(run.get("condition_actual")), []).append(run)
+    baseline = by_condition.get("flat_skills") or by_condition.get("baseline") or []
+    optimized = by_condition.get("tmcp_behavior_optimized") or by_condition.get("tmcp_cold_start") or []
+    shortcut = by_condition.get("tmcp_validated_shortcut") or []
+    if not baseline or not optimized:
+        return {
+            "schema": "tmcp-claim-gate-v0.1",
+            "claim_allowed": False,
+            "reason": "missing_baseline_or_tmcp_condition",
+        }
+    comparison = _comparison_summary(baseline, optimized)
+    baseline_missed = _missed_requirement_rate(baseline)
+    optimized_missed = _missed_requirement_rate(optimized)
+    shortcut_separated = bool(shortcut) and optimized is not shortcut
+    token_ok = bool(comparison["token_claim_allowed"])
+    missed_ok = optimized_missed <= baseline_missed
+    claim_allowed = bool(comparison["quality_claim_allowed"] and token_ok and missed_ok and shortcut_separated)
+    if not comparison["quality_claim_allowed"]:
+        reason = "quality_or_completion_regression"
+    elif not token_ok:
+        reason = "token_usage_not_lower"
+    elif not missed_ok:
+        reason = "missed_requirement_rate_worse"
+    elif not shortcut_separated:
+        reason = "shortcut_condition_not_separated"
+    else:
+        reason = "quality_noninferior_token_positive_missed_requirements_nonregressive"
+    return {
+        "schema": "tmcp-claim-gate-v0.1",
+        "claim_allowed": claim_allowed,
+        "reason": reason,
+        "quality_claim_allowed": comparison["quality_claim_allowed"],
+        "token_claim_allowed": token_ok,
+        "baseline_missed_requirement_rate": baseline_missed,
+        "tmcp_missed_requirement_rate": optimized_missed,
+        "shortcut_condition_separated": shortcut_separated,
+        "comparison": comparison,
+    }
 
 
 def _repository_record(repo_path: Path) -> dict[str, object]:
@@ -1089,6 +1137,7 @@ def _condition_token_payload(condition: str, task: dict[str, object]) -> dict[st
         "baseline": 0,
         "flat_skills": 1400,
         "tmcp_cold_start": 900,
+        "tmcp_behavior_optimized": 650,
         "tmcp_validated_shortcut": 450,
     }.get(condition, 0)
     expected_modules = _string_list(task.get("expected_tmcp_route"))
@@ -1206,6 +1255,21 @@ def _total_tokens(run: dict[str, object]) -> int | None:
     if isinstance(input_tokens, int | float) and isinstance(output_tokens, int | float):
         return int(input_tokens + output_tokens)
     return None
+
+
+def _missed_requirement_rate(runs: list[dict[str, object]]) -> float:
+    if not runs:
+        return 0.0
+    missed = 0
+    for run in runs:
+        value = run.get("missed_requirement_count")
+        if isinstance(value, int | float):
+            missed += int(value)
+            continue
+        omissions = run.get("omitted_requirements")
+        if isinstance(omissions, list):
+            missed += len(omissions)
+    return round(missed / len(runs), 4)
 
 
 def _delta(baseline: object, challenger: object) -> float | None:

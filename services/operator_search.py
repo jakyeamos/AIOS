@@ -334,6 +334,7 @@ def _search_writebacks(
         columns=(
             "id, title, summary, "
             f"{_selectable(columns, 'project_id', 'NULL')}, "
+            f"{_selectable(columns, 'run_id', 'NULL')}, "
             f"{_selectable(columns, 'layer_key')}, "
             f"{_selectable(columns, 'status')}, {last_expr} AS last_updated_at"
         ),
@@ -353,12 +354,13 @@ def _search_writebacks(
             query=query,
             key=_text_or_empty(row["layer_key"] or row["id"]),
             now=now,
-            metadata={"status": row["status"], "layer_key": row["layer_key"]},
+            metadata={"status": row["status"], "layer_key": row["layer_key"], "run_id": row["run_id"]},
         )
         for row in rows
         if _matches_query(
             query,
             _text_or_empty(row["id"]),
+            _text_or_empty(row["run_id"]),
             _text_or_empty(row["title"]),
             _text_or_empty(row["summary"]),
             _text_or_empty(row["layer_key"]),
@@ -373,33 +375,67 @@ def _search_findings(
         logger.debug("operator_search: success_criteria_findings table missing; skipping")
         return []
     columns = _table_columns(conn, "success_criteria_findings")
-    last_expr = _last_updated_expr(columns)
-    message_column = (
-        "message" if "message" in columns else "summary" if "summary" in columns else "''"
+    has_direct_run = "run_id" in columns
+    has_evaluations = _safe_table_exists(conn, "success_criteria_evaluations")
+    evaluation_columns = _table_columns(conn, "success_criteria_evaluations")
+    message_expr = (
+        "f.message" if "message" in columns else "f.summary" if "summary" in columns else "''"
     )
+    run_expr = "f.run_id" if has_direct_run else "e.run_id"
+    project_expr = (
+        "f.project_id"
+        if "project_id" in columns
+        else "e.project_id"
+        if has_evaluations and "project_id" in evaluation_columns
+        else "NULL"
+    )
+    last_expr = (
+        "f.updated_at"
+        if "updated_at" in columns
+        else "f.created_at"
+        if "created_at" in columns
+        else "''"
+    )
+    join = (
+        " LEFT JOIN success_criteria_evaluations e ON e.id = f.evaluation_id"
+        if not has_direct_run and has_evaluations and "evaluation_id" in columns
+        else ""
+    )
+    where = ""
+    params: tuple[Any, ...] = ()
+    if project_id and project_expr != "NULL":
+        where = f" WHERE {project_expr} = ?"
+        params = (project_id,)
+    criterion_expr = "f.criterion_id" if "criterion_id" in columns else "''"
+    level_expr = "f.level" if "level" in columns else "''"
     rows = _fetch_rows(
         conn,
-        table="success_criteria_findings",
+        table=f"success_criteria_findings f{join}",
         columns=(
-            f"id, {_selectable(columns, 'run_id', 'NULL')}, "
-            f"{_selectable(columns, 'criterion_id')}, "
-            f"{_selectable(columns, 'level')}, {message_column} AS message, "
+            "f.id AS id, "
+            f"{run_expr} AS run_id, "
+            f"{project_expr} AS project_id, "
+            f"{criterion_expr} AS criterion_id, "
+            f"{level_expr} AS level, "
+            f"{message_expr} AS message, "
             f"{last_expr} AS last_updated_at"
         ),
+        where=where,
+        params=params,
         order_expr="last_updated_at",
     )
     hits = []
     for row in rows:
         title = f"{_text_or_empty(row['level'])} {_text_or_empty(row['criterion_id'])}".strip()
         summary = _text_or_empty(row["message"])
-        if _matches_query(query, _text_or_empty(row["id"]), title, summary):
+        if _matches_query(query, _text_or_empty(row["id"]), _text_or_empty(row["run_id"]), title, summary):
             hits.append(
                 _make_hit(
                     kind="finding",
                     id_=_text_or_empty(row["id"]),
                     title=title or _text_or_empty(row["id"]),
                     summary=summary,
-                    project_id=None,
+                    project_id=row["project_id"],
                     source_table="success_criteria_findings",
                     last_updated_at=_text_or_empty(row["last_updated_at"]),
                     query=query,

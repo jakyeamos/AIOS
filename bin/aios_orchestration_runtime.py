@@ -32,6 +32,12 @@ def now_iso() -> str:
     return datetime.now(UTC).isoformat()
 
 
+def _ensure_column(conn: sqlite3.Connection, table: str, column: str, definition: str) -> None:
+    existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+    if column not in existing:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
+
 def _table_has_column(
     conn: sqlite3.Connection,
     table_name: str,
@@ -256,6 +262,11 @@ def ensure_runtime_schema(conn: sqlite3.Connection) -> None:
             selected_nodes_json TEXT NOT NULL DEFAULT '[]',
             skipped_nodes_json TEXT NOT NULL DEFAULT '[]',
             token_estimates_json TEXT NOT NULL DEFAULT '{}',
+            node_usefulness_json TEXT NOT NULL DEFAULT '{}',
+            omitted_requirements_json TEXT NOT NULL DEFAULT '[]',
+            adherence_json TEXT NOT NULL DEFAULT '{}',
+            phase TEXT,
+            domain TEXT,
             execution_outcome TEXT NOT NULL DEFAULT 'pending',
             validation_evidence_json TEXT NOT NULL DEFAULT '[]',
             created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
@@ -272,6 +283,56 @@ def ensure_runtime_schema(conn: sqlite3.Connection) -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_tmcp_traversal_receipts_fingerprint
           ON tmcp_traversal_receipts(traversal_fingerprint, created_at DESC)
+        """
+    )
+    _ensure_column(conn, "tmcp_traversal_receipts", "node_usefulness_json", "TEXT NOT NULL DEFAULT '{}'")
+    _ensure_column(conn, "tmcp_traversal_receipts", "omitted_requirements_json", "TEXT NOT NULL DEFAULT '[]'")
+    _ensure_column(conn, "tmcp_traversal_receipts", "adherence_json", "TEXT NOT NULL DEFAULT '{}'")
+    _ensure_column(conn, "tmcp_traversal_receipts", "phase", "TEXT")
+    _ensure_column(conn, "tmcp_traversal_receipts", "domain", "TEXT")
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS tmcp_receipt_events (
+            id TEXT PRIMARY KEY,
+            receipt_id TEXT REFERENCES tmcp_traversal_receipts(id),
+            run_id TEXT,
+            invocation_id TEXT,
+            event_type TEXT NOT NULL,
+            node TEXT,
+            behavior_atom TEXT,
+            summary TEXT NOT NULL,
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_tmcp_receipt_events_receipt
+          ON tmcp_receipt_events(receipt_id, created_at)
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS tmcp_intervention_events (
+            id TEXT PRIMARY KEY,
+            receipt_id TEXT REFERENCES tmcp_traversal_receipts(id),
+            run_id TEXT,
+            invocation_id TEXT,
+            intervention_type TEXT NOT NULL,
+            node TEXT,
+            behavior_atom TEXT,
+            summary TEXT NOT NULL,
+            outcome TEXT NOT NULL DEFAULT 'recorded',
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_tmcp_intervention_events_receipt
+          ON tmcp_intervention_events(receipt_id, created_at)
         """
     )
     conn.execute(

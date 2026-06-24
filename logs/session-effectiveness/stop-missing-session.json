@@ -1,7 +1,7 @@
 {
   "receipt_type": "session_effectiveness",
   "session_id": "stop-missing-session",
-  "project_id": "c51b694472805f4c",
+  "project_id": "187bffa628cae189",
   "project_name": "repo",
   "run_id": null,
   "invocation_id": null,
@@ -58,6 +58,6 @@
     "No durable artifacts were captured.",
     "No session handoff was found."
   ],
-  "generated_at": "2026-06-01T22:22:32.006519+00:00",
+  "generated_at": "2026-06-24T03:11:07.599216+00:00",
   "receipt_path": "/Users/jakyeamos/AIOS/logs/session-effectiveness/stop-missing-session.json"
 }

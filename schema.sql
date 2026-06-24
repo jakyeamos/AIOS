@@ -367,6 +367,11 @@ CREATE TABLE tmcp_traversal_receipts (
   selected_nodes_json TEXT NOT NULL DEFAULT '[]',
   skipped_nodes_json TEXT NOT NULL DEFAULT '[]',
   token_estimates_json TEXT NOT NULL DEFAULT '{}',
+  node_usefulness_json TEXT NOT NULL DEFAULT '{}',
+  omitted_requirements_json TEXT NOT NULL DEFAULT '[]',
+  adherence_json TEXT NOT NULL DEFAULT '{}',
+  phase TEXT,
+  domain TEXT,
   execution_outcome TEXT NOT NULL DEFAULT 'pending',
   validation_evidence_json TEXT NOT NULL DEFAULT '[]',
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
@@ -375,6 +380,35 @@ CREATE INDEX idx_tmcp_traversal_receipts_run
   ON tmcp_traversal_receipts(run_id, created_at DESC);
 CREATE INDEX idx_tmcp_traversal_receipts_fingerprint
   ON tmcp_traversal_receipts(traversal_fingerprint, created_at DESC);
+CREATE TABLE tmcp_receipt_events (
+  id TEXT PRIMARY KEY,
+  receipt_id TEXT REFERENCES tmcp_traversal_receipts(id),
+  run_id TEXT,
+  invocation_id TEXT,
+  event_type TEXT NOT NULL,
+  node TEXT,
+  behavior_atom TEXT,
+  summary TEXT NOT NULL,
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX idx_tmcp_receipt_events_receipt
+  ON tmcp_receipt_events(receipt_id, created_at);
+CREATE TABLE tmcp_intervention_events (
+  id TEXT PRIMARY KEY,
+  receipt_id TEXT REFERENCES tmcp_traversal_receipts(id),
+  run_id TEXT,
+  invocation_id TEXT,
+  intervention_type TEXT NOT NULL,
+  node TEXT,
+  behavior_atom TEXT,
+  summary TEXT NOT NULL,
+  outcome TEXT NOT NULL DEFAULT 'recorded',
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+);
+CREATE INDEX idx_tmcp_intervention_events_receipt
+  ON tmcp_intervention_events(receipt_id, created_at);
 CREATE TABLE briefing_packets (
   id TEXT PRIMARY KEY,
   run_id TEXT NOT NULL REFERENCES orchestration_runs(id),
@@ -1257,3 +1291,73 @@ CREATE TABLE IF NOT EXISTS shadow_candidates (
   state_updated_at TEXT,
   created_at TEXT
 );
+CREATE TABLE IF NOT EXISTS context_loop_runs (
+  id TEXT PRIMARY KEY,
+  created_at TEXT NOT NULL,
+  workflow TEXT NOT NULL,
+  task_type TEXT NOT NULL,
+  task_input_hash TEXT NOT NULL,
+  triggering_event TEXT NOT NULL,
+  prompt_version TEXT NOT NULL,
+  guidance_version TEXT NOT NULL,
+  retrieved_context_json TEXT NOT NULL DEFAULT '[]',
+  context_sources_json TEXT NOT NULL DEFAULT '[]',
+  approved_lessons_json TEXT NOT NULL DEFAULT '[]',
+  generated_output_hash TEXT NOT NULL,
+  generated_output TEXT NOT NULL,
+  uncertainty_flags_json TEXT NOT NULL DEFAULT '[]',
+  unsupported_claims_json TEXT NOT NULL DEFAULT '[]',
+  assumptions_json TEXT NOT NULL DEFAULT '[]',
+  handoff_notes TEXT NOT NULL,
+  reversible_artifact_json TEXT NOT NULL DEFAULT '{}'
+);
+CREATE TABLE IF NOT EXISTS context_loop_review_events (
+  id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL REFERENCES context_loop_runs(id),
+  created_at TEXT NOT NULL,
+  review_outcome TEXT NOT NULL,
+  original_output_hash TEXT NOT NULL,
+  final_output_hash TEXT,
+  final_output TEXT,
+  diff_text TEXT NOT NULL,
+  edit_distance_ratio REAL NOT NULL,
+  reviewer_notes TEXT NOT NULL,
+  metadata_json TEXT NOT NULL DEFAULT '{}'
+);
+CREATE TABLE IF NOT EXISTS context_loop_learning_candidates (
+  id TEXT PRIMARY KEY,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  workflow TEXT NOT NULL,
+  review_event_id TEXT NOT NULL REFERENCES context_loop_review_events(id),
+  observed_pattern TEXT NOT NULL,
+  likely_interpretation TEXT NOT NULL,
+  confidence REAL NOT NULL,
+  affected_workflow TEXT NOT NULL,
+  proposed_change TEXT NOT NULL,
+  help_reason TEXT NOT NULL,
+  destination TEXT NOT NULL,
+  category TEXT NOT NULL,
+  evidence_json TEXT NOT NULL DEFAULT '[]',
+  status TEXT NOT NULL DEFAULT 'candidate',
+  decision_note TEXT,
+  decided_by TEXT,
+  decided_at TEXT,
+  applied_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_context_loop_runs_workflow
+  ON context_loop_runs(workflow, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_context_loop_reviews_run
+  ON context_loop_review_events(run_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_context_loop_candidates_status
+  ON context_loop_learning_candidates(status, created_at DESC);
+CREATE TABLE IF NOT EXISTS project_inventory_hygiene_events (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL REFERENCES projects(id),
+  old_status TEXT NOT NULL,
+  new_status TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_project_inventory_hygiene_events_project
+  ON project_inventory_hygiene_events(project_id, created_at DESC);

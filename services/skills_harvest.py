@@ -8,12 +8,15 @@ import subprocess
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 COMPILER_VERSION = "skills-harvest-v0.1"
 TMCP_DESIGN_DECISION_ID = "tmcp-decision-graph-v0.2"
 TMCP_TRAVERSAL_ACTIONS = ("LOAD", "CONSIDER", "USE", "SKIP", "EXIT", "WHY", "EVIDENCE", "OUTCOME")
+ROOT = Path(__file__).resolve().parents[1]
+BEHAVIOR_ATOM_REGISTRY_PATH = ROOT / "config" / "tmcp" / "behavior-atoms.json"
 
 SOURCE_CANDIDATE_NAMES = {
     "AGENTS.md",
@@ -112,16 +115,88 @@ SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("openai_key", re.compile(r"\bsk-[A-Za-z0-9_\-]{20,}\b")),
     ("connection_string", re.compile(r"(?i)\b(postgres|mysql|mongodb|redis)://[^\s)>\"]+")),
 )
+DEFAULT_GRAPH_PROFILE_PATH = Path("config/tmcp/canonical-graph.json")
 TASK_KEYWORDS = {
     "audit": ("audit", "review", "inspect", "evaluate"),
     "implementation": ("implement", "edit", "patch", "fix", "refactor", "build"),
-    "planning": ("plan", "roadmap", "phase", "acceptance"),
+    "planning": ("plan", "roadmap", "phase", "acceptance", "strategy", "strategies", "promotion", "compare"),
     "research": ("research", "investigate", "source", "citation"),
     "debugging": ("debug", "bug", "root cause", "failure"),
     "testing": ("test", "verify", "validate", "quality gate"),
     "documentation": ("document", "readme", "docs", "writeback"),
     "agent_workflow": ("agent", "workflow", "routing", "skill", "prompt", "tmcp", "gsd"),
+    "visual_polish": (
+        "visual polish",
+        "product ui polish",
+        "enterprise saas",
+        "dashboard polish",
+        "ai ui",
+        "realistic demo data",
+        "generic shadcn",
+    ),
 }
+
+FALLBACK_BEHAVIOR_ATOMS: dict[str, list[str]] = {
+    "context_gathering": ["context_selection", "minimal_context"],
+    "evidence_first": ["read_before_edit", "evidence_trace"],
+    "minimal_patch_policy": ["bounded_change", "avoid_speculative_abstraction"],
+    "test_gate": ["verification_gate", "claim_evidence"],
+    "output_contract": ["clear_closeout", "validation_reporting"],
+    "user_approval_gate": ["approval_before_risk", "destructive_action_guard"],
+    "tool_use_policy": ["tool_safety", "command_policy"],
+    "provenance_policy": ["provenance_trace", "source_tier_precedence"],
+    "operating_language": ["canonical_vocabulary", "term_consistency"],
+    "direct_implementation": ["direct_execution_permission"],
+    "approval_before_edit": ["approval_before_edit"],
+    "ambiguous_task_resolution": ["ambiguity_clarification"],
+    "conflict__editing_permission": ["conflict_branch_selection"],
+    "implementation": ["change_execution", "verification_gate"],
+    "debugging": ["reproduce_first", "root_cause_analysis"],
+    "audit": ["risk_review", "finding_evidence"],
+    "visual_polish": ["ui_quality", "visual_verification"],
+    "planning": ["execution_ready_plan", "acceptance_criteria"],
+    "research": ["source_grounding", "citation_discipline"],
+    "testing": ["test_authoring", "verification_gate"],
+    "documentation": ["truth_update", "doc_staleness_check"],
+    "agent_workflow": ["skill_routing", "workflow_selection"],
+}
+
+
+@lru_cache(maxsize=1)
+def _behavior_atom_registry() -> dict[str, Any]:
+    if not BEHAVIOR_ATOM_REGISTRY_PATH.exists():
+        return {
+            "schema": "tmcp-behavior-atoms-fallback",
+            "atoms": {},
+            "node_mappings": FALLBACK_BEHAVIOR_ATOMS,
+            "semantic_section_labels": {},
+        }
+    try:
+        parsed = json.loads(BEHAVIOR_ATOM_REGISTRY_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {
+            "schema": "tmcp-behavior-atoms-fallback",
+            "atoms": {},
+            "node_mappings": FALLBACK_BEHAVIOR_ATOMS,
+            "semantic_section_labels": {},
+        }
+    if not isinstance(parsed, dict):
+        return {
+            "schema": "tmcp-behavior-atoms-fallback",
+            "atoms": {},
+            "node_mappings": FALLBACK_BEHAVIOR_ATOMS,
+            "semantic_section_labels": {},
+        }
+    return parsed
+
+
+def _behavior_atom_mappings() -> dict[str, list[str]]:
+    mappings = _dict(_behavior_atom_registry().get("node_mappings"))
+    normalized: dict[str, list[str]] = {}
+    for key, value in mappings.items():
+        if isinstance(key, str):
+            normalized[key] = [str(item) for item in _string_list(value)]
+    return normalized or FALLBACK_BEHAVIOR_ATOMS
 
 
 @dataclass(frozen=True)
@@ -138,6 +213,7 @@ class HarvestOptions:
     interactive: bool = False
     report_only: bool = False
     force: bool = False
+    graph_profile_path: Path | None = None
 
 
 @dataclass
@@ -172,8 +248,39 @@ class SkillGroup:
     classifications: list[str]
 
 
+def _load_graph_profile(path: Path | None) -> dict[str, Any]:
+    profile_path = path or DEFAULT_GRAPH_PROFILE_PATH
+    if not profile_path.exists():
+        return {
+            "schema": "tmcp-canonical-graph-profile-v0.1",
+            "profile_id": "default",
+            "output_path": "skills-library",
+            "source_roots": [],
+            "overlay_namespaces": [],
+            "graph_version_policy": {
+                "large_drop_threshold": 0.3,
+                "fail_on_large_drop": True,
+            },
+        }
+    parsed = json.loads(profile_path.read_text(encoding="utf-8"))
+    if not isinstance(parsed, dict):
+        raise ValueError(f"Invalid TMCP graph profile: {profile_path}")
+    return {
+        "schema": str(parsed.get("schema", "tmcp-canonical-graph-profile-v0.1")),
+        "profile_id": str(parsed.get("profile_id", "default")),
+        "description": str(parsed.get("description", "")),
+        "output_path": str(parsed.get("output_path", "skills-library")),
+        "source_roots": _string_list(parsed.get("source_roots")),
+        "exclude_dirs": _string_list(parsed.get("exclude_dirs")),
+        "overlay_namespaces": _string_list(parsed.get("overlay_namespaces")),
+        "graph_version_policy": _dict(parsed.get("graph_version_policy")),
+        "profile_path": str(profile_path),
+    }
+
+
 def harvest_skills_library(options: HarvestOptions) -> dict[str, Any]:
     started_at = _now()
+    graph_profile = _load_graph_profile(options.graph_profile_path)
     roots = tuple(path.expanduser().resolve() for path in options.roots)
     out = options.out.expanduser().resolve()
     candidates, skipped = discover_candidates(
@@ -184,7 +291,15 @@ def harvest_skills_library(options: HarvestOptions) -> dict[str, Any]:
     classified = [_classify_candidate(candidate) for candidate in candidates]
     duplicate_groups = _duplicate_groups(classified)
     conflicts = _detect_conflicts(classified)
-    generation = _plan_generation(classified, duplicate_groups, conflicts, out, started_at, options)
+    generation = _plan_generation(
+        classified,
+        duplicate_groups,
+        conflicts,
+        out,
+        started_at,
+        options,
+        graph_profile,
+    )
 
     git_result: dict[str, Any] = {"initialized": False, "committed": False, "pushed": False}
     if not options.dry_run:
@@ -217,6 +332,8 @@ def harvest_skills_library(options: HarvestOptions) -> dict[str, Any]:
         "report_only": options.report_only,
         "tmcp_enabled": options.tmcp,
         "source_tiers": dict(sorted(Counter(item.source_tier for item in classified).items())),
+        "graph_profile": graph_profile,
+        "graph_diff": generation["graph_diff"],
     }
     return {
         "summary": summary,
@@ -342,6 +459,24 @@ def validate_generated_library(
         "skills.tmcp/shortcuts/candidate.md" in files,
         "Shortcut promotion policy is generated.",
     )
+    check(
+        "tmcp-graph-json",
+        "skills.tmcp/graph.json" in files,
+        "Structured TMCP graph metadata is generated.",
+    )
+    graph_payload = _json_loads(generation["file_contents"].get("skills.tmcp/graph.json", "{}"))
+    check(
+        "tmcp-graph-schema",
+        graph_payload.get("schema") == "tmcp-graph-v0.1",
+        "Structured graph declares the expected schema.",
+    )
+    graph_paths = _graph_paths(graph_payload)
+    for rel_path in graph_paths:
+        check(
+            f"tmcp-graph-path:{rel_path}",
+            rel_path in files and (dry_run or (out / rel_path).exists()),
+            "Graph path resolves to a generated file.",
+        )
     for rel_path, content in generation["file_contents"].items():
         if rel_path.startswith("skills.tmcp/tasks/") and rel_path.endswith(".md"):
             check(
@@ -354,6 +489,192 @@ def validate_generated_library(
     check("dry-run-rerunnable", True, "Command accepts --dry-run and does not require output writes.")
     failures = [item for item in checks if item["status"] == "fail"]
     return {"status": "pass" if not failures else "fail", "checks": checks}
+
+
+def verify_tmcp_graph(
+    library: Path,
+    *,
+    graph_profile_path: Path | None = None,
+    repair: bool = False,
+    refresh: bool = False,
+) -> dict[str, Any]:
+    root = library.expanduser().resolve()
+    graph_profile = _load_graph_profile(graph_profile_path)
+    graph_path = root / "skills.tmcp" / "graph.json"
+    manifest = _json_file(root / "manifest.json")
+    lock = _json_file(root / "skills.lock")
+    skill_dirs = sorted(path for path in (root / "skills").glob("*") if path.is_dir())
+    checks: list[dict[str, Any]] = []
+
+    def check(check_id: str, passed: bool, detail: str) -> None:
+        checks.append({"id": check_id, "status": "pass" if passed else "fail", "detail": detail})
+
+    check("library-exists", root.exists(), str(root))
+    check("manifest-exists", bool(manifest), "manifest.json")
+    check("skills-lock-exists", bool(lock), "skills.lock")
+    manifest_skill_count = int(manifest.get("skill_count", 0) or 0)
+    check(
+        "canonical-skill-count",
+        manifest_skill_count == len(skill_dirs) and len(skill_dirs) > 0,
+        f"manifest={manifest_skill_count} skill_dirs={len(skill_dirs)}",
+    )
+    check(
+        "skills-lock-source-hashes",
+        bool(_dict(lock.get("source_hashes"))),
+        f"source_hashes={len(_dict(lock.get('source_hashes')))}",
+    )
+
+    repaired = False
+    if repair and root.exists() and manifest and skill_dirs and (refresh or not graph_path.exists()):
+        graph_path.parent.mkdir(parents=True, exist_ok=True)
+        graph_path.write_text(
+            _existing_tmcp_graph_json(root, manifest, lock, graph_profile),
+            encoding="utf-8",
+        )
+        repaired = True
+
+    graph = _json_file(graph_path)
+    check("graph-json-exists", graph_path.exists(), "skills.tmcp/graph.json")
+    check("graph-json-schema", graph.get("schema") == "tmcp-graph-v0.1", "schema=tmcp-graph-v0.1")
+    source_skills = _dict(graph.get("source_skills"))
+    check(
+        "graph-source-skill-count",
+        len(source_skills) == len(skill_dirs) if graph else False,
+        f"graph_source_skills={len(source_skills)} skill_dirs={len(skill_dirs)}",
+    )
+    graph_profile_payload = _dict(graph.get("graph_profile"))
+    check(
+        "graph-profile-id",
+        graph_profile_payload.get("profile_id") == graph_profile.get("profile_id"),
+        f"graph={graph_profile_payload.get('profile_id')} expected={graph_profile.get('profile_id')}",
+    )
+    for rel_path in sorted(_graph_paths(graph)):
+        check(
+            f"graph-path:{rel_path}",
+            (root / rel_path).exists(),
+            "Graph path resolves inside the skills library.",
+        )
+
+    failures = [item for item in checks if item["status"] == "fail"]
+    return {
+        "schema": "tmcp-graph-verification-v0.1",
+        "status": "pass" if not failures else "fail",
+        "library": str(root),
+        "repaired": repaired,
+        "graph_profile": graph_profile,
+        "summary": {
+            "skill_count": len(skill_dirs),
+            "manifest_skill_count": manifest_skill_count,
+            "source_hash_count": len(_dict(lock.get("source_hashes"))),
+            "graph_source_skill_count": len(source_skills),
+            "failure_count": len(failures),
+        },
+        "checks": checks,
+    }
+
+
+def _json_loads(value: str) -> dict[str, Any]:
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError:
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def _json_file(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    try:
+        parsed = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def _string_list(value: object) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value if isinstance(item, str)]
+
+
+def _dict(value: object) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
+def _graph_paths(graph: dict[str, Any]) -> set[str]:
+    paths: set[str] = set()
+    entrypoint = graph.get("entrypoint")
+    if isinstance(entrypoint, str):
+        paths.add(entrypoint)
+    for section in ("tasks", "modules", "branches", "source_skills"):
+        rows = graph.get(section)
+        if not isinstance(rows, dict):
+            continue
+        for row in rows.values():
+            if isinstance(row, dict) and isinstance(row.get("path"), str):
+                paths.add(str(row["path"]))
+    return paths
+
+
+def _graph_diff(
+    out: Path,
+    file_contents: dict[str, str],
+    source_hashes: dict[str, str],
+    new_skill_count: int,
+) -> dict[str, Any]:
+    previous_manifest = _json_file(out / "manifest.json")
+    previous_lock = _json_file(out / "skills.lock")
+    previous_hashes = _dict(previous_lock.get("source_hashes"))
+    previous_files: set[str] = set()
+    if out.exists():
+        previous_files = {
+            path.relative_to(out).as_posix()
+            for path in out.rglob("*")
+            if path.is_file() and ".git/" not in path.relative_to(out).as_posix()
+        }
+    current_files = set(file_contents)
+    previous_skills = int(previous_manifest.get("skill_count", 0) or 0)
+    added_sources = sorted(set(source_hashes) - set(previous_hashes))
+    removed_sources = sorted(set(previous_hashes) - set(source_hashes))
+    changed_sources = sorted(
+        key
+        for key, digest in source_hashes.items()
+        if key in previous_hashes and previous_hashes[key] != digest
+    )
+    return {
+        "schema": "tmcp-graph-diff-v0.1",
+        "previous_skill_count": previous_skills,
+        "new_skill_count": new_skill_count,
+        "skill_drop_count": max(0, previous_skills - new_skill_count),
+        "skill_drop_ratio": (
+            round((previous_skills - new_skill_count) / previous_skills, 4)
+            if previous_skills > 0 and previous_skills > new_skill_count
+            else 0
+        ),
+        "added_files": sorted(current_files - previous_files),
+        "removed_files": sorted(previous_files - current_files),
+        "changed_source_count": len(changed_sources),
+        "added_source_count": len(added_sources),
+        "removed_source_count": len(removed_sources),
+        "changed_sources": changed_sources[:50],
+        "added_sources": added_sources[:50],
+        "removed_sources": removed_sources[:50],
+    }
+
+
+def _guard_large_graph_drop(graph_diff: dict[str, Any], graph_profile: dict[str, Any]) -> None:
+    policy = _dict(graph_profile.get("graph_version_policy"))
+    if policy.get("fail_on_large_drop", True) is False:
+        return
+    threshold = float(policy.get("large_drop_threshold", 0.3) or 0.3)
+    previous_count = int(graph_diff.get("previous_skill_count", 0) or 0)
+    drop_ratio = float(graph_diff.get("skill_drop_ratio", 0) or 0)
+    if previous_count > 0 and drop_ratio >= threshold:
+        raise ValueError(
+            "Refusing to regenerate TMCP graph because skill count dropped "
+            f"from {previous_count} to {graph_diff.get('new_skill_count')} "
+            f"({drop_ratio:.1%}). Review source roots or override the graph profile policy."
+        )
 
 
 def _classify_candidate(candidate: CandidateFile) -> CandidateFile:
@@ -406,8 +727,8 @@ def _plan_generation(
     out: Path,
     generated_at: str,
     options: HarvestOptions,
+    graph_profile: dict[str, Any],
 ) -> dict[str, Any]:
-    del out
     skill_sources = [
         candidate for candidate in candidates if "reusable skill" in candidate.classification
     ]
@@ -457,14 +778,24 @@ def _plan_generation(
         file_contents[f"workflows/{source.slug}.md"] = _workflow_markdown(source)
 
     if options.tmcp:
-        file_contents.update(_tmcp_files(tmcp_sources, skills, workflows, conflicts, generated_at))
+        file_contents.update(
+            _tmcp_files(tmcp_sources, skills, workflows, conflicts, generated_at, graph_profile)
+        )
 
     file_contents.update(_audit_files(candidates, skills, duplicate_groups, conflicts, generated_at))
     file_contents["README.md"] = _readme_markdown(generated_at, options)
+    source_hashes = {
+        source.slug: hashlib.sha256(source.redacted_content.encode("utf-8")).hexdigest()
+        for source in candidates
+    }
+    graph_diff = _graph_diff(out, file_contents, source_hashes, len(skills))
+    _guard_large_graph_drop(graph_diff, graph_profile)
     file_contents["manifest.json"] = json.dumps(
         {
             "generated_at": generated_at,
             "compiler_version": COMPILER_VERSION,
+            "graph_profile": graph_profile,
+            "graph_diff": graph_diff,
             "source_count": len(candidates),
             "skill_count": len(skills),
             "instruction_count": len(global_instructions) + len(project_instructions),
@@ -479,10 +810,7 @@ def _plan_generation(
     file_contents["skills.lock"] = json.dumps(
         {
             "compiler_version": COMPILER_VERSION,
-            "source_hashes": {
-                source.slug: hashlib.sha256(source.redacted_content.encode("utf-8")).hexdigest()
-                for source in candidates
-            },
+            "source_hashes": source_hashes,
         },
         indent=2,
         sort_keys=True,
@@ -499,6 +827,7 @@ def _plan_generation(
         "project_instructions": [_candidate_record(source) for source in project_instructions],
         "sources": manifest_sources,
         "tmcp_source_count": len(tmcp_sources),
+        "graph_diff": graph_diff,
         "duplicates": duplicate_groups,
         "conflicts": conflicts,
     }
@@ -510,12 +839,22 @@ def _tmcp_files(
     workflows: list[CandidateFile],
     conflicts: list[dict[str, Any]],
     generated_at: str,
+    graph_profile: dict[str, Any],
 ) -> dict[str, str]:
     task_map = _task_sources(sources)
     modules = _modules_from_sources(sources)
     branches = _branches(conflicts)
     files: dict[str, str] = {
         "skills.tmcp/router.md": _tmcp_router(task_map),
+        "skills.tmcp/graph.json": _tmcp_graph_json(
+            sources=sources,
+            skills=skills,
+            task_map=task_map,
+            modules=modules,
+            branches=branches,
+            generated_at=generated_at,
+            graph_profile=graph_profile,
+        ),
         "skills.tmcp/design-decision.md": _tmcp_design_decision(generated_at),
         "skills.tmcp/traversal-receipt-schema.md": _traversal_receipt_schema(),
         "skills.tmcp/evaluation-plan.md": _evaluation_plan(),
@@ -952,6 +1291,13 @@ def _modules_from_sources(candidates: list[CandidateFile]) -> list[dict[str, Any
         "user_approval_gate": ("approval", "permission", "ask", "destructive"),
         "tool_use_policy": ("tool", "bash", "apply_patch", "browser", "mcp"),
         "provenance_policy": ("provenance", "source", "trace", "receipt"),
+        "operating_language": (
+            "operating language",
+            "glossary",
+            "canonical vocabulary",
+            "domain language",
+            "leading word",
+        ),
     }
     for candidate in candidates:
         text = candidate.content.lower()
@@ -1501,6 +1847,425 @@ def _branch_file(branch: dict[str, Any]) -> str:
             "",
         ]
     )
+
+
+def _tmcp_graph_json(
+    *,
+    sources: list[CandidateFile],
+    skills: list[SkillGroup],
+    task_map: dict[str, list[CandidateFile]],
+    modules: list[dict[str, Any]],
+    branches: list[dict[str, Any]],
+    generated_at: str,
+    graph_profile: dict[str, Any],
+) -> str:
+    source_by_slug = {source.slug: source for source in sources}
+    tasks = {
+        task_id: {
+            "id": task_id,
+            "node": f"@task:{task_id}",
+            "path": f"skills.tmcp/tasks/{task_id}.md",
+            "triggers": list(TASK_KEYWORDS.get(task_id, (task_id,))),
+            **_node_utility_metadata(task_id, "task"),
+            "source_refs": [source.slug for source in task_sources],
+            "source_tiers": sorted({source.source_tier for source in task_sources}),
+            "required_modules": [
+                module["id"]
+                for module in modules
+                if module["status"] == "active"
+            ][:6],
+        }
+        for task_id, task_sources in task_map.items()
+    }
+    module_rows = {
+        module["id"]: {
+            "id": module["id"],
+            "node": f"@module:{module['id']}",
+            "path": f"skills.tmcp/modules/{module['id']}.md",
+            "type": module["type"],
+            "status": module["status"],
+            "activation": module["activation"],
+            "source_refs": list(module["sources"]),
+            "source_tiers": sorted(
+                {
+                    source_by_slug[source_slug].source_tier
+                    for source_slug in module["sources"]
+                    if source_slug in source_by_slug
+                }
+            ),
+            "triggers": _module_triggers(module["id"]),
+            **_node_utility_metadata(module["id"], "module"),
+        }
+        for module in modules
+    }
+    branch_rows = {
+        branch["id"]: {
+            "id": branch["id"],
+            "node": f"@branch:{branch['id']}",
+            "path": f"skills.tmcp/branches/{branch['id']}.branch.md",
+            "type": branch["type"],
+            "status": branch["status"],
+            "competing": list(branch["competing"]),
+            "source_refs": list(branch["sources"]),
+            "triggers": _branch_triggers(branch["id"]),
+            **_node_utility_metadata(branch["id"], "branch"),
+        }
+        for branch in branches
+    }
+    source_skills = {
+        group.slug: {
+            "id": group.slug,
+            "node": f"@source_skill:{group.slug}",
+            "path": f"skills/{group.slug}/SKILL.md",
+            "concept_key": group.concept_key,
+            "title": group.title,
+            "source_refs": [source.slug for source in group.sources],
+            "source_tiers": list(group.source_tiers),
+            "classifications": list(group.classifications),
+            "triggers": _source_skill_triggers(group),
+            **_source_skill_utility_metadata(group),
+        }
+        for group in skills
+    }
+    source_hashes = {
+        source.slug: hashlib.sha256(source.redacted_content.encode("utf-8")).hexdigest()
+        for source in sources
+    }
+    payload = {
+        "schema": "tmcp-graph-v0.1",
+        "generated_at": generated_at,
+        "compiler_version": COMPILER_VERSION,
+        "design_decision": TMCP_DESIGN_DECISION_ID,
+        "entrypoint": "skills.tmcp/router.md",
+        "graph_profile": graph_profile,
+        "tasks": tasks,
+        "modules": module_rows,
+        "branches": branch_rows,
+        "source_skills": source_skills,
+        "source_hashes": source_hashes,
+        "overlay_namespaces": list(graph_profile.get("overlay_namespaces", [])),
+    }
+    return json.dumps(payload, indent=2, sort_keys=True) + "\n"
+
+
+def _existing_tmcp_graph_json(
+    library: Path,
+    manifest: dict[str, Any],
+    lock: dict[str, Any],
+    graph_profile: dict[str, Any],
+) -> str:
+    task_rows: dict[str, dict[str, Any]] = {}
+    for path in sorted((library / "skills.tmcp" / "tasks").glob("*.md")):
+        task_id = path.stem
+        task_rows[task_id] = {
+            "id": task_id,
+            "node": f"@task:{task_id}",
+            "path": path.relative_to(library).as_posix(),
+            "triggers": list(TASK_KEYWORDS.get(task_id, (task_id.replace("_", " "),))),
+            **_node_utility_metadata(task_id, "task"),
+            "source_refs": [],
+            "source_tiers": [],
+            "required_modules": _existing_task_required_modules(library, task_id),
+        }
+    if not task_rows:
+        for task_id in TASK_KEYWORDS:
+            task_rows[task_id] = {
+                "id": task_id,
+                "node": f"@task:{task_id}",
+                "path": f"skills.tmcp/tasks/{task_id}.md",
+                "triggers": list(TASK_KEYWORDS.get(task_id, (task_id,))),
+                "source_refs": [],
+                "source_tiers": [],
+                "required_modules": [],
+            }
+
+    module_rows: dict[str, dict[str, Any]] = {}
+    for path in sorted((library / "skills.tmcp" / "modules").glob("*.md")):
+        module_id = path.stem
+        module_rows[module_id] = {
+            "id": module_id,
+            "node": f"@module:{module_id}",
+            "path": path.relative_to(library).as_posix(),
+            "type": _module_type(module_id),
+            "status": "active",
+            "activation": "active",
+            "source_refs": [],
+            "source_tiers": [],
+            "triggers": _module_triggers(module_id),
+            **_node_utility_metadata(module_id, "module"),
+        }
+
+    branch_rows: dict[str, dict[str, Any]] = {}
+    for path in sorted((library / "skills.tmcp" / "branches").glob("*.branch.md")):
+        branch_id = path.name.removesuffix(".branch.md")
+        branch_rows[branch_id] = {
+            "id": branch_id,
+            "node": f"@branch:{branch_id}",
+            "path": path.relative_to(library).as_posix(),
+            "type": "existing",
+            "status": "active",
+            "competing": [],
+            "source_refs": [],
+            "triggers": _branch_triggers(branch_id),
+            **_node_utility_metadata(branch_id, "branch"),
+        }
+
+    skill_groups = {
+        str(item.get("slug")): item
+        for item in _list_of_dicts(manifest.get("skill_groups"))
+        if item.get("slug")
+    }
+    source_skills: dict[str, dict[str, Any]] = {}
+    for skill_path in sorted((library / "skills").glob("*/SKILL.md")):
+        skill_id = skill_path.parent.name
+        group = skill_groups.get(skill_id, {})
+        title = str(group.get("title") or _first_heading(skill_path) or skill_id.replace("-", " ").title())
+        concept_key = str(group.get("concept_key") or skill_id.replace("-", "."))
+        source_skills[skill_id] = {
+            "id": skill_id,
+            "node": f"@source_skill:{skill_id}",
+            "path": skill_path.relative_to(library).as_posix(),
+            "concept_key": concept_key,
+            "title": title,
+            "source_refs": _string_list(group.get("source_slugs")),
+            "source_tiers": _string_list(group.get("source_tiers")),
+            "classifications": _string_list(group.get("detected_type")),
+            "triggers": _existing_skill_triggers(skill_id, concept_key, title, skill_path),
+            **_existing_skill_utility_metadata(skill_id, concept_key, title, group),
+        }
+
+    payload = {
+        "schema": "tmcp-graph-v0.1",
+        "generated_at": _now(),
+        "compiler_version": COMPILER_VERSION,
+        "design_decision": TMCP_DESIGN_DECISION_ID,
+        "entrypoint": "skills.tmcp/router.md",
+        "graph_profile": graph_profile,
+        "tasks": task_rows,
+        "modules": module_rows,
+        "branches": branch_rows,
+        "source_skills": source_skills,
+        "source_hashes": _dict(lock.get("source_hashes")),
+        "overlay_namespaces": list(graph_profile.get("overlay_namespaces", [])),
+        "repair_source": "existing-generated-library",
+    }
+    return json.dumps(payload, indent=2, sort_keys=True) + "\n"
+
+
+def _existing_task_required_modules(library: Path, task_id: str) -> list[str]:
+    task_path = library / "skills.tmcp" / "tasks" / f"{task_id}.md"
+    if task_path.exists():
+        refs = re.findall(r"@module:([A-Za-z0-9_-]+)", task_path.read_text(encoding="utf-8", errors="replace"))
+        if refs:
+            return list(dict.fromkeys(refs))[:8]
+    return [
+        module_id
+        for module_id in ("context_gathering", "evidence_first", "provenance_policy", "output_contract")
+        if (library / "skills.tmcp" / "modules" / f"{module_id}.md").exists()
+    ]
+
+
+def _existing_skill_triggers(
+    skill_id: str,
+    concept_key: str,
+    title: str,
+    skill_path: Path,
+) -> list[str]:
+    terms = set(_summary_terms(skill_id))
+    terms.update(_summary_terms(concept_key))
+    terms.update(_summary_terms(title))
+    try:
+        content = skill_path.read_text(encoding="utf-8", errors="replace")[:2000]
+    except OSError:
+        content = ""
+    terms.update(_summary_terms(content))
+    return sorted(terms)[:20]
+
+
+def _existing_skill_utility_metadata(
+    skill_id: str,
+    concept_key: str,
+    title: str,
+    group: dict[str, Any],
+) -> dict[str, Any]:
+    atoms = sorted(
+        {
+            *_behavior_atoms_for(skill_id),
+            *_behavior_atoms_for(concept_key),
+            *_behavior_atoms_for(title),
+            *(
+                atom
+                for classification in _string_list(group.get("detected_type"))
+                for atom in _behavior_atoms_for(classification)
+            ),
+        }
+    )
+    if not atoms:
+        atoms = ["source_specific_behavior"]
+    source_count = int(group.get("source_count", 1) or 1)
+    source_tiers = _string_list(group.get("source_tiers"))
+    return {
+        "behavior_atoms": atoms[:8],
+        "token_cost": 180 + min(420, source_count * 40),
+        "adds_behavior": _adds_behavior_description(atoms),
+        "redundant_with": [],
+        "risk_if_omitted": "medium" if "project_authoritative" in source_tiers else "low",
+    }
+
+
+def _first_heading(path: Path) -> str:
+    try:
+        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+            if line.startswith("# "):
+                return line.lstrip("#").strip()
+    except OSError:
+        return ""
+    return ""
+
+
+def _list_of_dicts(value: object) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, dict)]
+
+
+def _module_triggers(module_id: str) -> list[str]:
+    return {
+        "context_gathering": ["context", "packet", "receipt", "load"],
+        "evidence_first": ["evidence", "source", "inspect", "prove"],
+        "minimal_patch_policy": ["minimal", "scope", "bounded", "patch"],
+        "operating_language": ["operating language", "glossary", "vocabulary", "leading word"],
+        "output_contract": ["output", "summary", "report", "final"],
+        "provenance_policy": ["provenance", "source", "trace", "receipt"],
+        "test_gate": ["test", "verify", "validate", "quality gate"],
+        "tool_use_policy": ["tool", "bash", "browser", "mcp"],
+        "user_approval_gate": ["approval", "permission", "ask", "destructive"],
+    }.get(module_id, [module_id.replace("_", " ")])
+
+
+def _branch_triggers(branch_id: str) -> list[str]:
+    return {
+        "direct_implementation": ["implement", "fix", "patch", "edit", "build"],
+        "approval_before_edit": ["review", "audit", "plan", "research", "approval"],
+        "ambiguous_task_resolution": ["ambiguous", "unclear", "maybe"],
+        "conflict__editing_permission": ["conflict", "permission", "approval"],
+    }.get(branch_id, [branch_id.replace("_", " ")])
+
+
+def _source_skill_triggers(group: SkillGroup) -> list[str]:
+    terms: set[str] = set()
+    for value in (group.slug, group.concept_key, group.title):
+        terms.update(term for term in re.split(r"[^a-zA-Z0-9]+", value.lower()) if len(term) >= 4)
+    for source in group.sources[:3]:
+        terms.update(_summary_terms(source.summary))
+        terms.update(_summary_terms(source.relative_path))
+    return sorted(terms)[:16]
+
+
+def _summary_terms(value: str) -> set[str]:
+    stop = {
+        "with",
+        "from",
+        "that",
+        "this",
+        "when",
+        "where",
+        "then",
+        "into",
+        "skill",
+        "skills",
+    }
+    return {term for term in re.split(r"[^a-zA-Z0-9]+", value.lower()) if len(term) >= 4 and term not in stop}
+
+
+def _node_utility_metadata(node_id: str, node_type: str) -> dict[str, Any]:
+    atoms = _behavior_atoms_for(node_id)
+    return {
+        "behavior_atoms": atoms,
+        "token_cost": _estimated_node_token_cost(node_id, node_type, atoms),
+        "adds_behavior": _adds_behavior_description(atoms),
+        "redundant_with": _redundant_with(node_id, atoms),
+        "risk_if_omitted": _risk_if_omitted(node_id, atoms),
+    }
+
+
+def _source_skill_utility_metadata(group: SkillGroup) -> dict[str, Any]:
+    atoms = sorted(
+        {
+            *_behavior_atoms_for(group.concept_key),
+            *_behavior_atoms_for(group.title),
+            *(
+                atom
+                for classification in group.classifications
+                for atom in _behavior_atoms_for(classification)
+            ),
+        }
+    )
+    if not atoms:
+        atoms = ["source_specific_behavior"]
+    return {
+        "behavior_atoms": atoms[:8],
+        "token_cost": 180 + min(420, len(group.sources) * 40),
+        "adds_behavior": _adds_behavior_description(atoms),
+        "redundant_with": [],
+        "risk_if_omitted": "medium" if "project_authoritative" in group.source_tiers else "low",
+    }
+
+
+def _behavior_atoms_for(value: str) -> list[str]:
+    lowered = value.replace("-", "_").replace(".", "_").lower()
+    atom_mappings = _behavior_atom_mappings()
+    atoms: set[str] = set(atom_mappings.get(lowered, []))
+    for key, key_atoms in atom_mappings.items():
+        if key in lowered:
+            atoms.update(key_atoms)
+    if any(term in lowered for term in ("test", "verify", "validation")):
+        atoms.add("verification_gate")
+    if any(term in lowered for term in ("review", "audit", "risk")):
+        atoms.add("risk_review")
+    if any(term in lowered for term in ("frontend", "ui", "visual")):
+        atoms.add("ui_quality")
+    if any(term in lowered for term in ("docs", "documentation", "readme")):
+        atoms.add("truth_update")
+    if any(term in lowered for term in ("tool", "command", "mcp", "bash")):
+        atoms.add("tool_safety")
+    return sorted(atoms)
+
+
+def _estimated_node_token_cost(node_id: str, node_type: str, atoms: list[str]) -> int:
+    base = {"task": 180, "module": 140, "branch": 90, "source_skill": 260}.get(node_type, 140)
+    return base + (len(atoms) * 18) + min(80, len(node_id) * 2)
+
+
+def _adds_behavior_description(atoms: list[str]) -> str:
+    if not atoms:
+        return "No distinct behavior atom detected; include only with direct trigger evidence."
+    return "Adds " + ", ".join(atoms[:6]).replace("_", " ") + "."
+
+
+def _redundant_with(node_id: str, atoms: list[str]) -> list[str]:
+    redundant: list[str] = []
+    for other_id, other_atoms in _behavior_atom_mappings().items():
+        if other_id == node_id:
+            continue
+        if atoms and set(atoms).issubset(set(other_atoms)):
+            redundant.append(other_id)
+    return sorted(redundant)[:8]
+
+
+def _risk_if_omitted(node_id: str, atoms: list[str]) -> str:
+    high_risk_atoms = {
+        "verification_gate",
+        "approval_before_risk",
+        "destructive_action_guard",
+        "tool_safety",
+        "source_tier_precedence",
+    }
+    if high_risk_atoms & set(atoms):
+        return "high"
+    if node_id in {"implementation", "debugging", "audit", "direct_implementation"}:
+        return "medium"
+    return "low"
 
 
 def _tmcp_design_decision(generated_at: str) -> str:

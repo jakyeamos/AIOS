@@ -440,6 +440,68 @@ def test_search_all_hits_have_drill_down_path() -> None:
     assert all(path for path in paths_by_kind.values())
 
 
+def test_search_writebacks_by_run_id() -> None:
+    conn = _make_db()
+    _seed_all_kinds(conn)
+
+    hits = search_entities(conn, query="run-alpha", kinds=("writeback",))
+
+    assert [hit.id for hit in hits] == ["writeback-alpha"]
+    assert hits[0].metadata["run_id"] == "run-alpha"
+
+
+def test_search_canonical_findings_by_evaluation_run_id() -> None:
+    conn = _make_db(all_tables=False)
+    _seed_run(conn, id_="run-canonical", project_id="p1")
+    conn.executescript(
+        """
+        CREATE TABLE success_criteria_evaluations (
+          id TEXT PRIMARY KEY,
+          project_id TEXT,
+          run_id TEXT,
+          summary TEXT,
+          created_at TEXT
+        );
+        CREATE TABLE success_criteria_findings (
+          id TEXT PRIMARY KEY,
+          evaluation_id TEXT NOT NULL,
+          criterion_id TEXT NOT NULL,
+          criterion_title TEXT NOT NULL,
+          criterion_scope TEXT NOT NULL,
+          level TEXT NOT NULL,
+          summary TEXT NOT NULL,
+          resolution_status TEXT NOT NULL DEFAULT 'open',
+          created_at TEXT NOT NULL
+        );
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO success_criteria_evaluations (id, project_id, run_id, summary, created_at)
+        VALUES ('eval-canonical', 'p1', 'run-canonical', 'Evaluated', '2026-06-01T00:00:00Z')
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO success_criteria_findings (
+          id, evaluation_id, criterion_id, criterion_title, criterion_scope, level, summary,
+          resolution_status, created_at
+        )
+        VALUES (
+          'finding-canonical', 'eval-canonical', 'agent-claim-verification',
+          'Agent Claim Verification', 'global', 'warning', 'Canonical finding',
+          'open', '2026-06-01T00:00:00Z'
+        )
+        """
+    )
+
+    hits = search_entities(conn, query="run-canonical", kinds=("finding",))
+
+    assert [hit.id for hit in hits] == ["finding-canonical"]
+    assert hits[0].project_id == "p1"
+    assert hits[0].metadata["run_id"] == "run-canonical"
+
+
 def test_search_tolerates_missing_tables() -> None:
     conn = _make_db(all_tables=False)
     _seed_run(conn, objective="anything")

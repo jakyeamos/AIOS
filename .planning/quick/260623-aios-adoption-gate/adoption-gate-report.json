@@ -1,0 +1,333 @@
+{
+  "db_copy": "/tmp/aios-adoption-gate.db",
+  "generated_at": "2026-06-23T23:37:23.967762Z",
+  "logs_dir": "/var/folders/r7/b6pc8f3d7mjgkqx_wps2p52r0000gn/T/aios-adoption-gate-9h_b365_/logs",
+  "ok": true,
+  "results": [
+    {
+      "details": {
+        "invocation_id": "invoke-manual-3287cd95-5e00-45ca-9e15-0a1ba9af36aa",
+        "objective": "Fix the AIOS start-work route metadata bug",
+        "project_id": "5bcd40a28db7463c",
+        "returncode": 0,
+        "run_id": "run-6a6f923a-fe39-4e1d-867c-dfa8e846f6ba",
+        "stderr": ""
+      },
+      "name": "start-work:aios-internal-bugfix",
+      "status": "pass",
+      "summary": "Created ready run with implementation-delivery."
+    },
+    {
+      "details": {
+        "returncode": 0,
+        "stderr": ""
+      },
+      "name": "managed-runtime:run-6a6f923a-fe39-4e1d-867c-dfa8e846f6ba",
+      "status": "pass",
+      "summary": "Managed runtime completed."
+    },
+    {
+      "details": {
+        "invocation": [
+          "completed",
+          "managed-invoke-manual-3287cd95-5e00-45ca-9e15-0a1ba9af36aa",
+          "2026-06-23T23:37:20.917606+00:00"
+        ],
+        "run": [
+          "completed",
+          "managed-invoke-manual-3287cd95-5e00-45ca-9e15-0a1ba9af36aa",
+          "invoke-manual-3287cd95-5e00-45ca-9e15-0a1ba9af36aa"
+        ],
+        "session": [
+          "managed-invoke-manual-3287cd95-5e00-45ca-9e15-0a1ba9af36aa",
+          "closed",
+          "run-6a6f923a-fe39-4e1d-867c-dfa8e846f6ba",
+          "invoke-manual-3287cd95-5e00-45ca-9e15-0a1ba9af36aa"
+        ]
+      },
+      "name": "lifecycle:run-6a6f923a-fe39-4e1d-867c-dfa8e846f6ba",
+      "status": "pass",
+      "summary": "Run, invocation, and session closed with explicit linkage."
+    },
+    {
+      "details": {
+        "criteria_evaluations": 1,
+        "tmcp_receipts": 1,
+        "workflow_reports": 2,
+        "writebacks": 2
+      },
+      "name": "artifacts:run-6a6f923a-fe39-4e1d-867c-dfa8e846f6ba",
+      "status": "pass",
+      "summary": "Workflow, evaluation, writeback, and TMCP artifacts exist."
+    },
+    {
+      "details": {
+        "hits": [
+          {
+            "drill_down_path": "/runs/run-6a6f923a-fe39-4e1d-867c-dfa8e846f6ba?route=route-run-6a6f923a-fe39-4e1d-867c-dfa8e846f6ba",
+            "id": "route-run-6a6f923a-fe39-4e1d-867c-dfa8e846f6ba",
+            "kind": "route_decision",
+            "last_updated_at": "2026-06-23T23:37:20.285124+00:00",
+            "metadata": {
+              "run_id": "run-6a6f923a-fe39-4e1d-867c-dfa8e846f6ba"
+            },
+            "project_id": "5bcd40a28db7463c",
+            "score": 0.2,
+            "source_table": "orchestration_runs",
+            "summary": "Route decision attached to run",
+            "title": "Route for Fix the AIOS start-work route metadata bug"
+          }
+        ],
+        "stderr": ""
+      },
+      "name": "operator-search:run-6a6f923a-fe39-4e1d-867c-dfa8e846f6ba",
+      "status": "pass",
+      "summary": "Route decision is searchable."
+    },
+    {
+      "details": {
+        "provenance": {
+          "evaluation": "confirmed",
+          "goal": "confirmed",
+          "next_action": "confirmed",
+          "packet": "confirmed",
+          "route": "confirmed",
+          "run": "confirmed",
+          "unresolved_delta": "missing",
+          "writeback": "confirmed"
+        },
+        "stderr": "",
+        "step_kinds": [
+          "goal",
+          "route",
+          "packet",
+          "run",
+          "evaluation",
+          "writeback",
+          "unresolved_delta",
+          "next_action"
+        ]
+      },
+      "name": "daily-flow:run-6a6f923a-fe39-4e1d-867c-dfa8e846f6ba",
+      "status": "pass",
+      "summary": "Daily-flow replay exposes route, packet, run, evaluation, and writeback."
+    },
+    {
+      "details": {
+        "invocation_id": "invoke-manual-c4de2278-978b-4c1c-8589-8c153f0f85f9",
+        "objective": "Fix the amos-saas login redirect bug and verify the quality checks",
+        "project_id": "92e1b456b08dc985",
+        "returncode": 0,
+        "run_id": "run-ff7bad7f-e85b-414d-a4ec-df6972075686",
+        "stderr": ""
+      },
+      "name": "start-work:non-aios-bugfix",
+      "status": "pass",
+      "summary": "Created ready run with implementation-delivery."
+    },
+    {
+      "details": {
+        "returncode": 0,
+        "stderr": ""
+      },
+      "name": "managed-runtime:run-ff7bad7f-e85b-414d-a4ec-df6972075686",
+      "status": "pass",
+      "summary": "Managed runtime completed."
+    },
+    {
+      "details": {
+        "invocation": [
+          "completed",
+          "managed-invoke-manual-c4de2278-978b-4c1c-8589-8c153f0f85f9",
+          "2026-06-23T23:37:22.321501+00:00"
+        ],
+        "run": [
+          "completed",
+          "managed-invoke-manual-c4de2278-978b-4c1c-8589-8c153f0f85f9",
+          "invoke-manual-c4de2278-978b-4c1c-8589-8c153f0f85f9"
+        ],
+        "session": [
+          "managed-invoke-manual-c4de2278-978b-4c1c-8589-8c153f0f85f9",
+          "closed",
+          "run-ff7bad7f-e85b-414d-a4ec-df6972075686",
+          "invoke-manual-c4de2278-978b-4c1c-8589-8c153f0f85f9"
+        ]
+      },
+      "name": "lifecycle:run-ff7bad7f-e85b-414d-a4ec-df6972075686",
+      "status": "pass",
+      "summary": "Run, invocation, and session closed with explicit linkage."
+    },
+    {
+      "details": {
+        "criteria_evaluations": 1,
+        "tmcp_receipts": 1,
+        "workflow_reports": 2,
+        "writebacks": 2
+      },
+      "name": "artifacts:run-ff7bad7f-e85b-414d-a4ec-df6972075686",
+      "status": "pass",
+      "summary": "Workflow, evaluation, writeback, and TMCP artifacts exist."
+    },
+    {
+      "details": {
+        "hits": [
+          {
+            "drill_down_path": "/runs/run-ff7bad7f-e85b-414d-a4ec-df6972075686?route=route-run-ff7bad7f-e85b-414d-a4ec-df6972075686",
+            "id": "route-run-ff7bad7f-e85b-414d-a4ec-df6972075686",
+            "kind": "route_decision",
+            "last_updated_at": "2026-06-23T23:37:21.953567+00:00",
+            "metadata": {
+              "run_id": "run-ff7bad7f-e85b-414d-a4ec-df6972075686"
+            },
+            "project_id": "92e1b456b08dc985",
+            "score": 0.2,
+            "source_table": "orchestration_runs",
+            "summary": "Route decision attached to run",
+            "title": "Route for Fix the amos-saas login redirect bug and verify the quality checks"
+          }
+        ],
+        "stderr": ""
+      },
+      "name": "operator-search:run-ff7bad7f-e85b-414d-a4ec-df6972075686",
+      "status": "pass",
+      "summary": "Route decision is searchable."
+    },
+    {
+      "details": {
+        "provenance": {
+          "evaluation": "confirmed",
+          "goal": "confirmed",
+          "next_action": "confirmed",
+          "packet": "confirmed",
+          "route": "confirmed",
+          "run": "confirmed",
+          "unresolved_delta": "missing",
+          "writeback": "confirmed"
+        },
+        "stderr": "",
+        "step_kinds": [
+          "goal",
+          "route",
+          "packet",
+          "run",
+          "evaluation",
+          "writeback",
+          "unresolved_delta",
+          "next_action"
+        ]
+      },
+      "name": "daily-flow:run-ff7bad7f-e85b-414d-a4ec-df6972075686",
+      "status": "pass",
+      "summary": "Daily-flow replay exposes route, packet, run, evaluation, and writeback."
+    },
+    {
+      "details": {
+        "invocation_id": "invoke-manual-1c915ed9-3a8c-456a-9307-bab284577d0b",
+        "objective": "Verify the AIOS operator UI user stories through the real interface",
+        "project_id": "5bcd40a28db7463c",
+        "returncode": 0,
+        "run_id": "run-7c5a8544-51ad-4f0a-b7ab-a5a21b6dd7b0",
+        "stderr": ""
+      },
+      "name": "start-work:aios-ui-verification",
+      "status": "pass",
+      "summary": "Created ready run with implementation-delivery."
+    },
+    {
+      "details": {
+        "returncode": 0,
+        "stderr": ""
+      },
+      "name": "managed-runtime:run-7c5a8544-51ad-4f0a-b7ab-a5a21b6dd7b0",
+      "status": "pass",
+      "summary": "Managed runtime completed."
+    },
+    {
+      "details": {
+        "invocation": [
+          "completed",
+          "managed-invoke-manual-1c915ed9-3a8c-456a-9307-bab284577d0b",
+          "2026-06-23T23:37:23.681951+00:00"
+        ],
+        "run": [
+          "completed",
+          "managed-invoke-manual-1c915ed9-3a8c-456a-9307-bab284577d0b",
+          "invoke-manual-1c915ed9-3a8c-456a-9307-bab284577d0b"
+        ],
+        "session": [
+          "managed-invoke-manual-1c915ed9-3a8c-456a-9307-bab284577d0b",
+          "closed",
+          "run-7c5a8544-51ad-4f0a-b7ab-a5a21b6dd7b0",
+          "invoke-manual-1c915ed9-3a8c-456a-9307-bab284577d0b"
+        ]
+      },
+      "name": "lifecycle:run-7c5a8544-51ad-4f0a-b7ab-a5a21b6dd7b0",
+      "status": "pass",
+      "summary": "Run, invocation, and session closed with explicit linkage."
+    },
+    {
+      "details": {
+        "criteria_evaluations": 1,
+        "tmcp_receipts": 1,
+        "workflow_reports": 2,
+        "writebacks": 2
+      },
+      "name": "artifacts:run-7c5a8544-51ad-4f0a-b7ab-a5a21b6dd7b0",
+      "status": "pass",
+      "summary": "Workflow, evaluation, writeback, and TMCP artifacts exist."
+    },
+    {
+      "details": {
+        "hits": [
+          {
+            "drill_down_path": "/runs/run-7c5a8544-51ad-4f0a-b7ab-a5a21b6dd7b0?route=route-run-7c5a8544-51ad-4f0a-b7ab-a5a21b6dd7b0",
+            "id": "route-run-7c5a8544-51ad-4f0a-b7ab-a5a21b6dd7b0",
+            "kind": "route_decision",
+            "last_updated_at": "2026-06-23T23:37:23.359322+00:00",
+            "metadata": {
+              "run_id": "run-7c5a8544-51ad-4f0a-b7ab-a5a21b6dd7b0"
+            },
+            "project_id": "5bcd40a28db7463c",
+            "score": 0.2,
+            "source_table": "orchestration_runs",
+            "summary": "Route decision attached to run",
+            "title": "Route for Verify the AIOS operator UI user stories through the real interface"
+          }
+        ],
+        "stderr": ""
+      },
+      "name": "operator-search:run-7c5a8544-51ad-4f0a-b7ab-a5a21b6dd7b0",
+      "status": "pass",
+      "summary": "Route decision is searchable."
+    },
+    {
+      "details": {
+        "provenance": {
+          "evaluation": "confirmed",
+          "goal": "confirmed",
+          "next_action": "confirmed",
+          "packet": "confirmed",
+          "route": "confirmed",
+          "run": "confirmed",
+          "unresolved_delta": "missing",
+          "writeback": "confirmed"
+        },
+        "stderr": "",
+        "step_kinds": [
+          "goal",
+          "route",
+          "packet",
+          "run",
+          "evaluation",
+          "writeback",
+          "unresolved_delta",
+          "next_action"
+        ]
+      },
+      "name": "daily-flow:run-7c5a8544-51ad-4f0a-b7ab-a5a21b6dd7b0",
+      "status": "pass",
+      "summary": "Daily-flow replay exposes route, packet, run, evaluation, and writeback."
+    }
+  ],
+  "source_db": "/Users/jakyeamos/AIOS/data/aios.db"
+}

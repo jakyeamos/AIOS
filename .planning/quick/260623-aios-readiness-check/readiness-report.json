@@ -1,0 +1,164 @@
+{
+  "db_copy": "/tmp/aios-readiness-check.db",
+  "generated_at": "2026-06-23T23:31:09.562463Z",
+  "ok": true,
+  "results": [
+    {
+      "details": {
+        "case": {
+          "name": "aios-bugfix",
+          "objective": "Fix the AIOS start-work route metadata bug",
+          "project_id": "5bcd40a28db7463c",
+          "workflow": "implementation-delivery"
+        },
+        "returncode": 0,
+        "route_rationale": "Resolved project outcome=exact; selected workflow implementation-delivery with prompt family recovery_handoff.",
+        "route_status": "ready",
+        "stderr": "",
+        "workflow": "implementation-delivery"
+      },
+      "name": "route-selector:aios-bugfix",
+      "status": "pass",
+      "summary": "Selected implementation-delivery for aios-bugfix."
+    },
+    {
+      "details": {
+        "case": {
+          "name": "non-aios-login-bugfix",
+          "objective": "Fix the amos-saas login redirect bug and verify the quality checks",
+          "project_id": "92e1b456b08dc985",
+          "workflow": "implementation-delivery"
+        },
+        "returncode": 0,
+        "route_rationale": "Resolved project outcome=exact; selected workflow implementation-delivery with prompt family recovery_handoff.",
+        "route_status": "ready",
+        "stderr": "",
+        "workflow": "implementation-delivery"
+      },
+      "name": "route-selector:non-aios-login-bugfix",
+      "status": "pass",
+      "summary": "Selected implementation-delivery for non-aios-login-bugfix."
+    },
+    {
+      "details": {
+        "case": {
+          "name": "ui-user-story-verification",
+          "objective": "Verify the AIOS operator UI user stories through the real interface",
+          "project_id": "5bcd40a28db7463c",
+          "workflow": "implementation-delivery"
+        },
+        "returncode": 0,
+        "route_rationale": "Resolved project outcome=exact; selected workflow implementation-delivery with prompt family recovery_handoff.",
+        "route_status": "ready",
+        "stderr": "",
+        "workflow": "implementation-delivery"
+      },
+      "name": "route-selector:ui-user-story-verification",
+      "status": "pass",
+      "summary": "Selected implementation-delivery for ui-user-story-verification."
+    },
+    {
+      "details": {
+        "case": {
+          "name": "academic-writing-positive-control",
+          "objective": "Write an academic paper with citations about AIOS routing",
+          "project_id": "5bcd40a28db7463c",
+          "workflow": "academic_paper_v1"
+        },
+        "returncode": 0,
+        "route_rationale": "Resolved project outcome=exact; selected workflow academic_paper_v1 with prompt family content_generation.",
+        "route_status": "ready",
+        "stderr": "",
+        "workflow": "academic_paper_v1"
+      },
+      "name": "route-selector:academic-writing-positive-control",
+      "status": "pass",
+      "summary": "Selected academic_paper_v1 for academic-writing-positive-control."
+    },
+    {
+      "details": {
+        "error": {
+          "code": "route-blocked",
+          "exit_code": 2,
+          "message": "No registered project matched the objective or current working directory strongly enough."
+        },
+        "returncode": 2,
+        "stderr": ""
+      },
+      "name": "route-selector:ambiguous-block",
+      "status": "pass",
+      "summary": "Ambiguous objective blocked before packet creation."
+    },
+    {
+      "details": {
+        "hits": [
+          {
+            "drill_down_path": "/runs/run-18529ee5-d1d6-4249-bb5e-fa51b6b2312f?route=route-run-18529ee5-d1d6-4249-bb5e-fa51b6b2312f",
+            "id": "route-run-18529ee5-d1d6-4249-bb5e-fa51b6b2312f",
+            "kind": "route_decision",
+            "last_updated_at": "2026-06-23T23:31:07.433202+00:00",
+            "metadata": {
+              "run_id": "run-18529ee5-d1d6-4249-bb5e-fa51b6b2312f"
+            },
+            "project_id": "5bcd40a28db7463c",
+            "score": 0.7,
+            "source_table": "orchestration_runs",
+            "summary": "Route decision attached to run",
+            "title": "Route for Fix the AIOS start-work route metadata bug"
+          }
+        ],
+        "query": "Fix the AIOS start-work",
+        "stderr": ""
+      },
+      "name": "operator-inspectability:route-search",
+      "status": "pass",
+      "summary": "Route decision is searchable with a drill-down path."
+    },
+    {
+      "details": {
+        "stderr": "",
+        "step_kinds": [
+          "goal",
+          "route",
+          "packet",
+          "run",
+          "evaluation",
+          "writeback",
+          "unresolved_delta",
+          "next_action"
+        ]
+      },
+      "name": "daily-flow:replay",
+      "status": "pass",
+      "summary": "Daily-flow returned the canonical 8-step trace."
+    },
+    {
+      "details": {
+        "stderr": "",
+        "step_kinds": [
+          "goal",
+          "route",
+          "packet",
+          "run",
+          "evaluation",
+          "writeback",
+          "unresolved_delta",
+          "next_action"
+        ]
+      },
+      "name": "daily-flow:preview",
+      "status": "pass",
+      "summary": "Daily-flow returned the canonical 8-step trace."
+    },
+    {
+      "details": {
+        "stderr": "",
+        "total_actions": 0
+      },
+      "name": "operator-inspectability:next-action",
+      "status": "pass",
+      "summary": "Next-action returned a structured action list."
+    }
+  ],
+  "source_db": "/Users/jakyeamos/AIOS/data/aios.db"
+}

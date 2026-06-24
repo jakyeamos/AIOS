@@ -849,10 +849,28 @@ def recommend_workflow_from_health(
     return recommendations
 
 
-def _tokenize(text: str | None) -> set[str]:
+def _word_set(text: str | None) -> set[str]:
     if not text:
         return set()
-    return set(re.findall(r"[a-z0-9]{4,}", text.lower()))
+    return set(re.findall(r"[a-z0-9]{3,}", text.lower()))
+
+
+def _has_word(text: str, word: str) -> bool:
+    return re.search(rf"(?<![a-z0-9]){re.escape(word.lower())}(?![a-z0-9])", text) is not None
+
+
+def _has_any_word(text: str, words: set[str]) -> bool:
+    return any(_has_word(text, word) for word in words)
+
+
+def _matched_phrases(text: str, phrases: tuple[str, ...] | list[str]) -> list[str]:
+    return sorted(
+        {
+            phrase.lower()
+            for phrase in phrases
+            if phrase.strip() and phrase.lower() in text
+        }
+    )
 
 
 def _load_prompt_templates(path: Path) -> list[dict[str, Any]]:
@@ -871,58 +889,79 @@ def rank_workflow_candidates(
     workflow_registry_path: Path | None = None,
 ) -> list[WorkflowRouteCandidate]:
     workflows = load_workflow_registry(workflow_registry_path)
-    objective_tokens = _tokenize(objective)
-    implementation_tokens = {"implement", "build", "feature", "refactor", "fix", "ship", "tests"}
-    recovery_tokens = {"debug", "broken", "failure", "regression", "crash"}
-    analysis_tokens = {"review", "audit", "analyze", "architecture", "strategy"}
+    objective_text = objective.lower()
+    implementation_terms = {
+        "api",
+        "build",
+        "bug",
+        "ci",
+        "db",
+        "feature",
+        "fix",
+        "implement",
+        "refactor",
+        "ship",
+        "test",
+        "tests",
+        "ui",
+        "verify",
+    }
+    recovery_terms = {
+        "broken",
+        "crash",
+        "debug",
+        "error",
+        "failing",
+        "failure",
+        "flaky",
+        "regression",
+    }
+    analysis_terms = {"analyze", "architecture", "audit", "review", "strategy"}
+    content_terms = {"academic", "article", "citations", "draft", "essay", "paper", "write"}
+    transformation_terms = {"creative", "humanize", "outreach", "prompt", "rewrite", "voice"}
+    implementation_evidence = _has_any_word(objective_text, implementation_terms)
+    recovery_evidence = _has_any_word(objective_text, recovery_terms)
+    analysis_evidence = _has_any_word(objective_text, analysis_terms)
+    content_evidence = _has_any_word(objective_text, content_terms)
+    transformation_evidence = _has_any_word(objective_text, transformation_terms)
     candidates: list[WorkflowRouteCandidate] = []
 
     for workflow in workflows.values():
-        matched_terms = sorted(
-            {
-                hint.lower()
-                for hint in workflow.trigger_hints
-                if hint.lower() in objective.lower() or _tokenize(hint) & objective_tokens
-            }
-        )
-        score = len(matched_terms)
+        matched_terms = _matched_phrases(objective_text, workflow.trigger_hints)
+        score = len(matched_terms) * 4
+        evidence_reasons = [f"matched trigger hint {term!r}" for term in matched_terms]
         if (
             workflow.workflow_family == "audit_and_implement"
-            and implementation_tokens & objective_tokens
+            and implementation_evidence
         ):
-            score += 3
-        if workflow.workflow_family == "failure_recovery" and recovery_tokens & objective_tokens:
-            score += 3
-        if workflow.workflow_family == "audit_only" and analysis_tokens & objective_tokens:
-            score += 2
-            if implementation_tokens & objective_tokens or recovery_tokens & objective_tokens:
-                score -= 2
+            score += 6
+            evidence_reasons.append("implementation evidence")
+        if workflow.workflow_family == "failure_recovery" and recovery_evidence:
+            score += 7
+            evidence_reasons.append("failure-recovery evidence")
+            if implementation_evidence:
+                score += 1
+        if workflow.workflow_family == "audit_only" and analysis_evidence:
+            score += 5
+            evidence_reasons.append("analysis/audit evidence")
+            if implementation_evidence or recovery_evidence:
+                score -= 3
         if (
             workflow.workflow_family == "content_generation"
-            and {
-                "paper",
-                "essay",
-                "citations",
-                "academic",
-            }
-            & objective_tokens
+            and content_evidence
+            and not (implementation_evidence or recovery_evidence)
         ):
-            score += 2
+            score += 7
+            evidence_reasons.append("content-generation evidence")
         if (
             workflow.workflow_family == "writing_transformation"
-            and {
-                "humanize",
-                "rewrite",
-                "voice",
-                "outreach",
-                "prompt",
-                "creative",
-            }
-            & objective_tokens
+            and transformation_evidence
+            and not (implementation_evidence or recovery_evidence)
         ):
-            score += 3
-        if workflow.lifecycle_state == "active":
-            score += 2
+            score += 7
+            evidence_reasons.append("writing-transformation evidence")
+        if score > 0 and workflow.lifecycle_state == "active":
+            score += 1
         if score <= 0:
             continue
         candidates.append(
@@ -932,10 +971,25 @@ def rank_workflow_candidates(
                 score=score,
                 matched_terms=tuple(matched_terms),
                 rationale=(
-                    f"Matched trigger hints {matched_terms or ['<implicit>']} for workflow_family={workflow.workflow_family}."
+                    f"Matched {', '.join(evidence_reasons)} for workflow_family={workflow.workflow_family}."
                 ),
             )
         )
+
+    if implementation_evidence and not any(
+        candidate.workflow_key == "implementation-delivery" for candidate in candidates
+    ):
+        workflow = workflows.get("implementation-delivery")
+        if workflow is not None:
+            candidates.append(
+                WorkflowRouteCandidate(
+                    workflow_key=workflow.key,
+                    workflow_family=workflow.workflow_family,
+                    score=6 + (1 if workflow.lifecycle_state == "active" else 0),
+                    matched_terms=(),
+                    rationale="Matched implementation evidence via code-work fallback.",
+                )
+            )
 
     candidates.sort(key=lambda candidate: (-candidate.score, candidate.workflow_key))
     return candidates
@@ -955,7 +1009,7 @@ def recommend_prompt_family(
 
     prompt_path = prompt_registry_path or DEFAULT_PROMPT_REGISTRY
     templates = _load_prompt_templates(prompt_path)
-    objective_tokens = _tokenize(objective)
+    objective_words = _word_set(objective)
     ranked: list[tuple[int, dict[str, Any]]] = []
 
     for template in templates:
@@ -975,9 +1029,7 @@ def recommend_prompt_family(
             score += 2
         tags = template.get("tags") or []
         if isinstance(tags, list):
-            score += len(
-                objective_tokens & {str(tag).lower() for tag in tags if isinstance(tag, str)}
-            )
+            score += len(objective_words & {str(tag).lower() for tag in tags if isinstance(tag, str)})
         if score > 0:
             ranked.append((score, template))
 
@@ -1036,6 +1088,25 @@ def recommend_route_primitives(
         }
 
     selected = candidates[0]
+    runner_up = candidates[1] if len(candidates) > 1 else None
+    if selected.score < 4 or (runner_up is not None and runner_up.score >= selected.score):
+        return {
+            "objective": objective,
+            "selected_workflow": None,
+            "workflow_candidates": [
+                {
+                    "workflow_key": candidate.workflow_key,
+                    "workflow_family": candidate.workflow_family,
+                    "score": candidate.score,
+                    "matched_terms": list(candidate.matched_terms),
+                    "rationale": candidate.rationale,
+                }
+                for candidate in candidates
+            ],
+            "prompt_recommendation": None,
+            "backend_recommendation": None,
+            "blocked_reason": "Workflow evidence was weak or tied; route needs clarification.",
+        }
     task_family = WORKFLOW_TASK_FAMILIES.get(selected.workflow_key)
     prompt_recommendation = recommend_prompt_family(
         objective=objective,
@@ -1076,7 +1147,7 @@ def recommend_route_primitives(
 def _select_prompt_template(
     objective: str, workflow_key: str, templates: list[dict[str, Any]]
 ) -> str | None:
-    objective_tokens = _tokenize(objective)
+    objective_words = _word_set(objective)
     best_id: str | None = None
     best_score = -1
 
@@ -1093,9 +1164,7 @@ def _select_prompt_template(
             score += 3
         tags = template.get("tags") or []
         if isinstance(tags, list):
-            score += len(
-                objective_tokens & {str(tag).lower() for tag in tags if isinstance(tag, str)}
-            )
+            score += len(objective_words & {str(tag).lower() for tag in tags if isinstance(tag, str)})
         if score > best_score:
             best_score = score
             best_id = template_id
@@ -1253,8 +1322,8 @@ def _validate_citations(text: str) -> dict[str, Any]:
 
 
 def _validate_meaning_preservation(draft_text: str, humanized_text: str) -> dict[str, Any]:
-    draft_tokens = _tokenize(draft_text)
-    final_tokens = _tokenize(humanized_text)
+    draft_tokens = _word_set(draft_text)
+    final_tokens = _word_set(humanized_text)
     if not draft_tokens:
         return {
             "passed": False,
@@ -1272,8 +1341,8 @@ def _validate_meaning_preservation(draft_text: str, humanized_text: str) -> dict
 
 
 def _validate_scope(objective: str, output_text: str) -> dict[str, Any]:
-    objective_tokens = _tokenize(objective)
-    output_tokens = _tokenize(output_text)
+    objective_tokens = _word_set(objective)
+    output_tokens = _word_set(output_text)
     overlap = objective_tokens & output_tokens
     passed = len(overlap) > 0
     issues = (
