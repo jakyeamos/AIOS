@@ -718,6 +718,44 @@ def test_divergent_judge_stage_satisfies_required_validation_with_stage_findings
     assert report["status"] == "completed"
 
 
+def test_expert_review_workflow_executes_with_artifacts(tmp_path: Path) -> None:
+    packet = compile_tmcp_packet(
+        objective="Review UI polish with TMCP and create a rubric remediation plan",
+        project_path=str(tmp_path),
+        phase="planning",
+        domain="ui_polish",
+    )
+    context = WorkflowExecutionContext(
+        objective="Review UI polish with TMCP and create a rubric remediation plan",
+        workflow_key="expert_rubric_remediation_v1",
+        repo_path=str(tmp_path),
+        run_id="review-run-workflow",
+        tmcp_packet=packet,
+        evidence_items=(
+            {
+                "dimension_id": "source_grounding",
+                "severity": "warning",
+                "summary": "Review needs evidence-backed findings.",
+                "evidence": [
+                    "docs/superpowers/specs/2026-06-24-expert-rubric-remediation-design.md:1"
+                ],
+                "recommended_fix": "Keep all findings tied to local evidence.",
+            },
+        ),
+        selected_slice_id="slice-1",
+    )
+
+    report = execute_workflow(context)
+
+    assert report["status"] == "completed"
+    artifacts = report["artifacts"]
+    assert artifacts["expert_rubric"]["schema"] == "aios-expert-rubric-v0.1"
+    assert artifacts["expert_audit_report"]["findings"][0]["evidence"]
+    assert artifacts["expert_remediation_plan"]["slices"][0]["verification"]
+    assert artifacts["expert_implementation_handoff"]["requires_user_approval"] is True
+    assert Path(artifacts["expert_review_artifact_paths"]["rubric_json"]).exists()
+
+
 def test_unknown_workflow_raises(tmp_path: Path) -> None:
     context = WorkflowExecutionContext(
         objective="Any objective",

@@ -296,6 +296,8 @@ class WorkflowExecutionContext:
     invocation_id: str | None = None
     session_id: str | None = None
     tmcp_packet: dict[str, Any] | None = None
+    evidence_items: tuple[dict[str, Any], ...] = ()
+    selected_slice_id: str | None = None
 
 
 def _now_iso() -> str:
@@ -1819,6 +1821,8 @@ def execute_workflow(
         "rtk_mode": workflow_rtk_mode,
         "agent_rules": [{"title": rule.title, "body": rule.body} for rule in load_agent_rules()],
         "tmcp_packet": context.tmcp_packet,
+        "review_evidence_items": list(context.evidence_items),
+        "selected_slice_id": context.selected_slice_id,
     }
     stages_report: list[dict[str, Any]] = []
     validations: list[dict[str, Any]] = []
