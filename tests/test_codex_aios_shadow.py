@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -67,3 +68,57 @@ def test_route_rule_separates_shadow_from_governed_route() -> None:
 
     assert "do not govern" in automatic
     assert "govern" in governed
+
+
+def test_route_failure_payload_marks_automatic_shadow_non_blocking() -> None:
+    module = _load_module()
+
+    payload = module.route_failure_payload(
+        objective="Do a task with no workflow",
+        project={"id": "project-aios", "name": "AIOS", "repo_path": "/repo"},
+        route_result={
+            "returncode": 2,
+            "json": {
+                "error": {
+                    "code": "route-blocked",
+                    "message": "No governed workflow matched the objective strongly enough.",
+                }
+            },
+        },
+        governed_route=False,
+        diagnostics_path=Path("/repo/data/aios-route-failures.jsonl"),
+    )
+
+    assert payload["ok"] is True
+    assert payload["aios_route"]["status"] == "route_failed"
+    assert payload["aios_route"]["blocking"] is False
+    assert payload["baseline"]["instruction"].startswith("Continue the baseline task normally")
+    assert payload["diagnostics"]["path"] == "/repo/data/aios-route-failures.jsonl"
+
+
+def test_record_route_failure_appends_parseable_jsonl(tmp_path: Path) -> None:
+    module = _load_module()
+    path = tmp_path / "route-failures.jsonl"
+
+    module.record_route_failure(
+        path,
+        objective="Do a task with no workflow",
+        project={"id": "project-aios", "name": "AIOS", "repo_path": "/repo"},
+        route_result={
+            "returncode": 2,
+            "json": {
+                "error": {
+                    "code": "route-blocked",
+                    "message": "No governed workflow matched the objective strongly enough.",
+                }
+            },
+        },
+        governed_route=False,
+    )
+
+    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    assert len(rows) == 1
+    assert rows[0]["code"] == "route-blocked"
+    assert rows[0]["mode"] == "automatic-shadow"
+    assert rows[0]["blocking"] is False
+    assert rows[0]["objective"] == "Do a task with no workflow"

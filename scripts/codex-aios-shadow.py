@@ -15,6 +15,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DB = ROOT / "data" / "aios.db"
+DEFAULT_ROUTE_FAILURES = ROOT / "data" / "aios-route-failures.jsonl"
 
 
 def main() -> int:
@@ -52,6 +53,25 @@ def main() -> int:
         project_id=project["id"],
     )
     if route_result["returncode"] != 0:
+        if not args.governed_route:
+            diagnostics_path = DEFAULT_ROUTE_FAILURES
+            record_route_failure(
+                diagnostics_path,
+                objective=args.objective,
+                project=project,
+                route_result=route_result,
+                governed_route=args.governed_route,
+            )
+            print_json(
+                route_failure_payload(
+                    objective=args.objective,
+                    project=project,
+                    route_result=route_result,
+                    governed_route=args.governed_route,
+                    diagnostics_path=diagnostics_path,
+                )
+            )
+            return 0
         print_json(route_result["json"] or route_result)
         return int(route_result["returncode"])
 
@@ -231,6 +251,87 @@ def route_rule(governed_route: bool) -> str:
     if governed_route:
         return "explicit /aios command: AIOS route and packet govern the baseline task"
     return "automatic shadow: AIOS route and packet are evidence only and do not govern the baseline task"
+
+
+def route_failure_payload(
+    *,
+    objective: str,
+    project: dict[str, str],
+    route_result: dict[str, Any],
+    governed_route: bool,
+    diagnostics_path: Path,
+) -> dict[str, Any]:
+    error = route_error(route_result)
+    return {
+        "ok": True,
+        "mode": "shadow",
+        "governed_route": governed_route,
+        "objective": objective,
+        "project": project,
+        "baseline": {
+            "repo_path": project.get("repo_path"),
+            "instruction": baseline_instruction(governed_route),
+        },
+        "aios_route": {
+            "status": "route_failed",
+            "blocking": governed_route,
+            "error": error,
+        },
+        "shadow": None,
+        "shadow_prompt": None,
+        "diagnostics": {
+            "path": str(diagnostics_path),
+            "document": str(ROOT / "docs" / "diagnostics" / "route-blocked-failures.md"),
+        },
+        "compare_policy": {
+            "source_of_truth": "baseline current workspace",
+            "shadow_rule": "no shadow worktree was created because AIOS routing failed",
+            "route_rule": route_rule(governed_route),
+            "useful_evidence": [
+                "objective text",
+                "error code and message",
+                "project inference result",
+                "route selector candidates",
+                "workflow registry coverage gaps",
+            ],
+        },
+    }
+
+
+def record_route_failure(
+    path: Path,
+    *,
+    objective: str,
+    project: dict[str, str],
+    route_result: dict[str, Any],
+    governed_route: bool,
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    event = {
+        "recorded_at": datetime.now(UTC).isoformat(),
+        "mode": "governed-route" if governed_route else "automatic-shadow",
+        "blocking": governed_route,
+        "objective": objective,
+        "project": project,
+        "returncode": route_result.get("returncode"),
+        **route_error(route_result),
+    }
+    with path.open("a", encoding="utf-8") as file:
+        file.write(json.dumps(event, sort_keys=True) + "\n")
+
+
+def route_error(route_result: dict[str, Any]) -> dict[str, Any]:
+    payload = route_result.get("json")
+    if isinstance(payload, dict):
+        error = payload.get("error")
+        if isinstance(error, dict):
+            return {
+                "code": str(error.get("code") or "unknown"),
+                "message": str(error.get("message") or ""),
+                "payload": payload,
+            }
+    raw = route_result.get("stdout") or route_result.get("stderr") or ""
+    return {"code": "route-failed", "message": str(raw), "payload": payload}
 
 
 def print_json(payload: dict[str, Any]) -> None:
