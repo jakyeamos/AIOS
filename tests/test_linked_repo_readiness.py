@@ -260,6 +260,41 @@ def test_runner_dry_run_uses_aios_owned_config_command(tmp_path: Path) -> None:
     assert ".aios-quality-gate.json" not in result.stdout
 
 
+
+def test_phase24_real_config_requires_anti_slop_for_typescript_adoption_targets() -> None:
+    payload = json.loads((ROOT / "config" / "quality-pipeline.json").read_text(encoding="utf-8"))
+    standard_gates = {gate["key"]: gate for gate in payload["standard"]["gates"]}
+
+    assert standard_gates["anti_slop"] == {
+        "key": "anti_slop",
+        "label": "Anti-Slop Heuristics",
+        "tier": "tier_1_core",
+        "required": True,
+        "applicability": ["typescript_app", "developer_tool"],
+    }
+
+    classes = payload["standard"]["classes"]
+    for repo_class in ("platform_control_plane", "production_public_web_app", "developer_tool_package"):
+        assert "anti_slop" in classes[repo_class]["required_gates"]
+
+    missing_backfill_commands: list[str] = []
+    for project in payload["projects"]:
+        project_id = project["project_id"]
+        if project_id in DEFAULT_EXCLUDED_PROJECT_IDS or project.get("strict_readiness_status") == "excluded":
+            continue
+        if project.get("repo_class") not in {
+            "platform_control_plane",
+            "production_public_web_app",
+            "developer_tool_package",
+        }:
+            continue
+        command = project.get("gates", {}).get("anti_slop", {}).get("command", "")
+        if "anti-slop.mjs check . --mode audit --format json" not in command:
+            missing_backfill_commands.append(project_id)
+
+    assert missing_backfill_commands == []
+
+
 def test_runner_dry_run_uses_local_ci_exception_command(tmp_path: Path) -> None:
     config_path = _write_config(tmp_path / "quality-pipeline.json")
     payload = json.loads(config_path.read_text())

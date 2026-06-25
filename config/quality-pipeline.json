@@ -237,6 +237,16 @@
         ]
       },
       {
+        "key": "anti_slop",
+        "label": "Anti-Slop Heuristics",
+        "tier": "tier_1_core",
+        "required": true,
+        "applicability": [
+          "typescript_app",
+          "developer_tool"
+        ]
+      },
+      {
         "key": "package",
         "label": "Package / Consumer Smoke",
         "tier": "tier_1_core",
@@ -267,6 +277,7 @@
           "build",
           "architecture",
           "pre_cr",
+          "anti_slop",
           "repo_truth",
           "secret_scan",
           "dependency_security",
@@ -286,6 +297,7 @@
           "build",
           "architecture",
           "pre_cr",
+          "anti_slop",
           "repo_truth",
           "secret_scan",
           "dependency_security",
@@ -304,6 +316,7 @@
           "package",
           "architecture",
           "pre_cr",
+          "anti_slop",
           "repo_truth",
           "secret_scan",
           "dependency_security",
@@ -454,6 +467,10 @@
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
+        },
+        "anti_slop": {
+          "command": "node /Users/jakyeamos/projects/eslint-plugin-anti-slop/bin/anti-slop.mjs check . --mode audit --format json",
+          "working_directory": "."
         }
       },
       "repo_class": "production_public_web_app",
@@ -530,6 +547,10 @@
         "e2e_smoke": {
           "command": "pnpm e2e:smoke",
           "working_directory": "."
+        },
+        "anti_slop": {
+          "command": "node /Users/jakyeamos/projects/eslint-plugin-anti-slop/bin/anti-slop.mjs check . --mode audit --format json",
+          "working_directory": "."
         }
       },
       "repo_class": "production_public_web_app",
@@ -600,6 +621,10 @@
         },
         "architecture": {
           "command": "test -f package.json && test -d packages && test -d tests && test -d scripts",
+          "working_directory": "."
+        },
+        "anti_slop": {
+          "command": "node /Users/jakyeamos/projects/eslint-plugin-anti-slop/bin/anti-slop.mjs check . --mode audit --format json",
           "working_directory": "."
         }
       },
@@ -672,6 +697,10 @@
         },
         "thermo_nuclear_simplification": {
           "command": "uv run pytest -q tests/test_commit_quality_ladder.py",
+          "working_directory": "."
+        },
+        "anti_slop": {
+          "command": "node /Users/jakyeamos/projects/eslint-plugin-anti-slop/bin/anti-slop.mjs check . --mode audit --format json",
           "working_directory": "."
         }
       },
@@ -748,6 +777,10 @@
         },
         "architecture": {
           "command": "test -f package.json && test -d app && test -d packages && test -d scripts",
+          "working_directory": "."
+        },
+        "anti_slop": {
+          "command": "node /Users/jakyeamos/projects/eslint-plugin-anti-slop/bin/anti-slop.mjs check . --mode audit --format json",
           "working_directory": "."
         }
       },
@@ -829,6 +862,10 @@
         "architecture": {
           "command": "test -f package.json && test -d src && test -d app && test -d scripts",
           "working_directory": "."
+        },
+        "anti_slop": {
+          "command": "node /Users/jakyeamos/projects/eslint-plugin-anti-slop/bin/anti-slop.mjs check . --mode audit --format json",
+          "working_directory": "."
         }
       },
       "repo_class": "production_public_web_app",
@@ -899,6 +936,10 @@
         },
         "architecture": {
           "command": "test -f package.json && test -d packages && test -d scripts",
+          "working_directory": "."
+        },
+        "anti_slop": {
+          "command": "node /Users/jakyeamos/projects/eslint-plugin-anti-slop/bin/anti-slop.mjs check . --mode audit --format json",
           "working_directory": "."
         }
       },
@@ -976,6 +1017,10 @@
         "architecture": {
           "command": "test -f package.json && test -d server && test -d src && test -d scripts",
           "working_directory": "."
+        },
+        "anti_slop": {
+          "command": "node /Users/jakyeamos/projects/eslint-plugin-anti-slop/bin/anti-slop.mjs check . --mode audit --format json",
+          "working_directory": "."
         }
       },
       "repo_class": "production_public_web_app",
@@ -1051,6 +1096,10 @@
         },
         "architecture": {
           "command": "test -f package.json && test -d src && test -d scripts",
+          "working_directory": "."
+        },
+        "anti_slop": {
+          "command": "node /Users/jakyeamos/projects/eslint-plugin-anti-slop/bin/anti-slop.mjs check . --mode audit --format json",
           "working_directory": "."
         }
       },
@@ -1176,6 +1225,10 @@
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
+        },
+        "anti_slop": {
+          "command": "node /Users/jakyeamos/projects/eslint-plugin-anti-slop/bin/anti-slop.mjs check . --mode audit --format json",
+          "working_directory": "."
         }
       },
       "repo_class": "production_public_web_app",
@@ -1242,6 +1295,10 @@
         },
         "architecture": {
           "command": "test -f package.json && test -d src && test -d test && test -d scripts",
+          "working_directory": "."
+        },
+        "anti_slop": {
+          "command": "node /Users/jakyeamos/projects/eslint-plugin-anti-slop/bin/anti-slop.mjs check . --mode audit --format json",
           "working_directory": "."
         }
       },
