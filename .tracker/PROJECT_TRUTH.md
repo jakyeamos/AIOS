@@ -1,14 +1,14 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, and a smoke-verified expert-rubric-remediation workflow through service artifacts, runtime, registry, routing, and `aios tmcp review-plan`; the full Python pytest baseline is green again while broader Ruff and BasedPyright baseline issues remain open.
+summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, smoke-verified expert-rubric-remediation, repo gate adoption planning, a visible Pre-CR user commit gate, and a DB-backed personalized humanizer CLI while broader Ruff and BasedPyright baseline issues remain open.
 healthScore: 72
 statusLabel: needs_attention
-nextStep: Use the smoke-verified `aios tmcp review-plan` workflow on the full Soundscape visual-polish evidence set, then triage the remaining Ruff format/check and BasedPyright baseline failures.
+nextStep: Execute BidCamp repo-local Phase 151, then continue BidCamp phases 152-155 before moving to EliHealth phases 09-13 and pre-cr-suite-lsp phases 04-06.
 blockers:
-  - Full repo Ruff and format baselines are not green: Ruff reports 25 issues and Ruff format reports 178 files needing formatting.
+  - Full repo Ruff and format baselines are not green: Ruff reports 25 issues and Ruff format reports 172 files needing formatting.
   - Full repo BasedPyright is not green: 110 errors and 101 warnings, including the existing `services/aios_cli.py` `run_cli` complexity baseline.
-lastUpdated: 2026-06-24
+lastUpdated: 2026-06-26
 tags: [infra, ai-os, hooks, automation]
 areas: [engineering]
 goals: []
@@ -37,11 +37,25 @@ agentExpectationsVersion: 1
 
 AIOS is an active, git-versioned Python/shell infrastructure project (first commit 2026-04-01, latest normalization commits on 2026-04-12). It runs continuously as the backbone of all Claude Code sessions: lifecycle hooks fire on session start, stop, prompt submit, and tool events, writing structured data to a SQLite ops database at `~/AIOS/data/aios.db`.
 
-The codebase is large, with Python services and scripts in `services/` and `bin/`, a committed `aios-ui/` Next.js command-center app, schema-backed operational storage, growing context/planning docs, and explicit Python quality configuration in `pyproject.toml`. The Code Topology Service (CTS) backend is committed: `services/cts/` provides graph storage, parsing, search, impact analysis, incremental updates, and MCP/CLI entrypoints. Phase 11 eval-run infrastructure is now coherent end to end: `schema.sql` defines eval task/run/score/failure tables, `services/eval_run_service.py` creates and reads durable eval records, and `services/aios_cli.py` exposes `aios eval record-run`, `list-runs`, and `summary`. The latest full Python quality pass on 2026-06-22 shows repo-level failures outside the hook-policy slice, while targeted hook-policy checks pass.
+The codebase is large, with Python services and scripts in `services/` and `bin/`, a committed `aios-ui/` Next.js command-center app, schema-backed operational storage, growing context/planning docs, and explicit Python quality configuration in `pyproject.toml`. The Code Topology Service (CTS) backend is committed: `services/cts/` provides graph storage, parsing, search, impact analysis, incremental updates, and MCP/CLI entrypoints. Phase 11 eval-run infrastructure is now coherent end to end: `schema.sql` defines eval task/run/score/failure tables, `services/eval_run_service.py` creates and reads durable eval records, and `services/aios_cli.py` exposes `aios eval record-run`, `list-runs`, and `summary`. The latest full Python quality pass on 2026-06-25 shows repo-level Ruff and BasedPyright failures outside the user commit gate visibility slice, while targeted hook-policy checks pass.
 
 AIOS now also has a file-backed and SQLite-backed context-loop learning primitive: `services/context_loops.py`, `schema.sql`, and `python bin/aios.py context-loops ...` record inner-loop context/draft runs, review events, learning candidates, explicit approvals/rejections, approved lesson application, metrics, and a draft-only email pilot. Contract docs and examples live under `aios/context-loops/`.
 
 AIOS now has `expert_rubric_remediation_v1` implemented and smoke-verified through the core artifact service, workflow runtime dispatch, active workflow/skill registry contracts, route scoring, and `aios tmcp review-plan`. The workflow compiles TMCP expertise into an explicit rubric, audits concrete evidence, produces ordered remediation slices, and writes an approval-gated implementation handoff without executing implementation.
+
+AIOS also has `repo_gate_adoption_v1`, a narrow audit-and-plan workflow for repository quality-gate adoption. It scans repo-local scripts, Pre-CR, anti-slop, local AIOS quality contracts, CI, hooks, dead-code, structural-scan, and truth-file evidence; produces a core gate readiness matrix; conditionally records TMCP expert enrichment only when source sufficiency passes; writes broad repo-class and gate-specific rubric packs; writes a staged rollout plan under git-ignored `AIOS-backfill/gate-adoption/{run_id}`; and exposes the flow through `aios gate adoption-plan`.
+
+Repo quality certification now lives in the standalone repository `/Users/jakyeamos/repo-quality-certifier`, with remote `git@github.com:jakyeamos/repo-quality-certifier.git`. That repo owns deterministic repo scanning, gate matrix synthesis, broad and gate-specific rubrics, rollout phase generation, document-quality evaluation, artifact writing, CLI/MCP/plugin surfaces, tests, and its own Pre-CR config. AIOS consumes it through a local path dependency and keeps a thin `services/repo_gate_adoption.py` adapter that injects AIOS TMCP enrichment and preserves existing workflow/CLI imports.
+
+Shared quality evidence/finding normalization now lives in the standalone repository `/Users/jakyeamos/quality-evidence-contract`, with remote `git@github.com:jakyeamos/quality-evidence-contract.git`. The success-criteria evaluator remains AIOS-owned because registry policy, SQLite writes, and artifact lifecycle are still product-integrated, but stage/evaluation findings now carry an additive nested `quality_contract` payload for portable consumers.
+
+Context compiler contract validation now lives in the standalone repository `/Users/jakyeamos/context-compiler-contract`, with remote `git@github.com:jakyeamos/context-compiler-contract.git`. AIOS consumes it through a local file dependency, while `tools/context-compile.mjs` remains AIOS-owned until context-root and routing assumptions are external-fixture backed.
+
+AIOS now has a strict subsystem ownership map in `.planning/SUBSYSTEM_EXTRACTION_PLAN.md`. The map classifies major surfaces as `core_aios`, `adapter_inside_aios`, `contract_package`, `standalone_tool`, or `incubator_candidate`. The current scope truth is that AIOS is better scoped after extracting `repo-quality-certifier`, `quality-evidence-contract`, `context-compiler-contract`, and the Research Domain Writing standalone tool, but it still contains incubator candidates that need future boundary decisions, including CTS, agent/eval harness pieces, personalized humanizer, benchmark tooling, and quality/standards consolidation surfaces.
+
+The three extracted repos now have release governance and pushed `v0.1.0` tags. `repo-quality-certifier` release governance is at commit `3ff7eb4`, `quality-evidence-contract` at `36c94bc`, and `context-compiler-contract` at `de60ba1`. AIOS still uses local path/file dependencies for active development; the remaining release-boundary decision is whether to switch those dependencies to tagged Git refs.
+
+Research Domain Writing now lives in the standalone repository `/Users/jakyeamos/research-domain-writing`, with remote `git@github.com:jakyeamos/research-domain-writing.git` and pushed tag `v0.1.0` at commit `ba0f608`. AIOS no longer owns RDW prompts, domain packs, examples, installers, packet validation, or release process; local slash commands and agent skills point at the external repo.
 
 ## Why This Matters / Intended Outcome
 
@@ -50,6 +64,36 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 ## Recent Progress
 
 - 2026-06-25: Added an AIOS quality-pipeline `anti_slop` adoption/backfill gate for platform, production public web app, and developer-tool package repos, with audit-mode linked-repo commands and readiness regression coverage.
+- 2026-06-26: Linked-repo adoption reports now require quality certification through `repo_gate_adoption_v1`, separating `aios_wired`, `quality_standard_compliant`, and `release_ready` stages from final `adoption_ready`, `adopted_but_blocked`, or `not_adopted` status.
+- 2026-06-26: Completed Phase 29 pre-execution prep by refreshing the linked-repo adoption baseline, documenting first-wave repo branch/dirty state, and updating Phase 29 acceptance criteria to require `adoption_ready` plus passing certification stages.
+- 2026-06-26: Added `BidCamp`, `tenure`, and `EliHealth` to the linked-repo adoption list, expanding Phase 29 to 23 in-scope repos; first evidence rows are recorded and the new repos are AIOS-wired but blocked until failing required gates pass.
+- 2026-06-26: Upgraded `repo_gate_adoption_v1` to generate broad and gate-specific rubric packs before rollout planning, preventing sizable repo adoption from being scoped only by failed command gates.
+- 2026-06-26: Wired conditional TMCP expert enrichment into `repo_gate_adoption_v1`; adoption artifacts now record `enriched` only when relevant TMCP source sufficiency passes, otherwise `insufficient_source` with AIOS standard rubric fallback.
+- 2026-06-26: Added a UI visual/runtime verification broad rubric to `repo_gate_adoption_v1`, requiring rendered proof through local launch, browser/device automation, screenshots, computer use, Xcode simulator, or equivalent evidence for UI-bearing repos.
+- 2026-06-26: Extended `repo_gate_adoption_v1` to materialize per-rubric audit and implementation docs in both Markdown and JSON, plus `rubric-detail-manifest.json` for agent-readable GSD phase inputs.
+- 2026-06-26: Extended `repo_gate_adoption_v1` generated docs with repo classification evidence, selected AIOS quality-pipeline profile context, required profile gates, configured command metadata, strict-readiness blockers, and UI visual-proof routing.
+- 2026-06-26: Added `aios gate adoption-doc-quality`, which generates adoption docs and writes `adoption-doc-quality.json` / `.md` so agents can fail structurally invalid docs and carry explicit phase-readiness fields before execution planning.
+- 2026-06-26: Strengthened adoption-doc generation so broad and gate-specific rubric docs include scan-derived evidence, evidence-of-absence findings, missing-proof blockers, non-generic root causes, likely affected files/scripts, accepted-exception status, and validation commands.
+- 2026-06-26: BidCamp Phase 29 workflow-quality pilot `phase29-bidcamp-pilot-008` passes adoption doc quality with `status=pass`, `warning_count=0`, `ready_for_phase_planning=true`, and `ready_for_execution=true`; gate summary now distinguishes `present=14`, `enforceable=13`, `absent=7`, and `skipped=2`, with `local_quality_contract` treated as required setup rather than a skip.
+- 2026-06-26: Set Phase 29 workflow-quality pilots to `BidCamp`, `EliHealth`, and `pre-cr-suite-lsp`, each on a new target-repo branch, so the adoption-doc workflow is tested against dense web, mobile/native, and non-UI developer-tool repos before portfolio-wide rollout.
+- 2026-06-26: Set up and pushed repo-local adoption gates in the three Phase 29 pilot repos: `BidCamp` commit `145b6bd0` with run `phase29-bidcamp-pilot-setup-002`, `EliHealth` commit `30b9d4d` with run `phase29-elihealth-pilot-setup-002`, and `pre-cr-suite-lsp` commit `cfc8afd` with run `phase29-pre-cr-suite-lsp-pilot-setup-002`. All three latest adoption-doc-quality runs pass with `warning_count=0`, `absent=0`, and `local_quality_contract` present; only repo-class skips remain.
+- 2026-06-26: Corrected Phase 29 pilot planning so gate-scoped remediation lives inside the owning repos: `BidCamp` phases `151`-`155`, `EliHealth` phases `09`-`13`, and `pre-cr-suite-lsp` phases `04`-`06`.
+- 2026-06-26: Hardened `repo_gate_adoption_v1` so generated rollout plans now require repo-local gate-scoped phases, target-repo ownership, per-gate phase templates by default, final certification, and explicit cluster rationale before any multi-gate phase can pass validation.
+- 2026-06-26: Tightened `repo_gate_adoption_v1` strict clearance semantics so inherited full lint/test failures become repo-local remediation targets; focused checks are interim proof only, and final certification cannot mark a repo `adoption_ready` while full lint or full tests fail from an inherited baseline.
+- 2026-06-26: Expanded `repo_gate_adoption_v1` tier-one certification to fifteen broad rubrics and first-class gate rows where actionable, adding build/package integrity, runtime smoke, release/rollback readiness, data/state integrity, and observability/debuggability while preserving existing lint, tests, security, dependency, architecture, anti-slop, dead-code, truth, CI/local proof, and UI runtime requirements.
+- 2026-06-26: Strengthened the complexity/simplification rubric so thermo/simplifier skills are treated as expert audit input rather than full proof; certification now requires hotspots, implementation phases, runtime/product/architecture/over-abstraction review, verification commands, and exception rationale/expiry.
+- 2026-06-26: Split repo quality certification into the standalone `repo_quality_certifier` package boundary while keeping AIOS as the workflow adapter/orchestrator; focused contract tests prove standalone import does not load `services.tmcp_runtime` and non-AIOS callers receive valid TMCP fallback output.
+- 2026-06-26: Promoted `repo_quality_certifier` to repo-ready extraction posture by adding standalone CLI, MCP-shaped stdio/JSON-RPC tool handlers, plugin manifest/skill artifacts, package-data metadata, and external fixture tests for plan/doc-quality execution.
+- 2026-06-26: Physically extracted repo quality certification into `/Users/jakyeamos/repo-quality-certifier`, pushed remote `git@github.com:jakyeamos/repo-quality-certifier.git`, and wired AIOS to consume `repo-quality-certifier @ file:///Users/jakyeamos/repo-quality-certifier`; the external repo has initial commits `dd5c00f` and `dab399f`, and AIOS focused adapter tests pass with the in-tree package removed.
+- 2026-06-26: Extracted `quality_evidence_contract` for portable quality evidence/finding schemas, normalization, validation, and counts; `services.success_criteria` now adds `quality_contract` to stage and evaluation finding payloads without changing legacy fields.
+- 2026-06-26: Physically extracted quality evidence contracts into `/Users/jakyeamos/quality-evidence-contract`, pushed remote `git@github.com:jakyeamos/quality-evidence-contract.git`, and wired AIOS to consume `quality-evidence-contract @ file:///Users/jakyeamos/quality-evidence-contract`; initial commit `5bb3b85` passes external Ruff, BasedPyright, pytest, and Pre-CR, and AIOS success-criteria integration tests pass with the in-tree package removed.
+- 2026-06-26: Updated `bin/aios.py` to re-enter the project virtualenv before importing service modules, restoring plain `python3 bin/aios.py ...` command paths after local packages moved to path dependencies.
+- 2026-06-26: Extracted `context_compiler_contract` for compiled context result/receipt validation and wired the live context compiler regression test through that contract.
+- 2026-06-26: Physically extracted context compiler contracts into `/Users/jakyeamos/context-compiler-contract`, pushed remote `git@github.com:jakyeamos/context-compiler-contract.git`, and wired AIOS to consume `context-compiler-contract` through a local file dependency; initial commit `e8c6e90` passes standalone package tests, syntax check, and Pre-CR, and AIOS context compiler regression tests pass with the in-tree contract removed.
+- 2026-06-26: Added a strict subsystem ownership map to `.planning/SUBSYSTEM_EXTRACTION_PLAN.md`, classifying core AIOS surfaces, AIOS adapters, extracted contract packages, standalone tool candidates, and incubator candidates before any further repo splits.
+- 2026-06-26: Added `CHANGELOG.md`, `RELEASE.md`, release validation checklists, Pre-CR doc ignores, and pushed annotated `v0.1.0` tags for `repo-quality-certifier`, `quality-evidence-contract`, and `context-compiler-contract`.
+- 2026-06-26: Audited `research-domain-writing/` and classified it as a standalone tool to extract after a narrow hardening pass, with AIOS retaining only skill/tool consumption and future adapter hooks.
+- 2026-06-26: Extracted Research Domain Writing into `/Users/jakyeamos/research-domain-writing`, created private remote `jakyeamos/research-domain-writing`, pushed `main`, tagged `v0.1.0`, and repointed local Claude/Cursor/Codex skill installs to the standalone repo.
 - 2026-04-08: Added ops/maintenance utilities, retrieval rule and provenance tooling, enriched hook event capture, AI history import tooling
 - 2026-04-08: Design specs added for Code Topology Service (CTS), AIOS Command UI, and prompt library
 - 2026-04-09: Ruff 0.15.10 auto-fixed 181 issues; shellcheck clean on `auto_ingest.sh` and `health_check.sh`; BasedPyright and Vulture installed
@@ -80,19 +124,22 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-06-24: Executed expert rubric remediation through Phase 28 Plan 28-01: core artifact builders, workflow runtime dispatch, active registry entries, expert route scoring, and the read-only `aios tmcp review-plan` CLI now exist with focused regression coverage.
 - 2026-06-24: Smoke-verified `aios tmcp review-plan` against Soundscape visual-polish evidence, producing rubric, audit, remediation, and approval-gated handoff artifacts under `/tmp/aios-expert-review-smoke`.
 - 2026-06-24: Restored the full Python pytest baseline by fixing stale relative-window learning fixtures, updating implemented contract-audit expectations, restoring the skills-harvest validation boolean, generating the missing default TMCP approval branch, and making workflow-experiment temp repos satisfy the user commit quality gate without blocking artifact commits.
+- 2026-06-25: Made the global user commit quality gate visible during long Pre-CR runs by emitting flushed Pre-CR start, heartbeat, and finish messages while preserving captured JSON output for failure summaries.
+- 2026-06-25: Added `aios humanize` CLI commands for personalized humanizer rewrites, feedback capture, and eval execution, with JSON output, optional file/stdin input, run recording, and focused CLI regression coverage.
+- 2026-06-25: Added a global/AIOS agent rule that completed feature-branch work must be integrated into canonical `dev` before feature branches are pruned, keeping `main` deployable for release/mainline merges.
+- 2026-06-25: Added expert-UI-rubric aliases so natural prompts such as "Use the TMCP expert UI rubric on Hoopscout" route to `expert_rubric_remediation_v1` instead of generic UI implementation/review handling.
+- 2026-06-26: Added `repo_gate_adoption_v1` with deterministic artifact builders, workflow runtime dispatch, active workflow/skill registry entries, route aliases for quality/commit gate adoption, and `aios gate adoption-plan` CLI output.
 
 ## Open Problems
 
-1. **Full Ruff baseline is not green** — `uv run ruff check .` failed on 2026-06-24 with 25 issues; touched-file Ruff checks pass for the pytest-baseline fix.
-2. **Full format baseline is not green** — `uv run ruff format --check .` reported 178 files needing formatting on 2026-06-24; touched-file format checks pass for the pytest-baseline fix.
-3. **Full BasedPyright baseline is not green** — `uv run basedpyright` failed on 2026-06-24 with 110 errors and 101 warnings, including existing `run_cli` complexity.
-
+1. **Full Ruff baseline is not green** — `uv run ruff check .` failed on 2026-06-26 with 25 issues; touched-file Ruff checks pass for the repo gate adoption workflow.
+2. **Full format baseline is not green** — `uv run ruff format --check .` reported 172 files needing formatting on 2026-06-26; touched-file format checks pass for the repo gate adoption workflow.
+3. **Full BasedPyright baseline is not green** — `uv run basedpyright` failed on 2026-06-26 with 110 errors and 101 warnings, including existing `run_cli` complexity.
 ## Next Concrete Steps
 
-1. Use `aios tmcp review-plan` on the full Soundscape visual-polish evidence set and review the generated implementation handoff before approving any remediation slice.
+1. Execute BidCamp repo-local Phase 151 from `phase29-bidcamp-pilot-final-doc-pass-001`, then continue BidCamp 152-155, EliHealth 09-13, and pre-cr-suite-lsp 04-06.
 2. Triage the full BasedPyright baseline, starting with `run_cli` complexity and optional-access/type-helper errors in runtime-critical modules.
 3. Run Ruff autofix/format in planned chunks rather than broad unreviewed churn.
-4. Keep the eval-run service/CLI contract covered as later external harness adapters add more write paths.
 
 ## Risks / Blockers
 
@@ -104,16 +151,69 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 | Step | Status | Notes |
 |------|--------|-------|
-| Lint (ruff) | Fail | `uv run ruff check .` failed on 2026-06-24 with 25 issues. Focused expert workflow Ruff checks pass. |
-| Type check (basedpyright) | Fail | `uv run basedpyright` failed on 2026-06-24 with 110 errors and 101 warnings, including existing `run_cli` complexity. |
-| Dead code (vulture) | Pass | `uv run vulture . --min-confidence 70` exited 0 on 2026-06-24. |
-| Tests | Pass | `uv run pytest -q` passed on 2026-06-24 with 961 tests. |
-| Structure | Fail | `uv run ruff format --check .` reported 178 files needing formatting on 2026-06-24. Focused expert workflow format checks pass. |
+| Lint (ruff) | Fail | `uv run ruff check .` failed on 2026-06-26 with 25 issues. Focused repo gate adoption workflow Ruff checks pass. |
+| Type check (basedpyright) | Fail | `uv run basedpyright` failed on 2026-06-26 with 110 errors and 101 warnings, including existing `run_cli` complexity. Focused repo gate adoption service BasedPyright checks pass. |
+| Dead code (vulture) | Pass | `uv run vulture . --min-confidence 70` exited 0 on 2026-06-26. |
+| Tests | Pass | `uv run pytest -q` passed on 2026-06-26 with 1001 tests. |
+| Structure | Fail | `uv run ruff format --check .` reported 172 files needing formatting on 2026-06-26. Focused repo gate adoption workflow format checks pass. |
+
+Focused repo gate adoption workflow checks on 2026-06-26:
+- `uv run pytest tests/test_repo_gate_adoption.py tests/test_workflow_orchestration.py tests/test_task_routing.py tests/test_aios_cli.py -q` passed with 163 tests.
+- `uv run pytest tests/test_repo_gate_adoption.py tests/test_workflow_orchestration.py::test_repo_gate_adoption_workflow_registry_contract tests/test_workflow_orchestration.py::test_repo_gate_adoption_workflow_executes_with_artifacts tests/test_workflow_orchestration.py::test_repo_gate_adoption_routing_beats_generic_workflow_routes tests/test_task_routing.py::test_route_objective_routes_quality_gate_adoption_to_gate_workflow tests/test_aios_cli.py::test_gate_adoption_plan_json_writes_artifacts -q` passed with 8 tests.
+- `uv run pytest -q tests/test_repo_gate_adoption.py tests/test_workflow_orchestration.py::test_repo_gate_adoption_workflow_registry_contract tests/test_workflow_orchestration.py::test_repo_gate_adoption_workflow_executes_with_artifacts tests/test_aios_cli.py::test_gate_adoption_plan_json_writes_artifacts` passed with 8 tests after TMCP expert enrichment wiring.
+- `uv run pytest -q tests/test_repo_gate_adoption.py tests/test_workflow_orchestration.py::test_repo_gate_adoption_workflow_registry_contract tests/test_workflow_orchestration.py::test_repo_gate_adoption_workflow_executes_with_artifacts tests/test_aios_cli.py::test_gate_adoption_plan_json_writes_artifacts` passed with 8 tests after per-rubric Markdown/JSON materializer wiring.
+- `uv run pytest -q tests/test_repo_gate_adoption.py tests/test_workflow_orchestration.py::test_repo_gate_adoption_workflow_registry_contract tests/test_workflow_orchestration.py::test_repo_gate_adoption_workflow_executes_with_artifacts tests/test_aios_cli.py::test_gate_adoption_plan_json_writes_artifacts tests/test_aios_cli.py::test_gate_adoption_doc_quality_json_writes_report` passed with 9 tests after profile/classification, visual route, and adoption-doc-quality CLI wiring.
+- `uv run pytest -q tests/test_repo_gate_adoption.py tests/test_aios_cli.py::test_gate_adoption_doc_quality_json_writes_report tests/test_aios_cli.py::test_gate_adoption_plan_json_writes_artifacts tests/test_workflow_orchestration.py::test_repo_gate_adoption_workflow_executes_with_artifacts` passed with 8 tests after scan-derived rubric evidence/root-cause generation and stricter phase-readiness assertions.
+- `uv run pytest -q tests/test_repo_gate_adoption.py tests/test_workflow_orchestration.py::test_repo_gate_adoption_workflow_registry_contract tests/test_workflow_orchestration.py::test_repo_gate_adoption_workflow_executes_with_artifacts tests/test_aios_cli.py::test_gate_adoption_plan_json_writes_artifacts tests/test_aios_cli.py::test_gate_adoption_doc_quality_json_writes_report` passed with 11 tests after repo-local gate-phase rollout hardening.
+- `uv run ruff check services/repo_gate_adoption.py services/aios_cli.py tests/test_repo_gate_adoption.py tests/test_aios_cli.py` passed after repo-local gate-phase rollout hardening.
+- `uv run pytest -q tests/test_repo_gate_adoption.py tests/test_workflow_orchestration.py::test_repo_gate_adoption_workflow_registry_contract tests/test_workflow_orchestration.py::test_repo_gate_adoption_workflow_executes_with_artifacts tests/test_aios_cli.py::test_gate_adoption_plan_json_writes_artifacts tests/test_aios_cli.py::test_gate_adoption_doc_quality_json_writes_report` passed with 11 tests after strict inherited lint/test clearance hardening.
+- `uv run basedpyright services/repo_gate_adoption.py` passed after strict inherited lint/test clearance hardening.
+- `uv run pytest -q tests/test_repo_gate_adoption.py tests/test_workflow_orchestration.py::test_repo_gate_adoption_workflow_registry_contract tests/test_workflow_orchestration.py::test_repo_gate_adoption_workflow_executes_with_artifacts tests/test_aios_cli.py::test_gate_adoption_plan_json_writes_artifacts tests/test_aios_cli.py::test_gate_adoption_doc_quality_json_writes_report` passed with 11 tests after fifteen-rubric tier-one gate expansion.
+- `uv run ruff check services/repo_gate_adoption.py services/workflow_orchestration.py services/aios_cli.py tests/test_repo_gate_adoption.py tests/test_workflow_orchestration.py tests/test_task_routing.py tests/test_aios_cli.py` passed.
+- `uv run ruff format --check services/repo_gate_adoption.py services/workflow_orchestration.py services/aios_cli.py tests/test_repo_gate_adoption.py tests/test_workflow_orchestration.py tests/test_task_routing.py tests/test_aios_cli.py` passed.
+- `uv run basedpyright services/repo_gate_adoption.py` passed.
+- `uv run vulture services/repo_gate_adoption.py --min-confidence 70` exited 0.
+- `uv run pytest -q` passed with 1001 tests.
+- `uv run ruff check repo_quality_certifier services/repo_gate_adoption.py tests/test_repo_quality_certifier_package.py tests/test_repo_gate_adoption.py` passed after the `repo_quality_certifier` package-boundary split.
+- `uv run basedpyright repo_quality_certifier services/repo_gate_adoption.py tests/test_repo_quality_certifier_package.py` passed after the `repo_quality_certifier` package-boundary split.
+- `uv run pytest -q tests/test_repo_quality_certifier_package.py tests/test_repo_gate_adoption.py` passed with 9 tests after the `repo_quality_certifier` package-boundary split.
+- `uv run ruff check repo_quality_certifier tests/test_repo_quality_certifier_package.py pyproject.toml` passed after adding standalone CLI/MCP/plugin surfaces.
+- `uv run ruff format --check repo_quality_certifier tests/test_repo_quality_certifier_package.py` passed after adding standalone CLI/MCP/plugin surfaces.
+- `uv run basedpyright repo_quality_certifier tests/test_repo_quality_certifier_package.py` passed after adding standalone CLI/MCP/plugin surfaces.
+- `uv run pytest -q tests/test_repo_quality_certifier_package.py` passed with 8 tests after adding standalone CLI/MCP/plugin surfaces.
+- `uv run ruff check services/success_criteria.py tests/test_quality_evidence_contract.py tests/test_success_criteria.py pyproject.toml` passed after wiring external `quality-evidence-contract`.
+- `uv run basedpyright services/success_criteria.py tests/test_quality_evidence_contract.py` passed after wiring external `quality-evidence-contract`.
+- `uv run --with pytest python -m pytest -q tests/test_quality_evidence_contract.py tests/test_success_criteria.py` passed with 29 tests after wiring external `quality-evidence-contract`.
+- `python3 bin/aios.py --json --help` passed after adding the virtualenv re-exec bootstrap.
+- `pnpm test:context` passed with 15 tests after wiring external `context-compiler-contract`.
+- `node --check tests/context-compiler.test.mjs` passed after wiring external `context-compiler-contract`.
+
+Full repo checks on 2026-06-26:
+- `uv run ruff check .` failed with 25 existing issues.
+- `uv run ruff format --check .` failed with 172 files needing formatting.
+- `uv run basedpyright` failed with 110 errors and 101 warnings.
+- `uv run pytest -q` passed with 1001 tests.
+- `uv run vulture . --min-confidence 70` exited 0.
+
+Focused personalized humanizer CLI checks on 2026-06-25:
+- `uv run pytest tests/test_personalized_humanizer.py tests/test_aios_cli.py::test_humanize_run_no_record_outputs_rewrite tests/test_aios_cli.py::test_humanize_run_records_feedback_flow tests/test_aios_cli.py::test_humanize_eval_cli_runs_suite -q` passed with 14 tests.
+- `uv run ruff check services/aios_cli.py tests/test_aios_cli.py tests/test_personalized_humanizer.py` passed.
+- `uv run ruff format --check services/aios_cli.py tests/test_aios_cli.py tests/test_personalized_humanizer.py` passed.
+
+Focused user commit gate checks on 2026-06-25:
+- `uv run pytest tests/test_user_commit_quality_gate.py -q` passed with 28 tests.
+- `uv run ruff check bin/user-commit-quality-gate.py tests/test_user_commit_quality_gate.py` passed.
+- `uv run ruff format --check bin/user-commit-quality-gate.py tests/test_user_commit_quality_gate.py` passed.
+- `uv run basedpyright bin/user-commit-quality-gate.py tests/test_user_commit_quality_gate.py` passed.
+- `uv run vulture bin/user-commit-quality-gate.py --min-confidence 70` exited 0.
 
 Focused expert workflow checks on 2026-06-24:
 - `uv run pytest tests/test_aios_cli.py::test_tmcp_review_plan_writes_expert_review_artifacts tests/test_aios_cli.py::test_tmcp_review_plan_rejects_malformed_evidence_json -q` passed.
 - `uv run pytest tests/test_workflow_orchestration.py::test_expert_review_workflow_registry_contract tests/test_workflow_orchestration.py::test_expert_review_workflow_executes_with_artifacts -q` passed.
 - `uv run pytest tests/test_expert_rubric_remediation.py -q` passed.
+
+Focused expert routing alias check on 2026-06-25:
+- `uv run pytest tests/test_task_routing.py -k tmcp_expert_rubric -q` passed.
 
 Doc-only update note: the 2026-06-24 expert-rubric-remediation spec, implementation-plan, GSD phase-split, and Phase 26-28 planning commits ran the staged AIOS commit-quality checks and passed the registered standards, context, success-criteria, quality-pipeline, allowlist, and staged handler-race gates. The Phase 26-28 planning pass also ran `verify plan-structure` and `frontmatter validate --schema plan` for all eight plan files plus `git diff --check`; `gap-analysis --phase-dir` exited 0 but warned because global `REQUIREMENTS.md` coverage is not scoped to these TBD-requirement phases. No repo-level Ruff, BasedPyright, Vulture, or pytest run was performed for those design/planning-only commits; existing repo-level failures remain authoritative.
 

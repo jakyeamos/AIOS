@@ -13,7 +13,6 @@ export const DEFAULT_INCLUDE_PATTERNS = [
   /^config\/tmcp\//,
   /^config\/workflows\//,
   /^prompts\//,
-  /^research-domain-writing\/.*(?:SKILL\.md|prompts\/.*\.md)$/,
   /^skills\/.*(?:SKILL\.md|references\/.*\.md|agents\/.*\.ya?ml)$/,
   /^\.cursor\/skills\/.*\/SKILL\.md$/,
 ];

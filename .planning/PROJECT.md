@@ -58,7 +58,7 @@ AIOS should compile messy human intent into the right context, standards, workfl
 - The current codebase map in `.planning/codebase/` should be treated as reference material for planning, while `PROJECT.md`, context receipts, and the control-plane artifacts remain stronger truth surfaces
 - The active v1 roadmap now extends through Phase 15, adding planned tracks for measurable eval/shadow workflows, graph-native memory, multi-provider session ingestion, cross-project complexity standards, and agent skill portfolio integration.
 - The checked-in managed workflow report fixtures now reflect agent-rule-enriched invocation output from the current control-plane runtime.
-- The repository now includes the standalone `research-domain-writing/` skill bundle, Cursor skill shims, and archived package for grounded domain writing workflows.
+- Research Domain Writing has been extracted from this repository into `/Users/jakyeamos/research-domain-writing`; AIOS should consume it through installed skills or thin adapters rather than owning the RDW prompt/domain source tree.
 - Phase 6 has an execution-ready context artifact defining standards resolution, stage evaluation, execution-first evidence, and operator finding lifecycle boundaries.
 - Phase 6 Plan 01 shipped registry-driven standards resolution before execution, briefing packet criteria/standards persistence columns, agentize registry-backed standards selection, and session-start standards/trigger previews.
 - Phase 6 Plan 02 shipped durable workflow stage findings, including a `success_criteria_stage_findings` table, stage JSON artifacts, workflow-stage evaluation hooks, and closeout governance aggregation.
