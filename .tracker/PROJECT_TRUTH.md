@@ -57,6 +57,8 @@ The three extracted repos now have release governance and pushed `v0.1.0` tags. 
 
 Research Domain Writing now lives in the standalone repository `/Users/jakyeamos/research-domain-writing`, with remote `git@github.com:jakyeamos/research-domain-writing.git` and pushed tag `v0.1.0` at commit `ba0f608`. AIOS no longer owns RDW prompts, domain packs, examples, installers, packet validation, or release process; local slash commands and agent skills point at the external repo.
 
+Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER_BOUNDARY_AUDIT.md`. The current decision is to keep personalized humanizer runtime, workflow stages, profile governance, SQLite state, and privacy rules inside AIOS. It is an AIOS memory/persona projection, not the next RDW-style standalone product. A future extraction should start with a portable voice-profile/voice-packet/scorecard contract using synthetic fixtures, not with moving runtime or personal profile data.
+
 ## Why This Matters / Intended Outcome
 
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
@@ -94,6 +96,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-06-26: Added `CHANGELOG.md`, `RELEASE.md`, release validation checklists, Pre-CR doc ignores, and pushed annotated `v0.1.0` tags for `repo-quality-certifier`, `quality-evidence-contract`, and `context-compiler-contract`.
 - 2026-06-26: Audited `research-domain-writing/` and classified it as a standalone tool to extract after a narrow hardening pass, with AIOS retaining only skill/tool consumption and future adapter hooks.
 - 2026-06-26: Extracted Research Domain Writing into `/Users/jakyeamos/research-domain-writing`, created private remote `jakyeamos/research-domain-writing`, pushed `main`, tagged `v0.1.0`, and repointed local Claude/Cursor/Codex skill installs to the standalone repo.
+- 2026-06-26: Audited personalized humanizer and decided to keep runtime/state/profile inside AIOS; future extraction should start with a portable voice-profile/voice-packet/scorecard contract only after synthetic fixtures and external reuse pressure exist.
 - 2026-04-08: Added ops/maintenance utilities, retrieval rule and provenance tooling, enriched hook event capture, AI history import tooling
 - 2026-04-08: Design specs added for Code Topology Service (CTS), AIOS Command UI, and prompt library
 - 2026-04-09: Ruff 0.15.10 auto-fixed 181 issues; shellcheck clean on `auto_ingest.sh` and `health_check.sh`; BasedPyright and Vulture installed
