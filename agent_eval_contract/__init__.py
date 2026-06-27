@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from .clean_room import run_clean_room_contract_check
 from .external import normalize_external_result, to_swe_bench_format, to_terminal_bench_format
+from .samples import load_sample, validate_all_samples, validate_sample
 from .schemas import (
     AUTOMATION_STATES,
     CONTEXT_PROFILES,
@@ -22,6 +24,12 @@ from .schemas import (
     FinalStatus,
     ShadowCandidate,
     ShadowRecommendation,
+)
+from .templates import (
+    supported_template_ids,
+    validate_eval_template,
+    validate_eval_template_file,
+    validate_template_directory,
 )
 from .validators import (
     HARNESS_DIMENSION_NAMES,
@@ -54,10 +62,18 @@ __all__ = [
     "ShadowCandidate",
     "ShadowRecommendation",
     "normalize_external_result",
+    "load_sample",
+    "run_clean_room_contract_check",
+    "supported_template_ids",
     "to_swe_bench_format",
     "to_terminal_bench_format",
+    "validate_all_samples",
     "validate_context_profile",
+    "validate_eval_template",
+    "validate_eval_template_file",
     "validate_final_status",
     "validate_harness_fixture_components",
     "validate_priority",
+    "validate_sample",
+    "validate_template_directory",
 ]

@@ -14,10 +14,15 @@ sys.path.insert(0, str(ROOT))
 from agent_eval_contract import (
     CONTEXT_PROFILES,
     HARNESS_DIMENSION_NAMES,
+    load_sample,
     normalize_external_result,
+    supported_template_ids,
+    validate_all_samples,
     validate_context_profile,
+    validate_eval_template,
     validate_harness_fixture_components,
     validate_priority,
+    validate_template_directory,
 )
 from services.eval_run_service import create_eval_run, create_eval_task
 
@@ -104,3 +109,45 @@ def test_external_result_normalization_matches_contract() -> None:
     assert normalized["tests_run"] == ["pytest"]
     assert set(CONTEXT_PROFILES) >= {"external_clean_room", "peer_repo_only"}
     assert "false_completion_caught" in HARNESS_DIMENSION_NAMES
+
+
+def test_eval_template_validator_accepts_checked_in_templates() -> None:
+    template_root = ROOT / "docs" / "evals" / "templates"
+
+    validated = validate_template_directory(template_root)
+
+    assert set(validated) == set(supported_template_ids())
+
+
+def test_eval_template_validator_rejects_missing_section() -> None:
+    with pytest.raises(ValueError, match="missing required sections"):
+        validate_eval_template(
+            "failure-record",
+            "# Eval Failure Record\n\n## Identifiers\n\n- Failure ID:\n",
+        )
+
+
+def test_agent_eval_contract_bundled_samples_validate() -> None:
+    validated = validate_all_samples()
+
+    assert "eval_task" in validated
+    assert load_sample("eval_run")["context_profile"] == "peer_repo_only"
+
+
+def test_clean_room_contract_runner_does_not_import_aios_services() -> None:
+    for module_name in list(sys.modules):
+        if module_name == "agent_eval_contract" or module_name.startswith("agent_eval_contract."):
+            del sys.modules[module_name]
+        if module_name == "services" or module_name.startswith("services."):
+            del sys.modules[module_name]
+
+    imported = importlib.import_module("agent_eval_contract")
+    result = imported.run_clean_room_contract_check(
+        template_root=ROOT / "docs" / "evals" / "templates"
+    )
+
+    assert result["ok"] is True
+    assert result["template_count"] == 5
+    assert result["sample_count"] == 6
+    assert "services" not in sys.modules
+    assert not any(module_name.startswith("services.") for module_name in sys.modules)
