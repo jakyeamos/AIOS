@@ -57,6 +57,16 @@ def supported_template_ids() -> tuple[str, ...]:
     return tuple(sorted(TEMPLATE_SECTIONS))
 
 
+def render_eval_template(template_id: str) -> str:
+    required_sections = TEMPLATE_SECTIONS.get(template_id)
+    if required_sections is None:
+        allowed = ", ".join(supported_template_ids())
+        raise ValueError(f"Unknown eval template id '{template_id}'. Use one of: {allowed}.")
+    title = template_id.replace("-", " ").title()
+    sections = "\n\n".join(f"## {section}\n\nTODO" for section in required_sections)
+    return f"# {title}\n\n{sections}\n"
+
+
 def validate_eval_template(template_id: str, markdown: str) -> None:
     required_sections = TEMPLATE_SECTIONS.get(template_id)
     if required_sections is None:

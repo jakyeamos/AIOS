@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import importlib
+import json
+import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -14,16 +17,20 @@ sys.path.insert(0, str(ROOT))
 from agent_eval_contract import (
     CONTEXT_PROFILES,
     HARNESS_DIMENSION_NAMES,
+    load_release_metadata,
     load_sample,
     normalize_external_result,
+    render_eval_template,
     supported_template_ids,
     validate_all_samples,
     validate_context_profile,
     validate_eval_template,
     validate_harness_fixture_components,
     validate_priority,
+    validate_release_metadata,
     validate_template_directory,
 )
+from agent_eval_contract.fixture_runner import write_contract_fixture_bundle
 from services.eval_run_service import create_eval_run, create_eval_task
 
 
@@ -127,11 +134,26 @@ def test_eval_template_validator_rejects_missing_section() -> None:
         )
 
 
+def test_eval_template_renderer_produces_valid_portable_templates() -> None:
+    for template_id in supported_template_ids():
+        validate_eval_template(template_id, render_eval_template(template_id))
+
+
 def test_agent_eval_contract_bundled_samples_validate() -> None:
     validated = validate_all_samples()
 
     assert "eval_task" in validated
     assert load_sample("eval_run")["context_profile"] == "peer_repo_only"
+
+
+def test_agent_eval_contract_release_metadata_validates() -> None:
+    metadata = load_release_metadata()
+
+    validate_release_metadata(metadata)
+
+    assert metadata["package_name"] == "agent-eval-contract"
+    assert "clean-room fixture production" in metadata["portable_surfaces"]
+    assert "SQLite eval storage" in metadata["aios_owned_surfaces"]
 
 
 def test_clean_room_contract_runner_does_not_import_aios_services() -> None:
@@ -151,3 +173,41 @@ def test_clean_room_contract_runner_does_not_import_aios_services() -> None:
     assert result["sample_count"] == 6
     assert "services" not in sys.modules
     assert not any(module_name.startswith("services.") for module_name in sys.modules)
+
+
+def test_fixture_bundle_writer_produces_non_aios_artifacts(tmp_path: Path) -> None:
+    result = write_contract_fixture_bundle(tmp_path)
+
+    assert result["clean_room_check"]["ok"] is True
+    assert (tmp_path / "manifest.json").exists()
+    assert (tmp_path / "samples" / "eval_task.json").exists()
+    assert (tmp_path / "templates" / "major-task-eval.md").exists()
+    assert json.loads((tmp_path / "manifest.json").read_text(encoding="utf-8"))["package"] == (
+        "agent-eval-contract"
+    )
+
+
+def test_fixture_runner_cli_works_outside_aios_cwd(tmp_path: Path) -> None:
+    output_dir = tmp_path / "bundle"
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(ROOT)
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "agent_eval_contract.fixture_runner",
+            "--output-dir",
+            str(output_dir),
+        ],
+        cwd=tmp_path,
+        env=env,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    manifest = json.loads(completed.stdout)
+    assert manifest["clean_room_check"]["ok"] is True
+    assert manifest["clean_room_check"]["sample_count"] == 6
+    assert (output_dir / "manifest.json").exists()

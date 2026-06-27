@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from .clean_room import run_clean_room_contract_check
 from .external import normalize_external_result, to_swe_bench_format, to_terminal_bench_format
+from .release import load_release_metadata, validate_release_metadata
 from .samples import load_sample, validate_all_samples, validate_sample
 from .schemas import (
     AUTOMATION_STATES,
@@ -26,6 +27,7 @@ from .schemas import (
     ShadowRecommendation,
 )
 from .templates import (
+    render_eval_template,
     supported_template_ids,
     validate_eval_template,
     validate_eval_template_file,
@@ -63,6 +65,8 @@ __all__ = [
     "ShadowRecommendation",
     "normalize_external_result",
     "load_sample",
+    "load_release_metadata",
+    "render_eval_template",
     "run_clean_room_contract_check",
     "supported_template_ids",
     "to_swe_bench_format",
@@ -74,6 +78,7 @@ __all__ = [
     "validate_final_status",
     "validate_harness_fixture_components",
     "validate_priority",
+    "validate_release_metadata",
     "validate_sample",
     "validate_template_directory",
 ]
