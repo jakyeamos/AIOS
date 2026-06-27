@@ -1,10 +1,10 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, smoke-verified expert-rubric-remediation, repo gate adoption planning, and a review-ready standalone Quality Runner design while broader Ruff and BasedPyright baseline issues remain open.
+summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, smoke-verified expert-rubric-remediation, repo gate adoption planning, and a ready Quality Runner implementation plan while broader Ruff and BasedPyright baseline issues remain open.
 healthScore: 72
 statusLabel: needs_attention
-nextStep: Review the Quality Runner standalone audit-and-plan design, then choose the implementation language and package/MCP scaffolding boundary before execution planning.
+nextStep: Execute Quality Runner implementation plan Task 1 by scaffolding `/Users/jakyeamos/quality-runner` as a standalone Python package.
 blockers:
   - Full repo Ruff and format baselines are not green: Ruff reports 25 issues and Ruff format reports 172 files needing formatting.
   - Full repo BasedPyright is not green: 110 errors and 101 warnings, including the existing `services/aios_cli.py` `run_cli` complexity baseline.
@@ -45,7 +45,7 @@ AIOS now has `expert_rubric_remediation_v1` implemented and smoke-verified throu
 
 AIOS also has `repo_gate_adoption_v1`, a narrow audit-and-plan workflow for repository quality-gate adoption. It scans repo-local scripts, Pre-CR, anti-slop, local AIOS quality contracts, CI, hooks, dead-code, structural-scan, and truth-file evidence; produces a core gate readiness matrix; conditionally records TMCP expert enrichment only when source sufficiency passes; writes broad repo-class and gate-specific rubric packs; writes a staged rollout plan under git-ignored `AIOS-backfill/gate-adoption/{run_id}`; and exposes the flow through `aios gate adoption-plan`.
 
-AIOS now has a review-ready design for Quality Runner, a standalone audit-and-plan tool with CLI and MCP surfaces. Quality Runner is intended to orchestrate TMCP expert rubrics, AIOS adoption/backfill signals, Pre-CR, anti-slop, dead-code, truth-file, git-policy, and language-quality evidence into a single remediation plan without modifying target repos in v1.
+AIOS now has a review-ready design and implementation plan for Quality Runner, a standalone audit-and-plan tool with CLI and MCP surfaces. Quality Runner is intended to orchestrate TMCP expert rubrics, AIOS adoption/backfill signals, Pre-CR, anti-slop, dead-code, truth-file, git-policy, and language-quality evidence into a single remediation plan without modifying target repos in v1.
 
 Repo quality certification now lives in the standalone repository `/Users/jakyeamos/repo-quality-certifier`, with remote `git@github.com:jakyeamos/repo-quality-certifier.git`. That repo owns deterministic repo scanning, gate matrix synthesis, broad and gate-specific rubrics, rollout phase generation, document-quality evaluation, artifact writing, CLI/MCP/plugin surfaces, tests, and its own Pre-CR config. AIOS consumes it through a local path dependency and keeps a thin `services/repo_gate_adoption.py` adapter that injects AIOS TMCP enrichment and preserves existing workflow/CLI imports.
 
@@ -97,6 +97,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-06-26: Audited `research-domain-writing/` and classified it as a standalone tool to extract after a narrow hardening pass, with AIOS retaining only skill/tool consumption and future adapter hooks.
 - 2026-06-26: Extracted Research Domain Writing into `/Users/jakyeamos/research-domain-writing`, created private remote `jakyeamos/research-domain-writing`, pushed `main`, tagged `v0.1.0`, and repointed local Claude/Cursor/Codex skill installs to the standalone repo.
 - 2026-06-27: Added the review-ready Quality Runner design spec for a standalone audit-and-plan engine with CLI and MCP surfaces, shared core package, pluggable adapters, `.quality-runner/` artifacts, and explicit v1 non-execution boundaries.
+- 2026-06-27: Added the Quality Runner implementation plan for a Python-first standalone package at `/Users/jakyeamos/quality-runner`, covering scaffold, core contracts, discovery, standards, audit planning, CLI, MCP, plugin metadata, quality checks, and AIOS adoption notes.
 - 2026-04-08: Added ops/maintenance utilities, retrieval rule and provenance tooling, enriched hook event capture, AI history import tooling
 - 2026-04-08: Design specs added for Code Topology Service (CTS), AIOS Command UI, and prompt library
 - 2026-04-09: Ruff 0.15.10 auto-fixed 181 issues; shellcheck clean on `auto_ingest.sh` and `health_check.sh`; BasedPyright and Vulture installed
@@ -140,8 +141,8 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 3. **Full BasedPyright baseline is not green** — `uv run basedpyright` failed on 2026-06-26 with 110 errors and 101 warnings, including existing `run_cli` complexity.
 ## Next Concrete Steps
 
-1. Review `docs/superpowers/specs/2026-06-27-quality-runner-design.md` and decide whether v1 should be Python-first or TypeScript-first.
-2. Convert the approved Quality Runner design into an implementation plan covering the standalone package, CLI, MCP server, adapters, schemas, and smoke fixtures.
+1. Execute `docs/superpowers/plans/2026-06-27-quality-runner.md` Task 1 to scaffold `/Users/jakyeamos/quality-runner`.
+2. Continue the Quality Runner plan through core contracts, repo discovery, audit planning, CLI, MCP, plugin metadata, and release-readiness checks.
 3. Resume linked-repo adoption execution with BidCamp repo-local Phase 151, then continue BidCamp 152-155, EliHealth 09-13, and pre-cr-suite-lsp 04-06.
 
 ## Risks / Blockers
@@ -199,6 +200,8 @@ Full repo checks on 2026-06-26:
 - `uv run vulture . --min-confidence 70` exited 0.
 
 Doc-only update note: the 2026-06-27 Quality Runner design commit adds a standalone audit-and-plan spec and updates this truth snapshot. It does not change production code; the existing full-repo Ruff, format, and BasedPyright failures remain authoritative.
+
+Doc-only update note: the 2026-06-27 Quality Runner implementation-plan commit adds a Python-first standalone package plan and updates this truth snapshot. It does not change production code; the existing full-repo Ruff, format, and BasedPyright failures remain authoritative.
 
 Focused personalized humanizer CLI checks on 2026-06-25:
 - `uv run pytest tests/test_personalized_humanizer.py tests/test_aios_cli.py::test_humanize_run_no_record_outputs_rewrite tests/test_aios_cli.py::test_humanize_run_records_feedback_flow tests/test_aios_cli.py::test_humanize_eval_cli_runs_suite -q` passed with 14 tests.
