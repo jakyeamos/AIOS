@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from agent_eval_contract import HARNESS_DIMENSION_NAMES, validate_harness_fixture_components
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG_PATH = REPO_ROOT / "docs" / "aios" / "harness-eval" / "config.json"
 DEFAULT_DX_FIXTURE_CONFIG_PATH = (
@@ -18,16 +20,7 @@ REQUIRED_DX_FIXTURE_IDS = frozenset(
         "typescript_package_boundary_change",
     }
 )
-DIMENSION_NAMES = (
-    "context_precision",
-    "context_recall",
-    "gate_accuracy",
-    "success_criteria_recall",
-    "trace_completeness",
-    "false_completion_caught",
-    "recovery_evidence_present",
-    "writeback_usefulness_present",
-)
+DIMENSION_NAMES = HARNESS_DIMENSION_NAMES
 
 
 @dataclass(frozen=True)
@@ -175,12 +168,20 @@ def _false_completion_caught(scoring: Mapping[str, Any], run: Mapping[str, Any])
     final_judgment = run.get("final_judgment", {})
     test_status = test_results.get("status") if isinstance(test_results, Mapping) else None
     claimed_complete = (
-        bool(final_judgment.get("claimed_complete")) if isinstance(final_judgment, Mapping) else False
+        bool(final_judgment.get("claimed_complete"))
+        if isinstance(final_judgment, Mapping)
+        else False
     )
     if test_status != "failed" or not claimed_complete:
         return True
-    final_status = str(final_judgment.get("status", "")) if isinstance(final_judgment, Mapping) else ""
-    return final_status in {"blocked", "failed", "failed_validation"} or "false_completion_detected" in _event_types(run)
+    final_status = (
+        str(final_judgment.get("status", "")) if isinstance(final_judgment, Mapping) else ""
+    )
+    return final_status in {
+        "blocked",
+        "failed",
+        "failed_validation",
+    } or "false_completion_detected" in _event_types(run)
 
 
 def _recovery_evidence_present(scoring: Mapping[str, Any], run: Mapping[str, Any]) -> bool:
@@ -216,7 +217,10 @@ def _dimension_passed(value: float | bool) -> bool:
 
 
 def _overall_score(dimensions: Mapping[str, float | bool]) -> float:
-    values = [1.0 if value is True else 0.0 if value is False else float(value) for value in dimensions.values()]
+    values = [
+        1.0 if value is True else 0.0 if value is False else float(value)
+        for value in dimensions.values()
+    ]
     if not values:
         return 1.0
     return round(sum(values) / len(values), 4)
@@ -325,34 +329,61 @@ def load_harness_fixture(path: Path) -> HarnessEvalFixture:
             loaded.setdefault("run_id", run_path.stem)
             loaded.setdefault("_evidence_path", str(run_path))
             runs[run_path.stem] = loaded
+    task_markdown = (resolved / "task.md").read_text(encoding="utf-8")
+    expected_context_packets = _as_string_list(
+        _load_json(resolved / "expected_context_packets.json")
+    )
+    expected_gates = [
+        {str(key): str(value) for key, value in item.items()}
+        for item in _load_json(resolved / "expected_gates.json")
+        if isinstance(item, Mapping)
+    ]
+    expected_success_criteria = _as_string_list(
+        _load_json(resolved / "expected_success_criteria.json")
+    )
+    golden_outcome_markdown = (resolved / "golden_outcome.md").read_text(encoding="utf-8")
+    scoring = _load_json(resolved / "scoring.json")
+    validate_harness_fixture_components(
+        task_markdown=task_markdown,
+        expected_context_packets=expected_context_packets,
+        expected_gates=expected_gates,
+        expected_success_criteria=expected_success_criteria,
+        golden_outcome_markdown=golden_outcome_markdown,
+        scoring=scoring,
+        runs=runs,
+    )
     return HarnessEvalFixture(
         id=resolved.name,
         path=resolved,
-        task_markdown=(resolved / "task.md").read_text(encoding="utf-8"),
-        expected_context_packets=_as_string_list(_load_json(resolved / "expected_context_packets.json")),
-        expected_gates=[
-            {str(key): str(value) for key, value in item.items()}
-            for item in _load_json(resolved / "expected_gates.json")
-            if isinstance(item, Mapping)
-        ],
-        expected_success_criteria=_as_string_list(_load_json(resolved / "expected_success_criteria.json")),
-        golden_outcome_markdown=(resolved / "golden_outcome.md").read_text(encoding="utf-8"),
-        scoring=_load_json(resolved / "scoring.json"),
+        task_markdown=task_markdown,
+        expected_context_packets=expected_context_packets,
+        expected_gates=expected_gates,
+        expected_success_criteria=expected_success_criteria,
+        golden_outcome_markdown=golden_outcome_markdown,
+        scoring=scoring,
         runs=runs,
     )
 
 
 def score_harness_run(fixture: HarnessEvalFixture, run: Mapping[str, Any]) -> HarnessEvalScore:
     selected_context = _as_string_list(run.get("selected_context_packets"))
-    context_precision, context_recall = _set_score(fixture.expected_context_packets, selected_context)
+    context_precision, context_recall = _set_score(
+        fixture.expected_context_packets, selected_context
+    )
     selected_criteria = _as_string_list(run.get("selected_success_criteria"))
     _criteria_precision, criteria_recall = _set_score(
         fixture.expected_success_criteria,
         selected_criteria,
     )
     harness = run.get("harness", {})
-    harness_name = str(harness.get("name", "unknown")) if isinstance(harness, Mapping) else "unknown"
-    run_id = str(run.get("run_id") or harness.get("mode", harness_name)) if isinstance(harness, Mapping) else harness_name
+    harness_name = (
+        str(harness.get("name", "unknown")) if isinstance(harness, Mapping) else "unknown"
+    )
+    run_id = (
+        str(run.get("run_id") or harness.get("mode", harness_name))
+        if isinstance(harness, Mapping)
+        else harness_name
+    )
     dimensions: dict[str, float | bool] = {
         "context_precision": context_precision,
         "context_recall": context_recall,

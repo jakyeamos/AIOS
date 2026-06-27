@@ -6,27 +6,11 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-CONTEXT_PROFILES = {
-    "jakye_second_brain_full",
-    "jakye_second_brain_limited",
-    "jakye_repo_only",
-    "peer_repo_only",
-    "peer_portable_context_packet",
-    "external_clean_room",
-}
-FINAL_STATUSES = {"success", "partial", "failed", "abandoned"}
-PRIORITIES = {"low", "medium", "high", "critical"}
-
-SCORE_FIELDS = (
-    "task_success",
-    "quality_adherence",
-    "workflow_speed",
-    "cost_efficiency",
-    "context_effectiveness",
-    "second_brain_effectiveness",
-    "context_portability",
-    "autonomy",
-    "user_trust",
+from agent_eval_contract import (
+    SCORE_FIELDS,
+    validate_context_profile,
+    validate_final_status,
+    validate_priority,
 )
 
 
@@ -53,24 +37,15 @@ def _loads_list(raw: str | None) -> list[Any]:
 
 
 def _validate_context_profile(context_profile: str) -> None:
-    if context_profile not in CONTEXT_PROFILES:
-        allowed = ", ".join(sorted(CONTEXT_PROFILES))
-        raise ValueError(
-            f"Invalid context_profile '{context_profile}'. Use one of: {allowed}. "
-            "Choose the profile that matches the context actually available to the run."
-        )
+    validate_context_profile(context_profile)
 
 
 def _validate_final_status(final_status: str) -> None:
-    if final_status not in FINAL_STATUSES:
-        allowed = ", ".join(sorted(FINAL_STATUSES))
-        raise ValueError(f"Invalid final_status '{final_status}'. Use one of: {allowed}.")
+    validate_final_status(final_status)
 
 
 def _validate_priority(priority: str) -> None:
-    if priority not in PRIORITIES:
-        allowed = ", ".join(sorted(PRIORITIES))
-        raise ValueError(f"Invalid priority '{priority}'. Use one of: {allowed}.")
+    validate_priority(priority)
 
 
 def _validate_task_exists(conn: sqlite3.Connection, task_id: str) -> None:

@@ -27,7 +27,7 @@ ignore = [
 
 [tool.basedpyright]
 pythonVersion = "3.12"
-include = ["bin", "tests", "services"]
+include = ["agent_eval_contract", "bin", "tests", "services"]
 exclude = ["archive", "staging", "aios-ui"]
 typeCheckingMode = "standard"
 reportMissingImports = "warning"
@@ -35,5 +35,5 @@ reportMissingModuleSource = "none"
 
 [tool.vulture]
 min_confidence = 70
-paths = ["bin", "services"]
+paths = ["agent_eval_contract", "bin", "services"]
 exclude = ["archive/", "staging/"]
