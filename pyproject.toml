@@ -2,6 +2,14 @@
 name = "aios"
 version = "0.1.0"
 requires-python = ">=3.12"
+dependencies = [
+    "agent-eval-contract @ file:///Users/jakyeamos/agent-eval-contract",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
 
 [tool.ruff]
 line-length = 100
@@ -27,7 +35,7 @@ ignore = [
 
 [tool.basedpyright]
 pythonVersion = "3.12"
-include = ["agent_eval_contract", "bin", "tests", "services"]
+include = ["bin", "tests", "services"]
 exclude = ["archive", "staging", "aios-ui"]
 typeCheckingMode = "standard"
 reportMissingImports = "warning"
@@ -35,5 +43,5 @@ reportMissingModuleSource = "none"
 
 [tool.vulture]
 min_confidence = 70
-paths = ["agent_eval_contract", "bin", "services"]
+paths = ["bin", "services"]
 exclude = ["archive/", "staging/"]

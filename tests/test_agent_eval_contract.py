@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import importlib.metadata
 import json
 import os
 import subprocess
@@ -31,6 +32,7 @@ from agent_eval_contract import (
     validate_template_directory,
 )
 from agent_eval_contract.fixture_runner import write_contract_fixture_bundle
+
 from services.eval_run_service import create_eval_run, create_eval_task
 
 
@@ -42,8 +44,11 @@ def test_agent_eval_contract_import_does_not_import_aios_services() -> None:
             del sys.modules[module_name]
 
     imported = importlib.import_module("agent_eval_contract")
+    direct_url = importlib.metadata.distribution("agent-eval-contract").read_text("direct_url.json")
 
     assert "external_clean_room" in imported.CONTEXT_PROFILES
+    assert direct_url is not None
+    assert "file:///Users/jakyeamos/agent-eval-contract" in direct_url
     assert "services" not in sys.modules
     assert not any(module_name.startswith("services.") for module_name in sys.modules)
 
