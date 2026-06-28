@@ -1,0 +1,2765 @@
+{
+  "adopted_but_blocked_count": 23,
+  "adoption_ready_count": 0,
+  "blocked_count": 23,
+  "evidence_required_count": 0,
+  "excluded_count": 3,
+  "excluded_projects": [
+    {
+      "project_id": "video-pipeline",
+      "reason": "excluded_by_phase24_scope"
+    },
+    {
+      "project_id": "manga-sync",
+      "reason": "excluded_by_phase24_scope"
+    },
+    {
+      "project_id": "agent-router",
+      "reason": "excluded_by_phase24_scope"
+    }
+  ],
+  "not_adopted_count": 0,
+  "projects": [
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "Fresh local and remote evidence still required before final adoption-ready status."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "architecture": "quality-soundscape-app-architecture-20260624030903961084",
+        "build": "quality-soundscape-app-build-20260624030754235748",
+        "ci": "quality-soundscape-app-ci-20260624030921863820",
+        "coverage": "quality-soundscape-app-coverage-20260624030814158457",
+        "db_restore": "quality-soundscape-app-db_restore-20260624030922367390",
+        "dependency_security": "quality-soundscape-app-dependency_security-20260625152357130650",
+        "e2e_smoke": "quality-soundscape-app-e2e_smoke-20260625155941372526",
+        "env_validation": "quality-soundscape-app-env_validation-20260624030755556347",
+        "full_e2e": "quality-soundscape-app-full_e2e-20260624030922778773",
+        "install": "quality-soundscape-app-install-20260624030240386207",
+        "lint": "quality-soundscape-app-lint-20260624030443531887",
+        "mobile_release": "quality-soundscape-app-mobile_release-20260624030922645950",
+        "pitr_monitor": "quality-soundscape-app-pitr_monitor-20260624030922511094",
+        "pre_cr": "quality-soundscape-app-pre_cr-20260624031333840687",
+        "repo_truth": "quality-soundscape-app-repo_truth-20260624030921689608",
+        "secret_scan": "quality-soundscape-app-secret_scan-20260625151733445152",
+        "seo": "quality-soundscape-app-seo-20260624030839081155",
+        "telemetry_utility": "quality-soundscape-app-telemetry_utility-20260624030840434476",
+        "test": "quality-soundscape-app-test-20260624030626808210",
+        "typecheck": "quality-soundscape-app-typecheck-20260624030606877970"
+      },
+      "missing_gate_keys": [
+        "lint",
+        "typecheck",
+        "test",
+        "ci",
+        "secret_scan",
+        "dependency_security",
+        "e2e_smoke",
+        "pre_cr",
+        "anti_slop"
+      ],
+      "project_id": "soundscape-app",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "Fresh local and remote evidence still required before final adoption-ready status.",
+          "anti_slop_not_passing",
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:anti_slop:stale",
+          "gate_not_passing:ci:blocked",
+          "gate_not_passing:dependency_security:fail",
+          "gate_not_passing:e2e_smoke:fail",
+          "gate_not_passing:lint:blocked",
+          "gate_not_passing:pre_cr:fail",
+          "gate_not_passing:secret_scan:fail",
+          "gate_not_passing:test:fail",
+          "gate_not_passing:typecheck:fail",
+          "pre_cr_not_passing",
+          "strict_readiness_status_not_ready:evidence_required"
+        ],
+        "configured_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "architecture": "quality-soundscape-app-architecture-20260624030903961084",
+            "build": "quality-soundscape-app-build-20260624030754235748",
+            "ci": "quality-soundscape-app-ci-20260624030921863820",
+            "coverage": "quality-soundscape-app-coverage-20260624030814158457",
+            "db_restore": "quality-soundscape-app-db_restore-20260624030922367390",
+            "dependency_security": "quality-soundscape-app-dependency_security-20260625152357130650",
+            "e2e_smoke": "quality-soundscape-app-e2e_smoke-20260625155941372526",
+            "env_validation": "quality-soundscape-app-env_validation-20260624030755556347",
+            "full_e2e": "quality-soundscape-app-full_e2e-20260624030922778773",
+            "install": "quality-soundscape-app-install-20260624030240386207",
+            "lint": "quality-soundscape-app-lint-20260624030443531887",
+            "mobile_release": "quality-soundscape-app-mobile_release-20260624030922645950",
+            "pitr_monitor": "quality-soundscape-app-pitr_monitor-20260624030922511094",
+            "pre_cr": "quality-soundscape-app-pre_cr-20260624031333840687",
+            "repo_truth": "quality-soundscape-app-repo_truth-20260624030921689608",
+            "secret_scan": "quality-soundscape-app-secret_scan-20260625151733445152",
+            "seo": "quality-soundscape-app-seo-20260624030839081155",
+            "telemetry_utility": "quality-soundscape-app-telemetry_utility-20260624030840434476",
+            "test": "quality-soundscape-app-test-20260624030626808210",
+            "typecheck": "quality-soundscape-app-typecheck-20260624030606877970"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "evidence_required"
+        },
+        "gate_profile_key": "production_public_web_app",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "lint",
+          "typecheck",
+          "test",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "passing_gate_keys": [
+          "install",
+          "build",
+          "architecture",
+          "repo_truth"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "production_public_web_app",
+        "required_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "production_public_web_app",
+      "strict_readiness_status": "evidence_required",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "Fresh local evidence, coverage proof, and local CI proof are required before final adoption-ready status."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "architecture": "quality-portfolio-architecture-20260624032506414684",
+        "build": "quality-portfolio-build-20260624032502512166",
+        "ci": "quality-portfolio-ci-20260624032718438878",
+        "dependency_security": "quality-portfolio-dependency_security-20260624032505025821",
+        "e2e_smoke": "quality-portfolio-e2e_smoke-20260624032505648266",
+        "env_validation": "quality-portfolio-env_validation-20260624032502978956",
+        "install": "quality-portfolio-install-20260624032452263030",
+        "lint": "quality-portfolio-lint-20260624032455322977",
+        "pre_cr": "quality-portfolio-pre_cr-20260624032506234166",
+        "repo_truth": "quality-portfolio-repo_truth-20260624032717648038",
+        "secret_scan": "quality-portfolio-secret_scan-20260624032503535755",
+        "test": "quality-portfolio-test-20260624032458980244",
+        "typecheck": "quality-portfolio-typecheck-20260624032458464758"
+      },
+      "missing_gate_keys": [
+        "ci",
+        "pre_cr",
+        "anti_slop"
+      ],
+      "project_id": "portfolio",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "Fresh local evidence, coverage proof, and local CI proof are required before final adoption-ready status.",
+          "anti_slop_not_passing",
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:anti_slop:stale",
+          "gate_not_passing:ci:blocked",
+          "gate_not_passing:pre_cr:fail",
+          "pre_cr_not_passing",
+          "strict_readiness_status_not_ready:blocked"
+        ],
+        "configured_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "architecture": "quality-portfolio-architecture-20260624032506414684",
+            "build": "quality-portfolio-build-20260624032502512166",
+            "ci": "quality-portfolio-ci-20260624032718438878",
+            "dependency_security": "quality-portfolio-dependency_security-20260624032505025821",
+            "e2e_smoke": "quality-portfolio-e2e_smoke-20260624032505648266",
+            "env_validation": "quality-portfolio-env_validation-20260624032502978956",
+            "install": "quality-portfolio-install-20260624032452263030",
+            "lint": "quality-portfolio-lint-20260624032455322977",
+            "pre_cr": "quality-portfolio-pre_cr-20260624032506234166",
+            "repo_truth": "quality-portfolio-repo_truth-20260624032717648038",
+            "secret_scan": "quality-portfolio-secret_scan-20260624032503535755",
+            "test": "quality-portfolio-test-20260624032458980244",
+            "typecheck": "quality-portfolio-typecheck-20260624032458464758"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "blocked"
+        },
+        "gate_profile_key": "production_public_web_app",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "ci",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "passing_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke",
+          "repo_truth"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "production_public_web_app",
+        "required_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "production_public_web_app",
+      "strict_readiness_status": "blocked",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "Missing substantive architecture boundary gate, passing dependency/security evidence, and fresh local CI proof."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "build": "quality-Terrace-build-20260624034821324551",
+        "ci": "quality-Terrace-ci-20260624035103156812",
+        "dependency_security": "quality-Terrace-dependency_security-20260624034830346213",
+        "install": "quality-Terrace-install-20260624034759009758",
+        "lint": "quality-Terrace-lint-20260624034801070632",
+        "package": "quality-Terrace-package-20260624034827830257",
+        "pre_cr": "quality-Terrace-pre_cr-20260624034831063091",
+        "repo_truth": "quality-Terrace-repo_truth-20260624035102603284",
+        "secret_scan": "quality-Terrace-secret_scan-20260624035100914619",
+        "test": "quality-Terrace-test-20260624034818999070",
+        "typecheck": "quality-Terrace-typecheck-20260624034803716103"
+      },
+      "missing_gate_keys": [
+        "test",
+        "architecture",
+        "ci",
+        "dependency_security",
+        "pre_cr",
+        "anti_slop"
+      ],
+      "project_id": "Terrace",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "Missing substantive architecture boundary gate, passing dependency/security evidence, and fresh local CI proof.",
+          "anti_slop_not_passing",
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:anti_slop:stale",
+          "gate_not_passing:architecture:stale",
+          "gate_not_passing:ci:blocked",
+          "gate_not_passing:dependency_security:fail",
+          "gate_not_passing:pre_cr:fail",
+          "gate_not_passing:test:fail",
+          "pre_cr_not_passing",
+          "strict_readiness_status_not_ready:blocked"
+        ],
+        "configured_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop",
+          "package"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "build": "quality-Terrace-build-20260624034821324551",
+            "ci": "quality-Terrace-ci-20260624035103156812",
+            "dependency_security": "quality-Terrace-dependency_security-20260624034830346213",
+            "install": "quality-Terrace-install-20260624034759009758",
+            "lint": "quality-Terrace-lint-20260624034801070632",
+            "package": "quality-Terrace-package-20260624034827830257",
+            "pre_cr": "quality-Terrace-pre_cr-20260624034831063091",
+            "repo_truth": "quality-Terrace-repo_truth-20260624035102603284",
+            "secret_scan": "quality-Terrace-secret_scan-20260624035100914619",
+            "test": "quality-Terrace-test-20260624034818999070",
+            "typecheck": "quality-Terrace-typecheck-20260624034803716103"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "blocked"
+        },
+        "gate_profile_key": "developer_tool_package",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "test",
+          "architecture",
+          "ci",
+          "dependency_security",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "passing_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "secret_scan",
+          "repo_truth",
+          "package"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "developer_tool_package",
+        "required_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop",
+          "package"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "developer_tool_package",
+      "strict_readiness_status": "blocked",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "Fresh Phase 23 local quality-pipeline evidence, standards-health proof, and local CI proof are required before final adoption-ready status; dirty-tree cleanup is deferred to closeout hygiene."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "architecture": "quality-aios-architecture-20260624031018033627",
+        "build": "quality-aios-build-20260624031232586125",
+        "ci": "quality-aios-ci-20260624031244821769",
+        "divergent_strategy_standard": "quality-aios-divergent_strategy_standard-20260624031021285210",
+        "install": "quality-aios-install-20260624031155259122",
+        "lint": "quality-aios-lint-20260624031207273699",
+        "pre_cr": "quality-aios-pre_cr-20260624031333281270",
+        "pre_pr_readiness": "quality-aios-pre_pr_readiness-20260624031144459912",
+        "repo_truth": "quality-aios-repo_truth-20260624031332592940",
+        "test": "quality-aios-test-20260624031003549990",
+        "thermo_nuclear_simplification": "quality-aios-thermo_nuclear_simplification-20260624031145649704",
+        "typecheck": "quality-aios-typecheck-20260624031219178848"
+      },
+      "missing_gate_keys": [
+        "install",
+        "test",
+        "architecture",
+        "ci",
+        "pre_cr",
+        "anti_slop"
+      ],
+      "project_id": "aios",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "Fresh Phase 23 local quality-pipeline evidence, standards-health proof, and local CI proof are required before final adoption-ready status; dirty-tree cleanup is deferred to closeout hygiene.",
+          "anti_slop_not_passing",
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:anti_slop:stale",
+          "gate_not_passing:architecture:fail",
+          "gate_not_passing:ci:blocked",
+          "gate_not_passing:install:fail",
+          "gate_not_passing:pre_cr:fail",
+          "gate_not_passing:test:fail",
+          "pre_cr_not_passing",
+          "strict_readiness_status_not_ready:evidence_required"
+        ],
+        "configured_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "pre_pr_readiness",
+          "thermo_nuclear_simplification",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "architecture": "quality-aios-architecture-20260624031018033627",
+            "build": "quality-aios-build-20260624031232586125",
+            "ci": "quality-aios-ci-20260624031244821769",
+            "divergent_strategy_standard": "quality-aios-divergent_strategy_standard-20260624031021285210",
+            "install": "quality-aios-install-20260624031155259122",
+            "lint": "quality-aios-lint-20260624031207273699",
+            "pre_cr": "quality-aios-pre_cr-20260624031333281270",
+            "pre_pr_readiness": "quality-aios-pre_pr_readiness-20260624031144459912",
+            "repo_truth": "quality-aios-repo_truth-20260624031332592940",
+            "test": "quality-aios-test-20260624031003549990",
+            "thermo_nuclear_simplification": "quality-aios-thermo_nuclear_simplification-20260624031145649704",
+            "typecheck": "quality-aios-typecheck-20260624031219178848"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "evidence_required"
+        },
+        "gate_profile_key": "platform_control_plane",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "install",
+          "test",
+          "architecture",
+          "ci",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "passing_gate_keys": [
+          "lint",
+          "typecheck",
+          "build",
+          "pre_pr_readiness",
+          "thermo_nuclear_simplification",
+          "repo_truth"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "platform_control_plane",
+        "required_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "pre_pr_readiness",
+          "thermo_nuclear_simplification",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "platform_control_plane",
+      "strict_readiness_status": "evidence_required",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "Substantive architecture rules, coverage proof, and fresh local CI proof are still required before final adoption-ready status."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "build": "quality-dispatches-from-cyberspace-build-20260624032522267754",
+        "ci": "quality-dispatches-from-cyberspace-ci-20260624032718599623",
+        "dependency_security": "quality-dispatches-from-cyberspace-dependency_security-20260624032530929952",
+        "e2e_smoke": "quality-dispatches-from-cyberspace-e2e_smoke-20260624032532125788",
+        "env_validation": "quality-dispatches-from-cyberspace-env_validation-20260624032523918225",
+        "install": "quality-dispatches-from-cyberspace-install-20260624032507767345",
+        "lint": "quality-dispatches-from-cyberspace-lint-20260624032509770861",
+        "pre_cr": "quality-dispatches-from-cyberspace-pre_cr-20260624032532797575",
+        "repo_truth": "quality-dispatches-from-cyberspace-repo_truth-20260624032717873106",
+        "secret_scan": "quality-dispatches-from-cyberspace-secret_scan-20260624032525060238",
+        "test": "quality-dispatches-from-cyberspace-test-20260624032514593445",
+        "typecheck": "quality-dispatches-from-cyberspace-typecheck-20260624032513862355"
+      },
+      "missing_gate_keys": [
+        "typecheck",
+        "architecture",
+        "ci",
+        "dependency_security",
+        "pre_cr",
+        "anti_slop"
+      ],
+      "project_id": "dispatches-from-cyberspace",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "Substantive architecture rules, coverage proof, and fresh local CI proof are still required before final adoption-ready status.",
+          "anti_slop_not_passing",
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:anti_slop:stale",
+          "gate_not_passing:architecture:stale",
+          "gate_not_passing:ci:blocked",
+          "gate_not_passing:dependency_security:fail",
+          "gate_not_passing:pre_cr:fail",
+          "gate_not_passing:typecheck:fail",
+          "pre_cr_not_passing",
+          "strict_readiness_status_not_ready:blocked"
+        ],
+        "configured_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "build": "quality-dispatches-from-cyberspace-build-20260624032522267754",
+            "ci": "quality-dispatches-from-cyberspace-ci-20260624032718599623",
+            "dependency_security": "quality-dispatches-from-cyberspace-dependency_security-20260624032530929952",
+            "e2e_smoke": "quality-dispatches-from-cyberspace-e2e_smoke-20260624032532125788",
+            "env_validation": "quality-dispatches-from-cyberspace-env_validation-20260624032523918225",
+            "install": "quality-dispatches-from-cyberspace-install-20260624032507767345",
+            "lint": "quality-dispatches-from-cyberspace-lint-20260624032509770861",
+            "pre_cr": "quality-dispatches-from-cyberspace-pre_cr-20260624032532797575",
+            "repo_truth": "quality-dispatches-from-cyberspace-repo_truth-20260624032717873106",
+            "secret_scan": "quality-dispatches-from-cyberspace-secret_scan-20260624032525060238",
+            "test": "quality-dispatches-from-cyberspace-test-20260624032514593445",
+            "typecheck": "quality-dispatches-from-cyberspace-typecheck-20260624032513862355"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "blocked"
+        },
+        "gate_profile_key": "production_public_web_app",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "typecheck",
+          "architecture",
+          "ci",
+          "dependency_security",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "passing_gate_keys": [
+          "install",
+          "lint",
+          "test",
+          "build",
+          "secret_scan",
+          "e2e_smoke",
+          "repo_truth"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "production_public_web_app",
+        "required_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "production_public_web_app",
+      "strict_readiness_status": "blocked",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "Substantive architecture proof, passing local evidence for all configured gates, and local CI proof are still required before final adoption-ready status."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "build": "quality-remodelvision-build-20260624033804028691",
+        "ci": "quality-remodelvision-ci-20260624034007583633",
+        "coverage": "quality-remodelvision-coverage-20260624033805071075",
+        "dependency_security": "quality-remodelvision-dependency_security-20260624033809737561",
+        "e2e_smoke": "quality-remodelvision-e2e_smoke-20260624033805661106",
+        "env_validation": "quality-remodelvision-env_validation-20260624033807366600",
+        "install": "quality-remodelvision-install-20260624033731152399",
+        "lint": "quality-remodelvision-lint-20260624033737492463",
+        "pre_cr": "quality-remodelvision-pre_cr-20260624033810428334",
+        "repo_truth": "quality-remodelvision-repo_truth-20260624034007273603",
+        "secret_scan": "quality-remodelvision-secret_scan-20260624034006512092",
+        "test": "quality-remodelvision-test-20260624033748371031",
+        "typecheck": "quality-remodelvision-typecheck-20260624033744444284"
+      },
+      "missing_gate_keys": [
+        "lint",
+        "typecheck",
+        "test",
+        "build",
+        "architecture",
+        "ci",
+        "secret_scan",
+        "dependency_security",
+        "e2e_smoke",
+        "pre_cr",
+        "anti_slop"
+      ],
+      "project_id": "remodelvision",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "Substantive architecture proof, passing local evidence for all configured gates, and local CI proof are still required before final adoption-ready status.",
+          "anti_slop_not_passing",
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:anti_slop:stale",
+          "gate_not_passing:architecture:stale",
+          "gate_not_passing:build:fail",
+          "gate_not_passing:ci:blocked",
+          "gate_not_passing:dependency_security:fail",
+          "gate_not_passing:e2e_smoke:fail",
+          "gate_not_passing:lint:fail",
+          "gate_not_passing:pre_cr:fail",
+          "gate_not_passing:secret_scan:fail",
+          "gate_not_passing:test:fail",
+          "gate_not_passing:typecheck:fail",
+          "pre_cr_not_passing",
+          "strict_readiness_status_not_ready:blocked"
+        ],
+        "configured_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "build": "quality-remodelvision-build-20260624033804028691",
+            "ci": "quality-remodelvision-ci-20260624034007583633",
+            "coverage": "quality-remodelvision-coverage-20260624033805071075",
+            "dependency_security": "quality-remodelvision-dependency_security-20260624033809737561",
+            "e2e_smoke": "quality-remodelvision-e2e_smoke-20260624033805661106",
+            "env_validation": "quality-remodelvision-env_validation-20260624033807366600",
+            "install": "quality-remodelvision-install-20260624033731152399",
+            "lint": "quality-remodelvision-lint-20260624033737492463",
+            "pre_cr": "quality-remodelvision-pre_cr-20260624033810428334",
+            "repo_truth": "quality-remodelvision-repo_truth-20260624034007273603",
+            "secret_scan": "quality-remodelvision-secret_scan-20260624034006512092",
+            "test": "quality-remodelvision-test-20260624033748371031",
+            "typecheck": "quality-remodelvision-typecheck-20260624033744444284"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "blocked"
+        },
+        "gate_profile_key": "production_public_web_app",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "passing_gate_keys": [
+          "install",
+          "repo_truth"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "production_public_web_app",
+        "required_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "production_public_web_app",
+      "strict_readiness_status": "blocked",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "Missing substantive architecture boundary gate, passing dependency/security evidence, and fresh local CI proof."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "build": "quality-pre-cr-suite-lsp-build-20260624034903257551",
+        "ci": "quality-pre-cr-suite-lsp-ci-20260624035103331796",
+        "dependency_security": "quality-pre-cr-suite-lsp-dependency_security-20260624034920983503",
+        "install": "quality-pre-cr-suite-lsp-install-20260624034838641300",
+        "lint": "quality-pre-cr-suite-lsp-lint-20260624034846268684",
+        "package": "quality-pre-cr-suite-lsp-package-20260624034915195833",
+        "pre_cr": "quality-pre-cr-suite-lsp-pre_cr-20260624034921887222",
+        "repo_truth": "quality-pre-cr-suite-lsp-repo_truth-20260624035102742299",
+        "secret_scan": "quality-pre-cr-suite-lsp-secret_scan-20260624035101653213",
+        "test": "quality-pre-cr-suite-lsp-test-20260624034854621620",
+        "typecheck": "quality-pre-cr-suite-lsp-typecheck-20260624034849184452"
+      },
+      "missing_gate_keys": [
+        "architecture",
+        "ci",
+        "dependency_security",
+        "anti_slop"
+      ],
+      "project_id": "pre-cr-suite-lsp",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "Missing substantive architecture boundary gate, passing dependency/security evidence, and fresh local CI proof.",
+          "anti_slop_not_passing",
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:anti_slop:stale",
+          "gate_not_passing:architecture:stale",
+          "gate_not_passing:ci:blocked",
+          "gate_not_passing:dependency_security:fail",
+          "strict_readiness_status_not_ready:blocked"
+        ],
+        "configured_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop",
+          "package"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "build": "quality-pre-cr-suite-lsp-build-20260624034903257551",
+            "ci": "quality-pre-cr-suite-lsp-ci-20260624035103331796",
+            "dependency_security": "quality-pre-cr-suite-lsp-dependency_security-20260624034920983503",
+            "install": "quality-pre-cr-suite-lsp-install-20260624034838641300",
+            "lint": "quality-pre-cr-suite-lsp-lint-20260624034846268684",
+            "package": "quality-pre-cr-suite-lsp-package-20260624034915195833",
+            "pre_cr": "quality-pre-cr-suite-lsp-pre_cr-20260624034921887222",
+            "repo_truth": "quality-pre-cr-suite-lsp-repo_truth-20260624035102742299",
+            "secret_scan": "quality-pre-cr-suite-lsp-secret_scan-20260624035101653213",
+            "test": "quality-pre-cr-suite-lsp-test-20260624034854621620",
+            "typecheck": "quality-pre-cr-suite-lsp-typecheck-20260624034849184452"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "blocked"
+        },
+        "gate_profile_key": "developer_tool_package",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "architecture",
+          "ci",
+          "dependency_security",
+          "anti_slop"
+        ],
+        "passing_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "secret_scan",
+          "repo_truth",
+          "pre_cr",
+          "package"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "developer_tool_package",
+        "required_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop",
+          "package"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "developer_tool_package",
+      "strict_readiness_status": "blocked",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "Substantive architecture rules, local CI proof, and coverage proof are still required before final adoption-ready status."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "build": "quality-Bballedu-build-20260624032609063990",
+        "dependency_security": "quality-Bballedu-dependency_security-20260624032611656430",
+        "e2e_smoke": "quality-Bballedu-e2e_smoke-20260624032614173994",
+        "env_validation": "quality-Bballedu-env_validation-20260624032609514313",
+        "install": "quality-Bballedu-install-20260624032535220734",
+        "lint": "quality-Bballedu-lint-20260624032544997910",
+        "pre_cr": "quality-Bballedu-pre_cr-20260624032614759093",
+        "repo_truth": "quality-Bballedu-repo_truth-20260624032718059533",
+        "secret_scan": "quality-Bballedu-secret_scan-20260624032610141624",
+        "test": "quality-Bballedu-test-20260624032600696138",
+        "typecheck": "quality-Bballedu-typecheck-20260624032557287349"
+      },
+      "missing_gate_keys": [
+        "architecture",
+        "ci",
+        "dependency_security",
+        "e2e_smoke",
+        "pre_cr",
+        "anti_slop"
+      ],
+      "project_id": "Bballedu",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "Substantive architecture rules, local CI proof, and coverage proof are still required before final adoption-ready status.",
+          "anti_slop_not_passing",
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:anti_slop:stale",
+          "gate_not_passing:architecture:stale",
+          "gate_not_passing:ci:stale",
+          "gate_not_passing:dependency_security:fail",
+          "gate_not_passing:e2e_smoke:fail",
+          "gate_not_passing:pre_cr:fail",
+          "pre_cr_not_passing",
+          "strict_readiness_status_not_ready:blocked"
+        ],
+        "configured_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "build": "quality-Bballedu-build-20260624032609063990",
+            "dependency_security": "quality-Bballedu-dependency_security-20260624032611656430",
+            "e2e_smoke": "quality-Bballedu-e2e_smoke-20260624032614173994",
+            "env_validation": "quality-Bballedu-env_validation-20260624032609514313",
+            "install": "quality-Bballedu-install-20260624032535220734",
+            "lint": "quality-Bballedu-lint-20260624032544997910",
+            "pre_cr": "quality-Bballedu-pre_cr-20260624032614759093",
+            "repo_truth": "quality-Bballedu-repo_truth-20260624032718059533",
+            "secret_scan": "quality-Bballedu-secret_scan-20260624032610141624",
+            "test": "quality-Bballedu-test-20260624032600696138",
+            "typecheck": "quality-Bballedu-typecheck-20260624032557287349"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "blocked"
+        },
+        "gate_profile_key": "production_public_web_app",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "architecture",
+          "ci",
+          "dependency_security",
+          "e2e_smoke",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "passing_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "secret_scan",
+          "repo_truth"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "production_public_web_app",
+        "required_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "production_public_web_app",
+      "strict_readiness_status": "blocked",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "Substantive architecture rules, local CI proof, and coverage proof are still required before final adoption-ready status."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "build": "quality-tm-build-20260624032649964524",
+        "dependency_security": "quality-tm-dependency_security-20260624032652880198",
+        "e2e_smoke": "quality-tm-e2e_smoke-20260624032653281131",
+        "env_validation": "quality-tm-env_validation-20260624032650531900",
+        "install": "quality-tm-install-20260624032615788962",
+        "lint": "quality-tm-lint-20260624032617726525",
+        "pre_cr": "quality-tm-pre_cr-20260624032653973497",
+        "repo_truth": "quality-tm-repo_truth-20260624032718215420",
+        "secret_scan": "quality-tm-secret_scan-20260624032651051237",
+        "test": "quality-tm-test-20260624032623534647",
+        "typecheck": "quality-tm-typecheck-20260624032620734886"
+      },
+      "missing_gate_keys": [
+        "architecture",
+        "ci",
+        "dependency_security",
+        "pre_cr",
+        "anti_slop"
+      ],
+      "project_id": "tm",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "Substantive architecture rules, local CI proof, and coverage proof are still required before final adoption-ready status.",
+          "anti_slop_not_passing",
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:anti_slop:stale",
+          "gate_not_passing:architecture:stale",
+          "gate_not_passing:ci:stale",
+          "gate_not_passing:dependency_security:fail",
+          "gate_not_passing:pre_cr:fail",
+          "pre_cr_not_passing",
+          "strict_readiness_status_not_ready:blocked"
+        ],
+        "configured_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "build": "quality-tm-build-20260624032649964524",
+            "dependency_security": "quality-tm-dependency_security-20260624032652880198",
+            "e2e_smoke": "quality-tm-e2e_smoke-20260624032653281131",
+            "env_validation": "quality-tm-env_validation-20260624032650531900",
+            "install": "quality-tm-install-20260624032615788962",
+            "lint": "quality-tm-lint-20260624032617726525",
+            "pre_cr": "quality-tm-pre_cr-20260624032653973497",
+            "repo_truth": "quality-tm-repo_truth-20260624032718215420",
+            "secret_scan": "quality-tm-secret_scan-20260624032651051237",
+            "test": "quality-tm-test-20260624032623534647",
+            "typecheck": "quality-tm-typecheck-20260624032620734886"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "blocked"
+        },
+        "gate_profile_key": "production_public_web_app",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "architecture",
+          "ci",
+          "dependency_security",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "passing_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "secret_scan",
+          "e2e_smoke",
+          "repo_truth"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "production_public_web_app",
+        "required_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "production_public_web_app",
+      "strict_readiness_status": "blocked",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "Substantive architecture proof, passing local evidence for all configured gates, and local CI proof are still required before final adoption-ready status."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "build": "quality-amos-saas-build-20260624033902395753",
+        "ci": "quality-amos-saas-ci-20260624034007739848",
+        "dependency_security": "quality-amos-saas-dependency_security-20260624033905876802",
+        "e2e_smoke": "quality-amos-saas-e2e_smoke-20260624033902990651",
+        "env_validation": "quality-amos-saas-env_validation-20260624033904121881",
+        "install": "quality-amos-saas-install-20260624033811477990",
+        "lint": "quality-amos-saas-lint-20260624033824558685",
+        "repo_truth": "quality-amos-saas-repo_truth-20260624034007427650",
+        "secret_scan": "quality-amos-saas-secret_scan-20260624034007114250",
+        "test": "quality-amos-saas-test-20260624033837901213",
+        "typecheck": "quality-amos-saas-typecheck-20260624033834419814"
+      },
+      "missing_gate_keys": [
+        "lint",
+        "typecheck",
+        "build",
+        "architecture",
+        "ci",
+        "dependency_security",
+        "pre_cr",
+        "anti_slop"
+      ],
+      "project_id": "amos-saas",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "Substantive architecture proof, passing local evidence for all configured gates, and local CI proof are still required before final adoption-ready status.",
+          "anti_slop_not_passing",
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:anti_slop:stale",
+          "gate_not_passing:architecture:stale",
+          "gate_not_passing:build:fail",
+          "gate_not_passing:ci:blocked",
+          "gate_not_passing:dependency_security:fail",
+          "gate_not_passing:lint:fail",
+          "gate_not_passing:pre_cr:stale",
+          "gate_not_passing:typecheck:fail",
+          "pre_cr_not_passing",
+          "strict_readiness_status_not_ready:blocked"
+        ],
+        "configured_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "build": "quality-amos-saas-build-20260624033902395753",
+            "ci": "quality-amos-saas-ci-20260624034007739848",
+            "dependency_security": "quality-amos-saas-dependency_security-20260624033905876802",
+            "e2e_smoke": "quality-amos-saas-e2e_smoke-20260624033902990651",
+            "env_validation": "quality-amos-saas-env_validation-20260624033904121881",
+            "install": "quality-amos-saas-install-20260624033811477990",
+            "lint": "quality-amos-saas-lint-20260624033824558685",
+            "repo_truth": "quality-amos-saas-repo_truth-20260624034007427650",
+            "secret_scan": "quality-amos-saas-secret_scan-20260624034007114250",
+            "test": "quality-amos-saas-test-20260624033837901213",
+            "typecheck": "quality-amos-saas-typecheck-20260624033834419814"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "blocked"
+        },
+        "gate_profile_key": "production_public_web_app",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "lint",
+          "typecheck",
+          "build",
+          "architecture",
+          "ci",
+          "dependency_security",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "passing_gate_keys": [
+          "install",
+          "test",
+          "secret_scan",
+          "e2e_smoke",
+          "repo_truth"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "production_public_web_app",
+        "required_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "production_public_web_app",
+      "strict_readiness_status": "blocked",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "Missing lint/typecheck/build scripts, substantive architecture boundary gate, passing dependency/security evidence, and fresh local CI proof."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "ci": "quality-eslint-plugin-anti-slop-ci-20260624035103488638",
+        "dependency_security": "quality-eslint-plugin-anti-slop-dependency_security-20260624034926711496",
+        "install": "quality-eslint-plugin-anti-slop-install-20260624034922593819",
+        "package": "quality-eslint-plugin-anti-slop-package-20260624034925222943",
+        "pre_cr": "quality-eslint-plugin-anti-slop-pre_cr-20260624034927336869",
+        "repo_truth": "quality-eslint-plugin-anti-slop-repo_truth-20260624035102872664",
+        "secret_scan": "quality-eslint-plugin-anti-slop-secret_scan-20260624035102055757",
+        "test": "quality-eslint-plugin-anti-slop-test-20260624034923675148"
+      },
+      "missing_gate_keys": [
+        "lint",
+        "typecheck",
+        "architecture",
+        "ci",
+        "anti_slop"
+      ],
+      "project_id": "eslint-plugin-anti-slop",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "Missing lint/typecheck/build scripts, substantive architecture boundary gate, passing dependency/security evidence, and fresh local CI proof.",
+          "anti_slop_not_passing",
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:anti_slop:stale",
+          "gate_not_passing:architecture:stale",
+          "gate_not_passing:ci:blocked",
+          "gate_not_passing:lint:stale",
+          "gate_not_passing:typecheck:stale",
+          "strict_readiness_status_not_ready:blocked"
+        ],
+        "configured_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop",
+          "package"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "ci": "quality-eslint-plugin-anti-slop-ci-20260624035103488638",
+            "dependency_security": "quality-eslint-plugin-anti-slop-dependency_security-20260624034926711496",
+            "install": "quality-eslint-plugin-anti-slop-install-20260624034922593819",
+            "package": "quality-eslint-plugin-anti-slop-package-20260624034925222943",
+            "pre_cr": "quality-eslint-plugin-anti-slop-pre_cr-20260624034927336869",
+            "repo_truth": "quality-eslint-plugin-anti-slop-repo_truth-20260624035102872664",
+            "secret_scan": "quality-eslint-plugin-anti-slop-secret_scan-20260624035102055757",
+            "test": "quality-eslint-plugin-anti-slop-test-20260624034923675148"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "blocked"
+        },
+        "gate_profile_key": "developer_tool_package",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "lint",
+          "typecheck",
+          "architecture",
+          "ci",
+          "anti_slop"
+        ],
+        "passing_gate_keys": [
+          "install",
+          "test",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "package"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "developer_tool_package",
+        "required_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop",
+          "package"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "developer_tool_package",
+      "strict_readiness_status": "blocked",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "local CI proof, passing validation/Pre-CR evidence, and deeper architecture policy remain required before final adoption-ready status."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "architecture": "quality-career-ops-architecture-20260624050241257668",
+        "ci": "quality-career-ops-ci-20260624045514819305",
+        "dependency_security": "quality-career-ops-dependency_security-20260624045514507903",
+        "install": "quality-career-ops-install-20260624050238846091",
+        "lint": "quality-career-ops-lint-20260624045510407018",
+        "pre_cr": "quality-career-ops-pre_cr-20260624050319804229",
+        "repo_truth": "quality-career-ops-repo_truth-20260624050241669419",
+        "secret_scan": "quality-career-ops-secret_scan-20260624045511933742",
+        "test": "quality-career-ops-test-20260624050239677536",
+        "validation": "quality-career-ops-validation-20260624050240801712"
+      },
+      "missing_gate_keys": [
+        "ci",
+        "pre_cr",
+        "validation"
+      ],
+      "project_id": "career-ops",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:ci:blocked",
+          "gate_not_passing:pre_cr:fail",
+          "gate_not_passing:validation:fail",
+          "local CI proof, passing validation/Pre-CR evidence, and deeper architecture policy remain required before final adoption-ready status.",
+          "pre_cr_not_passing",
+          "strict_readiness_status_not_ready:blocked"
+        ],
+        "configured_gate_keys": [
+          "install",
+          "lint",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "validation"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "architecture": "quality-career-ops-architecture-20260624050241257668",
+            "ci": "quality-career-ops-ci-20260624045514819305",
+            "dependency_security": "quality-career-ops-dependency_security-20260624045514507903",
+            "install": "quality-career-ops-install-20260624050238846091",
+            "lint": "quality-career-ops-lint-20260624045510407018",
+            "pre_cr": "quality-career-ops-pre_cr-20260624050319804229",
+            "repo_truth": "quality-career-ops-repo_truth-20260624050241669419",
+            "secret_scan": "quality-career-ops-secret_scan-20260624045511933742",
+            "test": "quality-career-ops-test-20260624050239677536",
+            "validation": "quality-career-ops-validation-20260624050240801712"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "blocked"
+        },
+        "gate_profile_key": "python_data_research_course",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "ci",
+          "pre_cr",
+          "validation"
+        ],
+        "passing_gate_keys": [
+          "install",
+          "lint",
+          "test",
+          "architecture",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "python_data_research_course",
+        "required_gate_keys": [
+          "install",
+          "lint",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "validation"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "python_data_research_course",
+      "strict_readiness_status": "blocked",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "Dashboard npm lockfile is canonical for the dashboard subproject; local CI proof plus passing lint/test/dependency/Pre-CR evidence remain required before final adoption-ready status."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "architecture": "quality-Dsci-proj-architecture-20260624045515130870",
+        "ci": "quality-Dsci-proj-ci-20260624050319294056",
+        "dependency_security": "quality-Dsci-proj-dependency_security-20260624045516653891",
+        "install": "quality-Dsci-proj-install-20260624050258087015",
+        "lint": "quality-Dsci-proj-lint-20260624050259340616",
+        "pre_cr": "quality-Dsci-proj-pre_cr-20260624050302116994",
+        "repo_truth": "quality-Dsci-proj-repo_truth-20260624050301535560",
+        "secret_scan": "quality-Dsci-proj-secret_scan-20260624045515516080",
+        "test": "quality-Dsci-proj-test-20260624050300818694",
+        "validation": "quality-Dsci-proj-validation-20260624050301212632"
+      },
+      "missing_gate_keys": [
+        "lint",
+        "test",
+        "ci",
+        "dependency_security",
+        "pre_cr"
+      ],
+      "project_id": "Dsci-proj",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "Dashboard npm lockfile is canonical for the dashboard subproject; local CI proof plus passing lint/test/dependency/Pre-CR evidence remain required before final adoption-ready status.",
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:ci:blocked",
+          "gate_not_passing:dependency_security:fail",
+          "gate_not_passing:lint:fail",
+          "gate_not_passing:pre_cr:fail",
+          "gate_not_passing:test:fail",
+          "pre_cr_not_passing",
+          "strict_readiness_status_not_ready:blocked"
+        ],
+        "configured_gate_keys": [
+          "install",
+          "lint",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "validation"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "architecture": "quality-Dsci-proj-architecture-20260624045515130870",
+            "ci": "quality-Dsci-proj-ci-20260624050319294056",
+            "dependency_security": "quality-Dsci-proj-dependency_security-20260624045516653891",
+            "install": "quality-Dsci-proj-install-20260624050258087015",
+            "lint": "quality-Dsci-proj-lint-20260624050259340616",
+            "pre_cr": "quality-Dsci-proj-pre_cr-20260624050302116994",
+            "repo_truth": "quality-Dsci-proj-repo_truth-20260624050301535560",
+            "secret_scan": "quality-Dsci-proj-secret_scan-20260624045515516080",
+            "test": "quality-Dsci-proj-test-20260624050300818694",
+            "validation": "quality-Dsci-proj-validation-20260624050301212632"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "blocked"
+        },
+        "gate_profile_key": "python_data_research_course",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "lint",
+          "test",
+          "ci",
+          "dependency_security",
+          "pre_cr"
+        ],
+        "passing_gate_keys": [
+          "install",
+          "architecture",
+          "secret_scan",
+          "repo_truth",
+          "validation"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "python_data_research_course",
+        "required_gate_keys": [
+          "install",
+          "lint",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "validation"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "python_data_research_course",
+      "strict_readiness_status": "blocked",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "Compile/structure checks replace py_compile-only floor proof, but benchmark tasks/tests, local CI proof, and passing dependency evidence remain required before readiness."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "architecture": "quality-claude-improvement-lab-architecture-20260624050747485388",
+        "build": "quality-claude-improvement-lab-build-20260624050747327241",
+        "ci": "quality-claude-improvement-lab-ci-20260624050747640296",
+        "dependency_security": "quality-claude-improvement-lab-dependency_security-20260624050748054350",
+        "install": "quality-claude-improvement-lab-install-20260624050743843579",
+        "lint": "quality-claude-improvement-lab-lint-20260624050745128102",
+        "pre_cr": "quality-claude-improvement-lab-pre_cr-20260624050744849143",
+        "repo_truth": "quality-claude-improvement-lab-repo_truth-20260624050744327834",
+        "secret_scan": "quality-claude-improvement-lab-secret_scan-20260624050747826314",
+        "test": "quality-claude-improvement-lab-test-20260624050745297413",
+        "validation": "quality-claude-improvement-lab-validation-20260624050744175419"
+      },
+      "missing_gate_keys": [
+        "ci",
+        "dependency_security",
+        "pre_cr"
+      ],
+      "project_id": "claude-improvement-lab",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "Compile/structure checks replace py_compile-only floor proof, but benchmark tasks/tests, local CI proof, and passing dependency evidence remain required before readiness.",
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:ci:blocked",
+          "gate_not_passing:dependency_security:fail",
+          "gate_not_passing:pre_cr:fail",
+          "pre_cr_not_passing",
+          "strict_readiness_status_not_ready:blocked"
+        ],
+        "configured_gate_keys": [
+          "install",
+          "lint",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "validation"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "architecture": "quality-claude-improvement-lab-architecture-20260624050747485388",
+            "build": "quality-claude-improvement-lab-build-20260624050747327241",
+            "ci": "quality-claude-improvement-lab-ci-20260624050747640296",
+            "dependency_security": "quality-claude-improvement-lab-dependency_security-20260624050748054350",
+            "install": "quality-claude-improvement-lab-install-20260624050743843579",
+            "lint": "quality-claude-improvement-lab-lint-20260624050745128102",
+            "pre_cr": "quality-claude-improvement-lab-pre_cr-20260624050744849143",
+            "repo_truth": "quality-claude-improvement-lab-repo_truth-20260624050744327834",
+            "secret_scan": "quality-claude-improvement-lab-secret_scan-20260624050747826314",
+            "test": "quality-claude-improvement-lab-test-20260624050745297413",
+            "validation": "quality-claude-improvement-lab-validation-20260624050744175419"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "blocked"
+        },
+        "gate_profile_key": "python_data_research_course",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "ci",
+          "dependency_security",
+          "pre_cr"
+        ],
+        "passing_gate_keys": [
+          "install",
+          "lint",
+          "test",
+          "architecture",
+          "secret_scan",
+          "repo_truth",
+          "validation"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "python_data_research_course",
+        "required_gate_keys": [
+          "install",
+          "lint",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "validation"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "python_data_research_course",
+      "strict_readiness_status": "blocked",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "R structure and script validation are configured, but local CI proof, reproducible dependency lock strategy, and passing local evidence remain required before readiness."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "architecture": "quality-R-Project-architecture-20260624050757222025",
+        "ci": "quality-R-Project-ci-20260624050757376520",
+        "dependency_security": "quality-R-Project-dependency_security-20260624050757907462",
+        "install": "quality-R-Project-install-20260624050756258385",
+        "pre_cr": "quality-R-Project-pre_cr-20260624050755900538",
+        "repo_truth": "quality-R-Project-repo_truth-20260624050755375218",
+        "secret_scan": "quality-R-Project-secret_scan-20260624050757574196",
+        "test": "quality-R-Project-test-20260624050757019039",
+        "validation": "quality-R-Project-validation-20260624050755188222"
+      },
+      "missing_gate_keys": [
+        "lint",
+        "ci",
+        "pre_cr"
+      ],
+      "project_id": "R-Project",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "R structure and script validation are configured, but local CI proof, reproducible dependency lock strategy, and passing local evidence remain required before readiness.",
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:ci:blocked",
+          "gate_not_passing:lint:stale",
+          "gate_not_passing:pre_cr:fail",
+          "pre_cr_not_passing",
+          "strict_readiness_status_not_ready:blocked"
+        ],
+        "configured_gate_keys": [
+          "install",
+          "lint",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "validation"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "architecture": "quality-R-Project-architecture-20260624050757222025",
+            "ci": "quality-R-Project-ci-20260624050757376520",
+            "dependency_security": "quality-R-Project-dependency_security-20260624050757907462",
+            "install": "quality-R-Project-install-20260624050756258385",
+            "pre_cr": "quality-R-Project-pre_cr-20260624050755900538",
+            "repo_truth": "quality-R-Project-repo_truth-20260624050755375218",
+            "secret_scan": "quality-R-Project-secret_scan-20260624050757574196",
+            "test": "quality-R-Project-test-20260624050757019039",
+            "validation": "quality-R-Project-validation-20260624050755188222"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "blocked"
+        },
+        "gate_profile_key": "python_data_research_course",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "lint",
+          "ci",
+          "pre_cr"
+        ],
+        "passing_gate_keys": [
+          "install",
+          "test",
+          "architecture",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "validation"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "python_data_research_course",
+        "required_gate_keys": [
+          "install",
+          "lint",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "validation"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "python_data_research_course",
+      "strict_readiness_status": "blocked",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "local CI proof, passing lint/type/test/dependency evidence, and deeper architecture policy remain required before final adoption-ready status."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "architecture": "quality-LIS-architecture-20260624045507453503",
+        "build": "quality-LIS-build-20260624050228348123",
+        "ci": "quality-LIS-ci-20260624045509611238",
+        "dependency_security": "quality-LIS-dependency_security-20260624045509240579",
+        "install": "quality-LIS-install-20260624045907337741",
+        "lint": "quality-LIS-lint-20260624045908501234",
+        "pre_cr": "quality-LIS-pre_cr-20260624050236126416",
+        "repo_truth": "quality-LIS-repo_truth-20260624050234594487",
+        "secret_scan": "quality-LIS-secret_scan-20260624045508244223",
+        "test": "quality-LIS-test-20260624050226953803",
+        "validation": "quality-LIS-validation-20260624050234041466"
+      },
+      "missing_gate_keys": [
+        "lint",
+        "test",
+        "ci",
+        "dependency_security"
+      ],
+      "project_id": "LIS",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:ci:blocked",
+          "gate_not_passing:dependency_security:fail",
+          "gate_not_passing:lint:fail",
+          "gate_not_passing:test:blocked",
+          "local CI proof, passing lint/type/test/dependency evidence, and deeper architecture policy remain required before final adoption-ready status.",
+          "strict_readiness_status_not_ready:blocked"
+        ],
+        "configured_gate_keys": [
+          "install",
+          "lint",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "validation"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "architecture": "quality-LIS-architecture-20260624045507453503",
+            "build": "quality-LIS-build-20260624050228348123",
+            "ci": "quality-LIS-ci-20260624045509611238",
+            "dependency_security": "quality-LIS-dependency_security-20260624045509240579",
+            "install": "quality-LIS-install-20260624045907337741",
+            "lint": "quality-LIS-lint-20260624045908501234",
+            "pre_cr": "quality-LIS-pre_cr-20260624050236126416",
+            "repo_truth": "quality-LIS-repo_truth-20260624050234594487",
+            "secret_scan": "quality-LIS-secret_scan-20260624045508244223",
+            "test": "quality-LIS-test-20260624050226953803",
+            "validation": "quality-LIS-validation-20260624050234041466"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "blocked"
+        },
+        "gate_profile_key": "python_data_research_course",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "lint",
+          "test",
+          "ci",
+          "dependency_security"
+        ],
+        "passing_gate_keys": [
+          "install",
+          "architecture",
+          "secret_scan",
+          "repo_truth",
+          "pre_cr",
+          "validation"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "python_data_research_course",
+        "required_gate_keys": [
+          "install",
+          "lint",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "validation"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "python_data_research_course",
+      "strict_readiness_status": "blocked",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "Course structure validation replaces pre-cr-only floor proof, but assignment-specific tests/builds and local CI proof remain required before readiness."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "architecture": "quality-csds391-s26-6-architecture-20260624050758981907",
+        "ci": "quality-csds391-s26-6-ci-20260624050759131695",
+        "dependency_security": "quality-csds391-s26-6-dependency_security-20260624050759463245",
+        "install": "quality-csds391-s26-6-install-20260624050758627449",
+        "pre_cr": "quality-csds391-s26-6-pre_cr-20260624050758469443",
+        "repo_truth": "quality-csds391-s26-6-repo_truth-20260624050758060395",
+        "secret_scan": "quality-csds391-s26-6-secret_scan-20260624050759307006",
+        "test": "quality-csds391-s26-6-test-20260624050758823958",
+        "validation": "quality-csds391-s26-6-validation-20260624050759702922"
+      },
+      "missing_gate_keys": [
+        "lint",
+        "ci",
+        "pre_cr"
+      ],
+      "project_id": "csds391-s26-6",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "Course structure validation replaces pre-cr-only floor proof, but assignment-specific tests/builds and local CI proof remain required before readiness.",
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:ci:blocked",
+          "gate_not_passing:lint:stale",
+          "gate_not_passing:pre_cr:fail",
+          "pre_cr_not_passing",
+          "strict_readiness_status_not_ready:blocked"
+        ],
+        "configured_gate_keys": [
+          "install",
+          "lint",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "validation"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "architecture": "quality-csds391-s26-6-architecture-20260624050758981907",
+            "ci": "quality-csds391-s26-6-ci-20260624050759131695",
+            "dependency_security": "quality-csds391-s26-6-dependency_security-20260624050759463245",
+            "install": "quality-csds391-s26-6-install-20260624050758627449",
+            "pre_cr": "quality-csds391-s26-6-pre_cr-20260624050758469443",
+            "repo_truth": "quality-csds391-s26-6-repo_truth-20260624050758060395",
+            "secret_scan": "quality-csds391-s26-6-secret_scan-20260624050759307006",
+            "test": "quality-csds391-s26-6-test-20260624050758823958",
+            "validation": "quality-csds391-s26-6-validation-20260624050759702922"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "blocked"
+        },
+        "gate_profile_key": "python_data_research_course",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "lint",
+          "ci",
+          "pre_cr"
+        ],
+        "passing_gate_keys": [
+          "install",
+          "test",
+          "architecture",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "validation"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "python_data_research_course",
+        "required_gate_keys": [
+          "install",
+          "lint",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "validation"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "python_data_research_course",
+      "strict_readiness_status": "blocked",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "Vault content validation is configured, but failing vault/protected-path evidence, Pre-CR status, and local CI proof remain required before readiness."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "architecture": "quality-Vaults-architecture-20260624051558477285",
+        "ci": "quality-Vaults-ci-20260624051559557131",
+        "dependency_security": "quality-Vaults-dependency_security-20260624051559259867",
+        "install": "quality-Vaults-install-20260624051558051459",
+        "lint": "quality-Vaults-lint-20260624051703794062",
+        "pre_cr": "quality-Vaults-pre_cr-20260624051557295902",
+        "repo_truth": "quality-Vaults-repo_truth-20260624051556780172",
+        "secret_scan": "quality-Vaults-secret_scan-20260624051558925066",
+        "test": "quality-Vaults-test-20260624051705293558",
+        "validation": "quality-Vaults-validation-20260624051557810507"
+      },
+      "missing_gate_keys": [
+        "architecture",
+        "ci",
+        "secret_scan",
+        "pre_cr",
+        "validation"
+      ],
+      "project_id": "Vaults",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "Vault content validation is configured, but failing vault/protected-path evidence, Pre-CR status, and local CI proof remain required before readiness.",
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:architecture:fail",
+          "gate_not_passing:ci:blocked",
+          "gate_not_passing:pre_cr:fail",
+          "gate_not_passing:secret_scan:fail",
+          "gate_not_passing:validation:fail",
+          "pre_cr_not_passing",
+          "strict_readiness_status_not_ready:blocked"
+        ],
+        "configured_gate_keys": [
+          "architecture",
+          "ci",
+          "secret_scan",
+          "repo_truth",
+          "pre_cr",
+          "validation"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "architecture": "quality-Vaults-architecture-20260624051558477285",
+            "ci": "quality-Vaults-ci-20260624051559557131",
+            "dependency_security": "quality-Vaults-dependency_security-20260624051559259867",
+            "install": "quality-Vaults-install-20260624051558051459",
+            "lint": "quality-Vaults-lint-20260624051703794062",
+            "pre_cr": "quality-Vaults-pre_cr-20260624051557295902",
+            "repo_truth": "quality-Vaults-repo_truth-20260624051556780172",
+            "secret_scan": "quality-Vaults-secret_scan-20260624051558925066",
+            "test": "quality-Vaults-test-20260624051705293558",
+            "validation": "quality-Vaults-validation-20260624051557810507"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "blocked"
+        },
+        "gate_profile_key": "content_vault_container",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "architecture",
+          "ci",
+          "secret_scan",
+          "pre_cr",
+          "validation"
+        ],
+        "passing_gate_keys": [
+          "repo_truth"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "content_vault_container",
+        "required_gate_keys": [
+          "architecture",
+          "ci",
+          "secret_scan",
+          "repo_truth",
+          "pre_cr",
+          "validation"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "content_vault_container",
+      "strict_readiness_status": "blocked",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "All child repos under BBDSE count toward container readiness; any failing child Pre-CR evidence plus local CI proof remain required before readiness."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "architecture": "quality-BBDSE-architecture-20260624051607455182",
+        "ci": "quality-BBDSE-ci-20260624051608936531",
+        "dependency_security": "quality-BBDSE-dependency_security-20260624051608705225",
+        "install": "quality-BBDSE-install-20260624051607635120",
+        "lint": "quality-BBDSE-lint-20260624051705969569",
+        "pre_cr": "quality-BBDSE-pre_cr-20260624051607234619",
+        "repo_truth": "quality-BBDSE-repo_truth-20260624051603599059",
+        "secret_scan": "quality-BBDSE-secret_scan-20260624051608385672",
+        "test": "quality-BBDSE-test-20260624051712334907",
+        "validation": "quality-BBDSE-validation-20260624051603311263"
+      },
+      "missing_gate_keys": [
+        "ci",
+        "pre_cr",
+        "validation"
+      ],
+      "project_id": "BBDSE",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "All child repos under BBDSE count toward container readiness; any failing child Pre-CR evidence plus local CI proof remain required before readiness.",
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:ci:blocked",
+          "gate_not_passing:pre_cr:fail",
+          "gate_not_passing:validation:fail",
+          "pre_cr_not_passing",
+          "strict_readiness_status_not_ready:blocked"
+        ],
+        "configured_gate_keys": [
+          "architecture",
+          "ci",
+          "secret_scan",
+          "repo_truth",
+          "pre_cr",
+          "validation"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "architecture": "quality-BBDSE-architecture-20260624051607455182",
+            "ci": "quality-BBDSE-ci-20260624051608936531",
+            "dependency_security": "quality-BBDSE-dependency_security-20260624051608705225",
+            "install": "quality-BBDSE-install-20260624051607635120",
+            "lint": "quality-BBDSE-lint-20260624051705969569",
+            "pre_cr": "quality-BBDSE-pre_cr-20260624051607234619",
+            "repo_truth": "quality-BBDSE-repo_truth-20260624051603599059",
+            "secret_scan": "quality-BBDSE-secret_scan-20260624051608385672",
+            "test": "quality-BBDSE-test-20260624051712334907",
+            "validation": "quality-BBDSE-validation-20260624051603311263"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "blocked"
+        },
+        "gate_profile_key": "content_vault_container",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "ci",
+          "pre_cr",
+          "validation"
+        ],
+        "passing_gate_keys": [
+          "architecture",
+          "secret_scan",
+          "repo_truth"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "content_vault_container",
+        "required_gate_keys": [
+          "architecture",
+          "ci",
+          "secret_scan",
+          "repo_truth",
+          "pre_cr",
+          "validation"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "content_vault_container",
+      "strict_readiness_status": "blocked",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "Aggregate backend/frontend validation is configured, but local CI proof plus passing aggregate test/validation/dependency evidence remain required before final adoption-ready status."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "architecture": "quality-Fantasy-architecture-20260624045726228498",
+        "ci": "quality-Fantasy-ci-20260624045726859389",
+        "dependency_security": "quality-Fantasy-dependency_security-20260624045726710884",
+        "install": "quality-Fantasy-install-20260624045525251789",
+        "pre_cr": "quality-Fantasy-pre_cr-20260624050302978971",
+        "repo_truth": "quality-Fantasy-repo_truth-20260624050302316607",
+        "secret_scan": "quality-Fantasy-secret_scan-20260624045726465313",
+        "test": "quality-Fantasy-test-20260624045627439080",
+        "validation": "quality-Fantasy-validation-20260624045725938450"
+      },
+      "missing_gate_keys": [
+        "lint",
+        "test",
+        "ci",
+        "dependency_security",
+        "validation"
+      ],
+      "project_id": "Fantasy",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "Aggregate backend/frontend validation is configured, but local CI proof plus passing aggregate test/validation/dependency evidence remain required before final adoption-ready status.",
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:ci:blocked",
+          "gate_not_passing:dependency_security:fail",
+          "gate_not_passing:lint:stale",
+          "gate_not_passing:test:fail",
+          "gate_not_passing:validation:fail",
+          "strict_readiness_status_not_ready:blocked"
+        ],
+        "configured_gate_keys": [
+          "install",
+          "lint",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "validation"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "architecture": "quality-Fantasy-architecture-20260624045726228498",
+            "ci": "quality-Fantasy-ci-20260624045726859389",
+            "dependency_security": "quality-Fantasy-dependency_security-20260624045726710884",
+            "install": "quality-Fantasy-install-20260624045525251789",
+            "pre_cr": "quality-Fantasy-pre_cr-20260624050302978971",
+            "repo_truth": "quality-Fantasy-repo_truth-20260624050302316607",
+            "secret_scan": "quality-Fantasy-secret_scan-20260624045726465313",
+            "test": "quality-Fantasy-test-20260624045627439080",
+            "validation": "quality-Fantasy-validation-20260624045725938450"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "blocked"
+        },
+        "gate_profile_key": "python_data_research_course",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "lint",
+          "test",
+          "ci",
+          "dependency_security",
+          "validation"
+        ],
+        "passing_gate_keys": [
+          "install",
+          "architecture",
+          "secret_scan",
+          "repo_truth",
+          "pre_cr"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "python_data_research_course",
+        "required_gate_keys": [
+          "install",
+          "lint",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "validation"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "python_data_research_course",
+      "strict_readiness_status": "blocked",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "Newly added Phase 29 adoption target; needs repo-local AIOS contract, Pre-CR baseline, passing local evidence, and local CI proof before adoption-ready status."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "anti_slop": "quality-BidCamp-anti_slop-20260626141419650263",
+        "architecture": "quality-BidCamp-architecture-20260626141411409042",
+        "build": "quality-BidCamp-build-20260626141411213906",
+        "ci": "quality-BidCamp-ci-20260626142106284339",
+        "dependency_security": "quality-BidCamp-dependency_security-20260626141412447849",
+        "e2e_smoke": "quality-BidCamp-e2e_smoke-20260626141414887165",
+        "install": "quality-BidCamp-install-20260626141407517651",
+        "lint": "quality-BidCamp-lint-20260626141408430929",
+        "pre_cr": "quality-BidCamp-pre_cr-20260626141415560830",
+        "repo_truth": "quality-BidCamp-repo_truth-20260626142105920869",
+        "secret_scan": "quality-BidCamp-secret_scan-20260626141411686979",
+        "test": "quality-BidCamp-test-20260626141410289597",
+        "typecheck": "quality-BidCamp-typecheck-20260626141409357526"
+      },
+      "missing_gate_keys": [
+        "install",
+        "lint",
+        "typecheck",
+        "test",
+        "build",
+        "architecture",
+        "ci",
+        "secret_scan",
+        "dependency_security"
+      ],
+      "project_id": "BidCamp",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "Newly added Phase 29 adoption target; needs repo-local AIOS contract, Pre-CR baseline, passing local evidence, and local CI proof before adoption-ready status.",
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:architecture:fail",
+          "gate_not_passing:build:fail",
+          "gate_not_passing:ci:fail",
+          "gate_not_passing:dependency_security:fail",
+          "gate_not_passing:install:fail",
+          "gate_not_passing:lint:fail",
+          "gate_not_passing:secret_scan:fail",
+          "gate_not_passing:test:fail",
+          "gate_not_passing:typecheck:fail",
+          "strict_readiness_status_not_ready:blocked"
+        ],
+        "configured_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "anti_slop": "quality-BidCamp-anti_slop-20260626141419650263",
+            "architecture": "quality-BidCamp-architecture-20260626141411409042",
+            "build": "quality-BidCamp-build-20260626141411213906",
+            "ci": "quality-BidCamp-ci-20260626142106284339",
+            "dependency_security": "quality-BidCamp-dependency_security-20260626141412447849",
+            "e2e_smoke": "quality-BidCamp-e2e_smoke-20260626141414887165",
+            "install": "quality-BidCamp-install-20260626141407517651",
+            "lint": "quality-BidCamp-lint-20260626141408430929",
+            "pre_cr": "quality-BidCamp-pre_cr-20260626141415560830",
+            "repo_truth": "quality-BidCamp-repo_truth-20260626142105920869",
+            "secret_scan": "quality-BidCamp-secret_scan-20260626141411686979",
+            "test": "quality-BidCamp-test-20260626141410289597",
+            "typecheck": "quality-BidCamp-typecheck-20260626141409357526"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "blocked"
+        },
+        "gate_profile_key": "production_public_web_app",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security"
+        ],
+        "passing_gate_keys": [
+          "e2e_smoke",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "production_public_web_app",
+        "required_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "production_public_web_app",
+      "strict_readiness_status": "blocked",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "Newly added Phase 29 adoption target; needs repo-local AIOS contract, fresh passing local evidence, and local CI proof before adoption-ready status."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "anti_slop": "quality-tenure-anti_slop-20260626141740027577",
+        "architecture": "quality-tenure-architecture-20260626141727833139",
+        "build": "quality-tenure-build-20260626141726032673",
+        "ci": "quality-tenure-ci-20260626142107033788",
+        "dependency_security": "quality-tenure-dependency_security-20260626141729719937",
+        "e2e_smoke": "quality-tenure-e2e_smoke-20260626141733154092",
+        "install": "quality-tenure-install-20260626141540621867",
+        "lint": "quality-tenure-lint-20260626141556975001",
+        "pre_cr": "quality-tenure-pre_cr-20260626141734340813",
+        "repo_truth": "quality-tenure-repo_truth-20260626142106464037",
+        "secret_scan": "quality-tenure-secret_scan-20260626141728135977",
+        "test": "quality-tenure-test-20260626141631464424",
+        "typecheck": "quality-tenure-typecheck-20260626141614480683"
+      },
+      "missing_gate_keys": [
+        "ci",
+        "secret_scan",
+        "dependency_security",
+        "e2e_smoke"
+      ],
+      "project_id": "tenure",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "Newly added Phase 29 adoption target; needs repo-local AIOS contract, fresh passing local evidence, and local CI proof before adoption-ready status.",
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:ci:fail",
+          "gate_not_passing:dependency_security:fail",
+          "gate_not_passing:e2e_smoke:fail",
+          "gate_not_passing:secret_scan:fail",
+          "strict_readiness_status_not_ready:blocked"
+        ],
+        "configured_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "anti_slop": "quality-tenure-anti_slop-20260626141740027577",
+            "architecture": "quality-tenure-architecture-20260626141727833139",
+            "build": "quality-tenure-build-20260626141726032673",
+            "ci": "quality-tenure-ci-20260626142107033788",
+            "dependency_security": "quality-tenure-dependency_security-20260626141729719937",
+            "e2e_smoke": "quality-tenure-e2e_smoke-20260626141733154092",
+            "install": "quality-tenure-install-20260626141540621867",
+            "lint": "quality-tenure-lint-20260626141556975001",
+            "pre_cr": "quality-tenure-pre_cr-20260626141734340813",
+            "repo_truth": "quality-tenure-repo_truth-20260626142106464037",
+            "secret_scan": "quality-tenure-secret_scan-20260626141728135977",
+            "test": "quality-tenure-test-20260626141631464424",
+            "typecheck": "quality-tenure-typecheck-20260626141614480683"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "blocked"
+        },
+        "gate_profile_key": "production_public_web_app",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke"
+        ],
+        "passing_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "production_public_web_app",
+        "required_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "build",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "e2e_smoke",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "production_public_web_app",
+      "strict_readiness_status": "blocked",
+      "verdict": "blocked"
+    },
+    {
+      "adoption_status": "adopted_but_blocked",
+      "blockers": [
+        "Newly added Phase 29 mobile-app adoption target; needs repo-local AIOS contract, Pre-CR baseline, passing mobile release proof, and local CI proof before adoption-ready status."
+      ],
+      "exclusion_reason": null,
+      "latest_evidence_ids": {
+        "anti_slop": "quality-EliHealth-anti_slop-20260626141944172352",
+        "architecture": "quality-EliHealth-architecture-20260626141829850260",
+        "ci": "quality-EliHealth-ci-20260626142107655795",
+        "dependency_security": "quality-EliHealth-dependency_security-20260626141836109430",
+        "install": "quality-EliHealth-install-20260626141758418068",
+        "lint": "quality-EliHealth-lint-20260626141812825740",
+        "mobile_release": "quality-EliHealth-mobile_release-20260626141936762187",
+        "pre_cr": "quality-EliHealth-pre_cr-20260626141937851088",
+        "repo_truth": "quality-EliHealth-repo_truth-20260626142107260628",
+        "secret_scan": "quality-EliHealth-secret_scan-20260626141830174749",
+        "test": "quality-EliHealth-test-20260626141829639774",
+        "typecheck": "quality-EliHealth-typecheck-20260626141817789004"
+      },
+      "missing_gate_keys": [
+        "install",
+        "lint",
+        "test",
+        "ci",
+        "mobile_release"
+      ],
+      "project_id": "EliHealth",
+      "quality_certification": {
+        "accepted_exceptions": [
+          "non_remote_ci_exception"
+        ],
+        "adoption_status": "adopted_but_blocked",
+        "blockers": [
+          "Newly added Phase 29 mobile-app adoption target; needs repo-local AIOS contract, Pre-CR baseline, passing mobile release proof, and local CI proof before adoption-ready status.",
+          "ci_local_replacement_proof_missing",
+          "gate_not_passing:ci:fail",
+          "gate_not_passing:install:fail",
+          "gate_not_passing:lint:fail",
+          "gate_not_passing:mobile_release:fail",
+          "gate_not_passing:test:fail",
+          "strict_readiness_status_not_ready:blocked"
+        ],
+        "configured_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "mobile_release",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "evidence": {
+          "latest_evidence_ids": {
+            "anti_slop": "quality-EliHealth-anti_slop-20260626141944172352",
+            "architecture": "quality-EliHealth-architecture-20260626141829850260",
+            "ci": "quality-EliHealth-ci-20260626142107655795",
+            "dependency_security": "quality-EliHealth-dependency_security-20260626141836109430",
+            "install": "quality-EliHealth-install-20260626141758418068",
+            "lint": "quality-EliHealth-lint-20260626141812825740",
+            "mobile_release": "quality-EliHealth-mobile_release-20260626141936762187",
+            "pre_cr": "quality-EliHealth-pre_cr-20260626141937851088",
+            "repo_truth": "quality-EliHealth-repo_truth-20260626142107260628",
+            "secret_scan": "quality-EliHealth-secret_scan-20260626141830174749",
+            "test": "quality-EliHealth-test-20260626141829639774",
+            "typecheck": "quality-EliHealth-typecheck-20260626141817789004"
+          },
+          "standard_version": "2026-04-26",
+          "strict_readiness_status": "blocked"
+        },
+        "gate_profile_key": "mobile_app",
+        "missing_command_gate_keys": [],
+        "missing_gate_keys": [
+          "install",
+          "lint",
+          "test",
+          "ci",
+          "mobile_release"
+        ],
+        "passing_gate_keys": [
+          "typecheck",
+          "architecture",
+          "secret_scan",
+          "dependency_security",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "placeholder_command_gate_keys": [],
+        "repo_classification": "mobile_app",
+        "required_gate_keys": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "architecture",
+          "ci",
+          "secret_scan",
+          "dependency_security",
+          "mobile_release",
+          "repo_truth",
+          "pre_cr",
+          "anti_slop"
+        ],
+        "required_subworkflow": "repo_gate_adoption_v1",
+        "stage_statuses": {
+          "aios_wired": "pass",
+          "quality_standard_compliant": "fail",
+          "release_ready": "fail"
+        },
+        "workflow_key": "repo_gate_adoption_v1"
+      },
+      "repo_class": "mobile_app",
+      "strict_readiness_status": "blocked",
+      "verdict": "blocked"
+    }
+  ],
+  "ready_count": 0,
+  "target_count": 23
+}

@@ -88,6 +88,7 @@ The user clarified that this run does not need to make all CI gates pass. The re
 - `scripts/linked-repo-quality-runner.py` resolves `ci` gates through each repo's approved `non_remote_ci_exception.local_proof_command` instead of trying to execute a GitHub workflow YAML path.
 - `services/quality_pipeline.py` now honors `standard.classes[*].required_gates`, so class-specific readiness gates drive blocker status instead of every globally applicable gate.
 - `config/quality-pipeline.json` now has runnable commands for every required gate in the 20 in-scope repos; the current report has no unconfigured required gates.
+- Follow-up setup verification found AIOS was missing required platform `secret_scan` and `dependency_security` commands. Those commands are now configured, and the focused regression test proves no Phase 24 in-scope repo has a missing required gate config, blank required gate command, or missing local CI proof command.
 
 Current failure ledger from `python3 scripts/linked-repo-quality-runner.py --report`:
 
