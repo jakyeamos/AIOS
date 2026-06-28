@@ -123,11 +123,14 @@ from services.second_brain_eval import (
     evaluate_gold_set_run,
 )
 from services.session_intelligence_loop import (
+    SessionIntelligenceBackfillOptions,
     SessionIntelligenceOptions,
     list_session_intelligence_candidates,
     mark_session_intelligence_candidate,
     run_session_intelligence,
+    run_session_intelligence_backfill,
 )
+from services.session_providers.claude import ClaudeProvider
 from services.session_providers.codex import CodexProvider
 from services.shadow_automation import (
     approve_candidate,
@@ -4789,6 +4792,16 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
             f"candidates={summary['candidate_count']} report={data.get('report_path') or 'none'}"
         )
         return
+    if command == "session-intel-backfill":
+        summary = data["summary"]
+        print(
+            f"providers={summary['provider_count']} "
+            f"processed={summary['processed_source_count']} "
+            f"skipped={summary['skipped_source_count']} "
+            f"batches={summary['batch_count']} "
+            f"candidates={summary['candidate_count']}"
+        )
+        return
     if command == "session-intel-candidates":
         print(f"candidates={data['count']}")
         return
@@ -5096,15 +5109,8 @@ def _workflow_gates_payload(args: argparse.Namespace) -> dict[str, Any]:
 
 def _session_intel_payload(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
     if args.session_intel_command == "run":
-        if args.provider != "codex":
-            raise CLIError(
-                "unsupported-session-intel-provider",
-                f"Unsupported session intelligence provider: {args.provider}",
-                EXIT_USAGE,
-            )
-        source_root = Path(args.source_root).expanduser() if args.source_root else None
         report_root = Path(args.report_root).expanduser() if args.report_root else None
-        provider = CodexProvider(source_root=source_root, db_path=DEFAULT_DB_PATH)
+        provider = _session_intel_provider(args.provider, source_root=args.source_root)
         return run_session_intelligence(
             conn,
             provider=provider,
@@ -5117,6 +5123,53 @@ def _session_intel_payload(conn: sqlite3.Connection, args: argparse.Namespace) -
                 / "session-provider-config.yaml",
             ),
         )
+    if args.session_intel_command == "backfill":
+        report_root = Path(args.report_root).expanduser() if args.report_root else None
+        providers = _session_intel_providers(args)
+        provider_results = [
+            run_session_intelligence_backfill(
+                conn,
+                provider=provider,
+                options=SessionIntelligenceBackfillOptions(
+                    since=args.since,
+                    lane=args.lane,
+                    batch_size=args.batch_size,
+                    write_report=bool(args.write_report),
+                    report_root=report_root,
+                    config_path=Path(getattr(args, "config_root", DEFAULT_CONFIG_ROOT)).expanduser()
+                    / "session-provider-config.yaml",
+                ),
+            )
+            for provider in providers
+        ]
+        return {
+            "summary": {
+                "provider_count": len(provider_results),
+                "eligible_source_count": sum(
+                    result["summary"]["eligible_source_count"] for result in provider_results
+                ),
+                "processed_source_count": sum(
+                    result["summary"]["processed_source_count"] for result in provider_results
+                ),
+                "skipped_source_count": sum(
+                    result["summary"]["skipped_source_count"] for result in provider_results
+                ),
+                "batch_count": sum(result["summary"]["batch_count"] for result in provider_results),
+                "session_count": sum(
+                    result["summary"]["session_count"] for result in provider_results
+                ),
+                "candidate_count": sum(
+                    result["summary"]["candidate_count"] for result in provider_results
+                ),
+            },
+            "providers": provider_results,
+            "report_paths": [
+                path for result in provider_results for path in result["report_paths"]
+            ],
+            "report_json_paths": [
+                path for result in provider_results for path in result["report_json_paths"]
+            ],
+        }
     if args.session_intel_command == "candidates":
         candidates = list_session_intelligence_candidates(
             conn,
@@ -5136,6 +5189,47 @@ def _session_intel_payload(conn: sqlite3.Connection, args: argparse.Namespace) -
         f"Unsupported session-intel command: {args.session_intel_command}",
         EXIT_USAGE,
     )
+
+
+def _session_intel_provider(
+    provider_name: str,
+    *,
+    source_root: str | None = None,
+) -> ClaudeProvider | CodexProvider:
+    root = Path(source_root).expanduser() if source_root else None
+    if provider_name == "codex":
+        return CodexProvider(source_root=root, db_path=DEFAULT_DB_PATH)
+    if provider_name == "claude":
+        return ClaudeProvider(source_root=root, db_path=DEFAULT_DB_PATH)
+    raise CLIError(
+        "unsupported-session-intel-provider",
+        f"Unsupported session intelligence provider: {provider_name}",
+        EXIT_USAGE,
+    )
+
+
+def _session_intel_providers(args: argparse.Namespace) -> list[ClaudeProvider | CodexProvider]:
+    if args.provider == "all":
+        return [
+            CodexProvider(
+                source_root=Path(args.codex_source_root).expanduser()
+                if args.codex_source_root
+                else None,
+                db_path=DEFAULT_DB_PATH,
+            ),
+            ClaudeProvider(
+                source_root=Path(args.claude_source_root).expanduser()
+                if args.claude_source_root
+                else None,
+                db_path=DEFAULT_DB_PATH,
+            ),
+        ]
+    return [
+        _session_intel_provider(
+            args.provider,
+            source_root=args.source_root,
+        )
+    ]
 
 
 def _dx_pack_report_template() -> dict[str, Any]:
@@ -5206,7 +5300,7 @@ def create_parser() -> argparse.ArgumentParser:
     session_intel_run = session_intel_subparsers.add_parser(
         "run", help="Analyze new Codex sessions and emit review-gated candidates"
     )
-    session_intel_run.add_argument("--provider", choices=["codex"], default="codex")
+    session_intel_run.add_argument("--provider", choices=["codex", "claude"], default="codex")
     session_intel_run.add_argument("--since", default="last")
     session_intel_run.add_argument(
         "--lane",
@@ -5217,6 +5311,26 @@ def create_parser() -> argparse.ArgumentParser:
     session_intel_run.add_argument("--source-root", default=None)
     session_intel_run.add_argument("--report-root", default=None)
     session_intel_run.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    session_intel_backfill = session_intel_subparsers.add_parser(
+        "backfill", help="Backfill historical Codex and Claude sessions in resumable batches"
+    )
+    session_intel_backfill.add_argument(
+        "--provider", choices=["codex", "claude", "all"], default="all"
+    )
+    session_intel_backfill.add_argument("--since", default="all")
+    session_intel_backfill.add_argument(
+        "--lane",
+        choices=["all", "friction_tool", "workflow_skill", "impact_idea"],
+        default="all",
+    )
+    session_intel_backfill.add_argument("--batch-size", type=int, default=250)
+    session_intel_backfill.add_argument("--write-report", action="store_true")
+    session_intel_backfill.add_argument("--source-root", default=None)
+    session_intel_backfill.add_argument("--codex-source-root", default=None)
+    session_intel_backfill.add_argument("--claude-source-root", default=None)
+    session_intel_backfill.add_argument("--report-root", default=None)
+    session_intel_backfill.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     session_intel_candidates = session_intel_subparsers.add_parser(
         "candidates", help="List review-gated session intelligence candidates"

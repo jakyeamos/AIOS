@@ -10,11 +10,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from services.session_intelligence_loop import (  # noqa: E402
+    SessionIntelligenceBackfillOptions,
     SessionIntelligenceOptions,
     ensure_session_intelligence_schema,
     list_session_intelligence_candidates,
     mark_session_intelligence_candidate,
     run_session_intelligence,
+    run_session_intelligence_backfill,
 )
 from services.session_providers.codex import CodexProvider  # noqa: E402
 
@@ -82,6 +84,32 @@ def _function_output(output: str) -> dict:
             "output": output,
         },
     }
+
+
+def _write_claude_session(path: Path, session_id: str, user_text: str, assistant_text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    events = [
+        {
+            "type": "user",
+            "timestamp": "2026-06-27T10:00:00Z",
+            "cwd": "/Users/jakyeamos/AIOS",
+            "message": {"role": "user", "content": user_text},
+        },
+        {
+            "type": "assistant",
+            "timestamp": "2026-06-27T10:01:00Z",
+            "cwd": "/Users/jakyeamos/AIOS",
+            "message": {
+                "role": "assistant",
+                "model": "claude-sonnet-4",
+                "content": [{"type": "text", "text": assistant_text}],
+            },
+        },
+    ]
+    path.write_text(
+        "\n".join(json.dumps(event, sort_keys=True) for event in events) + "\n",
+        encoding="utf-8",
+    )
 
 
 def test_codex_provider_normalizes_tools_commands_errors_and_cwd(tmp_path: Path) -> None:
@@ -169,6 +197,52 @@ def test_session_intelligence_deduplicates_candidates_across_runs(tmp_path: Path
     assert len(list_session_intelligence_candidates(conn)) == 1
 
 
+def test_session_intelligence_backfill_batches_and_resumes_from_cursors(
+    tmp_path: Path,
+) -> None:
+    sessions_root = tmp_path / "sessions"
+    for index in range(3):
+        _write_codex_rollout(
+            sessions_root / f"2026/06/27/rollout-2026-06-27T10-0{index}-00-session-{index}.jsonl",
+            [
+                _session_meta(f"session-{index}"),
+                _function_call(f"pnpm test --filter package-{index}"),
+                _function_output("Process exited with code 1\npytest failed"),
+            ],
+        )
+    conn = _memory_conn()
+    provider = CodexProvider(source_root=sessions_root, db_path=tmp_path / "aios.db")
+    options = SessionIntelligenceBackfillOptions(
+        since="all",
+        batch_size=2,
+        write_report=True,
+        report_root=tmp_path / "reports",
+    )
+
+    first = run_session_intelligence_backfill(conn, provider=provider, options=options)
+    second = run_session_intelligence_backfill(conn, provider=provider, options=options)
+
+    assert first["summary"]["eligible_source_count"] == 3
+    assert first["summary"]["processed_source_count"] == 3
+    assert first["summary"]["skipped_source_count"] == 0
+    assert first["summary"]["batch_count"] == 2
+    assert first["summary"]["candidate_count"] == 3
+    assert len(first["report_paths"]) == 2
+    assert all(Path(path).exists() for path in first["report_paths"])
+    assert second["summary"]["eligible_source_count"] == 3
+    assert second["summary"]["processed_source_count"] == 0
+    assert second["summary"]["skipped_source_count"] == 3
+    assert second["summary"]["batch_count"] == 0
+
+    first_source = sorted(sessions_root.glob("**/*.jsonl"))[0]
+    first_source.touch()
+    third = run_session_intelligence_backfill(conn, provider=provider, options=options)
+
+    assert third["summary"]["processed_source_count"] == 0
+    assert third["summary"]["skipped_source_count"] == 3
+    assert third["summary"]["batch_count"] == 1
+
+
 def test_session_intelligence_lists_and_marks_candidates(tmp_path: Path) -> None:
     conn = _memory_conn()
     ensure_session_intelligence_schema(conn)
@@ -225,10 +299,25 @@ def test_session_intelligence_cli_parser_accepts_run_candidates_and_mark() -> No
             "reviewed",
         ]
     )
+    backfill_args = parser.parse_args(
+        [
+            "session-intel",
+            "backfill",
+            "--provider",
+            "all",
+            "--since",
+            "all",
+            "--batch-size",
+            "250",
+            "--write-report",
+        ]
+    )
 
     assert run_args.session_intel_command == "run"
     assert candidates_args.session_intel_command == "candidates"
     assert mark_args.session_intel_command == "mark"
+    assert backfill_args.session_intel_command == "backfill"
+    assert backfill_args.provider == "all"
 
 
 def test_session_intelligence_cli_payloads_run_list_and_mark(tmp_path: Path) -> None:
@@ -275,3 +364,48 @@ def test_session_intelligence_cli_payloads_run_list_and_mark(tmp_path: Path) -> 
     assert Path(run_payload["report_path"]).exists()
     assert listed["count"] == 1
     assert marked["status"] == "observed"
+
+
+def test_session_intelligence_cli_backfill_supports_codex_and_claude(
+    tmp_path: Path,
+) -> None:
+    import services.aios_cli as aios_cli
+
+    codex_root = tmp_path / "codex"
+    claude_root = tmp_path / "claude"
+    _write_codex_rollout(
+        codex_root / "2026/06/27/rollout-2026-06-27T10-00-00-codex-session.jsonl",
+        [
+            _session_meta("codex-session"),
+            _function_call("pnpm test"),
+            _function_output("Process exited with code 1\npytest failed"),
+        ],
+    )
+    _write_claude_session(
+        claude_root / "-Users-jakyeamos-AIOS" / "claude-session.jsonl",
+        "claude-session",
+        "Highest leverage impact idea: backfill Claude and Codex transcripts.",
+        "Keep generated candidates review-gated.",
+    )
+    conn = _memory_conn()
+
+    payload = aios_cli._session_intel_payload(
+        conn,
+        argparse.Namespace(
+            session_intel_command="backfill",
+            provider="all",
+            since="all",
+            lane="all",
+            batch_size=1,
+            write_report=False,
+            source_root=None,
+            codex_source_root=str(codex_root),
+            claude_source_root=str(claude_root),
+            report_root=str(tmp_path / "reports"),
+        ),
+    )
+
+    assert payload["summary"]["provider_count"] == 2
+    assert payload["summary"]["processed_source_count"] == 2
+    assert {result["provider"] for result in payload["providers"]} == {"codex", "claude"}
+    assert len(list_session_intelligence_candidates(conn)) == 2

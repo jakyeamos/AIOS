@@ -48,6 +48,16 @@ class SessionIntelligenceOptions:
 
 
 @dataclass(frozen=True)
+class SessionIntelligenceBackfillOptions:
+    since: str = "all"
+    lane: str = "all"
+    batch_size: int = 250
+    write_report: bool = False
+    report_root: Path | None = None
+    config_path: Path | None = None
+
+
+@dataclass(frozen=True)
 class _CandidateDraft:
     lane: Lane
     title: str
@@ -126,11 +136,109 @@ def run_session_intelligence(
     options: SessionIntelligenceOptions,
 ) -> dict[str, Any]:
     ensure_session_intelligence_schema(conn)
+    return _run_session_intelligence_for_sources(
+        conn,
+        provider=provider,
+        options=options,
+        sources=_sources_for_options(conn, provider, options),
+    )
+
+
+def run_session_intelligence_backfill(
+    conn: sqlite3.Connection,
+    *,
+    provider: SessionProvider,
+    options: SessionIntelligenceBackfillOptions,
+) -> dict[str, Any]:
+    ensure_session_intelligence_schema(conn)
+    batch_size = max(1, options.batch_size)
+    eligible_sources = _eligible_sources_for_since(provider.discover_sources(), options.since)
+    pending_sources = [
+        source
+        for source in eligible_sources
+        if not _cursor_matches_source_stat(conn, provider=provider, source=source)
+    ]
+    batches = []
+    report_paths = []
+    report_json_paths = []
+    for batch_index, source_batch in enumerate(_chunks(pending_sources, batch_size), start=1):
+        batch_options = SessionIntelligenceOptions(
+            since=f"backfill:{options.since}:batch-{batch_index}",
+            lane=options.lane,
+            write_report=options.write_report,
+            report_root=options.report_root,
+            config_path=options.config_path,
+        )
+        result = _run_session_intelligence_for_sources(
+            conn,
+            provider=provider,
+            options=batch_options,
+            sources=source_batch,
+            skip_current_hash=True,
+        )
+        batches.append(result)
+        if result.get("report_path"):
+            report_paths.append(result["report_path"])
+        if result.get("report_json_path"):
+            report_json_paths.append(result["report_json_path"])
+
+    session_count = sum(batch["summary"]["session_count"] for batch in batches)
+    candidate_count = sum(batch["summary"]["candidate_count"] for batch in batches)
+    hash_skipped_count = sum(
+        batch["summary"].get("hash_skipped_source_count", 0) for batch in batches
+    )
+    return {
+        "backfill_id": f"session-intel-backfill-{uuid.uuid4()}",
+        "provider": provider.provider_id,
+        "summary": {
+            "eligible_source_count": len(eligible_sources),
+            "processed_source_count": sum(batch["summary"]["source_count"] for batch in batches),
+            "skipped_source_count": len(eligible_sources)
+            - len(pending_sources)
+            + hash_skipped_count,
+            "batch_count": len(batches),
+            "session_count": session_count,
+            "candidate_count": candidate_count,
+        },
+        "batches": batches,
+        "report_paths": report_paths,
+        "report_json_paths": report_json_paths,
+    }
+
+
+def _run_session_intelligence_for_sources(
+    conn: sqlite3.Connection,
+    *,
+    provider: SessionProvider,
+    options: SessionIntelligenceOptions,
+    sources: list[Any],
+    skip_current_hash: bool = False,
+) -> dict[str, Any]:
     run_id = f"session-intel-{uuid.uuid4()}"
     now = _now()
     redactors = _load_redactors(options.config_path)
-    sources = _sources_for_options(conn, provider, options)
-    sessions = [_normalize_source(provider, source) for source in sources]
+    source_session_pairs = [(source, _normalize_source(provider, source)) for source in sources]
+    hash_skipped_pairs = []
+    if skip_current_hash:
+        pending_pairs = []
+        for source, session in source_session_pairs:
+            if _cursor_matches_content_hash(
+                conn, provider=provider, source=source, content_hash=session.content_hash
+            ):
+                hash_skipped_pairs.append((source, session))
+                continue
+            pending_pairs.append((source, session))
+        source_session_pairs = pending_pairs
+        for source, session in hash_skipped_pairs:
+            _upsert_cursor(
+                conn,
+                provider=provider,
+                source=source,
+                session=session,
+                now=now,
+            )
+    sources = [source for source, _session in source_session_pairs]
+    sessions = [session for _source, session in source_session_pairs]
     candidates = _candidate_drafts(sessions, lane=options.lane)
     stored_candidates = [
         _upsert_candidate(conn, draft, redactors=redactors, now=now) for draft in candidates
@@ -179,6 +287,7 @@ def run_session_intelligence(
         "provider": provider.provider_id,
         "summary": {
             "source_count": len(sources),
+            "hash_skipped_source_count": len(hash_skipped_pairs),
             "session_count": len(sessions),
             "candidate_count": len(stored_candidates),
         },
@@ -249,15 +358,12 @@ def _sources_for_options(
     provider: SessionProvider,
     options: SessionIntelligenceOptions,
 ) -> list[Any]:
-    all_sources = provider.discover_sources()
+    all_sources = _eligible_sources_for_since(provider.discover_sources(), options.since)
     if options.since == "all":
         return all_sources
-    cutoff = _since_cutoff(options.since)
     result = []
     for source in all_sources:
         stat = source.path.stat()
-        if cutoff is not None and datetime.fromtimestamp(stat.st_mtime, tz=UTC) < cutoff:
-            continue
         cursor = conn.execute(
             """
             SELECT content_hash, last_mtime, last_size
@@ -275,6 +381,57 @@ def _sources_for_options(
             continue
         result.append(source)
     return result
+
+
+def _eligible_sources_for_since(sources: list[Any], since: str) -> list[Any]:
+    cutoff = _since_cutoff(since)
+    if cutoff is None:
+        return sources
+    return [
+        source
+        for source in sources
+        if datetime.fromtimestamp(source.path.stat().st_mtime, tz=UTC) >= cutoff
+    ]
+
+
+def _cursor_matches_source_stat(
+    conn: sqlite3.Connection,
+    *,
+    provider: SessionProvider,
+    source: Any,
+) -> bool:
+    stat = source.path.stat()
+    cursor = conn.execute(
+        """
+        SELECT last_mtime, last_size
+        FROM session_intelligence_cursors
+        WHERE provider = ? AND source_path = ?
+        """,
+        (provider.provider_id, str(source.path)),
+    ).fetchone()
+    return (
+        cursor is not None
+        and cursor["last_mtime"] == stat.st_mtime
+        and cursor["last_size"] == stat.st_size
+    )
+
+
+def _cursor_matches_content_hash(
+    conn: sqlite3.Connection,
+    *,
+    provider: SessionProvider,
+    source: Any,
+    content_hash: str,
+) -> bool:
+    cursor = conn.execute(
+        """
+        SELECT content_hash
+        FROM session_intelligence_cursors
+        WHERE provider = ? AND source_path = ?
+        """,
+        (provider.provider_id, str(source.path)),
+    ).fetchone()
+    return cursor is not None and cursor["content_hash"] == content_hash
 
 
 def _normalize_source(provider: SessionProvider, source: Any) -> NormalizedSession:
@@ -693,6 +850,10 @@ def _since_cutoff(value: str) -> datetime | None:
     if not match:
         return None
     return datetime.now(UTC) - timedelta(days=int(match.group(1)))
+
+
+def _chunks(items: list[Any], size: int) -> list[list[Any]]:
+    return [items[index : index + size] for index in range(0, len(items), size)]
 
 
 def _session_to_meta_payload(session: NormalizedSession) -> dict[str, Any]:
