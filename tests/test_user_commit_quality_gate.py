@@ -137,6 +137,55 @@ def test_blocks_python_test_without_assertions() -> None:
     assert findings[0].rule == "weak-test"
 
 
+def test_blocks_low_value_static_ui_copy_test() -> None:
+    text = """
+import { renderToStaticMarkup } from "react-dom/server";
+
+it("renders summary copy", () => {
+    const html = renderToStaticMarkup(<Summary />);
+    expect(html).toContain("MPG");
+    expect(html).not.toContain("Confidence");
+});
+"""
+
+    findings = gate.find_low_value_static_ui_test("src/components/summary.test.tsx", text)
+
+    assert findings
+    assert findings[0].rule == "low-value-static-ui-test"
+
+
+def test_allows_documented_static_ui_copy_test_value() -> None:
+    text = """
+// quality-gate: allow static-ui-test: public accessibility copy is the behavior contract.
+import { renderToStaticMarkup } from "react-dom/server";
+
+it("renders summary copy", () => {
+    const html = renderToStaticMarkup(<Summary />);
+    expect(html).toContain("MPG");
+});
+"""
+
+    findings = gate.find_low_value_static_ui_test("src/components/summary.test.tsx", text)
+
+    assert findings == []
+
+
+def test_allows_ui_behavior_test_with_interaction() -> None:
+    text = """
+import { fireEvent, render, screen } from "@testing-library/react";
+
+it("filters rows", () => {
+    render(<Filter />);
+    fireEvent.change(screen.getByText("Search"), { target: { value: "SGA" } });
+    expect(screen.getByText("Shai Gilgeous-Alexander")).toBeTruthy();
+});
+"""
+
+    findings = gate.find_low_value_static_ui_test("src/components/filter.test.tsx", text)
+
+    assert findings == []
+
+
 def test_requires_pre_cr_config_for_source_commits(tmp_path: Path) -> None:
     findings = gate.check_pre_cr_requirement(tmp_path, ["src/app.ts"])
 
@@ -150,17 +199,38 @@ def test_skips_pre_cr_for_non_source_commits(tmp_path: Path) -> None:
     assert findings == []
 
 
+def test_pre_cr_runner_emits_visible_heartbeat(tmp_path: Path, monkeypatch, capsys) -> None:
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        gate.time.sleep(0.08)
+        return subprocess.CompletedProcess(command, 0, stdout='{"ok":true}', stderr="")
+
+    monkeypatch.setattr(gate.subprocess, "run", fake_run)
+
+    result = gate.run_pre_cr_command(
+        ["/bin/pre-cr", "run"],
+        tmp_path,
+        heartbeat_seconds=0.01,
+    )
+
+    captured = capsys.readouterr()
+    assert result.returncode == 0
+    assert "Running Pre-CR changed-line readiness" in captured.err
+    assert "Pre-CR still running after" in captured.err
+    assert "Pre-CR finished" in captured.err
+
+
 def test_runs_pre_cr_when_config_and_cli_exist(tmp_path: Path, monkeypatch) -> None:
     (tmp_path / ".pre-cr.json").write_text("{}", encoding="utf-8")
     monkeypatch.setattr(
         gate.shutil, "which", lambda command: "/bin/pre-cr" if command == "pre-cr" else None
     )
 
-    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+    def fake_run(command: list[str], root: Path) -> subprocess.CompletedProcess[str]:
         assert command == ["/bin/pre-cr", "run", "--json", "--workspace", str(tmp_path)]
+        assert root == tmp_path
         return subprocess.CompletedProcess(command, 0, stdout='{"ok":true}', stderr="")
 
-    monkeypatch.setattr(gate.subprocess, "run", fake_run)
+    monkeypatch.setattr(gate, "run_pre_cr_command", fake_run)
 
     findings = gate.check_pre_cr_requirement(tmp_path, ["src/app.ts"])
 
@@ -173,7 +243,8 @@ def test_reports_pre_cr_coverage_failure(tmp_path: Path, monkeypatch) -> None:
         gate.shutil, "which", lambda command: "/bin/pre-cr" if command == "pre-cr" else None
     )
 
-    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+    def fake_run(command: list[str], root: Path) -> subprocess.CompletedProcess[str]:
+        assert root == tmp_path
         payload = {
             "ok": False,
             "result": {
@@ -185,7 +256,7 @@ def test_reports_pre_cr_coverage_failure(tmp_path: Path, monkeypatch) -> None:
         }
         return subprocess.CompletedProcess(command, 1, stdout=gate.json.dumps(payload), stderr="")
 
-    monkeypatch.setattr(gate.subprocess, "run", fake_run)
+    monkeypatch.setattr(gate, "run_pre_cr_command", fake_run)
 
     findings = gate.check_pre_cr_requirement(tmp_path, ["src/app.ts"])
 

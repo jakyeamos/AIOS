@@ -24,6 +24,7 @@ Tests should verify real routing, validation, and output behavior rather than ec
 For stateful or cross-system work, run the exact modified path before completion.
 Missing tests are a completion risk unless explicitly accepted.
 In TDD-heavy projects, adoption/backfill scans must judge test value by protected behavior and maintenance cost, not by count or coverage growth alone.
+TDD is not a license to add low-value tests. Tiny static presentation/copy edits can be verified with typecheck, build, and runtime/browser inspection when a render-text test would only duplicate implementation copy.
 
 ## Applicability
 
@@ -35,3 +36,4 @@ In TDD-heavy projects, adoption/backfill scans must judge test value by protecte
 - Schema validation is exercised against real Markdown files.
 - Routing tests assert selected files and receipt content.
 - Conflict precedence is covered by executable tests.
+- New tests protect behavior, public contracts, domain logic, or confirmed regressions; brittle static render/copy assertions are omitted unless their value is documented.
