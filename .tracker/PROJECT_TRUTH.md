@@ -1,10 +1,10 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, standalone Quality Runner consumption boundary, and a fully triaged Codex/Claude session-intelligence backlog while broader Ruff and BasedPyright baseline issues remain open.
+summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, standalone Quality Runner consumption boundary, a fully triaged Codex/Claude session-intelligence backlog, and six review-gated session-intelligence tool surfaces while broader Ruff and BasedPyright baseline issues remain open.
 healthScore: 73
 statusLabel: needs_attention
-nextStep: Scope the first approved session-intelligence automation target: a repo-state inspection helper backed by candidate `session-intel-4413a04508602882`.
+nextStep: Use the new review-gated session-intelligence tool surfaces in live Codex sessions and decide whether `aios repo inspect` should absorb more CTS/context evidence.
 blockers:
   - Full repo Ruff and format baselines are not green: Ruff reports 25 issues and Ruff format reports 169 files needing formatting.
   - Full repo BasedPyright is not green: 110 errors and 78 warnings, including the existing `services/aios_cli.py` `run_cli` complexity baseline.
@@ -108,6 +108,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-06-28: Added `aios session-intel clusters` as a compact triage queue, intent-level friction grouping, review-event recording, and successful command-sequence workflow mining; the live pending queue now rolls up into 621 clusters, with top clusters for repo state inspection, git history review, git commit/publish, reusable workflow, and tool execution.
 - 2026-06-28: Completed the first conservative top-cluster triage pass in `aios.db`: approved 7 representative candidates, superseded 321 redundant exact-command variants, observed 18 broad/low-certainty items, rejected 11 project-specific one-offs, and left 616 friction candidates pending review.
 - 2026-06-28: Completed the remaining session-intelligence candidate triage. The candidate table now has zero pending rows: 10 approved candidate rows, 783 superseded variants, 47 observed items, and 134 rejected one-offs; a backup was written to `data/aios.db.pre-session-intel-full-triage-20260628`.
+- 2026-06-28: Promoted the 10 approved session-intelligence representatives into six review-gated deterministic tool surfaces: `aios repo inspect`, `aios quality ladder`, `aios ship guard`, `aios service probe`, `aios workflow-skill codex`, and `aios planning state`.
 - 2026-04-08: Added ops/maintenance utilities, retrieval rule and provenance tooling, enriched hook event capture, AI history import tooling
 - 2026-04-08: Design specs added for Code Topology Service (CTS), AIOS Command UI, and prompt library
 - 2026-04-09: Ruff 0.15.10 auto-fixed 181 issues; shellcheck clean on `auto_ingest.sh` and `health_check.sh`; BasedPyright and Vulture installed
@@ -151,7 +152,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 3. **Full BasedPyright baseline is not green** — `uv run basedpyright` failed on 2026-06-26 with 110 errors and 101 warnings, including existing `run_cli` complexity.
 ## Next Concrete Steps
 
-1. Scope and implement the first approved session-intelligence automation target: a repo-state inspection helper backed by `session-intel-4413a04508602882`.
+1. Use `aios repo inspect` and `aios quality ladder` in live Codex sessions, then decide whether they should ingest CTS/context evidence or remain lightweight deterministic helpers.
 2. Decide whether AIOS should add a thin shortcut or adapter for invoking external Quality Runner runs.
 3. Resume linked-repo adoption execution with BidCamp repo-local Phase 151, then continue BidCamp 152-155, EliHealth 09-13, and pre-cr-suite-lsp 04-06.
 
@@ -168,7 +169,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 | Lint (ruff) | Fail | `uv run ruff check .` failed on 2026-06-28 with 25 existing repo issues. Focused Codex session intelligence Ruff checks pass. |
 | Type check (basedpyright) | Fail | `uv run basedpyright` failed on 2026-06-28 with 110 errors and 78 warnings, including existing `run_cli` complexity. Focused Codex session intelligence BasedPyright checks pass. |
 | Dead code (vulture) | Warning | `uv run vulture . --min-confidence 70` failed on 2026-06-28 because `.venv` third-party packages were scanned; `uv run vulture bin services --min-confidence 70` passed. |
-| Tests | Pass | `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run pytest -q` passed on 2026-06-28 with 1039 tests. |
+| Tests | Pass | `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run pytest -q` passed on 2026-06-28 with 1051 tests. |
 | Structure | Fail | `uv run ruff format --check .` reported 169 files needing formatting on 2026-06-28. Focused Codex session intelligence format checks pass. |
 
 Focused Codex session intelligence checks on 2026-06-28:
@@ -190,6 +191,14 @@ Focused Codex session intelligence triage checks on 2026-06-28:
 - `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run basedpyright services/session_intelligence_loop.py tests/test_session_intelligence_loop.py` passed.
 - `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run vulture services/session_intelligence_loop.py --min-confidence 70` exited 0.
 - `.venv/bin/python /Users/jakyeamos/AIOS/bin/aios.py session-intel clusters --status pending_review --lane all` returned `clusters=50` with the default limit; `--limit 5 --json` returned 5 of 621 total clusters with compact candidate previews.
+
+Focused session-intelligence tool promotion checks on 2026-06-28:
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run pytest tests/test_session_intelligence_tools.py tests/test_session_intelligence_loop.py tests/test_aios_cli.py -q` passed with 110 tests.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run pytest -q` passed with 1051 tests.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run ruff check services/session_intelligence_tools.py services/aios_cli.py tests/test_session_intelligence_tools.py` passed.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run ruff format --check services/session_intelligence_tools.py services/aios_cli.py tests/test_session_intelligence_tools.py` passed.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run basedpyright services/session_intelligence_tools.py tests/test_session_intelligence_tools.py` passed.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run vulture services/session_intelligence_tools.py --min-confidence 70` exited 0.
 
 Focused Quality Runner standalone checks on 2026-06-28:
 - In `/Users/jakyeamos/quality-runner`, `python3.14 -m pytest -q` passed with 95 tests.

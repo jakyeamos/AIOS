@@ -131,6 +131,14 @@ from services.session_intelligence_loop import (
     run_session_intelligence,
     run_session_intelligence_backfill,
 )
+from services.session_intelligence_tools import (
+    codex_workflow_skill_payload,
+    planning_state_payload,
+    quality_ladder_payload,
+    repo_inspect_payload,
+    service_probe_payload,
+    ship_guard_payload,
+)
 from services.session_providers.claude import ClaudeProvider
 from services.session_providers.codex import CodexProvider
 from services.shadow_automation import (
@@ -4812,6 +4820,30 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "session-intel-mark":
         print(f"candidate={data['id']} status={data['status']}")
         return
+    if command == "repo-inspect":
+        git_info = data["git"]
+        print(
+            f"repo={data['repo']['root']} branch={git_info['branch'] or 'unknown'} "
+            f"dirty={git_info['dirty']}"
+        )
+        return
+    if command == "quality-ladder":
+        print(f"profile={data['profile']} steps={len(data['steps'])} mode=plan_only")
+        return
+    if command == "ship-guard":
+        decision = data["decision"]
+        print(f"ready={decision['ready']} blockers={len(decision['blockers'])}")
+        return
+    if command == "service-probe":
+        print(f"probes={len(data['probes'])}")
+        return
+    if command == "workflow-skill-codex":
+        print(f"skill={data['skill']['name']} review_gated={data['promotion']['review_gated']}")
+        return
+    if command == "planning-state":
+        decision = data["decision"]
+        print(f"ready={decision['ready_for_agent_work']} blockers={len(decision['blockers'])}")
+        return
     if command == "contracts-audit":
         summary = data["summary"]
         print(f"contracts={summary['canonical_contract_count']} partial={summary['partial_count']}")
@@ -5047,6 +5079,18 @@ def _command_name(args: argparse.Namespace) -> str:
         return f"context-loops-{args.context_loops_command}"
     if args.command == "session-intel":
         return f"session-intel-{args.session_intel_command}"
+    if args.command == "repo":
+        return f"repo-{args.repo_command}"
+    if args.command == "quality":
+        return f"quality-{args.quality_command}"
+    if args.command == "ship":
+        return f"ship-{args.ship_command}"
+    if args.command == "service":
+        return f"service-{args.service_command}"
+    if args.command == "workflow-skill":
+        return f"workflow-skill-{args.workflow_skill_command}"
+    if args.command == "planning":
+        return f"planning-{args.planning_command}"
     if args.command == "gate":
         return f"gate-{args.gate_command}"
     if args.command == "skills":
@@ -5205,6 +5249,65 @@ def _session_intel_payload(conn: sqlite3.Connection, args: argparse.Namespace) -
     raise CLIError(
         "unsupported-session-intel-command",
         f"Unsupported session-intel command: {args.session_intel_command}",
+        EXIT_USAGE,
+    )
+
+
+def _repo_payload(args: argparse.Namespace) -> dict[str, Any]:
+    if args.repo_command == "inspect":
+        return repo_inspect_payload(
+            Path(args.repo),
+            include_processes=bool(args.include_processes),
+        )
+    raise CLIError(
+        "unsupported-repo-command", f"Unsupported repo command: {args.repo_command}", EXIT_USAGE
+    )
+
+
+def _quality_payload(args: argparse.Namespace) -> dict[str, Any]:
+    if args.quality_command == "ladder":
+        return quality_ladder_payload(Path(args.repo), profile=args.profile)
+    raise CLIError(
+        "unsupported-quality-command",
+        f"Unsupported quality command: {args.quality_command}",
+        EXIT_USAGE,
+    )
+
+
+def _ship_payload(args: argparse.Namespace) -> dict[str, Any]:
+    if args.ship_command == "guard":
+        return ship_guard_payload(Path(args.repo))
+    raise CLIError(
+        "unsupported-ship-command", f"Unsupported ship command: {args.ship_command}", EXIT_USAGE
+    )
+
+
+def _service_payload(args: argparse.Namespace) -> dict[str, Any]:
+    if args.service_command == "probe":
+        return service_probe_payload(ports=args.port, names=args.name)
+    raise CLIError(
+        "unsupported-service-command",
+        f"Unsupported service command: {args.service_command}",
+        EXIT_USAGE,
+    )
+
+
+def _workflow_skill_payload(args: argparse.Namespace) -> dict[str, Any]:
+    if args.workflow_skill_command == "codex":
+        return codex_workflow_skill_payload()
+    raise CLIError(
+        "unsupported-workflow-skill-command",
+        f"Unsupported workflow-skill command: {args.workflow_skill_command}",
+        EXIT_USAGE,
+    )
+
+
+def _planning_payload(args: argparse.Namespace) -> dict[str, Any]:
+    if args.planning_command == "state":
+        return planning_state_payload(Path(args.repo))
+    raise CLIError(
+        "unsupported-planning-command",
+        f"Unsupported planning command: {args.planning_command}",
         EXIT_USAGE,
     )
 
@@ -5392,6 +5495,65 @@ def create_parser() -> argparse.ArgumentParser:
     )
     session_intel_mark.add_argument("--note", default="")
     session_intel_mark.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    repo_parser = subparsers.add_parser("repo", help="Deterministic repository inspection tools")
+    repo_subparsers = repo_parser.add_subparsers(dest="repo_command", required=True)
+    repo_inspect = repo_subparsers.add_parser("inspect", help="Inspect repo state and context")
+    repo_inspect.add_argument("--repo", default=".", help="Repository path")
+    repo_inspect.add_argument(
+        "--include-processes",
+        action="store_true",
+        help="Include default local service probes",
+    )
+    repo_inspect.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    quality_parser = subparsers.add_parser("quality", help="Quality ladder planning tools")
+    quality_subparsers = quality_parser.add_subparsers(dest="quality_command", required=True)
+    quality_ladder = quality_subparsers.add_parser(
+        "ladder", help="Plan project-aware quality commands without running them"
+    )
+    quality_ladder.add_argument("--repo", default=".", help="Repository path")
+    quality_ladder.add_argument(
+        "--profile",
+        choices=["auto", "python", "javascript", "mixed"],
+        default="auto",
+        help="Quality command profile",
+    )
+    quality_ladder.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    ship_parser = subparsers.add_parser("ship", help="Review-gated shipping tools")
+    ship_subparsers = ship_parser.add_subparsers(dest="ship_command", required=True)
+    ship_guard = ship_subparsers.add_parser(
+        "guard", help="Inspect commit/publish readiness without mutating git state"
+    )
+    ship_guard.add_argument("--repo", default=".", help="Repository path")
+    ship_guard.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    service_parser = subparsers.add_parser("service", help="Local service diagnostics")
+    service_subparsers = service_parser.add_subparsers(dest="service_command", required=True)
+    service_probe = service_subparsers.add_parser("probe", help="Probe local ports and processes")
+    service_probe.add_argument("--port", type=int, action="append", default=None)
+    service_probe.add_argument("--name", action="append", default=None)
+    service_probe.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    workflow_skill_parser = subparsers.add_parser(
+        "workflow-skill", help="Review-gated workflow skill promotion candidates"
+    )
+    workflow_skill_subparsers = workflow_skill_parser.add_subparsers(
+        dest="workflow_skill_command", required=True
+    )
+    workflow_skill_codex = workflow_skill_subparsers.add_parser(
+        "codex", help="Render the Codex tier-one workflow skill candidate"
+    )
+    workflow_skill_codex.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    planning_parser = subparsers.add_parser("planning", help="Planning and truth-state tools")
+    planning_subparsers = planning_parser.add_subparsers(dest="planning_command", required=True)
+    planning_state = planning_subparsers.add_parser(
+        "state", help="Inspect planning and PROJECT_TRUTH readiness"
+    )
+    planning_state.add_argument("--repo", default=".", help="Repository path")
+    planning_state.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     logs_parser = subparsers.add_parser("logs", help="Read AIOS logs")
     logs_parser.add_argument("--source", action="append", default=[], help="Log source filter")
@@ -6494,6 +6656,18 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             assert conn is not None
             data = _session_intel_payload(conn, args)
             conn.commit()
+        elif args.command == "repo":
+            data = _repo_payload(args)
+        elif args.command == "quality":
+            data = _quality_payload(args)
+        elif args.command == "ship":
+            data = _ship_payload(args)
+        elif args.command == "service":
+            data = _service_payload(args)
+        elif args.command == "workflow-skill":
+            data = _workflow_skill_payload(args)
+        elif args.command == "planning":
+            data = _planning_payload(args)
         elif args.command == "retrospectives":
             assert conn is not None
             data = _retrospective_payload(conn, args)
