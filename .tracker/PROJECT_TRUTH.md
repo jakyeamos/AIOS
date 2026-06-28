@@ -1,7 +1,7 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, standalone Quality Runner consumption boundary, and a partially triaged Codex/Claude session-intelligence backlog while broader Ruff and BasedPyright baseline issues remain open.
+summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, standalone Quality Runner consumption boundary, and a fully triaged Codex/Claude session-intelligence backlog while broader Ruff and BasedPyright baseline issues remain open.
 healthScore: 73
 statusLabel: needs_attention
 nextStep: Scope the first approved session-intelligence automation target: a repo-state inspection helper backed by candidate `session-intel-4413a04508602882`.
@@ -107,6 +107,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-06-28: Ran the first full local Codex/Claude session-intelligence backfill and hardened it into a tier-one workflow by fixing session-intel CLI commit durability, Claude Bash/tool-result normalization, and cross-batch candidate merging; the live DB now has 1,923 cursors, 973 pending candidates, and zero duplicate lane/title groups.
 - 2026-06-28: Added `aios session-intel clusters` as a compact triage queue, intent-level friction grouping, review-event recording, and successful command-sequence workflow mining; the live pending queue now rolls up into 621 clusters, with top clusters for repo state inspection, git history review, git commit/publish, reusable workflow, and tool execution.
 - 2026-06-28: Completed the first conservative top-cluster triage pass in `aios.db`: approved 7 representative candidates, superseded 321 redundant exact-command variants, observed 18 broad/low-certainty items, rejected 11 project-specific one-offs, and left 616 friction candidates pending review.
+- 2026-06-28: Completed the remaining session-intelligence candidate triage. The candidate table now has zero pending rows: 10 approved candidate rows, 783 superseded variants, 47 observed items, and 134 rejected one-offs; a backup was written to `data/aios.db.pre-session-intel-full-triage-20260628`.
 - 2026-04-08: Added ops/maintenance utilities, retrieval rule and provenance tooling, enriched hook event capture, AI history import tooling
 - 2026-04-08: Design specs added for Code Topology Service (CTS), AIOS Command UI, and prompt library
 - 2026-04-09: Ruff 0.15.10 auto-fixed 181 issues; shellcheck clean on `auto_ingest.sh` and `health_check.sh`; BasedPyright and Vulture installed
