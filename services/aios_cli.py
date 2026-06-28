@@ -122,6 +122,13 @@ from services.second_brain_eval import (
     compute_second_brain_lift,
     evaluate_gold_set_run,
 )
+from services.session_intelligence_loop import (
+    SessionIntelligenceOptions,
+    list_session_intelligence_candidates,
+    mark_session_intelligence_candidate,
+    run_session_intelligence,
+)
+from services.session_providers.codex import CodexProvider
 from services.shadow_automation import (
     approve_candidate,
     run_full_automation_pipeline,
@@ -4775,6 +4782,19 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
             f"terminal_runs={summary['terminal_run_count']} no_learning={summary['no_learning_count']}"
         )
         return
+    if command == "session-intel-run":
+        summary = data["summary"]
+        print(
+            f"sources={summary['source_count']} sessions={summary['session_count']} "
+            f"candidates={summary['candidate_count']} report={data.get('report_path') or 'none'}"
+        )
+        return
+    if command == "session-intel-candidates":
+        print(f"candidates={data['count']}")
+        return
+    if command == "session-intel-mark":
+        print(f"candidate={data['id']} status={data['status']}")
+        return
     if command == "contracts-audit":
         summary = data["summary"]
         print(f"contracts={summary['canonical_contract_count']} partial={summary['partial_count']}")
@@ -5008,6 +5028,8 @@ def _command_name(args: argparse.Namespace) -> str:
         return f"benchmark-{args.benchmark_command}"
     if args.command == "context-loops":
         return f"context-loops-{args.context_loops_command}"
+    if args.command == "session-intel":
+        return f"session-intel-{args.session_intel_command}"
     if args.command == "gate":
         return f"gate-{args.gate_command}"
     if args.command == "skills":
@@ -5072,6 +5094,50 @@ def _workflow_gates_payload(args: argparse.Namespace) -> dict[str, Any]:
     return {"gates": rows, "count": len(rows)}
 
 
+def _session_intel_payload(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    if args.session_intel_command == "run":
+        if args.provider != "codex":
+            raise CLIError(
+                "unsupported-session-intel-provider",
+                f"Unsupported session intelligence provider: {args.provider}",
+                EXIT_USAGE,
+            )
+        source_root = Path(args.source_root).expanduser() if args.source_root else None
+        report_root = Path(args.report_root).expanduser() if args.report_root else None
+        provider = CodexProvider(source_root=source_root, db_path=DEFAULT_DB_PATH)
+        return run_session_intelligence(
+            conn,
+            provider=provider,
+            options=SessionIntelligenceOptions(
+                since=args.since,
+                lane=args.lane,
+                write_report=bool(args.write_report),
+                report_root=report_root,
+                config_path=Path(getattr(args, "config_root", DEFAULT_CONFIG_ROOT)).expanduser()
+                / "session-provider-config.yaml",
+            ),
+        )
+    if args.session_intel_command == "candidates":
+        candidates = list_session_intelligence_candidates(
+            conn,
+            status=None if args.status == "all" else args.status,
+            lane=args.lane,
+        )
+        return {"count": len(candidates), "candidates": candidates}
+    if args.session_intel_command == "mark":
+        return mark_session_intelligence_candidate(
+            conn,
+            candidate_id=args.candidate_id,
+            status=args.status,
+            note=args.note,
+        )
+    raise CLIError(
+        "unsupported-session-intel-command",
+        f"Unsupported session-intel command: {args.session_intel_command}",
+        EXIT_USAGE,
+    )
+
+
 def _dx_pack_report_template() -> dict[str, Any]:
     return {
         "title": "Developer Experience Pack Implementation Report",
@@ -5130,6 +5196,54 @@ def create_parser() -> argparse.ArgumentParser:
 
     metadata_parser = subparsers.add_parser("metadata", help="One-shot metadata snapshot")
     metadata_parser.add_argument("--project", default=None, help="Optional project id filter")
+
+    session_intel = subparsers.add_parser(
+        "session-intel", help="Run and review Codex session intelligence candidates"
+    )
+    session_intel_subparsers = session_intel.add_subparsers(
+        dest="session_intel_command", required=True
+    )
+    session_intel_run = session_intel_subparsers.add_parser(
+        "run", help="Analyze new Codex sessions and emit review-gated candidates"
+    )
+    session_intel_run.add_argument("--provider", choices=["codex"], default="codex")
+    session_intel_run.add_argument("--since", default="last")
+    session_intel_run.add_argument(
+        "--lane",
+        choices=["all", "friction_tool", "workflow_skill", "impact_idea"],
+        default="all",
+    )
+    session_intel_run.add_argument("--write-report", action="store_true")
+    session_intel_run.add_argument("--source-root", default=None)
+    session_intel_run.add_argument("--report-root", default=None)
+    session_intel_run.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    session_intel_candidates = session_intel_subparsers.add_parser(
+        "candidates", help="List review-gated session intelligence candidates"
+    )
+    session_intel_candidates.add_argument(
+        "--status",
+        choices=["all", "pending_review", "approved", "rejected", "observed", "superseded"],
+        default="pending_review",
+    )
+    session_intel_candidates.add_argument(
+        "--lane",
+        choices=["all", "friction_tool", "workflow_skill", "impact_idea"],
+        default="all",
+    )
+    session_intel_candidates.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    session_intel_mark = session_intel_subparsers.add_parser(
+        "mark", help="Mark a session intelligence candidate review status"
+    )
+    session_intel_mark.add_argument("--candidate-id", required=True)
+    session_intel_mark.add_argument(
+        "--status",
+        choices=["approved", "rejected", "observed", "superseded"],
+        required=True,
+    )
+    session_intel_mark.add_argument("--note", default="")
+    session_intel_mark.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     logs_parser = subparsers.add_parser("logs", help="Read AIOS logs")
     logs_parser.add_argument("--source", action="append", default=[], help="Log source filter")
@@ -6151,6 +6265,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             "operator-search",
             "next-action",
             "daily-flow",
+            "session-intel",
             "contracts-audit",
             "governance-audit",
             "criteria-finding",
@@ -6227,6 +6342,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             data = _workflow_learning_payload(conn)
         elif args.command == "workflow-gates":
             data = _workflow_gates_payload(args)
+        elif args.command == "session-intel":
+            assert conn is not None
+            data = _session_intel_payload(conn, args)
         elif args.command == "retrospectives":
             assert conn is not None
             data = _retrospective_payload(conn, args)
