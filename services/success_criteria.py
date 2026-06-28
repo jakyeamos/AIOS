@@ -9,6 +9,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from quality_evidence_contract import normalize_quality_finding
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_PATH = REPO_ROOT / "config" / "success-criteria" / "registry.json"
 SKILL_MAP_PATH = REPO_ROOT / "config" / "success-criteria" / "skill-map.json"
@@ -37,8 +39,24 @@ DOC_PATH_MARKERS = ("/docs/", "/.planning/", "/spec/")
 SENSITIVE_PATH_MARKERS = ("auth", "security", "secret", "token", "permission", "crypto")
 OBSERVABILITY_MARKERS = ("log", "metric", "trace", "telemetry", "observability", "monitor")
 UI_PATH_MARKERS = ("/app/", "/components/", "/pages/", "/ui/", ".tsx", ".jsx")
-DATA_PATH_MARKERS = ("schema.sql", "schema.ts", "migration", "migrations", "/db", "database", "sqlite")
-API_PATH_MARKERS = ("/api/", "/routers/", "route.ts", "server/actions", "trpc", "contract", "types.ts")
+DATA_PATH_MARKERS = (
+    "schema.sql",
+    "schema.ts",
+    "migration",
+    "migrations",
+    "/db",
+    "database",
+    "sqlite",
+)
+API_PATH_MARKERS = (
+    "/api/",
+    "/routers/",
+    "route.ts",
+    "server/actions",
+    "trpc",
+    "contract",
+    "types.ts",
+)
 DEPENDENCY_PATH_MARKERS = (
     "package.json",
     "pnpm-lock.yaml",
@@ -124,6 +142,35 @@ class CriterionFinding:
     summary: str
     evidence: list[str]
     metadata: dict[str, Any]
+
+
+def _criterion_finding_payload(
+    finding: CriterionFinding,
+    *,
+    source: str,
+) -> dict[str, Any]:
+    legacy_payload = {
+        "criterion_id": finding.criterion_id,
+        "criterion_title": finding.criterion_title,
+        "criterion_scope": finding.criterion_scope,
+        "level": finding.level,
+        "summary": finding.summary,
+        "evidence": finding.evidence,
+        "metadata": finding.metadata,
+    }
+    return {
+        **legacy_payload,
+        "quality_contract": normalize_quality_finding(
+            criterion_id=finding.criterion_id,
+            criterion_title=finding.criterion_title,
+            criterion_scope=finding.criterion_scope,
+            level=finding.level,
+            summary=finding.summary,
+            evidence=finding.evidence,
+            metadata=finding.metadata,
+            source=source,
+        ),
+    }
 
 
 def _now_iso() -> str:
@@ -366,15 +413,23 @@ def infer_context(
         domains.add("workflow")
     if _contains_any(objective_lower, ("ui", "component", "react", "next.js", "dashboard", "form")):
         domains.update(("ui", "web-apps"))
-    if _contains_any(objective_lower, ("accessibility", "keyboard", "focus", "screen reader", "wcag")):
+    if _contains_any(
+        objective_lower, ("accessibility", "keyboard", "focus", "screen reader", "wcag")
+    ):
         domains.add("accessibility")
     if _contains_any(objective_lower, COMPLEXITY_MARKERS):
         domains.update(("complexity", "performance"))
-    if _contains_any(objective_lower, ("dependency", "lockfile", "package manager", "supply chain")):
+    if _contains_any(
+        objective_lower, ("dependency", "lockfile", "package manager", "supply chain")
+    ):
         domains.add("supply-chain")
-    if _contains_any(objective_lower, ("schema", "migration", "database", "sqlite", "backfill", "data integrity")):
+    if _contains_any(
+        objective_lower, ("schema", "migration", "database", "sqlite", "backfill", "data integrity")
+    ):
         domains.update(("data", "migration"))
-    if _contains_any(objective_lower, ("api", "contract", "request", "response", "trpc", "server action")):
+    if _contains_any(
+        objective_lower, ("api", "contract", "request", "response", "trpc", "server action")
+    ):
         domains.update(("api", "contract"))
     if _contains_any(objective_lower, RESILIENCE_MARKERS):
         domains.add("reliability")
@@ -392,7 +447,10 @@ def infer_context(
         domains.update(("ui", "web-apps", "accessibility", "performance"))
     if any(_contains_any(path.lower(), DEPENDENCY_PATH_MARKERS) for path in changed):
         domains.add("supply-chain")
-    if any(_contains_any(path.lower(), DATA_PATH_MARKERS) or Path(path).suffix.lower() == ".sql" for path in changed):
+    if any(
+        _contains_any(path.lower(), DATA_PATH_MARKERS) or Path(path).suffix.lower() == ".sql"
+        for path in changed
+    ):
         domains.update(("data", "migration"))
     if any(_contains_any(f"/{path.lower()}", API_PATH_MARKERS) for path in changed):
         domains.update(("api", "contract"))
@@ -1152,17 +1210,7 @@ def evaluate_stage_findings(
         if stage_kind not in _stage_kinds_for_criterion(criterion):
             continue
         finding = evaluate_criterion(criterion, stage_context)
-        findings.append(
-            {
-                "criterion_id": finding.criterion_id,
-                "criterion_title": finding.criterion_title,
-                "criterion_scope": finding.criterion_scope,
-                "level": finding.level,
-                "summary": finding.summary,
-                "evidence": finding.evidence,
-                "metadata": finding.metadata,
-            }
-        )
+        findings.append(_criterion_finding_payload(finding, source="success_criteria_stage"))
     return findings
 
 
@@ -1352,15 +1400,7 @@ def record_evaluation(
         "accepted_tradeoffs": accepted_tradeoffs,
         "context": context,
         "findings": [
-            {
-                "criterion_id": finding.criterion_id,
-                "criterion_title": finding.criterion_title,
-                "criterion_scope": finding.criterion_scope,
-                "level": finding.level,
-                "summary": finding.summary,
-                "evidence": finding.evidence,
-                "metadata": finding.metadata,
-            }
+            _criterion_finding_payload(finding, source="success_criteria_evaluation")
             for finding in findings
         ],
         "created_at": _now_iso(),
