@@ -115,6 +115,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-06-28: Integrated `quality-evidence-contract` into success-criteria findings so stage and evaluation findings carry a portable nested `quality_contract` payload alongside legacy fields.
 - 2026-06-28: Added ignore rules for generated AIOS DB backups, session-intelligence reports, `AIOS-backfill/`, and Node dependency folders so local operational artifacts do not enter source commits.
 - 2026-06-28: Expanded AIOS governed workflow surfaces with planning-governance routing, repo-gate adoption planning/document-quality CLI paths, expert-rubric aliases, personalized humanizer CLI commands, linked-repo adoption certification, and richer Codex shadow evidence reporting.
+- 2026-06-28: Committed Phase 25 planning-governance closeout summaries and Phase 29 linked-repo adoption remediation planning artifacts, including the refreshed roadmap/state files.
 - 2026-04-08: Added ops/maintenance utilities, retrieval rule and provenance tooling, enriched hook event capture, AI history import tooling
 - 2026-04-08: Design specs added for Code Topology Service (CTS), AIOS Command UI, and prompt library
 - 2026-04-09: Ruff 0.15.10 auto-fixed 181 issues; shellcheck clean on `auto_ingest.sh` and `health_check.sh`; BasedPyright and Vulture installed
