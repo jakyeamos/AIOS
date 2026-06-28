@@ -14,6 +14,7 @@ from services.session_intelligence_loop import (  # noqa: E402
     SessionIntelligenceOptions,
     ensure_session_intelligence_schema,
     list_session_intelligence_candidates,
+    list_session_intelligence_clusters,
     mark_session_intelligence_candidate,
     run_session_intelligence,
     run_session_intelligence_backfill,
@@ -311,7 +312,7 @@ def test_session_intelligence_backfill_batches_and_resumes_from_cursors(
     assert first["summary"]["processed_source_count"] == 3
     assert first["summary"]["skipped_source_count"] == 0
     assert first["summary"]["batch_count"] == 2
-    assert first["summary"]["candidate_count"] == 3
+    assert first["summary"]["candidate_count"] == 2
     assert len(first["report_paths"]) == 2
     assert all(Path(path).exists() for path in first["report_paths"])
     assert second["summary"]["eligible_source_count"] == 3
@@ -356,6 +357,99 @@ def test_session_intelligence_backfill_merges_same_candidate_across_batches(
     assert len(candidates[0]["redacted_evidence"]) == 3
 
 
+def test_session_intelligence_groups_friction_by_intent_not_exact_command(
+    tmp_path: Path,
+) -> None:
+    sessions_root = tmp_path / "sessions"
+    for index, command in enumerate(
+        ("git status --short", "git -C /repo status --short", "git diff --stat")
+    ):
+        _write_codex_rollout(
+            sessions_root / f"2026/06/27/rollout-2026-06-27T10-0{index}-00-session-{index}.jsonl",
+            [
+                _session_meta(f"session-{index}"),
+                _function_call(command),
+                _function_output("Process exited with code 1\nnot a git repository"),
+            ],
+        )
+    conn = _memory_conn()
+    provider = CodexProvider(source_root=sessions_root, db_path=tmp_path / "aios.db")
+
+    run_session_intelligence(
+        conn,
+        provider=provider,
+        options=SessionIntelligenceOptions(since="all", lane="friction_tool"),
+    )
+    candidates = list_session_intelligence_candidates(conn)
+
+    assert len(candidates) == 1
+    assert candidates[0]["title"] == "Deterministic helper for repo state inspection"
+    assert candidates[0]["source_sessions"] == ["session-0", "session-1", "session-2"]
+    assert "git status --short" in candidates[0]["redacted_evidence"][0]["summary"]
+    assert "git -C /repo status --short" in candidates[0]["redacted_evidence"][1]["summary"]
+    assert "git diff --stat" in candidates[0]["redacted_evidence"][2]["summary"]
+
+
+def test_session_intelligence_mines_successful_command_sequences_as_workflows(
+    tmp_path: Path,
+) -> None:
+    sessions_root = tmp_path / "sessions"
+    for index in range(2):
+        _write_codex_rollout(
+            sessions_root / f"2026/06/27/rollout-2026-06-27T10-0{index}-00-session-{index}.jsonl",
+            [
+                _session_meta(f"session-{index}"),
+                _function_call("rg -n session_intelligence services tests"),
+                _function_output("services/session_intelligence_loop.py:1:match"),
+                _function_call("uv run pytest tests/test_session_intelligence_loop.py -q"),
+                _function_output("12 passed"),
+                _message("assistant", "Implemented the change, verified tests, and updated truth."),
+            ],
+        )
+    conn = _memory_conn()
+    provider = CodexProvider(source_root=sessions_root, db_path=tmp_path / "aios.db")
+
+    run_session_intelligence(
+        conn,
+        provider=provider,
+        options=SessionIntelligenceOptions(since="all", lane="workflow_skill"),
+    )
+    candidates = list_session_intelligence_candidates(conn)
+
+    assert len(candidates) == 1
+    assert candidates[0]["lane"] == "workflow_skill"
+    assert candidates[0]["title"] == "Reusable implementation verification workflow"
+    assert candidates[0]["proposed_artifact_type"] == "skill_or_workflow_candidate"
+
+
+def test_session_intelligence_clusters_candidates_for_triage(tmp_path: Path) -> None:
+    sessions_root = tmp_path / "sessions"
+    for index, command in enumerate(("git status --short", "git diff --stat", "pnpm test")):
+        _write_codex_rollout(
+            sessions_root / f"2026/06/27/rollout-2026-06-27T10-0{index}-00-session-{index}.jsonl",
+            [
+                _session_meta(f"session-{index}"),
+                _function_call(command),
+                _function_output("Process exited with code 1\nfailed"),
+            ],
+        )
+    conn = _memory_conn()
+    provider = CodexProvider(source_root=sessions_root, db_path=tmp_path / "aios.db")
+    run_session_intelligence(
+        conn,
+        provider=provider,
+        options=SessionIntelligenceOptions(since="all", lane="friction_tool"),
+    )
+
+    clusters = list_session_intelligence_clusters(conn, status="pending_review", lane="all")
+
+    assert clusters[0]["cluster_key"] == "friction_tool:repo_state_inspection"
+    assert clusters[0]["candidate_count"] == 1
+    assert clusters[0]["source_session_count"] == 2
+    assert clusters[0]["recommended_review_action"] == "Review as a deterministic tool candidate."
+    assert clusters[1]["cluster_key"] == "friction_tool:javascript_package_quality"
+
+
 def test_session_intelligence_lists_and_marks_candidates(tmp_path: Path) -> None:
     conn = _memory_conn()
     ensure_session_intelligence_schema(conn)
@@ -389,6 +483,10 @@ def test_session_intelligence_lists_and_marks_candidates(tmp_path: Path) -> None
     assert pending[0]["id"] == "candidate-1"
     assert updated["status"] == "approved"
     assert updated["review_note"] == "Approved for later implementation."
+    events = conn.execute("SELECT * FROM session_intelligence_review_events").fetchall()
+    assert len(events) == 1
+    assert events[0]["candidate_id"] == "candidate-1"
+    assert events[0]["status"] == "approved"
 
 
 def test_session_intelligence_cli_parser_accepts_run_candidates_and_mark() -> None:
@@ -399,6 +497,9 @@ def test_session_intelligence_cli_parser_accepts_run_candidates_and_mark() -> No
     run_args = parser.parse_args(["session-intel", "run", "--provider", "codex", "--since", "last"])
     candidates_args = parser.parse_args(
         ["session-intel", "candidates", "--status", "pending_review", "--lane", "all"]
+    )
+    clusters_args = parser.parse_args(
+        ["session-intel", "clusters", "--status", "pending_review", "--lane", "all"]
     )
     mark_args = parser.parse_args(
         [
@@ -428,6 +529,7 @@ def test_session_intelligence_cli_parser_accepts_run_candidates_and_mark() -> No
 
     assert run_args.session_intel_command == "run"
     assert candidates_args.session_intel_command == "candidates"
+    assert clusters_args.session_intel_command == "clusters"
     assert mark_args.session_intel_command == "mark"
     assert backfill_args.session_intel_command == "backfill"
     assert backfill_args.provider == "all"
@@ -472,11 +574,19 @@ def test_session_intelligence_cli_payloads_run_list_and_mark(tmp_path: Path) -> 
             note="keep watching",
         ),
     )
+    clusters = aios_cli._session_intel_payload(
+        conn,
+        argparse.Namespace(session_intel_command="clusters", status="all", lane="all", limit=1),
+    )
 
     assert run_payload["summary"]["candidate_count"] == 1
     assert Path(run_payload["report_path"]).exists()
     assert listed["count"] == 1
     assert marked["status"] == "observed"
+    assert clusters["count"] == 1
+    assert clusters["total_count"] == 1
+    assert clusters["clusters"][0]["status_counts"] == {"observed": 1}
+    assert "redacted_evidence" not in clusters["clusters"][0]["top_candidates"][0]
 
 
 def test_session_intelligence_cli_backfill_supports_codex_and_claude(

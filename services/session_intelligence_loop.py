@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import shlex
 import sqlite3
 import uuid
 from collections import defaultdict
@@ -118,6 +119,17 @@ def ensure_session_intelligence_schema(conn: sqlite3.Connection) -> None:
           last_size INTEGER,
           last_scanned_at TEXT NOT NULL,
           PRIMARY KEY (provider, source_path)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS session_intelligence_review_events (
+          id TEXT PRIMARY KEY,
+          candidate_id TEXT NOT NULL,
+          status TEXT NOT NULL,
+          note TEXT NOT NULL DEFAULT '',
+          created_at TEXT NOT NULL
         )
         """
     )
@@ -325,6 +337,62 @@ def list_session_intelligence_candidates(
     return [_candidate_row_to_dict(row) for row in rows]
 
 
+def list_session_intelligence_clusters(
+    conn: sqlite3.Connection,
+    *,
+    status: str | None = None,
+    lane: str = "all",
+    limit: int | None = None,
+) -> list[dict[str, Any]]:
+    candidates = list_session_intelligence_candidates(conn, status=status, lane=lane)
+    grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for candidate in candidates:
+        grouped[_candidate_cluster_key(candidate)].append(candidate)
+
+    clusters = []
+    for cluster_key, group in grouped.items():
+        source_sessions = sorted(
+            {str(session_id) for candidate in group for session_id in candidate["source_sessions"]}
+        )
+        status_counts: dict[str, int] = defaultdict(int)
+        for candidate in group:
+            status_counts[str(candidate["status"])] += 1
+        exemplar = max(
+            group, key=lambda item: (int(item["impact_score"]), float(item["confidence"]))
+        )
+        clusters.append(
+            {
+                "cluster_key": cluster_key,
+                "lane": exemplar["lane"],
+                "title": _cluster_title(exemplar),
+                "candidate_count": len(group),
+                "source_session_count": len(source_sessions),
+                "max_impact_score": max(int(candidate["impact_score"]) for candidate in group),
+                "avg_confidence": round(
+                    sum(float(candidate["confidence"]) for candidate in group) / len(group), 3
+                ),
+                "status_counts": dict(sorted(status_counts.items())),
+                "candidate_ids": [candidate["id"] for candidate in group],
+                "top_candidates": [
+                    _cluster_candidate_preview(candidate) for candidate in group[:5]
+                ],
+                "recommended_review_action": _cluster_review_action(exemplar),
+            }
+        )
+    sorted_clusters = sorted(
+        clusters,
+        key=lambda item: (
+            int(item["max_impact_score"]),
+            int(item["source_session_count"]),
+            int(item["candidate_count"]),
+        ),
+        reverse=True,
+    )
+    if limit is None:
+        return sorted_clusters
+    return sorted_clusters[: max(0, limit)]
+
+
 def mark_session_intelligence_candidate(
     conn: sqlite3.Connection,
     *,
@@ -350,6 +418,15 @@ def mark_session_intelligence_candidate(
     ).fetchone()
     if row is None:
         raise ValueError(f"Session intelligence candidate not found: {candidate_id}")
+    conn.execute(
+        """
+        INSERT INTO session_intelligence_review_events (
+          id, candidate_id, status, note, created_at
+        )
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (f"session-intel-review-{uuid.uuid4()}", candidate_id, status, note, now),
+    )
     return _candidate_row_to_dict(row)
 
 
@@ -451,17 +528,22 @@ def _candidate_drafts(sessions: list[NormalizedSession], *, lane: str) -> list[_
 
 
 def _friction_candidates(sessions: list[NormalizedSession]) -> list[_CandidateDraft]:
-    grouped: dict[str, list[NormalizedSession]] = defaultdict(list)
+    grouped: dict[str, list[tuple[NormalizedSession, str]]] = defaultdict(list)
+    intent_labels: dict[str, str] = {}
     for session in sessions:
         if not session.errors_extracted and not session.provider_metadata.get("approval_friction"):
             continue
         command = session.commands_run[-1] if session.commands_run else "tool execution"
-        grouped[command].append(session)
+        intent_key, intent_label = _friction_intent(command)
+        grouped[intent_key].append((session, command))
+        intent_labels[intent_key] = intent_label
 
     drafts = []
-    for command, group in grouped.items():
+    for intent_key, group in grouped.items():
+        intent_label = intent_labels[intent_key]
+        commands = sorted({command for _session, command in group})
         evidence = []
-        for session in group:
+        for session, command in group:
             error = session.errors_extracted[0] if session.errors_extracted else "approval friction"
             evidence.append(
                 {
@@ -473,11 +555,14 @@ def _friction_candidates(sessions: list[NormalizedSession]) -> list[_CandidateDr
         drafts.append(
             _CandidateDraft(
                 lane="friction_tool",
-                title=f"Deterministic helper for repeated friction: {command}",
-                summary=f"Codex hit repeatable friction around `{command}`.",
+                title=f"Deterministic helper for {intent_label}",
+                summary=(
+                    f"Codex hit repeatable friction around {intent_label}. "
+                    f"Commands: {_format_command_list(commands)}."
+                ),
                 impact_score=min(10, 4 + len(group)),
                 confidence=0.65 if len(group) == 1 else 0.8,
-                source_sessions=_session_ids(group),
+                source_sessions=_session_ids([session for session, _command in group]),
                 evidence=evidence,
                 proposed_artifact_type="deterministic_tool_candidate",
                 proposed_next_action="Review whether this repeated failure should become a narrow script, command wrapper, or eval.",
@@ -533,31 +618,197 @@ def _workflow_candidates(sessions: list[NormalizedSession]) -> list[_CandidateDr
             )
         )
     ]
-    if not matched:
-        return []
-    evidence = [
-        {
-            "session_id": session.provider_session_id,
-            "summary": _first_matching_text(
-                session, ("workflow", "completed cleanly", "went well")
-            ),
-            "source": _source_file(session),
-        }
-        for session in matched
+    sequence_matched = [
+        session
+        for session in sessions
+        if session not in matched and _looks_like_successful_implementation_workflow(session)
     ]
-    return [
-        _CandidateDraft(
-            lane="workflow_skill",
-            title="Reusable Codex workflow pattern",
-            summary="One or more Codex sessions describe a repeatable workflow that completed cleanly.",
-            impact_score=min(10, 5 + len(matched)),
-            confidence=0.7 if len(matched) == 1 else 0.82,
-            source_sessions=_session_ids(matched),
-            evidence=evidence,
-            proposed_artifact_type="skill_or_workflow_candidate",
-            proposed_next_action="Review the evidence and decide whether to promote it into a skill or workflow proposal.",
+    drafts: list[_CandidateDraft] = []
+    if matched:
+        evidence = [
+            {
+                "session_id": session.provider_session_id,
+                "summary": _first_matching_text(
+                    session, ("workflow", "completed cleanly", "went well")
+                ),
+                "source": _source_file(session),
+            }
+            for session in matched
+        ]
+        drafts.append(
+            _CandidateDraft(
+                lane="workflow_skill",
+                title="Reusable Codex workflow pattern",
+                summary="One or more Codex sessions describe a repeatable workflow that completed cleanly.",
+                impact_score=min(10, 5 + len(matched)),
+                confidence=0.7 if len(matched) == 1 else 0.82,
+                source_sessions=_session_ids(matched),
+                evidence=evidence,
+                proposed_artifact_type="skill_or_workflow_candidate",
+                proposed_next_action="Review the evidence and decide whether to promote it into a skill or workflow proposal.",
+            )
         )
-    ]
+    if sequence_matched:
+        evidence = [
+            {
+                "session_id": session.provider_session_id,
+                "summary": _workflow_sequence_summary(session),
+                "source": _source_file(session),
+            }
+            for session in sequence_matched
+        ]
+        drafts.append(
+            _CandidateDraft(
+                lane="workflow_skill",
+                title="Reusable implementation verification workflow",
+                summary="Sessions repeatedly inspect code, implement changes, and verify with tests or quality checks without extracted errors.",
+                impact_score=min(10, 5 + len(sequence_matched)),
+                confidence=0.72 if len(sequence_matched) == 1 else 0.84,
+                source_sessions=_session_ids(sequence_matched),
+                evidence=evidence,
+                proposed_artifact_type="skill_or_workflow_candidate",
+                proposed_next_action="Review whether this successful command sequence should become a skill, workflow checklist, or deterministic closeout helper.",
+            )
+        )
+    return _dedupe_drafts(drafts)
+
+
+def _friction_intent(command: str) -> tuple[str, str]:
+    normalized = _canonical_command(command)
+    lower = normalized.lower()
+    if (
+        lower.startswith("git status")
+        or lower.startswith("git diff")
+        or lower.startswith("git rev-parse")
+    ):
+        return "repo_state_inspection", "repo state inspection"
+    if lower.startswith("git log") or lower.startswith("git show"):
+        return "git_history_review", "git history review"
+    if lower.startswith("git push") or lower.startswith("git commit"):
+        return "git_commit_publish", "git commit and publish flow"
+    if lower.startswith(("pnpm ", "npm ", "yarn ")):
+        return "javascript_package_quality", "JavaScript package quality command"
+    if (
+        lower.startswith(("uv run ", "pytest", "ruff ", "basedpyright", "vulture "))
+        or "/pytest" in lower
+    ):
+        return "python_quality_ladder", "Python quality ladder command"
+    if "skill.md" in lower:
+        return "skill_instruction_review", "skill instruction review"
+    if lower.startswith("date "):
+        return "timestamp_metadata", "timestamp metadata"
+    if lower == "tool execution":
+        return "tool_execution", "tool execution"
+    return f"command:{_normalize_key(normalized)}", f"repeated friction: {normalized}"
+
+
+def _canonical_command(command: str) -> str:
+    normalized = command.strip()
+    try:
+        parts = shlex.split(normalized)
+    except ValueError:
+        return normalized
+    if len(parts) >= 4 and parts[0] == "git" and parts[1] == "-C":
+        return "git " + " ".join(parts[3:])
+    return normalized
+
+
+def _format_command_list(commands: list[str]) -> str:
+    return ", ".join(f"`{command}`" for command in commands[:5])
+
+
+def _looks_like_successful_implementation_workflow(session: NormalizedSession) -> bool:
+    if session.errors_extracted or len(session.commands_run) < 2:
+        return False
+    commands = [command.lower() for command in session.commands_run]
+    has_inspection = any(
+        command.startswith(("rg ", "sed ", "git status", "git diff", "git log"))
+        for command in commands
+    )
+    has_verification = any(
+        token in command
+        for command in commands
+        for token in (
+            "pytest",
+            "ruff",
+            "basedpyright",
+            "vulture",
+            "pnpm test",
+            "pnpm lint",
+            "pnpm typecheck",
+            "pnpm build",
+        )
+    )
+    text = _session_text(session, include_tools=False).lower()
+    has_closeout_language = any(
+        phrase in text
+        for phrase in (
+            "implemented",
+            "verified",
+            "tests",
+            "updated truth",
+            "committed",
+            "pushed",
+        )
+    )
+    return has_inspection and has_verification and has_closeout_language
+
+
+def _workflow_sequence_summary(session: NormalizedSession) -> str:
+    return " -> ".join(session.commands_run[:5])
+
+
+def _candidate_cluster_key(candidate: dict[str, Any]) -> str:
+    lane = str(candidate["lane"])
+    title = str(candidate["title"])
+    if lane == "friction_tool":
+        for evidence in candidate["redacted_evidence"]:
+            summary = str(evidence.get("summary", ""))
+            command = summary.split(":", 1)[0]
+            intent_key, _intent_label = _friction_intent(command)
+            return f"{lane}:{intent_key}"
+    return f"{lane}:{_normalize_key(title)}"
+
+
+def _cluster_title(candidate: dict[str, Any]) -> str:
+    lane = str(candidate["lane"])
+    if lane == "friction_tool":
+        key = _candidate_cluster_key(candidate).split(":", 1)[1]
+        label_by_key = {
+            "repo_state_inspection": "Repo State Inspection Friction",
+            "git_history_review": "Git History Review Friction",
+            "git_commit_publish": "Git Commit And Publish Friction",
+            "javascript_package_quality": "JavaScript Package Quality Friction",
+            "python_quality_ladder": "Python Quality Ladder Friction",
+            "skill_instruction_review": "Skill Instruction Review Friction",
+            "timestamp_metadata": "Timestamp Metadata Friction",
+            "tool_execution": "Tool Execution Friction",
+        }
+        return label_by_key.get(key, str(candidate["title"]))
+    return str(candidate["title"])
+
+
+def _cluster_review_action(candidate: dict[str, Any]) -> str:
+    artifact_type = str(candidate["proposed_artifact_type"])
+    if artifact_type == "deterministic_tool_candidate":
+        return "Review as a deterministic tool candidate."
+    if artifact_type == "skill_or_workflow_candidate":
+        return "Review as a skill or workflow promotion candidate."
+    if artifact_type == "meta_learning_proposal":
+        return "Review as a meta-learning proposal before changing rules."
+    return "Review, mark observed, or convert into a scoped implementation target."
+
+
+def _cluster_candidate_preview(candidate: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": candidate["id"],
+        "title": candidate["title"],
+        "status": candidate["status"],
+        "impact_score": candidate["impact_score"],
+        "confidence": candidate["confidence"],
+        "source_session_count": len(candidate["source_sessions"]),
+        "proposed_artifact_type": candidate["proposed_artifact_type"],
+    }
 
 
 def _impact_candidates(sessions: list[NormalizedSession]) -> list[_CandidateDraft]:

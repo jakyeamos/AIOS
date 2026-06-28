@@ -126,6 +126,7 @@ from services.session_intelligence_loop import (
     SessionIntelligenceBackfillOptions,
     SessionIntelligenceOptions,
     list_session_intelligence_candidates,
+    list_session_intelligence_clusters,
     mark_session_intelligence_candidate,
     run_session_intelligence,
     run_session_intelligence_backfill,
@@ -4805,6 +4806,9 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "session-intel-candidates":
         print(f"candidates={data['count']}")
         return
+    if command == "session-intel-clusters":
+        print(f"clusters={data['count']}")
+        return
     if command == "session-intel-mark":
         print(f"candidate={data['id']} status={data['status']}")
         return
@@ -5177,6 +5181,20 @@ def _session_intel_payload(conn: sqlite3.Connection, args: argparse.Namespace) -
             lane=args.lane,
         )
         return {"count": len(candidates), "candidates": candidates}
+    if args.session_intel_command == "clusters":
+        status = None if args.status == "all" else args.status
+        total_clusters = list_session_intelligence_clusters(
+            conn,
+            status=status,
+            lane=args.lane,
+        )
+        clusters = list_session_intelligence_clusters(
+            conn,
+            status=status,
+            lane=args.lane,
+            limit=args.limit,
+        )
+        return {"count": len(clusters), "total_count": len(total_clusters), "clusters": clusters}
     if args.session_intel_command == "mark":
         return mark_session_intelligence_candidate(
             conn,
@@ -5346,6 +5364,22 @@ def create_parser() -> argparse.ArgumentParser:
         default="all",
     )
     session_intel_candidates.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    session_intel_clusters = session_intel_subparsers.add_parser(
+        "clusters", help="Group candidates into reviewable triage clusters"
+    )
+    session_intel_clusters.add_argument(
+        "--status",
+        choices=["all", "pending_review", "approved", "rejected", "observed", "superseded"],
+        default="pending_review",
+    )
+    session_intel_clusters.add_argument(
+        "--lane",
+        choices=["all", "friction_tool", "workflow_skill", "impact_idea"],
+        default="all",
+    )
+    session_intel_clusters.add_argument("--limit", type=int, default=50)
+    session_intel_clusters.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     session_intel_mark = session_intel_subparsers.add_parser(
         "mark", help="Mark a session intelligence candidate review status"
