@@ -7,8 +7,8 @@
   "workflow_key": "divergent-strategy",
   "agent_key": "implementation-lead",
   "packet_id": "packet-managed-failed-workflow",
-  "workflow_report_id": "workflow-report-e2b2745d-2ad5-40a7-a2c4-61694c0fa4f9",
+  "workflow_report_id": "workflow-report-f57d043c-c3fa-4c1a-ba32-a9409df194d3",
   "workflow_report_path": "/Users/jakyeamos/AIOS/logs/control-plane/workflow-reports/invoke-managed-failed-workflow.json",
   "workflow_summary": "Workflow divergent-strategy finished with status=completed; stages=4; validations=0/0 passed.",
-  "recorded_at": "2026-06-24T03:11:23.167125+00:00"
+  "recorded_at": "2026-06-28T16:16:55.637849+00:00"
 }

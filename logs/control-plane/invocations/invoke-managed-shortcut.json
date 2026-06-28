@@ -7,8 +7,8 @@
   "workflow_key": "implementation-delivery",
   "agent_key": "implementation-lead",
   "packet_id": "packet-managed-shortcut",
-  "workflow_report_id": "workflow-report-84b46aa1-ea52-4613-9a39-f749d3984d89",
+  "workflow_report_id": "workflow-report-6c0abfe9-eda1-4d22-bfc2-2298eb31d6bc",
   "workflow_report_path": "/Users/jakyeamos/AIOS/logs/control-plane/workflow-reports/invoke-managed-shortcut.json",
   "workflow_summary": "Workflow implementation-delivery finished with status=completed; stages=4; validations=1/1 passed.",
-  "recorded_at": "2026-06-24T03:11:21.943325+00:00"
+  "recorded_at": "2026-06-28T16:16:54.589727+00:00"
 }
