@@ -1,10 +1,10 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, Quality Runner planning, and review-gated Codex/Claude session intelligence backfill while broader Ruff and BasedPyright baseline issues remain open.
+summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, Quality Runner planning, and a real Codex/Claude session intelligence backfill now persisted for review while broader Ruff and BasedPyright baseline issues remain open.
 healthScore: 73
 statusLabel: needs_attention
-nextStep: Run the first review-gated `aios session-intel backfill --provider all --since all --write-report` over the local Codex and Claude corpora, then continue Quality Runner Task 1.
+nextStep: Review and triage the 973 pending session-intelligence candidates, then continue Quality Runner Task 1.
 blockers:
   - Full repo Ruff and format baselines are not green: Ruff reports 25 issues and Ruff format reports 169 files needing formatting.
   - Full repo BasedPyright is not green: 110 errors and 78 warnings, including the existing `services/aios_cli.py` `run_cli` complexity baseline.
@@ -17,7 +17,7 @@ repoType: infra
 sourceOfTruth: mixed
 primaryLanguage: Python
 activeBranch: codex/project-aios-component-scope
-lastCommitDate: 2026-06-27
+lastCommitDate: 2026-06-28
 quality:
   lint: fail
   types: fail
@@ -103,6 +103,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-06-27: Added the Quality Runner implementation plan for a Python-first standalone package at `/Users/jakyeamos/quality-runner`, covering scaffold, core contracts, discovery, standards, audit planning, CLI, MCP, plugin metadata, quality checks, and AIOS adoption notes.
 - 2026-06-28: Added the Codex Session Intelligence loop with enriched Codex JSONL normalization, review-gated `friction_tool`, `workflow_skill`, and `impact_idea` candidates, redacted daily reports, `aios session-intel` CLI commands, and the daily Codex automation `daily-codex-session-intelligence`.
 - 2026-06-28: Added resumable `aios session-intel backfill` mode for historical Codex and Claude sessions, with provider `all`, batch sizing, cursor-based resume, optional reports, and review-gated candidate storage only.
+- 2026-06-28: Ran the first full local Codex/Claude session-intelligence backfill and hardened it into a tier-one workflow by fixing session-intel CLI commit durability, Claude Bash/tool-result normalization, and cross-batch candidate merging; the live DB now has 1,923 cursors, 973 pending candidates, and zero duplicate lane/title groups.
 - 2026-04-08: Added ops/maintenance utilities, retrieval rule and provenance tooling, enriched hook event capture, AI history import tooling
 - 2026-04-08: Design specs added for Code Topology Service (CTS), AIOS Command UI, and prompt library
 - 2026-04-09: Ruff 0.15.10 auto-fixed 181 issues; shellcheck clean on `auto_ingest.sh` and `health_check.sh`; BasedPyright and Vulture installed
@@ -146,7 +147,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 3. **Full BasedPyright baseline is not green** — `uv run basedpyright` failed on 2026-06-26 with 110 errors and 101 warnings, including existing `run_cli` complexity.
 ## Next Concrete Steps
 
-1. Run `aios session-intel backfill --provider all --since all --write-report` once to mine the existing local Codex and Claude transcript backlog before relying only on the daily incremental automation.
+1. Review and triage the 973 pending `session_intelligence_candidates` from the first Codex/Claude backfill, starting with high-impact friction-tool candidates.
 2. Execute `docs/superpowers/plans/2026-06-27-quality-runner.md` Task 1 to scaffold `/Users/jakyeamos/quality-runner`.
 3. Resume linked-repo adoption execution with BidCamp repo-local Phase 151, then continue BidCamp 152-155, EliHealth 09-13, and pre-cr-suite-lsp 04-06.
 
@@ -163,15 +164,16 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 | Lint (ruff) | Fail | `uv run ruff check .` failed on 2026-06-28 with 25 existing repo issues. Focused Codex session intelligence Ruff checks pass. |
 | Type check (basedpyright) | Fail | `uv run basedpyright` failed on 2026-06-28 with 110 errors and 78 warnings, including existing `run_cli` complexity. Focused Codex session intelligence BasedPyright checks pass. |
 | Dead code (vulture) | Warning | `uv run vulture . --min-confidence 70` failed on 2026-06-28 because `.venv` third-party packages were scanned; `uv run vulture bin services --min-confidence 70` passed. |
-| Tests | Pass | `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run pytest -q` passed on 2026-06-28 with 1032 tests. |
+| Tests | Pass | `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run pytest -q` passed on 2026-06-28 with 1036 tests. |
 | Structure | Fail | `uv run ruff format --check .` reported 169 files needing formatting on 2026-06-28. Focused Codex session intelligence format checks pass. |
 
 Focused Codex session intelligence checks on 2026-06-28:
-- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run pytest tests/test_session_intelligence_loop.py -q` passed with 8 tests after backfill mode.
-- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run ruff check services/session_intelligence_loop.py services/aios_cli.py tests/test_session_intelligence_loop.py` passed.
-- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run ruff format --check services/session_intelligence_loop.py services/aios_cli.py tests/test_session_intelligence_loop.py` passed.
-- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run basedpyright services/session_intelligence_loop.py tests/test_session_intelligence_loop.py` passed.
-- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run vulture services/session_intelligence_loop.py --min-confidence 70` exited 0.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run pytest tests/test_session_intelligence_loop.py -q` passed with 12 tests after durability, Claude normalization, and cross-batch merge hardening.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run ruff check services/session_intelligence_loop.py services/session_providers/claude.py services/aios_cli.py tests/test_session_intelligence_loop.py` passed.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run ruff format --check services/session_intelligence_loop.py services/session_providers/claude.py services/aios_cli.py tests/test_session_intelligence_loop.py` passed.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run basedpyright services/session_intelligence_loop.py services/session_providers/claude.py tests/test_session_intelligence_loop.py` passed.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run vulture services/session_intelligence_loop.py services/session_providers/claude.py --min-confidence 70` exited 0.
+- `.venv/bin/python /Users/jakyeamos/AIOS/bin/aios.py session-intel backfill --provider all --since all --write-report --batch-size 250` processed 1,923 sources in 9 batches with 1,051 batch candidates; persisted state after the immediate resume is 1,923 cursors, 973 pending candidates, and zero duplicate lane/title groups. Backup before the first live run is `data/aios.db.pre-session-intel-backfill-20260628`.
 - `.venv/bin/python bin/aios.py --db /private/tmp/aios-session-intel-backfill-smoke.db session-intel backfill --provider all --codex-source-root /private/tmp/aios-empty-codex --claude-source-root /private/tmp/aios-empty-claude --batch-size 1 --json` passed.
 - `.venv/bin/python bin/aios.py --db /private/tmp/aios-session-intel-smoke.db session-intel candidates --json` passed.
 - `.venv/bin/python bin/aios.py --db /private/tmp/aios-session-intel-smoke.db session-intel run --provider codex --since all --source-root /private/tmp/no-codex-sessions --write-report --report-root /private/tmp/session-intel-reports --json` passed.

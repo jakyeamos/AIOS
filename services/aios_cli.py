@@ -6459,6 +6459,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "session-intel":
             assert conn is not None
             data = _session_intel_payload(conn, args)
+            conn.commit()
         elif args.command == "retrospectives":
             assert conn is not None
             data = _retrospective_payload(conn, args)

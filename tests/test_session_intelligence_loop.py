@@ -18,6 +18,7 @@ from services.session_intelligence_loop import (  # noqa: E402
     run_session_intelligence,
     run_session_intelligence_backfill,
 )
+from services.session_providers.claude import ClaudeProvider  # noqa: E402
 from services.session_providers.codex import CodexProvider  # noqa: E402
 
 
@@ -112,6 +113,58 @@ def _write_claude_session(path: Path, session_id: str, user_text: str, assistant
     )
 
 
+def _write_claude_tool_session(path: Path, session_id: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    events = [
+        {
+            "type": "user",
+            "timestamp": "2026-06-27T10:00:00Z",
+            "cwd": "/Users/jakyeamos/AIOS",
+            "sessionId": session_id,
+            "message": {"role": "user", "content": "Run the tests."},
+        },
+        {
+            "type": "assistant",
+            "timestamp": "2026-06-27T10:01:00Z",
+            "cwd": "/Users/jakyeamos/AIOS",
+            "sessionId": session_id,
+            "message": {
+                "role": "assistant",
+                "model": "claude-sonnet-4",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": "toolu_1",
+                        "name": "Bash",
+                        "input": {"command": "pnpm test", "description": "Run tests"},
+                    }
+                ],
+            },
+        },
+        {
+            "type": "user",
+            "timestamp": "2026-06-27T10:02:00Z",
+            "cwd": "/Users/jakyeamos/AIOS",
+            "sessionId": session_id,
+            "message": {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": "toolu_1",
+                        "is_error": True,
+                        "content": "Process exited with code 1\npytest failed",
+                    }
+                ],
+            },
+        },
+    ]
+    path.write_text(
+        "\n".join(json.dumps(event, sort_keys=True) for event in events) + "\n",
+        encoding="utf-8",
+    )
+
+
 def test_codex_provider_normalizes_tools_commands_errors_and_cwd(tmp_path: Path) -> None:
     rollout = tmp_path / "sessions" / "rollout-2026-06-27T10-00-00-session-1.jsonl"
     _write_codex_rollout(
@@ -135,6 +188,38 @@ def test_codex_provider_normalizes_tools_commands_errors_and_cwd(tmp_path: Path)
     assert normalized.tool_calls[0]["tool"] == "exec_command"
     assert normalized.errors_extracted == ["Process exited with code 1: pytest failed"]
     assert normalized.provider_metadata["model_provider"] == "openai"
+
+
+def test_claude_provider_normalizes_bash_tools_commands_and_errors(tmp_path: Path) -> None:
+    session_path = tmp_path / "claude" / "-Users-jakyeamos-AIOS" / "claude-session.jsonl"
+    _write_claude_tool_session(session_path, "claude-session")
+    provider = ClaudeProvider(source_root=tmp_path / "claude", db_path=tmp_path / "aios.db")
+
+    normalized = provider.normalize_session(
+        provider.extract_raw_session(provider.discover_sources()[0])
+    )
+
+    assert normalized.workspace_path == "/Users/jakyeamos/AIOS"
+    assert normalized.commands_run == ["pnpm test"]
+    assert normalized.tool_calls[0]["tool"] == "Bash"
+    assert normalized.tool_calls[0]["command"] == "pnpm test"
+    assert normalized.errors_extracted == ["Process exited with code 1: pytest failed"]
+
+
+def test_session_intelligence_backfill_classifies_claude_friction(tmp_path: Path) -> None:
+    session_path = tmp_path / "claude" / "-Users-jakyeamos-AIOS" / "claude-session.jsonl"
+    _write_claude_tool_session(session_path, "claude-session")
+    conn = _memory_conn()
+    provider = ClaudeProvider(source_root=tmp_path / "claude", db_path=tmp_path / "aios.db")
+
+    result = run_session_intelligence_backfill(
+        conn,
+        provider=provider,
+        options=SessionIntelligenceBackfillOptions(since="all", batch_size=1),
+    )
+
+    assert result["summary"]["candidate_count"] == 1
+    assert list_session_intelligence_candidates(conn)[0]["lane"] == "friction_tool"
 
 
 def test_session_intelligence_classifies_lanes_and_redacts_report(tmp_path: Path) -> None:
@@ -241,6 +326,34 @@ def test_session_intelligence_backfill_batches_and_resumes_from_cursors(
     assert third["summary"]["processed_source_count"] == 0
     assert third["summary"]["skipped_source_count"] == 3
     assert third["summary"]["batch_count"] == 1
+
+
+def test_session_intelligence_backfill_merges_same_candidate_across_batches(
+    tmp_path: Path,
+) -> None:
+    sessions_root = tmp_path / "sessions"
+    for index in range(3):
+        _write_codex_rollout(
+            sessions_root / f"2026/06/27/rollout-2026-06-27T10-0{index}-00-session-{index}.jsonl",
+            [
+                _session_meta(f"session-{index}"),
+                _function_call("pnpm test"),
+                _function_output("Process exited with code 1\npytest failed"),
+            ],
+        )
+    conn = _memory_conn()
+    provider = CodexProvider(source_root=sessions_root, db_path=tmp_path / "aios.db")
+
+    run_session_intelligence_backfill(
+        conn,
+        provider=provider,
+        options=SessionIntelligenceBackfillOptions(since="all", batch_size=1),
+    )
+    candidates = list_session_intelligence_candidates(conn)
+
+    assert len(candidates) == 1
+    assert candidates[0]["source_sessions"] == ["session-0", "session-1", "session-2"]
+    assert len(candidates[0]["redacted_evidence"]) == 3
 
 
 def test_session_intelligence_lists_and_marks_candidates(tmp_path: Path) -> None:
@@ -409,3 +522,45 @@ def test_session_intelligence_cli_backfill_supports_codex_and_claude(
     assert payload["summary"]["processed_source_count"] == 2
     assert {result["provider"] for result in payload["providers"]} == {"codex", "claude"}
     assert len(list_session_intelligence_candidates(conn)) == 2
+
+
+def test_session_intelligence_cli_backfill_persists_rows(tmp_path: Path, capsys) -> None:
+    import services.aios_cli as aios_cli
+
+    sessions_root = tmp_path / "sessions"
+    _write_codex_rollout(
+        sessions_root / "2026/06/27/rollout-2026-06-27T10-00-00-session-1.jsonl",
+        [
+            _session_meta("session-1"),
+            _function_call("pnpm test"),
+            _function_output("Process exited with code 1\npytest failed"),
+        ],
+    )
+    db_path = tmp_path / "aios.db"
+    db_path.touch()
+
+    exit_code = aios_cli.run_cli(
+        [
+            "--db",
+            str(db_path),
+            "session-intel",
+            "backfill",
+            "--provider",
+            "codex",
+            "--source-root",
+            str(sessions_root),
+            "--batch-size",
+            "1",
+        ]
+    )
+    capsys.readouterr()
+
+    with sqlite3.connect(db_path) as conn:
+        run_count = conn.execute("SELECT COUNT(*) FROM session_intelligence_runs").fetchone()[0]
+        candidate_count = conn.execute(
+            "SELECT COUNT(*) FROM session_intelligence_candidates"
+        ).fetchone()[0]
+
+    assert exit_code == 0
+    assert run_count == 1
+    assert candidate_count == 1

@@ -611,12 +611,33 @@ def _upsert_candidate(
     redacted_evidence = [_redact_evidence(item, redactors) for item in draft.evidence]
     candidate_id = _candidate_id(draft.lane, draft.title, draft.source_sessions, redacted_evidence)
     existing = conn.execute(
-        "SELECT status, review_note, created_at FROM session_intelligence_candidates WHERE id = ?",
+        "SELECT * FROM session_intelligence_candidates WHERE id = ?",
         (candidate_id,),
     ).fetchone()
+    if existing is None:
+        existing = conn.execute(
+            """
+            SELECT *
+            FROM session_intelligence_candidates
+            WHERE lane = ? AND title = ?
+            ORDER BY created_at ASC
+            LIMIT 1
+            """,
+            (draft.lane, draft.title),
+        ).fetchone()
+        if existing is not None:
+            candidate_id = existing["id"]
     status = existing["status"] if existing is not None else "pending_review"
     review_note = existing["review_note"] if existing is not None else None
     created_at = existing["created_at"] if existing is not None else now
+    source_sessions = sorted(
+        set(draft.source_sessions) | set(_existing_json_list(existing, "source_sessions_json"))
+    )
+    redacted_evidence = _merge_evidence(
+        _existing_json_list(existing, "redacted_evidence_json"), redacted_evidence
+    )
+    impact_score = max(draft.impact_score, existing["impact_score"] if existing is not None else 0)
+    confidence = max(draft.confidence, existing["confidence"] if existing is not None else 0.0)
     conn.execute(
         """
         INSERT INTO session_intelligence_candidates (
@@ -641,10 +662,10 @@ def _upsert_candidate(
             draft.lane,
             draft.title,
             draft.summary,
-            draft.impact_score,
-            draft.confidence,
+            impact_score,
+            confidence,
             status,
-            json.dumps(draft.source_sessions, sort_keys=True),
+            json.dumps(source_sessions, sort_keys=True),
             json.dumps(redacted_evidence, sort_keys=True),
             draft.proposed_artifact_type,
             draft.proposed_next_action,
@@ -658,6 +679,28 @@ def _upsert_candidate(
         (candidate_id,),
     ).fetchone()
     return _candidate_row_to_dict(row)
+
+
+def _existing_json_list(row: sqlite3.Row | None, column: str) -> list[Any]:
+    if row is None:
+        return []
+    value = json.loads(row[column])
+    return value if isinstance(value, list) else []
+
+
+def _merge_evidence(existing: list[Any], incoming: list[dict[str, str]]) -> list[dict[str, str]]:
+    merged: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for item in [*existing, *incoming]:
+        if not isinstance(item, dict):
+            continue
+        normalized = {str(key): str(value) for key, value in item.items()}
+        key = json.dumps(normalized, sort_keys=True)
+        if key in seen:
+            continue
+        seen.add(key)
+        merged.append(normalized)
+    return merged
 
 
 def _seed_workflow_synthesis(
