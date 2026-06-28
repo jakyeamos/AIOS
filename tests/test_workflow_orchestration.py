@@ -385,6 +385,50 @@ def test_expert_review_workflow_registry_contract() -> None:
     )
 
 
+def test_repo_gate_adoption_workflow_registry_contract() -> None:
+    workflows = load_workflow_registry(ROOT / "config" / "workflows" / "registry.json")
+    skills = load_skill_registry(ROOT / "config" / "workflows" / "skills.json")
+    workflow = workflows["repo_gate_adoption_v1"]
+
+    assert validate_workflow_bindings(workflows, skills) == []
+    assert workflow.workflow_family == "audit_and_plan"
+    assert workflow.implementation_bearing is False
+    assert [stage.key for stage in workflow.stages] == [
+        "repo_fact_scan",
+        "gate_matrix",
+        "tmcp_expert_enrichment",
+        "rubric_pack",
+        "rollout_plan",
+        "artifact_validate",
+    ]
+    assert workflow.required_validations == (
+        "repo_gate_scan_has_evidence",
+        "gate_matrix_has_core_gates",
+        "tmcp_expert_enrichment_has_sufficiency_status",
+        "rubric_pack_has_broad_and_gate_rubrics",
+        "gate_rollout_has_phases",
+    )
+    artifact_validate = workflow.stages[-1]
+    assert any(
+        validation.criterion_id == "complexity-budget"
+        for validation in artifact_validate.validations
+    )
+
+
+def test_planning_governance_workflow_registry_contract() -> None:
+    workflows = load_workflow_registry(ROOT / "config" / "workflows" / "registry.json")
+    skills = load_skill_registry(ROOT / "config" / "workflows" / "skills.json")
+    workflow = workflows["planning-governance"]
+
+    assert validate_workflow_bindings(workflows, skills) == []
+    assert workflow.lifecycle_state == "active"
+    assert workflow.workflow_family == "planning_governance"
+    assert workflow.required_validations
+    assert workflow.verification_exempt is False
+    validate_stage = next(stage for stage in workflow.stages if stage.kind == "validate")
+    assert validate_stage.validations
+
+
 def test_input_binding_rejects_unknown_source() -> None:
     with pytest.raises(ValueError, match="ether"):
         _stage_from_row(
@@ -776,6 +820,76 @@ def test_expert_review_workflow_executes_with_artifacts(tmp_path: Path) -> None:
     assert Path(artifacts["expert_review_artifact_paths"]["rubric_json"]).exists()
 
 
+def test_repo_gate_adoption_workflow_executes_with_artifacts(tmp_path: Path) -> None:
+    (tmp_path / "package.json").write_text(
+        json.dumps(
+            {
+                "scripts": {
+                    "lint": "eslint .",
+                    "typecheck": "tsc --noEmit",
+                    "test": "vitest run",
+                    "build": "vite build",
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "tsconfig.json").write_text("{}", encoding="utf-8")
+    (tmp_path / ".pre-cr.json").write_text("{}", encoding="utf-8")
+    (tmp_path / ".aios-quality-gate.json").write_text(
+        json.dumps(
+            {
+                "projectId": "fixture",
+                "preCommitGates": ["test_quality", "pre_cr"],
+                "fullGates": ["architecture"],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = execute_workflow(
+        WorkflowExecutionContext(
+            objective="Create a quality gate adoption plan for this repo",
+            workflow_key="repo_gate_adoption_v1",
+            repo_path=str(tmp_path),
+            run_id="gate-adoption-run",
+        )
+    )
+
+    assert report["status"] == "completed"
+    artifacts = report["artifacts"]
+    assert artifacts["repo_gate_scan"]["schema"] == "aios-repo-gate-scan-v0.1"
+    assert artifacts["repo_gate_matrix"]["summary"]["present"] >= 4
+    assert (
+        artifacts["repo_tmcp_expert_enrichment"]["schema"]
+        == "aios-repo-gate-tmcp-expert-enrichment-v0.1"
+    )
+    assert artifacts["repo_tmcp_expert_enrichment"]["status"] in {
+        "enriched",
+        "insufficient_source",
+    }
+    assert artifacts["repo_quality_rubric_pack"]["schema"] == "aios-repo-gate-rubric-pack-v0.1"
+    assert (
+        artifacts["repo_quality_rubric_pack"]["tmcp_expert_enrichment"]["status"]
+        == artifacts["repo_tmcp_expert_enrichment"]["status"]
+    )
+    assert artifacts["repo_quality_rubric_pack"]["broad_rubrics"]
+    assert artifacts["repo_quality_rubric_pack"]["gate_specific_rubrics"]
+    assert artifacts["repo_gate_rollout_plan"]["phases"]
+    gate_matrix_path = Path(artifacts["repo_gate_adoption_artifact_paths"]["gate_matrix_json"])
+    assert gate_matrix_path.exists()
+    assert tmp_path / "AIOS-backfill" in gate_matrix_path.parents
+    assert Path(
+        artifacts["repo_gate_adoption_artifact_paths"]["tmcp_expert_enrichment_json"]
+    ).exists()
+    assert Path(artifacts["repo_gate_adoption_artifact_paths"]["rubric_pack_json"]).exists()
+    assert Path(artifacts["repo_gate_adoption_artifact_paths"]["rubric_docs_dir"]).is_dir()
+    assert Path(
+        artifacts["repo_gate_adoption_artifact_paths"]["rubric_detail_manifest_json"]
+    ).exists()
+    assert artifacts["repo_gate_rollout_plan"]["rubric_detail_documents"]
+
+
 def test_unknown_workflow_raises(tmp_path: Path) -> None:
     context = WorkflowExecutionContext(
         objective="Any objective",
@@ -995,6 +1109,16 @@ def test_expert_review_objective_routes_to_rubric_remediation_workflow(
     assert route["selected_workflow"]["workflow_key"] == "expert_rubric_remediation_v1"
 
 
+def test_repo_gate_adoption_routing_beats_generic_workflow_routes() -> None:
+    objective = "Create a quality gate adoption plan for this repo's commit gates"
+
+    candidates = rank_workflow_candidates(objective)
+    route = recommend_route_primitives(objective)
+
+    assert candidates[0].workflow_key == "repo_gate_adoption_v1"
+    assert route["selected_workflow"]["workflow_key"] == "repo_gate_adoption_v1"
+
+
 def test_recommend_prompt_family_for_implementation_workflow() -> None:
     recommendation = recommend_prompt_family(
         objective="Implement a scoped feature with a concise handoff",
@@ -1021,6 +1145,43 @@ def test_recommend_route_primitives_for_implementation_objective() -> None:
     assert route["selected_workflow"]["workflow_key"] == "implementation-delivery"
     assert route["prompt_recommendation"]["prompt_family"] is not None
     assert route["backend_recommendation"]["selected_surface"] == "codex"
+
+
+def test_recommend_route_primitives_selects_planning_governance_for_gsd_phase_add() -> None:
+    route = recommend_route_primitives(
+        "Add a new GSD phase for planning governance",
+        surface="codex",
+    )
+
+    assert route["selected_workflow"]["workflow_key"] == "planning-governance"
+    assert route["selected_workflow"]["workflow_family"] == "planning_governance"
+    assert any(
+        candidate["workflow_key"] == "planning-governance"
+        and "planning detection" in candidate["rationale"]
+        for candidate in route["workflow_candidates"]
+    )
+
+
+def test_recommend_route_primitives_selects_execution_lane_for_known_gsd_command() -> None:
+    route = recommend_route_primitives("gsd-execute-phase 24", surface="codex")
+
+    assert route["selected_workflow"]["workflow_key"] == "implementation-delivery"
+    assert any(
+        candidate["workflow_key"] == "implementation-delivery"
+        and "GSD command" in candidate["rationale"]
+        for candidate in route["workflow_candidates"]
+    )
+
+
+def test_recommend_route_primitives_selects_execution_lane_for_gsd_command_prose() -> None:
+    route = recommend_route_primitives("Execute GSD phase 24", surface="codex")
+
+    assert route["selected_workflow"]["workflow_key"] == "implementation-delivery"
+    assert any(
+        candidate["workflow_key"] == "implementation-delivery"
+        and "GSD command" in candidate["rationale"]
+        for candidate in route["workflow_candidates"]
+    )
 
 
 def _approval_policy_stub(**_: object) -> dict[str, object]:

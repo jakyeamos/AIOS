@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sqlite3
 from pathlib import Path
 from unittest.mock import patch
@@ -99,3 +100,88 @@ def test_start_work_does_not_retry_non_session_failures(tmp_path: Path) -> None:
 
     assert result == blocked_result
     assert run.call_count == 1
+
+
+def test_route_helper_main_returns_planning_governance_route(tmp_path: Path, capsys) -> None:
+    module = _load_module()
+    db_path = tmp_path / "aios.db"
+    db_path.write_text("", encoding="utf-8")
+    project = {"id": "project-aios", "name": "AIOS", "repo_path": str(tmp_path)}
+    start_result = {
+        "returncode": 0,
+        "json": {
+            "ok": True,
+            "data": {
+                "run": {
+                    "id": "run-planning",
+                    "workflow_key": "planning-governance",
+                    "packet_id": "packet-planning",
+                    "route_id": "route-planning",
+                    "status": "in_progress",
+                    "active_invocation_id": "invoke-planning",
+                    "backend_key": "codex-managed-runtime",
+                }
+            },
+        },
+    }
+
+    with (
+        patch.object(
+            module.sys,
+            "argv",
+            [
+                "codex-aios-route.py",
+                "Add a new GSD phase for planning governance",
+                "--db",
+                str(db_path),
+            ],
+        ),
+        patch.object(module, "resolve_project", return_value=project),
+        patch.object(module, "start_work", return_value=start_result),
+    ):
+        assert module.main() == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ok"] is True
+    assert payload["run"]["workflow_key"] == "planning-governance"
+    assert payload["objective"] == "Add a new GSD phase for planning governance"
+
+
+def test_route_helper_main_returns_known_gsd_command_route(tmp_path: Path, capsys) -> None:
+    module = _load_module()
+    db_path = tmp_path / "aios.db"
+    db_path.write_text("", encoding="utf-8")
+    project = {"id": "project-aios", "name": "AIOS", "repo_path": str(tmp_path)}
+    start_result = {
+        "returncode": 0,
+        "json": {
+            "ok": True,
+            "data": {
+                "run": {
+                    "id": "run-execute",
+                    "workflow_key": "implementation-delivery",
+                    "packet_id": "packet-execute",
+                    "route_id": "route-execute",
+                    "status": "in_progress",
+                    "active_invocation_id": "invoke-execute",
+                    "backend_key": "codex-managed-runtime",
+                }
+            },
+        },
+    }
+
+    with (
+        patch.object(
+            module.sys,
+            "argv",
+            ["codex-aios-route.py", "gsd-execute-phase 24", "--db", str(db_path)],
+        ),
+        patch.object(module, "resolve_project", return_value=project),
+        patch.object(module, "start_work", return_value=start_result),
+    ):
+        assert module.main() == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ok"] is True
+    assert payload["run"]["workflow_key"] == "implementation-delivery"
+    assert payload["objective"] == "gsd-execute-phase 24"

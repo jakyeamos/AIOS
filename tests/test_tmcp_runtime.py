@@ -471,6 +471,55 @@ def test_compile_tmcp_packet_routes_workflow_strategy_comparison_to_planning(
     assert packet["registry_overlay"]["matched"] is True
 
 
+def test_compile_tmcp_packet_keeps_tmcp_internal_review_on_canonical_graph(
+    tmp_path: Path,
+) -> None:
+    library = _seed_tmcp_library(tmp_path / "skills-library")
+
+    packet = compile_tmcp_packet(
+        objective="Review TMCP routing risks and explain why this manifest is default",
+        project_path="/tmp/project",
+        skills_library_path=library,
+    )
+
+    assert packet["task_id"] == "agent_workflow"
+    assert packet["registry_overlay"]["matched"] is False
+    assert not any(
+        node.startswith("@namespace:portable_dev_process/")
+        for node in packet["selected_nodes"]
+    )
+    assert packet["registry_overlay"]["skipped_namespaces"] == [
+        {
+            "namespace": "portable_dev_process",
+            "reason": (
+                "TMCP-internal routing work uses the canonical graph unless "
+                "instruction hygiene is explicitly requested."
+            ),
+        }
+    ]
+
+
+def test_compile_tmcp_packet_allows_tmcp_instruction_hygiene_overlay(
+    tmp_path: Path,
+) -> None:
+    library = _seed_tmcp_library(tmp_path / "skills-library")
+
+    packet = compile_tmcp_packet(
+        objective=(
+            "Review TMCP agent instructions, reduce prompt size, and check "
+            "whether prose affects behavior"
+        ),
+        project_path="/tmp/project",
+        skills_library_path=library,
+    )
+
+    assert packet["registry_overlay"]["matched"] is True
+    assert (
+        "@namespace:portable_dev_process/@task:instruction_hygiene"
+        in packet["selected_nodes"]
+    )
+
+
 def test_compile_tmcp_packet_skips_overlay_when_no_behavior_is_added(
     tmp_path: Path,
 ) -> None:

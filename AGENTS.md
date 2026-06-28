@@ -9,15 +9,15 @@ Shadow every non-trivial Codex task through AIOS, even when the user does not ty
 For ordinary non-`/aios` tasks, create the shadow lane before doing non-trivial work:
 
 ```bash
-python3 /Users/jakyeamos/AIOS/scripts/codex-aios-shadow.py "<objective>"
+/Users/jakyeamos/AIOS/bin/codex-aios-shadow "<objective>"
 ```
 
-This keeps the current workspace as the baseline source of truth and creates an isolated AIOS shadow worktree for comparison. The returned AIOS route, packet, and shadow metadata are evidence only for ordinary tasks; continue the baseline implementation normally unless the user explicitly requested `/aios`. Do not merge, copy, or promote shadow output into the baseline workspace without explicit user review.
+This keeps the current workspace as the baseline source of truth and creates an isolated AIOS shadow worktree for comparison. The wrapper is the narrow permission boundary for shadow setup; it only delegates to `scripts/codex-aios-shadow.py`, whose worktree creation writes Git refs under `.git`. The returned AIOS route, packet, and shadow metadata are evidence only for ordinary tasks; continue the baseline implementation normally unless the user explicitly requested `/aios`. Do not merge, copy, or promote shadow output into the baseline workspace without explicit user review.
 
 When a Codex prompt starts with `/aios`, route the baseline task through AIOS before doing non-trivial work and create the same shadow lane automatically:
 
 ```bash
-python3 /Users/jakyeamos/AIOS/scripts/codex-aios-shadow.py "<objective>" --governed-route
+/Users/jakyeamos/AIOS/bin/codex-aios-shadow "<objective>" --governed-route
 ```
 
 Use the command body, without the `/aios` prefix, as the objective. Infer the project from the current working directory when possible; otherwise use the explicit project name/id in the prompt.
@@ -37,6 +37,18 @@ python3 /Users/jakyeamos/AIOS/scripts/codex-aios-route.py "<objective>" --projec
 Treat the returned run, route, packet, and shadow metadata as the task's governing context only for `/aios` prompts. For ordinary prompts, use the returned metadata only as comparison evidence for AIOS usefulness. After implementation, inspect the run with `operator-search`, `daily-flow`, and `next-action` using the commands returned by the helper when they exist.
 
 Automatic shadow routing has a diagnostic failure mode. If `scripts/codex-aios-shadow.py` exits `0` with `ok: true`, `governed_route: false`, `aios_route.status: "route_failed"`, and `aios_route.blocking: false`, continue the baseline implementation normally. This means AIOS recorded the routing miss in `data/aios-route-failures.jsonl`; it is not an unshadowed-work approval gate, and no user approval is required. Only ask for explicit approval when automatic shadow setup exits nonzero or cannot record diagnostic evidence, such as project resolution failure, helper failure, or shadow worktree creation failure. If governed `/aios` routing fails or blocks, stop and report the AIOS error instead of bypassing the route unless the user explicitly says to bypass AIOS.
+
+## TMCP Expert Workflow Trigger
+
+When the user asks to use the TMCP expert workflow, TMCP expert rubric, TMCP judge, or says to judge/evaluate something with TMCP, treat that as a request for the expert-rubric remediation workflow.
+
+Use this first-class command surface:
+
+```bash
+uv run python bin/aios.py expert-rubric "<objective>" --project-path "<target repo>" --output-dir "<artifact output dir>" --evidence-json '<json evidence object or array>'
+```
+
+If structured evidence is not already available, inspect the target first and build evidence items with `dimension_id`, `severity`, `summary`, `evidence`, and `recommended_fix` before running the command. Do not treat this as UI-specific; the rubric profile comes from the compiled TMCP packet and selected evidence.
 
 ## AIOS Context Compiler Bootloader
 
@@ -65,9 +77,33 @@ Useful commands:
 3. Evaluate final changed files against applicable criteria before completion.
 4. Record blockers, warnings, passes, and accepted tradeoffs in durable artifacts.
 
+## Adoption / Gate Reporting
+
+When reporting simplification, complexity, or file-size gate work, do not describe success only as
+line-count reduction. Always state the behavioral impact explicitly.
+
+- Use "split by responsibility with no intentional behavior changes" when the work was mechanical
+  extraction.
+- Use "behavior changed" only when user-facing behavior or runtime semantics were intentionally
+  modified.
+- Use "feature removed" only when functionality was actually removed.
+
+Adoption reports must distinguish gate outcome, files or modules affected, whether behavior was
+preserved, changed, or removed, and the runtime/type/test proof supporting that claim.
+
+## Test Value / Anti-Bloat Gate
+
+Tests are a trust mechanism, not proof-by-volume. Do not add tests just to satisfy TDD ritual, coverage pressure, or static UI copy verification.
+
+New tests must protect behavior, a public contract, domain logic, or a confirmed regression. For tiny presentation/text changes, prefer typecheck, build, and runtime/browser evidence when a render-text test would only duplicate implementation copy. Delete or consolidate obsolete, duplicated, brittle, or implementation-coupled tests in the same change set that makes them obsolete.
+
 ## Rule: Strategic Improvement Suggestions
 
 The user is always open to better ways of doing things. When a task reveals a stronger approach, a more durable architecture, or an option with longer-lasting impact than the tactical change requested, proactively surface it with the tradeoff and recommended path. Do not wait for explicit permission to mention better options, but keep the active task moving unless the alternative changes scope materially.
+
+## Rule: Dev Integration Branch
+
+Feature branches and worktrees are allowed and encouraged, but completed feature-branch work must be folded into a canonical `dev` branch afterwards so progress is not lost, duplicated, or rediscovered later. Each project should have a canonical `dev` integration branch unless the project documents an explicit equivalent. After feature work is committed and verified, merge it into `dev`, push `dev`, and prune the feature branch once it is safely merged and no active dirty worktree depends on it. Do not merge feature branches directly to `main` unless the user explicitly asks for a release or mainline merge. `main` should stay deployable; `dev` should carry accumulated completed progress between releases.
 
 ## Rule: Dependency And Lockfile Authority
 
@@ -342,7 +378,7 @@ The primary user is your agents. Over time, the project should become strong eno
 ## Workflow Conventions
 - The repo expects a context-compilation boot sequence before non-trivial work. The contract is documented in `AGENTS.md` and implemented by `tools/context-compile.mjs`.
 - Non-trivial work should load `PROJECT.md`, selected standards in `aios/context/standards/`, relevant domain/feature packets in `aios/context/domains/`, `aios/context/features/`, and `aios/context/packets/`, then validate or inspect the resulting receipt.
-- Keep `main` deployable and prefer feature branches for non-trivial code changes, per `AGENTS.md` and `README.md`.
+- Keep `main` deployable, use feature branches/worktrees for non-trivial code changes, and fold completed verified feature work into the canonical `dev` branch unless a documented equivalent exists.
 - Each logical implementation slice is expected to end in a coherent code commit followed by an immediate `PROJECT.md` truth-file update commit; this rule is repeated in `AGENTS.md` and `docs/superpowers/plans/tier-one-aios/EXECUTION.md`.
 - Generated or operational artifacts under `logs/`, `staging/`, and local DB stores are not treated as source unless explicitly promoted.
 ## Style Conventions

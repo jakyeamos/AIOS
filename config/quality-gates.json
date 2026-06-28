@@ -1899,6 +1899,318 @@
           "Add CI/default proof or a reviewed non-remote exception."
         ]
       }
+    },
+    {
+      "projectId": "BidCamp",
+      "roots": [
+        "/Users/jakyeamos/projects/BidCamp"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "test_quality": {
+          "preCommitCommands": [
+            [
+              "pnpm",
+              "lint"
+            ],
+            [
+              "pnpm",
+              "exec",
+              "tsc",
+              "--noEmit"
+            ],
+            [
+              "pnpm",
+              "test"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pnpm",
+              "lint"
+            ],
+            [
+              "pnpm",
+              "exec",
+              "tsc",
+              "--noEmit"
+            ],
+            [
+              "pnpm",
+              "test"
+            ],
+            [
+              "pnpm",
+              "build"
+            ]
+          ]
+        },
+        "architecture": {
+          "preCommitCommands": [
+            [
+              "node",
+              "scripts/aios-architecture-check.mjs"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "node",
+              "scripts/aios-architecture-check.mjs"
+            ]
+          ]
+        },
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Newly added Phase 29 production/public web strict gates are configured, but repo-local contract, Pre-CR baseline, passing evidence, and local CI proof are still required.",
+        "requiredNextSteps": [
+          "Add repo-local AIOS contract and Pre-CR baseline, then record passing local evidence and CI proof."
+        ]
+      }
+    },
+    {
+      "projectId": "tenure",
+      "roots": [
+        "/Users/jakyeamos/LayerC0de/tenure"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "test_quality": {
+          "preCommitCommands": [
+            [
+              "npm",
+              "run",
+              "lint"
+            ],
+            [
+              "npx",
+              "tsc",
+              "--noEmit"
+            ],
+            [
+              "npm",
+              "run",
+              "test:unit"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "npm",
+              "run",
+              "lint"
+            ],
+            [
+              "npx",
+              "tsc",
+              "--noEmit"
+            ],
+            [
+              "npm",
+              "run",
+              "test:unit"
+            ],
+            [
+              "npm",
+              "run",
+              "build"
+            ]
+          ]
+        },
+        "architecture": {
+          "preCommitCommands": [
+            [
+              "npm",
+              "run",
+              "check:engine-compliance"
+            ],
+            [
+              "npm",
+              "run",
+              "check:internal-api-auth-gate"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "npm",
+              "run",
+              "check:engine-compliance"
+            ],
+            [
+              "npm",
+              "run",
+              "check:internal-api-auth-gate"
+            ]
+          ]
+        },
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Newly added Phase 29 production/public web strict gates are configured, but repo-local contract, passing evidence, and local CI proof are still required.",
+        "requiredNextSteps": [
+          "Add repo-local AIOS contract, then record passing local evidence and CI proof."
+        ]
+      }
+    },
+    {
+      "projectId": "EliHealth",
+      "roots": [
+        "/Users/jakyeamos/EliHealth"
+      ],
+      "preCommitRequired": true,
+      "gates": {
+        "test_quality": {
+          "preCommitCommands": [
+            [
+              "npm",
+              "run",
+              "lint"
+            ],
+            [
+              "npm",
+              "run",
+              "test:types"
+            ],
+            [
+              "npm",
+              "test"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "npm",
+              "run",
+              "lint"
+            ],
+            [
+              "npm",
+              "run",
+              "test:types"
+            ],
+            [
+              "npm",
+              "test"
+            ],
+            [
+              "npm",
+              "run",
+              "tokens:check"
+            ]
+          ]
+        },
+        "architecture": {
+          "preCommitCommands": [
+            [
+              "test",
+              "-f",
+              "package.json"
+            ],
+            [
+              "test",
+              "-d",
+              "src"
+            ],
+            [
+              "test",
+              "-d",
+              "ios"
+            ],
+            [
+              "test",
+              "-d",
+              "scripts"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "test",
+              "-f",
+              "package.json"
+            ],
+            [
+              "test",
+              "-d",
+              "src"
+            ],
+            [
+              "test",
+              "-d",
+              "ios"
+            ],
+            [
+              "test",
+              "-d",
+              "scripts"
+            ]
+          ]
+        },
+        "pre_cr": {
+          "preCommitCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ],
+          "fullCommands": [
+            [
+              "pre-cr",
+              "run",
+              "--json",
+              "--workspace",
+              "{repo_root}"
+            ]
+          ]
+        }
+      },
+      "adoptionMaturity": {
+        "status": "class_blocked",
+        "reason": "Newly added Phase 29 mobile-app strict gates are configured, but repo-local contract, Pre-CR baseline, mobile release proof, passing evidence, and local CI proof are still required.",
+        "requiredNextSteps": [
+          "Add repo-local AIOS contract and Pre-CR baseline, then record passing mobile release evidence and CI proof."
+        ]
+      }
     }
   ]
 }

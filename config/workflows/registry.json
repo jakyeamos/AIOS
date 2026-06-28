@@ -2576,12 +2576,216 @@
       "purpose_long": "Candidate route for durable agent work loops. It adds workspace state, goal verifier, steering, queueing, artifact, automation, memory, and TMCP skill-candidacy contracts without changing existing active routing or quality gates."
     },
     {
+      "key": "planning-governance",
+      "name": "Planning Governance",
+      "workflow_family": "planning_governance",
+      "purpose": "Route GSD planning objectives through governed standards, evidence, executable-plan, and verification-handoff contracts before implementation begins.",
+      "trigger_hints": [
+        "gsd planning",
+        "add phase",
+        "plan phase",
+        "roadmap phase",
+        "execution contract",
+        "verification plan",
+        "blockers into phase"
+      ],
+      "output_contract": [
+        "planning intent detection evidence",
+        "standards-before-execution contract",
+        "required planning artifacts",
+        "acceptance criteria and evidence expectations",
+        "verification handoff"
+      ],
+      "required_validations": [
+        "planning_contract_validator"
+      ],
+      "stages": [
+        {
+          "key": "parse_planning_intent",
+          "kind": "parse_request",
+          "required_skills": [
+            "planning_governance_compiler"
+          ],
+          "required_inputs": [
+            {
+              "key": "objective",
+              "source": "packet",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "planning_detection",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "standards_bindings": [
+            "workflow_agent_control.explicit_handshake"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "compile_plan_contract",
+          "kind": "generate",
+          "required_skills": [
+            "planning_governance_compiler"
+          ],
+          "required_inputs": [
+            {
+              "key": "planning_detection",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "planning_contract",
+              "target": "artifact",
+              "required": true
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "summary",
+              "path_template": ".planning/runs/{run_id}/planning-governance-contract.md",
+              "required": true
+            }
+          ],
+          "standards_bindings": [
+            "testing.trust_signal",
+            "documentation.truth_file_currency"
+          ],
+          "required_evidence": [
+            "acceptance_criteria",
+            "evidence_expectations",
+            "verification_handoff"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "validate_plan_contract",
+          "kind": "validate",
+          "required_skills": [
+            "planning_contract_validator"
+          ],
+          "required_inputs": [
+            {
+              "key": "planning_contract",
+              "source": "prior_stage",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "validation_report",
+              "target": "report",
+              "required": true
+            }
+          ],
+          "validations": [
+            {
+              "criterion_id": "workflow-state-integrity",
+              "blocking": true
+            },
+            {
+              "criterion_id": "test-quality",
+              "blocking": true
+            },
+            {
+              "criterion_id": "agent-claim-verification",
+              "blocking": true
+            }
+          ],
+          "required_evidence": [
+            "validation_commands",
+            "route_blocking_safeguards"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "finalize_handoff",
+          "kind": "finalize",
+          "required_skills": [
+            "planning_governance_compiler"
+          ],
+          "required_verifier": true,
+          "expected_artifacts": [
+            {
+              "artifact_kind": "checkpoint",
+              "path_template": ".planning/runs/{run_id}/planning-governance-handoff.md",
+              "required": true
+            }
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event",
+              "writeback_candidate"
+            ],
+            "on_failure": [
+              "workflow_learning_event",
+              "follow_up_item"
+            ],
+            "no_learning_evidence_required": false
+          }
+        }
+      ],
+      "lifecycle_state": "active",
+      "applicability": [
+        "planning_governance",
+        "gsd_planning",
+        "phase_planning",
+        "roadmap_gap_closure",
+        "standards_before_execution"
+      ],
+      "purpose_long": "Active route for governed GSD planning objectives. It keeps planning inside start-work routing, surfaces standards and evidence before execution, and preserves route-blocking for unsupported objectives."
+    },
+    {
       "key": "expert_rubric_remediation_v1",
       "name": "Expert Rubric Remediation v1",
       "workflow_family": "audit_and_plan",
       "purpose": "Compile domain expertise into an explicit rubric, audit concrete evidence, and produce an ordered remediation plan.",
       "trigger_hints": [
         "review using tmcp",
+        "tmcp expert rubric",
+        "tmcp expert ui rubric",
+        "tmcp ui rubric",
+        "tmcp expert workflow",
+        "use the tmcp expert workflow",
+        "judge this with tmcp",
+        "tmcp judge",
+        "expert workflow to judge",
+        "expert-rubric",
+        "expert rubric workflow",
+        "expert ui rubric",
+        "ui rubric workflow",
         "create a rubric",
         "remediation plan",
         "expert rubric",
@@ -2799,6 +3003,245 @@
         "remediation"
       ],
       "purpose_long": "Compile TMCP expertise into an explicit rubric, audit concrete evidence, produce ordered remediation slices, and stop before implementation until the user approves a handoff.",
+      "implementation_bearing": false
+    },
+    {
+      "key": "repo_gate_adoption_v1",
+      "name": "Repo Gate Adoption v1",
+      "workflow_family": "audit_and_plan",
+      "purpose": "Inspect a repository quality posture, produce broad and gate-specific adoption rubrics, and plan staged GSD remediation without implementing changes.",
+      "trigger_hints": [
+        "commit gate adoption",
+        "commit gates adoption",
+        "quality gate adoption",
+        "quality gates adoption",
+        "repo gate adoption",
+        "repo gate readiness",
+        "gate readiness plan",
+        "pre-cr adoption",
+        "anti-slop adoption",
+        "quality ladder adoption",
+        "adopt commit gates",
+        "adopt repo gates"
+      ],
+      "output_contract": [
+        "repo fact scan",
+        "quality gate readiness matrix",
+        "conditional TMCP expert enrichment status",
+        "broad repo-class quality rubric pack",
+        "gate-specific rubric pack",
+        "per-rubric Markdown and JSON audit/implementation document manifest",
+        "staged adoption rollout plan",
+        "artifact paths"
+      ],
+      "required_validations": [
+        "repo_gate_scan_has_evidence",
+        "gate_matrix_has_core_gates",
+        "tmcp_expert_enrichment_has_sufficiency_status",
+        "rubric_pack_has_broad_and_gate_rubrics",
+        "gate_rollout_has_phases"
+      ],
+      "stages": [
+        {
+          "key": "repo_fact_scan",
+          "kind": "enrich_context",
+          "required_skills": [
+            "repo_gate_fact_scanner"
+          ],
+          "required_inputs": [
+            {
+              "key": "repo_path",
+              "source": "packet",
+              "required": true
+            }
+          ],
+          "required_outputs": [
+            {
+              "key": "repo_scan",
+              "target": "artifact",
+              "required": true
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "evidence",
+              "path_template": "AIOS-backfill/gate-adoption/{run_id}/repo-scan.json"
+            }
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "gate_matrix",
+          "kind": "generate",
+          "required_skills": [
+            "repo_gate_matrix_synthesizer"
+          ],
+          "required_outputs": [
+            {
+              "key": "gate_matrix",
+              "target": "artifact",
+              "required": true
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "report",
+              "path_template": "AIOS-backfill/gate-adoption/{run_id}/gate-matrix.md"
+            }
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "tmcp_expert_enrichment",
+          "kind": "generate",
+          "required_skills": [
+            "repo_tmcp_expert_enricher"
+          ],
+          "required_outputs": [
+            {
+              "key": "tmcp_expert_enrichment",
+              "target": "artifact",
+              "required": true
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "evidence",
+              "path_template": "AIOS-backfill/gate-adoption/{run_id}/tmcp-expert-enrichment.md"
+            }
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "rubric_pack",
+          "kind": "generate",
+          "required_skills": [
+            "repo_quality_rubric_pack_builder"
+          ],
+          "required_outputs": [
+            {
+              "key": "rubric_pack",
+              "target": "artifact",
+              "required": true
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "report",
+              "path_template": "AIOS-backfill/gate-adoption/{run_id}/rubric-pack.md"
+            },
+            {
+              "artifact_kind": "evidence",
+              "path_template": "AIOS-backfill/gate-adoption/{run_id}/rubric-detail-manifest.json"
+            }
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "rollout_plan",
+          "kind": "finalize",
+          "required_skills": [
+            "repo_gate_rollout_planner"
+          ],
+          "required_outputs": [
+            {
+              "key": "rollout_plan",
+              "target": "artifact",
+              "required": true
+            }
+          ],
+          "expected_artifacts": [
+            {
+              "artifact_kind": "summary",
+              "path_template": "AIOS-backfill/gate-adoption/{run_id}/rollout-plan.md"
+            }
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
+        },
+        {
+          "key": "artifact_validate",
+          "kind": "validate",
+          "required_skills": [
+            "repo_gate_scan_has_evidence",
+            "gate_matrix_has_core_gates",
+            "tmcp_expert_enrichment_has_sufficiency_status",
+            "rubric_pack_has_broad_and_gate_rubrics",
+            "gate_rollout_has_phases"
+          ],
+          "validations": [
+            {
+              "criterion_id": "complexity-budget",
+              "blocking": true
+            },
+            {
+              "criterion_id": "agent-claim-verification",
+              "blocking": true
+            }
+          ],
+          "required_evidence": [
+            "repo_gate_adoption_artifacts"
+          ],
+          "writeback_behavior": {
+            "on_success": [
+              "workflow_learning_event"
+            ],
+            "on_failure": [
+              "workflow_learning_event"
+            ],
+            "no_learning_evidence_required": false
+          }
+        }
+      ],
+      "lifecycle_state": "active",
+      "applicability": [
+        "audit_and_plan",
+        "repo_adoption",
+        "quality_gates",
+        "commit_gates",
+        "pre_cr",
+        "anti_slop"
+      ],
+      "purpose_long": "Create a repo adoption evidence packet that treats command gates and broad quality standards as separate first-class surfaces: scan existing scripts, contracts, hooks, CI, Pre-CR, anti-slop, dead-code, and truth-file signals; conditionally compile TMCP expert context only when source sufficiency passes; synthesize broad repo-class rubrics for complexity, anti-slop/product quality, architecture, test value, UI visual/runtime verification, dead code, security, dependencies, truth/docs, and CI proof; synthesize gate-specific rubrics; then stop at implementation-free GSD phase planning.",
       "implementation_bearing": false
     }
   ]

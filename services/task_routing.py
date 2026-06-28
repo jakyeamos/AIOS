@@ -238,8 +238,7 @@ def route_objective(
                 workflow_alternatives=(),
                 task_family=selected_workflow.get("workflow_family"),
                 blocked_reason=(
-                    f"{BEHAVIORAL_SPEC_WORKFLOW_KEY} is gated to mature repos; "
-                    f"{report.rationale}"
+                    f"{BEHAVIORAL_SPEC_WORKFLOW_KEY} is gated to mature repos; {report.rationale}"
                 ),
                 rationale="Routing blocked by mature-repo eligibility gate.",
                 semantic_recommendation=semantic_recommendation,
@@ -247,6 +246,7 @@ def route_objective(
             )
 
     workflow_family = str(selected_workflow.get("workflow_family", ""))
+    workflow_key = str(selected_workflow.get("workflow_key", ""))
     enriched_backend = backend_recommendation
     if backend_recommendation and backend_recommendation.get("selected_surface"):
         backend = get_backend_for_surface(cast(Surface, backend_recommendation["selected_surface"]))
@@ -255,13 +255,27 @@ def route_objective(
             "selected_backend_key": backend.key,
             "selected_backend_label": backend.label,
         }
-    agent_recommendation = {
-        "agent_key": "implementation-lead",
-        "rationale": (
-            f"Defaulted to implementation-lead because {workflow_family or 'the selected workflow'} "
-            "still executes through the implementation-oriented harness path."
-        ),
-    }
+    if workflow_family == "planning_governance":
+        agent_recommendation = {
+            "agent_key": "planning-governance-lead",
+            "rationale": (
+                "Use a planning-governance lead because this route produces planning artifacts, "
+                "standards evidence, and verification handoff before implementation begins."
+            ),
+        }
+    else:
+        agent_recommendation = {
+            "agent_key": "implementation-lead",
+            "rationale": (
+                f"Defaulted to implementation-lead because {workflow_family or 'the selected workflow'} "
+                "still executes through the implementation-oriented harness path."
+            ),
+        }
+    task_family = (
+        str(enriched_backend.get("task_family"))
+        if isinstance(enriched_backend, dict) and enriched_backend.get("task_family")
+        else workflow_family
+    )
     task_classifications = (workflow_family,) if workflow_family else ()
     skill_recommendations = tuple(
         recommend_assets_for_packet(
@@ -308,11 +322,11 @@ def route_objective(
         agent_recommendation=agent_recommendation,
         skill_recommendations=skill_recommendations,
         workflow_alternatives=workflow_alternatives,
-        task_family=workflow_family,
+        task_family=task_family,
         blocked_reason=None,
         rationale=(
             f"Resolved project outcome={project.outcome}; selected workflow "
-            f"{selected_workflow.get('workflow_key')} with prompt family "
+            f"{workflow_key} with prompt family "
             f"{prompt_recommendation.get('prompt_family') if prompt_recommendation else None}."
         ),
         semantic_recommendation=semantic_recommendation,

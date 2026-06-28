@@ -2033,6 +2033,17 @@ def _select_registry_overlay(
         namespace_root = ROOT / "config" / "tmcp" / str(raw_namespace.get("path", ""))
         manifest = _json_file(manifest_path)
         route = _select_manifest_task(objective, task_id, manifest, canonical_modules)
+        if route is not None and _should_skip_overlay_for_tmcp_internal_work(objective, route):
+            skipped_namespaces.append(
+                {
+                    "namespace": namespace_id,
+                    "reason": (
+                        "TMCP-internal routing work uses the canonical graph unless "
+                        "instruction hygiene is explicitly requested."
+                    ),
+                }
+            )
+            continue
         if route is None:
             skipped_namespaces.append(
                 {
@@ -2110,6 +2121,26 @@ def _select_registry_overlay(
             "entry_policy": registry.get("entry_policy"),
         },
     }
+
+
+def _should_skip_overlay_for_tmcp_internal_work(
+    objective: str,
+    route: dict[str, Any],
+) -> bool:
+    lowered = objective.lower()
+    internal_terms = (
+        "tmcp",
+        "skill graph",
+        "canonical graph",
+        "manifest trigger",
+        "manifest triggers",
+        "packet selection",
+        "route selection",
+        "routing",
+    )
+    if not any(term in lowered for term in internal_terms):
+        return False
+    return route.get("task_id") != "instruction_hygiene"
 
 
 def _json_file(path: Path) -> dict[str, Any]:

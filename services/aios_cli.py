@@ -100,6 +100,16 @@ from services.peer_trace import (
     list_peer_sessions,
     start_peer_session,
 )
+from services.personalized_humanizer import (
+    FeedbackVerdict,
+    ensure_personalized_humanizer_schema,
+    humanize_text,
+    record_eval_result,
+    record_feedback,
+    record_rewrite_run,
+    run_eval_suite,
+)
+from services.planning_lenses import select_planning_lenses
 from services.portable_context_packet_generator import generate_packet
 from services.pre_pr_readiness import (
     DEFAULT_PRE_CR_REPO,
@@ -110,6 +120,7 @@ from services.pre_pr_readiness import (
 )
 from services.project_health_proof import DEFAULT_PROVING_PROJECTS, prove_project_health
 from services.quality_gates import run_gate as run_quality_gate
+from services.repo_gate_adoption import write_adoption_doc_quality_report
 from services.retrospective_artifacts import list_retrospective_artifacts
 from services.rtk_integration import (
     classify_rtk_metrics,
@@ -520,6 +531,102 @@ def _tmcp_review_plan_payload(args: argparse.Namespace) -> dict[str, Any]:
         "remediation_slices": remediation_slices,
         "implementation_handoff": artifacts.get("expert_implementation_handoff"),
     }
+
+
+def _gate_adoption_plan_payload(args: argparse.Namespace) -> dict[str, Any]:
+    run_id = args.run_id or f"repo-gate-adoption-{uuid.uuid4().hex[:8]}"
+    repo_root = Path(args.repo_root).expanduser().resolve()
+    report = execute_workflow(
+        WorkflowExecutionContext(
+            objective=(
+                args.objective
+                or "Create a repo quality gate adoption readiness matrix and rollout plan"
+            ),
+            workflow_key="repo_gate_adoption_v1",
+            repo_path=str(repo_root),
+            run_id=run_id,
+        )
+    )
+    artifacts = report["artifacts"]
+    gate_matrix = artifacts.get("repo_gate_matrix")
+    rollout_plan = artifacts.get("repo_gate_rollout_plan")
+    return {
+        "schema": "aios-repo-gate-adoption-result-v0.1",
+        "workflow_key": report["workflow_key"],
+        "run_id": report["run_id"],
+        "status": report["status"],
+        "validations": report["validations"],
+        "artifact_paths": artifacts.get("repo_gate_adoption_artifact_paths", {}),
+        "gate_summary": gate_matrix.get("summary", {}) if isinstance(gate_matrix, dict) else {},
+        "phase_scope_policy": rollout_plan.get("phase_scope_policy", "")
+        if isinstance(rollout_plan, dict)
+        else "",
+        "phase_owner": rollout_plan.get("phase_owner", "")
+        if isinstance(rollout_plan, dict)
+        else "",
+        "aios_role": rollout_plan.get("aios_role", "") if isinstance(rollout_plan, dict) else "",
+        "repo_local_phases": rollout_plan.get("repo_local_phases", [])
+        if isinstance(rollout_plan, dict)
+        else [],
+        "rollout_phases": rollout_plan.get("phases", []) if isinstance(rollout_plan, dict) else [],
+    }
+
+
+def _gate_adoption_doc_quality_payload(args: argparse.Namespace) -> dict[str, Any]:
+    adoption_payload = _gate_adoption_plan_payload(args)
+    artifact_paths = adoption_payload.get("artifact_paths")
+    artifact_paths = artifact_paths if isinstance(artifact_paths, dict) else {}
+    manifest_raw = artifact_paths.get("rubric_detail_manifest_json")
+    output_dir = (
+        Path(str(manifest_raw)).parent if manifest_raw else Path(args.repo_root).expanduser()
+    )
+    quality_paths = write_adoption_doc_quality_report(output_dir)
+    quality_report = json.loads(
+        quality_paths["adoption_doc_quality_json"].read_text(encoding="utf-8")
+    )
+    merged_artifact_paths = {
+        **artifact_paths,
+        **{key: str(path) for key, path in quality_paths.items()},
+    }
+    return {
+        "schema": "aios-repo-gate-adoption-doc-quality-result-v0.1",
+        "workflow_key": adoption_payload["workflow_key"],
+        "run_id": adoption_payload["run_id"],
+        "status": quality_report.get("status", "unknown"),
+        "passed": quality_report.get("passed", False),
+        "structurally_valid": quality_report.get("structurally_valid", False),
+        "ready_for_phase_planning": quality_report.get("ready_for_phase_planning", False),
+        "ready_for_execution": quality_report.get("ready_for_execution", False),
+        "validations": adoption_payload["validations"],
+        "artifact_paths": merged_artifact_paths,
+        "gate_summary": adoption_payload["gate_summary"],
+        "doc_quality": quality_report,
+    }
+
+
+def _add_expert_rubric_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("objective", help="Natural language review objective")
+    parser.add_argument(
+        "--project-path",
+        default=".",
+        help="Target project path used for TMCP packet compilation",
+    )
+    parser.add_argument(
+        "--output-dir",
+        required=True,
+        help="Directory where review artifacts will be written",
+    )
+    parser.add_argument(
+        "--evidence-json",
+        default="[]",
+        help="JSON object or array of evidence objects",
+    )
+    parser.add_argument(
+        "--selected-slice-id",
+        default=None,
+        help="Optional remediation slice id to include in the implementation handoff",
+    )
+    parser.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
 
 def _resumable_runs(conn: sqlite3.Connection, limit: int = 5) -> list[dict[str, Any]]:
@@ -1428,6 +1535,63 @@ def _prompt_contract_lines(route_payload: dict[str, Any], backend_key: str) -> l
     return lines
 
 
+def _planning_governance_sections(route_payload: dict[str, Any]) -> list[dict[str, Any]]:
+    workflow = route_payload.get("selected_workflow")
+    if not isinstance(workflow, dict) or workflow.get("workflow_key") != "planning-governance":
+        return []
+
+    selection = select_planning_lenses(workflow="planning-governance", phase="plan")
+    lens_lines = [
+        f"{lens.key}: {lens.purpose} Standards: {', '.join(lens.standard_refs) or 'none'}."
+        for lens in selection.lenses
+    ]
+    candidate = next(
+        (
+            row
+            for row in route_payload.get("workflow_candidates", [])
+            if isinstance(row, dict) and row.get("workflow_key") == "planning-governance"
+        ),
+        {},
+    )
+    detection_rationale = str(candidate.get("rationale", "")).strip()
+
+    return [
+        {
+            "title": "Planning Quality Contract",
+            "items": [
+                "Do not start implementation as the first action.",
+                "Create planning artifacts that preserve scope, non-goals, standards, and verification before execution begins.",
+                "Carry acceptance criteria, evidence expectations, and closeout rules into the executable plan.",
+            ]
+            + ([f"Route evidence: {detection_rationale}"] if detection_rationale else []),
+        },
+        {
+            "title": "Required Planning Artifacts",
+            "items": [
+                "GSD-compatible PLAN.md or equivalent planning contract.",
+                "Task-level acceptance criteria and validation commands.",
+                "Evidence expectations for route decisions, changed artifacts, and final verification.",
+                "Truth-file and SUMMARY.md writeback plan after evidence exists.",
+            ],
+        },
+        {
+            "title": "Standards Before Execution",
+            "items": lens_lines
+            or [
+                "No planning lenses were selected; escalate before execution because standards are missing."
+            ],
+        },
+        {
+            "title": "Verification Handoff",
+            "items": [
+                "Hand off only after the plan names automated checks or explicit human verification.",
+                "Verifier must inspect actual artifacts and command output, not just summary claims.",
+                "Blockers, warnings, and accepted tradeoffs must remain visible in durable artifacts.",
+            ],
+        },
+    ]
+
+
 def _required_check_lines(
     workflow_contract: dict[str, Any] | None,
     criteria_rows: Sequence[dict[str, Any]],
@@ -1458,6 +1622,17 @@ def _closeout_lines() -> list[str]:
         "Record unresolved risks, follow-up work, and approval-gated writeback proposals before closeout.",
         "Keep run, invocation, and session identifiers linked through verification and stop-hook evaluation.",
     ]
+
+
+def _next_recommended_action(workflow_key: str) -> str:
+    if workflow_key == "planning-governance":
+        return (
+            "Create planning artifacts from this packet, preserve standards-before-execution, "
+            "and hand off only after verification commands are explicit."
+        )
+    return (
+        "Start the routed runtime with this packet and keep run/invocation/session linkage intact."
+    )
 
 
 def _packet_sections(
@@ -1511,6 +1686,8 @@ def _packet_sections(
             "items": _prompt_contract_lines(route_payload, backend_key),
         }
     )
+
+    sections.extend(_planning_governance_sections(route_payload))
 
     sections.append(
         {
@@ -1749,6 +1926,7 @@ def _start_work_payload(
     run_id = f"run-{uuid.uuid4()}"
     packet_id = f"packet-{uuid.uuid4()}"
     invocation_id = f"invoke-manual-{uuid.uuid4()}"
+    next_recommended_action = _next_recommended_action(workflow_key)
     sections = _packet_sections(
         conn,
         objective=objective,
@@ -1830,7 +2008,7 @@ def _start_work_payload(
                 {
                     "packet_id": packet_id,
                     "current_stage": "packet_ready",
-                    "next_recommended_action": "Start the routed runtime with this packet and keep run/invocation/session linkage intact.",
+                    "next_recommended_action": next_recommended_action,
                     "pending_approval_count": 0,
                     "approval_targets": [],
                     "updated_at": now,
@@ -2004,6 +2182,7 @@ def _start_work_payload(
             "invocation_id": invocation_id,
             "packet_id": packet_id,
             "session_id": linked_session_id,
+            "next_recommended_action": next_recommended_action,
         },
         "route": route_payload,
     }
@@ -2973,6 +3152,103 @@ def cmd_eval_gold_set_run(conn: sqlite3.Connection, args: argparse.Namespace) ->
         run_id=str(args.run_id),
         gold_task_id=str(args.gold_task_id),
     )
+
+
+def _read_humanize_input(args: argparse.Namespace) -> str:
+    sources = [
+        bool(args.text),
+        bool(args.input),
+        bool(args.stdin),
+    ]
+    if sum(sources) != 1:
+        raise CLIError(
+            "humanize-input-required",
+            "Specify exactly one of --text, --input, or --stdin.",
+            EXIT_USAGE,
+        )
+    if args.text:
+        return str(args.text)
+    if args.stdin:
+        return sys.stdin.read()
+    input_path = Path(args.input).expanduser().resolve()
+    try:
+        return input_path.read_text(encoding="utf-8")
+    except FileNotFoundError as exc:
+        raise CLIError(
+            "humanize-input-not-found", f"Input file not found: {input_path}", EXIT_NOT_FOUND
+        ) from exc
+
+
+def cmd_humanize_run(conn: sqlite3.Connection | None, args: argparse.Namespace) -> dict[str, Any]:
+    text = _read_humanize_input(args)
+    if not text.strip():
+        raise CLIError("humanize-empty-input", "Input text is empty.", EXIT_USAGE)
+
+    try:
+        result = humanize_text(
+            text,
+            requested_mode=args.mode,
+            pipeline_position=args.pipeline,
+            debug=bool(args.debug),
+        )
+    except ValueError as exc:
+        raise CLIError("humanize-invalid-request", str(exc), EXIT_USAGE) from exc
+
+    output_path = Path(args.output).expanduser().resolve() if args.output else None
+    if output_path is not None:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(result.output, encoding="utf-8")
+
+    run_id = None
+    if conn is not None and not args.no_record:
+        ensure_personalized_humanizer_schema(conn)
+        run_id = record_rewrite_run(conn, result, input_text=text)
+        conn.commit()
+
+    payload: dict[str, Any] = {
+        "output": result.output,
+        "mode": result.mode,
+        "pipeline_position": result.pipeline_position,
+        "changed": result.output != text,
+        "scorecard": result.scorecard,
+        "risks": result.risks,
+        "run_id": run_id,
+        "recorded": run_id is not None,
+        "output_path": str(output_path) if output_path is not None else None,
+    }
+    if args.debug:
+        payload["debug"] = result.debug
+    return payload
+
+
+def cmd_humanize_feedback(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    ensure_personalized_humanizer_schema(conn)
+    revision_text = None
+    if args.revision:
+        revision_text = Path(args.revision).expanduser().resolve().read_text(encoding="utf-8")
+    feedback = record_feedback(
+        conn,
+        run_id=str(args.run_id),
+        verdict=cast(FeedbackVerdict, str(args.verdict)),
+        notes=str(args.notes),
+        user_revision=revision_text,
+    )
+    conn.commit()
+    feedback["verdict"] = str(args.verdict)
+    return feedback
+
+
+def cmd_humanize_eval(conn: sqlite3.Connection | None, args: argparse.Namespace) -> dict[str, Any]:
+    result = run_eval_suite()
+    if conn is not None and args.record:
+        ensure_personalized_humanizer_schema(conn)
+        eval_id = record_eval_result(conn, result)
+        conn.commit()
+        result["eval_id"] = eval_id
+        result["recorded"] = True
+    else:
+        result["recorded"] = False
+    return result
 
 
 def _meta_analyze_session_payload(args: argparse.Namespace) -> dict[str, Any]:
@@ -4991,6 +5267,29 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "eval-gold-set-run":
         print(f"recall={data['recall']} missed_sources={len(data['missed_sources'])}")
         return
+    if command == "humanize-run":
+        if data.get("output_path"):
+            print(
+                f"run={data.get('run_id') or 'unrecorded'} "
+                f"changed={data['changed']} output={data['output_path']}"
+            )
+        else:
+            print(data["output"])
+        return
+    if command == "humanize-feedback":
+        proposal = data.get("proposal") if isinstance(data.get("proposal"), dict) else None
+        print(
+            f"feedback={data['feedback_id']} verdict={data['verdict']} "
+            f"proposal={proposal.get('id') if proposal else 'none'}"
+        )
+        return
+    if command == "humanize-eval":
+        summary = data["summary"]
+        print(
+            f"cases={summary['case_count']} passed={summary['passed_count']} "
+            f"recorded={data.get('recorded', False)}"
+        )
+        return
     if command == "meta-analyze-session":
         print(f"signals={data['signal_count']} input={data['input_path']}")
         return
@@ -5057,6 +5356,8 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
 def _command_name(args: argparse.Namespace) -> str:
     if args.command == "eval":
         return f"eval-{args.eval_command}"
+    if args.command == "humanize":
+        return f"humanize-{args.humanize_command}"
     if args.command == "meta":
         return f"meta-{args.meta_command}"
     if args.command == "review":
@@ -5106,6 +5407,66 @@ def _command_name(args: argparse.Namespace) -> str:
     if args.command == "standards-resolution":
         return f"standards-resolution-{args.standards_resolution_command}"
     return args.command
+
+
+def _command_requires_db(args: argparse.Namespace) -> bool:
+    if args.command in {
+        "status",
+        "health",
+        "metadata",
+        "recent-failures",
+        "rtk",
+        "capability-audit",
+        "invocation-audit",
+        "lifecycle-audit",
+        "knowledge-objects",
+        "workflow-learning-audit",
+        "retrospectives",
+        "model-selection",
+        "evidence",
+        "verifier",
+        "learning-analyze",
+        "learning-propose",
+        "learning-impact",
+        "operator-search",
+        "next-action",
+        "daily-flow",
+        "session-intel",
+        "contracts-audit",
+        "governance-audit",
+        "criteria-finding",
+        "standards-resolution",
+        "delta-explain",
+        "recommend-workflow",
+        "standards-override",
+        "asset-lifecycle",
+        "workflow-compare",
+        "promote-asset",
+        "truth-audit",
+        "prove-project-health",
+        "sync-automation-history",
+        "start-work",
+        "harness-brief",
+        "harness-simulate",
+        "harness-replay",
+        "harness-shadow-evaluate",
+        "eval",
+        "context-loops",
+        "shadow",
+        "peer-trace",
+        "ablation",
+        "packet",
+        "benchmark",
+    }:
+        return True
+    return bool(
+        args.command == "humanize"
+        and (
+            args.humanize_command == "feedback"
+            or (args.humanize_command == "eval" and args.record)
+            or (args.humanize_command == "run" and not args.no_record)
+        )
+    )
 
 
 def _evidence_payload(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
@@ -5790,6 +6151,55 @@ def create_parser() -> argparse.ArgumentParser:
     eval_gold_set_run.add_argument("--gold-task-id", required=True)
     eval_gold_set_run.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
+    humanize_parser = subparsers.add_parser(
+        "humanize", help="Run the personalized humanizer workflow"
+    )
+    humanize_subparsers = humanize_parser.add_subparsers(dest="humanize_command", required=True)
+    humanize_run = humanize_subparsers.add_parser(
+        "run", help="Rewrite text through the personalized humanizer"
+    )
+    humanize_input = humanize_run.add_mutually_exclusive_group(required=True)
+    humanize_input.add_argument("--text", default=None)
+    humanize_input.add_argument("--input", default=None, help="Input UTF-8 text file")
+    humanize_input.add_argument("--stdin", action="store_true", help="Read input from stdin")
+    humanize_run.add_argument(
+        "--mode",
+        choices=[
+            "professional_outreach",
+            "project_build_in_public",
+            "academic_reflective",
+            "prompt_prd",
+            "creative_narrative",
+        ],
+        default=None,
+    )
+    humanize_run.add_argument(
+        "--pipeline",
+        choices=["standalone", "after_generic_humanizer"],
+        default="standalone",
+    )
+    humanize_run.add_argument("--output", default=None, help="Optional output file")
+    humanize_run.add_argument("--debug", action="store_true")
+    humanize_run.add_argument("--no-record", action="store_true")
+    humanize_run.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    humanize_feedback = humanize_subparsers.add_parser(
+        "feedback", help="Record feedback for a personalized humanizer run"
+    )
+    humanize_feedback.add_argument("--run-id", required=True)
+    humanize_feedback.add_argument(
+        "--verdict", choices=["approved", "edited", "rejected"], required=True
+    )
+    humanize_feedback.add_argument("--notes", required=True)
+    humanize_feedback.add_argument("--revision", default=None, help="Optional revised text file")
+    humanize_feedback.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    humanize_eval = humanize_subparsers.add_parser(
+        "eval", help="Run the personalized humanizer eval suite"
+    )
+    humanize_eval.add_argument("--record", action="store_true")
+    humanize_eval.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
     meta = subparsers.add_parser("meta", help="Analyze and review meta-learning signals")
     meta_subparsers = meta.add_subparsers(dest="meta_command", required=True)
     meta_analyze_session = meta_subparsers.add_parser(
@@ -6261,6 +6671,36 @@ def create_parser() -> argparse.ArgumentParser:
         default="pre-commit",
         help="Gate command set to run",
     )
+    gate_adoption_plan = gate_subparsers.add_parser(
+        "adoption-plan",
+        help="Write a repo quality-gate adoption matrix and rollout plan",
+    )
+    gate_adoption_plan.add_argument("--repo-root", default=".", help="Repository root to scan")
+    gate_adoption_plan.add_argument("--run-id", default=None, help="Optional deterministic run id")
+    gate_adoption_plan.add_argument(
+        "--objective",
+        default=None,
+        help="Optional objective text for workflow reporting",
+    )
+    gate_adoption_doc_quality = gate_subparsers.add_parser(
+        "adoption-doc-quality",
+        help="Generate adoption docs and validate their agent/human quality",
+    )
+    gate_adoption_doc_quality.add_argument(
+        "--repo-root",
+        default=".",
+        help="Repository root to scan",
+    )
+    gate_adoption_doc_quality.add_argument(
+        "--run-id",
+        default=None,
+        help="Optional deterministic run id",
+    )
+    gate_adoption_doc_quality.add_argument(
+        "--objective",
+        default=None,
+        help="Optional objective text for workflow reporting",
+    )
 
     skills_parser = subparsers.add_parser("skills", help="Instruction/skills registry surfaces")
     skills_subparsers = skills_parser.add_subparsers(dest="skills_command", required=True)
@@ -6485,28 +6925,12 @@ def create_parser() -> argparse.ArgumentParser:
         "review-plan",
         help="Compile TMCP expertise and write expert rubric remediation artifacts",
     )
-    tmcp_review_plan.add_argument("objective", help="Natural language review objective")
-    tmcp_review_plan.add_argument(
-        "--project-path",
-        default=".",
-        help="Target project path used for TMCP packet compilation",
+    _add_expert_rubric_arguments(tmcp_review_plan)
+    expert_rubric = subparsers.add_parser(
+        "expert-rubric",
+        help="Run the TMCP expert-rubric remediation workflow",
     )
-    tmcp_review_plan.add_argument(
-        "--output-dir",
-        required=True,
-        help="Directory where review artifacts will be written",
-    )
-    tmcp_review_plan.add_argument(
-        "--evidence-json",
-        default="[]",
-        help="JSON object or array of evidence objects",
-    )
-    tmcp_review_plan.add_argument(
-        "--selected-slice-id",
-        default=None,
-        help="Optional remediation slice id to include in the implementation handoff",
-    )
-    tmcp_review_plan.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    _add_expert_rubric_arguments(expert_rubric)
 
     corpus_parser = subparsers.add_parser("corpus", help="Corpus evaluation harness")
     corpus_subparsers = corpus_parser.add_subparsers(dest="corpus_command", required=True)
@@ -6554,57 +6978,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
     conn: sqlite3.Connection | None = None
 
     try:
-        if args.command in {
-            "status",
-            "health",
-            "metadata",
-            "recent-failures",
-            "rtk",
-            "capability-audit",
-            "invocation-audit",
-            "lifecycle-audit",
-            "knowledge-objects",
-            "workflow-learning-audit",
-            "retrospectives",
-            "model-selection",
-            "evidence",
-            "verifier",
-            "learning-analyze",
-            "learning-propose",
-            "learning-impact",
-            "operator-search",
-            "next-action",
-            "daily-flow",
-            "session-intel",
-            "contracts-audit",
-            "governance-audit",
-            "criteria-finding",
-            "standards-resolution",
-            "delta-explain",
-            "recommend-workflow",
-            "standards-override",
-            "asset-lifecycle",
-            "workflow-compare",
-            "promote-asset",
-            "truth-audit",
-            "prove-project-health",
-            "sync-automation-history",
-            "start-work",
-            "harness-brief",
-            "harness-simulate",
-            "harness-replay",
-            "harness-shadow-evaluate",
-            "eval",
-            "context-loops",
-            "shadow",
-            "peer-trace",
-            "ablation",
-            "packet",
-            "benchmark",
-        }:
-            conn = _connect_db(db_path)
-        else:
-            conn = None
+        conn = _connect_db(db_path) if _command_requires_db(args) else None
 
         if args.command == "corpus":
             return _run_corpus_command(args.corpus_command, args.corpus_args)
@@ -6801,6 +7175,13 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "eval" and args.eval_command == "gold-set-run":
             assert conn is not None
             data = cmd_eval_gold_set_run(conn, args)
+        elif args.command == "humanize" and args.humanize_command == "run":
+            data = cmd_humanize_run(conn, args)
+        elif args.command == "humanize" and args.humanize_command == "feedback":
+            assert conn is not None
+            data = cmd_humanize_feedback(conn, args)
+        elif args.command == "humanize" and args.humanize_command == "eval":
+            data = cmd_humanize_eval(conn, args)
         elif args.command == "meta" and args.meta_command == "analyze-session":
             data = _meta_analyze_session_payload(args)
         elif args.command == "context-loops" and args.context_loops_command == "inner-run":
@@ -6983,7 +7364,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             )
         elif args.command == "tmcp" and args.tmcp_command == "shortcut-governance":
             data = shortcut_governance_recommendation(_parse_json_object(args.shortcut_json))
-        elif args.command == "tmcp" and args.tmcp_command == "review-plan":
+        elif args.command == "expert-rubric" or (
+            args.command == "tmcp" and args.tmcp_command == "review-plan"
+        ):
             data = _tmcp_review_plan_payload(args)
         elif args.command == "harness-active-readiness":
             data = active_readiness()
@@ -7019,6 +7402,10 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
                     str(data["summary"]),
                     EXIT_RUNTIME,
                 )
+        elif args.command == "gate" and args.gate_command == "adoption-plan":
+            data = _gate_adoption_plan_payload(args)
+        elif args.command == "gate" and args.gate_command == "adoption-doc-quality":
+            data = _gate_adoption_doc_quality_payload(args)
         elif args.command == "skills" and args.skills_command == "status":
             data = _instruction_status(config_root, vault_root, project_id=args.project)
         elif args.command == "skills" and args.skills_command == "refresh":

@@ -743,7 +743,7 @@
     },
     {
       "key": "smart_search",
-      "purpose": "基于 opencli 命令的智能搜索路由器。当用户想要搜索、查询、查找或研究信息时，尤其是涉及指定网站、社交媒体、技术资料、新闻、购物、旅游、求职、金融或中文内容时，务必使用此 skill",
+      "purpose": "\u57fa\u4e8e opencli \u547d\u4ee4\u7684\u667a\u80fd\u641c\u7d22\u8def\u7531\u5668\u3002\u5f53\u7528\u6237\u60f3\u8981\u641c\u7d22\u3001\u67e5\u8be2\u3001\u67e5\u627e\u6216\u7814\u7a76\u4fe1\u606f\u65f6\uff0c\u5c24\u5176\u662f\u6d89\u53ca\u6307\u5b9a\u7f51\u7ad9\u3001\u793e\u4ea4\u5a92\u4f53\u3001\u6280\u672f\u8d44\u6599\u3001\u65b0\u95fb\u3001\u8d2d\u7269\u3001\u65c5\u6e38\u3001\u6c42\u804c\u3001\u91d1\u878d\u6216\u4e2d\u6587\u5185\u5bb9\u65f6\uff0c\u52a1\u5fc5\u4f7f\u7528\u6b64 skill",
       "allowed_stages": [
         "enrich_context"
       ],
@@ -757,7 +757,7 @@
       "applicability": [
         "enrich_context"
       ],
-      "purpose_long": "基于 opencli 命令的智能搜索路由器。当用户想要搜索、查询、查找或研究信息时，尤其是涉及指定网站、社交媒体、技术资料、新闻、购物、旅游、求职、金融或中文内容时，务必使用此 skill"
+      "purpose_long": "\u57fa\u4e8e opencli \u547d\u4ee4\u7684\u667a\u80fd\u641c\u7d22\u8def\u7531\u5668\u3002\u5f53\u7528\u6237\u60f3\u8981\u641c\u7d22\u3001\u67e5\u8be2\u3001\u67e5\u627e\u6216\u7814\u7a76\u4fe1\u606f\u65f6\uff0c\u5c24\u5176\u662f\u6d89\u53ca\u6307\u5b9a\u7f51\u7ad9\u3001\u793e\u4ea4\u5a92\u4f53\u3001\u6280\u672f\u8d44\u6599\u3001\u65b0\u95fb\u3001\u8d2d\u7269\u3001\u65c5\u6e38\u3001\u6c42\u804c\u3001\u91d1\u878d\u6216\u4e2d\u6587\u5185\u5bb9\u65f6\uff0c\u52a1\u5fc5\u4f7f\u7528\u6b64 skill"
     },
     {
       "key": "audit_only_executor",
@@ -1393,6 +1393,80 @@
       "purpose_long": "Create an approval-gated handoff from a selected remediation slice into implementation-delivery."
     },
     {
+      "key": "planning_governance_compiler",
+      "purpose": "Compile GSD planning objectives into standards-aware planning contracts with artifacts, acceptance criteria, evidence expectations, and verification handoff before execution.",
+      "allowed_stages": [
+        "parse_request",
+        "generate",
+        "finalize"
+      ],
+      "input_schema": {
+        "objective": "string",
+        "planning_detection": "object|null"
+      },
+      "output_schema": {
+        "planning_contract": "object",
+        "required_artifacts": "string[]",
+        "verification_handoff": "string"
+      },
+      "invariants": [
+        "Preserve the requested planning objective without converting it into immediate implementation.",
+        "Surface standards before execution starts.",
+        "Every planning contract must include acceptance criteria, evidence expectations, and verification handoff.",
+        "Keep unsupported or ambiguous objectives blocked instead of inventing a route."
+      ],
+      "failure_conditions": [
+        "Planning intent is unknown.",
+        "Required planning artifacts are absent.",
+        "Verification handoff is missing."
+      ],
+      "side_effects": [
+        "May write planning artifacts under .planning/runs/{run_id}/."
+      ],
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "planning_governance",
+        "gsd_planning",
+        "phase_planning",
+        "finalize"
+      ],
+      "purpose_long": "Registry-only skill contract for planning-governance workflow stages. It describes the artifact and standards contract consumed by start-work packets and downstream plan execution."
+    },
+    {
+      "key": "planning_contract_validator",
+      "purpose": "Validate that governed planning output includes executable plan contracts, scoped standards, evidence expectations, and verification handoff.",
+      "allowed_stages": [
+        "validate"
+      ],
+      "input_schema": {
+        "planning_contract": "object"
+      },
+      "output_schema": {
+        "passed": "boolean",
+        "issues": "string[]"
+      },
+      "invariants": [
+        "Validation output must be explicit pass/fail.",
+        "Do not accept plans without acceptance criteria and verification commands.",
+        "Do not accept planning output that starts with implementation as the first action."
+      ],
+      "failure_conditions": [
+        "Acceptance criteria are missing.",
+        "Evidence expectations are missing.",
+        "Verification handoff is missing.",
+        "Planning output broadens scope beyond the requested objective."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "planning_governance",
+        "validate"
+      ],
+      "purpose_long": "Registry-only validator for planning-governance contracts."
+    },
+    {
       "key": "tmcp_packet_compiled",
       "purpose": "Validate that the expert workflow has a compiled TMCP expertise packet.",
       "allowed_stages": [
@@ -1503,6 +1577,319 @@
         "validate"
       ],
       "purpose_long": "Validate that remediation slices include verification expectations."
+    },
+    {
+      "key": "repo_gate_fact_scanner",
+      "purpose": "Inspect a repository for package scripts, Python tooling, CI, hooks, Pre-CR, anti-slop, local AIOS quality contracts, dead-code scans, and project truth surfaces.",
+      "allowed_stages": [
+        "enrich_context"
+      ],
+      "input_schema": {
+        "repo_path": "string",
+        "run_id": "string"
+      },
+      "output_schema": {
+        "repo_scan": "object"
+      },
+      "invariants": [
+        "Do not execute repo commands during the adoption scan.",
+        "Every detected gate signal must cite a local file or script source.",
+        "Missing gates must be represented explicitly rather than omitted."
+      ],
+      "failure_conditions": [
+        "Repo path is missing.",
+        "Scan output omits gate evidence."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "repo_gate_adoption",
+        "quality_gates",
+        "enrich_context"
+      ],
+      "purpose_long": "Build the evidence packet for repo-level quality gate adoption planning without running or mutating project checks."
+    },
+    {
+      "key": "repo_gate_matrix_synthesizer",
+      "purpose": "Convert repo gate scan evidence into a status, enforcement, maturity, and adoption-action matrix for core AIOS quality gates.",
+      "allowed_stages": [
+        "generate"
+      ],
+      "input_schema": {
+        "repo_scan": "object"
+      },
+      "output_schema": {
+        "gate_matrix": "object"
+      },
+      "invariants": [
+        "The matrix must include every core gate even when absent.",
+        "Gate maturity must distinguish present evidence from hard enforcement.",
+        "Pre-CR, anti-slop, complexity/Big-O, install, security, dependency, package, validation, release, smoke, and Pre-PR gates must stay visible as independent rows."
+      ],
+      "failure_conditions": [
+        "Gate matrix omits a core gate.",
+        "A gate has no status."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "repo_gate_adoption",
+        "quality_gates",
+        "generate"
+      ],
+      "purpose_long": "Create the repo gate adoption readiness matrix from scan evidence."
+    },
+    {
+      "key": "repo_gate_rollout_planner",
+      "purpose": "Turn the gate matrix and rubric pack into staged GSD-ready rollout phases that audit broad standards before implementation.",
+      "allowed_stages": [
+        "finalize"
+      ],
+      "input_schema": {
+        "gate_matrix": "object",
+        "rubric_pack": "object"
+      },
+      "output_schema": {
+        "rollout_plan": "object",
+        "artifact_paths": "object"
+      },
+      "invariants": [
+        "The workflow must stop at an adoption plan and never implement gate changes.",
+        "Each phase must include verification.",
+        "Hard enforcement must come after baseline and audit-mode evidence.",
+        "Every rubric must materialize audit and implementation documents in both Markdown and JSON before phase execution.",
+        "GSD phases must be scoped from combined broad-standard and gate-specific audits, not only failed command names."
+      ],
+      "failure_conditions": [
+        "Rollout phases are missing.",
+        "A rollout phase lacks verification."
+      ],
+      "side_effects": [
+        "Writes gate adoption artifacts under git-ignored AIOS-backfill/gate-adoption/{run_id} in the target repository."
+      ],
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "repo_gate_adoption",
+        "quality_gates",
+        "finalize"
+      ],
+      "purpose_long": "Create the staged repo gate adoption plan from the gate matrix and rubric pack, then write scan, matrix, rubric, and rollout artifacts."
+    },
+    {
+      "key": "repo_tmcp_expert_enricher",
+      "purpose": "Conditionally enrich repo adoption rubrics with TMCP expert context when source sufficiency is high enough.",
+      "allowed_stages": [
+        "generate"
+      ],
+      "input_schema": {
+        "repo_scan": "object",
+        "gate_matrix": "object"
+      },
+      "output_schema": {
+        "tmcp_expert_enrichment": "object"
+      },
+      "invariants": [
+        "TMCP must not claim expertise when relevant source coverage is insufficient.",
+        "Insufficient TMCP source must fall back to AIOS standard rubrics without blocking adoption planning.",
+        "Any enriched rubric influence must cite selected TMCP nodes and sufficiency metadata."
+      ],
+      "failure_conditions": [
+        "Enrichment status is missing.",
+        "Insufficient source does not record a fallback."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "repo_gate_adoption",
+        "tmcp",
+        "quality_rubrics",
+        "generate"
+      ],
+      "purpose_long": "Compile a TMCP packet for adoption rubric expertise and record whether it is sufficient to enrich the rubric pack."
+    },
+    {
+      "key": "repo_quality_rubric_pack_builder",
+      "purpose": "Build broad and gate-specific adoption rubrics from the repo scan and gate matrix.",
+      "allowed_stages": [
+        "generate"
+      ],
+      "input_schema": {
+        "repo_scan": "object",
+        "gate_matrix": "object",
+        "tmcp_expert_enrichment": "object"
+      },
+      "output_schema": {
+        "rubric_pack": "object"
+      },
+      "invariants": [
+        "The rubric pack must include broad quality-standard rubrics.",
+        "The rubric pack must include one gate-specific rubric for every gate matrix row.",
+        "Command gates must not be treated as full proof of the underlying quality standard.",
+        "UI-bearing repos must require visual/runtime confirmation through local launch, browser/device automation, screenshots, computer use, Xcode simulator, or equivalent evidence.",
+        "TMCP enrichment must be represented as enriched or insufficient_source; insufficient source cannot influence rubrics."
+      ],
+      "failure_conditions": [
+        "Rubric pack omits broad quality rubrics.",
+        "Rubric pack omits gate-specific rubrics."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "repo_gate_adoption",
+        "quality_gates",
+        "generate"
+      ],
+      "purpose_long": "Create the repo quality rubric pack that supports adoption planning beyond raw command presence."
+    },
+    {
+      "key": "repo_gate_scan_has_evidence",
+      "purpose": "Validate that the repo gate scan has a schema, repo path, and gate evidence object.",
+      "allowed_stages": [
+        "validate"
+      ],
+      "input_schema": {
+        "repo_scan": "object"
+      },
+      "output_schema": {
+        "passed": "boolean",
+        "issues": "string[]"
+      },
+      "invariants": [
+        "Validation output must be explicit pass/fail."
+      ],
+      "failure_conditions": [
+        "Repo scan schema is invalid.",
+        "Gate evidence is missing."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "repo_gate_adoption",
+        "validate"
+      ],
+      "purpose_long": "Validate the repo gate adoption scan artifact."
+    },
+    {
+      "key": "gate_matrix_has_core_gates",
+      "purpose": "Validate that the gate adoption matrix includes every core quality gate row.",
+      "allowed_stages": [
+        "validate"
+      ],
+      "input_schema": {
+        "gate_matrix": "object"
+      },
+      "output_schema": {
+        "passed": "boolean",
+        "issues": "string[]"
+      },
+      "invariants": [
+        "Validation output must be explicit pass/fail."
+      ],
+      "failure_conditions": [
+        "Core gate rows are missing."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "repo_gate_adoption",
+        "validate"
+      ],
+      "purpose_long": "Validate the repo gate adoption matrix artifact."
+    },
+    {
+      "key": "tmcp_expert_enrichment_has_sufficiency_status",
+      "purpose": "Validate that TMCP enrichment records enriched, insufficient-source, or not-requested status with fallback policy.",
+      "allowed_stages": [
+        "validate"
+      ],
+      "input_schema": {
+        "tmcp_expert_enrichment": "object"
+      },
+      "output_schema": {
+        "passed": "boolean",
+        "issues": "string[]"
+      },
+      "invariants": [
+        "Validation output must be explicit pass/fail."
+      ],
+      "failure_conditions": [
+        "Enrichment status is invalid.",
+        "Insufficient source has no AIOS-standard fallback."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "repo_gate_adoption",
+        "tmcp",
+        "validate"
+      ],
+      "purpose_long": "Validate the conditional TMCP expert enrichment artifact without requiring TMCP source sufficiency."
+    },
+    {
+      "key": "rubric_pack_has_broad_and_gate_rubrics",
+      "purpose": "Validate that the adoption rubric pack includes broad and gate-specific rubrics.",
+      "allowed_stages": [
+        "validate"
+      ],
+      "input_schema": {
+        "rubric_pack": "object"
+      },
+      "output_schema": {
+        "passed": "boolean",
+        "issues": "string[]"
+      },
+      "invariants": [
+        "Validation output must be explicit pass/fail."
+      ],
+      "failure_conditions": [
+        "Broad quality rubrics are missing.",
+        "Gate-specific rubrics are missing."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "repo_gate_adoption",
+        "validate"
+      ],
+      "purpose_long": "Validate the repo gate adoption rubric pack artifact."
+    },
+    {
+      "key": "gate_rollout_has_phases",
+      "purpose": "Validate that the gate adoption rollout plan includes phases with verification.",
+      "allowed_stages": [
+        "validate"
+      ],
+      "input_schema": {
+        "rollout_plan": "object"
+      },
+      "output_schema": {
+        "passed": "boolean",
+        "issues": "string[]"
+      },
+      "invariants": [
+        "Validation output must be explicit pass/fail."
+      ],
+      "failure_conditions": [
+        "Rollout phases are missing.",
+        "A rollout phase lacks verification."
+      ],
+      "side_effects": [],
+      "execution_mode": "deterministic",
+      "lifecycle_state": "active",
+      "applicability": [
+        "repo_gate_adoption",
+        "validate"
+      ],
+      "purpose_long": "Validate the repo gate adoption rollout artifact."
     }
   ]
 }

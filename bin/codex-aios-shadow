@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Narrow permission boundary for Codex: this entrypoint only runs AIOS shadow setup.
+exec python3 "$ROOT/scripts/codex-aios-shadow.py" "$@"

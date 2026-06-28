@@ -14,7 +14,10 @@ from services.linked_repo_readiness import (  # noqa: E402
     phase24_readiness_report,
     phase24_target_projects,
 )
-from services.quality_pipeline import ensure_quality_pipeline_schema, record_quality_pipeline_run  # noqa: E402
+from services.quality_pipeline import (  # noqa: E402
+    ensure_quality_pipeline_schema,
+    record_quality_pipeline_run,
+)
 
 
 def _write_config(path: Path) -> Path:
@@ -25,6 +28,14 @@ def _write_config(path: Path) -> Path:
                 {"key": "lint", "label": "Lint", "required": True, "applicability": ["all"]},
                 {"key": "ci", "label": "CI", "required": True, "applicability": ["all"]},
             ],
+            "classes": {
+                "production_public_web_app": {
+                    "required_gates": ["lint", "ci"],
+                },
+                "developer_tool_package": {
+                    "required_gates": ["lint", "ci"],
+                },
+            },
         },
         "projects": [
             {
@@ -119,11 +130,78 @@ def test_missing_required_gate_evidence_blocks_readiness(tmp_path: Path) -> None
     conn.commit()
 
     report = phase24_readiness_report(conn, config_path=config_path)
-    soundscape = next(project for project in report["projects"] if project["project_id"] == "soundscape-app")
+    soundscape = next(
+        project for project in report["projects"] if project["project_id"] == "soundscape-app"
+    )
 
     assert soundscape["verdict"] == "evidence_required"
+    assert soundscape["adoption_status"] == "adopted_but_blocked"
     assert soundscape["missing_gate_keys"] == ["ci"]
     assert soundscape["latest_evidence_ids"] == {"lint": run_id}
+    assert soundscape["quality_certification"]["workflow_key"] == "repo_gate_adoption_v1"
+    assert soundscape["quality_certification"]["stage_statuses"] == {
+        "aios_wired": "pass",
+        "quality_standard_compliant": "fail",
+        "release_ready": "fail",
+    }
+    assert "gate_not_passing:ci:stale" in soundscape["quality_certification"]["blockers"]
+
+
+def test_passing_profiled_repo_is_adoption_ready(tmp_path: Path) -> None:
+    config_path = _write_config(tmp_path / "quality-pipeline.json")
+    payload = json.loads(config_path.read_text())
+    soundscape = next(
+        project for project in payload["projects"] if project["project_id"] == "soundscape-app"
+    )
+    soundscape["strict_readiness_status"] = "ready"
+    config_path.write_text(json.dumps(payload), encoding="utf-8")
+    conn = _conn(tmp_path)
+    for gate_key in ("lint", "ci"):
+        record_quality_pipeline_run(
+            conn,
+            project_id="soundscape-app",
+            gate_key=gate_key,
+            command=f"pnpm {gate_key}",
+            status="pass",
+            source="test",
+            completed_at="2026-06-24T00:00:00Z",
+            evidence=[f"{gate_key} ok"],
+        )
+    conn.commit()
+
+    report = phase24_readiness_report(conn, config_path=config_path)
+    soundscape = next(
+        project for project in report["projects"] if project["project_id"] == "soundscape-app"
+    )
+
+    assert soundscape["verdict"] == "ready"
+    assert soundscape["adoption_status"] == "adoption_ready"
+    assert report["adoption_ready_count"] == 1
+    assert soundscape["quality_certification"]["stage_statuses"] == {
+        "aios_wired": "pass",
+        "quality_standard_compliant": "pass",
+        "release_ready": "pass",
+    }
+
+
+def test_placeholder_commands_prevent_aios_wired_claim(tmp_path: Path) -> None:
+    config_path = _write_config(tmp_path / "quality-pipeline.json")
+    payload = json.loads(config_path.read_text())
+    portfolio = next(
+        project for project in payload["projects"] if project["project_id"] == "portfolio"
+    )
+    portfolio["gates"]["ci"] = {"command": "echo TODO", "working_directory": "."}
+    config_path.write_text(json.dumps(payload), encoding="utf-8")
+    conn = _conn(tmp_path)
+
+    report = phase24_readiness_report(conn, config_path=config_path)
+    portfolio = next(
+        project for project in report["projects"] if project["project_id"] == "portfolio"
+    )
+
+    assert portfolio["adoption_status"] == "not_adopted"
+    assert portfolio["quality_certification"]["placeholder_command_gate_keys"] == ["ci"]
+    assert "gate_command_placeholder:ci" in portfolio["quality_certification"]["blockers"]
 
 
 def test_missing_ci_without_exception_records_blocker(tmp_path: Path) -> None:
@@ -131,17 +209,22 @@ def test_missing_ci_without_exception_records_blocker(tmp_path: Path) -> None:
     conn = _conn(tmp_path)
 
     report = phase24_readiness_report(conn, config_path=config_path)
-    portfolio = next(project for project in report["projects"] if project["project_id"] == "portfolio")
+    portfolio = next(
+        project for project in report["projects"] if project["project_id"] == "portfolio"
+    )
 
     assert portfolio["verdict"] == "blocked"
     assert "ci_default_proof_missing" in portfolio["blockers"]
     assert "ci" in portfolio["missing_gate_keys"]
+    assert portfolio["adoption_status"] == "not_adopted"
 
 
 def test_non_remote_ci_exception_requires_local_ci_evidence(tmp_path: Path) -> None:
     config_path = _write_config(tmp_path / "quality-pipeline.json")
     payload = json.loads(config_path.read_text())
-    portfolio = next(project for project in payload["projects"] if project["project_id"] == "portfolio")
+    portfolio = next(
+        project for project in payload["projects"] if project["project_id"] == "portfolio"
+    )
     portfolio["non_remote_ci_exception"] = {
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained.",
@@ -153,11 +236,15 @@ def test_non_remote_ci_exception_requires_local_ci_evidence(tmp_path: Path) -> N
     conn = _conn(tmp_path)
 
     report = phase24_readiness_report(conn, config_path=config_path)
-    portfolio = next(project for project in report["projects"] if project["project_id"] == "portfolio")
+    portfolio = next(
+        project for project in report["projects"] if project["project_id"] == "portfolio"
+    )
 
     assert portfolio["verdict"] == "blocked"
     assert "ci_default_proof_missing" not in portfolio["blockers"]
     assert "ci" in portfolio["missing_gate_keys"]
+    assert portfolio["quality_certification"]["accepted_exceptions"] == ["non_remote_ci_exception"]
+    assert "ci_local_replacement_proof_missing" in portfolio["quality_certification"]["blockers"]
 
 
 def test_runner_rejects_agent_router_and_unknown_projects(tmp_path: Path) -> None:
@@ -260,7 +347,6 @@ def test_runner_dry_run_uses_aios_owned_config_command(tmp_path: Path) -> None:
     assert ".aios-quality-gate.json" not in result.stdout
 
 
-
 def test_phase24_real_config_requires_anti_slop_for_typescript_adoption_targets() -> None:
     payload = json.loads((ROOT / "config" / "quality-pipeline.json").read_text(encoding="utf-8"))
     standard_gates = {gate["key"]: gate for gate in payload["standard"]["gates"]}
@@ -274,13 +360,29 @@ def test_phase24_real_config_requires_anti_slop_for_typescript_adoption_targets(
     }
 
     classes = payload["standard"]["classes"]
-    for repo_class in ("platform_control_plane", "production_public_web_app", "developer_tool_package"):
+    for repo_class in (
+        "platform_control_plane",
+        "production_public_web_app",
+        "developer_tool_package",
+    ):
         assert "anti_slop" in classes[repo_class]["required_gates"]
+    assert (
+        payload["standard"]["adoption_readiness_rule"]["required_quality_certification_workflow"]
+        == "repo_gate_adoption_v1"
+    )
+    assert payload["standard"]["adoption_readiness_rule"]["final_adoption_statuses"] == [
+        "adoption_ready",
+        "adopted_but_blocked",
+        "not_adopted",
+    ]
 
     missing_backfill_commands: list[str] = []
     for project in payload["projects"]:
         project_id = project["project_id"]
-        if project_id in DEFAULT_EXCLUDED_PROJECT_IDS or project.get("strict_readiness_status") == "excluded":
+        if (
+            project_id in DEFAULT_EXCLUDED_PROJECT_IDS
+            or project.get("strict_readiness_status") == "excluded"
+        ):
             continue
         if project.get("repo_class") not in {
             "platform_control_plane",
@@ -295,10 +397,44 @@ def test_phase24_real_config_requires_anti_slop_for_typescript_adoption_targets(
     assert missing_backfill_commands == []
 
 
+def test_phase24_real_config_has_commands_for_every_required_gate() -> None:
+    payload = json.loads((ROOT / "config" / "quality-pipeline.json").read_text(encoding="utf-8"))
+    classes = payload["standard"]["classes"]
+    missing_configs: list[tuple[str, str]] = []
+    blank_commands: list[tuple[str, str]] = []
+    missing_ci_proofs: list[str] = []
+
+    for project in payload["projects"]:
+        project_id = project["project_id"]
+        if (
+            project_id in DEFAULT_EXCLUDED_PROJECT_IDS
+            or project.get("strict_readiness_status") == "excluded"
+        ):
+            continue
+        required_gates = classes[project["repo_class"]]["required_gates"]
+        gates = project.get("gates", {})
+        for gate_key in required_gates:
+            gate = gates.get(gate_key)
+            if gate is None:
+                missing_configs.append((project_id, gate_key))
+                continue
+            if not str(gate.get("command", "")).strip():
+                blank_commands.append((project_id, gate_key))
+        ci_exception = project.get("non_remote_ci_exception", {})
+        if "ci" in required_gates and not str(ci_exception.get("local_proof_command", "")).strip():
+            missing_ci_proofs.append(project_id)
+
+    assert missing_configs == []
+    assert blank_commands == []
+    assert missing_ci_proofs == []
+
+
 def test_runner_dry_run_uses_local_ci_exception_command(tmp_path: Path) -> None:
     config_path = _write_config(tmp_path / "quality-pipeline.json")
     payload = json.loads(config_path.read_text())
-    soundscape = next(project for project in payload["projects"] if project["project_id"] == "soundscape-app")
+    soundscape = next(
+        project for project in payload["projects"] if project["project_id"] == "soundscape-app"
+    )
     soundscape["non_remote_ci_exception"] = {
         "owner": "jakyeamos",
         "reason": "GitHub Actions credits are constrained.",
@@ -354,22 +490,45 @@ def test_runner_dry_run_uses_local_ci_exception_command(tmp_path: Path) -> None:
 
     assert result.returncode == 0
     payload = json.loads(result.stdout)
-    assert payload["command"] == "python3 scripts/linked-repo-ci-local-proof.py --project soundscape-app"
+    assert (
+        payload["command"]
+        == "python3 scripts/linked-repo-ci-local-proof.py --project soundscape-app"
+    )
 
 
-def test_readiness_report_real_config_has_20_targets_and_deprecated_repos_excluded() -> None:
+def test_readiness_report_real_config_has_23_targets_and_deprecated_repos_excluded() -> None:
     conn = sqlite3.connect(":memory:")
 
     report = phase24_readiness_report(conn)
 
-    assert report["target_count"] == 20
+    assert report["target_count"] == 23
     assert report["excluded_count"] == 3
     assert report["excluded_projects"] == [
         {"project_id": "video-pipeline", "reason": "excluded_by_phase24_scope"},
         {"project_id": "manga-sync", "reason": "excluded_by_phase24_scope"},
         {"project_id": "agent-router", "reason": "excluded_by_phase24_scope"},
     ]
-    placeholder_rows = conn.execute("SELECT COUNT(*) FROM projects WHERE repo_path = ''").fetchone()[0]
+    placeholder_rows = conn.execute(
+        "SELECT COUNT(*) FROM projects WHERE repo_path = ''"
+    ).fetchone()[0]
     assert placeholder_rows == 0
-    assert all("ci_default_proof_missing" not in project["blockers"] for project in report["projects"])
+    assert all(
+        "ci_default_proof_missing" not in project["blockers"] for project in report["projects"]
+    )
     assert all("ci" in project["missing_gate_keys"] for project in report["projects"])
+    assert report["adoption_ready_count"] == 0
+    assert report["adopted_but_blocked_count"] == 23
+    assert report["not_adopted_count"] == 0
+    assert all(
+        project["adoption_status"] == "adopted_but_blocked" for project in report["projects"]
+    )
+    newly_added = {
+        project["project_id"]: project["verdict"]
+        for project in report["projects"]
+        if project["project_id"] in {"BidCamp", "tenure", "EliHealth"}
+    }
+    assert newly_added == {
+        "BidCamp": "evidence_required",
+        "tenure": "evidence_required",
+        "EliHealth": "evidence_required",
+    }

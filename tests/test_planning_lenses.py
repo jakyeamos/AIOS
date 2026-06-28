@@ -40,6 +40,24 @@ def test_selects_gsd_plan_phase_lenses_from_workflow_context() -> None:
     assert any("workflow_phase:gsd:plan" in lens.sources for lens in selection.lenses)
 
 
+def test_selects_planning_governance_lenses_from_workflow_context() -> None:
+    selection = select_planning_lenses(workflow="planning-governance", phase="plan")
+
+    keys = _keys(selection)
+    for expected in {
+        "executor-readiness",
+        "constraint-preservation",
+        "artifact-definition",
+        "validation-strategy",
+        "standards-surfacing",
+        "verification-handoff",
+    }:
+        assert expected in keys
+    assert any(
+        "workflow_phase:planning-governance:plan" in lens.sources for lens in selection.lenses
+    )
+
+
 def test_requested_lenses_supplement_automatic_selection() -> None:
     selection = select_planning_lenses(
         task_types=("code_refactor",),

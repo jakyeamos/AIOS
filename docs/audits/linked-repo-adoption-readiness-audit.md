@@ -136,6 +136,18 @@ Strict readiness is blocked by these gate classes:
 
 Plan 23-02 must define class-based strict readiness in a reusable contract before replacing weak gates. The contract should explicitly say that repo-local `.aios-quality-gate.json` files declare only gate IDs, while executable commands remain in AIOS-owned config.
 
+## Phase 29 Adoption Document Update
+
+`repo_gate_adoption_v1` now writes adoption planning artifacts under each target repo's git-ignored `AIOS-backfill/gate-adoption/{run_id}` folder. The artifact pack includes repo classification evidence, the selected AIOS quality-pipeline profile, required gate commands, broad and gate-specific rubric Markdown/JSON docs, visual-proof routing for UI-bearing repos, and `rubric-detail-manifest.json` as the agent-readable index.
+
+Before a generated adoption pack is used as GSD phase input, run:
+
+```bash
+uv run python bin/aios.py gate adoption-doc-quality --repo-root <repo> --run-id <run-id>
+```
+
+Blocker findings from the document-quality report mean the generated adoption docs are not ready for implementation planning. Warning findings must be carried into the repo-specific audit pass unless the warning is resolved with concrete evidence or an accepted exception.
+
 ## Phase 23 Evidence Reporting Update
 
 Plan 23-07 added portfolio reporting support so `services.quality_pipeline.get_project_quality_pipeline` now exposes each repo's class, strict readiness verdict, maturation blockers, and any non-remote CI exception alongside latest gate status, source, timestamp, command, and evidence IDs.
@@ -185,6 +197,8 @@ Phase 24 Plan 24-02 recorded fresh local `quality_pipeline_runs` rows for `sound
 - `repo_truth`: `quality-soundscape-app-repo_truth-20260624030921689608`
 
 `soundscape-app` has failed or blocked evidence for `lint`, `typecheck`, `test`, `ci`, `secret_scan`, `dependency_security`, `coverage`, `e2e_smoke`, `seo`, `telemetry_utility`, `db_restore`, `pitr_monitor`, `mobile_release`, `full_e2e`, and `pre_cr`. `env_validation` is warning-level evidence. Local CI replacement proof has not passed; workflow-file presence was recorded only as blocked proof.
+
+Phase 29 Soundscape Tasks 1 and 2 refreshed the direct frontier on 2026-06-26. `node scripts/aios-architecture-check.mjs`, `corepack pnpm --filter @soundscape/api build`, and `corepack pnpm --filter @soundscape/web typecheck` pass. `corepack pnpm --filter @soundscape/web build` now fails on a pre-existing dirty edit in `packages/web/src/components/etf/EtfTradePanel.tsx`, not the previous compare route App Router export blocker; `packages/web/src/app/[locale]/(main)/compare/[userId]/page.tsx` already keeps `OverlapResultsSection` private. Readiness remains blocked until the unrelated dirty ETF build failure and the remaining missing gates are resolved.
 
 AIOS currently reports `blocked`. Passing local evidence exists for:
 
@@ -463,6 +477,29 @@ AIOS now has the setup needed to continue repo-by-repo:
 - `scripts/linked-repo-ci-local-proof.py` checks whether all non-`ci` required gates for a repo are passing before local CI replacement proof can pass.
 - `scripts/linked-repo-quality-runner.py` resolves approved `ci` gates through `non_remote_ci_exception.local_proof_command` instead of trying to execute GitHub workflow YAML paths.
 - `services/quality_pipeline.py` honors `standard.classes[*].required_gates`, so class-specific required gates drive blocker status.
-- Every required gate in the 20 in-scope repos has a configured runnable command; the current report has no unconfigured required gates.
+- Every required gate in the 20 Phase 24 in-scope repos has a configured runnable command; the Phase 24 report has no unconfigured required gates.
+- A follow-up setup check found AIOS was missing required platform `secret_scan` and `dependency_security` gate commands. Those commands are now configured, and `tests/test_linked_repo_readiness.py::test_phase24_real_config_has_commands_for_every_required_gate` protects the no-missing-required-gates invariant.
 
-Current report remains `ready_count: 0`, `blocked_count: 20`, `evidence_required_count: 0`, and `excluded_count: 3`. The durable failure ledger is appended to `24-VERIFICATION.md`.
+At Phase 24 closeout, the report remained `ready_count: 0`, `blocked_count: 20`, `evidence_required_count: 0`, and `excluded_count: 3`. The durable failure ledger is appended to `24-VERIFICATION.md`.
+
+### Phase 29 Scope Expansion
+
+On 2026-06-26, `BidCamp`, `tenure`, and `EliHealth` were added to the AIOS linked-repo adoption list. `BidCamp` and `tenure` use the `production_public_web_app` gate profile. `EliHealth` uses the `mobile_app` gate profile, including mobile release proof.
+
+The current Phase 29 baseline report returns `target_count: 23`, `ready_count: 0`, `blocked_count: 23`, `evidence_required_count: 0`, `excluded_count: 3`, `adoption_ready_count: 0`, `adopted_but_blocked_count: 23`, and `not_adopted_count: 0`. The three new repos have first evidence rows recorded and are AIOS-wired, but remain blocked until their configured required gates have passing proof.
+
+Latest new-target evidence:
+
+- `BidCamp`: passing `e2e_smoke`, `repo_truth`, `pre_cr`, and `anti_slop`; blocked on `install`, `lint`, `typecheck`, `test`, `build`, `architecture`, `secret_scan`, `dependency_security`, and local `ci`.
+- `tenure`: passing `install`, `lint`, `typecheck`, `test`, `build`, `architecture`, `repo_truth`, `pre_cr`, and `anti_slop`; blocked on `secret_scan`, `dependency_security`, `e2e_smoke`, and local `ci`.
+- `EliHealth`: passing `typecheck`, `architecture`, `secret_scan`, `dependency_security`, `repo_truth`, `pre_cr`, and `anti_slop`; blocked on `install`, `lint`, `test`, `mobile_release`, and local `ci`.
+
+Remediation planning must now use the `repo_gate_adoption_v1` rubric pack before implementation. The tactical examples above are gate-cluster candidates only after broader rubrics exist for complexity/simplification, anti-slop/product quality, architecture boundaries, test value, UI visual/runtime verification, dead code, security/secret handling, dependency risk, truth/docs accuracy, and CI/local proof integrity. Passing a configured anti-slop or architecture command is not enough to claim broad standards compliance.
+
+`repo_gate_adoption_v1` may conditionally add TMCP expert enrichment to the rubric pack, but only when the compiled TMCP packet has enough relevant source evidence for the selected repo/gate context. If source sufficiency fails, the artifact must record `insufficient_source` and fall back to AIOS standard rubrics; tactical remediation phases still derive from the broad plus gate-specific audit pack, not from unsupported expert claims.
+
+Generated adoption evidence should be kept in each target repo's git-ignored `AIOS-backfill/gate-adoption/{run_id}` folder. The linked repos' tracked docs folders should only receive durable human-facing documentation that is intentionally promoted after review.
+
+The folder now includes a per-rubric detail pack: each broad and gate-specific rubric gets Markdown plus JSON audit and implementation documents, and `rubric-detail-manifest.json` indexes those files for agents. Rollout planning should consume those generated detail docs instead of inferring phase scope from the top-level rubric pack alone.
+
+For UI-bearing repos, adoption evidence should include a visual/runtime proof path in addition to UI code-standard checks. Acceptable proof can come from local web launch plus browser automation/screenshots, computer-use inspection, Xcode simulator evidence for iOS/mobile surfaces, or an equivalent platform-specific run that confirms the interface actually renders and behaves correctly.

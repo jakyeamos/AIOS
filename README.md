@@ -86,7 +86,7 @@ http://localhost:3000/workflows
 In Codex, AIOS shadowing is automatic for non-trivial tasks. Ordinary prompts keep the current workspace as the baseline and use the AIOS lane as evidence only:
 
 ```bash
-python3 /Users/jakyeamos/AIOS/scripts/codex-aios-shadow.py "<objective>"
+/Users/jakyeamos/AIOS/bin/codex-aios-shadow "<objective>"
 ```
 
 Governed AIOS routing is command-triggered. Use `/aios` at the start of the prompt when the AIOS route and packet should govern the baseline work:
@@ -98,10 +98,10 @@ Governed AIOS routing is command-triggered. Use `/aios` at the start of the prom
 Codex should run:
 
 ```bash
-python3 /Users/jakyeamos/AIOS/scripts/codex-aios-shadow.py "<objective>" --governed-route
+/Users/jakyeamos/AIOS/bin/codex-aios-shadow "<objective>" --governed-route
 ```
 
-The helper infers the project from the current working directory, creates the routed run/packet, creates an isolated shadow worktree, and prints the follow-up inspection commands. For ordinary prompts, that route is comparison evidence only. For `/aios` prompts, that route is governing context. If the prompt is for another project while Codex is currently in the AIOS repo, include the project name:
+The wrapper is the narrow permission boundary for shadow setup and delegates to `scripts/codex-aios-shadow.py`. The helper infers the project from the current working directory, creates the routed run/packet, creates an isolated shadow worktree, and prints the follow-up inspection commands. For ordinary prompts, that route is comparison evidence only. For `/aios` prompts, that route is governing context. If the prompt is for another project while Codex is currently in the AIOS repo, include the project name:
 
 ```text
 /aios for amos-saas: Fix the login redirect bug and verify the checks
