@@ -1,7 +1,7 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, Quality Runner planning, and clustered Codex/Claude session intelligence backfill candidates ready for review while broader Ruff and BasedPyright baseline issues remain open.
+summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, standalone Quality Runner consumption boundary, and clustered Codex/Claude session intelligence backfill candidates ready for review while broader Ruff and BasedPyright baseline issues remain open.
 healthScore: 73
 statusLabel: needs_attention
 nextStep: Review the top 50 `session-intel clusters` from the 973 pending backfill candidates, then promote the highest-confidence automation targets.
@@ -46,7 +46,7 @@ AIOS now has `expert_rubric_remediation_v1` implemented and smoke-verified throu
 
 AIOS also has `repo_gate_adoption_v1`, a narrow audit-and-plan workflow for repository quality-gate adoption. It scans repo-local scripts, Pre-CR, anti-slop, local AIOS quality contracts, CI, hooks, dead-code, structural-scan, and truth-file evidence; produces a core gate readiness matrix; conditionally records TMCP expert enrichment only when source sufficiency passes; writes broad repo-class and gate-specific rubric packs; writes a staged rollout plan under git-ignored `AIOS-backfill/gate-adoption/{run_id}`; and exposes the flow through `aios gate adoption-plan`.
 
-AIOS now has a review-ready design and implementation plan for Quality Runner, a standalone audit-and-plan tool with CLI and MCP surfaces. Quality Runner is intended to orchestrate TMCP expert rubrics, AIOS adoption/backfill signals, Pre-CR, anti-slop, dead-code, truth-file, git-policy, and language-quality evidence into a single remediation plan without modifying target repos in v1.
+Quality Runner now lives in `/Users/jakyeamos/quality-runner` as a standalone audit-and-plan package with CLI and MCP surfaces. AIOS should consume it as an external tool and may provide adapters, standards profiles, or workflow shortcuts, but the standalone package owns the core workflow and `.quality-runner/` artifact contract.
 
 AIOS now has a review-gated Codex/Claude Session Intelligence loop. The loop enriches Codex session normalization with tool calls, commands, cwd, approval friction, errors, and terminal outcomes; stores lane candidates in SQLite; emits redacted Markdown/JSON reports; exposes `aios session-intel` commands; runs daily through the Codex automation `daily-codex-session-intelligence`; and supports resumable historical backfill across Codex and Claude sources.
 
@@ -101,6 +101,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-06-26: Extracted Research Domain Writing into `/Users/jakyeamos/research-domain-writing`, created private remote `jakyeamos/research-domain-writing`, pushed `main`, tagged `v0.1.0`, and repointed local Claude/Cursor/Codex skill installs to the standalone repo.
 - 2026-06-27: Added the review-ready Quality Runner design spec for a standalone audit-and-plan engine with CLI and MCP surfaces, shared core package, pluggable adapters, `.quality-runner/` artifacts, and explicit v1 non-execution boundaries.
 - 2026-06-27: Added the Quality Runner implementation plan for a Python-first standalone package at `/Users/jakyeamos/quality-runner`, covering scaffold, core contracts, discovery, standards, audit planning, CLI, MCP, plugin metadata, quality checks, and AIOS adoption notes.
+- 2026-06-28: Built Quality Runner as the standalone repository `/Users/jakyeamos/quality-runner` with audit-and-plan core contracts, discovery/standards/capability detection, remediation planning, `.quality-runner/runs/<run-id>/` artifacts, CLI commands, MCP tools, plugin metadata, packaging checks, and explicit v1 non-execution boundaries.
 - 2026-06-28: Added the Codex Session Intelligence loop with enriched Codex JSONL normalization, review-gated `friction_tool`, `workflow_skill`, and `impact_idea` candidates, redacted daily reports, `aios session-intel` CLI commands, and the daily Codex automation `daily-codex-session-intelligence`.
 - 2026-06-28: Added resumable `aios session-intel backfill` mode for historical Codex and Claude sessions, with provider `all`, batch sizing, cursor-based resume, optional reports, and review-gated candidate storage only.
 - 2026-06-28: Ran the first full local Codex/Claude session-intelligence backfill and hardened it into a tier-one workflow by fixing session-intel CLI commit durability, Claude Bash/tool-result normalization, and cross-batch candidate merging; the live DB now has 1,923 cursors, 973 pending candidates, and zero duplicate lane/title groups.
@@ -149,7 +150,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 ## Next Concrete Steps
 
 1. Review the top 50 `session-intel clusters` from the first Codex/Claude backfill and mark cluster members as `approved`, `rejected`, or `observed` before implementing any generated tools.
-2. Execute `docs/superpowers/plans/2026-06-27-quality-runner.md` Task 1 to scaffold `/Users/jakyeamos/quality-runner`.
+2. Decide whether AIOS should add a thin shortcut or adapter for invoking external Quality Runner runs.
 3. Resume linked-repo adoption execution with BidCamp repo-local Phase 151, then continue BidCamp 152-155, EliHealth 09-13, and pre-cr-suite-lsp 04-06.
 
 ## Risks / Blockers
@@ -187,6 +188,12 @@ Focused Codex session intelligence triage checks on 2026-06-28:
 - `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run basedpyright services/session_intelligence_loop.py tests/test_session_intelligence_loop.py` passed.
 - `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run vulture services/session_intelligence_loop.py --min-confidence 70` exited 0.
 - `.venv/bin/python /Users/jakyeamos/AIOS/bin/aios.py session-intel clusters --status pending_review --lane all` returned `clusters=50` with the default limit; `--limit 5 --json` returned 5 of 621 total clusters with compact candidate previews.
+
+Focused Quality Runner standalone checks on 2026-06-28:
+- In `/Users/jakyeamos/quality-runner`, `python3.14 -m pytest -q` passed with 95 tests.
+- In `/Users/jakyeamos/quality-runner`, `uv run --with pytest pytest -q` passed with 95 tests, exercising package build/install behavior.
+- In `/Users/jakyeamos/quality-runner`, `ruff check .`, `ruff format --check .`, `basedpyright`, and `vulture . --min-confidence 70` passed.
+- In `/Users/jakyeamos/quality-runner`, `python3.14 scripts/run_pytest_with_lcov.py` passed with 95 tests, and `pre-cr run --workspace /Users/jakyeamos/quality-runner` exited 0 while reporting no coverage result.
 
 Focused repo gate adoption workflow checks on 2026-06-26:
 - `uv run pytest tests/test_repo_gate_adoption.py tests/test_workflow_orchestration.py tests/test_task_routing.py tests/test_aios_cli.py -q` passed with 163 tests.
