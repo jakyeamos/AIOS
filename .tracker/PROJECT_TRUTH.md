@@ -109,6 +109,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-06-28: Completed the first conservative top-cluster triage pass in `aios.db`: approved 7 representative candidates, superseded 321 redundant exact-command variants, observed 18 broad/low-certainty items, rejected 11 project-specific one-offs, and left 616 friction candidates pending review.
 - 2026-06-28: Completed the remaining session-intelligence candidate triage. The candidate table now has zero pending rows: 10 approved candidate rows, 783 superseded variants, 47 observed items, and 134 rejected one-offs; a backup was written to `data/aios.db.pre-session-intel-full-triage-20260628`.
 - 2026-06-28: Promoted the 10 approved session-intelligence representatives into six review-gated deterministic tool surfaces: `aios repo inspect`, `aios quality ladder`, `aios ship guard`, `aios service probe`, `aios workflow-skill codex`, and `aios planning state`.
+- 2026-06-28: Strengthened the user commit quality gate so low-value static UI copy tests require documented behavior value, and long Pre-CR runs emit visible heartbeat/start/finish progress.
 - 2026-04-08: Added ops/maintenance utilities, retrieval rule and provenance tooling, enriched hook event capture, AI history import tooling
 - 2026-04-08: Design specs added for Code Topology Service (CTS), AIOS Command UI, and prompt library
 - 2026-04-09: Ruff 0.15.10 auto-fixed 181 issues; shellcheck clean on `auto_ingest.sh` and `health_check.sh`; BasedPyright and Vulture installed
