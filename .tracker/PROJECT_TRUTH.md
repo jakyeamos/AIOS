@@ -117,6 +117,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-06-28: Expanded AIOS governed workflow surfaces with planning-governance routing, repo-gate adoption planning/document-quality CLI paths, expert-rubric aliases, personalized humanizer CLI commands, linked-repo adoption certification, and richer Codex shadow evidence reporting.
 - 2026-06-28: Committed Phase 25 planning-governance closeout summaries and Phase 29 linked-repo adoption remediation planning artifacts, including the refreshed roadmap/state files.
 - 2026-06-28: Refreshed the tracked compiled AIOS context packet and receipt snapshots after the workflow, standards, and planning surface changes.
+- 2026-06-28: Refreshed tracked control-plane invocation, TMCP packet, workflow-report, and session-effectiveness evidence artifacts after the governed workflow surface changes.
 - 2026-04-08: Added ops/maintenance utilities, retrieval rule and provenance tooling, enriched hook event capture, AI history import tooling
 - 2026-04-08: Design specs added for Code Topology Service (CTS), AIOS Command UI, and prompt library
 - 2026-04-09: Ruff 0.15.10 auto-fixed 181 issues; shellcheck clean on `auto_ingest.sh` and `health_check.sh`; BasedPyright and Vulture installed
