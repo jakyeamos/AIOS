@@ -2,6 +2,9 @@
   "name": "aios",
   "version": "0.1.0",
   "private": true,
+  "dependencies": {
+    "context-compiler-contract": "file:/Users/jakyeamos/context-compiler-contract"
+  },
   "scripts": {
     "context:compile": "node tools/context-compile.mjs",
     "context:validate": "node tools/context-compile.mjs --validate",

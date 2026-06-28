@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 
+import { validateCompiledContextResult } from "context-compiler-contract";
 import {
   compileContext,
   parseContextFile,
@@ -239,7 +240,9 @@ test("emits packet-compatible retrieval trace and contract metadata", async () =
     contextRoot,
     write: false,
   });
+  const contract = validateCompiledContextResult(result);
 
+  assert.equal(contract.passed, true, contract.issues.join("\n"));
   assert.equal(result.packet_contract.route_compatible, true);
   assert.equal(result.packet_contract.selection_policy, "deterministic-context-compiler");
   assert(result.packet_contract.loaded_count >= 1);

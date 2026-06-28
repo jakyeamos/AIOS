@@ -1,0 +1,22 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      context-compiler-contract:
+        specifier: file:/Users/jakyeamos/context-compiler-contract
+        version: file:../context-compiler-contract
+
+packages:
+
+  context-compiler-contract@file:../context-compiler-contract:
+    resolution: {directory: ../context-compiler-contract, type: directory}
+
+snapshots:
+
+  context-compiler-contract@file:../context-compiler-contract: {}
