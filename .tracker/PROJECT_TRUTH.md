@@ -111,6 +111,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-06-28: Promoted the 10 approved session-intelligence representatives into six review-gated deterministic tool surfaces: `aios repo inspect`, `aios quality ladder`, `aios ship guard`, `aios service probe`, `aios workflow-skill codex`, and `aios planning state`.
 - 2026-06-28: Strengthened the user commit quality gate so low-value static UI copy tests require documented behavior value, and long Pre-CR runs emit visible heartbeat/start/finish progress.
 - 2026-06-28: Wired AIOS context compiler tests to consume the standalone `context-compiler-contract` package through the project `package.json` and `pnpm-lock.yaml`.
+- 2026-06-28: Wired AIOS Python dependency metadata to consume the extracted `quality-evidence-contract` and `repo-quality-certifier` packages while recording dev quality tools in `uv.lock`.
 - 2026-04-08: Added ops/maintenance utilities, retrieval rule and provenance tooling, enriched hook event capture, AI history import tooling
 - 2026-04-08: Design specs added for Code Topology Service (CTS), AIOS Command UI, and prompt library
 - 2026-04-09: Ruff 0.15.10 auto-fixed 181 issues; shellcheck clean on `auto_ingest.sh` and `health_check.sh`; BasedPyright and Vulture installed
