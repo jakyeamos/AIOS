@@ -3836,6 +3836,129 @@ def test_tmcp_review_plan_rejects_malformed_evidence_json(tmp_path: Path, capsys
     assert "valid JSON" in payload["error"]["message"]
 
 
+def test_route_preview_json_returns_ready_route_without_creating_run(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    db_path = tmp_path / "aios.db"
+    _seed_db(db_path)
+
+    route_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "route",
+            "Fix the AIOS routing bug",
+            "--project",
+            "p1",
+        ]
+    )
+
+    assert route_exit == EXIT_OK
+    output = json.loads(capsys.readouterr().out)
+    assert output["ok"] is True
+    assert output["command"] == "route"
+    data = output["data"]
+    assert data["status"] == "ready"
+    assert data["selected_project"]["id"] == "p1"
+    assert data["selected_workflow"]["workflow_key"] == "implementation-delivery"
+    assert data["start_work_command"] == [
+        "aios",
+        "start-work",
+        "Fix the AIOS routing bug",
+        "--project",
+        "p1",
+    ]
+
+    conn = sqlite3.connect(db_path)
+    run_count = conn.execute("SELECT COUNT(*) FROM orchestration_runs").fetchone()[0]
+    packet_count = conn.execute("SELECT COUNT(*) FROM briefing_packets").fetchone()[0]
+    invocation_count = conn.execute("SELECT COUNT(*) FROM orchestration_invocations").fetchone()[0]
+    conn.close()
+    assert run_count == 1
+    assert packet_count == 0
+    assert invocation_count == 0
+
+
+def test_route_preview_blocks_ambiguous_project_without_creating_run(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    db_path = tmp_path / "aios.db"
+    _seed_db(db_path)
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        """
+        INSERT INTO projects (id, name, repo_path, obsidian_path, status)
+        VALUES ('p2', 'Soundscape App', '/soundscape-app', '03 Projects/Soundscape App', 'active')
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO projects (id, name, repo_path, obsidian_path, status)
+        VALUES ('p3', 'Soundscape Web', '/soundscape-web', '03 Projects/Soundscape Web', 'active')
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    route_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "route",
+            "Improve Soundscape onboarding and make it launch ready",
+        ]
+    )
+
+    assert route_exit == EXIT_OK
+    output = json.loads(capsys.readouterr().out)
+    data = output["data"]
+    assert data["status"] == "blocked"
+    assert data["blocked_reason"]
+    assert data["next_fix"] == "Pass --project with one of the candidate project ids."
+    assert {candidate["id"] for candidate in data["project_candidates"]} >= {"p2", "p3"}
+
+    conn = sqlite3.connect(db_path)
+    run_count = conn.execute(
+        "SELECT COUNT(*) FROM orchestration_runs WHERE objective = ?",
+        ("Improve Soundscape onboarding and make it launch ready",),
+    ).fetchone()[0]
+    packet_count = conn.execute("SELECT COUNT(*) FROM briefing_packets").fetchone()[0]
+    conn.close()
+    assert run_count == 0
+    assert packet_count == 0
+
+
+def test_route_preview_human_summary_shows_workflow_and_start_command(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    db_path = tmp_path / "aios.db"
+    _seed_db(db_path)
+
+    route_exit = run_cli(
+        [
+            "--db",
+            str(db_path),
+            "route",
+            "Fix the AIOS routing bug",
+            "--project",
+            "AIOS",
+        ]
+    )
+
+    assert route_exit == EXIT_OK
+    output = capsys.readouterr().out
+    assert "status=ready" in output
+    assert "project=AIOS (p1)" in output
+    assert "workflow=implementation-delivery" in output
+    assert "agent=implementation-lead" in output
+    assert "run=aios start-work 'Fix the AIOS routing bug' --project p1" in output
+
+
 def test_start_work_creates_packet_and_links_current_session(tmp_path: Path, capsys) -> None:
     db_path = tmp_path / "aios.db"
     logs_dir = tmp_path / "logs"

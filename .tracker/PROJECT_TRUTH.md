@@ -1,12 +1,12 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, standalone Quality Runner consumption boundary, review-gated session-intelligence tools, and Codex session-ingest meta-learning proposals while broader Ruff and BasedPyright baseline issues remain open.
+summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, read-only workflow route preview, standalone Quality Runner consumption boundary, review-gated session-intelligence tools, and Codex session-ingest meta-learning proposals while broader Ruff and BasedPyright baseline issues remain open.
 healthScore: 73
 statusLabel: needs_attention
-nextStep: Review Codex session meta-learning proposals from the next rollout ingest and decide whether the review CLI should expose accept/reject operations for the proposal JSONL queue.
+nextStep: Use `aios route` in live Codex sessions to validate whether workflow/project/agent recommendations are clear enough before adding richer route explanation or semantic-router affordances.
 blockers:
-  - Full repo Ruff and format baselines are not green: Ruff reports 25 issues and Ruff format reports 163 files needing formatting.
+  - Full repo Ruff and format baselines are not green: Ruff reports 25 issues and Ruff format reports 162 files needing formatting.
   - Full repo BasedPyright is not green: 109 errors and 78 warnings, including the existing `services/aios_cli.py` `run_cli` complexity baseline.
   - `uv run vulture . --min-confidence 70` scans `.venv` and fails on third-party package findings; project-scoped `uv run vulture bin services --min-confidence 70` passes.
 lastUpdated: 2026-06-29
@@ -49,6 +49,8 @@ AIOS also has `repo_gate_adoption_v1`, a narrow audit-and-plan workflow for repo
 Quality Runner now lives in `/Users/jakyeamos/quality-runner` as a standalone audit-and-plan package with CLI and MCP surfaces. AIOS should consume it as an external tool and may provide adapters, standards profiles, or workflow shortcuts, but the standalone package owns the core workflow and `.quality-runner/` artifact contract.
 
 AIOS now has a review-gated Codex/Claude Session Intelligence loop. The loop enriches Codex session normalization with tool calls, commands, cwd, approval friction, errors, and terminal outcomes; stores lane candidates in SQLite; emits redacted Markdown/JSON reports; exposes `aios session-intel` commands; runs daily through the Codex automation `daily-codex-session-intelligence`; and supports resumable historical backfill across Codex and Claude sources.
+
+AIOS now has a read-only workflow router preview surface: `aios route "objective"` resolves the registered project, governed workflow, agent, backend, prompt family, candidate alternatives, and a ready-to-run `aios start-work ...` command without creating orchestration runs, packets, invocations, or sessions. `~/AIOS/bin/route` is a convenience wrapper around the same command.
 
 Repo quality certification now lives in the standalone repository `/Users/jakyeamos/repo-quality-certifier`, with remote `git@github.com:jakyeamos/repo-quality-certifier.git`. That repo owns deterministic repo scanning, gate matrix synthesis, broad and gate-specific rubrics, rollout phase generation, document-quality evaluation, artifact writing, CLI/MCP/plugin surfaces, tests, and its own Pre-CR config. AIOS consumes it through a local path dependency and keeps a thin `services/repo_gate_adoption.py` adapter that injects AIOS TMCP enrichment and preserves existing workflow/CLI imports.
 
@@ -115,6 +117,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-06-28: Integrated `quality-evidence-contract` into success-criteria findings so stage and evaluation findings carry a portable nested `quality_contract` payload alongside legacy fields.
 - 2026-06-28: Added ignore rules for generated AIOS DB backups, session-intelligence reports, `AIOS-backfill/`, and Node dependency folders so local operational artifacts do not enter source commits.
 - 2026-06-29: Extended Codex cron session ingest to emit review-gated meta-learning proposal JSONL records for explicit corrections, repeated tool friction, command suggestions, and candidate skills while preserving normalized Codex messages for downstream proposal extraction.
+- 2026-06-29: Added read-only workflow route preview through `aios route` plus `~/AIOS/bin/route`, with JSON/human output, project-name overrides, blocked-route guidance, native command metadata, docs, and regression coverage proving no run/packet/invocation rows are created.
 - 2026-06-28: Expanded AIOS governed workflow surfaces with planning-governance routing, repo-gate adoption planning/document-quality CLI paths, expert-rubric aliases, personalized humanizer CLI commands, linked-repo adoption certification, and richer Codex shadow evidence reporting.
 - 2026-06-28: Committed Phase 25 planning-governance closeout summaries and Phase 29 linked-repo adoption remediation planning artifacts, including the refreshed roadmap/state files.
 - 2026-06-28: Refreshed the tracked compiled AIOS context packet and receipt snapshots after the workflow, standards, and planning surface changes.
@@ -157,12 +160,12 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 ## Open Problems
 
-1. **Full Ruff baseline is not green** — `uv run ruff check .` failed on 2026-06-26 with 25 issues; touched-file Ruff checks pass for the repo gate adoption workflow.
-2. **Full format baseline is not green** — `uv run ruff format --check .` reported 163 files needing formatting on 2026-06-29; the final diff keeps legacy parser/test formatting minimal instead of reformatting whole files.
+1. **Full Ruff baseline is not green** — `uv run ruff check .` failed on 2026-06-29 with 25 existing issues; touched-file Ruff checks pass for the workflow route preview.
+2. **Full format baseline is not green** — `uv run ruff format --check .` reported 162 files needing formatting on 2026-06-29; the final diff keeps legacy parser/test formatting minimal instead of reformatting whole files.
 3. **Full BasedPyright baseline is not green** — `uv run basedpyright` failed on 2026-06-29 with 109 errors and 78 warnings, including existing `run_cli` complexity.
 ## Next Concrete Steps
 
-1. Use `aios repo inspect` and `aios quality ladder` in live Codex sessions, then decide whether they should ingest CTS/context evidence or remain lightweight deterministic helpers.
+1. Use `aios route` in live Codex sessions, then decide whether route previews need richer explanation, wrapper global-flag handling, or semantic-router integration.
 2. Decide whether AIOS should add a thin shortcut or adapter for invoking external Quality Runner runs.
 3. Resume linked-repo adoption execution with BidCamp repo-local Phase 151, then continue BidCamp 152-155, EliHealth 09-13, and pre-cr-suite-lsp 04-06.
 
@@ -176,11 +179,26 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 | Step | Status | Notes |
 |------|--------|-------|
-| Lint (ruff) | Fail | `uv run ruff check .` failed on 2026-06-29 with 25 existing repo issues. Focused Codex meta-learning ingest Ruff checks pass. |
-| Type check (basedpyright) | Fail | `uv run basedpyright` failed on 2026-06-29 with 109 errors and 78 warnings, including existing `run_cli` complexity. Focused Codex meta-learning ingest production-file BasedPyright checks pass. |
+| Lint (ruff) | Fail | `uv run ruff check .` failed on 2026-06-29 with 25 existing repo issues. Focused workflow route preview Ruff checks pass. |
+| Type check (basedpyright) | Fail | `uv run basedpyright` failed on 2026-06-29 with 109 errors and 78 warnings, including existing `run_cli` complexity. Focused route preview BasedPyright still hits the existing `run_cli` complexity and `SimpleNamespace` test baseline. |
 | Dead code (vulture) | Warning | `uv run vulture . --min-confidence 70` failed on 2026-06-28 because `.venv` third-party packages were scanned; `uv run vulture bin services --min-confidence 70` passed. |
-| Tests | Pass | `uv run pytest -q` passed on 2026-06-29 with 1056 tests. |
-| Structure | Fail | `uv run ruff format --check .` reported 163 files needing formatting on 2026-06-29. The final Codex meta-learning ingest diff avoids broad legacy file formatting churn. |
+| Tests | Pass | `uv run pytest -q` passed on 2026-06-29 with 1059 tests. |
+| Structure | Fail | `uv run ruff format --check .` reported 162 files needing formatting on 2026-06-29. The final workflow route preview diff avoids broad legacy file formatting churn. |
+
+Focused workflow route preview checks on 2026-06-29:
+- `uv run pytest -q tests/test_task_routing.py tests/test_aios_cli.py tests/test_native_commands.py` passed with 120 tests.
+- `uv run ruff check services/aios_cli.py tests/test_aios_cli.py tests/test_native_commands.py bin/route` passed.
+- `uv run ruff format --check services/aios_cli.py tests/test_aios_cli.py tests/test_native_commands.py bin/route` passed.
+- `uv run basedpyright services/aios_cli.py tests/test_aios_cli.py` failed with existing baseline issues: `services/aios_cli.py` `run_cli` complexity and `tests/test_aios_cli.py` `SimpleNamespace` argument typing.
+- `uv run vulture bin services --min-confidence 70` exited 0.
+- `./bin/route "Fix the AIOS routing bug" --project AIOS` returned a ready route and start-work command without creating a run.
+
+Full repo workflow route preview checks on 2026-06-29:
+- `uv run pytest -q` passed with 1059 tests.
+- `uv run ruff check .` failed with 25 existing repo issues.
+- `uv run ruff format --check .` failed with 162 files needing formatting.
+- `uv run basedpyright` failed with 109 errors and 78 warnings.
+- `uv run vulture bin services --min-confidence 70` exited 0.
 
 Focused Codex meta-learning ingest checks on 2026-06-29:
 - `uv run pytest -q tests/test_meta_learning_signals.py tests/test_meta_learning_router.py tests/test_meta_learning_session_ingest.py tests/test_import_ai_history.py` passed with 70 tests.

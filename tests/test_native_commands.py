@@ -356,10 +356,13 @@ def test_cleanup_and_prototype_cli_json(tmp_path: Path, capsys) -> None:
 
 
 def test_native_command_registry_covers_schema_and_safety_contracts() -> None:
-    registry = json.loads((ROOT / "config" / "commands" / "native-workflow-commands.json").read_text())
+    registry = json.loads(
+        (ROOT / "config" / "commands" / "native-workflow-commands.json").read_text()
+    )
     commands = {command["id"]: command for command in registry["commands"]}
 
     assert set(commands) == {
+        "route",
         "zoom_out",
         "handoff",
         "review_squad",
@@ -381,6 +384,7 @@ def test_native_workflow_command_docs_cover_required_workflows() -> None:
     docs = (ROOT / "docs" / "aios" / "native-workflow-commands.md").read_text()
 
     for phrase in [
+        "aios route",
         "aios zoom-out",
         "aios handoff",
         "aios review squad",

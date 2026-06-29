@@ -11,6 +11,41 @@
   ],
   "commands": [
     {
+      "id": "route",
+      "invocation": "aios route",
+      "implementation_order": 0,
+      "safety_class": "read_only",
+      "write_behavior": "none",
+      "second_brain_usage": "disabled_by_default",
+      "subagent_or_reviewer_lanes": [],
+      "input_schema": {
+        "required": ["objective"],
+        "optional": ["project", "cwd", "surface"]
+      },
+      "output_schema": {
+        "required": [
+          "status",
+          "objective",
+          "selected_project",
+          "selected_workflow",
+          "recommended_agent",
+          "backend_recommendation",
+          "prompt_recommendation",
+          "start_work_command"
+        ]
+      },
+      "validation_gates": ["no_run_created", "route_status_reported"],
+      "logging_metadata": [
+        "command_id",
+        "objective",
+        "project",
+        "workflow_key",
+        "route_status",
+        "outcome"
+      ],
+      "rollback": "not_applicable"
+    },
+    {
       "id": "zoom_out",
       "invocation": "aios zoom-out",
       "implementation_order": 1,

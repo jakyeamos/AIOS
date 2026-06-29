@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import shlex
 import sqlite3
 import subprocess
 import sys
@@ -601,6 +602,93 @@ def _gate_adoption_doc_quality_payload(args: argparse.Namespace) -> dict[str, An
         "artifact_paths": merged_artifact_paths,
         "gate_summary": adoption_payload["gate_summary"],
         "doc_quality": quality_report,
+    }
+
+
+def _resolve_route_project_override(
+    conn: sqlite3.Connection, raw_project: str | None
+) -> str | None:
+    if raw_project is None:
+        return None
+    raw_project = raw_project.strip()
+    if not raw_project:
+        return None
+    if not _table_exists(conn, "projects"):
+        return raw_project
+    rows = conn.execute(
+        """
+        SELECT id, name
+        FROM projects
+        WHERE status = 'active'
+        ORDER BY name
+        """
+    ).fetchall()
+    normalized = raw_project.lower()
+    for row in rows:
+        if normalized in {str(row["id"]).lower(), str(row["name"]).lower()}:
+            return str(row["id"])
+    return raw_project
+
+
+def _route_next_fix(route_payload: dict[str, Any]) -> str | None:
+    if route_payload.get("status") == "ready":
+        return None
+    project = route_payload.get("project") if isinstance(route_payload.get("project"), dict) else {}
+    candidates = project.get("candidates") if isinstance(project, dict) else []
+    if isinstance(candidates, list) and candidates:
+        return "Pass --project with one of the candidate project ids."
+    if isinstance(project, dict) and project.get("outcome") == "unsupported":
+        return "Register the project in AIOS or run from a registered project workspace."
+    return "Refine the objective so a governed workflow can be selected."
+
+
+def _route_preview_payload(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    explicit_project_id = _resolve_route_project_override(conn, args.project)
+    cwd = str(Path(args.cwd).expanduser().resolve()) if args.cwd else None
+    route = route_objective(
+        conn,
+        objective=args.objective,
+        surface=args.surface,
+        cwd=cwd,
+        explicit_project_id=explicit_project_id,
+    )
+    route_payload = route.to_json()
+    project_payload = route_payload["project"]
+    project_candidates = project_payload["candidates"]
+    selected_project_id = project_payload["selected_project_id"]
+    selected_project = next(
+        (candidate for candidate in project_candidates if candidate["id"] == selected_project_id),
+        None,
+    )
+    start_work_command = None
+    if route_payload["status"] == "ready" and selected_project_id:
+        start_work_command = [
+            "aios",
+            "start-work",
+            args.objective,
+            "--project",
+            selected_project_id,
+        ]
+    return {
+        "schema": "aios-route-preview-v0.1",
+        "status": route_payload["status"],
+        "objective": args.objective,
+        "surface": args.surface,
+        "cwd": cwd,
+        "selected_project": selected_project,
+        "selected_workflow": route_payload["selected_workflow"],
+        "recommended_agent": route_payload["agent_recommendation"],
+        "backend_recommendation": route_payload["backend_recommendation"],
+        "prompt_recommendation": route_payload["prompt_recommendation"],
+        "task_family": route_payload["task_family"],
+        "blocked_reason": route_payload["blocked_reason"],
+        "next_fix": _route_next_fix(route_payload),
+        "start_work_command": start_work_command,
+        "project_candidates": project_candidates,
+        "workflow_candidates": route_payload["workflow_candidates"],
+        "workflow_alternatives": route_payload["workflow_alternatives"],
+        "skill_recommendations": route_payload["skill_recommendations"],
+        "route": route_payload,
     }
 
 
@@ -5293,6 +5381,39 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "meta-analyze-session":
         print(f"signals={data['signal_count']} input={data['input_path']}")
         return
+    if command == "route":
+        if data["status"] == "ready":
+            project = data["selected_project"] or {}
+            workflow = data["selected_workflow"] or {}
+            agent = data["recommended_agent"] or {}
+            backend = data["backend_recommendation"] or {}
+            prompt = data["prompt_recommendation"] or {}
+            workflow_label = workflow.get("workflow_key")
+            if workflow.get("name"):
+                workflow_label = f"{workflow_label} ({workflow['name']})"
+            print("status=ready")
+            print(f"project={project.get('name')} ({project.get('id')})")
+            print(
+                f"workflow={workflow_label} "
+                f"family={workflow.get('workflow_family') or data.get('task_family')}"
+            )
+            print(f"agent={agent.get('agent_key')}")
+            print(
+                f"backend={backend.get('selected_backend_key')} "
+                f"surface={backend.get('selected_surface') or data.get('surface')}"
+            )
+            print(f"prompt={prompt.get('prompt_family')}")
+            print(f"run={shlex.join(data['start_work_command'])}")
+            return
+        print("status=blocked")
+        print(f"reason={data['blocked_reason']}")
+        print(f"next={data['next_fix']}")
+        for candidate in data["project_candidates"]:
+            print(
+                f"candidate={candidate['id']} {candidate['name']} "
+                f"score={candidate['score']} match={candidate['match_kind']}"
+            )
+        return
     if command in {
         "zoom-out",
         "handoff",
@@ -5423,6 +5544,7 @@ def _command_requires_db(args: argparse.Namespace) -> bool:
         "workflow-learning-audit",
         "retrospectives",
         "model-selection",
+        "route",
         "evidence",
         "verifier",
         "learning-analyze",
@@ -6630,6 +6752,16 @@ def create_parser() -> argparse.ArgumentParser:
         help="Report readiness for active backend-neutral harness enforcement",
     )
 
+    route_parser = subparsers.add_parser(
+        "route", help="Preview the governed AIOS workflow route without creating a run"
+    )
+    route_parser.add_argument("objective", help="Work objective to route through AIOS")
+    route_parser.add_argument("--project", default=None, help="Project id or name")
+    route_parser.add_argument(
+        "--cwd", default=None, help="Workspace path used for project inference"
+    )
+    route_parser.add_argument("--surface", default="codex", help="Preferred invocation surface")
+
     start_work = subparsers.add_parser(
         "start-work", help="Create a routed AIOS run packet and session handshake"
     )
@@ -7370,6 +7502,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             data = _tmcp_review_plan_payload(args)
         elif args.command == "harness-active-readiness":
             data = active_readiness()
+        elif args.command == "route":
+            assert conn is not None
+            data = _route_preview_payload(conn, args)
         elif args.command == "start-work":
             assert conn is not None
             data = _start_work_payload(
