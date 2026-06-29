@@ -10,6 +10,7 @@ Marks files in processed_files so each rollout is imported exactly once.
 Run via cron: 0 * * * * python3 ~/AIOS/bin/cron-ingest-codex.py >> ~/AIOS/logs/cron.log 2>&1
 Or hourly:    0 * * * * ...
 """
+
 import json
 import sqlite3
 import sys
@@ -17,13 +18,17 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
 import import_ai_history as ih  # noqa: E402
 
-DB          = Path.home() / "AIOS/data/aios.db"
+from services.meta_learning_session_ingest import propose_session_meta_learning  # noqa: E402
+
+DB = Path.home() / "AIOS/data/aios.db"
 CODEX_SESSIONS = Path.home() / ".codex/sessions"
-LOG         = Path.home() / "AIOS/logs/cron.log"
+LOG = Path.home() / "AIOS/logs/cron.log"
 STAGING_DIR = Path.home() / "AIOS/staging/ai-history/codex"
+META_LEARNING_PROPOSAL_DIR = Path.home() / "AIOS/data/meta-learning/proposals"
 
 # Minimum quality bar — skip very short/empty sessions
 MIN_WORDS = 50
@@ -65,7 +70,7 @@ def _find_rollouts() -> list[Path]:
 
 def _total_words(conversation: dict) -> int:
     return sum(
-        len((m.get("content") or "").split())
+        len((m.get("text") or m.get("content") or "").split())
         for m in conversation.get("messages", [])
     )
 
@@ -94,9 +99,7 @@ def _ingest_rollout(
     conv_id = conversation.get("id") or str(uuid.uuid4())
 
     # Check for duplicate by id
-    existing = conn.execute(
-        "SELECT id FROM ai_history_imports WHERE id=?", (conv_id,)
-    ).fetchone()
+    existing = conn.execute("SELECT id FROM ai_history_imports WHERE id=?", (conv_id,)).fetchone()
     if existing:
         return False
 
@@ -104,7 +107,7 @@ def _ingest_rollout(
     STAGING_DIR.mkdir(parents=True, exist_ok=True)
     md = ih.render_markdown(conversation)
     slug = ih.title_to_slug(conversation.get("title") or "codex-session")
-    suffix = ih.make_file_suffix(conversation)
+    suffix = ih.make_file_suffix(str(conversation.get("source_id") or ""), conv_id)
     out_path = STAGING_DIR / f"{slug}-{suffix}.md"
     out_path.write_text(md)
 
@@ -133,6 +136,7 @@ def _ingest_rollout(
 
     # Extract tool-error patterns from Codex session (commands that errored)
     _extract_codex_patterns(conn, conversation)
+    _emit_meta_learning_proposals(conversation)
 
     return True
 
@@ -143,6 +147,7 @@ def _extract_codex_patterns(conn: sqlite3.Connection, conversation: dict) -> Non
     them as observation-class patterns for later human review.
     """
     import re
+
     ERROR_RE = re.compile(
         r"(Error:|error:|Traceback|TypeError|ValueError|SyntaxError|"
         r"FAILED|command not found|No such file|npm ERR!)",
@@ -174,6 +179,25 @@ def _extract_codex_patterns(conn: sqlite3.Connection, conversation: dict) -> Non
                             (str(uuid.uuid4()), title, title, _now(), _now()),
                         )
                     break  # one pattern per message
+
+
+def _emit_meta_learning_proposals(conversation: dict) -> None:
+    """
+    Convert normalized Codex session evidence into governed meta-learning
+    proposals. This is append-only and never mutates rules, skills, prompts, or
+    vault notes directly.
+    """
+    result = propose_session_meta_learning(
+        conversation,
+        proposal_root=META_LEARNING_PROPOSAL_DIR,
+        filename="codex-session-proposals.jsonl",
+    )
+    if result.proposal_count:
+        _log(
+            "  meta-learning proposals: "
+            f"{result.proposal_count} from {result.accepted_signal_count}/"
+            f"{result.signal_count} accepted signals -> {result.proposal_path}"
+        )
 
 
 def main() -> None:

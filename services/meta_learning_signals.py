@@ -17,6 +17,7 @@ SignalType = Literal[
     "context_miss",
     "model_mismatch",
     "contradiction",
+    "candidate_skill",
 ]
 RiskLevel = Literal["low", "medium", "high"]
 
@@ -62,6 +63,26 @@ MODEL_MISMATCH_PATTERNS = (
     "should have used a stronger model",
     "overkill model",
 )
+TOOL_FRICTION_PATTERNS = (
+    "error:",
+    "traceback",
+    "typeerror",
+    "valueerror",
+    "syntaxerror",
+    "failed",
+    "command not found",
+    "no such file",
+    "npm err!",
+    "retry",
+    "blocked",
+)
+SKILL_CANDIDATE_PATTERNS = (
+    "candidate skill",
+    "skill candidate",
+    "extract a skill",
+    "turn this into a skill",
+    "reusable skill",
+)
 
 
 @dataclass(frozen=True)
@@ -91,7 +112,9 @@ class _Event:
     metadata: Mapping[str, Any]
 
 
-def extract_meta_learning_signals(raw: Mapping[str, Any] | Sequence[Mapping[str, Any]]) -> list[MetaLearningSignal]:
+def extract_meta_learning_signals(
+    raw: Mapping[str, Any] | Sequence[Mapping[str, Any]],
+) -> list[MetaLearningSignal]:
     sessions = _normalize_sessions(raw)
     events: list[_Event] = []
     for session in sessions:
@@ -106,6 +129,7 @@ def extract_meta_learning_signals(raw: Mapping[str, Any] | Sequence[Mapping[str,
     signals.extend(_model_mismatch_signals(events))
     signals.extend(_scope_restatement_signals(events))
     signals.extend(_contradiction_signals(events))
+    signals.extend(_candidate_skill_signals(events))
     return sorted(signals, key=lambda signal: signal.signal_id)
 
 
@@ -140,7 +164,9 @@ def _events_from_session(session: Mapping[str, Any]) -> list[_Event]:
                 metadata={"index": str(index), **{str(k): str(v) for k, v in message.items()}},
             )
         )
-    for index, command in enumerate(_string_list(session.get("commands") or session.get("commands_run"))):
+    for index, command in enumerate(
+        _string_list(session.get("commands") or session.get("commands_run"))
+    ):
         events.append(
             _Event(
                 session_id=session_id,
@@ -151,7 +177,9 @@ def _events_from_session(session: Mapping[str, Any]) -> list[_Event]:
                 metadata={"index": str(index), "command": command},
             )
         )
-    for index, item in enumerate(_list_of_mappings(session.get("tool_events") or session.get("tool_calls"))):
+    for index, item in enumerate(
+        _list_of_mappings(session.get("tool_events") or session.get("tool_calls"))
+    ):
         text = _text_from_mapping(item) or str(item.get("command") or item.get("tool") or "")
         if not text:
             continue
@@ -187,6 +215,17 @@ def _events_from_session(session: Mapping[str, Any]) -> list[_Event]:
                 text=text,
                 timestamp=_optional_str(item.get("timestamp") or item.get("created_at")),
                 metadata={"index": str(index), **{str(k): str(v) for k, v in item.items()}},
+            )
+        )
+    for index, skill in enumerate(_string_list(session.get("candidate_skills_to_extract"))):
+        events.append(
+            _Event(
+                session_id=session_id,
+                kind="candidate_skill",
+                summary=skill,
+                text=skill,
+                timestamp=None,
+                metadata={"index": str(index), "candidate_skill": skill},
             )
         )
     return events
@@ -232,17 +271,21 @@ def _approval_signals(events: list[_Event]) -> list[MetaLearningSignal]:
         if event.kind.startswith("message:user")
         and any(pattern in event.text.lower() for pattern in APPROVAL_PATTERNS)
     ]
-    return [
-        _build_signal(
-            "approval",
-            "Repeated approval or acceptance language appeared in the session trace.",
-            approvals,
-            ["approval language observed", *_recurrence_points(approvals)],
-            "observe_only",
-            "low",
-            stable_key="approval",
-        )
-    ] if approvals else []
+    return (
+        [
+            _build_signal(
+                "approval",
+                "Repeated approval or acceptance language appeared in the session trace.",
+                approvals,
+                ["approval language observed", *_recurrence_points(approvals)],
+                "observe_only",
+                "low",
+                stable_key="approval",
+            )
+        ]
+        if approvals
+        else []
+    )
 
 
 def _command_repetition_signals(events: list[_Event]) -> list[MetaLearningSignal]:
@@ -265,8 +308,12 @@ def _tool_friction_signals(events: list[_Event]) -> list[MetaLearningSignal]:
     friction = [
         event
         for event in events
-        if "tool" in event.kind
-        and any(token in _event_blob(event) for token in ("failed", "error", "retry", "blocked"))
+        if (
+            "tool" in event.kind
+            or event.kind.startswith("message:assistant")
+            or event.kind == "command"
+        )
+        and any(token in _event_blob(event) for token in TOOL_FRICTION_PATTERNS)
     ]
     grouped = _group_by_summary(friction)
     return [
@@ -390,6 +437,27 @@ def _contradiction_signals(events: list[_Event]) -> list[MetaLearningSignal]:
     return signals
 
 
+def _candidate_skill_signals(events: list[_Event]) -> list[MetaLearningSignal]:
+    matched = [
+        event
+        for event in events
+        if event.kind == "candidate_skill" or _matches_any(event.text, SKILL_CANDIDATE_PATTERNS)
+    ]
+    grouped = _group_by_summary(matched)
+    return [
+        _build_signal(
+            "candidate_skill",
+            f"Candidate skill: {group[0].summary}",
+            group,
+            ["candidate skill evidence", *_recurrence_points(group)],
+            "skill_or_agent_suggestion",
+            "medium",
+            stable_key=f"skill:{key}",
+        )
+        for key, group in grouped.items()
+    ]
+
+
 def _build_signal(
     signal_type: SignalType,
     summary: str,
@@ -463,7 +531,9 @@ def _target_layer_for_correction(text: str) -> str:
 
 def _risk_for_text(text: str) -> RiskLevel:
     lowered = text.lower()
-    if any(token in lowered for token in ("secret", "credential", "deploy", "delete", "destructive")):
+    if any(
+        token in lowered for token in ("secret", "credential", "deploy", "delete", "destructive")
+    ):
         return "high"
     if any(token in lowered for token in ("always", "never", "global", "agent rule")):
         return "medium"
@@ -473,7 +543,10 @@ def _risk_for_text(text: str) -> RiskLevel:
 def _recurrence_points(events: list[_Event]) -> list[str]:
     if len(events) <= 1:
         return []
-    return [f"frequency={len(events)}", f"source_sessions={len({event.session_id for event in events})}"]
+    return [
+        f"frequency={len(events)}",
+        f"source_sessions={len({event.session_id for event in events})}",
+    ]
 
 
 def _group_repeated(events: list[_Event], *, kind: str) -> dict[str, list[_Event]]:

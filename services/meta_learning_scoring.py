@@ -178,7 +178,11 @@ def _base_score(signal: MetaLearningSignal) -> tuple[int, list[str]]:
     if signal.type == "command_repetition":
         return 3, ["repeated manual command +3"]
     if signal.type == "tool_friction":
+        if signal.frequency >= 2 or len(signal.source_sessions) >= 2:
+            return 5, ["repeated tool loop/failure +5"]
         return 3, ["repeated tool loop/failure +3"]
+    if signal.type == "candidate_skill":
+        return 4, ["candidate skill evidence +4"]
     if signal.type == "model_mismatch":
         return 3, ["model mismatch +3"]
     if signal.type == "context_miss":
@@ -237,7 +241,14 @@ def _is_specific(signal: MetaLearningSignal, text: str) -> bool:
 def _has_future_value(signal: MetaLearningSignal, text: str) -> bool:
     if signal.frequency > 1 or len(signal.source_sessions) > 1:
         return True
-    if signal.type in {"explicit_correction", "command_repetition", "context_miss", "model_mismatch"}:
+    if signal.type in {
+        "explicit_correction",
+        "command_repetition",
+        "context_miss",
+        "model_mismatch",
+        "tool_friction",
+        "candidate_skill",
+    }:
         return _matches_any(
             text,
             (
@@ -249,6 +260,8 @@ def _has_future_value(signal: MetaLearningSignal, text: str) -> bool:
                 "command",
                 "model",
                 "context",
+                "tool",
+                "skill",
             ),
         )
     return False

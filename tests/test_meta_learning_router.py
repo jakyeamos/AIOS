@@ -27,8 +27,7 @@ def _score(
         signal_id=f"sig-{signal_type}-{target}",
         type=signal_type,  # type: ignore[arg-type]
         summary=summary,
-        evidence=evidence
-        or [{"session_id": "s1", "kind": "message:user", "summary": summary}],
+        evidence=evidence or [{"session_id": "s1", "kind": "message:user", "summary": summary}],
         source_sessions=sessions or ["s1"],
         frequency=frequency,
         recency="2026-06-23T00:00:00Z",
@@ -57,8 +56,18 @@ def test_multi_project_evidence_can_route_to_global_review() -> None:
             frequency=2,
             sessions=["s1", "s2"],
             evidence=[
-                {"session_id": "s1", "kind": "message:user", "summary": "Always use pointers", "project": "AIOS"},
-                {"session_id": "s2", "kind": "message:user", "summary": "Always use pointers", "project": "BidCamp"},
+                {
+                    "session_id": "s1",
+                    "kind": "message:user",
+                    "summary": "Always use pointers",
+                    "project": "AIOS",
+                },
+                {
+                    "session_id": "s2",
+                    "kind": "message:user",
+                    "summary": "Always use pointers",
+                    "project": "BidCamp",
+                },
             ],
         )
     )
@@ -85,6 +94,19 @@ def test_command_and_skill_routes_use_recommended_target_layer() -> None:
 
     assert command.target_layer == "command"
     assert skill.target_layer == "skill"
+
+
+def test_candidate_skill_routes_to_skill_review() -> None:
+    route = route_scored_signal(
+        _score(
+            signal_type="candidate_skill",
+            summary="Candidate skill: Codex rollout review loop",
+            target="skill_or_agent_suggestion",
+        )
+    )
+
+    assert route.target_layer == "skill"
+    assert route.requires_manual_review
 
 
 def test_context_miss_routes_to_eval_when_confident() -> None:

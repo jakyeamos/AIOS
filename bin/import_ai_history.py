@@ -502,6 +502,7 @@ def parse_codex_conversation(raw: dict, batch_id: str) -> dict:
         "quality": quality,
         "summary": summary or "No summary available.",
         "key_exchanges": key_exchanges,
+        "messages": messages,
         "exchange_count": len(exchanges),
     }
 
