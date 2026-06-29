@@ -1,15 +1,15 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, standalone Quality Runner consumption boundary, a fully triaged Codex/Claude session-intelligence backlog, and six review-gated session-intelligence tool surfaces while broader Ruff and BasedPyright baseline issues remain open.
+summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, standalone Quality Runner consumption boundary, review-gated session-intelligence tools, and Codex session-ingest meta-learning proposals while broader Ruff and BasedPyright baseline issues remain open.
 healthScore: 73
 statusLabel: needs_attention
-nextStep: Use the new review-gated session-intelligence tool surfaces in live Codex sessions and decide whether `aios repo inspect` should absorb more CTS/context evidence.
+nextStep: Review Codex session meta-learning proposals from the next rollout ingest and decide whether the review CLI should expose accept/reject operations for the proposal JSONL queue.
 blockers:
-  - Full repo Ruff and format baselines are not green: Ruff reports 25 issues and Ruff format reports 169 files needing formatting.
-  - Full repo BasedPyright is not green: 110 errors and 78 warnings, including the existing `services/aios_cli.py` `run_cli` complexity baseline.
+  - Full repo Ruff and format baselines are not green: Ruff reports 25 issues and Ruff format reports 163 files needing formatting.
+  - Full repo BasedPyright is not green: 109 errors and 78 warnings, including the existing `services/aios_cli.py` `run_cli` complexity baseline.
   - `uv run vulture . --min-confidence 70` scans `.venv` and fails on third-party package findings; project-scoped `uv run vulture bin services --min-confidence 70` passes.
-lastUpdated: 2026-06-28
+lastUpdated: 2026-06-29
 tags: [infra, ai-os, hooks, automation]
 areas: [engineering]
 goals: []
@@ -114,6 +114,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-06-28: Wired AIOS Python dependency metadata to consume the extracted `quality-evidence-contract` and `repo-quality-certifier` packages while recording dev quality tools in `uv.lock`.
 - 2026-06-28: Integrated `quality-evidence-contract` into success-criteria findings so stage and evaluation findings carry a portable nested `quality_contract` payload alongside legacy fields.
 - 2026-06-28: Added ignore rules for generated AIOS DB backups, session-intelligence reports, `AIOS-backfill/`, and Node dependency folders so local operational artifacts do not enter source commits.
+- 2026-06-29: Extended Codex cron session ingest to emit review-gated meta-learning proposal JSONL records for explicit corrections, repeated tool friction, command suggestions, and candidate skills while preserving normalized Codex messages for downstream proposal extraction.
 - 2026-06-28: Expanded AIOS governed workflow surfaces with planning-governance routing, repo-gate adoption planning/document-quality CLI paths, expert-rubric aliases, personalized humanizer CLI commands, linked-repo adoption certification, and richer Codex shadow evidence reporting.
 - 2026-06-28: Committed Phase 25 planning-governance closeout summaries and Phase 29 linked-repo adoption remediation planning artifacts, including the refreshed roadmap/state files.
 - 2026-06-28: Refreshed the tracked compiled AIOS context packet and receipt snapshots after the workflow, standards, and planning surface changes.
@@ -157,8 +158,8 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 ## Open Problems
 
 1. **Full Ruff baseline is not green** — `uv run ruff check .` failed on 2026-06-26 with 25 issues; touched-file Ruff checks pass for the repo gate adoption workflow.
-2. **Full format baseline is not green** — `uv run ruff format --check .` reported 172 files needing formatting on 2026-06-26; touched-file format checks pass for the repo gate adoption workflow.
-3. **Full BasedPyright baseline is not green** — `uv run basedpyright` failed on 2026-06-26 with 110 errors and 101 warnings, including existing `run_cli` complexity.
+2. **Full format baseline is not green** — `uv run ruff format --check .` reported 163 files needing formatting on 2026-06-29; the final diff keeps legacy parser/test formatting minimal instead of reformatting whole files.
+3. **Full BasedPyright baseline is not green** — `uv run basedpyright` failed on 2026-06-29 with 109 errors and 78 warnings, including existing `run_cli` complexity.
 ## Next Concrete Steps
 
 1. Use `aios repo inspect` and `aios quality ladder` in live Codex sessions, then decide whether they should ingest CTS/context evidence or remain lightweight deterministic helpers.
@@ -175,11 +176,19 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 | Step | Status | Notes |
 |------|--------|-------|
-| Lint (ruff) | Fail | `uv run ruff check .` failed on 2026-06-28 with 25 existing repo issues. Focused Codex session intelligence Ruff checks pass. |
-| Type check (basedpyright) | Fail | `uv run basedpyright` failed on 2026-06-28 with 110 errors and 78 warnings, including existing `run_cli` complexity. Focused Codex session intelligence BasedPyright checks pass. |
+| Lint (ruff) | Fail | `uv run ruff check .` failed on 2026-06-29 with 25 existing repo issues. Focused Codex meta-learning ingest Ruff checks pass. |
+| Type check (basedpyright) | Fail | `uv run basedpyright` failed on 2026-06-29 with 109 errors and 78 warnings, including existing `run_cli` complexity. Focused Codex meta-learning ingest production-file BasedPyright checks pass. |
 | Dead code (vulture) | Warning | `uv run vulture . --min-confidence 70` failed on 2026-06-28 because `.venv` third-party packages were scanned; `uv run vulture bin services --min-confidence 70` passed. |
-| Tests | Pass | `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run pytest -q` passed on 2026-06-28 with 1051 tests. |
-| Structure | Fail | `uv run ruff format --check .` reported 169 files needing formatting on 2026-06-28. Focused Codex session intelligence format checks pass. |
+| Tests | Pass | `uv run pytest -q` passed on 2026-06-29 with 1056 tests. |
+| Structure | Fail | `uv run ruff format --check .` reported 163 files needing formatting on 2026-06-29. The final Codex meta-learning ingest diff avoids broad legacy file formatting churn. |
+
+Focused Codex meta-learning ingest checks on 2026-06-29:
+- `uv run pytest -q tests/test_meta_learning_signals.py tests/test_meta_learning_router.py tests/test_meta_learning_session_ingest.py tests/test_import_ai_history.py` passed with 70 tests.
+- `uv run pytest -q` passed with 1056 tests.
+- `uv run ruff check bin/cron-ingest-codex.py bin/import_ai_history.py services/meta_learning_signals.py services/meta_learning_scoring.py services/meta_learning_router.py services/meta_learning_session_ingest.py tests/test_import_ai_history.py tests/test_meta_learning_signals.py tests/test_meta_learning_router.py tests/test_meta_learning_session_ingest.py` passed.
+- `uv run ruff format --check .` failed with the existing repo format baseline: 163 files would be reformatted.
+- `uv run basedpyright bin/cron-ingest-codex.py bin/import_ai_history.py services/meta_learning_signals.py services/meta_learning_scoring.py services/meta_learning_router.py services/meta_learning_session_ingest.py` passed.
+- `uv run vulture bin services --min-confidence 70` exited 0.
 
 Focused Codex session intelligence checks on 2026-06-28:
 - `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run pytest tests/test_session_intelligence_loop.py -q` passed with 12 tests after durability, Claude normalization, and cross-batch merge hardening.
