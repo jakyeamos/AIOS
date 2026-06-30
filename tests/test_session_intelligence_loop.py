@@ -269,6 +269,11 @@ def test_session_intelligence_classifies_lanes_and_redacts_report(tmp_path: Path
     assert "Review Queue" in decision_report
     assert "Anecdotal setting:" in decision_report
     assert "When a Codex run repeatedly hits this friction" in decision_report
+    assert "Helper strategy:" in decision_report
+    assert "- helper family:" in decision_report
+    assert "- reuse recommendation:" in decision_report
+    assert "- dedicated helper:" in decision_report
+    assert "Prefer a shared helper family or preset over a one-off script." in decision_report
     assert "source sessions:" not in decision_report
     assert "[REDACTED:api_key]" in decision_report
 
@@ -327,6 +332,31 @@ def test_session_intelligence_decision_report_includes_full_pending_backlog(
     assert "- latest pending candidates: 1" in decision_report
     assert "- all pending candidates: 2" in decision_report
     assert "Stored backlog-only candidate" in decision_report
+
+
+def test_session_intelligence_helper_strategy_uses_reusable_families(tmp_path: Path) -> None:
+    sessions_root = tmp_path / "sessions"
+    _write_codex_rollout(
+        sessions_root / "2026/06/27/rollout-2026-06-27T10-00-00-session-1.jsonl",
+        [
+            _session_meta("session-1"),
+            _function_call("vercel deploy --prod --yes"),
+            _function_output("Process exited with code 1\ndeployment failed"),
+        ],
+    )
+    conn = _memory_conn()
+    provider = CodexProvider(source_root=sessions_root, db_path=tmp_path / "aios.db")
+
+    result = run_session_intelligence(
+        conn,
+        provider=provider,
+        options=SessionIntelligenceOptions(since="all", write_report=True, report_root=tmp_path),
+    )
+
+    decision_report = Path(result["decision_report_path"]).read_text(encoding="utf-8")
+    assert "- helper family: deployment_flow" in decision_report
+    assert "Add this under the deployment_flow family" in decision_report
+    assert "- helper family: artifact_probe" not in decision_report
 
 
 def test_session_intelligence_deduplicates_candidates_across_runs(tmp_path: Path) -> None:

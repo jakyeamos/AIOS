@@ -1164,6 +1164,7 @@ def _append_candidate_lane_sections(
                     "",
                 ]
             )
+            lines.extend(_candidate_helper_strategy_lines(candidate))
             evidence_items = candidate["redacted_evidence"][:3]
             if evidence_items:
                 lines.append("Evidence:")
@@ -1193,6 +1194,59 @@ def _candidate_anecdotal_setting(candidate: dict[str, Any]) -> str:
         "session evidence to a concrete product or workflow bet that deserves a scoped human "
         "decision."
     )
+
+
+def _candidate_helper_strategy_lines(candidate: dict[str, Any]) -> list[str]:
+    if candidate["lane"] != "friction_tool":
+        return []
+    family = _candidate_helper_family(candidate)
+    if family == "bespoke_review":
+        dedicated_helper = "maybe, only after another run proves this is not a router preset"
+        recommendation = (
+            "Keep as review evidence for now; do not create a dedicated helper until the "
+            "friction repeats with a stable parameter shape."
+        )
+    else:
+        dedicated_helper = "no"
+        recommendation = (
+            "Prefer a shared helper family or preset over a one-off script. Add this under "
+            f"the {family} family if the same parameter shape keeps recurring."
+        )
+    return [
+        "Helper strategy:",
+        f"- helper family: {family}",
+        f"- reuse recommendation: {recommendation}",
+        f"- dedicated helper: {dedicated_helper}",
+        "",
+    ]
+
+
+def _candidate_helper_family(candidate: dict[str, Any]) -> str:
+    haystack = " ".join(
+        [
+            candidate["title"],
+            candidate["summary"],
+            candidate["proposed_next_action"],
+            " ".join(
+                evidence.get("summary", "") for evidence in candidate["redacted_evidence"][:5]
+            ),
+        ]
+    ).lower()
+    if any(token in haystack for token in ("git status", "git diff", "worktree", "rev-parse")):
+        return "repo_state"
+    if any(token in haystack for token in ("git log", "git show", "rev-list", "tag")):
+        return "git_history"
+    if any(token in haystack for token in ("vercel deploy", "deploy --prod", "deployment")):
+        return "deployment_flow"
+    if any(token in haystack for token in (".csv", ".json", "manifest", "counter")) or re.search(
+        r"\brows?\b", haystack
+    ):
+        return "artifact_probe"
+    if any(token in haystack for token in ("sed -n", "nl -ba", "read_text", ".md")):
+        return "doc_excerpt"
+    if any(token in haystack for token in ("pnpm", "npm", "pytest", "ruff", "node -e")):
+        return "package_check"
+    return "bespoke_review"
 
 
 def _candidate_row_to_dict(row: sqlite3.Row | None) -> dict[str, Any]:
