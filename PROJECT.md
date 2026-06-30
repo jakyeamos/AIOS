@@ -34,6 +34,15 @@ The repository currently contains five meaningful subsystems:
 
 Root operator documentation now lives in `README.md`, including local UI launch commands, key UI routes, store paths, workflow proposal backfill, and verification commands.
 
+## Implemented On 2026-06-30
+
+Codex session intelligence scans now write a canonical daily decision report:
+
+- `session-intel run --write-report` still emits the per-run Markdown and JSON artifacts, and now also returns `decision_report_path`
+- the canonical report is provider-specific at `data/session-intelligence/reports/{provider}-daily-candidate-decisions.md`, so the daily Codex automation updates `codex-daily-candidate-decisions.md` in place
+- the decision report is grouped by `friction_tool`, `workflow_skill`, and `impact_idea`, includes pending-review counts, candidate ids, impact/confidence, proposed artifact type, next decision, source sessions, summaries, and redacted evidence excerpts
+- behavior is intentionally review-only: the report surfaces candidate decisions without approving, rejecting, installing, generating, or applying candidate artifacts
+
 ## Implemented On 2026-06-25
 
 AIOS planning is now a governed first-class `start-work` route for tested GSD planning objectives:

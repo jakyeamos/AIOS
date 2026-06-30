@@ -256,9 +256,18 @@ def test_session_intelligence_classifies_lanes_and_redacts_report(tmp_path: Path
     assert {"friction_tool", "workflow_skill", "impact_idea"}.issubset(lanes)
     assert result["summary"]["candidate_count"] >= 3
     assert result["report_path"]
+    assert result["decision_report_path"] == str(tmp_path / "codex-daily-candidate-decisions.md")
     report = Path(result["report_path"]).read_text(encoding="utf-8")
+    decision_report = Path(result["decision_report_path"]).read_text(encoding="utf-8")
     assert secret not in report
+    assert secret not in decision_report
     assert "[REDACTED:api_key]" in report
+    assert "# Codex Daily Candidate Decisions" in decision_report
+    assert "## friction_tool" in decision_report
+    assert "## workflow_skill" in decision_report
+    assert "## impact_idea" in decision_report
+    assert "Review Queue" in decision_report
+    assert "[REDACTED:api_key]" in decision_report
 
 
 def test_session_intelligence_deduplicates_candidates_across_runs(tmp_path: Path) -> None:

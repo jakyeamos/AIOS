@@ -264,13 +264,15 @@ def _run_session_intelligence_for_sources(
 
     report_path: str | None = None
     report_json_path: str | None = None
+    decision_report_path: str | None = None
     if options.write_report:
-        report_path, report_json_path = _write_report(
+        report_path, report_json_path, decision_report_path = _write_report(
             options.report_root or Path("data/session-intelligence/reports"),
             run_id=run_id,
             provider=provider.provider_id,
             scanned_range=options.since,
             candidates=stored_candidates,
+            generated_at=now,
         )
 
     conn.execute(
@@ -306,6 +308,7 @@ def _run_session_intelligence_for_sources(
         "candidates": stored_candidates,
         "report_path": report_path,
         "report_json_path": report_json_path,
+        "decision_report_path": decision_report_path,
     }
 
 
@@ -1018,10 +1021,12 @@ def _write_report(
     provider: str,
     scanned_range: str,
     candidates: list[dict[str, Any]],
-) -> tuple[str, str]:
+    generated_at: str,
+) -> tuple[str, str, str]:
     report_root.mkdir(parents=True, exist_ok=True)
     markdown_path = report_root / f"{run_id}.md"
     json_path = report_root / f"{run_id}.json"
+    decision_path = report_root / f"{provider}-daily-candidate-decisions.md"
     lines = [
         f"# Codex Session Intelligence {run_id}",
         "",
@@ -1053,7 +1058,81 @@ def _write_report(
     json_path.write_text(
         json.dumps({"run_id": run_id, "candidates": candidates}, indent=2), encoding="utf-8"
     )
-    return str(markdown_path), str(json_path)
+    decision_path.write_text(
+        _decision_report_markdown(
+            run_id=run_id,
+            provider=provider,
+            scanned_range=scanned_range,
+            candidates=candidates,
+            generated_at=generated_at,
+        ),
+        encoding="utf-8",
+    )
+    return str(markdown_path), str(json_path), str(decision_path)
+
+
+def _decision_report_markdown(
+    *,
+    run_id: str,
+    provider: str,
+    scanned_range: str,
+    candidates: list[dict[str, Any]],
+    generated_at: str,
+) -> str:
+    pending = [candidate for candidate in candidates if candidate["status"] == "pending_review"]
+    pending_by_lane = {
+        lane: sorted(
+            [candidate for candidate in pending if candidate["lane"] == lane],
+            key=lambda candidate: (-candidate["impact_score"], -candidate["confidence"], candidate["title"]),
+        )
+        for lane in ("friction_tool", "workflow_skill", "impact_idea")
+    }
+    lines = [
+        "# Codex Daily Candidate Decisions",
+        "",
+        "## Review Queue",
+        "",
+        f"- provider: {provider}",
+        f"- latest run: {run_id}",
+        f"- scanned range: {scanned_range}",
+        f"- updated at: {generated_at}",
+        f"- pending candidates: {len(pending)}",
+        f"- friction_tool: {len(pending_by_lane['friction_tool'])}",
+        f"- workflow_skill: {len(pending_by_lane['workflow_skill'])}",
+        f"- impact_idea: {len(pending_by_lane['impact_idea'])}",
+        "",
+    ]
+    for lane in ("friction_tool", "workflow_skill", "impact_idea"):
+        lane_candidates = pending_by_lane[lane]
+        lines.extend([f"## {lane}", ""])
+        if not lane_candidates:
+            lines.extend(["No pending candidates in this lane.", ""])
+            continue
+        for candidate in lane_candidates:
+            lines.extend(
+                [
+                    f"### {candidate['title']}",
+                    "",
+                    f"- id: {candidate['id']}",
+                    f"- impact: {candidate['impact_score']}",
+                    f"- confidence: {candidate['confidence']}",
+                    f"- proposed artifact: {candidate['proposed_artifact_type']}",
+                    f"- next decision: {candidate['proposed_next_action']}",
+                    f"- source sessions: {', '.join(candidate['source_sessions'])}",
+                    "",
+                    candidate["summary"],
+                    "",
+                ]
+            )
+            evidence_items = candidate["redacted_evidence"][:3]
+            if evidence_items:
+                lines.append("Evidence:")
+                for evidence in evidence_items:
+                    lines.append(
+                        f"- {evidence.get('session_id', 'unknown')}: {evidence.get('summary', '')}"
+                    )
+                lines.append("")
+    return "\n".join(lines)
 
 
 def _candidate_row_to_dict(row: sqlite3.Row | None) -> dict[str, Any]:
