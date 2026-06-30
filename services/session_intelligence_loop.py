@@ -1114,6 +1114,8 @@ def _decision_report_markdown(
     _append_candidate_lane_sections(lines, latest_pending_by_lane, lane_heading_level=3)
     lines.extend(["## All pending candidates", ""])
     _append_candidate_lane_sections(lines, all_pending_by_lane, lane_heading_level=3)
+    lines.extend(_implementation_telemetry_contract_lines())
+    lines.extend(_removal_candidate_lines())
     return "\n".join(lines)
 
 
@@ -1276,6 +1278,47 @@ def _helper_family_strategy_lines(
         f"- average confidence: {average_confidence:.2f}",
         f"- reuse recommendation: {recommendation}",
         f"- dedicated helper: {dedicated_helper}",
+        (
+            "- telemetry plan: if implemented, record family-level helper telemetry for "
+            "invocations, bypasses, failures, runtime, agent retry count, and before/after "
+            "friction recurrence."
+        ),
+        (
+            "- removal review: promote the family as a removal candidate when telemetry shows "
+            "neutral or negative value, rising failure rates, or repeated manual bypasses."
+        ),
+        "",
+    ]
+
+
+def _implementation_telemetry_contract_lines() -> list[str]:
+    return [
+        "## Implementation Telemetry Contract",
+        "",
+        (
+            "Measure whether implemented candidates reduce repeated friction, workflow time, "
+            "agent retries, and manual intervention without increasing failures, bypasses, or "
+            "maintenance cost."
+        ),
+        "",
+        "- required before implementation: define baseline friction evidence and expected benefit",
+        "- required during use: record invocation count, success/failure, bypass count, latency, and affected candidate or helper family",
+        "- required after review: compare measured benefit against the original candidate claim before keeping it as default behavior",
+        "",
+    ]
+
+
+def _removal_candidate_lines() -> list[str]:
+    return [
+        "## Removal Candidates",
+        "",
+        "No implemented candidate telemetry is available yet.",
+        "",
+        (
+            "Future daily scans should list implemented helpers, skills, or workflows whose "
+            "telemetry shows neutral value, negative value, stale usage, repeated bypasses, or "
+            "higher failure/maintenance cost than the original manual path."
+        ),
         "",
     ]
 

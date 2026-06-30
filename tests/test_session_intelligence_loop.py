@@ -271,9 +271,15 @@ def test_session_intelligence_classifies_lanes_and_redacts_report(tmp_path: Path
     assert "When a Codex run repeatedly hits this friction" in decision_report
     assert "Helper strategy:" in decision_report
     assert "- helper family:" in decision_report
+    assert "- telemetry plan:" in decision_report
+    assert "- removal review:" in decision_report
     assert "- reuse recommendation:" in decision_report
     assert "- dedicated helper:" in decision_report
     assert "Prefer a shared helper family or preset over a one-off script." in decision_report
+    assert "## Implementation Telemetry Contract" in decision_report
+    assert "Measure whether implemented candidates reduce repeated friction" in decision_report
+    assert "## Removal Candidates" in decision_report
+    assert "No implemented candidate telemetry is available yet." in decision_report
     assert "source sessions:" not in decision_report
     assert "[REDACTED:api_key]" in decision_report
 
@@ -423,6 +429,8 @@ def test_session_intelligence_rolls_up_friction_candidates_by_helper_family(
     assert "##### Repeated git status inspection failed" in decision_report
     assert "##### Repeated git diff inspection failed" in decision_report
     assert "Add this under the repo_state family" in decision_report
+    assert "record family-level helper telemetry" in decision_report
+    assert "promote the family as a removal candidate" in decision_report
 
 
 def test_session_intelligence_deduplicates_candidates_across_runs(tmp_path: Path) -> None:

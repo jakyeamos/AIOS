@@ -44,6 +44,7 @@ Codex session intelligence scans now write a canonical daily decision report:
 - both decision sections are grouped by `friction_tool`, `workflow_skill`, and `impact_idea`, with pending-review counts, candidate ids, impact/confidence, proposed artifact type, next decision, summaries, and redacted evidence excerpts
 - each pending candidate now includes an anecdotal setting narrative that explains what the candidate would help with in a concrete future work scenario
 - friction-tool candidates are rolled up by reusable helper family, such as `repo_state`, `git_history`, `artifact_probe`, `doc_excerpt`, `package_check`, and `deployment_flow`, before individual candidate details; each family carries candidate count, impact/confidence summary, and a shared-preset recommendation before any one-off helper is considered
+- the daily decision report now includes an implementation telemetry contract and a `Removal Candidates` section, so approved future helpers/skills/workflows should be measured for benefit and later surfaced for removal when telemetry shows neutral or negative value
 - behavior is intentionally review-only: the report surfaces candidate decisions without approving, rejecting, installing, generating, or applying candidate artifacts
 
 ## Implemented On 2026-06-25
