@@ -41,6 +41,7 @@ Codex session intelligence scans now write a canonical daily decision report:
 - `session-intel run --write-report` still emits the per-run Markdown and JSON artifacts, and now also returns `decision_report_path`
 - the canonical report is provider-specific at `data/session-intelligence/reports/{provider}-daily-candidate-decisions.md`, so the daily Codex automation updates `codex-daily-candidate-decisions.md` in place
 - the decision report is grouped by `friction_tool`, `workflow_skill`, and `impact_idea`, includes pending-review counts, candidate ids, impact/confidence, proposed artifact type, next decision, source sessions, summaries, and redacted evidence excerpts
+- each pending candidate now includes an anecdotal setting narrative that explains what the candidate would help with in a concrete future work scenario
 - behavior is intentionally review-only: the report surfaces candidate decisions without approving, rejecting, installing, generating, or applying candidate artifacts
 
 ## Implemented On 2026-06-25

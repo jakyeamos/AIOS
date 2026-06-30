@@ -267,6 +267,8 @@ def test_session_intelligence_classifies_lanes_and_redacts_report(tmp_path: Path
     assert "## workflow_skill" in decision_report
     assert "## impact_idea" in decision_report
     assert "Review Queue" in decision_report
+    assert "Anecdotal setting:" in decision_report
+    assert "When a Codex run repeatedly hits this friction" in decision_report
     assert "[REDACTED:api_key]" in decision_report
 
 

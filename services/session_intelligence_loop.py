@@ -1122,6 +1122,8 @@ def _decision_report_markdown(
                     "",
                     candidate["summary"],
                     "",
+                    f"Anecdotal setting: {_candidate_anecdotal_setting(candidate)}",
+                    "",
                 ]
             )
             evidence_items = candidate["redacted_evidence"][:3]
@@ -1133,6 +1135,27 @@ def _decision_report_markdown(
                     )
                 lines.append("")
     return "\n".join(lines)
+
+
+def _candidate_anecdotal_setting(candidate: dict[str, Any]) -> str:
+    title = candidate["title"].rstrip(".")
+    if candidate["lane"] == "friction_tool":
+        return (
+            "When a Codex run repeatedly hits this friction, this candidate would help turn "
+            f"the pattern behind {title} into a small repeatable check or helper instead of "
+            "making the agent rediscover the same command shape during every closeout."
+        )
+    if candidate["lane"] == "workflow_skill":
+        return (
+            "When a future task looks like this successful sequence, this candidate would help "
+            "the agent start from a known workflow shape, including the expected checks and "
+            "handoff points, instead of reconstructing the approach from memory."
+        )
+    return (
+        "When planning what to improve next, this candidate would help connect scattered "
+        "session evidence to a concrete product or workflow bet that deserves a scoped human "
+        "decision."
+    )
 
 
 def _candidate_row_to_dict(row: sqlite3.Row | None) -> dict[str, Any]:
