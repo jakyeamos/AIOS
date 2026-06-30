@@ -137,8 +137,10 @@ from services.second_brain_eval import (
 from services.session_intelligence_loop import (
     SessionIntelligenceBackfillOptions,
     SessionIntelligenceOptions,
+    implement_session_intelligence_candidates,
     list_session_intelligence_candidates,
     list_session_intelligence_clusters,
+    list_session_intelligence_implementations,
     mark_session_intelligence_candidate,
     run_session_intelligence,
     run_session_intelligence_backfill,
@@ -5722,6 +5724,15 @@ def _session_intel_payload(conn: sqlite3.Connection, args: argparse.Namespace) -
             limit=args.limit,
         )
         return {"count": len(clusters), "total_count": len(total_clusters), "clusters": clusters}
+    if args.session_intel_command == "implement":
+        result = implement_session_intelligence_candidates(
+            conn,
+            status=args.status,
+            lane=args.lane,
+            actor_note=args.note,
+        )
+        implementations = list_session_intelligence_implementations(conn)
+        return {**result, "implementations": implementations}
     if args.session_intel_command == "mark":
         return mark_session_intelligence_candidate(
             conn,
@@ -5941,7 +5952,15 @@ def create_parser() -> argparse.ArgumentParser:
     )
     session_intel_candidates.add_argument(
         "--status",
-        choices=["all", "pending_review", "approved", "rejected", "observed", "superseded"],
+        choices=[
+            "all",
+            "pending_review",
+            "approved",
+            "implemented",
+            "rejected",
+            "observed",
+            "superseded",
+        ],
         default="pending_review",
     )
     session_intel_candidates.add_argument(
@@ -5956,7 +5975,15 @@ def create_parser() -> argparse.ArgumentParser:
     )
     session_intel_clusters.add_argument(
         "--status",
-        choices=["all", "pending_review", "approved", "rejected", "observed", "superseded"],
+        choices=[
+            "all",
+            "pending_review",
+            "approved",
+            "implemented",
+            "rejected",
+            "observed",
+            "superseded",
+        ],
         default="pending_review",
     )
     session_intel_clusters.add_argument(
@@ -5967,13 +5994,30 @@ def create_parser() -> argparse.ArgumentParser:
     session_intel_clusters.add_argument("--limit", type=int, default=50)
     session_intel_clusters.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
+    session_intel_implement = session_intel_subparsers.add_parser(
+        "implement",
+        help="Adopt session intelligence candidates as telemetry-tracked helper families",
+    )
+    session_intel_implement.add_argument(
+        "--status",
+        choices=["all", "pending_review", "approved", "implemented", "observed", "superseded"],
+        default="pending_review",
+    )
+    session_intel_implement.add_argument(
+        "--lane",
+        choices=["all", "friction_tool", "workflow_skill", "impact_idea"],
+        default="all",
+    )
+    session_intel_implement.add_argument("--note", default="")
+    session_intel_implement.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
     session_intel_mark = session_intel_subparsers.add_parser(
         "mark", help="Mark a session intelligence candidate review status"
     )
     session_intel_mark.add_argument("--candidate-id", required=True)
     session_intel_mark.add_argument(
         "--status",
-        choices=["approved", "rejected", "observed", "superseded"],
+        choices=["approved", "implemented", "rejected", "observed", "superseded"],
         required=True,
     )
     session_intel_mark.add_argument("--note", default="")

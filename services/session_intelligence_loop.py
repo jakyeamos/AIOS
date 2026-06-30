@@ -25,9 +25,29 @@ from services.workflow_synthesis import (
 )
 
 Lane = Literal["friction_tool", "workflow_skill", "impact_idea"]
-CandidateStatus = Literal["pending_review", "approved", "rejected", "observed", "superseded"]
+CandidateStatus = Literal[
+    "pending_review", "approved", "implemented", "rejected", "observed", "superseded"
+]
 LANES: set[str] = {"friction_tool", "workflow_skill", "impact_idea"}
-STATUSES: set[str] = {"pending_review", "approved", "rejected", "observed", "superseded"}
+STATUSES: set[str] = {
+    "pending_review",
+    "approved",
+    "implemented",
+    "rejected",
+    "observed",
+    "superseded",
+}
+HELPER_FAMILY_PRESETS: dict[str, str] = {
+    "repo_state": "Repo state inspection preset for branch, status, diff, and worktree checks.",
+    "git_history": "Git history preset for recent commits, tags, and branch divergence.",
+    "deployment_flow": "Deployment flow preset for preflight and deployment evidence review.",
+    "artifact_probe": "Artifact probe preset for JSON, CSV, manifest, and row-count inspection.",
+    "doc_excerpt": "Document excerpt preset for bounded file reads with line-oriented evidence.",
+    "package_check": "Package quality preset for package-manager and test/lint command planning.",
+    "bespoke_review": "Bespoke review queue for low-shape candidates that need telemetry before narrowing.",
+    "workflow_skill": "Workflow skill adoption preset for repeatable successful delivery sequences.",
+    "impact_idea": "Impact idea adoption preset for scoped product or workflow improvement bets.",
+}
 DEFAULT_REDACTION_PATTERNS = {
     "api_key": r"sk-[A-Za-z0-9]{20,}",
     "bearer_token": r"Bearer [A-Za-z0-9._-]{10,}",
@@ -135,8 +155,33 @@ def ensure_session_intelligence_schema(conn: sqlite3.Connection) -> None:
     )
     conn.execute(
         """
+        CREATE TABLE IF NOT EXISTS session_intelligence_implementations (
+          id TEXT PRIMARY KEY,
+          lane TEXT NOT NULL,
+          helper_family TEXT NOT NULL,
+          candidate_ids_json TEXT NOT NULL DEFAULT '[]',
+          candidate_count INTEGER NOT NULL DEFAULT 0,
+          implementation_status TEXT NOT NULL DEFAULT 'implemented',
+          telemetry_status TEXT NOT NULL DEFAULT 'awaiting_telemetry',
+          removal_status TEXT NOT NULL DEFAULT 'monitor',
+          removal_reason TEXT NOT NULL,
+          implemented_artifact_type TEXT NOT NULL,
+          implemented_artifact_ref TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        """
         CREATE INDEX IF NOT EXISTS idx_session_intelligence_candidates_review
           ON session_intelligence_candidates(status, lane, updated_at DESC)
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_session_intelligence_implementations_review
+          ON session_intelligence_implementations(removal_status, helper_family, updated_at DESC)
         """
     )
 
@@ -269,6 +314,7 @@ def _run_session_intelligence_for_sources(
         all_pending_candidates = list_session_intelligence_candidates(
             conn, status="pending_review", lane="all"
         )
+        implementations = list_session_intelligence_implementations(conn)
         report_path, report_json_path, decision_report_path = _write_report(
             options.report_root or Path("data/session-intelligence/reports"),
             run_id=run_id,
@@ -276,6 +322,7 @@ def _run_session_intelligence_for_sources(
             scanned_range=options.since,
             candidates=stored_candidates,
             all_pending_candidates=all_pending_candidates,
+            implementations=implementations,
             generated_at=now,
         )
 
@@ -398,6 +445,129 @@ def list_session_intelligence_clusters(
     if limit is None:
         return sorted_clusters
     return sorted_clusters[: max(0, limit)]
+
+
+def list_session_intelligence_implementations(
+    conn: sqlite3.Connection,
+    *,
+    removal_status: str | None = None,
+) -> list[dict[str, Any]]:
+    ensure_session_intelligence_schema(conn)
+    clauses: list[str] = []
+    params: list[str] = []
+    if removal_status:
+        clauses.append("removal_status = ?")
+        params.append(removal_status)
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    rows = conn.execute(
+        f"""
+        SELECT *
+        FROM session_intelligence_implementations
+        {where}
+        ORDER BY
+          CASE removal_status WHEN 'removal_candidate' THEN 0 ELSE 1 END,
+          candidate_count DESC,
+          helper_family ASC
+        """,
+        params,
+    ).fetchall()
+    return [_implementation_row_to_dict(row) for row in rows]
+
+
+def implement_session_intelligence_candidates(
+    conn: sqlite3.Connection,
+    *,
+    status: str = "pending_review",
+    lane: str = "all",
+    actor_note: str = "",
+) -> dict[str, Any]:
+    ensure_session_intelligence_schema(conn)
+    candidates = list_session_intelligence_candidates(
+        conn,
+        status=None if status == "all" else status,
+        lane=lane,
+    )
+    now = _now()
+    grouped: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for candidate in candidates:
+        grouped[(candidate["lane"], _candidate_implementation_family(candidate))].append(
+            candidate
+        )
+
+    implementation_ids: list[str] = []
+    for (candidate_lane, helper_family), family_candidates in sorted(
+        grouped.items(),
+        key=lambda item: (-len(item[1]), item[0][0], item[0][1]),
+    ):
+        implementation_id = _implementation_id(candidate_lane, helper_family)
+        candidate_ids = sorted(
+            set(_implementation_candidate_ids(conn, implementation_id))
+            | {candidate["id"] for candidate in family_candidates}
+        )
+        implementation_ids.append(implementation_id)
+        conn.execute(
+            """
+            INSERT INTO session_intelligence_implementations (
+              id, lane, helper_family, candidate_ids_json, candidate_count,
+              implementation_status, telemetry_status, removal_status, removal_reason,
+              implemented_artifact_type, implemented_artifact_ref, created_at, updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, 'implemented', 'awaiting_telemetry', 'monitor', ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+              candidate_ids_json = excluded.candidate_ids_json,
+              candidate_count = excluded.candidate_count,
+              implementation_status = excluded.implementation_status,
+              telemetry_status = excluded.telemetry_status,
+              removal_status = excluded.removal_status,
+              removal_reason = excluded.removal_reason,
+              implemented_artifact_type = excluded.implemented_artifact_type,
+              implemented_artifact_ref = excluded.implemented_artifact_ref,
+              updated_at = excluded.updated_at
+            """,
+            (
+                implementation_id,
+                candidate_lane,
+                helper_family,
+                json.dumps(candidate_ids),
+                len(candidate_ids),
+                _implementation_removal_reason(helper_family),
+                "helper_family_preset",
+                f"session-intel-helper-family:{helper_family}",
+                now,
+                now,
+            ),
+        )
+        note_parts = [
+            f"Implemented through helper family `{helper_family}` with telemetry and removal tracking."
+        ]
+        if actor_note:
+            note_parts.append(actor_note)
+        review_note = " ".join(note_parts)
+        for candidate_id in candidate_ids:
+            conn.execute(
+                """
+                UPDATE session_intelligence_candidates
+                SET status = 'implemented', review_note = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (review_note, now, candidate_id),
+            )
+            conn.execute(
+                """
+                INSERT INTO session_intelligence_review_events (
+                  id, candidate_id, status, note, created_at
+                )
+                VALUES (?, ?, 'implemented', ?, ?)
+                """,
+                (f"session-intel-review-{uuid.uuid4()}", candidate_id, review_note, now),
+            )
+
+    return {
+        "candidate_count": len(candidates),
+        "implementation_count": len(implementation_ids),
+        "implementation_ids": implementation_ids,
+        "status": "implemented",
+    }
 
 
 def mark_session_intelligence_candidate(
@@ -1026,6 +1196,7 @@ def _write_report(
     scanned_range: str,
     candidates: list[dict[str, Any]],
     all_pending_candidates: list[dict[str, Any]],
+    implementations: list[dict[str, Any]],
     generated_at: str,
 ) -> tuple[str, str, str]:
     report_root.mkdir(parents=True, exist_ok=True)
@@ -1070,6 +1241,7 @@ def _write_report(
             scanned_range=scanned_range,
             candidates=candidates,
             all_pending_candidates=all_pending_candidates,
+            implementations=implementations,
             generated_at=generated_at,
         ),
         encoding="utf-8",
@@ -1084,6 +1256,7 @@ def _decision_report_markdown(
     scanned_range: str,
     candidates: list[dict[str, Any]],
     all_pending_candidates: list[dict[str, Any]],
+    implementations: list[dict[str, Any]],
     generated_at: str,
 ) -> str:
     latest_pending = [
@@ -1115,7 +1288,7 @@ def _decision_report_markdown(
     lines.extend(["## All pending candidates", ""])
     _append_candidate_lane_sections(lines, all_pending_by_lane, lane_heading_level=3)
     lines.extend(_implementation_telemetry_contract_lines())
-    lines.extend(_removal_candidate_lines())
+    lines.extend(_removal_candidate_lines(implementations))
     return "\n".join(lines)
 
 
@@ -1308,17 +1481,52 @@ def _implementation_telemetry_contract_lines() -> list[str]:
     ]
 
 
-def _removal_candidate_lines() -> list[str]:
-    return [
+def _removal_candidate_lines(implementations: list[dict[str, Any]]) -> list[str]:
+    lines = [
         "## Removal Candidates",
         "",
-        "No implemented candidate telemetry is available yet.",
-        "",
+    ]
+    removal_candidates = [
+        implementation
+        for implementation in implementations
+        if implementation["removal_status"] == "removal_candidate"
+    ]
+    if removal_candidates:
+        lines.extend(["### active removal candidates", ""])
+        for implementation in removal_candidates:
+            lines.extend(_implementation_review_lines(implementation))
+    else:
+        lines.extend(["No implemented helpers currently meet removal thresholds.", ""])
+    if implementations:
+        lines.extend(["### monitored implemented helpers", ""])
+        for implementation in implementations:
+            lines.extend(_implementation_review_lines(implementation))
+    else:
+        lines.extend(
+            [
+                "No implemented candidate telemetry is available yet.",
+                "",
+                (
+                    "Future daily scans should list implemented helpers, skills, or workflows whose "
+                    "telemetry shows neutral value, negative value, stale usage, repeated bypasses, or "
+                    "higher failure/maintenance cost than the original manual path."
+                ),
+                "",
+            ]
+        )
+    return lines
+
+
+def _implementation_review_lines(implementation: dict[str, Any]) -> list[str]:
+    helper_family = implementation["helper_family"]
+    return [
         (
-            "Future daily scans should list implemented helpers, skills, or workflows whose "
-            "telemetry shows neutral value, negative value, stale usage, repeated bypasses, or "
-            "higher failure/maintenance cost than the original manual path."
+            f"- {helper_family}: {implementation['removal_status']}; "
+            f"{implementation['telemetry_status']}; candidates covered: "
+            f"{implementation['candidate_count']}"
         ),
+        f"  - artifact: {implementation['implemented_artifact_ref']}",
+        f"  - removal basis: {implementation['removal_reason']}",
         "",
     ]
 
@@ -1349,6 +1557,64 @@ def _candidate_helper_family(candidate: dict[str, Any]) -> str:
     if any(token in haystack for token in ("pnpm", "npm", "pytest", "ruff", "node -e")):
         return "package_check"
     return "bespoke_review"
+
+
+def _candidate_implementation_family(candidate: dict[str, Any]) -> str:
+    if candidate["lane"] == "friction_tool":
+        return _candidate_helper_family(candidate)
+    return str(candidate["lane"])
+
+
+def _implementation_id(lane: str, helper_family: str) -> str:
+    return f"session-intel-implementation-{lane}-{helper_family}"
+
+
+def _implementation_candidate_ids(conn: sqlite3.Connection, implementation_id: str) -> list[str]:
+    row = conn.execute(
+        """
+        SELECT candidate_ids_json
+        FROM session_intelligence_implementations
+        WHERE id = ?
+        """,
+        (implementation_id,),
+    ).fetchone()
+    if row is None:
+        return []
+    try:
+        loaded = json.loads(row["candidate_ids_json"])
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(loaded, list):
+        return []
+    return [str(candidate_id) for candidate_id in loaded]
+
+
+def _implementation_removal_reason(helper_family: str) -> str:
+    preset = HELPER_FAMILY_PRESETS.get(helper_family, "Session intelligence helper preset.")
+    return (
+        f"{preset} Track usage, bypasses, failures, and before/after friction recurrence "
+        "before deciding whether to keep, narrow, or remove this implementation."
+    )
+
+
+def _implementation_row_to_dict(row: sqlite3.Row | None) -> dict[str, Any]:
+    if row is None:
+        raise ValueError("Missing session intelligence implementation row")
+    return {
+        "id": row["id"],
+        "lane": row["lane"],
+        "helper_family": row["helper_family"],
+        "candidate_ids": json.loads(row["candidate_ids_json"]),
+        "candidate_count": row["candidate_count"],
+        "implementation_status": row["implementation_status"],
+        "telemetry_status": row["telemetry_status"],
+        "removal_status": row["removal_status"],
+        "removal_reason": row["removal_reason"],
+        "implemented_artifact_type": row["implemented_artifact_type"],
+        "implemented_artifact_ref": row["implemented_artifact_ref"],
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+    }
 
 
 def _candidate_row_to_dict(row: sqlite3.Row | None) -> dict[str, Any]:

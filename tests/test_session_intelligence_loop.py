@@ -13,8 +13,10 @@ from services.session_intelligence_loop import (  # noqa: E402
     SessionIntelligenceBackfillOptions,
     SessionIntelligenceOptions,
     ensure_session_intelligence_schema,
+    implement_session_intelligence_candidates,
     list_session_intelligence_candidates,
     list_session_intelligence_clusters,
+    list_session_intelligence_implementations,
     mark_session_intelligence_candidate,
     run_session_intelligence,
     run_session_intelligence_backfill,
@@ -433,6 +435,184 @@ def test_session_intelligence_rolls_up_friction_candidates_by_helper_family(
     assert "promote the family as a removal candidate" in decision_report
 
 
+def test_session_intelligence_implements_pending_candidates_as_tracked_helper_families(
+    tmp_path: Path,
+) -> None:
+    conn = _memory_conn()
+    ensure_session_intelligence_schema(conn)
+    conn.executemany(
+        """
+        INSERT INTO session_intelligence_candidates (
+          id, lane, title, summary, impact_score, confidence, status,
+          source_sessions_json, redacted_evidence_json, proposed_artifact_type,
+          proposed_next_action, review_note, created_at, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        [
+            (
+                "session-intel-repo-state-1",
+                "friction_tool",
+                "Repeated git status inspection failed",
+                "Codex kept rerunning git status checks before closeout.",
+                8,
+                0.8,
+                "pending_review",
+                json.dumps(["session-1"]),
+                json.dumps([{"session_id": "session-1", "summary": "git status --short failed"}]),
+                "deterministic_tool_candidate",
+                "Review whether a repo state preset should cover git status checks.",
+                None,
+                "2026-06-30T10:00:00+00:00",
+                "2026-06-30T10:00:00+00:00",
+            ),
+            (
+                "session-intel-repo-state-2",
+                "friction_tool",
+                "Repeated git diff inspection failed",
+                "Codex kept rerunning git diff checks before closeout.",
+                7,
+                0.7,
+                "pending_review",
+                json.dumps(["session-2"]),
+                json.dumps([{"session_id": "session-2", "summary": "git diff --stat failed"}]),
+                "deterministic_tool_candidate",
+                "Review whether a repo state preset should cover git diff checks.",
+                None,
+                "2026-06-30T10:01:00+00:00",
+                "2026-06-30T10:01:00+00:00",
+            ),
+            (
+                "session-intel-package-1",
+                "friction_tool",
+                "Repeated package quality command failed",
+                "Codex kept rerunning pnpm checks before closeout.",
+                6,
+                0.7,
+                "pending_review",
+                json.dumps(["session-3"]),
+                json.dumps([{"session_id": "session-3", "summary": "pnpm test failed"}]),
+                "deterministic_tool_candidate",
+                "Review whether package quality should use a shared preset.",
+                None,
+                "2026-06-30T10:02:00+00:00",
+                "2026-06-30T10:02:00+00:00",
+            ),
+        ],
+    )
+
+    result = implement_session_intelligence_candidates(
+        conn,
+        status="pending_review",
+        lane="all",
+        actor_note="Human approved implementation with removal tracking.",
+    )
+
+    implementations = list_session_intelligence_implementations(conn)
+    candidates = list_session_intelligence_candidates(conn, status="implemented", lane="all")
+    assert result["candidate_count"] == 3
+    assert result["implementation_count"] == 2
+    assert [item["helper_family"] for item in implementations] == [
+        "repo_state",
+        "package_check",
+    ]
+    assert implementations[0]["candidate_count"] == 2
+    assert implementations[0]["telemetry_status"] == "awaiting_telemetry"
+    assert implementations[0]["removal_status"] == "monitor"
+    assert implementations[0]["implemented_artifact_ref"] == "session-intel-helper-family:repo_state"
+    assert {candidate["status"] for candidate in candidates} == {"implemented"}
+    assert "session-intel-repo-state-1" in implementations[0]["candidate_ids"]
+
+    conn.execute(
+        """
+        INSERT INTO session_intelligence_candidates (
+          id, lane, title, summary, impact_score, confidence, status,
+          source_sessions_json, redacted_evidence_json, proposed_artifact_type,
+          proposed_next_action, review_note, created_at, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            "session-intel-repo-state-3",
+            "friction_tool",
+            "Repeated worktree inspection failed",
+            "Codex kept rerunning worktree checks before closeout.",
+            6,
+            0.7,
+            "pending_review",
+            json.dumps(["session-4"]),
+            json.dumps([{"session_id": "session-4", "summary": "git worktree list failed"}]),
+            "deterministic_tool_candidate",
+            "Review whether a repo state preset should cover worktree checks.",
+            None,
+            "2026-06-30T10:03:00+00:00",
+            "2026-06-30T10:03:00+00:00",
+        ),
+    )
+
+    implement_session_intelligence_candidates(
+        conn,
+        status="pending_review",
+        lane="all",
+        actor_note="Human approved another repo-state candidate.",
+    )
+
+    updated_implementations = list_session_intelligence_implementations(conn)
+    repo_state = updated_implementations[0]
+    assert repo_state["helper_family"] == "repo_state"
+    assert repo_state["candidate_count"] == 3
+    assert repo_state["candidate_ids"] == [
+        "session-intel-repo-state-1",
+        "session-intel-repo-state-2",
+        "session-intel-repo-state-3",
+    ]
+
+
+def test_session_intelligence_decision_report_lists_tracked_implemented_helpers(
+    tmp_path: Path,
+) -> None:
+    conn = _memory_conn()
+    ensure_session_intelligence_schema(conn)
+    conn.execute(
+        """
+        INSERT INTO session_intelligence_implementations (
+          id, lane, helper_family, candidate_ids_json, candidate_count,
+          implementation_status, telemetry_status, removal_status, removal_reason,
+          implemented_artifact_type, implemented_artifact_ref, created_at, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            "session-intel-implementation-friction_tool-repo_state",
+            "friction_tool",
+            "repo_state",
+            json.dumps(["session-intel-repo-state-1"]),
+            1,
+            "implemented",
+            "awaiting_telemetry",
+            "monitor",
+            "Track usage before deciding whether to keep or remove this helper family.",
+            "helper_family_preset",
+            "session-intel-helper-family:repo_state",
+            "2026-06-30T10:00:00+00:00",
+            "2026-06-30T10:00:00+00:00",
+        ),
+    )
+    provider = CodexProvider(source_root=tmp_path / "missing", db_path=tmp_path / "aios.db")
+
+    result = run_session_intelligence(
+        conn,
+        provider=provider,
+        options=SessionIntelligenceOptions(since="all", write_report=True, report_root=tmp_path),
+    )
+
+    decision_report = Path(result["decision_report_path"]).read_text(encoding="utf-8")
+    assert "## Removal Candidates" in decision_report
+    assert "### monitored implemented helpers" in decision_report
+    assert "- repo_state: monitor; awaiting_telemetry; candidates covered: 1" in decision_report
+    assert "session-intel-helper-family:repo_state" in decision_report
+
+
 def test_session_intelligence_deduplicates_candidates_across_runs(tmp_path: Path) -> None:
     sessions_root = tmp_path / "sessions"
     _write_codex_rollout(
@@ -673,6 +853,9 @@ def test_session_intelligence_cli_parser_accepts_run_candidates_and_mark() -> No
     clusters_args = parser.parse_args(
         ["session-intel", "clusters", "--status", "pending_review", "--lane", "all"]
     )
+    implement_args = parser.parse_args(
+        ["session-intel", "implement", "--status", "pending_review", "--lane", "all"]
+    )
     mark_args = parser.parse_args(
         [
             "session-intel",
@@ -680,7 +863,7 @@ def test_session_intelligence_cli_parser_accepts_run_candidates_and_mark() -> No
             "--candidate-id",
             "candidate-1",
             "--status",
-            "approved",
+            "implemented",
             "--note",
             "reviewed",
         ]
@@ -702,6 +885,7 @@ def test_session_intelligence_cli_parser_accepts_run_candidates_and_mark() -> No
     assert run_args.session_intel_command == "run"
     assert candidates_args.session_intel_command == "candidates"
     assert clusters_args.session_intel_command == "clusters"
+    assert implement_args.session_intel_command == "implement"
     assert mark_args.session_intel_command == "mark"
     assert backfill_args.session_intel_command == "backfill"
     assert backfill_args.provider == "all"
@@ -737,11 +921,24 @@ def test_session_intelligence_cli_payloads_run_list_and_mark(tmp_path: Path) -> 
         conn,
         argparse.Namespace(session_intel_command="candidates", status="pending_review", lane="all"),
     )
+    implemented = aios_cli._session_intel_payload(
+        conn,
+        argparse.Namespace(
+            session_intel_command="implement",
+            status="pending_review",
+            lane="all",
+            note="Human approved implementation.",
+        ),
+    )
+    implemented_list = aios_cli._session_intel_payload(
+        conn,
+        argparse.Namespace(session_intel_command="candidates", status="implemented", lane="all"),
+    )
     marked = aios_cli._session_intel_payload(
         conn,
         argparse.Namespace(
             session_intel_command="mark",
-            candidate_id=listed["candidates"][0]["id"],
+            candidate_id=implemented_list["candidates"][0]["id"],
             status="observed",
             note="keep watching",
         ),
@@ -754,6 +951,10 @@ def test_session_intelligence_cli_payloads_run_list_and_mark(tmp_path: Path) -> 
     assert run_payload["summary"]["candidate_count"] == 1
     assert Path(run_payload["report_path"]).exists()
     assert listed["count"] == 1
+    assert implemented["candidate_count"] == 1
+    assert implemented["implementation_count"] == 1
+    assert implemented["implementations"][0]["telemetry_status"] == "awaiting_telemetry"
+    assert implemented_list["count"] == 1
     assert marked["status"] == "observed"
     assert clusters["count"] == 1
     assert clusters["total_count"] == 1
