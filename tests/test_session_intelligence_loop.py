@@ -272,6 +272,62 @@ def test_session_intelligence_classifies_lanes_and_redacts_report(tmp_path: Path
     assert "[REDACTED:api_key]" in decision_report
 
 
+def test_session_intelligence_decision_report_includes_full_pending_backlog(
+    tmp_path: Path,
+) -> None:
+    sessions_root = tmp_path / "sessions"
+    _write_codex_rollout(
+        sessions_root / "2026/06/27/rollout-2026-06-27T10-00-00-session-1.jsonl",
+        [
+            _session_meta("session-1"),
+            _function_call("pnpm test"),
+            _function_output("Process exited with code 1\npytest failed"),
+        ],
+    )
+    conn = _memory_conn()
+    ensure_session_intelligence_schema(conn)
+    conn.execute(
+        """
+        INSERT INTO session_intelligence_candidates (
+          id, lane, title, summary, impact_score, confidence, status,
+          source_sessions_json, redacted_evidence_json, proposed_artifact_type,
+          proposed_next_action, review_note, created_at, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            "session-intel-backlog-only",
+            "friction_tool",
+            "Stored backlog-only candidate",
+            "Existing pending work should stay visible after a smaller latest scan.",
+            8,
+            0.7,
+            "pending_review",
+            json.dumps(["older-session"]),
+            json.dumps([{"session_id": "older-session", "summary": "older evidence"}]),
+            "deterministic_tool_candidate",
+            "Review whether this backlog item still deserves promotion.",
+            None,
+            "2026-06-26T10:00:00+00:00",
+            "2026-06-26T10:00:00+00:00",
+        ),
+    )
+    provider = CodexProvider(source_root=sessions_root, db_path=tmp_path / "aios.db")
+
+    result = run_session_intelligence(
+        conn,
+        provider=provider,
+        options=SessionIntelligenceOptions(since="last", write_report=True, report_root=tmp_path),
+    )
+
+    decision_report = Path(result["decision_report_path"]).read_text(encoding="utf-8")
+    assert "## New in latest scan" in decision_report
+    assert "## All pending candidates" in decision_report
+    assert "- latest pending candidates: 1" in decision_report
+    assert "- all pending candidates: 2" in decision_report
+    assert "Stored backlog-only candidate" in decision_report
+
+
 def test_session_intelligence_deduplicates_candidates_across_runs(tmp_path: Path) -> None:
     sessions_root = tmp_path / "sessions"
     _write_codex_rollout(

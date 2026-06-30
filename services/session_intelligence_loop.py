@@ -266,12 +266,16 @@ def _run_session_intelligence_for_sources(
     report_json_path: str | None = None
     decision_report_path: str | None = None
     if options.write_report:
+        all_pending_candidates = list_session_intelligence_candidates(
+            conn, status="pending_review", lane="all"
+        )
         report_path, report_json_path, decision_report_path = _write_report(
             options.report_root or Path("data/session-intelligence/reports"),
             run_id=run_id,
             provider=provider.provider_id,
             scanned_range=options.since,
             candidates=stored_candidates,
+            all_pending_candidates=all_pending_candidates,
             generated_at=now,
         )
 
@@ -1021,6 +1025,7 @@ def _write_report(
     provider: str,
     scanned_range: str,
     candidates: list[dict[str, Any]],
+    all_pending_candidates: list[dict[str, Any]],
     generated_at: str,
 ) -> tuple[str, str, str]:
     report_root.mkdir(parents=True, exist_ok=True)
@@ -1064,6 +1069,7 @@ def _write_report(
             provider=provider,
             scanned_range=scanned_range,
             candidates=candidates,
+            all_pending_candidates=all_pending_candidates,
             generated_at=generated_at,
         ),
         encoding="utf-8",
@@ -1077,16 +1083,14 @@ def _decision_report_markdown(
     provider: str,
     scanned_range: str,
     candidates: list[dict[str, Any]],
+    all_pending_candidates: list[dict[str, Any]],
     generated_at: str,
 ) -> str:
-    pending = [candidate for candidate in candidates if candidate["status"] == "pending_review"]
-    pending_by_lane = {
-        lane: sorted(
-            [candidate for candidate in pending if candidate["lane"] == lane],
-            key=lambda candidate: (-candidate["impact_score"], -candidate["confidence"], candidate["title"]),
-        )
-        for lane in ("friction_tool", "workflow_skill", "impact_idea")
-    }
+    latest_pending = [
+        candidate for candidate in candidates if candidate["status"] == "pending_review"
+    ]
+    latest_pending_by_lane = _pending_candidates_by_lane(latest_pending)
+    all_pending_by_lane = _pending_candidates_by_lane(all_pending_candidates)
     lines = [
         "# Codex Daily Candidate Decisions",
         "",
@@ -1096,22 +1100,57 @@ def _decision_report_markdown(
         f"- latest run: {run_id}",
         f"- scanned range: {scanned_range}",
         f"- updated at: {generated_at}",
-        f"- pending candidates: {len(pending)}",
-        f"- friction_tool: {len(pending_by_lane['friction_tool'])}",
-        f"- workflow_skill: {len(pending_by_lane['workflow_skill'])}",
-        f"- impact_idea: {len(pending_by_lane['impact_idea'])}",
+        f"- latest pending candidates: {len(latest_pending)}",
+        f"- all pending candidates: {len(all_pending_candidates)}",
+        f"- latest friction_tool: {len(latest_pending_by_lane['friction_tool'])}",
+        f"- latest workflow_skill: {len(latest_pending_by_lane['workflow_skill'])}",
+        f"- latest impact_idea: {len(latest_pending_by_lane['impact_idea'])}",
+        f"- all friction_tool: {len(all_pending_by_lane['friction_tool'])}",
+        f"- all workflow_skill: {len(all_pending_by_lane['workflow_skill'])}",
+        f"- all impact_idea: {len(all_pending_by_lane['impact_idea'])}",
         "",
     ]
+    lines.extend(["## New in latest scan", ""])
+    _append_candidate_lane_sections(lines, latest_pending_by_lane, lane_heading_level=3)
+    lines.extend(["## All pending candidates", ""])
+    _append_candidate_lane_sections(lines, all_pending_by_lane, lane_heading_level=3)
+    return "\n".join(lines)
+
+
+def _pending_candidates_by_lane(
+    candidates: list[dict[str, Any]],
+) -> dict[str, list[dict[str, Any]]]:
+    return {
+        lane: sorted(
+            [candidate for candidate in candidates if candidate["lane"] == lane],
+            key=lambda candidate: (
+                -candidate["impact_score"],
+                -candidate["confidence"],
+                candidate["title"],
+            ),
+        )
+        for lane in ("friction_tool", "workflow_skill", "impact_idea")
+    }
+
+
+def _append_candidate_lane_sections(
+    lines: list[str],
+    candidates_by_lane: dict[str, list[dict[str, Any]]],
+    *,
+    lane_heading_level: int,
+) -> None:
+    lane_heading = "#" * lane_heading_level
+    candidate_heading = "#" * (lane_heading_level + 1)
     for lane in ("friction_tool", "workflow_skill", "impact_idea"):
-        lane_candidates = pending_by_lane[lane]
-        lines.extend([f"## {lane}", ""])
+        lane_candidates = candidates_by_lane[lane]
+        lines.extend([f"{lane_heading} {lane}", ""])
         if not lane_candidates:
             lines.extend(["No pending candidates in this lane.", ""])
             continue
         for candidate in lane_candidates:
             lines.extend(
                 [
-                    f"### {candidate['title']}",
+                    f"{candidate_heading} {candidate['title']}",
                     "",
                     f"- id: {candidate['id']}",
                     f"- impact: {candidate['impact_score']}",
@@ -1134,7 +1173,6 @@ def _decision_report_markdown(
                         f"- {evidence.get('session_id', 'unknown')}: {evidence.get('summary', '')}"
                     )
                 lines.append("")
-    return "\n".join(lines)
 
 
 def _candidate_anecdotal_setting(candidate: dict[str, Any]) -> str:
