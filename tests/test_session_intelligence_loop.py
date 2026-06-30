@@ -359,6 +359,72 @@ def test_session_intelligence_helper_strategy_uses_reusable_families(tmp_path: P
     assert "- helper family: artifact_probe" not in decision_report
 
 
+def test_session_intelligence_rolls_up_friction_candidates_by_helper_family(
+    tmp_path: Path,
+) -> None:
+    conn = _memory_conn()
+    ensure_session_intelligence_schema(conn)
+    conn.executemany(
+        """
+        INSERT INTO session_intelligence_candidates (
+          id, lane, title, summary, impact_score, confidence, status,
+          source_sessions_json, redacted_evidence_json, proposed_artifact_type,
+          proposed_next_action, review_note, created_at, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        [
+            (
+                "session-intel-repo-state-1",
+                "friction_tool",
+                "Repeated git status inspection failed",
+                "Codex kept rerunning git status checks before closeout.",
+                8,
+                0.8,
+                "pending_review",
+                json.dumps(["session-1"]),
+                json.dumps([{"session_id": "session-1", "summary": "git status --short failed"}]),
+                "deterministic_tool_candidate",
+                "Review whether a repo state preset should cover git status checks.",
+                None,
+                "2026-06-30T10:00:00+00:00",
+                "2026-06-30T10:00:00+00:00",
+            ),
+            (
+                "session-intel-repo-state-2",
+                "friction_tool",
+                "Repeated git diff inspection failed",
+                "Codex kept rerunning git diff checks before closeout.",
+                7,
+                0.7,
+                "pending_review",
+                json.dumps(["session-2"]),
+                json.dumps([{"session_id": "session-2", "summary": "git diff --stat failed"}]),
+                "deterministic_tool_candidate",
+                "Review whether a repo state preset should cover git diff checks.",
+                None,
+                "2026-06-30T10:01:00+00:00",
+                "2026-06-30T10:01:00+00:00",
+            ),
+        ],
+    )
+    provider = CodexProvider(source_root=tmp_path / "missing", db_path=tmp_path / "aios.db")
+
+    result = run_session_intelligence(
+        conn,
+        provider=provider,
+        options=SessionIntelligenceOptions(since="all", write_report=True, report_root=tmp_path),
+    )
+
+    decision_report = Path(result["decision_report_path"]).read_text(encoding="utf-8")
+    assert "#### helper family: repo_state" in decision_report
+    assert decision_report.count("#### helper family: repo_state") == 1
+    assert "- candidate count: 2" in decision_report
+    assert "##### Repeated git status inspection failed" in decision_report
+    assert "##### Repeated git diff inspection failed" in decision_report
+    assert "Add this under the repo_state family" in decision_report
+
+
 def test_session_intelligence_deduplicates_candidates_across_runs(tmp_path: Path) -> None:
     sessions_root = tmp_path / "sessions"
     _write_codex_rollout(

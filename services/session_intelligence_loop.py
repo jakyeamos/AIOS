@@ -1140,39 +1140,94 @@ def _append_candidate_lane_sections(
     lane_heading_level: int,
 ) -> None:
     lane_heading = "#" * lane_heading_level
-    candidate_heading = "#" * (lane_heading_level + 1)
     for lane in ("friction_tool", "workflow_skill", "impact_idea"):
         lane_candidates = candidates_by_lane[lane]
         lines.extend([f"{lane_heading} {lane}", ""])
         if not lane_candidates:
             lines.extend(["No pending candidates in this lane.", ""])
             continue
-        for candidate in lane_candidates:
-            lines.extend(
-                [
-                    f"{candidate_heading} {candidate['title']}",
-                    "",
-                    f"- id: {candidate['id']}",
-                    f"- impact: {candidate['impact_score']}",
-                    f"- confidence: {candidate['confidence']}",
-                    f"- proposed artifact: {candidate['proposed_artifact_type']}",
-                    f"- next decision: {candidate['proposed_next_action']}",
-                    "",
-                    candidate["summary"],
-                    "",
-                    f"Anecdotal setting: {_candidate_anecdotal_setting(candidate)}",
-                    "",
-                ]
+        if lane == "friction_tool":
+            _append_friction_helper_family_sections(
+                lines,
+                lane_candidates,
+                family_heading_level=lane_heading_level + 1,
             )
-            lines.extend(_candidate_helper_strategy_lines(candidate))
-            evidence_items = candidate["redacted_evidence"][:3]
-            if evidence_items:
-                lines.append("Evidence:")
-                for evidence in evidence_items:
-                    lines.append(
-                        f"- {evidence.get('session_id', 'unknown')}: {evidence.get('summary', '')}"
-                    )
-                lines.append("")
+            continue
+        for candidate in lane_candidates:
+            _append_candidate_detail(
+                lines,
+                candidate,
+                candidate_heading_level=lane_heading_level + 1,
+            )
+
+
+def _append_friction_helper_family_sections(
+    lines: list[str],
+    candidates: list[dict[str, Any]],
+    *,
+    family_heading_level: int,
+) -> None:
+    family_heading = "#" * family_heading_level
+    candidate_heading_level = family_heading_level + 1
+    candidates_by_family = _friction_candidates_by_helper_family(candidates)
+    for family, family_candidates in sorted(
+        candidates_by_family.items(),
+        key=lambda item: (
+            -len(item[1]),
+            -max(candidate["impact_score"] for candidate in item[1]),
+            item[0],
+        ),
+    ):
+        lines.extend([f"{family_heading} helper family: {family}", ""])
+        lines.extend(_helper_family_strategy_lines(family, family_candidates))
+        for candidate in family_candidates:
+            _append_candidate_detail(
+                lines,
+                candidate,
+                candidate_heading_level=candidate_heading_level,
+            )
+
+
+def _append_candidate_detail(
+    lines: list[str],
+    candidate: dict[str, Any],
+    *,
+    candidate_heading_level: int,
+) -> None:
+    candidate_heading = "#" * candidate_heading_level
+    lines.extend(
+        [
+            f"{candidate_heading} {candidate['title']}",
+            "",
+            f"- id: {candidate['id']}",
+            f"- impact: {candidate['impact_score']}",
+            f"- confidence: {candidate['confidence']}",
+            f"- proposed artifact: {candidate['proposed_artifact_type']}",
+            f"- next decision: {candidate['proposed_next_action']}",
+            "",
+            candidate["summary"],
+            "",
+            f"Anecdotal setting: {_candidate_anecdotal_setting(candidate)}",
+            "",
+        ]
+    )
+    evidence_items = candidate["redacted_evidence"][:3]
+    if evidence_items:
+        lines.append("Evidence:")
+        for evidence in evidence_items:
+            lines.append(
+                f"- {evidence.get('session_id', 'unknown')}: {evidence.get('summary', '')}"
+            )
+        lines.append("")
+
+
+def _friction_candidates_by_helper_family(
+    candidates: list[dict[str, Any]],
+) -> dict[str, list[dict[str, Any]]]:
+    candidates_by_family: dict[str, list[dict[str, Any]]] = {}
+    for candidate in candidates:
+        candidates_by_family.setdefault(_candidate_helper_family(candidate), []).append(candidate)
+    return candidates_by_family
 
 
 def _candidate_anecdotal_setting(candidate: dict[str, Any]) -> str:
@@ -1196,10 +1251,10 @@ def _candidate_anecdotal_setting(candidate: dict[str, Any]) -> str:
     )
 
 
-def _candidate_helper_strategy_lines(candidate: dict[str, Any]) -> list[str]:
-    if candidate["lane"] != "friction_tool":
-        return []
-    family = _candidate_helper_family(candidate)
+def _helper_family_strategy_lines(
+    family: str,
+    candidates: list[dict[str, Any]],
+) -> list[str]:
     if family == "bespoke_review":
         dedicated_helper = "maybe, only after another run proves this is not a router preset"
         recommendation = (
@@ -1212,9 +1267,13 @@ def _candidate_helper_strategy_lines(candidate: dict[str, Any]) -> list[str]:
             "Prefer a shared helper family or preset over a one-off script. Add this under "
             f"the {family} family if the same parameter shape keeps recurring."
         )
+    average_confidence = sum(candidate["confidence"] for candidate in candidates) / len(candidates)
     return [
         "Helper strategy:",
         f"- helper family: {family}",
+        f"- candidate count: {len(candidates)}",
+        f"- max impact: {max(candidate['impact_score'] for candidate in candidates)}",
+        f"- average confidence: {average_confidence:.2f}",
         f"- reuse recommendation: {recommendation}",
         f"- dedicated helper: {dedicated_helper}",
         "",
