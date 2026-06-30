@@ -1157,7 +1157,6 @@ def _append_candidate_lane_sections(
                     f"- confidence: {candidate['confidence']}",
                     f"- proposed artifact: {candidate['proposed_artifact_type']}",
                     f"- next decision: {candidate['proposed_next_action']}",
-                    f"- source sessions: {', '.join(candidate['source_sessions'])}",
                     "",
                     candidate["summary"],
                     "",
