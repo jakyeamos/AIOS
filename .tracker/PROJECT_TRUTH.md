@@ -9,7 +9,7 @@ blockers:
   - Full repo Ruff and format baselines are not green: Ruff reports 25 issues and Ruff format reports 162 files needing formatting.
   - Full repo BasedPyright is not green: 109 errors and 78 warnings, including the existing `services/aios_cli.py` `run_cli` complexity baseline.
   - `uv run vulture . --min-confidence 70` scans `.venv` and fails on third-party package findings; project-scoped `uv run vulture bin services --min-confidence 70` passes.
-lastUpdated: 2026-06-29
+lastUpdated: 2026-06-30
 tags: [infra, ai-os, hooks, automation]
 areas: [engineering]
 goals: []
@@ -70,6 +70,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 ## Recent Progress
 
+- 2026-06-30: Removed stale code-intelligence integration references from AIOS active/default project lists, prompt-submit retrieval hints, benchmark manifests, and linked-project planning docs; targeted Ruff, BasedPyright, JSON parse, and tier-one regression checks pass.
 - 2026-06-25: Added an AIOS quality-pipeline `anti_slop` adoption/backfill gate for platform, production public web app, and developer-tool package repos, with audit-mode linked-repo commands and readiness regression coverage.
 - 2026-06-26: Linked-repo adoption reports now require quality certification through `repo_gate_adoption_v1`, separating `aios_wired`, `quality_standard_compliant`, and `release_ready` stages from final `adoption_ready`, `adopted_but_blocked`, or `not_adopted` status.
 - 2026-06-26: Completed Phase 29 pre-execution prep by refreshing the linked-repo adoption baseline, documenting first-wave repo branch/dirty state, and updating Phase 29 acceptance criteria to require `adoption_ready` plus passing certification stages.

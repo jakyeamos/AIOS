@@ -39,7 +39,6 @@ Priority repos:
 - `soundscape-app`
 - `Terrace`
 - `portfolio`
-- `GitNexus`
 - `amos-saas`
 
 For each, define:

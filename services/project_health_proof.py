@@ -7,7 +7,7 @@ from typing import Any
 
 from services.standards_health import ensure_standards_health_schema, evaluate_and_record
 
-DEFAULT_PROVING_PROJECTS = ("AIOS", "soundscape-app", "Terrace", "portfolio", "GitNexus", "amos-saas")
+DEFAULT_PROVING_PROJECTS = ("AIOS", "soundscape-app", "Terrace", "portfolio", "amos-saas")
 
 
 def _load_configured_projects(config_root: Path) -> dict[str, dict[str, Any]]:
@@ -153,7 +153,9 @@ def prove_project_health(
                     "name": str(candidate["name"]),
                     "project_id": str(candidate["id"]),
                     "repo_path": repo_path,
-                    "configured_profile_ids": configured.get("profile_ids", []) if configured else [],
+                    "configured_profile_ids": configured.get("profile_ids", [])
+                    if configured
+                    else [],
                     "status": "missing_source",
                     "snapshot_id": None,
                     "health_score": None,
@@ -186,7 +188,7 @@ def prove_project_health(
                 "candidate_count": len(candidates),
                 "missing_reason": None,
             }
-            )
+        )
 
     conn.commit()
     status_counts: dict[str, int] = {}

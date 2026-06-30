@@ -152,7 +152,7 @@ Blocker findings from the document-quality report mean the generated adoption do
 
 Plan 23-07 added portfolio reporting support so `services.quality_pipeline.get_project_quality_pipeline` now exposes each repo's class, strict readiness verdict, maturation blockers, and any non-remote CI exception alongside latest gate status, source, timestamp, command, and evidence IDs.
 
-`prove-project-health --all-inventory` was tightened to target active inventory rows only. It no longer appends default proving projects during an all-inventory proof, which prevents inactive or removed repos such as GitNexus from contaminating portfolio standards-health snapshots.
+`prove-project-health --all-inventory` was tightened to target active inventory rows only. It no longer appends default proving projects during an all-inventory proof, which prevents inactive or removed repos from contaminating portfolio standards-health snapshots.
 
 Current strict-readiness distribution from `config/quality-pipeline.json`:
 

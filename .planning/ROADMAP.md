@@ -670,7 +670,7 @@ This milestone adds algorithmic complexity and code simplification as mandatory 
 - Create `docs/quality/complexity-simplification-gate.md` — root gate specification (why, when, what, how, fix-vs-defer, Definition of Done)
 - Create `docs/quality/complexity-checklist.md` — local 17-pattern algorithmic complexity checklist derived from codex-complexity-optimizer patterns; no external dependency
 - Create `docs/backfill/complexity-simplification-backfill.md` — AIOS-specific backfill inventory
-- Create backfill docs for all six linked projects: soundscape-app, portfolio, amos-saas, GitNexus, tm, Terrace
+- Create backfill docs for linked projects: soundscape-app, portfolio, amos-saas, tm, Terrace
 - Update AIOS backfill doc with Cross-Project Summary table linking all six external inventories
 
 **Current Surfaces To Evolve:**
@@ -682,7 +682,6 @@ This milestone adds algorithmic complexity and code simplification as mandatory 
 - `~/projects/soundscape-app/docs/complexity-simplification-backfill.md` (new)
 - `~/projects/portfolio/docs/complexity-simplification-backfill.md` (new)
 - `~/projects/amos-saas/docs/complexity-simplification-backfill.md` (new)
-- `~/projects/GitNexus/docs/complexity-simplification-backfill.md` (new)
 - `~/projects/tm/docs/complexity-simplification-backfill.md` (new)
 - `~/projects/Terrace/docs/complexity-simplification-backfill.md` (new)
 

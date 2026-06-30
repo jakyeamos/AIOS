@@ -31,7 +31,7 @@ Matured the AIOS-owned configuration surface for production/public web repos whe
 - Added class-specific quality-pipeline gates and `strict_readiness_status` metadata for all seven production/public web repos.
 - Added `maturation_blockers` for every production/public web repo that lacks real class gates.
 - Removed weak-marker treatment from production/public web repos; none remains `floor_only` or `pre_cr_only`.
-- Added architecture-enforcement project rows for `dispatches-from-cyberspace`, `remodelvision`, `Bballedu`, and `tm`, and replaced stale lowercase `terrace`/`gitnexus` architecture rows during Plan 23-03 cleanup.
+- Added architecture-enforcement project rows for `dispatches-from-cyberspace`, `remodelvision`, `Bballedu`, and `tm`, and replaced stale lowercase architecture rows during Plan 23-03 cleanup.
 
 ## Readiness Result
 

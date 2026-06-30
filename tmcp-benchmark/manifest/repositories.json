@@ -277,43 +277,6 @@
     {
       "aios_shadow_branch": null,
       "build_system": "node",
-      "ci_configuration": [
-        ".github/workflows/ci-e2e.yml",
-        ".github/workflows/ci-quality.yml",
-        ".github/workflows/ci-report.yml",
-        ".github/workflows/ci-tests.yml",
-        ".github/workflows/ci.yml",
-        ".github/workflows/claude-code-review.yml",
-        ".github/workflows/claude.yml",
-        ".github/workflows/pr-description-check.yml",
-        ".github/workflows/publish.yml",
-        ".github/workflows/triage-sweep.yml"
-      ],
-      "current_commit": "66353c3347a5fbe33e4dec4f9322cf76ecb42266",
-      "default_branch": "main",
-      "dependency_lockfiles": [
-        "package-lock.json"
-      ],
-      "existing_shortcut_registry": [],
-      "existing_skills": [],
-      "framework": null,
-      "has_tmcp_graph": false,
-      "lint_commands": [
-        "npm run lint"
-      ],
-      "package_manager": "npm",
-      "project_id": "GitNexus",
-      "project_language": "typescript",
-      "repo_path": "/Users/jakyeamos/projects/Not-mine/GitNexus",
-      "test_commands": [],
-      "testing_framework": null,
-      "typecheck_commands": [],
-      "uncommitted_changes": true,
-      "upstream_remote": "https://github.com/jakyeamos/GitNexus.git"
-    },
-    {
-      "aios_shadow_branch": null,
-      "build_system": "node",
       "ci_configuration": [],
       "current_commit": "c33128e94fb20a5a009e0f6b3ab21b8bf682efbd",
       "default_branch": "codex/thin-v1-coach-demo",

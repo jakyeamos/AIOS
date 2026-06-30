@@ -28,8 +28,18 @@ PROMPT_PURPOSE_MAX_CHARS = 200
 PROMPT_MATCH_MIN_SCORE = 1
 
 REUSABLE_SIGNALS = [
-    "how do i", "how to", "explain", "refactor", "review", "write a",
-    "create a", "generate", "plan", "debug", "fix", "help me",
+    "how do i",
+    "how to",
+    "explain",
+    "refactor",
+    "review",
+    "write a",
+    "create a",
+    "generate",
+    "plan",
+    "debug",
+    "fix",
+    "help me",
 ]
 
 CONTROL_PROMPTS = {
@@ -174,7 +184,9 @@ def _render_template_hint(template: dict) -> str:
     )
 
 
-def _best_prompt_template(classification: str, prompt: str, templates: list[dict] | None = None) -> dict | None:
+def _best_prompt_template(
+    classification: str, prompt: str, templates: list[dict] | None = None
+) -> dict | None:
     templates = templates if templates is not None else _load_prompt_registry()
     if not templates:
         return None
@@ -251,7 +263,9 @@ def vault_search(args: list[str]) -> dict:
     try:
         result = subprocess.run(
             ["python3", VAULT_SEARCH] + args,
-            capture_output=True, text=True, timeout=6,
+            capture_output=True,
+            text=True,
+            timeout=6,
         )
         if result.returncode == 0 and result.stdout:
             return json.loads(result.stdout)
@@ -260,7 +274,9 @@ def vault_search(args: list[str]) -> dict:
     return {"results": [], "count": 0}
 
 
-def retrieve_context(classification: str, prompt: str, project_name: str, conn: sqlite3.Connection, policy: dict) -> tuple[str, str]:
+def retrieve_context(
+    classification: str, prompt: str, project_name: str, conn: sqlite3.Connection, policy: dict
+) -> tuple[str, str]:
     """
     Returns (context_text, source_description) based on classification.
     Returns ("", "") if nothing retrieved.
@@ -268,7 +284,9 @@ def retrieve_context(classification: str, prompt: str, project_name: str, conn: 
     retrieval_cfg = policy.get("prompt_retrieval", {})
     parts = []
     source = ""
-    matched_template = _best_prompt_template(classification, prompt, _data_backed_prompt_templates(conn))
+    matched_template = _best_prompt_template(
+        classification, prompt, _data_backed_prompt_templates(conn)
+    )
     if matched_template:
         parts.append(_render_template_hint(matched_template))
         source = "prompt_library"
@@ -316,9 +334,13 @@ def retrieve_context(classification: str, prompt: str, project_name: str, conn: 
         if cfg.get("search_archive", True) and not parts:
             # Only search archive if no open bugs matched (avoid noise when bugs already surfaced)
             stop = {"this", "that", "with", "from", "have", "what", "when", "where", "which"}
-            terms = " ".join(w for w in prompt.lower().split() if len(w) >= 4 and w not in stop)[:60]
+            terms = " ".join(w for w in prompt.lower().split() if len(w) >= 4 and w not in stop)[
+                :60
+            ]
             if terms:
-                archive_result = vault_search(["--grep", terms, "--section", "Key Changes", "--source", "archive"])
+                archive_result = vault_search(
+                    ["--grep", terms, "--section", "Key Changes", "--source", "archive"]
+                )
                 if archive_result.get("count", 0) > 0:
                     titles = [r["title"] for r in archive_result["results"][:2]]
                     parts.append(f"**Related archive notes:** {', '.join(titles)}")
@@ -340,7 +362,9 @@ def retrieve_context(classification: str, prompt: str, project_name: str, conn: 
                         if dec_text:
                             decision_parts.append(dec_text)
                 if decision_parts:
-                    parts.append("**Prior decisions (recent sessions):**\n" + "\n---\n".join(decision_parts))
+                    parts.append(
+                        "**Prior decisions (recent sessions):**\n" + "\n---\n".join(decision_parts)
+                    )
                     source = "handoff_decisions"
 
     elif classification == "implement":
@@ -358,7 +382,9 @@ def retrieve_context(classification: str, prompt: str, project_name: str, conn: 
                         if actions_text:
                             action_parts.append(actions_text)
                 if action_parts:
-                    parts.append("**Next actions from recent sessions:**\n" + "\n---\n".join(action_parts))
+                    parts.append(
+                        "**Next actions from recent sessions:**\n" + "\n---\n".join(action_parts)
+                    )
                     source = "handoff_next_actions"
 
     # Rules retrieval
@@ -399,8 +425,24 @@ def retrieve_context(classification: str, prompt: str, project_name: str, conn: 
         if os.path.isdir(wiki_dir):
             try:
                 # Extract key terms from prompt (skip short/stop words)
-                stop = {"this", "that", "with", "from", "have", "what", "when", "where",
-                        "which", "does", "why", "how", "the", "and", "for", "you"}
+                stop = {
+                    "this",
+                    "that",
+                    "with",
+                    "from",
+                    "have",
+                    "what",
+                    "when",
+                    "where",
+                    "which",
+                    "does",
+                    "why",
+                    "how",
+                    "the",
+                    "and",
+                    "for",
+                    "you",
+                }
                 terms = [w for w in prompt.lower().split() if len(w) >= 4 and w not in stop][:6]
                 if terms:
                     max_results = wiki_cfg.get("max_results", 2)
@@ -418,7 +460,7 @@ def retrieve_context(classification: str, prompt: str, project_name: str, conn: 
                                 # Strip frontmatter
                                 if text.startswith("---"):
                                     end = text.find("---", 3)
-                                    text = text[end + 3:].strip() if end > 0 else text
+                                    text = text[end + 3 :].strip() if end > 0 else text
                                 hits.append(f"**{fname[:-3]}:** {text[:max_chars].strip()}")
                             except Exception:
                                 pass
@@ -429,21 +471,6 @@ def retrieve_context(classification: str, prompt: str, project_name: str, conn: 
                         source = source or "wiki"
             except Exception:
                 pass  # graceful fallback
-
-    # GitNexus hint — if a .gitnexus/ index exists for the project CWD, surface it
-    # Only fires for classifications where code graph context adds value
-    gitnexus_cfg = policy.get("gitnexus_retrieval", {})
-    if gitnexus_cfg.get("enabled", True) and classification in ("debug", "refactor", "implement"):
-        gitnexus_dir = os.path.join(os.getcwd(), ".gitnexus")
-        if os.path.isdir(gitnexus_dir):
-            hints = {
-                "debug":     "gitnexus_query(), gitnexus_context(), gitnexus_detect_changes()",
-                "refactor":  "gitnexus_impact(), gitnexus_rename(), gitnexus_detect_changes()",
-                "implement": "gitnexus_query(), gitnexus_impact()",
-            }
-            tool_hint = hints.get(classification, "gitnexus_query()")
-            parts.append(f"**GitNexus index present** — use {tool_hint} for code graph context.")
-            source = source or "gitnexus"
 
     # Reusable prompt hint
     if not matched_template and policy.get("reusable_prompt_hint", {}).get("enabled", True):
@@ -459,7 +486,9 @@ def retrieve_context(classification: str, prompt: str, project_name: str, conn: 
                     if len(prior_words) > 0:
                         overlap = len(prior_words & prompt_words) / len(prior_words)
                         if overlap >= 0.6 and prior_text != prompt:
-                            parts.append(f"**Similar past prompt (reusable):** _{prior_text[:120]}_")
+                            parts.append(
+                                f"**Similar past prompt (reusable):** _{prior_text[:120]}_"
+                            )
                             source = source or "prompt_library"
                             break
         except Exception:
@@ -540,7 +569,12 @@ def main() -> None:
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
-                str(uuid.uuid4()), session_id, prompt_hash, prompt, classification, reusable,
+                str(uuid.uuid4()),
+                session_id,
+                prompt_hash,
+                prompt,
+                classification,
+                reusable,
                 1 if retrieval_context else 0,
                 retrieval_source if retrieval_source else None,
             ),
@@ -566,25 +600,33 @@ def main() -> None:
                 str(uuid.uuid4()),
                 session_id,
                 datetime.now(UTC).isoformat(),
-                json.dumps({
-                    "session_id": session_id,
-                    "classification": classification,
-                    "reusable": reusable,
-                    "prompt_hash": prompt_hash,
-                    "retrieval_fired": bool(retrieval_context),
-                    "retrieval_source": retrieval_source,
-                }),
+                json.dumps(
+                    {
+                        "session_id": session_id,
+                        "classification": classification,
+                        "reusable": reusable,
+                        "prompt_hash": prompt_hash,
+                        "retrieval_fired": bool(retrieval_context),
+                        "retrieval_source": retrieval_source,
+                    }
+                ),
             ),
         )
         conn.commit()
         conn.close()
-        log(f"prompt logged ({classification}, reusable={reusable}, retrieval={bool(retrieval_context)}) session={session_id}")
+        log(
+            f"prompt logged ({classification}, reusable={reusable}, retrieval={bool(retrieval_context)}) session={session_id}"
+        )
     except Exception as e:
         log(f"db error: {e}")
 
     # Inject retrieval context if found
     if retrieval_context:
-        print(json.dumps({"context": f"<!-- AIOS retrieval ({retrieval_source}) -->\n{retrieval_context}"}))
+        print(
+            json.dumps(
+                {"context": f"<!-- AIOS retrieval ({retrieval_source}) -->\n{retrieval_context}"}
+            )
+        )
 
 
 if __name__ == "__main__":

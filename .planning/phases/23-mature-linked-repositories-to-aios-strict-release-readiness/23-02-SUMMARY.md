@@ -35,7 +35,7 @@ Defined the strict release-readiness contract used by the remaining Phase 23 mat
   - content/vault/container repos
 - Added `standard.classes`, `standard.non_remote_ci_exception_schema`, and `standard.adoption_readiness_rule` to `config/quality-pipeline.json`.
 - Added `repo_class` metadata for all 23 active Phase 23 repos.
-- Removed stale `terrace` and `gitnexus` quality-pipeline rows so the pipeline config no longer carries inactive-row contamination.
+- Removed stale inactive quality-pipeline rows so the pipeline config no longer carries inactive-row contamination.
 - Updated portfolio and amos-saas inferred commands to use `pnpm` where a `pnpm-lock.yaml` is present.
 - Preserved BBDSE as blocked until aggregate or delegated subproject gates replace the floor-only contract.
 
