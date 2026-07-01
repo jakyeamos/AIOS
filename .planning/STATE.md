@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase 25 completed; Phase 29 repo-local pilot remediation phases are ready to execute
-last_updated: "2026-06-26T18:59:00Z"
+status: Daily-use release readiness is active; Phase 29 linked-repo remediation is paused as the release centerpiece
+last_updated: "2026-07-01T18:30:00Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -30,14 +30,16 @@ progress:
 - Latest planned linked-repo remediation phase: Phase 29 has eight AIOS coordination plans, while the pilot repos now carry their own repo-local gate-scoped phases generated from final adoption-doc-quality passes.
 - Latest completed governed-workflow phase: Phase 25 made GSD planning a governed first-class AIOS workflow with tested planning route selection, planning packet contracts, and known GSD command invocation coverage.
 - Latest completed expert-rubric phases: Phases 26-28 delivered core review artifacts, workflow runtime integration, route support, CLI exposure, quality closeout, and smoke verification.
+- Current release-readiness focus: make AIOS itself useful as the daily operating layer through `doctor -> start-work -> daily-flow replay -> next-action -> closeout evidence` before using portfolio linked-repo certification as the main showpiece.
+- Latest daily-use readiness slice: `doctor --json` now checks local package imports, SQLite, local stores, pnpm-only JavaScript state, context compiler package access, and daily-use command registration; README and `docs/case-study.md` lead with the daily loop; UI CI now uses pnpm.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 17, Progressive Governance And Standards Backfill Workflows
-- Active phase: Phase 29, Linked repo AIOS adoption readiness remediation
-- Active plan: BidCamp repo-local Phase 151, AIOS Format Gate Backfill
+- Active phase: Daily-use release readiness hardening
+- Active plan: AIOS self-readiness before Phase 29 portfolio certification resumes
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22 -> Phase 23 -> Phase 24
-- Next dependency chain: Phase 29 remediates the Phase 24 linked-repo readiness backlog after the completed Phase 26 -> Phase 27 -> Phase 28 expert-rubric chain; Phase 25 is now complete.
+- Next dependency chain: AIOS daily-use release gates must stay green before Phase 29 linked-repo readiness remediation resumes as a portfolio proof track.
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
 
 ## Known Constraints To Preserve
@@ -82,6 +84,7 @@ progress:
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-07-01 | Add AIOS daily-use release readiness path | Added `doctor --json`, hardened direct `bin/aios.py` dependency bootstrapping, pinned the integrated `start-work -> daily-flow -> next-action` loop with behavior tests, switched UI CI/docs/package metadata to pnpm-only, removed the stale UI npm lockfile, and added a daily-use README path plus `docs/case-study.md`; Phase 29 portfolio certification is paused as the release centerpiece until AIOS self-readiness is consistently green. |
 | 2026-06-25 | Add Anti-Slop adoption/backfill gate | Added `anti_slop` to AIOS quality-pipeline required gates for platform, production public web app, and developer-tool package classes; seeded audit-mode Anti-Slop backfill commands for in-scope linked repos; and added readiness regression coverage so adoption cannot lose the gate silently. |
 | 2026-06-26 | Add repo-local Phase 29 pilot remediation phases | Added gate-scoped adoption phases inside BidCamp, EliHealth, and pre-cr-suite-lsp from their final adoption-doc-quality artifact packs; AIOS remains the portfolio coordinator rather than owning per-repo execution phases. |
 | 2026-06-25 | Complete Phase 25 governed planning workflow | Completed all four Phase 25 plans; `planning-governance` is active, GSD phase-add/blocker/roadmap planning objectives route through governed start-work, planning packets surface standards and verification handoff before execution, `gsd-execute-phase 24` routes to the governed implementation lane, final targeted pytest suite passed with 192 tests, `pnpm context:validate` passed, and copied-DB Codex shadow smokes passed without creating worktrees. |

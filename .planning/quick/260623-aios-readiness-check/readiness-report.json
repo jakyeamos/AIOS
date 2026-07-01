@@ -1,6 +1,7 @@
 {
-  "db_copy": "/tmp/aios-readiness-check.db",
-  "generated_at": "2026-06-23T23:31:09.562463Z",
+  "db_copy": "/var/folders/r7/b6pc8f3d7mjgkqx_wps2p52r0000gn/T/aios-readiness-vkgg719m/aios-readiness.db",
+  "generated_at": "2026-07-01T18:33:50.111614Z",
+  "logs_dir": "/var/folders/r7/b6pc8f3d7mjgkqx_wps2p52r0000gn/T/aios-readiness-vkgg719m/logs",
   "ok": true,
   "results": [
     {
@@ -93,12 +94,12 @@
       "details": {
         "hits": [
           {
-            "drill_down_path": "/runs/run-18529ee5-d1d6-4249-bb5e-fa51b6b2312f?route=route-run-18529ee5-d1d6-4249-bb5e-fa51b6b2312f",
-            "id": "route-run-18529ee5-d1d6-4249-bb5e-fa51b6b2312f",
+            "drill_down_path": "/runs/run-5790533e-6833-416c-b7f4-a33918d1af44?route=route-run-5790533e-6833-416c-b7f4-a33918d1af44",
+            "id": "route-run-5790533e-6833-416c-b7f4-a33918d1af44",
             "kind": "route_decision",
-            "last_updated_at": "2026-06-23T23:31:07.433202+00:00",
+            "last_updated_at": "2026-07-01T18:33:48.553572+00:00",
             "metadata": {
-              "run_id": "run-18529ee5-d1d6-4249-bb5e-fa51b6b2312f"
+              "run_id": "run-5790533e-6833-416c-b7f4-a33918d1af44"
             },
             "project_id": "5bcd40a28db7463c",
             "score": 0.7,
@@ -160,5 +161,5 @@
       "summary": "Next-action returned a structured action list."
     }
   ],
-  "source_db": "/Users/jakyeamos/AIOS/data/aios.db"
+  "source_db": "/Users/jakyeamos/projects/AIOS/data/aios.db"
 }

@@ -49,15 +49,18 @@ def main() -> int:
         temp_dir_obj = tempfile.TemporaryDirectory(prefix="aios-readiness-")
         db_copy = Path(temp_dir_obj.name) / "aios-readiness.db"
         shutil.copy2(source_db, db_copy)
+    logs_dir = db_copy.parent / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        results = run_checks(db_copy)
+        results = run_checks(db_copy, logs_dir)
         ok = all(result.status == "pass" for result in results)
         payload = {
             "ok": ok,
             "generated_at": _now(),
             "source_db": str(source_db),
             "db_copy": str(db_copy),
+            "logs_dir": str(logs_dir),
             "results": [result.__dict__ for result in results],
         }
         (report_dir / "readiness-report.json").write_text(
@@ -75,7 +78,7 @@ def main() -> int:
             temp_dir_obj.cleanup()
 
 
-def run_checks(db_path: Path) -> list[CheckResult]:
+def run_checks(db_path: Path, logs_dir: Path) -> list[CheckResult]:
     projects = load_projects(db_path)
     aios_project = projects.get("AIOS")
     amos_project = projects.get("amos-saas")
@@ -118,12 +121,12 @@ def run_checks(db_path: Path) -> list[CheckResult]:
     ]
     created_runs: list[dict[str, Any]] = []
     for case in route_cases:
-        result, run = check_start_work_case(db_path, case)
+        result, run = check_start_work_case(db_path, logs_dir, case)
         results.append(result)
         if run:
             created_runs.append(run)
 
-    results.append(check_ambiguous_blocks(db_path))
+    results.append(check_ambiguous_blocks(db_path, logs_dir))
     if created_runs:
         first_run = created_runs[0]
         results.append(check_operator_search(db_path, first_run))
@@ -159,13 +162,17 @@ def load_projects(db_path: Path) -> dict[str, str]:
     return {str(name).strip(): str(project_id) for project_id, name in rows}
 
 
-def check_start_work_case(db_path: Path, case: dict[str, str]) -> tuple[CheckResult, dict[str, Any] | None]:
+def check_start_work_case(
+    db_path: Path, logs_dir: Path, case: dict[str, str]
+) -> tuple[CheckResult, dict[str, Any] | None]:
     command = [
         sys.executable,
         str(ROOT / "bin" / "aios.py"),
         "--json",
         "--db",
         str(db_path),
+        "--logs-dir",
+        str(logs_dir),
         "start-work",
         case["objective"],
         "--project",
@@ -177,7 +184,9 @@ def check_start_work_case(db_path: Path, case: dict[str, str]) -> tuple[CheckRes
     route = data.get("data", {}).get("route") if isinstance(data.get("data"), dict) else None
     workflow = run.get("workflow_key") if isinstance(run, dict) else None
     route_status = run.get("route_status") if isinstance(run, dict) else None
-    passed = completed["returncode"] == 0 and workflow == case["workflow"] and route_status == "ready"
+    passed = (
+        completed["returncode"] == 0 and workflow == case["workflow"] and route_status == "ready"
+    )
     details = {
         "case": case,
         "returncode": completed["returncode"],
@@ -201,7 +210,7 @@ def check_start_work_case(db_path: Path, case: dict[str, str]) -> tuple[CheckRes
     )
 
 
-def check_ambiguous_blocks(db_path: Path) -> CheckResult:
+def check_ambiguous_blocks(db_path: Path, logs_dir: Path) -> CheckResult:
     completed = run_command(
         [
             sys.executable,
@@ -209,18 +218,27 @@ def check_ambiguous_blocks(db_path: Path) -> CheckResult:
             "--json",
             "--db",
             str(db_path),
+            "--logs-dir",
+            str(logs_dir),
             "start-work",
             "Fix the bug",
         ]
     )
     data = completed.get("json", {})
-    error = data.get("error") if isinstance(data, dict) else {}
+    raw_error = data.get("error") if isinstance(data, dict) else {}
+    error = raw_error if isinstance(raw_error, dict) else {}
     passed = completed["returncode"] != 0 and error.get("code") == "route-blocked"
     return CheckResult(
         name="route-selector:ambiguous-block",
         status="pass" if passed else "fail",
-        summary="Ambiguous objective blocked before packet creation." if passed else "Ambiguous objective did not block correctly.",
-        details={"returncode": completed["returncode"], "error": error, "stderr": completed["stderr"]},
+        summary="Ambiguous objective blocked before packet creation."
+        if passed
+        else "Ambiguous objective did not block correctly.",
+        details={
+            "returncode": completed["returncode"],
+            "error": error,
+            "stderr": completed["stderr"],
+        },
     )
 
 
@@ -249,7 +267,9 @@ def check_operator_search(db_path: Path, run: dict[str, Any]) -> CheckResult:
     return CheckResult(
         name="operator-inspectability:route-search",
         status="pass" if passed else "fail",
-        summary="Route decision is searchable with a drill-down path." if passed else "Route decision search failed.",
+        summary="Route decision is searchable with a drill-down path."
+        if passed
+        else "Route decision search failed.",
         details={"query": query, "hits": hits, "stderr": completed["stderr"]},
     )
 
@@ -294,12 +314,23 @@ def check_daily_flow_output(name: str, completed: dict[str, Any]) -> CheckResult
     trace = data.get("data", {}).get("trace", {}) if isinstance(data.get("data"), dict) else {}
     steps = trace.get("steps", []) if isinstance(trace, dict) else []
     kinds = [step.get("kind") for step in steps if isinstance(step, dict)]
-    expected = ["goal", "route", "packet", "run", "evaluation", "writeback", "unresolved_delta", "next_action"]
+    expected = [
+        "goal",
+        "route",
+        "packet",
+        "run",
+        "evaluation",
+        "writeback",
+        "unresolved_delta",
+        "next_action",
+    ]
     passed = completed["returncode"] == 0 and kinds == expected
     return CheckResult(
         name=name,
         status="pass" if passed else "fail",
-        summary="Daily-flow returned the canonical 8-step trace." if passed else "Daily-flow did not return the canonical trace.",
+        summary="Daily-flow returned the canonical 8-step trace."
+        if passed
+        else "Daily-flow did not return the canonical trace.",
         details={"step_kinds": kinds, "stderr": completed["stderr"]},
     )
 
@@ -323,7 +354,9 @@ def check_next_action(db_path: Path, project_id: str) -> CheckResult:
     return CheckResult(
         name="operator-inspectability:next-action",
         status="pass" if passed else "fail",
-        summary="Next-action returned a structured action list." if passed else "Next-action failed.",
+        summary="Next-action returned a structured action list."
+        if passed
+        else "Next-action failed.",
         details={"total_actions": len(actions), "stderr": completed["stderr"]},
     )
 
@@ -358,6 +391,7 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"Generated: {payload['generated_at']}",
         f"Source DB: `{payload['source_db']}`",
         f"DB copy: `{payload['db_copy']}`",
+        f"Logs dir: `{payload['logs_dir']}`",
         f"Overall: {'PASS' if payload['ok'] else 'FAIL'}",
         "",
         "| Check | Status | Summary |",

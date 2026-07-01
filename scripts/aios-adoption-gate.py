@@ -16,7 +16,16 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SOURCE_DB = ROOT / "data" / "aios.db"
 DEFAULT_REPORT_DIR = ROOT / ".planning" / "quick" / "260623-aios-adoption-gate"
-EXPECTED_FLOW = ["goal", "route", "packet", "run", "evaluation", "writeback", "unresolved_delta", "next_action"]
+EXPECTED_FLOW = [
+    "goal",
+    "route",
+    "packet",
+    "run",
+    "evaluation",
+    "writeback",
+    "unresolved_delta",
+    "next_action",
+]
 
 
 @dataclass(frozen=True)
@@ -65,7 +74,9 @@ def main() -> int:
             json.dumps(payload, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
         )
-        (report_dir / "adoption-gate-report.md").write_text(render_markdown(payload), encoding="utf-8")
+        (report_dir / "adoption-gate-report.md").write_text(
+            render_markdown(payload), encoding="utf-8"
+        )
         print(json.dumps(payload, indent=2, sort_keys=True))
         return 0 if ok else 1
     finally:
@@ -113,7 +124,7 @@ def run_gate(db_path: Path, logs_dir: Path) -> list[GateResult]:
         results.append(start_result)
         if not run:
             continue
-        results.append(run_managed_runtime(db_path, run))
+        results.append(run_managed_runtime(db_path, logs_dir, run))
         results.extend(inspect_run(db_path, run))
     return results
 
@@ -127,7 +138,9 @@ def load_projects(db_path: Path) -> dict[str, str]:
     return {str(name).strip(): str(project_id) for project_id, name in rows}
 
 
-def start_work(db_path: Path, logs_dir: Path, case: dict[str, str]) -> tuple[GateResult, dict[str, Any] | None]:
+def start_work(
+    db_path: Path, logs_dir: Path, case: dict[str, str]
+) -> tuple[GateResult, dict[str, Any] | None]:
     completed = run_command(
         [
             sys.executable,
@@ -169,7 +182,7 @@ def start_work(db_path: Path, logs_dir: Path, case: dict[str, str]) -> tuple[Gat
     )
 
 
-def run_managed_runtime(db_path: Path, run: dict[str, Any]) -> GateResult:
+def run_managed_runtime(db_path: Path, logs_dir: Path, run: dict[str, Any]) -> GateResult:
     completed = run_command(
         [
             sys.executable,
@@ -182,6 +195,8 @@ def run_managed_runtime(db_path: Path, run: dict[str, Any]) -> GateResult:
             str(run["active_invocation_id"]),
             "--backend-key",
             str(run["backend_key"]),
+            "--logs-dir",
+            str(logs_dir),
         ]
     )
     passed = completed["returncode"] == 0
@@ -234,7 +249,9 @@ def inspect_lifecycle(db_path: Path, run_id: str, invocation_id: str) -> GateRes
     return GateResult(
         name=f"lifecycle:{run_id}",
         status="pass" if passed else "fail",
-        summary="Run, invocation, and session closed with explicit linkage." if passed else "Lifecycle linkage incomplete.",
+        summary="Run, invocation, and session closed with explicit linkage."
+        if passed
+        else "Lifecycle linkage incomplete.",
         details={
             "run": list(run_row) if run_row else None,
             "invocation": list(invocation_row) if invocation_row else None,
@@ -258,13 +275,17 @@ def inspect_artifacts(db_path: Path, run_id: str) -> GateResult:
     return GateResult(
         name=f"artifacts:{run_id}",
         status="pass" if passed else "fail",
-        summary="Workflow, evaluation, writeback, and TMCP artifacts exist." if passed else "Missing managed-run artifacts.",
+        summary="Workflow, evaluation, writeback, and TMCP artifacts exist."
+        if passed
+        else "Missing managed-run artifacts.",
         details=counts,
     )
 
 
 def _count(conn: sqlite3.Connection, table: str, run_id: str) -> int:
-    return int(conn.execute(f"SELECT COUNT(*) FROM {table} WHERE run_id = ?", (run_id,)).fetchone()[0])
+    return int(
+        conn.execute(f"SELECT COUNT(*) FROM {table} WHERE run_id = ?", (run_id,)).fetchone()[0]
+    )
 
 
 def inspect_operator_search(db_path: Path, run_id: str) -> GateResult:
@@ -327,7 +348,9 @@ def inspect_daily_flow(db_path: Path, run_id: str) -> GateResult:
     return GateResult(
         name=f"daily-flow:{run_id}",
         status="pass" if passed else "fail",
-        summary="Daily-flow replay exposes route, packet, run, evaluation, and writeback." if passed else "Daily-flow replay incomplete.",
+        summary="Daily-flow replay exposes route, packet, run, evaluation, and writeback."
+        if passed
+        else "Daily-flow replay incomplete.",
         details={"step_kinds": kinds, "provenance": provenance, "stderr": completed["stderr"]},
     )
 

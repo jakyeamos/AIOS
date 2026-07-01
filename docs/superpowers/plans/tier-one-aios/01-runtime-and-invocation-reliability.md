@@ -247,7 +247,7 @@ Use the same vocabulary in `aios-ui/server/aios/runtime.ts` and avoid UI-only st
 
 ```bash
 uv run pytest tests/test_orchestration_runtime.py tests/test_aios_cli.py -q
-cd aios-ui && npm run lint
+cd aios-ui && pnpm lint
 ```
 
 ### Tier-One Runtime Acceptance

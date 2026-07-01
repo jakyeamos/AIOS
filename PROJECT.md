@@ -34,6 +34,18 @@ The repository currently contains five meaningful subsystems:
 
 Root operator documentation now lives in `README.md`, including local UI launch commands, key UI routes, store paths, workflow proposal backfill, and verification commands.
 
+## Implemented On 2026-07-01
+
+AIOS daily-use release readiness is now the primary near-term product target:
+
+- `bin/aios.py` can fall back to `uv run` when direct `python3 bin/aios.py ...` invocation cannot import extracted local path dependencies, preserving the documented direct help/smoke contract
+- `uv run python bin/aios.py --json doctor` now reports a local release-readiness preflight covering extracted Python package imports, SQLite reachability, local store directories, pnpm-only package-manager state, context compiler package access, and the required daily-use command surface
+- behavior tests cover direct CLI help, health JSON, doctor pass/fail output, and the integrated daily loop: `start-work` creates route/packet/run/invocation ids, `daily-flow --run-id` replays the eight canonical evidence steps, and `next-action --project` returns project-scoped follow-up work
+- the AIOS UI quality workflow now uses pnpm/corepack with `aios-ui/pnpm-lock.yaml`; root and UI package manifests declare `packageManager: pnpm@10.26.0`; the stale `aios-ui/package-lock.json` npm lockfile has been removed
+- `README.md` now leads with the daily-use loop and a "When Not To Use AIOS" boundary so tiny edits and direct answers do not route through the operating layer by default
+- `docs/case-study.md` records the daily-use release proof story, architecture loop, safety boundary, release evidence, and known limits
+- linked-repo Phase 29 certification remains valuable, but it is no longer the release centerpiece until AIOS itself passes the daily-use readiness path consistently
+
 ## Implemented On 2026-06-30
 
 Codex session intelligence scans now write a canonical daily decision report:

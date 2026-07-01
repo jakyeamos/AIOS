@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import subprocess
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -615,6 +616,118 @@ def test_status_and_recent_failures_json(tmp_path: Path, capsys) -> None:
     assert status_output["ok"] is True
     assert status_output["command"] == "status"
     assert status_output["data"]["resumable_runs"] == []
+
+
+def test_direct_bin_aios_help_contract() -> None:
+    completed = subprocess.run(
+        [sys.executable, str(ROOT / "bin" / "aios.py"), "--help"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0
+    assert "AIOS unified JSON-first CLI" in completed.stdout
+
+
+def test_health_json_release_contract(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "health",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    output = json.loads(capsys.readouterr().out)
+    assert output["ok"] is True
+    assert output["command"] == "health"
+    assert output["data"]["checks"]["db_reachable"] is True
+
+
+def test_doctor_json_reports_release_preflight(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    vault_root = tmp_path / "vault"
+    ui_root = tmp_path / "aios-ui"
+    logs_dir.mkdir()
+    vault_root.mkdir()
+    ui_root.mkdir()
+    (ui_root / "package.json").write_text('{"packageManager":"pnpm@10.0.0"}\n', encoding="utf-8")
+    (ui_root / "pnpm-lock.yaml").write_text("lockfileVersion: '9.0'\n", encoding="utf-8")
+    _seed_db(db_path)
+
+    with patch.object(aios_cli, "REPO_ROOT", tmp_path):
+        exit_code = run_cli(
+            [
+                "--json",
+                "--db",
+                str(db_path),
+                "--logs-dir",
+                str(logs_dir),
+                "--vault-root",
+                str(vault_root),
+                "doctor",
+            ]
+        )
+
+    assert exit_code == EXIT_OK
+    output = json.loads(capsys.readouterr().out)
+    data = output["data"]
+    assert output["ok"] is True
+    assert data["ok"] is True
+    checks = {check["id"]: check for check in data["checks"]}
+    assert checks["python_dependency_quality_evidence_contract"]["status"] == "pass"
+    assert checks["python_dependency_repo_quality_certifier"]["status"] == "pass"
+    assert checks["sqlite_db"]["status"] == "pass"
+    assert checks["logs_dir"]["status"] == "pass"
+    assert checks["vault_root"]["status"] == "pass"
+    assert checks["ui_package_manager"]["status"] == "pass"
+
+
+def test_doctor_flags_ui_package_manager_drift(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    vault_root = tmp_path / "vault"
+    ui_root = tmp_path / "aios-ui"
+    logs_dir.mkdir()
+    vault_root.mkdir()
+    ui_root.mkdir()
+    (ui_root / "package.json").write_text('{"packageManager":"pnpm@10.0.0"}\n', encoding="utf-8")
+    (ui_root / "pnpm-lock.yaml").write_text("lockfileVersion: '9.0'\n", encoding="utf-8")
+    (ui_root / "package-lock.json").write_text("{}\n", encoding="utf-8")
+    _seed_db(db_path)
+
+    with patch.object(aios_cli, "REPO_ROOT", tmp_path):
+        exit_code = run_cli(
+            [
+                "--json",
+                "--db",
+                str(db_path),
+                "--logs-dir",
+                str(logs_dir),
+                "--vault-root",
+                str(vault_root),
+                "doctor",
+            ]
+        )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    checks = {check["id"]: check for check in data["checks"]}
+    assert data["ok"] is False
+    assert checks["ui_package_manager"]["status"] == "fail"
+    assert "Remove aios-ui/package-lock.json" in checks["ui_package_manager"]["remediation"]
 
 
 def test_asset_lifecycle_list_subcommand(tmp_path: Path, capsys) -> None:
@@ -4043,6 +4156,87 @@ def test_start_work_creates_packet_and_links_current_session(tmp_path: Path, cap
     ).fetchone()[0]
     assert event_count == 3
     conn.close()
+
+
+def test_daily_use_release_loop_starts_and_inspects_work(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    _seed_next_action_cli_rows(db_path)
+
+    start_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "start-work",
+            "Audit AIOS daily-use onboarding and ship a scoped fix with tests",
+            "--project",
+            "p1",
+        ]
+    )
+
+    assert start_exit == EXIT_OK
+    start_data = json.loads(capsys.readouterr().out)["data"]
+    run_id = start_data["run"]["id"]
+    assert start_data["route"]["selected_workflow"]["workflow_key"] == "implementation-delivery"
+    assert start_data["packet"]["id"]
+    assert start_data["invocation"]["id"]
+
+    replay_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "daily-flow",
+            "--run-id",
+            run_id,
+        ]
+    )
+
+    assert replay_exit == EXIT_OK
+    replay_data = json.loads(capsys.readouterr().out)["data"]
+    assert replay_data["is_preview"] is False
+    assert replay_data["step_count"] == 8
+    assert [step["kind"] for step in replay_data["trace"]["steps"]] == [
+        "goal",
+        "route",
+        "packet",
+        "run",
+        "evaluation",
+        "writeback",
+        "unresolved_delta",
+        "next_action",
+    ]
+    assert replay_data["trace"]["steps"][0]["evidence_ref"]["value"] == (
+        "Audit AIOS daily-use onboarding and ship a scoped fix with tests"
+    )
+    assert replay_data["trace"]["steps"][2]["evidence_ref"]["id"] == start_data["packet"]["id"]
+    assert replay_data["trace"]["steps"][3]["evidence_ref"]["id"] == run_id
+
+    next_action_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "next-action",
+            "--project",
+            start_data["run"]["project_id"],
+            "--json",
+        ]
+    )
+
+    assert next_action_exit == EXIT_OK
+    next_action_data = json.loads(capsys.readouterr().out)["data"]
+    assert next_action_data["project_id"] == start_data["run"]["project_id"]
+    assert next_action_data["total_actions"] >= 1
 
 
 @pytest.mark.parametrize(

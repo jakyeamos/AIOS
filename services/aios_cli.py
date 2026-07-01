@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import shlex
 import sqlite3
@@ -4747,6 +4748,268 @@ def _health_payload(conn: sqlite3.Connection, logs_dir: Path) -> dict[str, Any]:
     }
 
 
+def _doctor_check(
+    check_id: str,
+    status: str,
+    summary: str,
+    remediation: str | None = None,
+    **metadata: Any,
+) -> dict[str, Any]:
+    return {
+        "id": check_id,
+        "status": status,
+        "summary": summary,
+        "remediation": remediation,
+        "metadata": metadata,
+    }
+
+
+def _doctor_dependency_check(module_name: str, package_label: str) -> dict[str, Any]:
+    spec = importlib.util.find_spec(module_name)
+    if spec is None:
+        return _doctor_check(
+            f"python_dependency_{module_name}",
+            "fail",
+            f"{package_label} is not importable from the current Python environment.",
+            f"Run `uv sync` in {REPO_ROOT} or invoke AIOS through `uv run python bin/aios.py`.",
+        )
+    return _doctor_check(
+        f"python_dependency_{module_name}",
+        "pass",
+        f"{package_label} is importable.",
+        origin=str(spec.origin) if spec.origin else None,
+    )
+
+
+def _doctor_sqlite_check(db_path: Path) -> dict[str, Any]:
+    if not db_path.exists():
+        return _doctor_check(
+            "sqlite_db",
+            "fail",
+            f"SQLite database does not exist at {db_path}.",
+            "Run the AIOS DB initialization or point --db at an existing AIOS database.",
+            path=str(db_path),
+        )
+    try:
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        try:
+            conn.execute("SELECT 1").fetchone()
+            required_tables = ("projects", "orchestration_runs", "briefing_packets")
+            missing_tables = [table for table in required_tables if not _table_exists(conn, table)]
+        finally:
+            conn.close()
+    except sqlite3.Error as exc:
+        return _doctor_check(
+            "sqlite_db",
+            "fail",
+            f"SQLite database is not readable: {exc}",
+            "Repair the DB path or restore a valid AIOS SQLite database.",
+            path=str(db_path),
+        )
+    if missing_tables:
+        return _doctor_check(
+            "sqlite_db",
+            "fail",
+            f"SQLite database is reachable but missing required tables: {', '.join(missing_tables)}.",
+            "Run AIOS schema initialization or migrations before daily use.",
+            path=str(db_path),
+            missing_tables=missing_tables,
+        )
+    return _doctor_check("sqlite_db", "pass", "SQLite database is reachable.", path=str(db_path))
+
+
+def _doctor_directory_check(check_id: str, path: Path, label: str) -> dict[str, Any]:
+    if path.exists() and path.is_dir():
+        return _doctor_check(check_id, "pass", f"{label} exists.", path=str(path))
+    return _doctor_check(
+        check_id,
+        "fail",
+        f"{label} does not exist at {path}.",
+        f"Create {path} or pass the correct path with the relevant CLI flag.",
+        path=str(path),
+    )
+
+
+def _doctor_package_manager_check(root: Path, label: str, check_id: str) -> dict[str, Any]:
+    package_json = root / "package.json"
+    pnpm_lock = root / "pnpm-lock.yaml"
+    package_lock = root / "package-lock.json"
+    if not package_json.exists():
+        return _doctor_check(
+            check_id,
+            "warning",
+            f"{label} has no package.json; JavaScript checks are not available.",
+            None,
+            path=str(root),
+        )
+    try:
+        package_data = json.loads(package_json.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return _doctor_check(
+            check_id,
+            "fail",
+            f"{label} package.json is not valid JSON: {exc.msg}.",
+            f"Repair {package_json}.",
+            path=str(package_json),
+        )
+    package_manager = str(package_data.get("packageManager", ""))
+    failures: list[str] = []
+    if not package_manager.startswith("pnpm@"):
+        failures.append("packageManager must start with pnpm@")
+    if not pnpm_lock.exists():
+        failures.append("pnpm-lock.yaml is missing")
+    if package_lock.exists():
+        failures.append("package-lock.json is present")
+    if failures:
+        remediation_parts = []
+        if package_lock.exists():
+            remediation_parts.append(f"Remove {package_lock.relative_to(REPO_ROOT)}")
+        if not pnpm_lock.exists():
+            remediation_parts.append(f"run `pnpm install` in {root.relative_to(REPO_ROOT)}")
+        if not package_manager.startswith("pnpm@"):
+            remediation_parts.append(
+                f"set packageManager to pnpm in {package_json.relative_to(REPO_ROOT)}"
+            )
+        return _doctor_check(
+            check_id,
+            "fail",
+            f"{label} package-manager contract failed: {', '.join(failures)}.",
+            "; ".join(remediation_parts) + ".",
+            path=str(root),
+            package_manager=package_manager or None,
+            has_pnpm_lock=pnpm_lock.exists(),
+            has_package_lock=package_lock.exists(),
+        )
+    return _doctor_check(
+        check_id,
+        "pass",
+        f"{label} uses pnpm only.",
+        path=str(root),
+        package_manager=package_manager,
+    )
+
+
+def _doctor_context_compiler_contract_check() -> dict[str, Any]:
+    package_json = REPO_ROOT / "package.json"
+    if not package_json.exists():
+        return _doctor_check(
+            "context_compiler_contract",
+            "warning",
+            "Root package.json is missing; context compiler package access was not checked.",
+            None,
+        )
+    try:
+        package_data = json.loads(package_json.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return _doctor_check(
+            "context_compiler_contract",
+            "fail",
+            f"Root package.json is not valid JSON: {exc.msg}.",
+            "Repair package.json before running context compiler checks.",
+        )
+    dependencies = package_data.get("dependencies", {})
+    has_dependency = isinstance(dependencies, dict) and "context-compiler-contract" in dependencies
+    installed_path = REPO_ROOT / "node_modules" / "context-compiler-contract"
+    if has_dependency and installed_path.exists():
+        return _doctor_check(
+            "context_compiler_contract",
+            "pass",
+            "context-compiler-contract is declared and installed.",
+            dependency=str(dependencies["context-compiler-contract"]),
+            installed_path=str(installed_path),
+        )
+    status = "fail" if has_dependency else "warning"
+    summary = (
+        "context-compiler-contract is declared but not installed."
+        if has_dependency
+        else "context-compiler-contract is not declared in root package.json."
+    )
+    remediation = "Run `pnpm install` at the AIOS repo root." if has_dependency else None
+    return _doctor_check(
+        "context_compiler_contract",
+        status,
+        summary,
+        remediation,
+        dependency=dependencies.get("context-compiler-contract")
+        if isinstance(dependencies, dict)
+        else None,
+        installed_path=str(installed_path),
+    )
+
+
+def _doctor_audit_surface_check() -> dict[str, Any]:
+    required_commands = {
+        "contracts-audit",
+        "capability-audit",
+        "invocation-audit",
+        "lifecycle-audit",
+        "daily-flow",
+        "next-action",
+        "start-work",
+    }
+    parser = create_parser()
+    subparser_action = next(
+        action for action in parser._actions if isinstance(action, argparse._SubParsersAction)
+    )
+    missing = sorted(required_commands - set(subparser_action.choices))
+    if missing:
+        return _doctor_check(
+            "audit_command_surface",
+            "fail",
+            f"Required daily-use commands are missing: {', '.join(missing)}.",
+            "Restore the daily-use CLI commands before release.",
+            missing_commands=missing,
+        )
+    return _doctor_check(
+        "audit_command_surface",
+        "pass",
+        "Daily-use and audit command surfaces are registered.",
+        commands=sorted(required_commands),
+    )
+
+
+def _doctor_payload(
+    *,
+    db_path: Path,
+    logs_dir: Path,
+    config_root: Path,
+    vault_root: Path,
+) -> dict[str, Any]:
+    checks = [
+        _doctor_dependency_check("quality_evidence_contract", "quality-evidence-contract"),
+        _doctor_dependency_check("repo_quality_certifier", "repo-quality-certifier"),
+        _doctor_context_compiler_contract_check(),
+        _doctor_sqlite_check(db_path),
+        _doctor_directory_check("logs_dir", logs_dir, "Logs directory"),
+        _doctor_directory_check("vault_root", vault_root, "Vault root"),
+        _doctor_directory_check("config_root", config_root, "Config root"),
+        _doctor_package_manager_check(REPO_ROOT, "AIOS root", "root_package_manager"),
+        _doctor_package_manager_check(REPO_ROOT / "aios-ui", "AIOS UI", "ui_package_manager"),
+        _doctor_audit_surface_check(),
+    ]
+    failed = [check for check in checks if check["status"] == "fail"]
+    warnings = [check for check in checks if check["status"] == "warning"]
+    return {
+        "schema": "aios-doctor-v0.1",
+        "ok": not failed,
+        "summary": {
+            "status": "pass" if not failed else "fail",
+            "pass_count": len([check for check in checks if check["status"] == "pass"]),
+            "warning_count": len(warnings),
+            "fail_count": len(failed),
+        },
+        "daily_use_loop": [
+            "doctor",
+            "start-work",
+            "daily-flow --run-id",
+            "next-action --project",
+            "closeout evidence",
+        ],
+        "checks": checks,
+    }
+
+
 def _logs_payload(logs_dir: Path, sources: list[str], last: int) -> dict[str, Any]:
     selected = sources if sources else sorted(LOG_SOURCE_FILES)
     lines: list[dict[str, Any]] = []
@@ -5907,6 +6170,7 @@ def create_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("status", help="Compact control-plane status snapshot")
     subparsers.add_parser("health", help="Health summary with status + log file checks")
+    subparsers.add_parser("doctor", help="Daily-use release-readiness preflight")
 
     metadata_parser = subparsers.add_parser("metadata", help="One-shot metadata snapshot")
     metadata_parser.add_argument("--project", default=None, help="Optional project id filter")
@@ -7171,6 +7435,13 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "health":
             assert conn is not None
             data = _health_payload(conn, logs_dir)
+        elif args.command == "doctor":
+            data = _doctor_payload(
+                db_path=db_path,
+                logs_dir=logs_dir,
+                config_root=config_root,
+                vault_root=vault_root,
+            )
         elif args.command == "metadata":
             assert conn is not None
             data = _metadata_payload(

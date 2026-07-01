@@ -1,21 +1,18 @@
 # AIOS Field Pressure Gate
 
-Generated: 2026-06-24T01:32:55.321923Z
-Source DB: `/Users/jakyeamos/AIOS/data/aios.db`
-DB copy: `/tmp/aios-field-pressure-current.db`
+Generated: 2026-07-01T18:34:04.206291Z
+Source DB: `/Users/jakyeamos/projects/AIOS/data/aios.db`
+DB copy: `/var/folders/r7/b6pc8f3d7mjgkqx_wps2p52r0000gn/T/aios-field-pressure-tmz8xmti/aios-field-pressure.db`
 Overall: PASS
 Score: 100/100
 
 | Concern | Status | Summary |
 | --- | --- | --- |
 | daily-usage-pressure / daily-usage-pressure:route-volume | pass | 12/12 simulated daily objectives routed as expected. |
-| daily-usage-pressure / daily-usage-pressure:managed-run:run-7b961fc1-aa9a-4a82-a593-f940d8d7257f | pass | Managed runtime completed. |
-| daily-usage-pressure / daily-usage-pressure:managed-run:run-afbfba85-4aab-4633-8e24-c461f40b04bd | pass | Managed runtime completed. |
-| daily-usage-pressure / daily-usage-pressure:managed-run:run-b7694f60-b1f4-4eb5-87cb-ecc97e84ccdb | pass | Managed runtime completed. |
-| daily-usage-pressure / daily-usage-pressure:managed-run:run-1f58877f-c453-4670-abcd-9b1030d69c68 | pass | Managed runtime completed. |
-| daily-usage-pressure / daily-usage-pressure:managed-run:run-094fc67b-886a-43fc-b58d-6a99bd0e66b5 | pass | Managed runtime completed. |
-| daily-usage-pressure / daily-usage-pressure:managed-run:run-020633c5-39ce-4787-a008-225bd2d13829 | pass | Managed runtime completed. |
-| daily-usage-pressure / daily-usage-pressure:artifact-volume | pass | 6/6 managed runs produced closeout artifacts. |
+| daily-usage-pressure / daily-usage-pressure:managed-run:run-5011dd56-92ac-4a4d-9c26-d1dd5187bc0c | pass | Managed runtime completed. |
+| daily-usage-pressure / daily-usage-pressure:managed-run:run-a4cdabf1-462e-493e-8be8-acdaa80df39f | pass | Managed runtime completed. |
+| daily-usage-pressure / daily-usage-pressure:managed-run:run-aa350907-56e2-411d-8881-72204d6b0de7 | pass | Managed runtime completed. |
+| daily-usage-pressure / daily-usage-pressure:artifact-volume | pass | 3/3 managed runs produced closeout artifacts. |
 | operator-ux / operator-ux:file-coverage | pass | Operator route/component/server surfaces exist. |
 | operator-ux / operator-ux:lint-typecheck | pass | Operator UI lint/typecheck exits cleanly. |
 | operator-ux / operator-ux:surface-probes | pass | Operator surfaces expose searchable, drill-downable run state. |

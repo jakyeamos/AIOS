@@ -2,6 +2,44 @@
 
 AIOS is the local operating system for work context, agent workflows, durable project memory, and linked-project health. It runs primarily from local files and SQLite, with a Next.js dashboard in `aios-ui/`.
 
+## Use AIOS Today
+
+Use AIOS for serious Codex or project work when the task needs routing, context, durable run state, evaluation evidence, writebacks, or follow-up visibility.
+
+Preflight the local release contract:
+
+```bash
+cd /Users/jakyeamos/AIOS
+uv run python bin/aios.py --json doctor
+```
+
+Start a governed daily-use run:
+
+```bash
+uv run python bin/aios.py --json start-work "Audit AIOS daily-use onboarding and ship a scoped fix with tests" --project AIOS
+```
+
+Inspect the run without manual database queries:
+
+```bash
+uv run python bin/aios.py --json daily-flow --run-id <run-id>
+uv run python bin/aios.py --json next-action --project <project-id>
+```
+
+The release-ready daily loop is:
+
+```text
+doctor -> start-work -> daily-flow replay -> next-action -> closeout evidence
+```
+
+This loop is the default readiness claim for AIOS. Portfolio-wide linked-repo certification remains useful, but AIOS should prove this local daily-use path before using itself as the release centerpiece for other repos.
+
+See [`docs/case-study.md`](docs/case-study.md) for the daily-use release proof story.
+
+## When Not To Use AIOS
+
+Skip AIOS for tiny edits, direct factual answers, one-off shell commands, or work where the context and verification path are already obvious. Use it when the task is large enough that route selection, context packets, evaluation artifacts, or durable follow-up would reduce manual orchestration.
+
 ## Local UI
 
 Start the dashboard:
@@ -149,7 +187,7 @@ Create a compact AIOS packet and strict run/session/invocation handshake before 
 
 ```bash
 cd /Users/jakyeamos/AIOS
-python3 bin/aios.py --json start-work "Implement the scoped objective" --project <project-id>
+uv run python bin/aios.py --json start-work "Implement the scoped objective" --project <project-id>
 ```
 
 When `logs/current_session` points at an open hook-created session, the command links that session to the new run and invocation. If no open session is available, it still creates a ready run and packet for manual handoff.
@@ -178,7 +216,7 @@ Allowlisted project quality gate runner:
 
 ```bash
 cd /Users/jakyeamos/AIOS
-python3 bin/aios.py --json gate run test_quality --project soundscape-app --repo-root /Users/jakyeamos/projects/soundscape-app
+uv run python bin/aios.py --json gate run test_quality --project soundscape-app --repo-root /Users/jakyeamos/projects/soundscape-app
 ```
 
 Linked projects declare only gate IDs in `.aios-quality-gate.json`. Executable argv arrays live in AIOS-owned `config/quality-gates.json`; the global user commit hook rejects missing, malformed, or unknown gate declarations for registered source commits and never executes shell from repo-local config.
@@ -261,7 +299,7 @@ AIOS routes managed command output through the RTK compression layer:
 cd /Users/jakyeamos/AIOS
 python3 bin/rtk-run.py --mode adaptive -- pytest -q
 python3 bin/rtk-run.py --metrics --json
-python3 bin/aios.py --json rtk
+uv run python bin/aios.py --json rtk
 ```
 
 Rules live in `config/rtk/rules.json`; architecture details live in

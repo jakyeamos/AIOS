@@ -91,9 +91,9 @@ Run:
 
 ```bash
 cd aios-ui
-npm ci
-npm run lint
-npm run build
+pnpm install --frozen-lockfile
+pnpm lint
+pnpm build
 ```
 
 - [ ] **Step 3: Document local parity**
