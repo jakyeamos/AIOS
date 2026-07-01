@@ -3,7 +3,7 @@
 <p align="center"><strong>A local-first operating layer for agent sessions, durable memory, and reviewable automation.</strong></p>
 
 <p align="center">
-  <img alt="Status: public foundation slice" src="https://img.shields.io/badge/status-public%20foundation%20slice-0f766e">
+  <img alt="Status: public case study" src="https://img.shields.io/badge/status-public%20case%20study-0f766e">
   <img alt="Runtime: Python" src="https://img.shields.io/badge/runtime-Python-3776ab">
   <img alt="Storage: SQLite" src="https://img.shields.io/badge/storage-SQLite-003b57">
   <img alt="Mode: local first" src="https://img.shields.io/badge/mode-local%20first-111827">
@@ -11,11 +11,48 @@
 
 AIOS is a personal AI operating system: a local infrastructure layer for capturing agent sessions, preserving work context, importing useful AI-history archives, and turning repeated workflows into reviewable project memory.
 
-The public default branch is an early foundation slice. It includes hook entrypoints, a SQLite initialization script, and planning/spec documentation for AI-history import. Larger local and feature-branch work may exist elsewhere, but this branch is intentionally described by what it currently publishes.
+This public branch presents the implementation as a case study: local session hooks, durable storage, workflow planning, and the operating principles behind a larger local AI workbench. It is written to show the architecture, the working surfaces that are public here, and the next pieces that would make the full local system easier to evaluate from a clean clone.
 
-## Why It Exists
+![AIOS architecture snapshot](docs/assets/readme-snapshot.png)
+
+## Why This Matters
+
+### Problem
 
 AI-assisted work produces useful signals that are easy to lose: prompts, decisions, tool events, project context, repeated fixes, and post-session lessons. AIOS keeps those signals in local stores so future work can start from evidence instead of chat archaeology.
+
+### Who It Helps
+
+AIOS helps developers and agent operators who run serious multi-step work across projects and need durable context, route selection, quality evidence, and follow-up visibility after a chat window or terminal session ends.
+
+### What I Built
+
+I built a local-first operating layer around agent work: lifecycle hooks, SQLite-backed event capture, AI-history import planning, run/packet concepts, and a project-memory model that separates raw automation artifacts from reviewed notes.
+
+### Technical Decisions
+
+- Local files and SQLite are the default stores so the system remains inspectable and portable.
+- Hook scripts capture events at session boundaries instead of trying to reconstruct work after the fact.
+- Raw imported data, generated review artifacts, and curated notes are separate so automation does not silently become source-of-truth memory.
+- The architecture treats Git repositories as reviewed state and AIOS as the operational layer around them.
+
+### How To Run It
+
+```bash
+git clone https://github.com/jakyeamos/AIOS.git
+cd AIOS
+mkdir -p "$HOME/AIOS/data" "$HOME/AIOS/logs"
+```
+
+Review the hook scripts before wiring them into a live agent environment. The included `bin/init-db.sh` expects a SQLite schema at `$HOME/AIOS/data/schema.sql`.
+
+### What I Would Improve Next
+
+The strongest next public-facing improvement is promoting the dashboard, schema, and daily-use CLI path into this branch so a recruiter or teammate can run the full loop from a clean clone.
+
+## Case Study
+
+For more detail on the architecture and what works today, read [docs/case-study.md](docs/case-study.md).
 
 ## Public Branch Scope
 
@@ -65,6 +102,7 @@ The included `bin/init-db.sh` expects a SQLite schema at `$HOME/AIOS/data/schema
 
 ## Documentation
 
+- [AIOS case study](docs/case-study.md)
 - [AI-history import design](docs/specs/2026-04-01-ai-history-import-design.md)
 - [AI-history import implementation plan](docs/plans/2026-04-01-ai-history-import.md)
 
@@ -74,4 +112,4 @@ This repository contains infrastructure that can sit close to an agent workflow.
 
 ## Status
 
-AIOS is active infrastructure, but this default branch should be read as a public foundation slice rather than a complete product release. The README will need another pass when the dashboard, broader quality gates, workflow runtime, and full schema are promoted to the public branch.
+AIOS is active infrastructure presented here as a public case study. The next public milestone is a clean-clone release of the dashboard, schema, quality gates, workflow runtime, and daily-use CLI path.
