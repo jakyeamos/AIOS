@@ -23,6 +23,7 @@ from services.shadow_branch_runner import (  # noqa: E402
     capture_diff_stat,
     capture_test_delta,
     cleanup_shadow_worktree,
+    compare_shadow_runs,
     compute_shadow_branch_delta,
     create_shadow_worktree,
     list_shadow_parity_metadata,
@@ -245,6 +246,26 @@ def test_record_shadow_branch_run_can_mark_clean_initial_worktree() -> None:
 
     assert row["contamination_check_passed"] == 1
     assert row["parity_checklist_status"] == "no_evidence"
+
+
+def test_compare_refuses_shadow_run_without_execution_evidence() -> None:
+    conn = _connect()
+    shadow_run_id = record_shadow_branch_run(
+        conn,
+        task_id="task-1",
+        condition="full-aios",
+        start_sha="abc123",
+        aios_branch="aios/eval/task/full-aios",
+        worktree_path="/tmp/worktree",
+        no_evidence_reason="shadow lane created; implementation has not run yet",
+    )
+
+    with pytest.raises(ValueError, match="no completed comparison evidence"):
+        compare_shadow_runs(
+            conn,
+            shadow_run_id=shadow_run_id,
+            baseline_run_id="baseline-run-1",
+        )
 
 
 def test_shadow_parity_metadata_is_queryable_without_branch_mutation() -> None:

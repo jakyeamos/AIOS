@@ -165,12 +165,18 @@ from services.shadow_branch_runner import (
     cleanup_shadow_worktree,
     compare_shadow_runs,
     create_shadow_worktree,
+    get_shadow_run,
     list_shadow_parity_metadata,
     record_shadow_branch_run,
     shadow_branch_name,
     verify_no_contamination,
 )
 from services.shadow_candidate_scorer import score_shadow_candidate
+from services.shadow_codex_runner import (
+    cancel_shadow_execution,
+    launch_codex_shadow,
+    shadow_execution_status,
+)
 from services.skills_harvest import HarvestOptions, harvest_skills_library, verify_tmcp_graph
 from services.standards_health import (
     AssessmentStatus,
@@ -3815,8 +3821,140 @@ def cmd_shadow_run_pipeline(conn: sqlite3.Connection, args: argparse.Namespace) 
     return result
 
 
+def cmd_shadow_run(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    shadow = get_shadow_run(conn, str(args.shadow_run_id))
+    objective = str(args.objective or shadow.get("task_id") or args.shadow_run_id)
+    execution = launch_codex_shadow(
+        conn,
+        shadow_run_id=str(args.shadow_run_id),
+        objective=objective,
+        run_id=args.run_id,
+        packet_id=args.packet_id,
+        route_id=args.route_id,
+    )
+    conn.commit()
+    return {"shadow_run_id": args.shadow_run_id, "shadow_execution": execution}
+
+
 def cmd_shadow_status(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    if getattr(args, "shadow_run_id", None):
+        execution = shadow_execution_status(conn, shadow_run_id=str(args.shadow_run_id))
+        conn.commit()
+        return {"shadow_run_id": args.shadow_run_id, "shadow_execution": execution}
+    if not getattr(args, "candidate_id", None):
+        raise CLIError(
+            "shadow-status-target-required",
+            "Provide --shadow-run-id for execution status or --candidate-id for candidate status.",
+            EXIT_USAGE,
+        )
     return shadow_status(conn, str(args.candidate_id))
+
+
+def cmd_shadow_cancel(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    execution = cancel_shadow_execution(conn, shadow_run_id=str(args.shadow_run_id))
+    conn.commit()
+    return {"shadow_run_id": args.shadow_run_id, "shadow_execution": execution}
+
+
+def cmd_shadow(conn: sqlite3.Connection | None, args: argparse.Namespace) -> dict[str, Any]:
+    if args.shadow_command == "cleanup":
+        return cmd_shadow_cleanup(args)
+    if conn is None:
+        raise CLIError("db-required", "Shadow command requires a SQLite database.", EXIT_USAGE)
+    if args.shadow_command == "create-worktree":
+        return cmd_shadow_create_worktree(conn, args)
+    if args.shadow_command == "compare":
+        return cmd_shadow_compare(conn, args)
+    if args.shadow_command == "parity":
+        return cmd_shadow_parity(conn, args)
+    if args.shadow_command == "score":
+        return cmd_shadow_score(conn, args)
+    if args.shadow_command == "queue":
+        return cmd_shadow_queue(conn)
+    if args.shadow_command == "approve":
+        return cmd_shadow_approve(conn, args)
+    if args.shadow_command == "run-pipeline":
+        return cmd_shadow_run_pipeline(conn, args)
+    if args.shadow_command == "run":
+        return cmd_shadow_run(conn, args)
+    if args.shadow_command == "status":
+        return cmd_shadow_status(conn, args)
+    if args.shadow_command == "cancel":
+        return cmd_shadow_cancel(conn, args)
+    raise CLIError(
+        "unknown-shadow-command",
+        f"Unknown shadow command: {args.shadow_command}",
+        EXIT_USAGE,
+    )
+
+
+def cmd_eval(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    if args.eval_command == "record-run":
+        return cmd_eval_record_run(conn, args)
+    if args.eval_command == "list-runs":
+        return cmd_eval_list_runs(conn, args)
+    if args.eval_command == "summary":
+        return cmd_eval_summary(conn, args)
+    if args.eval_command == "second-brain-lift":
+        return cmd_eval_second_brain_lift(conn, args)
+    if args.eval_command == "retrieval-metrics":
+        return cmd_eval_retrieval_metrics(conn, args)
+    if args.eval_command == "gold-set-run":
+        return cmd_eval_gold_set_run(conn, args)
+    raise CLIError("unknown-eval-command", f"Unknown eval command: {args.eval_command}", EXIT_USAGE)
+
+
+def cmd_context_loops(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    if args.context_loops_command == "inner-run":
+        data = cmd_context_loops_inner_run(conn, args)
+    elif args.context_loops_command == "email-draft":
+        data = cmd_context_loops_email_draft(conn, args)
+    elif args.context_loops_command == "record-review":
+        data = cmd_context_loops_record_review(conn, args)
+    elif args.context_loops_command == "review":
+        data = cmd_context_loops_review(conn, args)
+    elif args.context_loops_command == "approve":
+        data = cmd_context_loops_approve(conn, args)
+    elif args.context_loops_command == "reject":
+        data = cmd_context_loops_reject(conn, args)
+    elif args.context_loops_command == "apply-approved":
+        data = cmd_context_loops_apply_approved(conn, args)
+    elif args.context_loops_command == "metrics":
+        return cmd_context_loops_metrics(conn, args)
+    else:
+        raise CLIError(
+            "unknown-context-loops-command",
+            f"Unknown context-loops command: {args.context_loops_command}",
+            EXIT_USAGE,
+        )
+    conn.commit()
+    return data
+
+
+def cmd_peer_trace(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    if args.peer_trace_command == "start":
+        return cmd_peer_trace_start(conn, args)
+    if args.peer_trace_command == "stop":
+        return cmd_peer_trace_stop(conn, args)
+    if args.peer_trace_command == "list":
+        return cmd_peer_trace_list(conn, args)
+    raise CLIError(
+        "unknown-peer-trace-command",
+        f"Unknown peer-trace command: {args.peer_trace_command}",
+        EXIT_USAGE,
+    )
+
+
+def cmd_ablation(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    if args.ablation_command == "run":
+        return cmd_ablation_run(conn, args)
+    if args.ablation_command == "compare":
+        return cmd_ablation_compare(conn, args)
+    raise CLIError(
+        "unknown-ablation-command",
+        f"Unknown ablation command: {args.ablation_command}",
+        EXIT_USAGE,
+    )
 
 
 def cmd_packet_generate(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
@@ -6795,11 +6933,28 @@ def create_parser() -> argparse.ArgumentParser:
     shadow_run_pipeline.add_argument("--repo-path", default=".")
     shadow_run_pipeline.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
-    shadow_status_parser = shadow_subparsers.add_parser(
-        "status", help="Show shadow candidate status"
+    shadow_run = shadow_subparsers.add_parser(
+        "run", help="Launch a headless Codex execution for a shadow worktree"
     )
-    shadow_status_parser.add_argument("--candidate-id", required=True)
+    shadow_run.add_argument("--shadow-run-id", required=True)
+    shadow_run.add_argument("--objective", default=None)
+    shadow_run.add_argument("--run-id", default=None)
+    shadow_run.add_argument("--packet-id", default=None)
+    shadow_run.add_argument("--route-id", default=None)
+    shadow_run.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    shadow_status_parser = shadow_subparsers.add_parser(
+        "status", help="Show shadow execution or candidate status"
+    )
+    shadow_status_parser.add_argument("--shadow-run-id", default=None)
+    shadow_status_parser.add_argument("--candidate-id", default=None)
     shadow_status_parser.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    shadow_cancel = shadow_subparsers.add_parser(
+        "cancel", help="Cancel a running headless Codex shadow execution"
+    )
+    shadow_cancel.add_argument("--shadow-run-id", required=True)
+    shadow_cancel.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     peer_trace = subparsers.add_parser("peer-trace", help="Record privacy-safe peer trace metadata")
     peer_trace_subparsers = peer_trace.add_subparsers(dest="peer_trace_command", required=True)
@@ -7617,24 +7772,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "harness-shadow-evaluate":
             assert conn is not None
             data = shadow_evaluate_session(conn, session_id=args.session_id)
-        elif args.command == "eval" and args.eval_command == "record-run":
+        elif args.command == "eval":
             assert conn is not None
-            data = cmd_eval_record_run(conn, args)
-        elif args.command == "eval" and args.eval_command == "list-runs":
-            assert conn is not None
-            data = cmd_eval_list_runs(conn, args)
-        elif args.command == "eval" and args.eval_command == "summary":
-            assert conn is not None
-            data = cmd_eval_summary(conn, args)
-        elif args.command == "eval" and args.eval_command == "second-brain-lift":
-            assert conn is not None
-            data = cmd_eval_second_brain_lift(conn, args)
-        elif args.command == "eval" and args.eval_command == "retrieval-metrics":
-            assert conn is not None
-            data = cmd_eval_retrieval_metrics(conn, args)
-        elif args.command == "eval" and args.eval_command == "gold-set-run":
-            assert conn is not None
-            data = cmd_eval_gold_set_run(conn, args)
+            data = cmd_eval(conn, args)
         elif args.command == "humanize" and args.humanize_command == "run":
             data = cmd_humanize_run(conn, args)
         elif args.command == "humanize" and args.humanize_command == "feedback":
@@ -7644,78 +7784,17 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             data = cmd_humanize_eval(conn, args)
         elif args.command == "meta" and args.meta_command == "analyze-session":
             data = _meta_analyze_session_payload(args)
-        elif args.command == "context-loops" and args.context_loops_command == "inner-run":
+        elif args.command == "context-loops":
             assert conn is not None
-            data = cmd_context_loops_inner_run(conn, args)
-            conn.commit()
-        elif args.command == "context-loops" and args.context_loops_command == "email-draft":
+            data = cmd_context_loops(conn, args)
+        elif args.command == "shadow":
+            data = cmd_shadow(conn, args)
+        elif args.command == "peer-trace":
             assert conn is not None
-            data = cmd_context_loops_email_draft(conn, args)
-            conn.commit()
-        elif args.command == "context-loops" and args.context_loops_command == "record-review":
+            data = cmd_peer_trace(conn, args)
+        elif args.command == "ablation":
             assert conn is not None
-            data = cmd_context_loops_record_review(conn, args)
-            conn.commit()
-        elif args.command == "context-loops" and args.context_loops_command == "review":
-            assert conn is not None
-            data = cmd_context_loops_review(conn, args)
-            conn.commit()
-        elif args.command == "context-loops" and args.context_loops_command == "approve":
-            assert conn is not None
-            data = cmd_context_loops_approve(conn, args)
-            conn.commit()
-        elif args.command == "context-loops" and args.context_loops_command == "reject":
-            assert conn is not None
-            data = cmd_context_loops_reject(conn, args)
-            conn.commit()
-        elif args.command == "context-loops" and args.context_loops_command == "apply-approved":
-            assert conn is not None
-            data = cmd_context_loops_apply_approved(conn, args)
-            conn.commit()
-        elif args.command == "context-loops" and args.context_loops_command == "metrics":
-            assert conn is not None
-            data = cmd_context_loops_metrics(conn, args)
-        elif args.command == "shadow" and args.shadow_command == "create-worktree":
-            assert conn is not None
-            data = cmd_shadow_create_worktree(conn, args)
-        elif args.command == "shadow" and args.shadow_command == "compare":
-            assert conn is not None
-            data = cmd_shadow_compare(conn, args)
-        elif args.command == "shadow" and args.shadow_command == "parity":
-            assert conn is not None
-            data = cmd_shadow_parity(conn, args)
-        elif args.command == "shadow" and args.shadow_command == "cleanup":
-            data = cmd_shadow_cleanup(args)
-        elif args.command == "shadow" and args.shadow_command == "score":
-            assert conn is not None
-            data = cmd_shadow_score(conn, args)
-        elif args.command == "shadow" and args.shadow_command == "queue":
-            assert conn is not None
-            data = cmd_shadow_queue(conn)
-        elif args.command == "peer-trace" and args.peer_trace_command == "start":
-            assert conn is not None
-            data = cmd_peer_trace_start(conn, args)
-        elif args.command == "peer-trace" and args.peer_trace_command == "stop":
-            assert conn is not None
-            data = cmd_peer_trace_stop(conn, args)
-        elif args.command == "peer-trace" and args.peer_trace_command == "list":
-            assert conn is not None
-            data = cmd_peer_trace_list(conn, args)
-        elif args.command == "ablation" and args.ablation_command == "run":
-            assert conn is not None
-            data = cmd_ablation_run(conn, args)
-        elif args.command == "ablation" and args.ablation_command == "compare":
-            assert conn is not None
-            data = cmd_ablation_compare(conn, args)
-        elif args.command == "shadow" and args.shadow_command == "approve":
-            assert conn is not None
-            data = cmd_shadow_approve(conn, args)
-        elif args.command == "shadow" and args.shadow_command == "run-pipeline":
-            assert conn is not None
-            data = cmd_shadow_run_pipeline(conn, args)
-        elif args.command == "shadow" and args.shadow_command == "status":
-            assert conn is not None
-            data = cmd_shadow_status(conn, args)
+            data = cmd_ablation(conn, args)
         elif args.command == "packet" and args.packet_command == "generate":
             assert conn is not None
             data = cmd_packet_generate(conn, args)

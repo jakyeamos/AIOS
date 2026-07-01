@@ -139,13 +139,13 @@ Codex should run:
 /Users/jakyeamos/AIOS/bin/codex-aios-shadow "<objective>" --governed-route
 ```
 
-The wrapper is the narrow permission boundary for shadow setup and delegates to `scripts/codex-aios-shadow.py`. The helper infers the project from the current working directory, creates the routed run/packet, creates an isolated shadow worktree, and prints the follow-up inspection commands. For ordinary prompts, that route is comparison evidence only. For `/aios` prompts, that route is governing context. If the prompt is for another project while Codex is currently in the AIOS repo, include the project name:
+The wrapper is the narrow permission boundary for shadow setup and delegates to `scripts/codex-aios-shadow.py`. The helper infers the project from the current working directory, creates the routed run/packet, creates an isolated shadow worktree, scores whether the task is worth an implementation comparison, and prints the follow-up inspection commands. Eligible large/high-value tasks launch a headless `codex exec` run in the shadow worktree with `workspace-write` sandboxing and no approval prompts; small, unsafe, dirty, or unmeasurable tasks remain route-only evidence with a recorded skip reason. For ordinary prompts, that route is comparison evidence only. For `/aios` prompts, that route is governing context. If the prompt is for another project while Codex is currently in the AIOS repo, include the project name:
 
 ```text
 /aios for amos-saas: Fix the login redirect bug and verify the checks
 ```
 
-The current workspace remains the baseline source of truth. The shadow lane is comparison evidence for assessing AIOS usefulness and must not be merged or copied back without explicit review.
+The current workspace remains the baseline source of truth. The shadow lane is comparison evidence for assessing AIOS usefulness and must not be merged or copied back without explicit review. Inspect automatic shadow execution with `aios shadow status --shadow-run-id <id>` and stop it with `aios shadow cancel --shadow-run-id <id>` when needed.
 
 If automatic shadow routing exits `0` with `ok: true`, `governed_route: false`, `aios_route.status: "route_failed"`, and `aios_route.blocking: false`, continue the baseline task normally. That payload means AIOS recorded a diagnostic route miss and did not create a shadow worktree; it does not require approval to continue. Explicit approval is only needed when automatic shadow setup exits nonzero or cannot record diagnostic evidence. Governed `/aios` routing failures still block unless the user explicitly bypasses AIOS.
 

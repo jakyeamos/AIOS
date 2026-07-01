@@ -114,7 +114,7 @@ def test_make_task_id_is_bounded_and_stable_shape() -> None:
     assert len(task_id) < 90
 
 
-def test_shadow_prompt_points_to_separate_codex_thread() -> None:
+def test_shadow_prompt_points_to_headless_shadow_execution() -> None:
     module = _load_module()
 
     prompt = module.shadow_prompt(
@@ -123,8 +123,8 @@ def test_shadow_prompt_points_to_separate_codex_thread() -> None:
     )
 
     assert prompt is not None
-    assert "separate Codex thread" in prompt
-    assert "/aios-shadow-implementation Fix login" in prompt
+    assert "Headless Codex shadow execution prompt prepared" in prompt
+    assert "Fix login" in prompt
 
 
 def test_make_branch_name_uses_codex_namespace() -> None:
@@ -439,6 +439,8 @@ def test_shadow_main_no_worktree_returns_planning_governance_route(tmp_path: Pat
     assert payload["aios_route"]["workflow_key"] == "planning-governance"
     assert payload["shadow"] is None
     assert payload["shadow_prompt"] is None
+    assert payload["candidate_score"]["recommendation"] == "trace_only"
+    assert payload["shadow_execution"]["status"] == "not_started"
     assert payload["evidence_report"]["schema"] == "aios-shadow-evidence-report-v0.1"
     assert payload["evidence_report"]["quality_signal"] == "trace_only"
     assert [
@@ -506,4 +508,5 @@ def test_shadow_main_no_worktree_returns_known_gsd_command_route(tmp_path: Path,
     assert payload["aios_route"]["workflow_key"] == "implementation-delivery"
     assert payload["shadow"] is None
     assert payload["shadow_prompt"] is None
+    assert payload["shadow_execution"]["status"] == "not_started"
     assert payload["evidence_report"]["quality_signal"] == "trace_only"

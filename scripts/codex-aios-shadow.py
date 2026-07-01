@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 DEFAULT_DB = ROOT / "data" / "aios.db"
 DEFAULT_ROUTE_FAILURES = ROOT / "data" / "aios-route-failures.jsonl"
 GATE_ADOPTION_WORKFLOW_KEY = "repo_gate_adoption_v1"
@@ -129,6 +130,18 @@ def main() -> int:
         shadow=shadow,
         inspect_commands=inspect_commands,
     )
+    candidate_score, shadow_execution = prepare_shadow_execution(
+        db_path=db_path,
+        objective=args.objective,
+        shadow=shadow,
+        route={
+            "run_id": run["id"],
+            "workflow_key": run["workflow_key"],
+            "packet_id": run["packet_id"],
+            "route_id": run["route_id"],
+        },
+        baseline_dirty=bool(git_state["dirty"]),
+    )
     payload = {
         "ok": True,
         "mode": "shadow",
@@ -151,9 +164,11 @@ def main() -> int:
         },
         "shadow": shadow,
         "shadow_prompt": shadow_prompt(args.objective, shadow),
+        "candidate_score": candidate_score,
+        "shadow_execution": shadow_execution,
         "evidence_report": evidence_report,
         "compare_policy": {
-            "source_of_truth": "baseline current workspace unless you explicitly promote shadow output",
+            "source_of_truth": "baseline current workspace",
             "shadow_rule": "do not merge or copy shadow changes back without review",
             "route_rule": route_rule(args.governed_route),
             "useful_evidence": [
@@ -179,6 +194,64 @@ def load_route_helper() -> Any:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def prepare_shadow_execution(
+    *,
+    db_path: Path,
+    objective: str,
+    shadow: dict[str, Any] | None,
+    route: dict[str, Any],
+    baseline_dirty: bool,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    from services.shadow_codex_runner import (
+        launch_codex_shadow,
+        score_codex_shadow_candidate,
+        should_auto_run,
+        skip_codex_shadow,
+    )
+
+    candidate_score = score_codex_shadow_candidate(
+        objective=objective,
+        shadow=shadow,
+        route=route,
+        baseline_dirty=baseline_dirty,
+    )
+    if not shadow or not shadow.get("shadow_run_id"):
+        return candidate_score, {
+            "mode": "headless-codex-exec",
+            "status": "not_started",
+            "command": [],
+            "pid": None,
+            "started_at": None,
+            "output_jsonl_path": None,
+            "final_message_path": None,
+            "skip_reason": "no shadow worktree was created",
+        }
+
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+        shadow_run_id = str(shadow["shadow_run_id"])
+        if should_auto_run(candidate_score):
+            execution = launch_codex_shadow(
+                conn,
+                shadow_run_id=shadow_run_id,
+                objective=objective,
+                run_id=str(route.get("run_id") or ""),
+                packet_id=str(route.get("packet_id") or ""),
+                route_id=str(route.get("route_id") or ""),
+            )
+        else:
+            execution = skip_codex_shadow(
+                conn,
+                shadow_run_id=shadow_run_id,
+                score=candidate_score,
+            )
+        conn.commit()
+        return candidate_score, execution
+    finally:
+        conn.close()
 
 
 def git_snapshot(repo_path: Path) -> dict[str, Any]:
@@ -647,10 +720,7 @@ def shadow_prompt(objective: str, shadow: dict[str, Any] | None) -> str | None:
     worktree_path = shadow.get("worktree_path")
     if not worktree_path:
         return None
-    return (
-        f"Open {worktree_path} in a separate Codex thread and run: "
-        f"/aios-shadow-implementation {objective}"
-    )
+    return f"Headless Codex shadow execution prompt prepared for {worktree_path}: {objective}"
 
 
 def baseline_instruction(governed_route: bool) -> str:
