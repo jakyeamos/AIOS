@@ -224,6 +224,29 @@ def test_record_shadow_branch_run_marks_empty_run_as_no_evidence() -> None:
     assert row["replay_unavailable_reason"] == "shadow lane created; implementation has not run yet"
 
 
+def test_record_shadow_branch_run_can_mark_clean_initial_worktree() -> None:
+    conn = _connect()
+
+    shadow_run_id = record_shadow_branch_run(
+        conn,
+        task_id="task-1",
+        condition="full-aios",
+        start_sha="abc123",
+        aios_branch="aios/eval/task/full-aios",
+        worktree_path="/tmp/worktree",
+        no_evidence_reason="shadow lane created; implementation has not run yet",
+        contamination_check_passed=True,
+    )
+
+    row = conn.execute(
+        "SELECT contamination_check_passed, parity_checklist_status FROM shadow_branch_runs WHERE id = ?",
+        (shadow_run_id,),
+    ).fetchone()
+
+    assert row["contamination_check_passed"] == 1
+    assert row["parity_checklist_status"] == "no_evidence"
+
+
 def test_shadow_parity_metadata_is_queryable_without_branch_mutation() -> None:
     conn = _connect()
     shadow_run_id = "shadow-run-1"

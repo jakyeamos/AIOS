@@ -2,10 +2,16 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import sqlite3
 from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+class _Completed:
+    def __init__(self, stdout: str = "") -> None:
+        self.stdout = stdout
 
 
 def _load_module():
@@ -89,7 +95,9 @@ def _write_gate_adoption_artifacts(
         {
             "schema": "rollout",
             "run_id": run_id,
-            "phases": [{"id": phase_id, "title": phase_id.replace("-", " ")} for phase_id in phase_ids],
+            "phases": [
+                {"id": phase_id, "title": phase_id.replace("-", " ")} for phase_id in phase_ids
+            ],
         },
     )
     (output_dir / "rollout-plan.md").write_text("# Rollout\n", encoding="utf-8")
@@ -206,6 +214,36 @@ def test_record_route_failure_appends_parseable_jsonl(tmp_path: Path) -> None:
     assert rows[0]["objective"] == "Do a task with no workflow"
 
 
+def test_create_shadow_lane_marks_clean_initial_worktree(tmp_path: Path) -> None:
+    module = _load_module()
+    db_path = tmp_path / "aios.db"
+    conn = sqlite3.connect(db_path)
+    conn.executescript((ROOT / "schema.sql").read_text(encoding="utf-8"))
+    conn.close()
+    repo = tmp_path / "AIOS"
+    repo.mkdir()
+
+    with patch("services.shadow_branch_runner.subprocess.run") as run:
+        run.side_effect = [_Completed(str(repo)), _Completed(""), _Completed("")]
+        shadow = module.create_shadow_lane(
+            db_path=db_path,
+            repo_path=repo,
+            task_id="codex-shadow-test",
+            start_sha="abc123",
+            condition="full-aios",
+        )
+
+    conn = sqlite3.connect(db_path)
+    row = conn.execute(
+        "SELECT contamination_check_passed, parity_checklist_status FROM shadow_branch_runs WHERE id = ?",
+        (shadow["shadow_run_id"],),
+    ).fetchone()
+    conn.close()
+
+    assert shadow["contamination_check_passed"] is True
+    assert row == (1, "no_evidence")
+
+
 def test_shadow_evidence_report_marks_gate_artifact_delta_actionable(tmp_path: Path) -> None:
     module = _load_module()
     baseline_repo = tmp_path / "repo"
@@ -251,7 +289,9 @@ def test_shadow_evidence_report_marks_gate_artifact_delta_actionable(tmp_path: P
         {"gate_id": "tests", "baseline": "present", "shadow": "partial"}
     ]
     assert report["comparison"]["rollout_plan"]["added_phase_ids"] == ["phase-1-ci-proof"]
-    assert report["comparison"]["rubric_pack"]["baseline_tmcp_expert_status"] == "insufficient_source"
+    assert (
+        report["comparison"]["rubric_pack"]["baseline_tmcp_expert_status"] == "insufficient_source"
+    )
     assert report["comparison"]["rubric_pack"]["shadow_tmcp_expert_status"] == "sufficient"
     assert {finding["title"] for finding in report["findings"]} >= {
         "Baseline workspace was dirty",
@@ -401,7 +441,9 @@ def test_shadow_main_no_worktree_returns_planning_governance_route(tmp_path: Pat
     assert payload["shadow_prompt"] is None
     assert payload["evidence_report"]["schema"] == "aios-shadow-evidence-report-v0.1"
     assert payload["evidence_report"]["quality_signal"] == "trace_only"
-    assert [inspection["name"] for inspection in payload["evidence_report"]["next_inspections"]] == [
+    assert [
+        inspection["name"] for inspection in payload["evidence_report"]["next_inspections"]
+    ] == [
         "shadow parity",
         "operator-search",
         "daily-flow",

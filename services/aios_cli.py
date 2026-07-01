@@ -168,6 +168,7 @@ from services.shadow_branch_runner import (
     list_shadow_parity_metadata,
     record_shadow_branch_run,
     shadow_branch_name,
+    verify_no_contamination,
 )
 from services.shadow_candidate_scorer import score_shadow_candidate
 from services.skills_harvest import HarvestOptions, harvest_skills_library, verify_tmcp_graph
@@ -3629,11 +3630,17 @@ def cmd_context_loops_metrics(
 def cmd_shadow_create_worktree(
     conn: sqlite3.Connection, args: argparse.Namespace
 ) -> dict[str, Any]:
+    repo_path = Path(args.repo_path).resolve()
     branch_name = shadow_branch_name(task_id=str(args.task_id), condition=str(args.condition))
     worktree_path = create_shadow_worktree(
-        repo_path=Path(args.repo_path).resolve(),
+        repo_path=repo_path,
         start_sha=str(args.start_sha),
         branch_name=branch_name,
+    )
+    contamination_check_passed = verify_no_contamination(
+        baseline_branch=str(args.start_sha),
+        shadow_branch=branch_name,
+        repo_path=repo_path,
     )
     shadow_run_id = record_shadow_branch_run(
         conn,
@@ -3646,6 +3653,7 @@ def cmd_shadow_create_worktree(
             "shadow worktree was created; no implementation, verification, or comparison "
             "evidence has been recorded yet"
         ),
+        contamination_check_passed=contamination_check_passed,
     )
     conn.commit()
     return {
@@ -3653,7 +3661,7 @@ def cmd_shadow_create_worktree(
         "task_id": args.task_id,
         "branch_name": branch_name,
         "worktree_path": worktree_path,
-        "contamination_check_passed": False,
+        "contamination_check_passed": contamination_check_passed,
         "parity_checklist_status": "no_evidence",
     }
 

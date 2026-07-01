@@ -189,6 +189,7 @@ def record_shadow_branch_run(
     aios_branch: str,
     worktree_path: str,
     no_evidence_reason: str | None = None,
+    contamination_check_passed: bool = False,
 ) -> str:
     ensure_shadow_branch_schema(conn)
     if not no_evidence_reason or not no_evidence_reason.strip():
@@ -202,7 +203,7 @@ def record_shadow_branch_run(
           failure_classification, replay_unavailable_reason,
           contamination_check_passed, created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             run_id,
@@ -216,6 +217,7 @@ def record_shadow_branch_run(
             "no_evidence",
             "shadow_execution_not_started",
             no_evidence_reason.strip(),
+            1 if contamination_check_passed else 0,
             _now_iso(),
         ),
     )

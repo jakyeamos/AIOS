@@ -200,6 +200,7 @@ def create_shadow_lane(
     from services.shadow_branch_runner import (
         create_shadow_worktree,
         record_shadow_branch_run,
+        verify_no_contamination,
     )
 
     branch_name = make_branch_name(task_id)
@@ -207,6 +208,11 @@ def create_shadow_lane(
         repo_path=repo_path,
         start_sha=start_sha,
         branch_name=branch_name,
+    )
+    contamination_check_passed = verify_no_contamination(
+        baseline_branch=start_sha,
+        shadow_branch=branch_name,
+        repo_path=repo_path,
     )
     conn = sqlite3.connect(db_path)
     try:
@@ -221,6 +227,7 @@ def create_shadow_lane(
                 "shadow lane created by codex-aios-shadow; run the generated shadow prompt "
                 "before treating this row as implementation evidence"
             ),
+            contamination_check_passed=contamination_check_passed,
         )
         conn.commit()
     finally:
@@ -230,7 +237,7 @@ def create_shadow_lane(
         "task_id": task_id,
         "branch_name": branch_name,
         "worktree_path": worktree_path,
-        "contamination_check_passed": False,
+        "contamination_check_passed": contamination_check_passed,
         "parity_checklist_status": "no_evidence",
     }
 

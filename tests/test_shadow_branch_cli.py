@@ -46,7 +46,7 @@ def test_shadow_create_worktree_and_cleanup_cli_json(tmp_path: Path, capsys) -> 
     conn.close()
 
     with patch("services.shadow_branch_runner.subprocess.run") as run:
-        run.side_effect = [_Completed(str(repo)), _Completed("")]
+        run.side_effect = [_Completed(str(repo)), _Completed(""), _Completed("")]
         exit_code = run_cli(
             [
                 "--json",
@@ -70,7 +70,7 @@ def test_shadow_create_worktree_and_cleanup_cli_json(tmp_path: Path, capsys) -> 
     assert exit_code == EXIT_OK
     output = json.loads(capsys.readouterr().out)
     assert output["data"]["branch_name"] == "aios/eval/shadow-task/full-aios"
-    assert output["data"]["contamination_check_passed"] is False
+    assert output["data"]["contamination_check_passed"] is True
 
     with patch("services.shadow_branch_runner.subprocess.run") as run:
         run.return_value = _Completed("")

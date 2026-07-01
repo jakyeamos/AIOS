@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-06-26
+Last updated: 2026-07-01
 
 ## What AIOS Is
 
@@ -41,10 +41,16 @@ AIOS daily-use release readiness is now the primary near-term product target:
 - `bin/aios.py` can fall back to `uv run` when direct `python3 bin/aios.py ...` invocation cannot import extracted local path dependencies, preserving the documented direct help/smoke contract
 - `uv run python bin/aios.py --json doctor` now reports a local release-readiness preflight covering extracted Python package imports, SQLite reachability, local store directories, pnpm-only package-manager state, context compiler package access, and the required daily-use command surface
 - behavior tests cover direct CLI help, health JSON, doctor pass/fail output, and the integrated daily loop: `start-work` creates route/packet/run/invocation ids, `daily-flow --run-id` replays the eight canonical evidence steps, and `next-action --project` returns project-scoped follow-up work
-- the AIOS UI quality workflow now uses pnpm/corepack with `aios-ui/pnpm-lock.yaml`; root and UI package manifests declare `packageManager: pnpm@10.26.0`; the stale `aios-ui/package-lock.json` npm lockfile has been removed
+- the AIOS UI quality workflow now uses pnpm/corepack with `aios-ui/pnpm-lock.yaml`; root and UI package manifests declare `packageManager: pnpm@11.7.0`; the stale `aios-ui/package-lock.json` npm lockfile has been removed
 - `README.md` now leads with the daily-use loop and a "When Not To Use AIOS" boundary so tiny edits and direct answers do not route through the operating layer by default
 - `docs/case-study.md` records the daily-use release proof story, architecture loop, safety boundary, release evidence, and known limits
 - linked-repo Phase 29 certification remains valuable, but it is no longer the release centerpiece until AIOS itself passes the daily-use readiness path consistently
+
+AIOS shadow setup now separates clean worktree creation from missing implementation evidence:
+
+- `codex-aios-shadow` and `aios shadow create-worktree` verify the new shadow branch against the captured start SHA before recording the initial shadow row
+- a newly created shadow lane can report `contamination_check_passed: true` while still reporting `parity_checklist_status: no_evidence` until the shadow prompt has actually run
+- this removes the misleading initial contamination warning that made automatic shadow procedures look untrustworthy even when the worktree was clean
 
 ## Implemented On 2026-06-30
 
