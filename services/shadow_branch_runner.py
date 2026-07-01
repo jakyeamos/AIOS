@@ -28,6 +28,9 @@ VALID_CONDITIONS = {
     "external_clean_room",
 }
 
+NO_EVIDENCE_DIFF_STAT = {"files_changed": 0, "insertions": 0, "deletions": 0}
+NO_EVIDENCE_TEST_DELTA = {"status": "not_run"}
+
 
 class ShadowBranchSafetyError(RuntimeError):
     pass
@@ -100,7 +103,9 @@ def create_shadow_worktree(*, repo_path: str | Path, start_sha: str, branch_name
     ).stdout.strip()
     worktree_path = repo / ".aios" / "shadow-worktrees" / branch_name.replace("/", "-")
     if Path(active_root).resolve() == worktree_path.resolve():
-        raise ShadowBranchSafetyError("Refusing to create a shadow worktree on the active tree path.")
+        raise ShadowBranchSafetyError(
+            "Refusing to create a shadow worktree on the active tree path."
+        )
     worktree_path.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run(
         ["git", "worktree", "add", str(worktree_path), "-b", branch_name, start_sha],
@@ -159,7 +164,9 @@ def capture_test_delta(
     }
 
 
-def compute_shadow_branch_delta(*, baseline_score: dict[str, Any], aios_score: dict[str, Any]) -> float:
+def compute_shadow_branch_delta(
+    *, baseline_score: dict[str, Any], aios_score: dict[str, Any]
+) -> float:
     return float(aios_score["overall_score"]) - float(baseline_score["overall_score"])
 
 
@@ -181,18 +188,36 @@ def record_shadow_branch_run(
     start_sha: str,
     aios_branch: str,
     worktree_path: str,
+    no_evidence_reason: str | None = None,
 ) -> str:
     ensure_shadow_branch_schema(conn)
+    if not no_evidence_reason or not no_evidence_reason.strip():
+        raise ValueError("no_evidence_reason is required when creating an empty shadow run.")
     run_id = _new_id("shadow-run")
     conn.execute(
         """
         INSERT INTO shadow_branch_runs (
           id, task_id, condition, start_sha, aios_branch, worktree_path,
+          diff_stat_json, test_delta_json, parity_checklist_status,
+          failure_classification, replay_unavailable_reason,
           contamination_check_passed, created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, 0, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
         """,
-        (run_id, task_id, condition, start_sha, aios_branch, worktree_path, _now_iso()),
+        (
+            run_id,
+            task_id,
+            condition,
+            start_sha,
+            aios_branch,
+            worktree_path,
+            json.dumps(NO_EVIDENCE_DIFF_STAT, sort_keys=True, separators=(",", ": ")),
+            json.dumps(NO_EVIDENCE_TEST_DELTA, sort_keys=True, separators=(",", ": ")),
+            "no_evidence",
+            "shadow_execution_not_started",
+            no_evidence_reason.strip(),
+            _now_iso(),
+        ),
     )
     return run_id
 
@@ -293,9 +318,18 @@ def compare_shadow_runs(
         """
         UPDATE shadow_branch_runs
         SET baseline_run_id = ?, shadow_branch_delta = ?, diff_stat_json = ?,
-            test_delta_json = ?, contamination_check_passed = 1
+            test_delta_json = ?, parity_checklist_status = ?,
+            failure_classification = NULL, replay_unavailable_reason = NULL,
+            contamination_check_passed = 1
         WHERE id = ?
         """,
-        (baseline_run_id, delta, json.dumps({}), json.dumps({}), shadow_run_id),
+        (
+            baseline_run_id,
+            delta,
+            json.dumps({}),
+            json.dumps({}),
+            "evidence_recorded",
+            shadow_run_id,
+        ),
     )
     return {"shadow_run_id": shadow_run_id, "baseline_run_id": baseline_run_id, "delta": delta}

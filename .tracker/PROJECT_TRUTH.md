@@ -1,15 +1,15 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, read-only workflow route preview, standalone Quality Runner consumption boundary, review-gated session-intelligence tools, and Codex session-ingest meta-learning proposals while broader Ruff and BasedPyright baseline issues remain open.
+summary: Active local-first agent operating system with durable eval-run recording, explicit no-evidence shadow-run marking, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, read-only workflow route preview, standalone Quality Runner consumption boundary, review-gated session-intelligence tools, and Codex session-ingest meta-learning proposals while broader Ruff and BasedPyright baseline issues remain open.
 healthScore: 73
 statusLabel: needs_attention
-nextStep: Use `aios route` in live Codex sessions to validate whether workflow/project/agent recommendations are clear enough before adding richer route explanation or semantic-router affordances.
+nextStep: Run a real shadow-lane implementation through the generated prompt and compare whether the new no-evidence marker cleanly separates lane setup from useful shadow output.
 blockers:
   - Full repo Ruff and format baselines are not green: Ruff reports 25 issues and Ruff format reports 162 files needing formatting.
   - Full repo BasedPyright is not green: 109 errors and 78 warnings, including the existing `services/aios_cli.py` `run_cli` complexity baseline.
   - `uv run vulture . --min-confidence 70` scans `.venv` and fails on third-party package findings; project-scoped `uv run vulture bin services --min-confidence 70` passes.
-lastUpdated: 2026-06-30
+lastUpdated: 2026-07-01
 tags: [infra, ai-os, hooks, automation]
 areas: [engineering]
 goals: []
@@ -17,7 +17,7 @@ repoType: infra
 sourceOfTruth: mixed
 primaryLanguage: Python
 activeBranch: codex/project-aios-component-scope
-lastCommitDate: 2026-06-28
+lastCommitDate: 2026-07-01
 quality:
   lint: fail
   types: fail
@@ -70,6 +70,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 ## Recent Progress
 
+- 2026-07-01: Tightened AIOS shadow-run recording so empty shadow lanes must carry an explicit no-evidence reason, persist `parity_checklist_status=no_evidence`, and cannot masquerade as measured shadow output before implementation, verification, or comparison evidence exists.
 - 2026-06-30: Removed stale code-intelligence integration references from AIOS active/default project lists, prompt-submit retrieval hints, benchmark manifests, and linked-project planning docs; targeted Ruff, BasedPyright, JSON parse, and tier-one regression checks pass.
 - 2026-06-25: Added an AIOS quality-pipeline `anti_slop` adoption/backfill gate for platform, production public web app, and developer-tool package repos, with audit-mode linked-repo commands and readiness regression coverage.
 - 2026-06-26: Linked-repo adoption reports now require quality certification through `repo_gate_adoption_v1`, separating `aios_wired`, `quality_standard_compliant`, and `release_ready` stages from final `adoption_ready`, `adopted_but_blocked`, or `not_adopted` status.
@@ -166,7 +167,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 3. **Full BasedPyright baseline is not green** — `uv run basedpyright` failed on 2026-06-29 with 109 errors and 78 warnings, including existing `run_cli` complexity.
 ## Next Concrete Steps
 
-1. Use `aios route` in live Codex sessions, then decide whether route previews need richer explanation, wrapper global-flag handling, or semantic-router integration.
+1. Run a real shadow-lane implementation through the generated prompt and verify it transitions from `no_evidence` to `evidence_recorded` only after comparison evidence exists.
 2. Decide whether AIOS should add a thin shortcut or adapter for invoking external Quality Runner runs.
 3. Resume linked-repo adoption execution with BidCamp repo-local Phase 151, then continue BidCamp 152-155, EliHealth 09-13, and pre-cr-suite-lsp 04-06.
 
@@ -183,8 +184,22 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 | Lint (ruff) | Fail | `uv run ruff check .` failed on 2026-06-29 with 25 existing repo issues. Focused workflow route preview Ruff checks pass. |
 | Type check (basedpyright) | Fail | `uv run basedpyright` failed on 2026-06-29 with 109 errors and 78 warnings, including existing `run_cli` complexity. Focused route preview BasedPyright still hits the existing `run_cli` complexity and `SimpleNamespace` test baseline. |
 | Dead code (vulture) | Warning | `uv run vulture . --min-confidence 70` failed on 2026-06-28 because `.venv` third-party packages were scanned; `uv run vulture bin services --min-confidence 70` passed. |
-| Tests | Pass | `uv run pytest -q` passed on 2026-06-29 with 1059 tests. |
+| Tests | Pass | `uv run pytest -q` passed on 2026-07-01 with 1066 tests. |
 | Structure | Fail | `uv run ruff format --check .` reported 162 files needing formatting on 2026-06-29. The final workflow route preview diff avoids broad legacy file formatting churn. |
+
+Focused shadow no-evidence checks on 2026-07-01:
+- `uv run pytest -q tests/test_shadow_branch_runner.py tests/test_shadow_branch_cli.py tests/test_codex_aios_shadow.py` passed with 26 tests.
+- `uv run ruff check services/shadow_branch_runner.py services/aios_cli.py scripts/codex-aios-shadow.py tests/test_shadow_branch_runner.py` passed.
+- `uv run ruff format --check services/shadow_branch_runner.py services/aios_cli.py scripts/codex-aios-shadow.py tests/test_shadow_branch_runner.py` passed.
+- `uv run basedpyright services/shadow_branch_runner.py scripts/codex-aios-shadow.py tests/test_shadow_branch_runner.py` passed with 0 errors and 0 warnings.
+- `uv run vulture bin services --min-confidence 70` exited 0.
+
+Full repo shadow no-evidence checks on 2026-07-01:
+- `uv run pytest -q` passed with 1066 tests.
+- `uv run ruff check .` failed with the existing repo lint baseline: 25 issues.
+- `uv run ruff format --check .` failed with the existing repo format baseline: 158 files would be reformatted.
+- `uv run basedpyright` failed with the existing repo type baseline: 109 errors and 78 warnings.
+- `uv run vulture bin services --min-confidence 70` exited 0.
 
 Focused workflow route preview checks on 2026-06-29:
 - `uv run pytest -q tests/test_task_routing.py tests/test_aios_cli.py tests/test_native_commands.py` passed with 120 tests.

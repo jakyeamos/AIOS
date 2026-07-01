@@ -30,9 +30,7 @@ GATE_ADOPTION_ARTIFACTS = {
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Create an AIOS shadow lane for a Codex task."
-    )
+    parser = argparse.ArgumentParser(description="Create an AIOS shadow lane for a Codex task.")
     parser.add_argument("objective", help="Task objective to shadow")
     parser.add_argument("--project", default=None, help="Project id, name, or repo path")
     parser.add_argument("--db", default=str(DEFAULT_DB), help="AIOS SQLite database")
@@ -55,7 +53,9 @@ def main() -> int:
     try:
         project = route_helper.resolve_project(db_path, explicit=args.project, cwd=cwd)
     except ValueError as exc:
-        print_json({"ok": False, "error": {"code": "project-resolution-failed", "message": str(exc)}})
+        print_json(
+            {"ok": False, "error": {"code": "project-resolution-failed", "message": str(exc)}}
+        )
         return 2
 
     route_result = route_helper.start_work(
@@ -217,6 +217,10 @@ def create_shadow_lane(
             start_sha=start_sha,
             aios_branch=branch_name,
             worktree_path=worktree_path,
+            no_evidence_reason=(
+                "shadow lane created by codex-aios-shadow; run the generated shadow prompt "
+                "before treating this row as implementation evidence"
+            ),
         )
         conn.commit()
     finally:
@@ -227,6 +231,7 @@ def create_shadow_lane(
         "branch_name": branch_name,
         "worktree_path": worktree_path,
         "contamination_check_passed": False,
+        "parity_checklist_status": "no_evidence",
     }
 
 
@@ -330,9 +335,7 @@ def compare_gate_adoption_artifacts(
     }
 
 
-def compare_gate_matrices(
-    baseline: dict[str, Any], shadow: dict[str, Any]
-) -> dict[str, Any]:
+def compare_gate_matrices(baseline: dict[str, Any], shadow: dict[str, Any]) -> dict[str, Any]:
     baseline_gates = _gates_by_id(baseline)
     shadow_gates = _gates_by_id(shadow)
     shared_gate_ids = sorted(set(baseline_gates) & set(shadow_gates))
@@ -552,7 +555,9 @@ def shadow_next_inspections(
                 "name": "gate-adoption artifacts",
                 "priority": "p0" if quality_signal.startswith("actionable") else "p1",
                 "why": "Repo adoption quality lives in repo-scan, gate-matrix, rubric-pack, and rollout-plan outputs.",
-                "command": f"Compare {baseline_dir} with {shadow_dir}" if shadow_dir else f"Inspect {baseline_dir}",
+                "command": f"Compare {baseline_dir} with {shadow_dir}"
+                if shadow_dir
+                else f"Inspect {baseline_dir}",
             },
         )
     return inspections
@@ -592,7 +597,9 @@ def _rubric_ids(payload: dict[str, Any], field: str) -> list[str]:
     rubrics = payload.get(field) if isinstance(payload, dict) else None
     if not isinstance(rubrics, list):
         return []
-    return [str(rubric["id"]) for rubric in rubrics if isinstance(rubric, dict) and rubric.get("id")]
+    return [
+        str(rubric["id"]) for rubric in rubrics if isinstance(rubric, dict) and rubric.get("id")
+    ]
 
 
 def _gate_ids_with_status(gates: dict[str, dict[str, Any]], status: str) -> list[str]:

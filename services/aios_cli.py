@@ -3641,6 +3641,10 @@ def cmd_shadow_create_worktree(
         start_sha=str(args.start_sha),
         aios_branch=branch_name,
         worktree_path=worktree_path,
+        no_evidence_reason=(
+            "shadow worktree was created; no implementation, verification, or comparison "
+            "evidence has been recorded yet"
+        ),
     )
     conn.commit()
     return {
@@ -3649,6 +3653,7 @@ def cmd_shadow_create_worktree(
         "branch_name": branch_name,
         "worktree_path": worktree_path,
         "contamination_check_passed": False,
+        "parity_checklist_status": "no_evidence",
     }
 
 
