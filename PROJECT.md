@@ -1721,3 +1721,10 @@ The spec execution roadmap has been corrected before execution:
 - Expanded packets replace `run_state["tmcp_packet"]` for subsequent workflow stages, and workflow reports expose `tmcp_packet_expansions` plus per-stage `tmcp_expansion` evidence for operator inspection.
 - Managed runtime packet artifacts now sync to the final active TMCP receipt while superseded initial receipts remain durable evidence, including cases where a promoted shortcut was used before phase-specific expansion.
 - Verification: focused TMCP/workflow/orchestration suites passed (`97 passed`), focused Ruff passed, focused Basedpyright passed with 0 errors, and `pnpm context:validate` passed.
+
+## 2026-07-01 - Automatic Codex shadow execution
+
+- `scripts/codex-aios-shadow.py` now scores each created shadow lane and auto-launches headless `codex exec` only for good/excellent candidates, while blocked, small, dirty, unsafe, or unmeasurable tasks remain route-only evidence with a recorded skip reason.
+- `services/shadow_codex_runner.py` owns the v1 execution backend: command construction, `workspace-write` sandboxing, `--ask-for-approval never`, JSONL/final-message artifact paths, detached launch metadata, status checks, and cancellation.
+- `shadow_branch_runs` now records execution status, backend, pid, command, output paths, timestamps, and execution metadata; `aios shadow run/status/cancel` exposes those controls without promoting shadow output.
+- Current truth: AIOS shadowing can now collect implementation evidence opportunistically during normal Codex work, but the baseline workspace remains the source of truth and shadow output must not be merged or copied back without explicit review.
