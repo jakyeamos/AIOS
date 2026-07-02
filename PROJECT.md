@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-07-01
+Last updated: 2026-07-02
 
 ## What AIOS Is
 
@@ -33,6 +33,15 @@ The repository currently contains five meaningful subsystems:
    The file-backed contract layer for inner/outer context learning loops: approved/rejected lessons, review taxonomy, retrieval policy, examples, and email pilot guidance.
 
 Root operator documentation now lives in `README.md`, including local UI launch commands, key UI routes, store paths, workflow proposal backfill, and verification commands.
+
+## Implemented On 2026-07-02
+
+Codex repo-state closeout now has a narrow deterministic helper:
+
+- `python bin/aios.py repo closeout --repo <path>` prints one stable closeout report with branch, full HEAD SHA, dirty flag, dirty files in Git porcelain format, diff stat, and recent commit titles
+- `python bin/aios.py --json repo closeout --repo <path>` exposes the same state as `aios-repo-closeout-v0.1` JSON for agent workflows and future automation
+- the helper is read-only and lives under the existing `repo` command family beside `repo inspect`, based on session-intelligence evidence that repeated `git status` and `git diff --stat` inspection created closeout friction
+- tests cover the payload and CLI renderer against a real temporary Git repository, including preserved porcelain status spacing and normalized diff-stat lines
 
 ## Implemented On 2026-07-01
 
