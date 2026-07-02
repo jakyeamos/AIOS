@@ -104,6 +104,44 @@ def test_vault_checks_only_trusted_wikilinks(tmp_path: Path, capsys) -> None:
     assert "Archive Missing Target" not in output
 
 
+def test_vault_resolves_obsidian_path_wikilinks(tmp_path: Path, capsys) -> None:
+    validator = _load_validator()
+    root = _vault_root(tmp_path)
+    maps = root / "Command-Center" / "00 Maps"
+    dashboard = root / "Command-Center" / "01 Dashboard"
+    maps.mkdir(parents=True)
+    dashboard.mkdir(parents=True)
+    (maps / "Index.md").write_text(
+        _trusted_frontmatter() + "# Index\n[[00 Maps/Projects]]\n[[01 Dashboard/Weekly Review]]\n",
+        encoding="utf-8",
+    )
+    (maps / "Projects.md").write_text(_trusted_frontmatter() + "# Projects\n", encoding="utf-8")
+    (dashboard / "Weekly Review.md").write_text(
+        _trusted_frontmatter() + "# Weekly Review\n",
+        encoding="utf-8",
+    )
+
+    result = validator.validate_vault(root)
+
+    output = capsys.readouterr().out
+    assert "broken_trusted_wikilink" not in output
+    assert result == 1
+
+
+def test_vault_treats_aios_audit_markdown_as_generated_raw(tmp_path: Path, capsys) -> None:
+    validator = _load_validator()
+    root = _vault_root(tmp_path)
+    audit = root / ".aios" / "audit"
+    audit.mkdir(parents=True)
+    (audit / "gate-summary.md").write_text("# Gate Summary\n", encoding="utf-8")
+
+    result = validator.validate_vault(root)
+
+    output = capsys.readouterr().out
+    assert "missing_metadata:.aios/audit/gate-summary.md" not in output
+    assert result == 1
+
+
 def test_vault_redacts_secret_like_paths(tmp_path: Path, capsys) -> None:
     validator = _load_validator()
     root = _vault_root(tmp_path)

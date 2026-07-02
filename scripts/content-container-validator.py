@@ -120,6 +120,8 @@ def _trust_for(path: Path, frontmatter: dict[str, str]) -> str:
         return frontmatter["trust"]
     if _is_quarantine(path):
         return "quarantine"
+    if _is_under(path, ".aios") and _is_under(path, "audit"):
+        return "raw"
     if _is_under(path, "02 Session Handoffs"):
         return "raw"
     if _is_archive_or_raw(path):
@@ -143,6 +145,18 @@ def _title_key(path: Path) -> str:
 
 def _strip_fenced_code(text: str) -> str:
     return re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+
+
+def _known_wikilink_targets(root: Path, paths: list[Path]) -> set[str]:
+    targets: set[str] = set()
+    for path in paths:
+        relative = path.relative_to(root)
+        no_suffix = relative.with_suffix("")
+        targets.add(path.stem)
+        targets.add(str(no_suffix))
+        if relative.parts and relative.parts[0] == "Command-Center":
+            targets.add(str(Path(*relative.parts[1:]).with_suffix("")))
+    return targets
 
 
 def _check_secret_free(root: Path, paths: list[Path]) -> list[str]:
@@ -173,7 +187,7 @@ def _check_frontmatter(root: Path, paths: list[Path]) -> list[str]:
 
 def _check_wikilinks(root: Path, paths: list[Path]) -> list[str]:
     failures: list[str] = []
-    names = {path.stem for path in paths}
+    targets = _known_wikilink_targets(root, paths)
     for path in paths:
         frontmatter = _frontmatter(path)
         if not _trusted_candidate(path, frontmatter):
@@ -182,7 +196,7 @@ def _check_wikilinks(root: Path, paths: list[Path]) -> list[str]:
         text = _strip_fenced_code(text)
         for match in re.finditer(r"\[\[([^\]|#]+)", text):
             target = match.group(1).strip()
-            if target and target not in names:
+            if target and target not in targets:
                 failures.append(f"broken_trusted_wikilink:{_safe_relative(path, root)}->{target}")
     return failures
 
