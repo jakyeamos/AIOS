@@ -16,6 +16,7 @@ from services.session_intelligence_tools import (  # noqa: E402
     codex_workflow_skill_payload,
     planning_state_payload,
     quality_ladder_payload,
+    repo_closeout_payload,
     repo_inspect_payload,
     service_probe_payload,
     ship_guard_payload,
@@ -86,6 +87,25 @@ def test_repo_inspect_reports_git_package_and_context_summary(sample_repo: Path)
     assert recommendations[0]["tool"] == "aios quality ladder"
 
 
+def test_repo_closeout_reports_deterministic_git_state(sample_repo: Path) -> None:
+    (sample_repo / "README.md").write_text("# Sample\n\nChanged.\n", encoding="utf-8")
+    (sample_repo / "new.txt").write_text("new\n", encoding="utf-8")
+
+    payload = repo_closeout_payload(sample_repo)
+    git = _dict(payload, "git")
+    diff_stat = _dict(payload, "diff_stat")
+
+    assert payload["schema"] == "aios-repo-closeout-v0.1"
+    assert payload["repo"] == str(sample_repo)
+    assert git["branch"] in {"master", "main"}
+    assert isinstance(git["head"], str)
+    assert len(cast(str, git["head"])) == 40
+    assert git["dirty"] is True
+    assert git["dirty_files"] == [" M README.md", "?? new.txt", "?? src.py"]
+    assert cast(list[str], diff_stat["lines"])[-1].strip().endswith("insertions(+)")
+    assert cast(list[dict[str, object]], git["recent_commits"])[0]["title"] == "initial"
+
+
 def test_quality_ladder_plans_python_and_js_commands_without_running(sample_repo: Path) -> None:
     payload = quality_ladder_payload(sample_repo, profile="auto")
 
@@ -153,6 +173,32 @@ def test_session_intelligence_tool_cli_json(
     output = json.loads(capsys.readouterr().out)
     assert output["ok"] is True
     assert output["data"]["schema"] == "aios-repo-inspect-v0.1"
+
+
+def test_repo_closeout_cli_prints_stable_human_report(
+    sample_repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    (sample_repo / "README.md").write_text("# Sample\n\nChanged.\n", encoding="utf-8")
+
+    exit_code = run_cli(["repo", "closeout", "--repo", str(sample_repo), "--commits", "1"])
+
+    assert exit_code == EXIT_OK
+    output = capsys.readouterr().out.splitlines()
+    assert output[0] == "AIOS Repo Closeout"
+    assert output[1] == f"repo: {sample_repo}"
+    assert output[2] in {"branch: master", "branch: main"}
+    assert output[3].startswith("head: ")
+    assert output[4] == "dirty: true"
+    assert output[5:] == [
+        "dirty_files:",
+        " M README.md",
+        "?? src.py",
+        "diff_stat:",
+        "README.md | 2 ++",
+        "1 file changed, 2 insertions(+)",
+        "recent_commits:",
+        "initial",
+    ]
 
 
 def test_quality_ladder_cli_json(sample_repo: Path, capsys: pytest.CaptureFixture[str]) -> None:

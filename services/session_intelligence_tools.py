@@ -87,13 +87,24 @@ def _root_markers(repo: Path) -> list[str]:
 
 
 def _status_lines(repo: Path) -> list[str]:
-    result = _git(repo, "status", "--short")
-    stdout = _stdout(result)
-    return [line for line in stdout.splitlines() if line]
+    try:
+        completed = subprocess.run(
+            ["git", "status", "--short"],
+            cwd=repo,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=5.0,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return []
+    if completed.returncode != 0:
+        return []
+    return [line for line in completed.stdout.splitlines() if line]
 
 
-def _recent_commits(repo: Path) -> list[JSONDict]:
-    result = _git(repo, "log", "--oneline", "-5")
+def _recent_commits(repo: Path, *, limit: int = 5) -> list[JSONDict]:
+    result = _git(repo, "log", "--oneline", f"-{limit}")
     commits: list[JSONDict] = []
     for line in _stdout(result).splitlines():
         if not line.strip():
@@ -107,6 +118,17 @@ def _current_branch(repo: Path) -> str | None:
     result = _git(repo, "branch", "--show-current")
     branch = _stdout(result)
     return branch or None
+
+
+def _head_sha(repo: Path) -> str | None:
+    result = _git(repo, "rev-parse", "HEAD")
+    head = _stdout(result)
+    return head or None
+
+
+def _diff_stat_lines(repo: Path) -> list[str]:
+    result = _git(repo, "diff", "--stat")
+    return [line.strip() for line in _stdout(result).splitlines() if line.strip()]
 
 
 def _remote_names(repo: Path) -> list[str]:
@@ -158,6 +180,29 @@ def repo_inspect_payload(repo_path: str | Path, *, include_processes: bool = Fal
     if include_processes:
         payload["local_services"] = service_probe_payload()
     return payload
+
+
+def repo_closeout_payload(repo_path: str | Path, *, commit_limit: int = 5) -> JSONDict:
+    repo = _git_root(Path(repo_path).expanduser().resolve())
+    git_probe = _git(repo, "rev-parse", "--is-inside-work-tree")
+    is_repo = bool(git_probe.get("ok"))
+    status = _status_lines(repo) if is_repo else []
+    bounded_limit = max(1, min(commit_limit, 20))
+    return {
+        "schema": "aios-repo-closeout-v0.1",
+        "repo": str(repo),
+        "git": {
+            "is_repo": is_repo,
+            "branch": _current_branch(repo) if is_repo else None,
+            "head": _head_sha(repo) if is_repo else None,
+            "dirty": bool(status),
+            "dirty_files": status,
+            "recent_commits": _recent_commits(repo, limit=bounded_limit) if is_repo else [],
+        },
+        "diff_stat": {
+            "lines": _diff_stat_lines(repo) if is_repo else [],
+        },
+    }
 
 
 def quality_ladder_payload(repo_path: str | Path, *, profile: str = "auto") -> JSONDict:

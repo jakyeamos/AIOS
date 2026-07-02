@@ -150,6 +150,7 @@ from services.session_intelligence_tools import (
     codex_workflow_skill_payload,
     planning_state_payload,
     quality_ladder_payload,
+    repo_closeout_payload,
     repo_inspect_payload,
     service_probe_payload,
     ship_guard_payload,
@@ -5888,6 +5889,24 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "gate-run":
         print(f"status={data['status']} gate={data['gateId']} summary={data['summary']}")
         return
+    if command == "repo-closeout":
+        git_data = data["git"]
+        diff_stat = data["diff_stat"]
+        print("AIOS Repo Closeout")
+        print(f"repo: {data['repo']}")
+        print(f"branch: {git_data['branch'] or 'unknown'}")
+        print(f"head: {git_data['head'] or 'unknown'}")
+        print(f"dirty: {str(git_data['dirty']).lower()}")
+        print("dirty_files:")
+        for line in git_data["dirty_files"]:
+            print(line)
+        print("diff_stat:")
+        for line in diff_stat["lines"]:
+            print(line)
+        print("recent_commits:")
+        for commit in git_data["recent_commits"]:
+            print(commit["title"])
+        return
 
 
 def _command_name(args: argparse.Namespace) -> str:
@@ -6167,6 +6186,8 @@ def _repo_payload(args: argparse.Namespace) -> dict[str, Any]:
             Path(args.repo),
             include_processes=bool(args.include_processes),
         )
+    if args.repo_command == "closeout":
+        return repo_closeout_payload(Path(args.repo), commit_limit=int(args.commits))
     raise CLIError(
         "unsupported-repo-command", f"Unsupported repo command: {args.repo_command}", EXIT_USAGE
     )
@@ -6448,6 +6469,18 @@ def create_parser() -> argparse.ArgumentParser:
         help="Include default local service probes",
     )
     repo_inspect.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    repo_closeout = repo_subparsers.add_parser(
+        "closeout",
+        help="Print deterministic Codex repo-state closeout",
+    )
+    repo_closeout.add_argument("--repo", default=".", help="Repository path")
+    repo_closeout.add_argument(
+        "--commits",
+        type=int,
+        default=5,
+        help="Number of recent commits to include",
+    )
+    repo_closeout.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     quality_parser = subparsers.add_parser("quality", help="Quality ladder planning tools")
     quality_subparsers = quality_parser.add_subparsers(dest="quality_command", required=True)
