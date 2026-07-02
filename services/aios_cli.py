@@ -135,6 +135,13 @@ from services.second_brain_eval import (
     compute_second_brain_lift,
     evaluate_gold_set_run,
 )
+from services.session_intelligence_helpers import (
+    HELPER_FAMILIES as SESSION_INTEL_HELPER_FAMILIES,
+)
+from services.session_intelligence_helpers import (
+    list_session_intelligence_helpers,
+    run_session_intelligence_helper,
+)
 from services.session_intelligence_loop import (
     SessionIntelligenceBackfillOptions,
     SessionIntelligenceOptions,
@@ -6175,6 +6182,19 @@ def _session_intel_payload(conn: sqlite3.Connection, args: argparse.Namespace) -
             status=args.status,
             note=args.note,
         )
+    if args.session_intel_command == "helper":
+        if args.session_intel_helper_command == "list":
+            helpers = list_session_intelligence_helpers(conn)
+            return {"count": len(helpers), "helpers": helpers}
+        if args.session_intel_helper_command == "run":
+            return run_session_intelligence_helper(
+                conn,
+                family=args.family,
+                path=args.path,
+                repo=args.repo,
+                start_line=args.start_line,
+                end_line=args.end_line,
+            )
     raise CLIError(
         "unsupported-session-intel-command",
         f"Unsupported session-intel command: {args.session_intel_command}",
@@ -6460,6 +6480,32 @@ def create_parser() -> argparse.ArgumentParser:
     )
     session_intel_mark.add_argument("--note", default="")
     session_intel_mark.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    session_intel_helper = session_intel_subparsers.add_parser(
+        "helper", help="Run deterministic helper-family surfaces for adopted candidates"
+    )
+    session_intel_helper_subparsers = session_intel_helper.add_subparsers(
+        dest="session_intel_helper_command", required=True
+    )
+    session_intel_helper_list = session_intel_helper_subparsers.add_parser(
+        "list", help="List adopted deterministic helper families"
+    )
+    session_intel_helper_list.add_argument(
+        "--json", action="store_true", default=argparse.SUPPRESS
+    )
+    session_intel_helper_run = session_intel_helper_subparsers.add_parser(
+        "run", help="Run one deterministic helper family"
+    )
+    session_intel_helper_run.add_argument(
+        "--family", choices=SESSION_INTEL_HELPER_FAMILIES, required=True
+    )
+    session_intel_helper_run.add_argument("--path", default=None)
+    session_intel_helper_run.add_argument("--repo", default=None)
+    session_intel_helper_run.add_argument("--start-line", type=int, default=None)
+    session_intel_helper_run.add_argument("--end-line", type=int, default=None)
+    session_intel_helper_run.add_argument(
+        "--json", action="store_true", default=argparse.SUPPRESS
+    )
 
     repo_parser = subparsers.add_parser("repo", help="Deterministic repository inspection tools")
     repo_subparsers = repo_parser.add_subparsers(dest="repo_command", required=True)

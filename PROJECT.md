@@ -36,6 +36,17 @@ Root operator documentation now lives in `README.md`, including local UI launch 
 
 ## Implemented On 2026-07-02
 
+Codex session-intelligence helper-family adoption now creates real deterministic helper command surfaces:
+
+- `python bin/aios.py session-intel helper list` lists adopted helper-family presets from `session_intelligence_implementations`, including candidate coverage, telemetry state, removal state, and artifact reference
+- `python bin/aios.py session-intel helper run --family doc_excerpt --path <file> --start-line <n> --end-line <n>` performs bounded line-oriented file excerpts with stable line numbers and a 500-line cap
+- `artifact_probe` summarizes JSON and CSV artifacts with deterministic metadata such as SHA-256, size, top-level JSON keys, array lengths, CSV headers, and row count
+- `repo_state` and `git_history` run fixed read-only Git probes for branch/status/diff evidence and recent history evidence without executing arbitrary candidate commands
+- `package_check` reads package-manager authority from `package.json` and committed lockfiles, surfaces scripts and likely quality scripts, and does not infer capability from `node_modules`
+- `deployment_flow`, `bespoke_review`, and `workflow_skill` now have deterministic inspection surfaces for deployment evidence, low-shape review triage, and workflow-skill candidate review instead of remaining database-only adoption records
+- behavior is split by helper-family responsibility with no intentional behavior changes to existing session-intel run/candidates/clusters/mark/implement flows
+- tests cover parser support, adopted-family listing, bounded excerpts, JSON/CSV artifact probing, and package-check lockfile/script reporting
+
 Codex repo-state closeout now has a narrow deterministic helper:
 
 - `python bin/aios.py repo closeout --repo <path>` prints one stable closeout report with branch, full HEAD SHA, dirty flag, dirty files in Git porcelain format, diff stat, and recent commit titles

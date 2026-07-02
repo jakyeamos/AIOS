@@ -868,6 +868,22 @@ def test_session_intelligence_cli_parser_accepts_run_candidates_and_mark() -> No
             "reviewed",
         ]
     )
+    helper_list_args = parser.parse_args(["session-intel", "helper", "list"])
+    helper_run_args = parser.parse_args(
+        [
+            "session-intel",
+            "helper",
+            "run",
+            "--family",
+            "doc_excerpt",
+            "--path",
+            "README.md",
+            "--start-line",
+            "1",
+            "--end-line",
+            "20",
+        ]
+    )
     backfill_args = parser.parse_args(
         [
             "session-intel",
@@ -887,6 +903,11 @@ def test_session_intelligence_cli_parser_accepts_run_candidates_and_mark() -> No
     assert clusters_args.session_intel_command == "clusters"
     assert implement_args.session_intel_command == "implement"
     assert mark_args.session_intel_command == "mark"
+    assert helper_list_args.session_intel_command == "helper"
+    assert helper_list_args.session_intel_helper_command == "list"
+    assert helper_run_args.session_intel_command == "helper"
+    assert helper_run_args.session_intel_helper_command == "run"
+    assert helper_run_args.family == "doc_excerpt"
     assert backfill_args.session_intel_command == "backfill"
     assert backfill_args.provider == "all"
 
@@ -960,6 +981,155 @@ def test_session_intelligence_cli_payloads_run_list_and_mark(tmp_path: Path) -> 
     assert clusters["total_count"] == 1
     assert clusters["clusters"][0]["status_counts"] == {"observed": 1}
     assert "redacted_evidence" not in clusters["clusters"][0]["top_candidates"][0]
+
+
+def test_session_intelligence_helper_list_returns_adopted_families() -> None:
+    import services.aios_cli as aios_cli
+
+    conn = _memory_conn()
+    ensure_session_intelligence_schema(conn)
+    conn.execute(
+        """
+        INSERT INTO session_intelligence_implementations (
+          id, lane, helper_family, candidate_ids_json, candidate_count,
+          implementation_status, telemetry_status, removal_status, removal_reason,
+          implemented_artifact_type, implemented_artifact_ref, created_at, updated_at
+        )
+        VALUES (
+          'session-intel-implementation-friction_tool-doc_excerpt',
+          'friction_tool',
+          'doc_excerpt',
+          '["candidate-1"]',
+          1,
+          'implemented',
+          'awaiting_telemetry',
+          'monitor',
+          'Track usage before keeping.',
+          'helper_family_preset',
+          'session-intel-helper-family:doc_excerpt',
+          'now',
+          'now'
+        )
+        """
+    )
+
+    payload = aios_cli._session_intel_payload(
+        conn,
+        argparse.Namespace(session_intel_command="helper", session_intel_helper_command="list"),
+    )
+
+    assert payload["count"] == 1
+    assert payload["helpers"][0]["family"] == "doc_excerpt"
+    assert payload["helpers"][0]["candidate_count"] == 1
+    assert payload["helpers"][0]["implemented"] is True
+
+
+def test_session_intelligence_doc_excerpt_helper_reads_bounded_lines(tmp_path: Path) -> None:
+    import services.aios_cli as aios_cli
+
+    target = tmp_path / "notes.md"
+    target.write_text("alpha\nbeta\ngamma\n", encoding="utf-8")
+    conn = _memory_conn()
+
+    payload = aios_cli._session_intel_payload(
+        conn,
+        argparse.Namespace(
+            session_intel_command="helper",
+            session_intel_helper_command="run",
+            family="doc_excerpt",
+            path=str(target),
+            repo=None,
+            start_line=2,
+            end_line=3,
+        ),
+    )
+
+    assert payload["family"] == "doc_excerpt"
+    assert payload["path"] == str(target)
+    assert payload["line_count"] == 2
+    assert payload["lines"] == [
+        {"line": 2, "text": "beta"},
+        {"line": 3, "text": "gamma"},
+    ]
+
+
+def test_session_intelligence_artifact_probe_helper_summarizes_json_and_csv(tmp_path: Path) -> None:
+    import services.aios_cli as aios_cli
+
+    json_path = tmp_path / "report.json"
+    csv_path = tmp_path / "rows.csv"
+    json_path.write_text('{"items": [1, 2], "status": "ok"}\n', encoding="utf-8")
+    csv_path.write_text("name,score\nA,1\nB,2\n", encoding="utf-8")
+    conn = _memory_conn()
+
+    json_payload = aios_cli._session_intel_payload(
+        conn,
+        argparse.Namespace(
+            session_intel_command="helper",
+            session_intel_helper_command="run",
+            family="artifact_probe",
+            path=str(json_path),
+            repo=None,
+            start_line=None,
+            end_line=None,
+        ),
+    )
+    csv_payload = aios_cli._session_intel_payload(
+        conn,
+        argparse.Namespace(
+            session_intel_command="helper",
+            session_intel_helper_command="run",
+            family="artifact_probe",
+            path=str(csv_path),
+            repo=None,
+            start_line=None,
+            end_line=None,
+        ),
+    )
+
+    assert json_payload["artifact"]["kind"] == "json"
+    assert json_payload["artifact"]["top_level_keys"] == ["items", "status"]
+    assert json_payload["artifact"]["array_lengths"] == {"items": 2}
+    assert csv_payload["artifact"]["kind"] == "csv"
+    assert csv_payload["artifact"]["headers"] == ["name", "score"]
+    assert csv_payload["artifact"]["row_count"] == 2
+
+
+def test_session_intelligence_package_check_helper_reports_scripts_and_lockfiles(
+    tmp_path: Path,
+) -> None:
+    import services.aios_cli as aios_cli
+
+    (tmp_path / "package.json").write_text(
+        json.dumps(
+            {
+                "packageManager": "pnpm@10.0.0",
+                "scripts": {"lint": "eslint .", "test": "vitest"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "pnpm-lock.yaml").write_text("lockfileVersion: '9.0'\n", encoding="utf-8")
+    conn = _memory_conn()
+
+    payload = aios_cli._session_intel_payload(
+        conn,
+        argparse.Namespace(
+            session_intel_command="helper",
+            session_intel_helper_command="run",
+            family="package_check",
+            path=None,
+            repo=str(tmp_path),
+            start_line=None,
+            end_line=None,
+        ),
+    )
+
+    assert payload["family"] == "package_check"
+    assert payload["repo"] == str(tmp_path)
+    assert payload["package_manager"] == "pnpm"
+    assert payload["lockfiles"] == ["pnpm-lock.yaml"]
+    assert payload["scripts"] == {"lint": "eslint .", "test": "vitest"}
 
 
 def test_session_intelligence_cli_backfill_supports_codex_and_claude(
