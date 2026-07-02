@@ -147,6 +147,10 @@ def _strip_fenced_code(text: str) -> str:
     return re.sub(r"```.*?```", "", text, flags=re.DOTALL)
 
 
+def _strip_html_comments(text: str) -> str:
+    return re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+
+
 def _known_wikilink_targets(root: Path, paths: list[Path]) -> set[str]:
     targets: set[str] = set()
     for path in paths:
@@ -194,6 +198,7 @@ def _check_wikilinks(root: Path, paths: list[Path]) -> list[str]:
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
         text = _strip_fenced_code(text)
+        text = _strip_html_comments(text)
         for match in re.finditer(r"\[\[([^\]|#]+)", text):
             target = match.group(1).strip()
             if target and target not in targets:

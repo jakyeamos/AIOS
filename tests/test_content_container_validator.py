@@ -142,6 +142,23 @@ def test_vault_treats_aios_audit_markdown_as_generated_raw(tmp_path: Path, capsy
     assert result == 1
 
 
+def test_vault_ignores_wikilinks_inside_html_comments(tmp_path: Path, capsys) -> None:
+    validator = _load_validator()
+    root = _vault_root(tmp_path)
+    templates = root / "Command-Center" / "07 Templates"
+    templates.mkdir(parents=True)
+    (templates / "Project.md").write_text(
+        _trusted_frontmatter() + "# Project\n<!-- [[03 Projects/PROJECT_NAME/Sessions/SESSION_DATE]] -->\n",
+        encoding="utf-8",
+    )
+
+    result = validator.validate_vault(root)
+
+    output = capsys.readouterr().out
+    assert "PROJECT_NAME" not in output
+    assert result == 1
+
+
 def test_vault_redacts_secret_like_paths(tmp_path: Path, capsys) -> None:
     validator = _load_validator()
     root = _vault_root(tmp_path)
