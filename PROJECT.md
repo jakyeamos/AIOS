@@ -50,7 +50,8 @@ AIOS Vaults validation is now trust-tier aware:
 - `scripts/content-container-validator.py --project Vaults` reports category-specific findings for unsafe content, missing trusted-note metadata, stale trusted notes, raw notes in trusted areas, broken trusted wikilinks, and quarantine candidates
 - validator output redacts secret-like and phone-like path segments before printing findings, so path-based reports do not leak likely secrets
 - archive, quarantine, raw personal corpus, and generated session handoffs no longer create trusted-wikilink noise unless explicitly promoted through trust metadata
-- `tests/test_content_container_validator.py` covers trusted metadata findings, trusted-only wikilink checks, archive noise suppression, and redacted secret-like quarantine candidates
+- Obsidian path-style wikilinks now resolve against stem, vault-relative path, and repo-relative path targets, while generated `.aios/audit` Markdown is treated as raw hook output instead of trusted-note metadata debt
+- `tests/test_content_container_validator.py` covers trusted metadata findings, trusted-only wikilink checks, path-style wikilink resolution, generated audit Markdown classification, archive noise suppression, and redacted secret-like quarantine candidates
 - verification: `UV_CACHE_DIR=/tmp/uv-cache uv run pytest -q tests/test_content_container_validator.py` and `UV_CACHE_DIR=/tmp/uv-cache uv run ruff check scripts/content-container-validator.py tests/test_content_container_validator.py`
 
 ## Implemented On 2026-07-01
