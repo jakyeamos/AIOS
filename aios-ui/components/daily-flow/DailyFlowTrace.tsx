@@ -7,7 +7,43 @@ type DailyFlowTraceProps = {
   trace: DailyFlowTrace;
 };
 
+type RepoCloseoutSummary = {
+  repo: string;
+  branch: string | null;
+  head: string | null;
+  dirty: boolean;
+  dirtyFiles: string[];
+  diffStatLines: string[];
+};
+
 const stepLabel = (kind: string): string => kind.replaceAll("_", " ");
+
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+
+const stringArray = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+
+const repoCloseoutSummary = (metadata: Record<string, unknown>): RepoCloseoutSummary | null => {
+  const closeout = asRecord(metadata.repo_closeout);
+  if (!closeout || closeout.schema !== "aios-repo-closeout-v0.1") {
+    return null;
+  }
+  const git = asRecord(closeout.git);
+  const diffStat = asRecord(closeout.diff_stat);
+  const repo = typeof closeout.repo === "string" ? closeout.repo : null;
+  if (!repo || !git) {
+    return null;
+  }
+  return {
+    repo,
+    branch: typeof git.branch === "string" ? git.branch : null,
+    head: typeof git.head === "string" ? git.head : null,
+    dirty: git.dirty === true,
+    dirtyFiles: stringArray(git.dirty_files),
+    diffStatLines: stringArray(diffStat?.lines),
+  };
+};
 
 const provenanceReason = (provenance: string): string => {
   if (provenance === "missing") {
@@ -33,33 +69,50 @@ export function DailyFlowTrace({ trace }: DailyFlowTraceProps): React.JSX.Elemen
         <span className="provenance-badge">{trace.isPreview ? "preview" : "replay"}</span>
       </div>
       <div className="daily-flow-stack">
-        {trace.steps.map((step, index) => (
-          <article
-            key={`${step.kind}-${index}`}
-            className={step.provenance === "missing" ? "entity-card daily-flow-missing" : "entity-card"}
-          >
-            <div className="panel-row">
-              <div>
-                <p className="panel-title">
-                  {index + 1}. {stepLabel(step.kind)}
-                </p>
-                <p className="panel-subtitle">{step.summary}</p>
+        {trace.steps.map((step, index) => {
+          const closeout = repoCloseoutSummary(step.metadata);
+          const diffStat = closeout?.diffStatLines.join(" · ");
+          return (
+            <article
+              key={`${step.kind}-${index}`}
+              className={step.provenance === "missing" ? "entity-card daily-flow-missing" : "entity-card"}
+            >
+              <div className="panel-row">
+                <div>
+                  <p className="panel-title">
+                    {index + 1}. {stepLabel(step.kind)}
+                  </p>
+                  <p className="panel-subtitle">{step.summary}</p>
+                </div>
+                <ProvenanceBadge
+                  level={step.provenance === "contradictory" ? "missing" : step.provenance}
+                  source={step.kind}
+                  reason={provenanceReason(step.provenance)}
+                />
               </div>
-              <ProvenanceBadge
-                level={step.provenance === "contradictory" ? "missing" : step.provenance}
-                source={step.kind}
-                reason={provenanceReason(step.provenance)}
-              />
-            </div>
-            <p className="entity-meta">
-              freshness: {step.freshness}
-              {step.provenance === "missing" ? " · Phase data is still being populated." : ""}
-            </p>
-            <Link href={step.drillDownPath} className="button-secondary">
-              Drill in
-            </Link>
-          </article>
-        ))}
+              <p className="entity-meta">
+                freshness: {step.freshness}
+                {step.provenance === "missing" ? " · Phase data is still being populated." : ""}
+              </p>
+              {closeout ? (
+                <div className="entity-meta">
+                  <p>
+                    repo: <span className="mono">{closeout.repo}</span>
+                  </p>
+                  <p>
+                    branch {closeout.branch ?? "unknown"} · head{" "}
+                    {closeout.head ? closeout.head.slice(0, 12) : "unknown"} ·{" "}
+                    {closeout.dirty ? `${closeout.dirtyFiles.length} dirty file(s)` : "clean"}
+                  </p>
+                  <p>diff: {diffStat && diffStat.length > 0 ? diffStat : "tracked diff clean"}</p>
+                </div>
+              ) : null}
+              <Link href={step.drillDownPath} className="button-secondary">
+                Open drilldown
+              </Link>
+            </article>
+          );
+        })}
       </div>
     </section>
   );

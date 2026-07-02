@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import argparse
 import json
 import sqlite3
 import subprocess
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
@@ -19,6 +19,24 @@ from services import standards_health, success_criteria  # noqa: E402
 from services.aios_cli import EXIT_OK, run_cli  # noqa: E402
 from services.eval_run_service import create_eval_task  # noqa: E402
 from services.rtk_integration import ensure_rtk_schema  # noqa: E402
+
+
+def _git(repo: Path, *args: str) -> None:
+    subprocess.run(["git", *args], cwd=repo, check=True, stdout=subprocess.PIPE, text=True)
+
+
+def _sample_closeout_repo(tmp_path: Path) -> Path:
+    repo = tmp_path / "closeout-repo"
+    repo.mkdir()
+    _git(repo, "init")
+    _git(repo, "config", "user.email", "aios@example.local")
+    _git(repo, "config", "user.name", "AIOS Tests")
+    (repo / "README.md").write_text("# Sample\n", encoding="utf-8")
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-m", "initial")
+    (repo / "README.md").write_text("# Sample\n\nChanged.\n", encoding="utf-8")
+    (repo / "new.txt").write_text("new\n", encoding="utf-8")
+    return repo
 
 
 def _seed_db(path: Path) -> None:
@@ -412,7 +430,7 @@ def _memory_conn() -> sqlite3.Connection:
 
 
 def test_dx_pack_report_template_matches_required_closeout_sections() -> None:
-    payload = aios_cli._dx_pack_payload(SimpleNamespace(report_template=True))
+    payload = aios_cli._dx_pack_payload(argparse.Namespace(report_template=True))
 
     template = payload["implementation_report_template"]
     assert template["title"] == "Developer Experience Pack Implementation Report"
@@ -2380,9 +2398,14 @@ def test_daily_flow_preview_cli(tmp_path: Path, capsys) -> None:
 def test_daily_flow_replay_cli(tmp_path: Path, capsys) -> None:
     db_path = tmp_path / "aios.db"
     logs_dir = tmp_path / "logs"
+    repo = _sample_closeout_repo(tmp_path)
     logs_dir.mkdir()
     _seed_db(db_path)
     _seed_daily_flow_replay_rows(db_path)
+    conn = sqlite3.connect(db_path)
+    conn.execute("UPDATE projects SET repo_path = ? WHERE id = 'p1'", (str(repo),))
+    conn.commit()
+    conn.close()
 
     exit_code = run_cli(
         [
@@ -2403,6 +2426,15 @@ def test_daily_flow_replay_cli(tmp_path: Path, capsys) -> None:
     assert data["trace"]["objective"] == "implement login"
     assert data["step_count"] == 8
     assert data["trace"]["steps"][2]["evidence_ref"]["id"] == "daily-packet"
+    run_step = next(step for step in data["trace"]["steps"] if step["kind"] == "run")
+    closeout = run_step["metadata"]["repo_closeout"]
+    assert closeout["schema"] == "aios-repo-closeout-v0.1"
+    assert closeout["repo"] == str(repo)
+    assert closeout["git"]["dirty_files"] == [" M README.md", "?? new.txt"]
+    assert closeout["diff_stat"]["lines"] == [
+        "README.md | 2 ++",
+        "1 file changed, 2 insertions(+)",
+    ]
 
 
 def test_daily_flow_cli_requires_one_mode(tmp_path: Path) -> None:

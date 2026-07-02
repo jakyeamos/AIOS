@@ -41,7 +41,9 @@ Codex repo-state closeout now has a narrow deterministic helper:
 - `python bin/aios.py repo closeout --repo <path>` prints one stable closeout report with branch, full HEAD SHA, dirty flag, dirty files in Git porcelain format, diff stat, and recent commit titles
 - `python bin/aios.py --json repo closeout --repo <path>` exposes the same state as `aios-repo-closeout-v0.1` JSON for agent workflows and future automation
 - the helper is read-only and lives under the existing `repo` command family beside `repo inspect`, based on session-intelligence evidence that repeated `git status` and `git diff --stat` inspection created closeout friction
-- tests cover the payload and CLI renderer against a real temporary Git repository, including preserved porcelain status spacing and normalized diff-stat lines
+- `daily-flow --run-id` now attaches the helper payload to the canonical run step as `metadata.repo_closeout` when the run's project has a known `projects.repo_path`, preserving the eight-step daily-flow order while surfacing repo state in closeout traces
+- `aios-ui/server/aios/daily-flow.ts` mirrors the same `aios-repo-closeout-v0.1` shape, and `DailyFlowTrace` renders repo path, branch, short HEAD, dirty-file count, and diff stat on Command Center and run-detail surfaces
+- tests cover the helper payload, CLI renderer, daily-flow service replay payload, and daily-flow CLI JSON replay against a real temporary Git repository, including preserved porcelain status spacing and normalized diff-stat lines
 
 ## Implemented On 2026-07-01
 

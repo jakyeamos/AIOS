@@ -4590,16 +4590,18 @@ def _contracts_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
             "source": "services/daily_flow.py",
             "source_of_truth": [
                 "services/daily_flow.py",
+                "services/session_intelligence_tools.py:repo_closeout_payload",
                 "services/agentize.py:agentize_request(dry_run=True)",
                 "services/aios_cli.py:cmd_daily_flow",
             ],
-            "storage": "read-only projection across route, packet, run, evaluation, writeback, delta, and next-action sources",
+            "storage": "read-only projection across route, packet, run, repo closeout, evaluation, writeback, delta, and next-action sources",
             "table_available": True,
             "notes": (
                 "Daily-flow trace backend (Phase 10, Plan 03). Preview is dry via "
-                "SAVEPOINT; replay is pure-read. UI mirror lands in Plan 04; tRPC "
-                "router in Plan 05; DailyFlowTrace component on /runs/[id] and "
-                "Command Center in Plan 06."
+                "SAVEPOINT; replay uses persisted run evidence plus read-only repo "
+                "closeout state when a project repo path is known. UI mirror lands "
+                "in Plan 04; tRPC router in Plan 05; DailyFlowTrace component on "
+                "/runs/[id] and Command Center in Plan 06."
             ),
         },
         {

@@ -1,15 +1,14 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with durable eval-run recording, explicit no-evidence shadow-run marking, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, read-only workflow route preview, standalone Quality Runner consumption boundary, review-gated session-intelligence tools, and Codex session-ingest meta-learning proposals while broader Ruff and BasedPyright baseline issues remain open.
+summary: Active local-first agent operating system with durable eval-run recording, explicit no-evidence shadow-run marking, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, read-only workflow route preview, daily-flow repo closeout traces, standalone Quality Runner consumption boundary, review-gated session-intelligence tools, and Codex session-ingest meta-learning proposals while broader Ruff and BasedPyright baseline issues remain open.
 healthScore: 73
 statusLabel: needs_attention
-nextStep: Run a real shadow-lane implementation through the generated prompt and compare whether the new no-evidence marker cleanly separates lane setup from useful shadow output.
+nextStep: Use the next real AIOS closeout trace to verify whether inline repo state removes repeated manual `git status` and `git diff --stat` checks before deciding whether to persist closeout snapshots.
 blockers:
-  - Full repo Ruff and format baselines are not green: Ruff reports 25 issues and Ruff format reports 162 files needing formatting.
-  - Full repo BasedPyright is not green: 109 errors and 78 warnings, including the existing `services/aios_cli.py` `run_cli` complexity baseline.
-  - `uv run vulture . --min-confidence 70` scans `.venv` and fails on third-party package findings; project-scoped `uv run vulture bin services --min-confidence 70` passes.
-lastUpdated: 2026-07-01
+  - Full repo Ruff and format baselines are not green: Ruff reports 25 issues and Ruff format reports 153 files needing formatting.
+  - Full repo BasedPyright is not green: 107 errors and 78 warnings across existing baseline files.
+lastUpdated: 2026-07-02
 tags: [infra, ai-os, hooks, automation]
 areas: [engineering]
 goals: []
@@ -17,7 +16,7 @@ repoType: infra
 sourceOfTruth: mixed
 primaryLanguage: Python
 activeBranch: codex/project-aios-component-scope
-lastCommitDate: 2026-07-01
+lastCommitDate: 2026-07-02
 quality:
   lint: fail
   types: fail
@@ -52,6 +51,8 @@ AIOS now has a review-gated Codex/Claude Session Intelligence loop. The loop enr
 
 AIOS now has a read-only workflow router preview surface: `aios route "objective"` resolves the registered project, governed workflow, agent, backend, prompt family, candidate alternatives, and a ready-to-run `aios start-work ...` command without creating orchestration runs, packets, invocations, or sessions. `~/AIOS/bin/route` is a convenience wrapper around the same command.
 
+AIOS now has a deterministic repo-state closeout helper integrated into daily-flow replay. `aios repo closeout` exposes the canonical `aios-repo-closeout-v0.1` payload, and `daily-flow --run-id` attaches that payload to the run step as `metadata.repo_closeout` when the run's project has a known repo path. The UI daily-flow mirror renders repo path, branch, short HEAD, dirty-file count, and diff stat on Command Center and run-detail surfaces without changing the canonical eight-step trace.
+
 Repo quality certification now lives in the standalone repository `/Users/jakyeamos/repo-quality-certifier`, with remote `git@github.com:jakyeamos/repo-quality-certifier.git`. That repo owns deterministic repo scanning, gate matrix synthesis, broad and gate-specific rubrics, rollout phase generation, document-quality evaluation, artifact writing, CLI/MCP/plugin surfaces, tests, and its own Pre-CR config. AIOS consumes it through a local path dependency and keeps a thin `services/repo_gate_adoption.py` adapter that injects AIOS TMCP enrichment and preserves existing workflow/CLI imports.
 
 Shared quality evidence/finding normalization now lives in the standalone repository `/Users/jakyeamos/quality-evidence-contract`, with remote `git@github.com:jakyeamos/quality-evidence-contract.git`. The success-criteria evaluator remains AIOS-owned because registry policy, SQLite writes, and artifact lifecycle are still product-integrated, but stage/evaluation findings now carry an additive nested `quality_contract` payload for portable consumers.
@@ -70,6 +71,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 ## Recent Progress
 
+- 2026-07-02: Integrated the repo closeout helper into daily-flow replay and UI operator surfaces: replay run steps now carry `metadata.repo_closeout`, CLI JSON exposes dirty files and diff stat through the trace, and the Command Center/run-detail trace renders repo path, branch, short HEAD, dirty-file count, and diff summary.
 - 2026-07-01: Tightened AIOS shadow-run recording so empty shadow lanes must carry an explicit no-evidence reason, persist `parity_checklist_status=no_evidence`, and cannot masquerade as measured shadow output before implementation, verification, or comparison evidence exists.
 - 2026-06-30: Removed stale code-intelligence integration references from AIOS active/default project lists, prompt-submit retrieval hints, benchmark manifests, and linked-project planning docs; targeted Ruff, BasedPyright, JSON parse, and tier-one regression checks pass.
 - 2026-06-25: Added an AIOS quality-pipeline `anti_slop` adoption/backfill gate for platform, production public web app, and developer-tool package repos, with audit-mode linked-repo commands and readiness regression coverage.
@@ -181,11 +183,25 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 | Step | Status | Notes |
 |------|--------|-------|
-| Lint (ruff) | Fail | `uv run ruff check .` failed on 2026-06-29 with 25 existing repo issues. Focused workflow route preview Ruff checks pass. |
-| Type check (basedpyright) | Fail | `uv run basedpyright` failed on 2026-06-29 with 109 errors and 78 warnings, including existing `run_cli` complexity. Focused route preview BasedPyright still hits the existing `run_cli` complexity and `SimpleNamespace` test baseline. |
-| Dead code (vulture) | Warning | `uv run vulture . --min-confidence 70` failed on 2026-06-28 because `.venv` third-party packages were scanned; `uv run vulture bin services --min-confidence 70` passed. |
-| Tests | Pass | `uv run pytest -q` passed on 2026-07-01 with 1066 tests. |
-| Structure | Fail | `uv run ruff format --check .` reported 162 files needing formatting on 2026-06-29. The final workflow route preview diff avoids broad legacy file formatting churn. |
+| Lint (ruff) | Fail | `uv run ruff check .` failed on 2026-07-02 with 25 existing repo issues. Focused daily-flow repo closeout Ruff checks pass. |
+| Type check (basedpyright) | Fail | `uv run basedpyright` failed on 2026-07-02 with 107 errors and 78 warnings across existing baseline files. Focused daily-flow repo closeout BasedPyright checks pass; the stale `SimpleNamespace` test typing issue in `tests/test_aios_cli.py` was fixed. |
+| Dead code (vulture) | Pass | `uv run vulture bin services --min-confidence 70` passed on 2026-07-02. |
+| Tests | Pass | `uv run pytest -q` passed on 2026-07-02 with 1082 tests. |
+| Structure | Fail | `uv run ruff format --check .` reported 153 files needing formatting on 2026-07-02. The daily-flow repo closeout diff avoids broad legacy file formatting churn. |
+
+Focused daily-flow repo closeout checks on 2026-07-02:
+- `uv run pytest -q tests/test_daily_flow.py tests/test_aios_cli.py::test_daily_flow_replay_cli tests/test_aios_cli.py::test_daily_flow_preview_cli` passed with 18 tests.
+- `uv run ruff check services/daily_flow.py tests/test_daily_flow.py tests/test_aios_cli.py` passed.
+- `uv run ruff format --check services/daily_flow.py tests/test_daily_flow.py tests/test_aios_cli.py` passed.
+- `uv run basedpyright services/daily_flow.py tests/test_daily_flow.py tests/test_aios_cli.py` passed with 0 errors and 0 warnings.
+- `cd aios-ui && pnpm lint` passed with existing warnings outside the touched daily-flow files.
+
+Full repo checks on 2026-07-02:
+- `uv run pytest -q` passed with 1082 tests.
+- `uv run ruff check .` failed with 25 existing repo issues.
+- `uv run ruff format --check .` failed with 153 files needing formatting.
+- `uv run basedpyright` failed with 107 errors and 78 warnings.
+- `uv run vulture bin services --min-confidence 70` exited 0.
 
 Focused shadow no-evidence checks on 2026-07-01:
 - `uv run pytest -q tests/test_shadow_branch_runner.py tests/test_shadow_branch_cli.py tests/test_codex_aios_shadow.py` passed with 26 tests.
