@@ -1,7 +1,7 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with durable eval-run recording, explicit no-evidence shadow-run marking, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, read-only workflow route preview, daily-flow repo closeout traces, standalone Quality Runner consumption boundary, review-gated session-intelligence tools, and Codex session-ingest meta-learning proposals while broader Ruff and BasedPyright baseline issues remain open.
+summary: Active local-first agent operating system with durable eval-run recording, explicit no-evidence shadow-run marking, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, read-only workflow route preview, daily-flow repo closeout traces, standalone Quality Runner consumption boundary, QR-detectable dead-code gate exposure, review-gated session-intelligence tools, and Codex session-ingest meta-learning proposals while broader Ruff and BasedPyright baseline issues remain open.
 healthScore: 73
 statusLabel: needs_attention
 nextStep: Use the next real AIOS closeout trace to verify whether inline repo state removes repeated manual `git status` and `git diff --stat` checks before deciding whether to persist closeout snapshots.
@@ -21,7 +21,7 @@ quality:
   lint: fail
   types: fail
   tests: pass
-  deadCode: warning
+  deadCode: pass
   structure: fail
 canonicalCommands:
   install: uv sync
@@ -72,6 +72,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 ## Recent Progress
 
 - 2026-07-02: Integrated the repo closeout helper into daily-flow replay and UI operator surfaces: replay run steps now carry `metadata.repo_closeout`, CLI JSON exposes dirty files and diff stat through the trace, and the Command Center/run-detail trace renders repo path, branch, short HEAD, dirty-file count, and diff summary.
+- 2026-07-02: Exposed the existing Vulture dead-code check through root `pnpm dead-code` and `pnpm audit:dead-code` scripts so Quality Runner detects the `dead_code` capability; final QR run `qr-clean-audit-20260702T200935Z-AIOS-final-2` has no missing repo-owned capabilities while inherited structural findings remain in generated/shadow worktree paths.
 - 2026-07-01: Tightened AIOS shadow-run recording so empty shadow lanes must carry an explicit no-evidence reason, persist `parity_checklist_status=no_evidence`, and cannot masquerade as measured shadow output before implementation, verification, or comparison evidence exists.
 - 2026-06-30: Removed stale code-intelligence integration references from AIOS active/default project lists, prompt-submit retrieval hints, benchmark manifests, and linked-project planning docs; targeted Ruff, BasedPyright, JSON parse, and tier-one regression checks pass.
 - 2026-06-25: Added an AIOS quality-pipeline `anti_slop` adoption/backfill gate for platform, production public web app, and developer-tool package repos, with audit-mode linked-repo commands and readiness regression coverage.
@@ -185,7 +186,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 |------|--------|-------|
 | Lint (ruff) | Fail | `uv run ruff check .` failed on 2026-07-02 with 25 existing repo issues. Focused daily-flow repo closeout Ruff checks pass. |
 | Type check (basedpyright) | Fail | `uv run basedpyright` failed on 2026-07-02 with 107 errors and 78 warnings across existing baseline files. Focused daily-flow repo closeout BasedPyright checks pass; the stale `SimpleNamespace` test typing issue in `tests/test_aios_cli.py` was fixed. |
-| Dead code (vulture) | Pass | `uv run vulture bin services --min-confidence 70` passed on 2026-07-02. |
+| Dead code (vulture) | Pass | `uv run vulture bin services --min-confidence 70`, `pnpm dead-code`, and `pnpm audit:dead-code` passed on 2026-07-02; Quality Runner final run `qr-clean-audit-20260702T200935Z-AIOS-final-2` detects `dead_code` from `package.json:scripts.dead-code`. |
 | Tests | Pass | `uv run pytest -q` passed on 2026-07-02 with 1082 tests. |
 | Structure | Fail | `uv run ruff format --check .` reported 153 files needing formatting on 2026-07-02. The daily-flow repo closeout diff avoids broad legacy file formatting churn. |
 
