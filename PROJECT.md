@@ -34,6 +34,15 @@ The repository currently contains five meaningful subsystems:
 
 Root operator documentation now lives in `README.md`, including local UI launch commands, key UI routes, store paths, workflow proposal backfill, and verification commands.
 
+## Implemented On 2026-07-03
+
+Codex daily session intelligence now has a first-class review-only wrapper:
+
+- `python bin/aios.py session-intel daily-codex --json` encapsulates `.venv/bin/python /Users/jakyeamos/AIOS/bin/aios.py session-intel run --provider codex --since last --write-report --json`
+- the wrapper always runs Codex `since=last` with report writing enabled, returns a clean `report_paths` object for Markdown, JSON, and canonical daily decision reports, and preserves the underlying per-run report fields for compatibility
+- behavior remains review-only: the wrapper creates or updates pending-review candidates and report artifacts without approving, rejecting, implementing, installing, generating, or applying candidate artifacts
+- tests cover parser support, wrapped-command metadata, report path materialization, persisted `provider=codex` / `scanned_range=last`, pending-review candidate state, and absence of implementation or review-event side effects
+
 ## Implemented On 2026-07-02
 
 Codex session-intelligence helper-family adoption now creates real deterministic helper command surfaces:
