@@ -247,6 +247,18 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG_ROOT = REPO_ROOT / "config"
 DEFAULT_DB_PATH = Path.home() / "AIOS" / "data" / "aios.db"
 DEFAULT_LOGS_DIR = Path.home() / "AIOS" / "logs"
+DAILY_CODEX_SESSION_INTEL_COMMAND = [
+    ".venv/bin/python",
+    str(Path.home() / "AIOS" / "bin" / "aios.py"),
+    "session-intel",
+    "run",
+    "--provider",
+    "codex",
+    "--since",
+    "last",
+    "--write-report",
+    "--json",
+]
 LOG_SOURCE_FILES = {
     "hooks": "hooks.log",
     "pipeline": "pipeline.log",
@@ -5591,6 +5603,17 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
             f"candidates={summary['candidate_count']} report={data.get('report_path') or 'none'}"
         )
         return
+    if command == "session-intel-daily-codex":
+        summary = data["summary"]
+        report_paths = data["report_paths"]
+        print(
+            f"sources={summary['source_count']} sessions={summary['session_count']} "
+            f"candidates={summary['candidate_count']} "
+            f"report={report_paths['markdown']} "
+            f"json={report_paths['json']} "
+            f"decision={report_paths['decision']}"
+        )
+        return
     if command == "session-intel-backfill":
         summary = data["summary"]
         print(
@@ -6098,6 +6121,34 @@ def _session_intel_payload(conn: sqlite3.Connection, args: argparse.Namespace) -
                 / "session-provider-config.yaml",
             ),
         )
+    if args.session_intel_command == "daily-codex":
+        report_root_arg = getattr(args, "report_root", None)
+        source_root_arg = getattr(args, "source_root", None)
+        report_root = Path(report_root_arg).expanduser() if report_root_arg else None
+        provider = _session_intel_provider("codex", source_root=source_root_arg)
+        result = run_session_intelligence(
+            conn,
+            provider=provider,
+            options=SessionIntelligenceOptions(
+                since="last",
+                lane="all",
+                write_report=True,
+                report_root=report_root,
+                config_path=Path(getattr(args, "config_root", DEFAULT_CONFIG_ROOT)).expanduser()
+                / "session-provider-config.yaml",
+            ),
+        )
+        return {
+            **result,
+            "scanned_range": "last",
+            "review_only": True,
+            "wrapped_command": list(DAILY_CODEX_SESSION_INTEL_COMMAND),
+            "report_paths": {
+                "markdown": result["report_path"],
+                "json": result["report_json_path"],
+                "decision": result["decision_report_path"],
+            },
+        }
     if args.session_intel_command == "backfill":
         report_root = Path(args.report_root).expanduser() if args.report_root else None
         providers = _session_intel_providers(args)
@@ -6384,6 +6435,14 @@ def create_parser() -> argparse.ArgumentParser:
     session_intel_run.add_argument("--source-root", default=None)
     session_intel_run.add_argument("--report-root", default=None)
     session_intel_run.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    session_intel_daily_codex = session_intel_subparsers.add_parser(
+        "daily-codex",
+        help="Run the daily review-only Codex session intelligence report wrapper",
+    )
+    session_intel_daily_codex.add_argument(
+        "--json", action="store_true", default=argparse.SUPPRESS
+    )
 
     session_intel_backfill = session_intel_subparsers.add_parser(
         "backfill", help="Backfill historical Codex and Claude sessions in resumable batches"

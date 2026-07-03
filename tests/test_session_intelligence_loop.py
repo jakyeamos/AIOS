@@ -897,6 +897,7 @@ def test_session_intelligence_cli_parser_accepts_run_candidates_and_mark() -> No
             "--write-report",
         ]
     )
+    daily_codex_args = parser.parse_args(["session-intel", "daily-codex"])
 
     assert run_args.session_intel_command == "run"
     assert candidates_args.session_intel_command == "candidates"
@@ -910,6 +911,7 @@ def test_session_intelligence_cli_parser_accepts_run_candidates_and_mark() -> No
     assert helper_run_args.family == "doc_excerpt"
     assert backfill_args.session_intel_command == "backfill"
     assert backfill_args.provider == "all"
+    assert daily_codex_args.session_intel_command == "daily-codex"
 
 
 def test_session_intelligence_cli_payloads_run_list_and_mark(tmp_path: Path) -> None:
@@ -981,6 +983,64 @@ def test_session_intelligence_cli_payloads_run_list_and_mark(tmp_path: Path) -> 
     assert clusters["total_count"] == 1
     assert clusters["clusters"][0]["status_counts"] == {"observed": 1}
     assert "redacted_evidence" not in clusters["clusters"][0]["top_candidates"][0]
+
+
+def test_session_intelligence_daily_codex_wrapper_returns_report_paths_and_review_only(
+    tmp_path: Path,
+) -> None:
+    import services.aios_cli as aios_cli
+
+    sessions_root = tmp_path / "sessions"
+    _write_codex_rollout(
+        sessions_root / "2026/06/27/rollout-2026-06-27T10-00-00-session-1.jsonl",
+        [
+            _session_meta("session-1"),
+            _function_call("pnpm test"),
+            _function_output("Process exited with code 1\npytest failed"),
+        ],
+    )
+    conn = _memory_conn()
+
+    payload = aios_cli._session_intel_payload(
+        conn,
+        argparse.Namespace(
+            session_intel_command="daily-codex",
+            source_root=str(sessions_root),
+            report_root=str(tmp_path),
+        ),
+    )
+
+    assert payload["provider"] == "codex"
+    assert payload["scanned_range"] == "last"
+    assert payload["review_only"] is True
+    assert payload["wrapped_command"] == [
+        ".venv/bin/python",
+        "/Users/jakyeamos/AIOS/bin/aios.py",
+        "session-intel",
+        "run",
+        "--provider",
+        "codex",
+        "--since",
+        "last",
+        "--write-report",
+        "--json",
+    ]
+    assert payload["summary"]["candidate_count"] == 1
+    assert payload["report_paths"] == {
+        "markdown": payload["report_path"],
+        "json": payload["report_json_path"],
+        "decision": payload["decision_report_path"],
+    }
+    assert all(Path(path).exists() for path in payload["report_paths"].values())
+    candidates = list_session_intelligence_candidates(conn, status="pending_review", lane="all")
+    implementations = list_session_intelligence_implementations(conn)
+    review_events = conn.execute("SELECT * FROM session_intelligence_review_events").fetchall()
+    run_row = conn.execute("SELECT provider, scanned_range FROM session_intelligence_runs").fetchone()
+    assert len(candidates) == 1
+    assert candidates[0]["status"] == "pending_review"
+    assert implementations == []
+    assert review_events == []
+    assert dict(run_row) == {"provider": "codex", "scanned_range": "last"}
 
 
 def test_session_intelligence_helper_list_returns_adopted_families() -> None:
