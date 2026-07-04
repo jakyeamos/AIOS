@@ -24,6 +24,7 @@ Any task that creates, reviews, expands, or evaluates a test suite, including im
 - Treat edge cases as design signals, not just opportunities to increase test count.
 - Pair test strategy with observability and failure inspection paths.
 - In TDD-heavy repos, apply the TDD Test Value Adoption Gate during adoption/backfill scans so low-signal tests become ratchet targets or backfill work instead of proof of readiness.
+- Do not add tests only to satisfy TDD ritual, coverage pressure, or static UI copy verification. Small presentation changes may be better verified by typecheck, build, and runtime/browser evidence.
 
 ## Blockers
 
@@ -37,6 +38,7 @@ Any task that creates, reviews, expands, or evaluates a test suite, including im
 - Mock-heavy suites likely testing implementation details rather than behavior.
 - AI-generated tests accepted without hypothesis review.
 - TDD-produced tests accumulate without pruning duplicates, implementation-coupled assertions, or obsolete behavior coverage.
+- Static render/copy assertions are added for tiny UI text/layout changes without documenting the behavior, contract, regression, or domain rule they protect.
 
 ## Evidence To Provide
 
@@ -45,6 +47,7 @@ Any task that creates, reviews, expands, or evaluates a test suite, including im
 - Which regression tests map to real incidents or bugs.
 - Which adversarial/edge scenarios were considered.
 - Which test-value backfill findings were retained, rewritten, consolidated, deleted, or deferred with rationale.
+- Why any new static render/copy test is worth keeping, when one is added.
 
 ## Related Criteria
 

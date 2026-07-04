@@ -97,6 +97,14 @@
       "purpose": "Plan concrete files, reports, schemas, logs, or durable outputs.",
       "standard_refs": ["documentation.truth_file_currency"]
     },
+    "standards-surfacing": {
+      "purpose": "Plan which standards and success criteria must be visible before execution begins.",
+      "standard_refs": ["global.testing", "global.maintainability", "global.observability"]
+    },
+    "verification-handoff": {
+      "purpose": "Plan the verification evidence and handoff required before execution or closeout can claim success.",
+      "standard_refs": ["agent-claim-verification", "workflow-state-integrity", "global.testing"]
+    },
     "escalation-clarity": {
       "purpose": "Plan when to ask, stop, split scope, request approval, or hand off.",
       "standard_refs": ["workflow_agent_control.explicit_handshake"]
@@ -176,7 +184,15 @@
     "gsd:implement": ["executor-readiness", "validation-strategy", "rollback-safety"],
     "gsd:review": ["regression-safety", "risk-management", "validation-strategy"],
     "gsd:validate": ["testing", "validation-strategy", "artifact-definition"],
-    "aios:plan": ["executor-readiness", "constraint-preservation", "validation-strategy"]
+    "aios:plan": ["executor-readiness", "constraint-preservation", "validation-strategy"],
+    "planning-governance:plan": [
+      "executor-readiness",
+      "constraint-preservation",
+      "artifact-definition",
+      "validation-strategy",
+      "standards-surfacing",
+      "verification-handoff"
+    ]
   },
   "risk_level_mappings": {
     "high": ["risk-management", "rollback-safety", "escalation-clarity"],

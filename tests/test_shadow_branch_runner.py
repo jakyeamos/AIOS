@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
 import sys
 from pathlib import Path
@@ -22,9 +23,11 @@ from services.shadow_branch_runner import (  # noqa: E402
     capture_diff_stat,
     capture_test_delta,
     cleanup_shadow_worktree,
+    compare_shadow_runs,
     compute_shadow_branch_delta,
     create_shadow_worktree,
     list_shadow_parity_metadata,
+    record_shadow_branch_run,
     shadow_branch_name,
     update_shadow_parity_metadata,
     verify_no_contamination,
@@ -167,9 +170,102 @@ def test_shadow_branch_schema_available_with_eval_scores() -> None:
     )
     record_eval_score(conn, run_id=run_id, overall_score=0.7)
 
-    row = conn.execute("SELECT overall_score FROM eval_scores WHERE run_id = ?", (run_id,)).fetchone()
+    row = conn.execute(
+        "SELECT overall_score FROM eval_scores WHERE run_id = ?", (run_id,)
+    ).fetchone()
 
     assert row["overall_score"] == 0.7
+
+
+def test_record_shadow_branch_run_requires_no_evidence_reason() -> None:
+    conn = _connect()
+
+    with pytest.raises(ValueError, match="no_evidence_reason"):
+        record_shadow_branch_run(
+            conn,
+            task_id="task-1",
+            condition="full-aios",
+            start_sha="abc123",
+            aios_branch="aios/eval/task/full-aios",
+            worktree_path="/tmp/worktree",
+        )
+
+
+def test_record_shadow_branch_run_marks_empty_run_as_no_evidence() -> None:
+    conn = _connect()
+
+    shadow_run_id = record_shadow_branch_run(
+        conn,
+        task_id="task-1",
+        condition="full-aios",
+        start_sha="abc123",
+        aios_branch="aios/eval/task/full-aios",
+        worktree_path="/tmp/worktree",
+        no_evidence_reason="shadow lane created; implementation has not run yet",
+    )
+
+    row = conn.execute(
+        """
+        SELECT diff_stat_json, test_delta_json, parity_checklist_status,
+               failure_classification, replay_unavailable_reason
+        FROM shadow_branch_runs
+        WHERE id = ?
+        """,
+        (shadow_run_id,),
+    ).fetchone()
+
+    assert json.loads(row["diff_stat_json"]) == {
+        "files_changed": 0,
+        "insertions": 0,
+        "deletions": 0,
+    }
+    assert json.loads(row["test_delta_json"]) == {"status": "not_run"}
+    assert row["parity_checklist_status"] == "no_evidence"
+    assert row["failure_classification"] == "shadow_execution_not_started"
+    assert row["replay_unavailable_reason"] == "shadow lane created; implementation has not run yet"
+
+
+def test_record_shadow_branch_run_can_mark_clean_initial_worktree() -> None:
+    conn = _connect()
+
+    shadow_run_id = record_shadow_branch_run(
+        conn,
+        task_id="task-1",
+        condition="full-aios",
+        start_sha="abc123",
+        aios_branch="aios/eval/task/full-aios",
+        worktree_path="/tmp/worktree",
+        no_evidence_reason="shadow lane created; implementation has not run yet",
+        contamination_check_passed=True,
+    )
+
+    row = conn.execute(
+        "SELECT contamination_check_passed, parity_checklist_status FROM shadow_branch_runs WHERE id = ?",
+        (shadow_run_id,),
+    ).fetchone()
+
+    assert row["contamination_check_passed"] == 1
+    assert row["parity_checklist_status"] == "no_evidence"
+
+
+def test_compare_refuses_shadow_run_without_execution_evidence() -> None:
+    conn = _connect()
+    shadow_run_id = record_shadow_branch_run(
+        conn,
+        task_id="task-1",
+        condition="full-aios",
+        start_sha="abc123",
+        aios_branch="aios/eval/task/full-aios",
+        worktree_path="/tmp/worktree",
+        no_evidence_reason="shadow lane created; implementation has not run yet",
+    )
+
+    with pytest.raises(ValueError, match="no completed comparison evidence"):
+        compare_shadow_runs(
+            conn,
+            shadow_run_id=shadow_run_id,
+            baseline_run_id="baseline-run-1",
+        )
 
 
 def test_shadow_parity_metadata_is_queryable_without_branch_mutation() -> None:

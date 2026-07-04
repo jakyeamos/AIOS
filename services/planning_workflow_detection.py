@@ -217,7 +217,12 @@ def _audit_to_implementation(objective: str) -> bool:
 
 
 def _generated_implementation_prompt(objective: str) -> bool:
-    prompt_terms = {"implementation prompt", "execution prompt", "generate a prompt", "write a prompt"}
+    prompt_terms = {
+        "implementation prompt",
+        "execution prompt",
+        "generate a prompt",
+        "write a prompt",
+    }
     implementation_terms = {"implement", "build", "code", "execute"}
     return any(term in objective for term in prompt_terms) and any(
         term in objective for term in implementation_terms

@@ -1,14 +1,14 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, smoke-verified expert-rubric-remediation, repo gate adoption planning, a visible Pre-CR user commit gate, and a DB-backed personalized humanizer CLI while broader Ruff and BasedPyright baseline issues remain open.
-healthScore: 72
+summary: Active local-first agent operating system with durable eval-run recording, explicit no-evidence shadow-run marking, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, read-only workflow route preview, daily-flow repo closeout traces, standalone Quality Runner consumption boundary, QR-detectable dead-code/runtime-smoke gate exposure, review-gated session-intelligence tools, and Codex session-ingest meta-learning proposals while broader Ruff and BasedPyright baseline issues remain open.
+healthScore: 73
 statusLabel: needs_attention
-nextStep: Execute BidCamp repo-local Phase 151, then continue BidCamp phases 152-155 before moving to EliHealth phases 09-13 and pre-cr-suite-lsp phases 04-06.
+nextStep: Use the next real AIOS closeout trace to verify whether inline repo state removes repeated manual `git status` and `git diff --stat` checks before deciding whether to persist closeout snapshots.
 blockers:
-  - Full repo Ruff and format baselines are not green: Ruff reports 25 issues and Ruff format reports 172 files needing formatting.
-  - Full repo BasedPyright is not green: 110 errors and 101 warnings, including the existing `services/aios_cli.py` `run_cli` complexity baseline.
-lastUpdated: 2026-06-26
+  - Full repo Ruff and format baselines are not green: Ruff reports 25 issues and Ruff format reports 153 files needing formatting.
+  - Full repo BasedPyright is not green: 107 errors and 78 warnings across existing baseline files.
+lastUpdated: 2026-07-04
 tags: [infra, ai-os, hooks, automation]
 areas: [engineering]
 goals: []
@@ -16,7 +16,7 @@ repoType: infra
 sourceOfTruth: mixed
 primaryLanguage: Python
 activeBranch: codex/project-aios-component-scope
-lastCommitDate: 2026-06-24
+lastCommitDate: 2026-07-02
 quality:
   lint: fail
   types: fail
@@ -45,15 +45,21 @@ AIOS now has `expert_rubric_remediation_v1` implemented and smoke-verified throu
 
 AIOS also has `repo_gate_adoption_v1`, a narrow audit-and-plan workflow for repository quality-gate adoption. It scans repo-local scripts, Pre-CR, anti-slop, local AIOS quality contracts, CI, hooks, dead-code, structural-scan, and truth-file evidence; produces a core gate readiness matrix; conditionally records TMCP expert enrichment only when source sufficiency passes; writes broad repo-class and gate-specific rubric packs; writes a staged rollout plan under git-ignored `AIOS-backfill/gate-adoption/{run_id}`; and exposes the flow through `aios gate adoption-plan`.
 
-Repo quality certification now lives in the standalone repository `/Users/jakyeamos/repo-quality-certifier`, with remote `git@github.com:jakyeamos/repo-quality-certifier.git`. That repo owns deterministic repo scanning, gate matrix synthesis, broad and gate-specific rubrics, rollout phase generation, document-quality evaluation, artifact writing, CLI/MCP/plugin surfaces, tests, and its own Pre-CR config. AIOS consumes it through a local path dependency and keeps a thin `services/repo_gate_adoption.py` adapter that injects AIOS TMCP enrichment and preserves existing workflow/CLI imports.
+Quality Runner now lives in `/Users/jakyeamos/quality-runner` as a standalone audit-and-plan package with CLI and MCP surfaces. AIOS should consume it as an external tool and may provide adapters, standards profiles, or workflow shortcuts, but the standalone package owns the core workflow and `.quality-runner/` artifact contract.
 
-Shared quality evidence/finding normalization now lives in the standalone repository `/Users/jakyeamos/quality-evidence-contract`, with remote `git@github.com:jakyeamos/quality-evidence-contract.git`. The success-criteria evaluator remains AIOS-owned because registry policy, SQLite writes, and artifact lifecycle are still product-integrated, but stage/evaluation findings now carry an additive nested `quality_contract` payload for portable consumers.
+AIOS now has a review-gated Codex/Claude Session Intelligence loop. The loop enriches Codex session normalization with tool calls, commands, cwd, approval friction, errors, and terminal outcomes; stores lane candidates in SQLite; emits redacted Markdown/JSON reports; exposes `aios session-intel` commands; runs daily through the Codex automation `daily-codex-session-intelligence`; and supports resumable historical backfill across Codex and Claude sources.
+
+AIOS now has a read-only workflow router preview surface: `aios route "objective"` resolves the registered project, governed workflow, agent, backend, prompt family, candidate alternatives, and a ready-to-run `aios start-work ...` command without creating orchestration runs, packets, invocations, or sessions. `~/AIOS/bin/route` is a convenience wrapper around the same command.
+
+AIOS now has a deterministic repo-state closeout helper integrated into daily-flow replay. `aios repo closeout` exposes the canonical `aios-repo-closeout-v0.1` payload, and `daily-flow --run-id` attaches that payload to the run step as `metadata.repo_closeout` when the run's project has a known repo path. The UI daily-flow mirror renders repo path, branch, short HEAD, dirty-file count, and diff stat on Command Center and run-detail surfaces without changing the canonical eight-step trace.
+
+Quality Runner now supersedes the older repo-quality-certifier and quality-evidence-contract path dependencies for AIOS consumption. AIOS consumes `/Users/jakyeamos/projects/quality-runner` through one local `quality-runner` dependency, while Quality Runner provides the compatibility imports, CLI/MCP tools, plugin metadata, deterministic gate-certification workflow, and evidence-normalization helpers still used by existing `quality_evidence_contract` and `repo_quality_certifier` callers. `services/repo_gate_adoption.py` remains the AIOS adapter that injects AIOS TMCP enrichment and preserves existing workflow/CLI imports.
 
 Context compiler contract validation now lives in the standalone repository `/Users/jakyeamos/context-compiler-contract`, with remote `git@github.com:jakyeamos/context-compiler-contract.git`. AIOS consumes it through a local file dependency, while `tools/context-compile.mjs` remains AIOS-owned until context-root and routing assumptions are external-fixture backed.
 
 AIOS now has a strict subsystem ownership map in `.planning/SUBSYSTEM_EXTRACTION_PLAN.md`. The map classifies major surfaces as `core_aios`, `adapter_inside_aios`, `contract_package`, `standalone_tool`, or `incubator_candidate`. The current scope truth is that AIOS is better scoped after extracting `repo-quality-certifier`, `quality-evidence-contract`, `context-compiler-contract`, Research Domain Writing, and `agent-eval-contract`. CTS, personalized humanizer, and eval/benchmark runtime have now been audited and intentionally remain AIOS-owned for runtime/state reasons. Portable agent eval contracts now live in `/Users/jakyeamos/agent-eval-contract`, with remote `git@github.com:jakyeamos/agent-eval-contract.git` and pushed tag `v0.1.0` at `7489155`; AIOS consumes `agent-eval-contract @ file:///Users/jakyeamos/agent-eval-contract` while keeping eval runtime/storage in AIOS. The agent-eval-contract split remains gated on tagged AIOS dependency consumption and a second consumer before it is release-complete.
 
-The three extracted repos now have release governance and pushed `v0.1.0` tags. `repo-quality-certifier` release governance is at commit `3ff7eb4`, `quality-evidence-contract` at `36c94bc`, and `context-compiler-contract` at `de60ba1`. AIOS still uses local path/file dependencies for active development; the remaining release-boundary decision is whether to switch those dependencies to tagged Git refs.
+The earlier repo-quality-certifier and quality-evidence-contract repos are now historical extraction sources rather than AIOS dependencies. `context-compiler-contract` remains a separate local file dependency with release governance at commit `de60ba1`.
 
 Research Domain Writing now lives in the standalone repository `/Users/jakyeamos/research-domain-writing`, with remote `git@github.com:jakyeamos/research-domain-writing.git` and pushed tag `v0.1.0` at commit `ba0f608`. AIOS no longer owns RDW prompts, domain packs, examples, installers, packet validation, or release process; local slash commands and agent skills point at the external repo.
 
@@ -65,6 +71,12 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 ## Recent Progress
 
+- 2026-07-02: Integrated the repo closeout helper into daily-flow replay and UI operator surfaces: replay run steps now carry `metadata.repo_closeout`, CLI JSON exposes dirty files and diff stat through the trace, and the Command Center/run-detail trace renders repo path, branch, short HEAD, dirty-file count, and diff summary.
+- 2026-07-04: Replaced AIOS's direct `quality-evidence-contract` and `repo-quality-certifier` path dependencies with one local `quality-runner` dependency after Quality Runner absorbed those compatibility imports, CLI/MCP surfaces, and plugin metadata. Focused AIOS compatibility tests passed.
+- 2026-07-02: Exposed the existing Vulture dead-code check through root `pnpm dead-code` and `pnpm audit:dead-code` scripts so Quality Runner detects the `dead_code` capability; final QR run `qr-clean-audit-20260702T200935Z-AIOS-final-2` has no missing repo-owned capabilities while inherited structural findings remain in generated/shadow worktree paths.
+- 2026-07-02: Added repo-local Quality Runner scan exclusions for ignored operational worktrees plus root `pnpm smoke`; final QR run `qr-clean-audit-20260702T200935Z-AIOS-final-4` detects no missing capabilities but remains blocked because QR structural scanning still scans excluded ignored paths (`.aios/shadow-worktrees`, `.worktrees`, `.superpowers`, and `tmcp-benchmark/runs/worktrees`) unless whole structural rule groups are disabled.
+- 2026-07-01: Tightened AIOS shadow-run recording so empty shadow lanes must carry an explicit no-evidence reason, persist `parity_checklist_status=no_evidence`, and cannot masquerade as measured shadow output before implementation, verification, or comparison evidence exists.
+- 2026-06-30: Removed stale code-intelligence integration references from AIOS active/default project lists, prompt-submit retrieval hints, benchmark manifests, and linked-project planning docs; targeted Ruff, BasedPyright, JSON parse, and tier-one regression checks pass.
 - 2026-06-25: Added an AIOS quality-pipeline `anti_slop` adoption/backfill gate for platform, production public web app, and developer-tool package repos, with audit-mode linked-repo commands and readiness regression coverage.
 - 2026-06-26: Linked-repo adoption reports now require quality certification through `repo_gate_adoption_v1`, separating `aios_wired`, `quality_standard_compliant`, and `release_ready` stages from final `adoption_ready`, `adopted_but_blocked`, or `not_adopted` status.
 - 2026-06-26: Completed Phase 29 pre-execution prep by refreshing the linked-repo adoption baseline, documenting first-wave repo branch/dirty state, and updating Phase 29 acceptance criteria to require `adoption_ready` plus passing certification stages.
@@ -103,6 +115,27 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-06-26: Hardened `agent_eval_contract` with eval template validators, bundled sample records, and `run_clean_room_contract_check`, proving the contract can validate docs/samples without importing AIOS services.
 - 2026-06-27: Added `agent_eval_contract.fixture_runner` and release metadata so the package can produce sample/template/manifest fixture bundles from a non-AIOS working directory while keeping runtime/storage surfaces explicitly AIOS-owned.
 - 2026-06-27: Physically split portable agent eval contracts into `/Users/jakyeamos/agent-eval-contract`, pushed remote `git@github.com:jakyeamos/agent-eval-contract.git`, and pushed tag `v0.1.0` at commit `7489155`; AIOS now consumes the package through a local file dependency and no longer owns the in-tree `agent_eval_contract/` source.
+- 2026-06-27: Added the review-ready Quality Runner design spec for a standalone audit-and-plan engine with CLI and MCP surfaces, shared core package, pluggable adapters, `.quality-runner/` artifacts, and explicit v1 non-execution boundaries.
+- 2026-06-27: Added the Quality Runner implementation plan for a Python-first standalone package at `/Users/jakyeamos/quality-runner`, covering scaffold, core contracts, discovery, standards, audit planning, CLI, MCP, plugin metadata, quality checks, and AIOS adoption notes.
+- 2026-06-28: Built Quality Runner as the standalone repository `/Users/jakyeamos/quality-runner` with audit-and-plan core contracts, discovery/standards/capability detection, remediation planning, `.quality-runner/runs/<run-id>/` artifacts, CLI commands, MCP tools, plugin metadata, packaging checks, and explicit v1 non-execution boundaries.
+- 2026-06-28: Added the Codex Session Intelligence loop with enriched Codex JSONL normalization, review-gated `friction_tool`, `workflow_skill`, and `impact_idea` candidates, redacted daily reports, `aios session-intel` CLI commands, and the daily Codex automation `daily-codex-session-intelligence`.
+- 2026-06-28: Added resumable `aios session-intel backfill` mode for historical Codex and Claude sessions, with provider `all`, batch sizing, cursor-based resume, optional reports, and review-gated candidate storage only.
+- 2026-06-28: Ran the first full local Codex/Claude session-intelligence backfill and hardened it into a tier-one workflow by fixing session-intel CLI commit durability, Claude Bash/tool-result normalization, and cross-batch candidate merging; the live DB now has 1,923 cursors, 973 pending candidates, and zero duplicate lane/title groups.
+- 2026-06-28: Added `aios session-intel clusters` as a compact triage queue, intent-level friction grouping, review-event recording, and successful command-sequence workflow mining; the live pending queue now rolls up into 621 clusters, with top clusters for repo state inspection, git history review, git commit/publish, reusable workflow, and tool execution.
+- 2026-06-28: Completed the first conservative top-cluster triage pass in `aios.db`: approved 7 representative candidates, superseded 321 redundant exact-command variants, observed 18 broad/low-certainty items, rejected 11 project-specific one-offs, and left 616 friction candidates pending review.
+- 2026-06-28: Completed the remaining session-intelligence candidate triage. The candidate table now has zero pending rows: 10 approved candidate rows, 783 superseded variants, 47 observed items, and 134 rejected one-offs; a backup was written to `data/aios.db.pre-session-intel-full-triage-20260628`.
+- 2026-06-28: Promoted the 10 approved session-intelligence representatives into six review-gated deterministic tool surfaces: `aios repo inspect`, `aios quality ladder`, `aios ship guard`, `aios service probe`, `aios workflow-skill codex`, and `aios planning state`.
+- 2026-06-28: Strengthened the user commit quality gate so low-value static UI copy tests require documented behavior value, and long Pre-CR runs emit visible heartbeat/start/finish progress.
+- 2026-06-28: Wired AIOS context compiler tests to consume the standalone `context-compiler-contract` package through the project `package.json` and `pnpm-lock.yaml`.
+- 2026-06-28: Wired AIOS Python dependency metadata to consume the extracted `quality-evidence-contract` and `repo-quality-certifier` packages while recording dev quality tools in `uv.lock`.
+- 2026-06-28: Integrated `quality-evidence-contract` into success-criteria findings so stage and evaluation findings carry a portable nested `quality_contract` payload alongside legacy fields.
+- 2026-06-28: Added ignore rules for generated AIOS DB backups, session-intelligence reports, `AIOS-backfill/`, and Node dependency folders so local operational artifacts do not enter source commits.
+- 2026-06-29: Extended Codex cron session ingest to emit review-gated meta-learning proposal JSONL records for explicit corrections, repeated tool friction, command suggestions, and candidate skills while preserving normalized Codex messages for downstream proposal extraction.
+- 2026-06-29: Added read-only workflow route preview through `aios route` plus `~/AIOS/bin/route`, with JSON/human output, project-name overrides, blocked-route guidance, native command metadata, docs, and regression coverage proving no run/packet/invocation rows are created.
+- 2026-06-28: Expanded AIOS governed workflow surfaces with planning-governance routing, repo-gate adoption planning/document-quality CLI paths, expert-rubric aliases, personalized humanizer CLI commands, linked-repo adoption certification, and richer Codex shadow evidence reporting.
+- 2026-06-28: Committed Phase 25 planning-governance closeout summaries and Phase 29 linked-repo adoption remediation planning artifacts, including the refreshed roadmap/state files.
+- 2026-06-28: Refreshed the tracked compiled AIOS context packet and receipt snapshots after the workflow, standards, and planning surface changes.
+- 2026-06-28: Refreshed tracked control-plane invocation, TMCP packet, workflow-report, and session-effectiveness evidence artifacts after the governed workflow surface changes.
 - 2026-04-08: Added ops/maintenance utilities, retrieval rule and provenance tooling, enriched hook event capture, AI history import tooling
 - 2026-04-08: Design specs added for Code Topology Service (CTS), AIOS Command UI, and prompt library
 - 2026-04-09: Ruff 0.15.10 auto-fixed 181 issues; shellcheck clean on `auto_ingest.sh` and `health_check.sh`; BasedPyright and Vulture installed
@@ -141,14 +174,14 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 ## Open Problems
 
-1. **Full Ruff baseline is not green** — `uv run ruff check .` failed on 2026-06-26 with 25 issues; touched-file Ruff checks pass for the repo gate adoption workflow.
-2. **Full format baseline is not green** — `uv run ruff format --check .` reported 172 files needing formatting on 2026-06-26; touched-file format checks pass for the repo gate adoption workflow.
-3. **Full BasedPyright baseline is not green** — `uv run basedpyright` failed on 2026-06-26 with 110 errors and 101 warnings, including existing `run_cli` complexity.
+1. **Full Ruff baseline is not green** — `uv run ruff check .` failed on 2026-06-29 with 25 existing issues; touched-file Ruff checks pass for the workflow route preview.
+2. **Full format baseline is not green** — `uv run ruff format --check .` reported 162 files needing formatting on 2026-06-29; the final diff keeps legacy parser/test formatting minimal instead of reformatting whole files.
+3. **Full BasedPyright baseline is not green** — `uv run basedpyright` failed on 2026-06-29 with 109 errors and 78 warnings, including existing `run_cli` complexity.
 ## Next Concrete Steps
 
-1. Execute BidCamp repo-local Phase 151 from `phase29-bidcamp-pilot-final-doc-pass-001`, then continue BidCamp 152-155, EliHealth 09-13, and pre-cr-suite-lsp 04-06.
-2. Triage the full BasedPyright baseline, starting with `run_cli` complexity and optional-access/type-helper errors in runtime-critical modules.
-3. Run Ruff autofix/format in planned chunks rather than broad unreviewed churn.
+1. Run a real shadow-lane implementation through the generated prompt and verify it transitions from `no_evidence` to `evidence_recorded` only after comparison evidence exists.
+2. Decide whether AIOS should add a thin shortcut or adapter for invoking external Quality Runner runs.
+3. Resume linked-repo adoption execution with BidCamp repo-local Phase 151, then continue BidCamp 152-155, EliHealth 09-13, and pre-cr-suite-lsp 04-06.
 
 ## Risks / Blockers
 
@@ -160,11 +193,97 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 | Step | Status | Notes |
 |------|--------|-------|
-| Lint (ruff) | Fail | `uv run ruff check .` failed on 2026-06-26 with 25 issues. Focused repo gate adoption workflow Ruff checks pass. |
-| Type check (basedpyright) | Fail | `uv run basedpyright` failed on 2026-06-26 with 110 errors and 101 warnings, including existing `run_cli` complexity. Focused repo gate adoption service BasedPyright checks pass. |
-| Dead code (vulture) | Pass | `uv run vulture . --min-confidence 70` exited 0 on 2026-06-26. |
-| Tests | Pass | `uv run pytest -q` passed on 2026-06-26 with 1001 tests. |
-| Structure | Fail | `uv run ruff format --check .` reported 172 files needing formatting on 2026-06-26. Focused repo gate adoption workflow format checks pass. |
+| Lint (ruff) | Fail | `uv run ruff check .` failed on 2026-07-02 with 25 existing repo issues. Focused daily-flow repo closeout Ruff checks pass. |
+| Type check (basedpyright) | Fail | `uv run basedpyright` failed on 2026-07-02 with 107 errors and 78 warnings across existing baseline files. Focused daily-flow repo closeout BasedPyright checks pass; the stale `SimpleNamespace` test typing issue in `tests/test_aios_cli.py` was fixed. |
+| Dead code (vulture) | Pass | `uv run vulture bin services --min-confidence 70`, `pnpm dead-code`, and `pnpm audit:dead-code` passed on 2026-07-02; Quality Runner final run `qr-clean-audit-20260702T200935Z-AIOS-final-4` detects `dead_code` from `package.json:scripts.dead-code`. |
+| Runtime smoke | Pass | `pnpm smoke` passed on 2026-07-02 and Quality Runner final run `qr-clean-audit-20260702T200935Z-AIOS-final-4` detects `runtime_smoke` from `package.json:scripts.smoke`. |
+| Tests | Pass | `uv run pytest -q` passed on 2026-07-02 with 1082 tests. |
+| Structure | Fail | `uv run ruff format --check .` reported 153 files needing formatting on 2026-07-02. The daily-flow repo closeout diff avoids broad legacy file formatting churn. |
+
+Focused daily-flow repo closeout checks on 2026-07-02:
+- `uv run pytest -q tests/test_daily_flow.py tests/test_aios_cli.py::test_daily_flow_replay_cli tests/test_aios_cli.py::test_daily_flow_preview_cli` passed with 18 tests.
+- `uv run ruff check services/daily_flow.py tests/test_daily_flow.py tests/test_aios_cli.py` passed.
+- `uv run ruff format --check services/daily_flow.py tests/test_daily_flow.py tests/test_aios_cli.py` passed.
+- `uv run basedpyright services/daily_flow.py tests/test_daily_flow.py tests/test_aios_cli.py` passed with 0 errors and 0 warnings.
+- `cd aios-ui && pnpm lint` passed with existing warnings outside the touched daily-flow files.
+
+Full repo checks on 2026-07-02:
+- `uv run pytest -q` passed with 1082 tests.
+- `uv run ruff check .` failed with 25 existing repo issues.
+- `uv run ruff format --check .` failed with 153 files needing formatting.
+- `uv run basedpyright` failed with 107 errors and 78 warnings.
+- `uv run vulture bin services --min-confidence 70` exited 0.
+
+Focused shadow no-evidence checks on 2026-07-01:
+- `uv run pytest -q tests/test_shadow_branch_runner.py tests/test_shadow_branch_cli.py tests/test_codex_aios_shadow.py` passed with 26 tests.
+- `uv run ruff check services/shadow_branch_runner.py services/aios_cli.py scripts/codex-aios-shadow.py tests/test_shadow_branch_runner.py` passed.
+- `uv run ruff format --check services/shadow_branch_runner.py services/aios_cli.py scripts/codex-aios-shadow.py tests/test_shadow_branch_runner.py` passed.
+- `uv run basedpyright services/shadow_branch_runner.py scripts/codex-aios-shadow.py tests/test_shadow_branch_runner.py` passed with 0 errors and 0 warnings.
+- `uv run vulture bin services --min-confidence 70` exited 0.
+
+Full repo shadow no-evidence checks on 2026-07-01:
+- `uv run pytest -q` passed with 1066 tests.
+- `uv run ruff check .` failed with the existing repo lint baseline: 25 issues.
+- `uv run ruff format --check .` failed with the existing repo format baseline: 158 files would be reformatted.
+- `uv run basedpyright` failed with the existing repo type baseline: 109 errors and 78 warnings.
+- `uv run vulture bin services --min-confidence 70` exited 0.
+
+Focused workflow route preview checks on 2026-06-29:
+- `uv run pytest -q tests/test_task_routing.py tests/test_aios_cli.py tests/test_native_commands.py` passed with 120 tests.
+- `uv run ruff check services/aios_cli.py tests/test_aios_cli.py tests/test_native_commands.py bin/route` passed.
+- `uv run ruff format --check services/aios_cli.py tests/test_aios_cli.py tests/test_native_commands.py bin/route` passed.
+- `uv run basedpyright services/aios_cli.py tests/test_aios_cli.py` failed with existing baseline issues: `services/aios_cli.py` `run_cli` complexity and `tests/test_aios_cli.py` `SimpleNamespace` argument typing.
+- `uv run vulture bin services --min-confidence 70` exited 0.
+- `./bin/route "Fix the AIOS routing bug" --project AIOS` returned a ready route and start-work command without creating a run.
+
+Full repo workflow route preview checks on 2026-06-29:
+- `uv run pytest -q` passed with 1059 tests.
+- `uv run ruff check .` failed with 25 existing repo issues.
+- `uv run ruff format --check .` failed with 162 files needing formatting.
+- `uv run basedpyright` failed with 109 errors and 78 warnings.
+- `uv run vulture bin services --min-confidence 70` exited 0.
+
+Focused Codex meta-learning ingest checks on 2026-06-29:
+- `uv run pytest -q tests/test_meta_learning_signals.py tests/test_meta_learning_router.py tests/test_meta_learning_session_ingest.py tests/test_import_ai_history.py` passed with 70 tests.
+- `uv run pytest -q` passed with 1056 tests.
+- `uv run ruff check bin/cron-ingest-codex.py bin/import_ai_history.py services/meta_learning_signals.py services/meta_learning_scoring.py services/meta_learning_router.py services/meta_learning_session_ingest.py tests/test_import_ai_history.py tests/test_meta_learning_signals.py tests/test_meta_learning_router.py tests/test_meta_learning_session_ingest.py` passed.
+- `uv run ruff format --check .` failed with the existing repo format baseline: 163 files would be reformatted.
+- `uv run basedpyright bin/cron-ingest-codex.py bin/import_ai_history.py services/meta_learning_signals.py services/meta_learning_scoring.py services/meta_learning_router.py services/meta_learning_session_ingest.py` passed.
+- `uv run vulture bin services --min-confidence 70` exited 0.
+
+Focused Codex session intelligence checks on 2026-06-28:
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run pytest tests/test_session_intelligence_loop.py -q` passed with 12 tests after durability, Claude normalization, and cross-batch merge hardening.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run ruff check services/session_intelligence_loop.py services/session_providers/claude.py services/aios_cli.py tests/test_session_intelligence_loop.py` passed.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run ruff format --check services/session_intelligence_loop.py services/session_providers/claude.py services/aios_cli.py tests/test_session_intelligence_loop.py` passed.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run basedpyright services/session_intelligence_loop.py services/session_providers/claude.py tests/test_session_intelligence_loop.py` passed.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run vulture services/session_intelligence_loop.py services/session_providers/claude.py --min-confidence 70` exited 0.
+- `.venv/bin/python /Users/jakyeamos/AIOS/bin/aios.py session-intel backfill --provider all --since all --write-report --batch-size 250` processed 1,923 sources in 9 batches with 1,051 batch candidates; persisted state after the immediate resume is 1,923 cursors, 973 pending candidates, and zero duplicate lane/title groups. Backup before the first live run is `data/aios.db.pre-session-intel-backfill-20260628`.
+- `.venv/bin/python bin/aios.py --db /private/tmp/aios-session-intel-backfill-smoke.db session-intel backfill --provider all --codex-source-root /private/tmp/aios-empty-codex --claude-source-root /private/tmp/aios-empty-claude --batch-size 1 --json` passed.
+- `.venv/bin/python bin/aios.py --db /private/tmp/aios-session-intel-smoke.db session-intel candidates --json` passed.
+- `.venv/bin/python bin/aios.py --db /private/tmp/aios-session-intel-smoke.db session-intel run --provider codex --since all --source-root /private/tmp/no-codex-sessions --write-report --report-root /private/tmp/session-intel-reports --json` passed.
+- `python3 bin/aios.py --db /private/tmp/aios-session-intel-smoke.db session-intel candidates --json` failed with `ModuleNotFoundError: quality_evidence_contract`; invoking through `.venv/bin/python` works.
+
+Focused Codex session intelligence triage checks on 2026-06-28:
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run pytest tests/test_session_intelligence_loop.py -q` passed with 15 tests after adding cluster triage, review events, intent grouping, and workflow sequence mining.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run ruff check services/session_intelligence_loop.py services/aios_cli.py tests/test_session_intelligence_loop.py` passed.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run ruff format --check services/session_intelligence_loop.py services/aios_cli.py tests/test_session_intelligence_loop.py` passed.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run basedpyright services/session_intelligence_loop.py tests/test_session_intelligence_loop.py` passed.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run vulture services/session_intelligence_loop.py --min-confidence 70` exited 0.
+- `.venv/bin/python /Users/jakyeamos/AIOS/bin/aios.py session-intel clusters --status pending_review --lane all` returned `clusters=50` with the default limit; `--limit 5 --json` returned 5 of 621 total clusters with compact candidate previews.
+
+Focused session-intelligence tool promotion checks on 2026-06-28:
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run pytest tests/test_session_intelligence_tools.py tests/test_session_intelligence_loop.py tests/test_aios_cli.py -q` passed with 110 tests.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run pytest -q` passed with 1051 tests.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run ruff check services/session_intelligence_tools.py services/aios_cli.py tests/test_session_intelligence_tools.py` passed.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run ruff format --check services/session_intelligence_tools.py services/aios_cli.py tests/test_session_intelligence_tools.py` passed.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run basedpyright services/session_intelligence_tools.py tests/test_session_intelligence_tools.py` passed.
+- `PYTHONPATH=/Users/jakyeamos/quality-evidence-contract:/Users/jakyeamos/repo-quality-certifier uv run vulture services/session_intelligence_tools.py --min-confidence 70` exited 0.
+
+Focused Quality Runner standalone checks on 2026-06-28:
+- In `/Users/jakyeamos/quality-runner`, `python3.14 -m pytest -q` passed with 95 tests.
+- In `/Users/jakyeamos/quality-runner`, `uv run --with pytest pytest -q` passed with 95 tests, exercising package build/install behavior.
+- In `/Users/jakyeamos/quality-runner`, `ruff check .`, `ruff format --check .`, `basedpyright`, and `vulture . --min-confidence 70` passed.
+- In `/Users/jakyeamos/quality-runner`, `python3.14 scripts/run_pytest_with_lcov.py` passed with 95 tests, and `pre-cr run --workspace /Users/jakyeamos/quality-runner` exited 0 while reporting no coverage result.
 
 Focused repo gate adoption workflow checks on 2026-06-26:
 - `uv run pytest tests/test_repo_gate_adoption.py tests/test_workflow_orchestration.py tests/test_task_routing.py tests/test_aios_cli.py -q` passed with 163 tests.
@@ -203,6 +322,10 @@ Full repo checks on 2026-06-26:
 - `uv run basedpyright` failed with 110 errors and 101 warnings.
 - `uv run pytest -q` passed with 1001 tests.
 - `uv run vulture . --min-confidence 70` exited 0.
+
+Doc-only update note: the 2026-06-27 Quality Runner design commit adds a standalone audit-and-plan spec and updates this truth snapshot. It does not change production code; the existing full-repo Ruff, format, and BasedPyright failures remain authoritative.
+
+Doc-only update note: the 2026-06-27 Quality Runner implementation-plan commit adds a Python-first standalone package plan and updates this truth snapshot. It does not change production code; the existing full-repo Ruff, format, and BasedPyright failures remain authoritative.
 
 Focused personalized humanizer CLI checks on 2026-06-25:
 - `uv run pytest tests/test_personalized_humanizer.py tests/test_aios_cli.py::test_humanize_run_no_record_outputs_rewrite tests/test_aios_cli.py::test_humanize_run_records_feedback_flow tests/test_aios_cli.py::test_humanize_eval_cli_runs_suite -q` passed with 14 tests.

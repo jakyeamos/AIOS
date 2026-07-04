@@ -16,7 +16,11 @@ from services.meta_learning_signals import (  # noqa: E402
 
 
 def _by_type(raw: dict, signal_type: str) -> list[dict]:
-    return [signal for signal in signals_to_dicts(extract_meta_learning_signals(raw)) if signal["type"] == signal_type]
+    return [
+        signal
+        for signal in signals_to_dicts(extract_meta_learning_signals(raw))
+        if signal["type"] == signal_type
+    ]
 
 
 def test_extracts_explicit_corrections_with_target_layer() -> None:
@@ -84,13 +88,34 @@ def test_extracts_approval_command_repetition_and_tool_friction() -> None:
     assert by_type["tool_friction"]["recommended_target_layer"] == "workflow_rule"
 
 
+def test_extracts_assistant_tool_errors_and_candidate_skills() -> None:
+    raw = {
+        "session_id": "s1",
+        "messages": [
+            {"role": "assistant", "text": "FAILED tests/test_app.py::test_flow"},
+            {"role": "assistant", "text": "FAILED tests/test_app.py::test_flow"},
+        ],
+        "candidate_skills_to_extract": ["Codex rollout review loop"],
+    }
+
+    signals = signals_to_dicts(extract_meta_learning_signals(raw))
+    by_type = {signal["type"]: signal for signal in signals}
+
+    assert by_type["tool_friction"]["frequency"] == 2
+    assert by_type["candidate_skill"]["recommended_target_layer"] == "skill_or_agent_suggestion"
+    assert by_type["candidate_skill"]["summary"] == "Candidate skill: Codex rollout review loop"
+
+
 def test_extracts_context_miss_model_mismatch_and_scope_restatement() -> None:
     raw = {
         "session_id": "s1",
         "messages": [
             {"role": "user", "text": "You missed the context from the phase plan."},
             {"role": "user", "text": "That is not what I asked; stay in scope."},
-            {"role": "user", "text": "This was a model mismatch; should have used a stronger model."},
+            {
+                "role": "user",
+                "text": "This was a model mismatch; should have used a stronger model.",
+            },
         ],
         "context_events": [
             {"type": "second_brain_miss", "summary": "second-brain miss for project convention"},

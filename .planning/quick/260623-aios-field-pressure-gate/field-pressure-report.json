@@ -1,7 +1,7 @@
 {
-  "db_copy": "/tmp/aios-field-pressure-current.db",
-  "generated_at": "2026-06-24T01:32:55.321923Z",
-  "logs_dir": "/var/folders/r7/b6pc8f3d7mjgkqx_wps2p52r0000gn/T/aios-field-pressure-sp508yao/logs",
+  "db_copy": "/var/folders/r7/b6pc8f3d7mjgkqx_wps2p52r0000gn/T/aios-field-pressure-tmz8xmti/aios-field-pressure.db",
+  "generated_at": "2026-07-01T18:34:04.206291Z",
+  "logs_dir": "/var/folders/r7/b6pc8f3d7mjgkqx_wps2p52r0000gn/T/aios-field-pressure-tmz8xmti/logs",
   "ok": true,
   "results": [
     {
@@ -12,7 +12,7 @@
             "expected_workflow": "implementation-delivery",
             "name": "aios-route-bug",
             "passed": true,
-            "run_id": "run-7b961fc1-aa9a-4a82-a593-f940d8d7257f",
+            "run_id": "run-5011dd56-92ac-4a4d-9c26-d1dd5187bc0c",
             "stderr": ""
           },
           {
@@ -20,7 +20,7 @@
             "expected_workflow": "failure-recovery",
             "name": "aios-daily-flow",
             "passed": true,
-            "run_id": "run-afbfba85-4aab-4633-8e24-c461f40b04bd",
+            "run_id": "run-a4cdabf1-462e-493e-8be8-acdaa80df39f",
             "stderr": ""
           },
           {
@@ -28,7 +28,7 @@
             "expected_workflow": "implementation-delivery",
             "name": "aios-next-action",
             "passed": true,
-            "run_id": "run-b7694f60-b1f4-4eb5-87cb-ecc97e84ccdb",
+            "run_id": "run-aa350907-56e2-411d-8881-72204d6b0de7",
             "stderr": ""
           },
           {
@@ -36,7 +36,7 @@
             "expected_workflow": "implementation-delivery",
             "name": "aios-ui-verify",
             "passed": true,
-            "run_id": "run-1f58877f-c453-4670-abcd-9b1030d69c68",
+            "run_id": "run-6e025b83-d879-4ef3-9fdd-c424cee5c28c",
             "stderr": ""
           },
           {
@@ -44,7 +44,7 @@
             "expected_workflow": "implementation-delivery",
             "name": "aios-db-migration",
             "passed": true,
-            "run_id": "run-094fc67b-886a-43fc-b58d-6a99bd0e66b5",
+            "run_id": "run-d2b57ad1-2e88-485f-8854-cb11537e0c8b",
             "stderr": ""
           },
           {
@@ -52,7 +52,7 @@
             "expected_workflow": "failure-recovery",
             "name": "aios-cli-quality",
             "passed": true,
-            "run_id": "run-020633c5-39ce-4787-a008-225bd2d13829",
+            "run_id": "run-b1358620-3fcb-4bc8-80f4-94835c5c1954",
             "stderr": ""
           },
           {
@@ -60,7 +60,7 @@
             "expected_workflow": "implementation-delivery",
             "name": "amos-login",
             "passed": true,
-            "run_id": "run-6748d220-5a8c-48d5-a121-16d3b1d9cda3",
+            "run_id": "run-2ca5ebfc-1e6b-462c-aae3-051e09fbbe6f",
             "stderr": ""
           },
           {
@@ -68,7 +68,7 @@
             "expected_workflow": "failure-recovery",
             "name": "amos-api",
             "passed": true,
-            "run_id": "run-9b571c72-e359-49fa-ac9a-3bf6adb3b109",
+            "run_id": "run-52b0b332-73cb-4912-859f-e2817cca8b99",
             "stderr": ""
           },
           {
@@ -76,7 +76,7 @@
             "expected_workflow": "implementation-delivery",
             "name": "amos-ui",
             "passed": true,
-            "run_id": "run-835950f7-d232-454f-b915-6ad597335086",
+            "run_id": "run-06d86d97-bd6e-4d62-bf05-34e1eb7b4236",
             "stderr": ""
           },
           {
@@ -84,7 +84,7 @@
             "expected_workflow": "failure-recovery",
             "name": "amos-tests",
             "passed": true,
-            "run_id": "run-64680e9f-8a8c-40e4-9415-b57b9fc3b476",
+            "run_id": "run-cb391cad-268f-48c1-b9ee-bd9aa9c33af1",
             "stderr": ""
           },
           {
@@ -92,7 +92,7 @@
             "expected_workflow": "academic_paper_v1",
             "name": "academic-paper",
             "passed": true,
-            "run_id": "run-31bed722-60b1-4515-80d3-b8d1a629adcc",
+            "run_id": "run-56f065c8-939c-4d3e-9c3e-7690d72e5162",
             "stderr": ""
           },
           {
@@ -100,7 +100,7 @@
             "expected_workflow": "academic_paper_v1",
             "name": "paper-revision",
             "passed": true,
-            "run_id": "run-bf6bc411-aa5e-41ee-8535-4b460ca841a5",
+            "run_id": "run-6eb6d174-7734-4983-a91d-b6062b6279b8",
             "stderr": ""
           }
         ]
@@ -114,7 +114,7 @@
         "returncode": 0,
         "stderr": ""
       },
-      "name": "daily-usage-pressure:managed-run:run-7b961fc1-aa9a-4a82-a593-f940d8d7257f",
+      "name": "daily-usage-pressure:managed-run:run-5011dd56-92ac-4a4d-9c26-d1dd5187bc0c",
       "status": "pass",
       "summary": "Managed runtime completed."
     },
@@ -123,7 +123,7 @@
         "returncode": 0,
         "stderr": ""
       },
-      "name": "daily-usage-pressure:managed-run:run-afbfba85-4aab-4633-8e24-c461f40b04bd",
+      "name": "daily-usage-pressure:managed-run:run-a4cdabf1-462e-493e-8be8-acdaa80df39f",
       "status": "pass",
       "summary": "Managed runtime completed."
     },
@@ -132,34 +132,7 @@
         "returncode": 0,
         "stderr": ""
       },
-      "name": "daily-usage-pressure:managed-run:run-b7694f60-b1f4-4eb5-87cb-ecc97e84ccdb",
-      "status": "pass",
-      "summary": "Managed runtime completed."
-    },
-    {
-      "details": {
-        "returncode": 0,
-        "stderr": ""
-      },
-      "name": "daily-usage-pressure:managed-run:run-1f58877f-c453-4670-abcd-9b1030d69c68",
-      "status": "pass",
-      "summary": "Managed runtime completed."
-    },
-    {
-      "details": {
-        "returncode": 0,
-        "stderr": ""
-      },
-      "name": "daily-usage-pressure:managed-run:run-094fc67b-886a-43fc-b58d-6a99bd0e66b5",
-      "status": "pass",
-      "summary": "Managed runtime completed."
-    },
-    {
-      "details": {
-        "returncode": 0,
-        "stderr": ""
-      },
-      "name": "daily-usage-pressure:managed-run:run-020633c5-39ce-4787-a008-225bd2d13829",
+      "name": "daily-usage-pressure:managed-run:run-aa350907-56e2-411d-8881-72204d6b0de7",
       "status": "pass",
       "summary": "Managed runtime completed."
     },
@@ -169,68 +142,38 @@
           {
             "counts": {
               "criteria_evaluations": 1,
-              "tmcp_receipts": 1,
+              "tmcp_receipts": 4,
               "workflow_reports": 2,
               "writebacks": 2
             },
             "passed": true,
-            "run_id": "run-7b961fc1-aa9a-4a82-a593-f940d8d7257f"
+            "run_id": "run-5011dd56-92ac-4a4d-9c26-d1dd5187bc0c"
           },
           {
             "counts": {
               "criteria_evaluations": 1,
-              "tmcp_receipts": 1,
+              "tmcp_receipts": 4,
               "workflow_reports": 2,
               "writebacks": 2
             },
             "passed": true,
-            "run_id": "run-afbfba85-4aab-4633-8e24-c461f40b04bd"
+            "run_id": "run-a4cdabf1-462e-493e-8be8-acdaa80df39f"
           },
           {
             "counts": {
               "criteria_evaluations": 1,
-              "tmcp_receipts": 1,
+              "tmcp_receipts": 4,
               "workflow_reports": 2,
               "writebacks": 2
             },
             "passed": true,
-            "run_id": "run-b7694f60-b1f4-4eb5-87cb-ecc97e84ccdb"
-          },
-          {
-            "counts": {
-              "criteria_evaluations": 1,
-              "tmcp_receipts": 1,
-              "workflow_reports": 2,
-              "writebacks": 2
-            },
-            "passed": true,
-            "run_id": "run-1f58877f-c453-4670-abcd-9b1030d69c68"
-          },
-          {
-            "counts": {
-              "criteria_evaluations": 1,
-              "tmcp_receipts": 1,
-              "workflow_reports": 2,
-              "writebacks": 2
-            },
-            "passed": true,
-            "run_id": "run-094fc67b-886a-43fc-b58d-6a99bd0e66b5"
-          },
-          {
-            "counts": {
-              "criteria_evaluations": 1,
-              "tmcp_receipts": 1,
-              "workflow_reports": 2,
-              "writebacks": 2
-            },
-            "passed": true,
-            "run_id": "run-020633c5-39ce-4787-a008-225bd2d13829"
+            "run_id": "run-aa350907-56e2-411d-8881-72204d6b0de7"
           }
         ]
       },
       "name": "daily-usage-pressure:artifact-volume",
       "status": "pass",
-      "summary": "6/6 managed runs produced closeout artifacts."
+      "summary": "3/3 managed runs produced closeout artifacts."
     },
     {
       "details": {
@@ -256,7 +199,7 @@
     {
       "details": {
         "returncode": 0,
-        "stderr": "",
+        "stderr": "$ eslint . && tsc --noEmit\n",
         "warning_line_count": 5,
         "warning_sample": [
           "  1:1  warning  Unused eslint-disable directive (no problems were reported from 'anti-slop/require-empty-state-action')",
@@ -283,7 +226,7 @@
           "next_action"
         ],
         "next_action_count": 5,
-        "run_id": "run-7b961fc1-aa9a-4a82-a593-f940d8d7257f",
+        "run_id": "run-5011dd56-92ac-4a4d-9c26-d1dd5187bc0c",
         "search_hit_kinds": [
           "route_decision",
           "run",
@@ -302,18 +245,18 @@
     {
       "details": {
         "candidate_count": 1,
-        "loop_run_id": "clr-de2165ada42f",
+        "loop_run_id": "clr-7001a0d7a493",
         "proposal": {
           "candidates": [
             {
               "affected_workflow": "aios_field_pressure",
-              "candidate_id": "clc-37a800310fad",
+              "candidate_id": "clc-d1d9d2ddfba9",
               "category": "missing_fact",
               "confidence": 0.6,
               "destination": "project_memory",
               "evidence": [
                 {
-                  "id": "clr-review-66a97c5a8298",
+                  "id": "clr-review-4a41f5dedd29",
                   "type": "context_loop_review_event"
                 }
               ],
@@ -321,13 +264,13 @@
               "likely_interpretation": "Reviewer notes supplied a possible reusable missing fact or preference.",
               "observed_pattern": "-Repeated session saves show routing friction. Approved lessons loaded: 0. +Repeated session saves show routing friction and suggest a route selector checklist.",
               "proposed_change": "Edits added the reusable route selector checklist target.",
-              "review_event_id": "clr-review-66a97c5a8298",
+              "review_event_id": "clr-review-4a41f5dedd29",
               "workflow": "aios_field_pressure"
             }
           ],
           "proposed_count": 1
         },
-        "review_event_id": "clr-review-66a97c5a8298"
+        "review_event_id": "clr-review-4a41f5dedd29"
       },
       "name": "learning-value:context-loop-replay",
       "status": "pass",
@@ -363,7 +306,7 @@
             "exit_code": 2,
             "message": "No governed workflow matched the objective strongly enough."
           },
-          "generated_at": "2026-06-24T01:32:53.963997+00:00",
+          "generated_at": "2026-07-01T18:34:02.532153+00:00",
           "ok": false
         },
         "returncode": 2,
@@ -382,7 +325,7 @@
             "exit_code": 2,
             "message": "Explicit project project-does-not-exist was not found in the registered project inventory."
           },
-          "generated_at": "2026-06-24T01:32:54.105884+00:00",
+          "generated_at": "2026-07-01T18:34:02.701071+00:00",
           "ok": false
         },
         "returncode": 2,
@@ -405,13 +348,13 @@
     {
       "details": {
         "evaluation_step": {
-          "drill_down_path": "/runs/run-bf6bc411-aa5e-41ee-8535-4b460ca841a5",
+          "drill_down_path": "/runs/run-6eb6d174-7734-4983-a91d-b6062b6279b8",
           "evidence_ref": {
             "id": null,
             "missing_reason": "source data unavailable - Phase 6 success_criteria_findings table not present",
             "table": null
           },
-          "freshness": "2026-06-24T01:32:54.415298Z",
+          "freshness": "2026-07-01T18:34:03.047901Z",
           "kind": "evaluation",
           "metadata": {},
           "provenance": "missing",
@@ -427,14 +370,14 @@
     {
       "details": {
         "returncode": 2,
-        "stderr": "{\"backend_key\": \"codex-managed-runtime\", \"error\": {\"code\": \"managed-run-preflight-failed\", \"message\": \"Run not found: run-does-not-exist\"}, \"generated_at\": \"2026-06-24T01:32:54.517212+00:00\", \"invocation_id\": \"invoke-does-not-exist\", \"ok\": false, \"run_id\": \"run-does-not-exist\"}\n",
+        "stderr": "{\"backend_key\": \"codex-managed-runtime\", \"error\": {\"code\": \"managed-run-preflight-failed\", \"message\": \"Run not found: run-does-not-exist\"}, \"generated_at\": \"2026-07-01T18:34:03.147798+00:00\", \"invocation_id\": \"invoke-does-not-exist\", \"ok\": false, \"run_id\": \"run-does-not-exist\"}\n",
         "stderr_json": {
           "backend_key": "codex-managed-runtime",
           "error": {
             "code": "managed-run-preflight-failed",
             "message": "Run not found: run-does-not-exist"
           },
-          "generated_at": "2026-06-24T01:32:54.517212+00:00",
+          "generated_at": "2026-07-01T18:34:03.147798+00:00",
           "invocation_id": "invoke-does-not-exist",
           "ok": false,
           "run_id": "run-does-not-exist"
@@ -458,15 +401,15 @@
           "!! logs/control-plane/invocations/invoke-manual-34cbb4e8-fe4f-4235-a12f-77fef963d186.json",
           "!! logs/control-plane/invocations/invoke-manual-37b0959e-f9db-401a-9ac9-173d865ab167.json",
           "!! logs/control-plane/invocations/invoke-manual-3f952328-2842-4545-a277-3bee63a3bd2d.json",
+          "!! logs/control-plane/invocations/invoke-manual-401ae8c3-30bf-4b63-83a7-03fb4f6c1116.json",
           "!! logs/control-plane/invocations/invoke-manual-457181c4-d00d-4a32-b089-27f33289b23e.json",
+          "!! logs/control-plane/invocations/invoke-manual-48a8e495-6ba6-4e2c-b6b5-ac65ef146cf3.json",
           "!! logs/control-plane/invocations/invoke-manual-49548d84-9475-4e2d-8793-74593d020eab.json",
           "!! logs/control-plane/invocations/invoke-manual-4bf9e801-4aca-4cdd-97fb-4092ff5023b0.json",
           "!! logs/control-plane/invocations/invoke-manual-56af86b8-9f9c-4142-b2c9-622756068480.json",
           "!! logs/control-plane/invocations/invoke-manual-5a7f624a-8550-4204-8ee8-770be526fb16.json",
           "!! logs/control-plane/invocations/invoke-manual-61048ac6-90a5-45b4-a423-7f2177f5da3a.json",
-          "!! logs/control-plane/invocations/invoke-manual-65995450-d2b9-42dc-8b55-780b970fc5f8.json",
-          "!! logs/control-plane/invocations/invoke-manual-6b338d06-3d2d-418d-955d-31373f32bb60.json",
-          "!! logs/control-plane/invocations/invoke-manual-84f7fe56-2810-4317-93fd-ef2b23c209df.json"
+          "!! logs/control-plane/invocations/invoke-manual-65995450-d2b9-42dc-8b55-780b970fc5f8.json"
         ],
         "returncode": 0,
         "unignored_entries": []
@@ -477,14 +420,18 @@
     },
     {
       "details": {
-        "ignored_other_count": 23,
-        "ignored_runtime_count": 411,
+        "ignored_other_count": 25,
+        "ignored_runtime_count": 457,
         "ignored_runtime_sample": [
           "!! .pytest_cache/",
           "!! .ruff_cache/",
+          "!! data/aios-route-failures.jsonl",
           "!! data/aios.db",
+          "!! data/aios.db.pre-session-intel-backfill-20260628",
+          "!! data/aios.db.pre-session-intel-full-triage-20260628",
           "!! data/cts/",
           "!! data/rule-artifacts/",
+          "!! data/session-intelligence/",
           "!! data/success-criteria/",
           "!! logs/closed/",
           "!! logs/control-plane/invocations/invoke-manual-0669524d-0868-4a1b-9a6e-48d8d3f98398.json",
@@ -495,45 +442,41 @@
           "!! logs/control-plane/invocations/invoke-manual-2cbce5a3-25e1-4b46-9f2f-7120cfe5c9a1.json",
           "!! logs/control-plane/invocations/invoke-manual-3287cd95-5e00-45ca-9e15-0a1ba9af36aa.json",
           "!! logs/control-plane/invocations/invoke-manual-341d1c26-c167-4a0f-ab43-68b273afdfce.json",
-          "!! logs/control-plane/invocations/invoke-manual-34cbb4e8-fe4f-4235-a12f-77fef963d186.json",
-          "!! logs/control-plane/invocations/invoke-manual-37b0959e-f9db-401a-9ac9-173d865ab167.json",
-          "!! logs/control-plane/invocations/invoke-manual-3f952328-2842-4545-a277-3bee63a3bd2d.json",
-          "!! logs/control-plane/invocations/invoke-manual-457181c4-d00d-4a32-b089-27f33289b23e.json",
-          "!! logs/control-plane/invocations/invoke-manual-49548d84-9475-4e2d-8793-74593d020eab.json"
+          "!! logs/control-plane/invocations/invoke-manual-34cbb4e8-fe4f-4235-a12f-77fef963d186.json"
         ],
         "returncode": 0,
-        "source_change_count": 69,
+        "source_change_count": 30,
         "source_change_sample": [
-          " M .gitignore",
+          " M .github/workflows/aios-ui-quality.yml",
           " M .planning/STATE.md",
-          " M .planning/phases/20-execution-symmetric-planning/20-07-PLAN.md",
-          " M .tracker/PROJECT_TRUTH.md",
-          " M AGENTS.md",
+          " M .planning/SUBSYSTEM_EXTRACTION_PLAN.md",
+          " M .planning/quick/260623-aios-adoption-gate/adoption-gate-report.json",
+          " M .planning/quick/260623-aios-adoption-gate/adoption-gate-report.md",
+          " M .planning/quick/260623-aios-field-pressure-gate/field-pressure-report.json",
+          " M .planning/quick/260623-aios-field-pressure-gate/field-pressure-report.md",
+          " M .planning/quick/260623-aios-readiness-check/readiness-report.json",
+          " M .planning/quick/260623-aios-readiness-check/readiness-report.md",
           " M PROJECT.md",
           " M README.md",
-          " M aios/context/compiled/latest.json",
-          " M aios/context/compiled/latest.md",
-          " M aios/context/receipts/latest.json",
-          " M aios/context/receipts/latest.md",
+          "D  aios-ui/package-lock.json",
+          " M aios-ui/package.json",
+          " M aios-ui/pnpm-lock.yaml",
           " M bin/aios-managed-run.py",
-          " M bin/aios_orchestration_runtime.py",
-          " M bin/user-commit-quality-gate.py",
-          " M config/tmcp/portable-dev-process/README.md",
-          " M config/tmcp/registry.json",
-          " M config/workflows/skills.json",
-          " M docs/adr/0003-tmcp-decision-graph-traversal.md",
-          " M docs/phase-15-skill-authoring-comparison.md",
-          " M schema.sql",
+          " M bin/aios.py",
+          " M docs/superpowers/plans/tier-one-aios/00-index.md",
+          " M docs/superpowers/plans/tier-one-aios/01-runtime-and-invocation-reliability.md",
+          " M docs/superpowers/plans/tier-one-aios/02-command-center-product-surface.md",
+          " M docs/superpowers/plans/tier-one-aios/08-testing-release-operational-hardening.md",
+          " M docs/superpowers/plans/tier-one-aios/09-rollout-governance.md",
+          " M docs/superpowers/plans/tier-one-aios/EXECUTION.md",
+          " M package.json",
+          " M scripts/aios-adoption-gate.py",
+          " M scripts/aios-field-pressure-gate.py",
+          " M scripts/aios-readiness-check.py",
           " M services/aios_cli.py",
-          " M services/commit_quality_ladder.py",
-          " M services/daily_flow.py",
-          " M services/next_action.py",
-          " M services/operator_search.py",
-          " M services/skills_harvest.py",
-          " M services/tmcp_benchmark.py",
-          " M services/tmcp_runtime.py",
-          " M services/workflow_orchestration.py",
-          " M tests/test_commit_quality_ladder.py"
+          " M tests/test_aios_cli.py",
+          "?? aios-ui/pnpm-workspace.yaml",
+          "?? docs/case-study.md"
         ]
       },
       "name": "artifact-hygiene:dirty-tree-classification",
@@ -542,5 +485,5 @@
     }
   ],
   "score": 100,
-  "source_db": "/Users/jakyeamos/AIOS/data/aios.db"
+  "source_db": "/Users/jakyeamos/projects/AIOS/data/aios.db"
 }

@@ -2,6 +2,44 @@
 
 AIOS is the local operating system for work context, agent workflows, durable project memory, and linked-project health. It runs primarily from local files and SQLite, with a Next.js dashboard in `aios-ui/`.
 
+## Use AIOS Today
+
+Use AIOS for serious Codex or project work when the task needs routing, context, durable run state, evaluation evidence, writebacks, or follow-up visibility.
+
+Preflight the local release contract:
+
+```bash
+cd /Users/jakyeamos/AIOS
+uv run python bin/aios.py --json doctor
+```
+
+Start a governed daily-use run:
+
+```bash
+uv run python bin/aios.py --json start-work "Audit AIOS daily-use onboarding and ship a scoped fix with tests" --project AIOS
+```
+
+Inspect the run without manual database queries:
+
+```bash
+uv run python bin/aios.py --json daily-flow --run-id <run-id>
+uv run python bin/aios.py --json next-action --project <project-id>
+```
+
+The release-ready daily loop is:
+
+```text
+doctor -> start-work -> daily-flow replay -> next-action -> closeout evidence
+```
+
+This loop is the default readiness claim for AIOS. Portfolio-wide linked-repo certification remains useful, but AIOS should prove this local daily-use path before using itself as the release centerpiece for other repos.
+
+See [`docs/case-study.md`](docs/case-study.md) for the daily-use release proof story.
+
+## When Not To Use AIOS
+
+Skip AIOS for tiny edits, direct factual answers, one-off shell commands, or work where the context and verification path are already obvious. Use it when the task is large enough that route selection, context packets, evaluation artifacts, or durable follow-up would reduce manual orchestration.
+
 ## Local UI
 
 Start the dashboard:
@@ -86,7 +124,7 @@ http://localhost:3000/workflows
 In Codex, AIOS shadowing is automatic for non-trivial tasks. Ordinary prompts keep the current workspace as the baseline and use the AIOS lane as evidence only:
 
 ```bash
-python3 /Users/jakyeamos/AIOS/scripts/codex-aios-shadow.py "<objective>"
+/Users/jakyeamos/AIOS/bin/codex-aios-shadow "<objective>"
 ```
 
 Governed AIOS routing is command-triggered. Use `/aios` at the start of the prompt when the AIOS route and packet should govern the baseline work:
@@ -98,16 +136,16 @@ Governed AIOS routing is command-triggered. Use `/aios` at the start of the prom
 Codex should run:
 
 ```bash
-python3 /Users/jakyeamos/AIOS/scripts/codex-aios-shadow.py "<objective>" --governed-route
+/Users/jakyeamos/AIOS/bin/codex-aios-shadow "<objective>" --governed-route
 ```
 
-The helper infers the project from the current working directory, creates the routed run/packet, creates an isolated shadow worktree, and prints the follow-up inspection commands. For ordinary prompts, that route is comparison evidence only. For `/aios` prompts, that route is governing context. If the prompt is for another project while Codex is currently in the AIOS repo, include the project name:
+The wrapper is the narrow permission boundary for shadow setup and delegates to `scripts/codex-aios-shadow.py`. The helper infers the project from the current working directory, creates the routed run/packet, creates an isolated shadow worktree, scores whether the task is worth an implementation comparison, and prints the follow-up inspection commands. Eligible large/high-value tasks launch a headless `codex exec` run in the shadow worktree with `workspace-write` sandboxing and no approval prompts; small, unsafe, dirty, or unmeasurable tasks remain route-only evidence with a recorded skip reason. For ordinary prompts, that route is comparison evidence only. For `/aios` prompts, that route is governing context. If the prompt is for another project while Codex is currently in the AIOS repo, include the project name:
 
 ```text
 /aios for amos-saas: Fix the login redirect bug and verify the checks
 ```
 
-The current workspace remains the baseline source of truth. The shadow lane is comparison evidence for assessing AIOS usefulness and must not be merged or copied back without explicit review.
+The current workspace remains the baseline source of truth. The shadow lane is comparison evidence for assessing AIOS usefulness and must not be merged or copied back without explicit review. Inspect automatic shadow execution with `aios shadow status --shadow-run-id <id>` and stop it with `aios shadow cancel --shadow-run-id <id>` when needed.
 
 If automatic shadow routing exits `0` with `ok: true`, `governed_route: false`, `aios_route.status: "route_failed"`, and `aios_route.blocking: false`, continue the baseline task normally. That payload means AIOS recorded a diagnostic route miss and did not create a shadow worktree; it does not require approval to continue. Explicit approval is only needed when automatic shadow setup exits nonzero or cannot record diagnostic evidence. Governed `/aios` routing failures still block unless the user explicitly bypasses AIOS.
 
@@ -149,7 +187,7 @@ Create a compact AIOS packet and strict run/session/invocation handshake before 
 
 ```bash
 cd /Users/jakyeamos/AIOS
-python3 bin/aios.py --json start-work "Implement the scoped objective" --project <project-id>
+uv run python bin/aios.py --json start-work "Implement the scoped objective" --project <project-id>
 ```
 
 When `logs/current_session` points at an open hook-created session, the command links that session to the new run and invocation. If no open session is available, it still creates a ready run and packet for manual handoff.
@@ -178,7 +216,7 @@ Allowlisted project quality gate runner:
 
 ```bash
 cd /Users/jakyeamos/AIOS
-python3 bin/aios.py --json gate run test_quality --project soundscape-app --repo-root /Users/jakyeamos/projects/soundscape-app
+uv run python bin/aios.py --json gate run test_quality --project soundscape-app --repo-root /Users/jakyeamos/projects/soundscape-app
 ```
 
 Linked projects declare only gate IDs in `.aios-quality-gate.json`. Executable argv arrays live in AIOS-owned `config/quality-gates.json`; the global user commit hook rejects missing, malformed, or unknown gate declarations for registered source commits and never executes shell from repo-local config.
@@ -261,7 +299,7 @@ AIOS routes managed command output through the RTK compression layer:
 cd /Users/jakyeamos/AIOS
 python3 bin/rtk-run.py --mode adaptive -- pytest -q
 python3 bin/rtk-run.py --metrics --json
-python3 bin/aios.py --json rtk
+uv run python bin/aios.py --json rtk
 ```
 
 Rules live in `config/rtk/rules.json`; architecture details live in

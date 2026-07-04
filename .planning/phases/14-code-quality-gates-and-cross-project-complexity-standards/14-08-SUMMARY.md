@@ -4,12 +4,11 @@
 
 Created `/Users/jakyeamos/projects/Terrace/docs/complexity-simplification-backfill.md` and updated `/Users/jakyeamos/AIOS/docs/backfill/complexity-simplification-backfill.md` with a `Cross-Project Summary` table.
 
-The summary includes all six planned external projects:
+The summary includes the planned external projects:
 
 - `soundscape-app`
 - `portfolio`
 - `BidCamp` as the renamed live project for the planned `amos-saas` backfill
-- `GitNexus`
 - `tm`
 - `Terrace`
 

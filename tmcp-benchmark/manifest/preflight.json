@@ -169,22 +169,6 @@
         "has_quality_command": true,
         "has_start_commit": true,
         "has_test_command": false,
-        "has_typecheck_command": false,
-        "repo_exists": true
-      },
-      "eligible": false,
-      "project_id": "GitNexus",
-      "reason": "missing_required_preflight_signal",
-      "repo_path": "/Users/jakyeamos/projects/Not-mine/GitNexus"
-    },
-    {
-      "checks": {
-        "clean_worktree": false,
-        "has_lint_command": true,
-        "has_lockfile": true,
-        "has_quality_command": true,
-        "has_start_commit": true,
-        "has_test_command": false,
         "has_typecheck_command": true,
         "repo_exists": true
       },

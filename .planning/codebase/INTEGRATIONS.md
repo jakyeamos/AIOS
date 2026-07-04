@@ -198,7 +198,7 @@ Treat this as the practical reference for what AIOS talks to, reads from, or ass
 - AIOS observes other local git repositories through project inventory and health tooling.
 - `services/project_inventory.py` and quality-pipeline code treat local repo paths as first-class inputs.
 - `docs/STORES.md` explicitly states code truth lives in external repos under `~/Projects/*/`.
-- `.gitnexus/` per-repo intelligence is treated as an external read-only dependency, not a writable AIOS store.
+- CTS per-repo intelligence is treated as local derived operational data, not canonical project source.
 
 ## Practical Takeaways
 

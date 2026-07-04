@@ -30,7 +30,7 @@ uv run pytest -q
 
 ```bash
 cd aios-ui
-npm run lint
+pnpm lint
 ```
 
 - [ ] Run capability audits:
@@ -86,8 +86,8 @@ Completion gate:
 ```bash
 uv run pytest -q
 cd aios-ui
-npm run lint
-npm run build
+pnpm lint
+pnpm build
 ```
 
 ### Priority 3: Knowledge And Memory Trust
@@ -108,7 +108,7 @@ Completion gate:
 uv run python bin/aios.py --json knowledge-objects
 uv run pytest tests/test_aios_cli.py -q
 cd aios-ui
-npm run lint
+pnpm lint
 ```
 
 ### Priority 4: Integrations And Retrieval Trust
@@ -168,7 +168,7 @@ Completion gate:
 uv run pytest tests/test_standards_health.py tests/test_quality_pipeline.py -q
 uv run python bin/aios.py --json capability-audit
 cd aios-ui
-npm run lint
+pnpm lint
 ```
 
 ### Priority 7: Telemetry Trust
@@ -190,7 +190,7 @@ uv run pytest tests/test_rtk_integration.py tests/test_aios_cli.py -q
 uv run python bin/aios.py --json rtk
 uv run python bin/aios.py --json recent-failures --last 20
 cd aios-ui
-npm run lint
+pnpm lint
 ```
 
 ### Priority 8: Command Center Product Surface
@@ -210,8 +210,8 @@ Completion gate:
 
 ```bash
 cd aios-ui
-npm run lint
-npm run build
+pnpm lint
+pnpm build
 ```
 
 Then manually verify:
@@ -235,8 +235,8 @@ Completion gate:
 ```bash
 uv run pytest -q
 cd aios-ui
-npm run lint
-npm run build
+pnpm lint
+pnpm build
 ```
 
 Also run:
@@ -307,8 +307,8 @@ Unsafe parallel work:
 Do not claim tier-one status until all are true:
 
 - [ ] `uv run pytest -q` passes
-- [ ] `cd aios-ui && npm run lint` passes
-- [ ] `cd aios-ui && npm run build` passes
+- [ ] `cd aios-ui && pnpm lint` passes
+- [ ] `cd aios-ui && pnpm build` passes
 - [ ] `contracts-audit` reports no undocumented canonical contracts
 - [ ] `invocation-audit` reports target handshake coverage or explicit accepted tradeoff
 - [ ] `lifecycle-audit` reports no unsupported states

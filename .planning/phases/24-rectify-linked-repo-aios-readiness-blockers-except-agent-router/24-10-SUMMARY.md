@@ -29,4 +29,5 @@
 - Added local CI replacement proof execution through `scripts/linked-repo-ci-local-proof.py`.
 - Updated the runner so approved `ci` exceptions execute local proof commands instead of workflow YAML paths.
 - Made class-specific required gates authoritative and filled runnable commands for every remaining required gate.
+- Corrected the remaining AIOS platform setup gap by adding required `secret_scan` and `dependency_security` commands, with a regression test covering all Phase 24 in-scope required gate commands and local CI proof metadata.
 - Current report remains 20 blocked, 0 ready, and 3 excluded, but no repo is blocked by missing AIOS runner setup.

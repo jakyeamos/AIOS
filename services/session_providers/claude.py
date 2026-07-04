@@ -7,6 +7,7 @@ import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 from types import ModuleType
+from typing import Any
 
 from services.session_providers.base import (
     HealthStatus,
@@ -34,6 +35,139 @@ def _load_import_ai_history() -> ModuleType:
 
 def _now() -> str:
     return datetime.now(UTC).isoformat()
+
+
+def _read_claude_jsonl_events(path: Path) -> list[dict[str, Any]]:
+    events = []
+    with path.open(encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(event, dict):
+                events.append(event)
+    return events
+
+
+def _minimal_session_from_events(
+    path: Path, project_dir_name: str, events: list[dict[str, Any]]
+) -> dict[str, object]:
+    first_timestamp = next(
+        (str(event.get("timestamp")) for event in events if event.get("timestamp")), ""
+    )
+    cwd = next((str(event.get("cwd")) for event in events if event.get("cwd")), "")
+    model = "claude-code"
+    for event in events:
+        message = event.get("message")
+        if not isinstance(message, dict):
+            continue
+        maybe_model = message.get("model")
+        if isinstance(maybe_model, str) and maybe_model.strip():
+            model = maybe_model.strip()
+            break
+    return {
+        "session_id": path.stem,
+        "created_at": first_timestamp,
+        "cwd": cwd,
+        "model": model,
+        "project_dir": project_dir_name,
+        "messages": [],
+    }
+
+
+def _extract_claude_tool_signals(
+    events: list[object],
+) -> tuple[list[dict[str, object]], list[str], list[str]]:
+    tool_calls: list[dict[str, object]] = []
+    commands_run: list[str] = []
+    errors_extracted: list[str] = []
+    seen_commands: set[str] = set()
+    for event in events:
+        if not isinstance(event, dict) or event.get("isMeta"):
+            continue
+        message = event.get("message")
+        if not isinstance(message, dict):
+            continue
+        content = message.get("content")
+        blocks = content if isinstance(content, list) else []
+        for block in blocks:
+            if not isinstance(block, dict):
+                continue
+            block_type = block.get("type")
+            if block_type == "tool_use":
+                tool_call = _claude_tool_call(block)
+                if tool_call:
+                    tool_calls.append(tool_call)
+                    command = str(tool_call.get("command") or "")
+                    if command and command not in seen_commands:
+                        seen_commands.add(command)
+                        commands_run.append(command)
+            elif block_type == "tool_result":
+                error = _claude_tool_result_error(block)
+                if error:
+                    errors_extracted.append(error)
+    return tool_calls, commands_run, errors_extracted
+
+
+def _claude_tool_call(block: dict[str, object]) -> dict[str, object] | None:
+    tool_name = str(block.get("name") or "")
+    tool_input = block.get("input")
+    input_dict = tool_input if isinstance(tool_input, dict) else {}
+    command = input_dict.get("command")
+    description = input_dict.get("description")
+    call_id = block.get("id")
+    if not tool_name and not command:
+        return None
+    return {
+        "tool": tool_name,
+        "id": str(call_id or ""),
+        "command": str(command or ""),
+        "description": str(description or ""),
+    }
+
+
+def _claude_tool_result_error(block: dict[str, object]) -> str | None:
+    text = _claude_tool_result_text(block.get("content"))
+    if not text:
+        return None
+    lowered = text.lower()
+    is_error = bool(block.get("is_error")) or any(
+        marker in lowered
+        for marker in (
+            "process exited with code 1",
+            "exit code 1",
+            "error:",
+            "failed",
+            "exception",
+            "traceback",
+        )
+    )
+    if not is_error:
+        return None
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if not lines:
+        return None
+    if lines[0].lower().startswith("process exited with code") and len(lines) > 1:
+        return f"{lines[0]}: {' '.join(lines[1:])}"[:500]
+    return " ".join(lines)[:500]
+
+
+def _claude_tool_result_text(value: object) -> str:
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, list):
+        parts = []
+        for item in value:
+            if isinstance(item, str):
+                parts.append(item.strip())
+            elif isinstance(item, dict) and isinstance(item.get("text"), str):
+                parts.append(str(item["text"]).strip())
+        return "\n".join(part for part in parts if part)
+    return ""
 
 
 class ClaudeProvider(SessionProvider):
@@ -76,9 +210,11 @@ class ClaudeProvider(SessionProvider):
 
     def extract_raw_session(self, source: SourcePath) -> RawSession:
         project_dir_name = source.path.parent.name
+        events = _read_claude_jsonl_events(source.path)
         session = self._import_ai_history.load_claude_code_session(source.path, project_dir_name)
         if session is None:
-            return RawSession(provider=self.provider_id, source=source, payload={})
+            session = _minimal_session_from_events(source.path, project_dir_name, events)
+        session["_events"] = events
         return RawSession(provider=self.provider_id, source=source, payload=session)
 
     def normalize_session(self, raw: RawSession) -> NormalizedSession:
@@ -96,6 +232,9 @@ class ClaudeProvider(SessionProvider):
                         "time": message.get("time") or 0,
                     }
                 )
+        events = raw.payload.get("_events")
+        event_list = events if isinstance(events, list) else []
+        tool_calls, commands_run, errors_extracted = _extract_claude_tool_signals(event_list)
         content_hash = self.compute_fingerprint_from_payload(raw.payload)
         source_path = str(raw.source.path)
         stat = raw.source.path.stat()
@@ -115,16 +254,19 @@ class ClaudeProvider(SessionProvider):
             title=session_id,
             participants=["user", "assistant"],
             messages=messages,
-            tool_calls=[],
+            tool_calls=tool_calls,
             file_edits=[],
-            commands_run=[],
+            commands_run=commands_run,
             decisions_extracted=[],
             todos_extracted=[],
-            errors_extracted=[],
+            errors_extracted=errors_extracted,
             summary_status="pending",
             writeback_status="pending",
             confidence=0.6 if messages else 0.0,
-            provider_metadata={"model": raw.payload.get("model")},
+            provider_metadata={
+                "model": raw.payload.get("model"),
+                "tool_call_count": len(tool_calls),
+            },
         )
 
     def compute_fingerprint(self, normalized: NormalizedSession) -> str:

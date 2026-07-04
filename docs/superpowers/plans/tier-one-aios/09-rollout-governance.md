@@ -111,7 +111,7 @@ git commit -m "docs: record tier-one planning pack"
 Before milestone close:
 
 - [ ] run `uv run pytest -q`
-- [ ] run `cd aios-ui && npm run lint`
+- [ ] run `cd aios-ui && pnpm lint`
 - [ ] run `uv run python bin/aios.py --json contracts-audit`
 - [ ] run `uv run python bin/aios.py --json capability-audit`
 - [ ] inspect `git status --short` and account for unrelated dirty files

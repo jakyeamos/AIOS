@@ -226,7 +226,6 @@ These are package marker files, so the quality-eval finding is informational rat
 | soundscape-app | `/Users/jakyeamos/projects/soundscape-app/docs/complexity-simplification-backfill.md` | 2026-06-23 | 0 | 3 | 2 |
 | portfolio | `/Users/jakyeamos/projects/portfolio/docs/complexity-simplification-backfill.md` | 2026-06-23 | 0 | 2 | 1 |
 | BidCamp (formerly amos-saas) | `/Users/jakyeamos/projects/BidCamp/docs/complexity-simplification-backfill.md` | 2026-06-23 | 0 | 3 | 2 |
-| GitNexus | `/Users/jakyeamos/projects/Not-mine/GitNexus/docs/complexity-simplification-backfill.md` | 2026-06-23 | 0 | 4 | 2 |
 | tm | `/Users/jakyeamos/projects/tm/docs/complexity-simplification-backfill.md` | 2026-06-23 | 0 | 2 | 3 |
 | Terrace | `/Users/jakyeamos/projects/Terrace/docs/complexity-simplification-backfill.md` | 2026-06-23 | 3 | 2 | 1 |
 

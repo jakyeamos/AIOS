@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-06-26
+Last updated: 2026-07-02
 
 ## What AIOS Is
 
@@ -33,6 +33,78 @@ The repository currently contains five meaningful subsystems:
    The file-backed contract layer for inner/outer context learning loops: approved/rejected lessons, review taxonomy, retrieval policy, examples, and email pilot guidance.
 
 Root operator documentation now lives in `README.md`, including local UI launch commands, key UI routes, store paths, workflow proposal backfill, and verification commands.
+
+## Implemented On 2026-07-03
+
+Codex daily session intelligence now has a first-class review-only wrapper:
+
+- `python bin/aios.py session-intel daily-codex --json` encapsulates `.venv/bin/python /Users/jakyeamos/AIOS/bin/aios.py session-intel run --provider codex --since last --write-report --json`
+- the wrapper always runs Codex `since=last` with report writing enabled, returns a clean `report_paths` object for Markdown, JSON, and canonical daily decision reports, and preserves the underlying per-run report fields for compatibility
+- behavior remains review-only: the wrapper creates or updates pending-review candidates and report artifacts without approving, rejecting, implementing, installing, generating, or applying candidate artifacts
+- tests cover parser support, wrapped-command metadata, report path materialization, persisted `provider=codex` / `scanned_range=last`, pending-review candidate state, and absence of implementation or review-event side effects
+
+## Implemented On 2026-07-02
+
+Codex session-intelligence helper-family adoption now creates real deterministic helper command surfaces:
+
+- `python bin/aios.py session-intel helper list` lists adopted helper-family presets from `session_intelligence_implementations`, including candidate coverage, telemetry state, removal state, and artifact reference
+- `python bin/aios.py session-intel helper run --family doc_excerpt --path <file> --start-line <n> --end-line <n>` performs bounded line-oriented file excerpts with stable line numbers and a 500-line cap
+- `artifact_probe` summarizes JSON and CSV artifacts with deterministic metadata such as SHA-256, size, top-level JSON keys, array lengths, CSV headers, and row count
+- `repo_state` and `git_history` run fixed read-only Git probes for branch/status/diff evidence and recent history evidence without executing arbitrary candidate commands
+- `package_check` reads package-manager authority from `package.json` and committed lockfiles, surfaces scripts and likely quality scripts, and does not infer capability from `node_modules`
+- `deployment_flow`, `bespoke_review`, and `workflow_skill` now have deterministic inspection surfaces for deployment evidence, low-shape review triage, and workflow-skill candidate review instead of remaining database-only adoption records
+- behavior is split by helper-family responsibility with no intentional behavior changes to existing session-intel run/candidates/clusters/mark/implement flows
+- tests cover parser support, adopted-family listing, bounded excerpts, JSON/CSV artifact probing, and package-check lockfile/script reporting
+
+Codex repo-state closeout now has a narrow deterministic helper:
+
+- `python bin/aios.py repo closeout --repo <path>` prints one stable closeout report with branch, full HEAD SHA, dirty flag, dirty files in Git porcelain format, diff stat, and recent commit titles
+- `python bin/aios.py --json repo closeout --repo <path>` exposes the same state as `aios-repo-closeout-v0.1` JSON for agent workflows and future automation
+- the helper is read-only and lives under the existing `repo` command family beside `repo inspect`, based on session-intelligence evidence that repeated `git status` and `git diff --stat` inspection created closeout friction
+- `daily-flow --run-id` now attaches the helper payload to the canonical run step as `metadata.repo_closeout` when the run's project has a known `projects.repo_path`, preserving the eight-step daily-flow order while surfacing repo state in closeout traces
+- `aios-ui/server/aios/daily-flow.ts` mirrors the same `aios-repo-closeout-v0.1` shape, and `DailyFlowTrace` renders repo path, branch, short HEAD, dirty-file count, and diff stat on Command Center and run-detail surfaces
+- tests cover the helper payload, CLI renderer, daily-flow service replay payload, and daily-flow CLI JSON replay against a real temporary Git repository, including preserved porcelain status spacing and normalized diff-stat lines
+
+AIOS Vaults validation is now trust-tier aware:
+
+- `scripts/content-container-validator.py --project Vaults` reports category-specific findings for unsafe content, missing trusted-note metadata, stale trusted notes, raw notes in trusted areas, broken trusted wikilinks, and quarantine candidates
+- validator output redacts secret-like and phone-like path segments before printing findings, so path-based reports do not leak likely secrets
+- archive, quarantine, raw personal corpus, and generated session handoffs no longer create trusted-wikilink noise unless explicitly promoted through trust metadata
+- Obsidian path-style wikilinks now resolve against stem, vault-relative path, and repo-relative path targets, commented template examples are ignored, and generated `.aios/audit` Markdown is treated as raw hook output instead of trusted-note metadata debt
+- `tests/test_content_container_validator.py` covers trusted metadata findings, trusted-only wikilink checks, path-style wikilink resolution, commented wikilink suppression, generated audit Markdown classification, archive noise suppression, and redacted secret-like quarantine candidates
+- verification: `UV_CACHE_DIR=/tmp/uv-cache uv run pytest -q tests/test_content_container_validator.py` and `UV_CACHE_DIR=/tmp/uv-cache uv run ruff check scripts/content-container-validator.py tests/test_content_container_validator.py`
+
+## Implemented On 2026-07-01
+
+AIOS daily-use release readiness is now the primary near-term product target:
+
+- `bin/aios.py` can fall back to `uv run` when direct `python3 bin/aios.py ...` invocation cannot import extracted local path dependencies, preserving the documented direct help/smoke contract
+- `uv run python bin/aios.py --json doctor` now reports a local release-readiness preflight covering extracted Python package imports, SQLite reachability, local store directories, pnpm-only package-manager state, context compiler package access, and the required daily-use command surface
+- behavior tests cover direct CLI help, health JSON, doctor pass/fail output, and the integrated daily loop: `start-work` creates route/packet/run/invocation ids, `daily-flow --run-id` replays the eight canonical evidence steps, and `next-action --project` returns project-scoped follow-up work
+- the AIOS UI quality workflow now uses pnpm/corepack with `aios-ui/pnpm-lock.yaml`; root and UI package manifests declare `packageManager: pnpm@11.7.0`; the stale `aios-ui/package-lock.json` npm lockfile has been removed
+- `README.md` now leads with the daily-use loop and a "When Not To Use AIOS" boundary so tiny edits and direct answers do not route through the operating layer by default
+- `docs/case-study.md` records the daily-use release proof story, architecture loop, safety boundary, release evidence, and known limits
+- linked-repo Phase 29 certification remains valuable, but it is no longer the release centerpiece until AIOS itself passes the daily-use readiness path consistently
+
+AIOS shadow setup now separates clean worktree creation from missing implementation evidence:
+
+- `codex-aios-shadow` and `aios shadow create-worktree` verify the new shadow branch against the captured start SHA before recording the initial shadow row
+- a newly created shadow lane can report `contamination_check_passed: true` while still reporting `parity_checklist_status: no_evidence` until the shadow prompt has actually run
+- this removes the misleading initial contamination warning that made automatic shadow procedures look untrustworthy even when the worktree was clean
+
+## Implemented On 2026-06-30
+
+Codex session intelligence scans now write a canonical daily decision report:
+
+- `session-intel run --write-report` still emits the per-run Markdown and JSON artifacts, and now also returns `decision_report_path`
+- the canonical report is provider-specific at `data/session-intelligence/reports/{provider}-daily-candidate-decisions.md`, so the daily Codex automation updates `codex-daily-candidate-decisions.md` in place
+- the decision report separates `New in latest scan` from `All pending candidates`, so small `--since last` runs do not hide the cumulative pending backlog
+- both decision sections are grouped by `friction_tool`, `workflow_skill`, and `impact_idea`, with pending-review counts, candidate ids, impact/confidence, proposed artifact type, next decision, summaries, and redacted evidence excerpts
+- each pending candidate now includes an anecdotal setting narrative that explains what the candidate would help with in a concrete future work scenario
+- friction-tool candidates are rolled up by reusable helper family, such as `repo_state`, `git_history`, `artifact_probe`, `doc_excerpt`, `package_check`, and `deployment_flow`, before individual candidate details; each family carries candidate count, impact/confidence summary, and a shared-preset recommendation before any one-off helper is considered
+- the daily decision report now includes an implementation telemetry contract and a `Removal Candidates` section, so approved future helpers/skills/workflows should be measured for benefit and later surfaced for removal when telemetry shows neutral or negative value
+- operators can now run `session-intel implement` to adopt pending or approved candidates into telemetry-tracked helper-family implementation records; the current Codex backlog is covered by seven monitored families (`doc_excerpt`, `bespoke_review`, `artifact_probe`, `package_check`, `deployment_flow`, `git_history`, and `repo_state`) with removal monitoring and no remaining pending-review candidates at the time of adoption
+- behavior is intentionally review-only: the report surfaces candidate decisions without approving, rejecting, installing, generating, or applying candidate artifacts
 
 ## Implemented On 2026-06-25
 
@@ -102,9 +174,8 @@ AIOS linked-project adoption contracts now cover the active source inventory:
 - `repo_gate_adoption_v1` now treats full lint and full test failures as strict clearance work. Generated lint/test phases require clearing inherited baseline failures across the repo, focused checks are only interim debugging proof, and final certification cannot classify a repo as `adoption_ready` while full lint or full tests still fail from an inherited baseline.
 - `repo_gate_adoption_v1` now models tier-one quality with fifteen broad certification rubrics and corresponding first-class gate rows where commands/proof are actionable: build/package integrity, runtime smoke, complexity/simplification, anti-slop/product quality, architecture boundaries, test value, UI visual/runtime verification, dead code, security/secret handling, dependency risk, truth/docs accuracy, CI/local proof, release/rollback readiness, data/state integrity, and observability/debuggability.
 - The complexity/simplification rubric now treats thermo/simplifier skills as the expert audit engine, not the whole gate: final proof requires concrete hotspots, implementation phases for blockers, runtime/product/architecture/over-abstraction review, lint/typecheck/test/build/runtime verification, and accepted exceptions only with rationale and expiry.
-- Repo quality certification now lives in a standalone repository at `/Users/jakyeamos/repo-quality-certifier`, with remote `git@github.com:jakyeamos/repo-quality-certifier.git`. AIOS consumes it through a `repo-quality-certifier @ file:///Users/jakyeamos/repo-quality-certifier` path dependency; `services/repo_gate_adoption.py` remains the AIOS adapter that injects TMCP enrichment while preserving existing workflow and CLI callers.
-- `repo-quality-certifier` now has repo-ready product surfaces outside AIOS: `repo-quality-certifier` and `repo-quality-certifier-mcp` console scripts, dependency-free JSON-RPC MCP-shaped tools for plan/doc-quality, a plugin manifest plus skill file, package-data metadata, and external fixture tests proving CLI/MCP/plugin contracts without AIOS runtime imports.
-- Shared quality evidence/finding normalization now lives in the standalone repository `/Users/jakyeamos/quality-evidence-contract`, with remote `git@github.com:jakyeamos/quality-evidence-contract.git`. AIOS consumes it through a `quality-evidence-contract @ file:///Users/jakyeamos/quality-evidence-contract` path dependency; `services.success_criteria` still owns AIOS registry and storage behavior, but stage/evaluation findings now carry an additive nested `quality_contract` payload for portable downstream consumers.
+- Quality Runner supersedes the older repo-quality-certifier and quality-evidence-contract path dependencies for AIOS consumption. AIOS now consumes `/Users/jakyeamos/projects/quality-runner` through one `quality-runner` path dependency, while Quality Runner carries the compatibility imports, CLI/MCP tools, and plugin metadata required by existing `quality_evidence_contract` and `repo_quality_certifier` callers.
+- `services/repo_gate_adoption.py` remains the AIOS adapter that injects TMCP enrichment while preserving existing workflow and CLI callers. The underlying deterministic scan, gate matrix, rubric, rollout, doc-quality, evidence-normalization, and old certifier/evidence compatibility surfaces are now provided by the Quality Runner installable package.
 - `bin/aios.py` now re-enters the project virtualenv before loading service modules, so `python3 bin/aios.py ...` command paths can resolve the newly externalized local path dependencies.
 - Context compiler contract validation now lives in the standalone repository `/Users/jakyeamos/context-compiler-contract`, with remote `git@github.com:jakyeamos/context-compiler-contract.git`. AIOS consumes it through a `context-compiler-contract` local file dependency while keeping `tools/context-compile.mjs`, context source selection, ranking, receipt writing, and context-root assumptions inside AIOS.
 - The context compiler contract validator now treats malformed routing-manifest source lists as validation issues instead of throwing, based on the standalone extraction test suite.
@@ -967,9 +1038,9 @@ The tier-one audit fix pass has started with capability trust gates before UI po
 - Managed runtime closeout now has direct start and closeout guards in `bin/aios-managed-run.py` so hook-side evaluator failures cannot leave authoritative runs stuck in `ready`; `tests/test_orchestration_runtime.py::test_managed_runtime_completes_via_explicit_handshake` and the full Python suite now pass.
 - Managed runtime closeout now has an explicit regression for authoritative closeout repair: `tests/test_orchestration_runtime.py::test_managed_closeout_repairs_authoritative_run_state` verifies a run left in `ready` is completed with the correct session, invocation, closeout event, and closed session state.
 - Workflow learning audit now recognizes inferred durable evidence from workflow reports, memory updates, standards snapshots, success evaluations, and session artifacts linked through runs; the live audit moved from 110 no-learning terminal runs to 96 inferred evidence records and 14 no-learning runs.
-- Priority standards-health snapshots were regenerated for AIOS, Terrace, amos-saas, portfolio, and soundscape-app using `services.standards_health.evaluate_and_record(..., trigger_kind="tier_one_priority_audit")`; the current priority scores are AIOS 64.8, Terrace 63.2, amos-saas 63.2, portfolio 72.8, and soundscape-app 63.2. GitNexus is not present in the current project inventory.
-- `aios prove-project-health --json` now records repeatable tier-one standards-health proof snapshots for the six proving projects and reports missing inventory/source explicitly; the live proof recorded snapshots for AIOS 68.0, soundscape-app 63.2, Terrace 63.2, portfolio 72.8, and amos-saas 63.2, while GitNexus is `missing_source` because `/Users/jakyeamos/Projects/GitNexus` is absent.
-- `aios prove-project-health --all-inventory --json` now processes every inventory row by project id, including duplicate project names; the live all-inventory proof recorded 27 standards-health snapshots and left only concrete missing-source findings for `Bball`, the duplicate `Terrace ` path with trailing whitespace, `sleeper_league_pack`, and absent configured `GitNexus`.
+- Priority standards-health snapshots were regenerated for AIOS, Terrace, amos-saas, portfolio, and soundscape-app using `services.standards_health.evaluate_and_record(..., trigger_kind="tier_one_priority_audit")`; the current priority scores are AIOS 64.8, Terrace 63.2, amos-saas 63.2, portfolio 72.8, and soundscape-app 63.2.
+- `aios prove-project-health --json` now records repeatable tier-one standards-health proof snapshots and reports missing inventory/source explicitly; the live proof recorded snapshots for AIOS 68.0, soundscape-app 63.2, Terrace 63.2, portfolio 72.8, and amos-saas 63.2.
+- `aios prove-project-health --all-inventory --json` now processes every inventory row by project id, including duplicate project names; the live all-inventory proof recorded 27 standards-health snapshots and left only concrete missing-source findings for `Bball`, the duplicate `Terrace ` path with trailing whitespace, and `sleeper_league_pack`.
 - `aios sync-automation-history --json` now imports durable daily pipeline evidence from `logs/pipeline.log` into `automation_run_history`; the live sync parsed 3 runs and the capability audit now reports no automation-history findings, with Daily ingest status confirmed from history as latest `healthy`, success rate 0.667, and urgency `watch`.
 - RTK metrics now separate total telemetry from eligible compression telemetry using the configured compression threshold, so short pass-through outputs are counted as ineligible instead of token-regressive compression attempts; the live RTK state remains `token_regressive` because one eligible historical event is still net-regressive, while 2 of 3 events are now classified as pass-through/ineligible.
 - Prompt Library visibility is now backed by the existing prompt sync path: `bin/sync-prompts.py` copied 5 prompt templates into the configured vault template directory and created 5 `prompt_library_links` rows, removing the `prompt_library_empty` finding from the live capability audit.
@@ -1552,7 +1623,7 @@ The wiki/DeepWiki-style knowledge layer now has a minimum maintenance contract f
 - deeper packet/result inspection at file/topic delta level
 - richer Taski operator controls beyond summary, approvals, run/evaluator inspection, and standards backfill visibility
 - legacy heuristic run matching still exists only as a fallback for older sessions that lack explicit handshake metadata
-- linked-project profile ratchet completion (`BidCamp`, `soundscape-app`, `GitNexus`, `Terrace`, `portfolio`) so each has native profile config + CI wiring in-repo
+- linked-project profile ratchet completion (`BidCamp`, `soundscape-app`, `Terrace`, `portfolio`) so each has native profile config + CI wiring in-repo
 
 ## Spec Roadmap Corrections On 2026-04-23
 
@@ -1693,3 +1764,10 @@ The spec execution roadmap has been corrected before execution:
 - Expanded packets replace `run_state["tmcp_packet"]` for subsequent workflow stages, and workflow reports expose `tmcp_packet_expansions` plus per-stage `tmcp_expansion` evidence for operator inspection.
 - Managed runtime packet artifacts now sync to the final active TMCP receipt while superseded initial receipts remain durable evidence, including cases where a promoted shortcut was used before phase-specific expansion.
 - Verification: focused TMCP/workflow/orchestration suites passed (`97 passed`), focused Ruff passed, focused Basedpyright passed with 0 errors, and `pnpm context:validate` passed.
+
+## 2026-07-01 - Automatic Codex shadow execution
+
+- `scripts/codex-aios-shadow.py` now scores each created shadow lane and auto-launches headless `codex exec` only for good/excellent candidates, while blocked, small, dirty, unsafe, or unmeasurable tasks remain route-only evidence with a recorded skip reason.
+- `services/shadow_codex_runner.py` owns the v1 execution backend: command construction, `workspace-write` sandboxing, `--ask-for-approval never`, JSONL/final-message artifact paths, detached launch metadata, status checks, and cancellation.
+- `shadow_branch_runs` now records execution status, backend, pid, command, output paths, timestamps, and execution metadata; `aios shadow run/status/cancel` exposes those controls without promoting shadow output.
+- Current truth: AIOS shadowing can now collect implementation evidence opportunistically during normal Codex work, but the baseline workspace remains the source of truth and shadow output must not be merged or copied back without explicit review.

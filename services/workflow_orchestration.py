@@ -36,6 +36,21 @@ from services.personalized_humanizer import (
     score_quality,
     transform_text,
 )
+from services.planning_workflow_detection import detect_planning_workflow
+from services.repo_gate_adoption import (
+    build_gate_matrix,
+    build_gate_rollout_plan,
+    build_rubric_pack,
+    build_tmcp_expert_enrichment,
+    gate_adoption_output_dir,
+    scan_repo_gate_facts,
+    validate_gate_matrix,
+    validate_gate_rollout_plan,
+    validate_repo_scan,
+    validate_rubric_pack,
+    validate_tmcp_expert_enrichment,
+    write_gate_adoption_artifacts,
+)
 from services.rtk_integration import load_compression_rules
 from services.semantic_workflow_routing import (
     SemanticWorkflowReasoner,
@@ -53,7 +68,9 @@ WORKFLOW_TASK_FAMILIES = {
     "implementation-delivery": "audit_and_implement",
     "failure-recovery": "audit_and_implement",
     "expert_rubric_remediation_v1": "audit_and_plan",
+    "repo_gate_adoption_v1": "audit_and_plan",
     "developer-experience-pack": "developer_experience",
+    "planning-governance": "audit_and_implement",
 }
 DX_CAPABILITY_IDS = {
     "dx_optimizer",
@@ -947,8 +964,10 @@ def rank_workflow_candidates(
         "analyze",
         "architecture",
         "audit",
+        "evaluate",
         "investigate",
         "investigation",
+        "judge",
         "review",
         "strategy",
     }
@@ -959,6 +978,15 @@ def rank_workflow_candidates(
         "rubric",
         "scorecard",
         "tmcp",
+    }
+    gate_adoption_terms = {
+        "adoption",
+        "commit",
+        "gate",
+        "gates",
+        "pre-cr",
+        "readiness",
+        "repo",
     }
     routing_diagnostic_terms = {
         "candidate",
@@ -978,6 +1006,19 @@ def rank_workflow_candidates(
     recovery_evidence = _has_any_word(objective_text, recovery_terms)
     analysis_evidence = _has_any_word(objective_text, analysis_terms)
     expert_review_evidence = _has_any_word(objective_text, expert_review_terms)
+    gate_adoption_evidence = _has_any_word(objective_text, gate_adoption_terms) and any(
+        phrase in objective_text
+        for phrase in (
+            "commit gate",
+            "commit gates",
+            "gate adoption",
+            "gate readiness",
+            "quality gate",
+            "quality gates",
+            "repo adoption",
+            "repo gate",
+        )
+    )
     routing_diagnostic_evidence = _has_any_word(objective_text, routing_diagnostic_terms) or any(
         phrase in objective_text
         for phrase in (
@@ -999,6 +1040,19 @@ def rank_workflow_candidates(
     )
     content_evidence = _has_any_word(objective_text, content_terms)
     transformation_evidence = _has_any_word(objective_text, transformation_terms)
+    planning_detection = detect_planning_workflow(objective)
+    gsd_planning_evidence = (
+        planning_detection.workflow == "gsd"
+        and planning_detection.phase == "plan"
+        and planning_detection.output_format == "gsd_ready_plan"
+        and "configured_gsd_alias" in planning_detection.signals
+    )
+    gsd_execution_evidence = (
+        planning_detection.workflow == "gsd"
+        and planning_detection.phase == "implement"
+        and planning_detection.output_format == "gsd_ready_execution_plan"
+        and "configured_gsd_alias" in planning_detection.signals
+    )
     candidates: list[WorkflowRouteCandidate] = []
 
     for workflow in workflows.values():
@@ -1008,6 +1062,12 @@ def rank_workflow_candidates(
         if workflow.workflow_family == "audit_and_implement" and implementation_evidence:
             score += 6
             evidence_reasons.append("implementation evidence")
+        if workflow.key == "implementation-delivery" and gsd_execution_evidence:
+            score += 13
+            evidence_reasons.append(
+                "GSD command evidence"
+                f" ({planning_detection.matched_alias or 'configured execution alias'})"
+            )
         if workflow.workflow_family == "failure_recovery" and recovery_evidence:
             score += 7
             evidence_reasons.append("failure-recovery evidence")
@@ -1027,6 +1087,15 @@ def rank_workflow_candidates(
             evidence_reasons.append("expert audit-plan evidence")
             if implementation_evidence:
                 score -= 2
+        if workflow.key == "repo_gate_adoption_v1" and gate_adoption_evidence:
+            score += 13
+            evidence_reasons.append("repo gate adoption evidence")
+        if workflow.workflow_family == "planning_governance" and gsd_planning_evidence:
+            score += 14
+            evidence_reasons.append(
+                "planning detection evidence"
+                f" ({planning_detection.matched_alias or 'unaliased GSD planning'})"
+            )
         if (
             workflow.workflow_family == "content_generation"
             and content_evidence
@@ -1806,6 +1875,112 @@ def _execute_skill(
             remediation_plan if isinstance(remediation_plan, dict) else {}
         )
 
+    if skill.key == "repo_gate_fact_scanner":
+        run_id = context.run_id or "repo-gate-adoption-preview"
+        repo_root = Path(context.repo_path or ".").expanduser().resolve()
+        repo_scan = scan_repo_gate_facts(repo_root, run_id=run_id)
+        state["repo_gate_scan"] = repo_scan
+        return {"repo_scan": repo_scan}, validate_repo_scan(repo_scan)
+
+    if skill.key == "repo_gate_matrix_synthesizer":
+        repo_scan = state.get("repo_gate_scan")
+        if not isinstance(repo_scan, dict):
+            raise ValueError("repo_gate_matrix_synthesizer requires repo_gate_scan")
+        gate_matrix = build_gate_matrix(
+            scan=repo_scan,
+            run_id=context.run_id or "repo-gate-adoption-preview",
+        )
+        state["repo_gate_matrix"] = gate_matrix
+        return {"gate_matrix": gate_matrix}, None
+
+    if skill.key == "repo_tmcp_expert_enricher":
+        repo_scan = state.get("repo_gate_scan")
+        gate_matrix = state.get("repo_gate_matrix")
+        if not isinstance(repo_scan, dict):
+            raise ValueError("repo_tmcp_expert_enricher requires repo_gate_scan")
+        if not isinstance(gate_matrix, dict):
+            raise ValueError("repo_tmcp_expert_enricher requires repo_gate_matrix")
+        tmcp_enrichment = build_tmcp_expert_enrichment(
+            scan=repo_scan,
+            gate_matrix=gate_matrix,
+            run_id=context.run_id or "repo-gate-adoption-preview",
+        )
+        state["repo_tmcp_expert_enrichment"] = tmcp_enrichment
+        return {
+            "tmcp_expert_enrichment": tmcp_enrichment,
+        }, validate_tmcp_expert_enrichment(tmcp_enrichment)
+
+    if skill.key == "repo_quality_rubric_pack_builder":
+        repo_scan = state.get("repo_gate_scan")
+        gate_matrix = state.get("repo_gate_matrix")
+        tmcp_enrichment = state.get("repo_tmcp_expert_enrichment")
+        if not isinstance(repo_scan, dict):
+            raise ValueError("repo_quality_rubric_pack_builder requires repo_gate_scan")
+        if not isinstance(gate_matrix, dict):
+            raise ValueError("repo_quality_rubric_pack_builder requires repo_gate_matrix")
+        rubric_pack = build_rubric_pack(
+            scan=repo_scan,
+            gate_matrix=gate_matrix,
+            run_id=context.run_id or "repo-gate-adoption-preview",
+            tmcp_enrichment=tmcp_enrichment if isinstance(tmcp_enrichment, dict) else None,
+        )
+        state["repo_quality_rubric_pack"] = rubric_pack
+        return {"rubric_pack": rubric_pack}, validate_rubric_pack(rubric_pack)
+
+    if skill.key == "repo_gate_rollout_planner":
+        gate_matrix = state.get("repo_gate_matrix")
+        if not isinstance(gate_matrix, dict):
+            raise ValueError("repo_gate_rollout_planner requires repo_gate_matrix")
+        rubric_pack = state.get("repo_quality_rubric_pack")
+        if not isinstance(rubric_pack, dict):
+            raise ValueError("repo_gate_rollout_planner requires repo_quality_rubric_pack")
+        run_id = context.run_id or "repo-gate-adoption-preview"
+        rollout_plan = build_gate_rollout_plan(
+            gate_matrix=gate_matrix,
+            run_id=run_id,
+            rubric_pack=rubric_pack,
+        )
+        repo_root = Path(context.repo_path or ".").expanduser().resolve()
+        output_dir = gate_adoption_output_dir(repo_root, run_id)
+        paths = write_gate_adoption_artifacts(
+            output_dir=output_dir,
+            repo_root=repo_root,
+            repo_scan=state.get("repo_gate_scan") or {},
+            gate_matrix=gate_matrix,
+            rubric_pack=rubric_pack,
+            rollout_plan=rollout_plan,
+        )
+        state["repo_gate_rollout_plan"] = rollout_plan
+        state["repo_gate_adoption_artifact_paths"] = {key: str(path) for key, path in paths.items()}
+        return {
+            "rollout_plan": rollout_plan,
+            "artifact_paths": state["repo_gate_adoption_artifact_paths"],
+        }, None
+
+    if skill.key == "repo_gate_scan_has_evidence":
+        repo_scan = state.get("repo_gate_scan")
+        return {}, validate_repo_scan(repo_scan if isinstance(repo_scan, dict) else {})
+
+    if skill.key == "gate_matrix_has_core_gates":
+        gate_matrix = state.get("repo_gate_matrix")
+        return {}, validate_gate_matrix(gate_matrix if isinstance(gate_matrix, dict) else {})
+
+    if skill.key == "rubric_pack_has_broad_and_gate_rubrics":
+        rubric_pack = state.get("repo_quality_rubric_pack")
+        return {}, validate_rubric_pack(rubric_pack if isinstance(rubric_pack, dict) else {})
+
+    if skill.key == "tmcp_expert_enrichment_has_sufficiency_status":
+        tmcp_enrichment = state.get("repo_tmcp_expert_enrichment")
+        return {}, validate_tmcp_expert_enrichment(
+            tmcp_enrichment if isinstance(tmcp_enrichment, dict) else {}
+        )
+
+    if skill.key == "gate_rollout_has_phases":
+        rollout_plan = state.get("repo_gate_rollout_plan")
+        return {}, validate_gate_rollout_plan(
+            rollout_plan if isinstance(rollout_plan, dict) else {}
+        )
+
     if skill.key == "scope_check":
         result = _validate_scope(
             context.objective,
@@ -2127,6 +2302,15 @@ def execute_workflow(
             "expert_remediation_plan": run_state.get("expert_remediation_plan"),
             "expert_implementation_handoff": run_state.get("expert_implementation_handoff"),
             "expert_review_artifact_paths": run_state.get("expert_review_artifact_paths", {}),
+            "repo_gate_scan": run_state.get("repo_gate_scan"),
+            "repo_gate_matrix": run_state.get("repo_gate_matrix"),
+            "repo_tmcp_expert_enrichment": run_state.get("repo_tmcp_expert_enrichment"),
+            "repo_quality_rubric_pack": run_state.get("repo_quality_rubric_pack"),
+            "repo_gate_rollout_plan": run_state.get("repo_gate_rollout_plan"),
+            "repo_gate_adoption_artifact_paths": run_state.get(
+                "repo_gate_adoption_artifact_paths",
+                {},
+            ),
         },
         "rtk": {
             "interface": rtk_rules.get(

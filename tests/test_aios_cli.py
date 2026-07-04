@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import argparse
 import json
 import sqlite3
+import subprocess
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
@@ -18,6 +19,24 @@ from services import standards_health, success_criteria  # noqa: E402
 from services.aios_cli import EXIT_OK, run_cli  # noqa: E402
 from services.eval_run_service import create_eval_task  # noqa: E402
 from services.rtk_integration import ensure_rtk_schema  # noqa: E402
+
+
+def _git(repo: Path, *args: str) -> None:
+    subprocess.run(["git", *args], cwd=repo, check=True, stdout=subprocess.PIPE, text=True)
+
+
+def _sample_closeout_repo(tmp_path: Path) -> Path:
+    repo = tmp_path / "closeout-repo"
+    repo.mkdir()
+    _git(repo, "init")
+    _git(repo, "config", "user.email", "aios@example.local")
+    _git(repo, "config", "user.name", "AIOS Tests")
+    (repo / "README.md").write_text("# Sample\n", encoding="utf-8")
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-m", "initial")
+    (repo / "README.md").write_text("# Sample\n\nChanged.\n", encoding="utf-8")
+    (repo / "new.txt").write_text("new\n", encoding="utf-8")
+    return repo
 
 
 def _seed_db(path: Path) -> None:
@@ -411,7 +430,7 @@ def _memory_conn() -> sqlite3.Connection:
 
 
 def test_dx_pack_report_template_matches_required_closeout_sections() -> None:
-    payload = aios_cli._dx_pack_payload(SimpleNamespace(report_template=True))
+    payload = aios_cli._dx_pack_payload(argparse.Namespace(report_template=True))
 
     template = payload["implementation_report_template"]
     assert template["title"] == "Developer Experience Pack Implementation Report"
@@ -615,6 +634,118 @@ def test_status_and_recent_failures_json(tmp_path: Path, capsys) -> None:
     assert status_output["ok"] is True
     assert status_output["command"] == "status"
     assert status_output["data"]["resumable_runs"] == []
+
+
+def test_direct_bin_aios_help_contract() -> None:
+    completed = subprocess.run(
+        [sys.executable, str(ROOT / "bin" / "aios.py"), "--help"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0
+    assert "AIOS unified JSON-first CLI" in completed.stdout
+
+
+def test_health_json_release_contract(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "health",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    output = json.loads(capsys.readouterr().out)
+    assert output["ok"] is True
+    assert output["command"] == "health"
+    assert output["data"]["checks"]["db_reachable"] is True
+
+
+def test_doctor_json_reports_release_preflight(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    vault_root = tmp_path / "vault"
+    ui_root = tmp_path / "aios-ui"
+    logs_dir.mkdir()
+    vault_root.mkdir()
+    ui_root.mkdir()
+    (ui_root / "package.json").write_text('{"packageManager":"pnpm@10.0.0"}\n', encoding="utf-8")
+    (ui_root / "pnpm-lock.yaml").write_text("lockfileVersion: '9.0'\n", encoding="utf-8")
+    _seed_db(db_path)
+
+    with patch.object(aios_cli, "REPO_ROOT", tmp_path):
+        exit_code = run_cli(
+            [
+                "--json",
+                "--db",
+                str(db_path),
+                "--logs-dir",
+                str(logs_dir),
+                "--vault-root",
+                str(vault_root),
+                "doctor",
+            ]
+        )
+
+    assert exit_code == EXIT_OK
+    output = json.loads(capsys.readouterr().out)
+    data = output["data"]
+    assert output["ok"] is True
+    assert data["ok"] is True
+    checks = {check["id"]: check for check in data["checks"]}
+    assert checks["python_dependency_quality_evidence_contract"]["status"] == "pass"
+    assert checks["python_dependency_repo_quality_certifier"]["status"] == "pass"
+    assert checks["sqlite_db"]["status"] == "pass"
+    assert checks["logs_dir"]["status"] == "pass"
+    assert checks["vault_root"]["status"] == "pass"
+    assert checks["ui_package_manager"]["status"] == "pass"
+
+
+def test_doctor_flags_ui_package_manager_drift(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    vault_root = tmp_path / "vault"
+    ui_root = tmp_path / "aios-ui"
+    logs_dir.mkdir()
+    vault_root.mkdir()
+    ui_root.mkdir()
+    (ui_root / "package.json").write_text('{"packageManager":"pnpm@10.0.0"}\n', encoding="utf-8")
+    (ui_root / "pnpm-lock.yaml").write_text("lockfileVersion: '9.0'\n", encoding="utf-8")
+    (ui_root / "package-lock.json").write_text("{}\n", encoding="utf-8")
+    _seed_db(db_path)
+
+    with patch.object(aios_cli, "REPO_ROOT", tmp_path):
+        exit_code = run_cli(
+            [
+                "--json",
+                "--db",
+                str(db_path),
+                "--logs-dir",
+                str(logs_dir),
+                "--vault-root",
+                str(vault_root),
+                "doctor",
+            ]
+        )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    checks = {check["id"]: check for check in data["checks"]}
+    assert data["ok"] is False
+    assert checks["ui_package_manager"]["status"] == "fail"
+    assert "Remove aios-ui/package-lock.json" in checks["ui_package_manager"]["remediation"]
 
 
 def test_asset_lifecycle_list_subcommand(tmp_path: Path, capsys) -> None:
@@ -1067,6 +1198,111 @@ def test_gate_run_json(monkeypatch, capsys, tmp_path: Path) -> None:
     assert payload["ok"] is True
     assert payload["command"] == "gate-run"
     assert payload["data"]["gateId"] == "test_quality"
+
+
+def test_gate_adoption_plan_json_writes_artifacts(capsys, tmp_path: Path) -> None:
+    (tmp_path / "package.json").write_text(
+        json.dumps(
+            {
+                "scripts": {
+                    "lint": "eslint .",
+                    "typecheck": "tsc --noEmit",
+                    "test": "vitest run",
+                    "build": "vite build",
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "tsconfig.json").write_text("{}", encoding="utf-8")
+    (tmp_path / ".pre-cr.json").write_text("{}", encoding="utf-8")
+    (tmp_path / ".git" / "info").mkdir(parents=True)
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "gate",
+            "adoption-plan",
+            "--repo-root",
+            str(tmp_path),
+            "--run-id",
+            "gate-cli-run",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    payload = json.loads(capsys.readouterr().out)
+    data = payload["data"]
+    assert payload["command"] == "gate-adoption-plan"
+    assert data["workflow_key"] == "repo_gate_adoption_v1"
+    assert all(row["passed"] for row in data["validations"])
+    assert data["gate_summary"]["present"] >= 4
+    assert data["phase_scope_policy"] == "repo_local_gate_scoped"
+    assert data["phase_owner"] == "target_repo"
+    assert data["aios_role"] == "portfolio_coordinator_and_evidence_ledger"
+    assert data["repo_local_phases"]
+    assert all(phase["phase_location"] == "target_repo" for phase in data["repo_local_phases"])
+    lint_phase = next(
+        phase for phase in data["repo_local_phases"] if phase["source_gate_ids"] == ["lint"]
+    )
+    assert lint_phase["strict_clearance_required"] is True
+    assert any(phase["phase_type"] == "final_certification" for phase in data["repo_local_phases"])
+    gate_matrix_path = Path(data["artifact_paths"]["gate_matrix_json"])
+    assert gate_matrix_path.exists()
+    assert tmp_path / "AIOS-backfill" in gate_matrix_path.parents
+    assert (tmp_path / ".git" / "info" / "exclude").read_text(encoding="utf-8").splitlines() == [
+        "AIOS-backfill/"
+    ]
+    assert Path(data["artifact_paths"]["tmcp_expert_enrichment_json"]).exists()
+    assert Path(data["artifact_paths"]["rubric_pack_json"]).exists()
+    assert Path(data["artifact_paths"]["rubric_docs_dir"]).is_dir()
+    assert Path(data["artifact_paths"]["rubric_detail_manifest_json"]).exists()
+    assert tmp_path in Path(data["artifact_paths"]["gate_matrix_json"]).parents
+
+
+def test_gate_adoption_doc_quality_json_writes_report(capsys, tmp_path: Path) -> None:
+    (tmp_path / "package.json").write_text(
+        json.dumps(
+            {
+                "scripts": {
+                    "lint": "eslint .",
+                    "typecheck": "tsc --noEmit",
+                    "test": "vitest run",
+                    "build": "vite build",
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "tsconfig.json").write_text("{}", encoding="utf-8")
+    (tmp_path / ".pre-cr.json").write_text("{}", encoding="utf-8")
+    (tmp_path / ".git" / "info").mkdir(parents=True)
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "gate",
+            "adoption-doc-quality",
+            "--repo-root",
+            str(tmp_path),
+            "--run-id",
+            "gate-doc-quality-run",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    payload = json.loads(capsys.readouterr().out)
+    data = payload["data"]
+    assert payload["command"] == "gate-adoption-doc-quality"
+    assert data["schema"] == "aios-repo-gate-adoption-doc-quality-result-v0.1"
+    assert data["passed"] is True
+    assert data["structurally_valid"] is True
+    assert data["ready_for_phase_planning"] is True
+    assert data["ready_for_execution"] is True
+    assert data["doc_quality"]["warning_count"] == 0
+    assert data["doc_quality"]["phase_planning_blocker_count"] == 0
+    assert Path(data["artifact_paths"]["adoption_doc_quality_json"]).exists()
+    assert Path(data["artifact_paths"]["adoption_doc_quality_markdown"]).exists()
 
 
 def test_capability_audit_reports_missing_and_no_data_signals(tmp_path: Path, capsys) -> None:
@@ -2162,9 +2398,14 @@ def test_daily_flow_preview_cli(tmp_path: Path, capsys) -> None:
 def test_daily_flow_replay_cli(tmp_path: Path, capsys) -> None:
     db_path = tmp_path / "aios.db"
     logs_dir = tmp_path / "logs"
+    repo = _sample_closeout_repo(tmp_path)
     logs_dir.mkdir()
     _seed_db(db_path)
     _seed_daily_flow_replay_rows(db_path)
+    conn = sqlite3.connect(db_path)
+    conn.execute("UPDATE projects SET repo_path = ? WHERE id = 'p1'", (str(repo),))
+    conn.commit()
+    conn.close()
 
     exit_code = run_cli(
         [
@@ -2185,6 +2426,15 @@ def test_daily_flow_replay_cli(tmp_path: Path, capsys) -> None:
     assert data["trace"]["objective"] == "implement login"
     assert data["step_count"] == 8
     assert data["trace"]["steps"][2]["evidence_ref"]["id"] == "daily-packet"
+    run_step = next(step for step in data["trace"]["steps"] if step["kind"] == "run")
+    closeout = run_step["metadata"]["repo_closeout"]
+    assert closeout["schema"] == "aios-repo-closeout-v0.1"
+    assert closeout["repo"] == str(repo)
+    assert closeout["git"]["dirty_files"] == [" M README.md", "?? new.txt"]
+    assert closeout["diff_stat"]["lines"] == [
+        "README.md | 2 ++",
+        "1 file changed, 2 insertions(+)",
+    ]
 
 
 def test_daily_flow_cli_requires_one_mode(tmp_path: Path) -> None:
@@ -3428,6 +3678,104 @@ def test_eval_run_cli_rejects_missing_task_json(tmp_path: Path, capsys) -> None:
     assert "Eval task not found" in output["error"]["message"]
 
 
+def test_humanize_run_no_record_outputs_rewrite(capsys) -> None:
+    exit_code = run_cli(
+        [
+            "--json",
+            "humanize",
+            "run",
+            "--no-record",
+            "--mode",
+            "project_build_in_public",
+            "--text",
+            "AIOS marks a pivotal step forward. It helps agents check their own work.",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    assert data["recorded"] is False
+    assert data["mode"] == "project_build_in_public"
+    assert "pivotal" not in data["output"]
+
+
+def test_humanize_run_records_feedback_flow(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    run_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "humanize",
+            "run",
+            "--mode",
+            "prompt_prd",
+            "--text",
+            "Implement the feature. Audit first. Add tests.",
+        ]
+    )
+
+    assert run_exit == EXIT_OK
+    run_data = json.loads(capsys.readouterr().out)["data"]
+    assert run_data["recorded"] is True
+    assert run_data["run_id"]
+
+    feedback_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "humanize",
+            "feedback",
+            "--run-id",
+            run_data["run_id"],
+            "--verdict",
+            "approved",
+            "--notes",
+            "Keep audit-first prompt structure.",
+        ]
+    )
+
+    assert feedback_exit == EXIT_OK
+    feedback_data = json.loads(capsys.readouterr().out)["data"]
+    assert feedback_data["verdict"] == "approved"
+    assert feedback_data["proposal"]["status"] == "candidate"
+
+
+def test_humanize_eval_cli_runs_suite(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "humanize",
+            "eval",
+            "--record",
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    data = json.loads(capsys.readouterr().out)["data"]
+    assert data["recorded"] is True
+    assert data["eval_id"]
+    assert data["summary"]["case_count"] == 8
+
+
 def test_packet_and_benchmark_cli_json_paths(tmp_path: Path, capsys) -> None:
     db_path = tmp_path / "aios.db"
     logs_dir = tmp_path / "logs"
@@ -3572,6 +3920,40 @@ def test_tmcp_review_plan_writes_expert_review_artifacts(tmp_path: Path, capsys)
     assert not (project / ".aios").exists()
 
 
+def test_expert_rubric_alias_writes_expert_review_artifacts(tmp_path: Path, capsys) -> None:
+    project = tmp_path / "target-project"
+    output_dir = tmp_path / "review-output"
+    project.mkdir()
+    evidence_item = {
+        "dimension_id": "source_grounding",
+        "severity": "warning",
+        "summary": "Review findings need source-backed evidence.",
+        "evidence": ["src/app/page.tsx:12"],
+        "recommended_fix": "Keep review findings tied to concrete source references.",
+    }
+
+    exit_code = run_cli(
+        [
+            "--json",
+            "expert-rubric",
+            "Run the TMCP expert rubric workflow against this UI review evidence",
+            "--project-path",
+            str(project),
+            "--output-dir",
+            str(output_dir),
+            "--evidence-json",
+            json.dumps(evidence_item),
+        ]
+    )
+
+    assert exit_code == EXIT_OK
+    payload = json.loads(capsys.readouterr().out)
+    data = payload["data"]
+    assert data["workflow_key"] == "expert_rubric_remediation_v1"
+    assert all(row["passed"] for row in data["validations"])
+    assert Path(data["artifact_paths"]["rubric_json"]).exists()
+
+
 def test_tmcp_review_plan_rejects_malformed_evidence_json(tmp_path: Path, capsys) -> None:
     project = tmp_path / "target-project"
     output_dir = tmp_path / "review-output"
@@ -3597,6 +3979,129 @@ def test_tmcp_review_plan_rejects_malformed_evidence_json(tmp_path: Path, capsys
     assert payload["ok"] is False
     assert payload["error"]["code"] == "invalid-evidence-json"
     assert "valid JSON" in payload["error"]["message"]
+
+
+def test_route_preview_json_returns_ready_route_without_creating_run(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    db_path = tmp_path / "aios.db"
+    _seed_db(db_path)
+
+    route_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "route",
+            "Fix the AIOS routing bug",
+            "--project",
+            "p1",
+        ]
+    )
+
+    assert route_exit == EXIT_OK
+    output = json.loads(capsys.readouterr().out)
+    assert output["ok"] is True
+    assert output["command"] == "route"
+    data = output["data"]
+    assert data["status"] == "ready"
+    assert data["selected_project"]["id"] == "p1"
+    assert data["selected_workflow"]["workflow_key"] == "implementation-delivery"
+    assert data["start_work_command"] == [
+        "aios",
+        "start-work",
+        "Fix the AIOS routing bug",
+        "--project",
+        "p1",
+    ]
+
+    conn = sqlite3.connect(db_path)
+    run_count = conn.execute("SELECT COUNT(*) FROM orchestration_runs").fetchone()[0]
+    packet_count = conn.execute("SELECT COUNT(*) FROM briefing_packets").fetchone()[0]
+    invocation_count = conn.execute("SELECT COUNT(*) FROM orchestration_invocations").fetchone()[0]
+    conn.close()
+    assert run_count == 1
+    assert packet_count == 0
+    assert invocation_count == 0
+
+
+def test_route_preview_blocks_ambiguous_project_without_creating_run(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    db_path = tmp_path / "aios.db"
+    _seed_db(db_path)
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        """
+        INSERT INTO projects (id, name, repo_path, obsidian_path, status)
+        VALUES ('p2', 'Soundscape App', '/soundscape-app', '03 Projects/Soundscape App', 'active')
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO projects (id, name, repo_path, obsidian_path, status)
+        VALUES ('p3', 'Soundscape Web', '/soundscape-web', '03 Projects/Soundscape Web', 'active')
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    route_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "route",
+            "Improve Soundscape onboarding and make it launch ready",
+        ]
+    )
+
+    assert route_exit == EXIT_OK
+    output = json.loads(capsys.readouterr().out)
+    data = output["data"]
+    assert data["status"] == "blocked"
+    assert data["blocked_reason"]
+    assert data["next_fix"] == "Pass --project with one of the candidate project ids."
+    assert {candidate["id"] for candidate in data["project_candidates"]} >= {"p2", "p3"}
+
+    conn = sqlite3.connect(db_path)
+    run_count = conn.execute(
+        "SELECT COUNT(*) FROM orchestration_runs WHERE objective = ?",
+        ("Improve Soundscape onboarding and make it launch ready",),
+    ).fetchone()[0]
+    packet_count = conn.execute("SELECT COUNT(*) FROM briefing_packets").fetchone()[0]
+    conn.close()
+    assert run_count == 0
+    assert packet_count == 0
+
+
+def test_route_preview_human_summary_shows_workflow_and_start_command(
+    tmp_path: Path,
+    capsys,
+) -> None:
+    db_path = tmp_path / "aios.db"
+    _seed_db(db_path)
+
+    route_exit = run_cli(
+        [
+            "--db",
+            str(db_path),
+            "route",
+            "Fix the AIOS routing bug",
+            "--project",
+            "AIOS",
+        ]
+    )
+
+    assert route_exit == EXIT_OK
+    output = capsys.readouterr().out
+    assert "status=ready" in output
+    assert "project=AIOS (p1)" in output
+    assert "workflow=implementation-delivery" in output
+    assert "agent=implementation-lead" in output
+    assert "run=aios start-work 'Fix the AIOS routing bug' --project p1" in output
 
 
 def test_start_work_creates_packet_and_links_current_session(tmp_path: Path, capsys) -> None:
@@ -3682,6 +4187,183 @@ def test_start_work_creates_packet_and_links_current_session(tmp_path: Path, cap
         (data["run"]["id"],),
     ).fetchone()[0]
     assert event_count == 3
+    conn.close()
+
+
+def test_daily_use_release_loop_starts_and_inspects_work(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    _seed_next_action_cli_rows(db_path)
+
+    start_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "start-work",
+            "Audit AIOS daily-use onboarding and ship a scoped fix with tests",
+            "--project",
+            "p1",
+        ]
+    )
+
+    assert start_exit == EXIT_OK
+    start_data = json.loads(capsys.readouterr().out)["data"]
+    run_id = start_data["run"]["id"]
+    assert start_data["route"]["selected_workflow"]["workflow_key"] == "implementation-delivery"
+    assert start_data["packet"]["id"]
+    assert start_data["invocation"]["id"]
+
+    replay_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "daily-flow",
+            "--run-id",
+            run_id,
+        ]
+    )
+
+    assert replay_exit == EXIT_OK
+    replay_data = json.loads(capsys.readouterr().out)["data"]
+    assert replay_data["is_preview"] is False
+    assert replay_data["step_count"] == 8
+    assert [step["kind"] for step in replay_data["trace"]["steps"]] == [
+        "goal",
+        "route",
+        "packet",
+        "run",
+        "evaluation",
+        "writeback",
+        "unresolved_delta",
+        "next_action",
+    ]
+    assert replay_data["trace"]["steps"][0]["evidence_ref"]["value"] == (
+        "Audit AIOS daily-use onboarding and ship a scoped fix with tests"
+    )
+    assert replay_data["trace"]["steps"][2]["evidence_ref"]["id"] == start_data["packet"]["id"]
+    assert replay_data["trace"]["steps"][3]["evidence_ref"]["id"] == run_id
+
+    next_action_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "next-action",
+            "--project",
+            start_data["run"]["project_id"],
+            "--json",
+        ]
+    )
+
+    assert next_action_exit == EXIT_OK
+    next_action_data = json.loads(capsys.readouterr().out)["data"]
+    assert next_action_data["project_id"] == start_data["run"]["project_id"]
+    assert next_action_data["total_actions"] >= 1
+
+
+@pytest.mark.parametrize(
+    "objective",
+    [
+        "judge this with TMCP",
+        "use the TMCP expert workflow",
+    ],
+)
+def test_start_work_routes_tmcp_expert_natural_language_to_expert_workflow(
+    tmp_path: Path,
+    capsys,
+    objective: str,
+) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    start_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "start-work",
+            objective,
+            "--project",
+            "p1",
+        ]
+    )
+
+    assert start_exit == EXIT_OK
+    output = json.loads(capsys.readouterr().out)
+    data = output["data"]
+    assert data["route"]["selected_workflow"]["workflow_key"] == "expert_rubric_remediation_v1"
+    assert data["run"]["workflow_key"] == "expert_rubric_remediation_v1"
+
+    conn = sqlite3.connect(db_path)
+    packet_row = conn.execute(
+        "SELECT workflow_key, route_result_json FROM briefing_packets WHERE id = ?",
+        (data["packet"]["id"],),
+    ).fetchone()
+    assert packet_row[0] == "expert_rubric_remediation_v1"
+    route_result = json.loads(packet_row[1])
+    assert route_result["selected_workflow"]["workflow_key"] == "expert_rubric_remediation_v1"
+    conn.close()
+
+
+def test_start_work_planning_governance_packet_surfaces_contract(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+
+    start_exit = run_cli(
+        [
+            "--json",
+            "--db",
+            str(db_path),
+            "--logs-dir",
+            str(logs_dir),
+            "start-work",
+            "Add a new GSD phase for planning governance",
+            "--project",
+            "p1",
+        ]
+    )
+
+    assert start_exit == EXIT_OK
+    output = json.loads(capsys.readouterr().out)
+    data = output["data"]
+    assert data["route"]["selected_workflow"]["workflow_key"] == "planning-governance"
+    assert data["packet"]["contract_version"] == "governed-handoff-v1"
+    packet_markdown = data["packet"]["markdown"]
+    for heading in {
+        "Planning Quality Contract",
+        "Required Planning Artifacts",
+        "Standards Before Execution",
+        "Verification Handoff",
+    }:
+        assert heading in packet_markdown
+    assert "Do not start implementation as the first action" in packet_markdown
+    assert "acceptance criteria" in packet_markdown.lower()
+    assert data["next_agent_context"]["next_recommended_action"].startswith("Create planning")
+
+    conn = sqlite3.connect(db_path)
+    packet_row = conn.execute(
+        "SELECT packet_markdown, route_result_json FROM briefing_packets WHERE id = ?",
+        (data["packet"]["id"],),
+    ).fetchone()
+    assert "Planning Quality Contract" in packet_row[0]
+    route_result = json.loads(packet_row[1])
+    assert route_result["selected_workflow"]["workflow_key"] == "planning-governance"
     conn.close()
 
 

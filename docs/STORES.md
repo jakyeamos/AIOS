@@ -16,9 +16,6 @@ and what each store is responsible for. Update this when the architecture change
 
 Code truth lives in `~/Projects/*/` git repos. AIOS observes code; it does not own it.
 
-GitNexus code intelligence (`.gitnexus/` per repo) is an external read-only service.
-AIOS hooks may query it but must never write to it or depend on it for core retrieval.
-
 CTS graph indexes are local-only operational artifacts. They can be rebuilt from source code and
 must never be treated as canonical source-of-truth over the code repository itself.
 
@@ -137,7 +134,7 @@ must never be treated as canonical source-of-truth over the code repository itse
 | Bug tracking | `aios.db` | bug_log | Yes (auto-capture) |
 | Pattern candidates | `aios.db` | patterns state=notice/hypothesis | Yes (auto-create) |
 | Approved rules | `aios.db` active_rules VIEW | state=rule, human_approved=1 | No — human gate |
-| Code intelligence | `.gitnexus/` (per-repo) | call graph, impact analysis | External service only |
+| Code intelligence | `~/AIOS/data/cts/` | derived topology, confidence, staleness | Yes, local operational artifacts only |
 | Wiki / knowledge | Vault `06 Knowledge/Wiki/` | authored entries | No — staging gate |
 | Handoff notes | Vault + `sessions.handoff_path` | narrative handoffs | Yes (hook-stop) |
 | Project context | Vault + `projects.obsidian_path` | project notes | No — human-maintained |

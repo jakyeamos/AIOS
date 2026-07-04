@@ -1,0 +1,7 @@
+[quality_runner]
+scan_exclusions = [
+  ".aios/shadow-worktrees/**",
+  ".worktrees/**",
+  ".superpowers/**",
+  "tmcp-benchmark/runs/worktrees/**",
+]

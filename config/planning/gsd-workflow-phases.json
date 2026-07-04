@@ -16,7 +16,20 @@
         "gsd plan phase",
         "gsd-plan",
         "gsd plan",
-        "/gsd-plan"
+        "/gsd-plan",
+        "gsd-add-phase",
+        "/gsd-add-phase",
+        "add phase",
+        "add a phase",
+        "add a new phase",
+        "add new phase",
+        "add a new gsd phase",
+        "create phase",
+        "new phase",
+        "make this into phase",
+        "blockers into a phase",
+        "roadmap phase",
+        "phase planning"
       ],
       "skill_names": [
         "gsd-plan-phase",
@@ -32,6 +45,7 @@
         "gsdimplementphase",
         "gsd execute phase",
         "gsd-execute-phase",
+        "execute gsd phase",
         "gsd execute",
         "/gsd-execute"
       ],

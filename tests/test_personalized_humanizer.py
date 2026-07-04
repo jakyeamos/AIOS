@@ -31,11 +31,22 @@ from services.workflow_orchestration import (  # noqa: E402
 
 
 def test_classifies_required_voice_modes() -> None:
-    assert classify_writing_task("Write a LinkedIn outreach note to a recruiter") == "professional_outreach"
-    assert classify_writing_task("Draft a build in public post about AIOS evals") == "project_build_in_public"
+    assert (
+        classify_writing_task("Write a LinkedIn outreach note to a recruiter")
+        == "professional_outreach"
+    )
+    assert (
+        classify_writing_task("Draft a build in public post about AIOS evals")
+        == "project_build_in_public"
+    )
     assert classify_writing_task("Turn this into a Codex implementation prompt") == "prompt_prd"
-    assert classify_writing_task("Revise this academic reflection paragraph") == "academic_reflective"
-    assert classify_writing_task("Rewrite this book scene with emotional realism") == "creative_narrative"
+    assert (
+        classify_writing_task("Revise this academic reflection paragraph") == "academic_reflective"
+    )
+    assert (
+        classify_writing_task("Rewrite this book scene with emotional realism")
+        == "creative_narrative"
+    )
 
 
 def test_retrieval_respects_mode_boundaries() -> None:
@@ -142,7 +153,9 @@ def test_feedback_creates_candidate_update_without_mutating_profile() -> None:
         "Audit first. Then implement only the smallest scoped fix.",
         requested_mode="prompt_prd",
     )
-    run_id = record_rewrite_run(conn, result, input_text="Audit first. Then implement only the smallest scoped fix.")
+    run_id = record_rewrite_run(
+        conn, result, input_text="Audit first. Then implement only the smallest scoped fix."
+    )
 
     feedback = record_feedback(
         conn,
@@ -160,7 +173,10 @@ def test_feedback_creates_candidate_update_without_mutating_profile() -> None:
         "SELECT status, proposed_rule FROM personalized_humanizer_profile_updates WHERE id = ?",
         (proposal["id"],),
     ).fetchone()
-    assert row == ("candidate", "User often wants implementation prompts to include audit-first steps.")
+    assert row == (
+        "candidate",
+        "User often wants implementation prompts to include audit-first steps.",
+    )
 
 
 def test_profile_update_approval_requires_evidence() -> None:

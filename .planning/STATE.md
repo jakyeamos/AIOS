@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase 28 complete
-last_updated: "2026-06-24T20:51:45.092Z"
+status: Daily-use release readiness is active; Phase 29 linked-repo remediation is paused as the release centerpiece
+last_updated: "2026-07-01T18:30:00Z"
 progress:
-  total_phases: 28
-  completed_phases: 27
-  total_plans: 153
-  completed_plans: 149
-  percent: 97
+  total_phases: 29
+  completed_phases: 28
+  total_plans: 161
+  completed_plans: 153
+  percent: 95
 ---
 
 # AIOS Planning State
@@ -25,18 +25,21 @@ progress:
 - Canonical planning intent: make AIOS the default operating layer for serious project work by tightening routing, context, lifecycle, truth, governance, evaluation, learning, and operator visibility into one governed loop.
 - Planning bias: sequence routing, context, and lifecycle first; then truth freshness, writeback governance, and evidence capture; then standards and delta scoring; then learning loops; then richer operator surfaces.
 - Planning source of truth: use [PROJECT.md](/Users/jakyeamos/AIOS/.planning/PROJECT.md) for product identity and constraints, [REQUIREMENTS.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS.md) for requirement authority, and [ROADMAP.md](/Users/jakyeamos/AIOS/.planning/ROADMAP.md) for execution sequencing.
-- Latest completed phase: Phase 28, Expert rubric remediation CLI and verification, passed with read-only CLI exposure, focused quality/truth closeout, Soundscape smoke artifacts, and approval-gated implementation handoff evidence.
-- Latest completed plan: Phase 28 Plan 28-03 smoke-verified `aios tmcp review-plan`, wrote final verification evidence, and refreshed project truth.
-- Latest planned governed-workflow phase: Phase 25 has four executable plans to make planning a governed first-class AIOS workflow.
+- Latest completed phase: Phase 25, Governed planning workflow, passed with active `planning-governance` routing, planning packet standards, Codex route/shadow helper regression coverage, and copied-DB shadow smoke evidence.
+- Latest completed plan: Phase 25 Plan 25-04 proved the original shadow planning objective routes to `planning-governance`, `gsd-execute-phase 24` routes to `implementation-delivery`, and final validation passes.
+- Latest planned linked-repo remediation phase: Phase 29 has eight AIOS coordination plans, while the pilot repos now carry their own repo-local gate-scoped phases generated from final adoption-doc-quality passes.
+- Latest completed governed-workflow phase: Phase 25 made GSD planning a governed first-class AIOS workflow with tested planning route selection, planning packet contracts, and known GSD command invocation coverage.
 - Latest completed expert-rubric phases: Phases 26-28 delivered core review artifacts, workflow runtime integration, route support, CLI exposure, quality closeout, and smoke verification.
+- Current release-readiness focus: make AIOS itself useful as the daily operating layer through `doctor -> start-work -> daily-flow replay -> next-action -> closeout evidence` before using portfolio linked-repo certification as the main showpiece.
+- Latest daily-use readiness slice: `doctor --json` now checks local package imports, SQLite, local stores, pnpm-only JavaScript state, context compiler package access, and daily-use command registration; README and `docs/case-study.md` lead with the daily loop; UI CI now uses pnpm.
 
 ## Current Roadmap Position
 
 - Active milestone: Milestone 17, Progressive Governance And Standards Backfill Workflows
-- Active phase: None - Phase 28 is complete
-- Active plan: None - all Phase 28 plans are executed
+- Active phase: Daily-use release readiness hardening
+- Active plan: AIOS self-readiness before Phase 29 portfolio certification resumes
 - Completed dependency chain: Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7 -> Phase 8 -> Phase 9 -> Phase 10 -> Phase 11 -> Phase 12 -> Phase 13 -> Phase 14 -> Phase 15 -> Phase 16 -> Phase 17 -> Phase 18 -> Phase 19 -> Phase 20 -> Phase 21 -> Phase 22 -> Phase 23 -> Phase 24
-- Next dependency chain: Phase 25 remains planned; the Phase 26 -> Phase 27 -> Phase 28 expert-rubric chain is complete.
+- Next dependency chain: AIOS daily-use release gates must stay green before Phase 29 linked-repo readiness remediation resumes as a portfolio proof track.
 - Completion rule: do not advance a phase until its mapped requirements have observable success criteria and durable evidence of satisfaction.
 
 ## Known Constraints To Preserve
@@ -59,7 +62,7 @@ progress:
 - Phase 24 added: Rectify linked repo AIOS readiness blockers except agent-router.
 - Phase 24 completed: 10 plans added AIOS evidence tooling, evidence-required closeout, production web app gates, targeted production cleanup, developer-tool gates, Python/data/course gates, content/container validation, local CI replacement exceptions, and final verification; closeout remains blocked at portfolio readiness with 0 ready repos, 20 blocked repos, and 3 excluded repos.
 - Phase 25 added: Make AIOS planning a governed first-class workflow.
-- Phase 25 planned: four plans cover planning detection, governed route selection, packet standards/evidence, and shadow-route proof with truth closeout; Phase 25 waits on Phase 24 execution because it depends on Phase 24.
+- Phase 25 completed: four plans added GSD phase-add/blocker/roadmap planning detection, active `planning-governance` workflow routing, planning packet standards/evidence/verification handoff sections, Codex route/shadow regression coverage, and copied-DB smoke evidence for the original planning objective plus `gsd-execute-phase 24`.
 - Phase 26 added: Expert rubric remediation core artifacts.
 - Phase 27 added: Expert rubric remediation workflow runtime.
 - Phase 28 added: Expert rubric remediation CLI and verification.
@@ -75,13 +78,18 @@ progress:
 - Phase 28 Plan 28-02 completed: focused expert workflow Ruff, format, new regression tests, and Vulture pass; project truth now records the implemented expert workflow while preserving existing broader CLI pytest and BasedPyright failures.
 - Phase 28 Plan 28-03 completed: `aios tmcp review-plan` smoke verification against Soundscape evidence produced nine review artifacts under `/tmp/aios-expert-review-smoke` and final handoff evidence in `28-VERIFICATION.md`.
 - Phase 28 completed: the expert-rubric remediation workflow is ready as a read-only review-plan generator; implementation of remediation slices remains an approval-gated follow-up workflow.
+- Phase 29 planned: eight AIOS coordination plans cover portfolio waves and final closeout; BidCamp, EliHealth, and pre-cr-suite-lsp now carry repo-local gate-scoped remediation phases.
 
 ## Quick Tasks Completed
 
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-07-01 | Add AIOS daily-use release readiness path | Added `doctor --json`, hardened direct `bin/aios.py` dependency bootstrapping, pinned the integrated `start-work -> daily-flow -> next-action` loop with behavior tests, switched UI CI/docs/package metadata to pnpm-only, removed the stale UI npm lockfile, and added a daily-use README path plus `docs/case-study.md`; Phase 29 portfolio certification is paused as the release centerpiece until AIOS self-readiness is consistently green. |
 | 2026-06-25 | Add Anti-Slop adoption/backfill gate | Added `anti_slop` to AIOS quality-pipeline required gates for platform, production public web app, and developer-tool package classes; seeded audit-mode Anti-Slop backfill commands for in-scope linked repos; and added readiness regression coverage so adoption cannot lose the gate silently. |
+| 2026-06-26 | Add repo-local Phase 29 pilot remediation phases | Added gate-scoped adoption phases inside BidCamp, EliHealth, and pre-cr-suite-lsp from their final adoption-doc-quality artifact packs; AIOS remains the portfolio coordinator rather than owning per-repo execution phases. |
+| 2026-06-25 | Complete Phase 25 governed planning workflow | Completed all four Phase 25 plans; `planning-governance` is active, GSD phase-add/blocker/roadmap planning objectives route through governed start-work, planning packets surface standards and verification handoff before execution, `gsd-execute-phase 24` routes to the governed implementation lane, final targeted pytest suite passed with 192 tests, `pnpm context:validate` passed, and copied-DB Codex shadow smokes passed without creating worktrees. |
 | 2026-06-24 | Add durable agent workflows | Added a durable-agent-workflow context packet, workflow reference doc, candidate `durable-agent-workspace` registry route, candidate durable state/verifier skills, `/steer` and `/queue` documentation, canonical operating-language terms, project truth, subsystem posture, and tests for context selection plus registry contracts without changing active route defaults or weakening gates. |
+| 2026-06-24 | Plan Phase 29 linked-repo adoption remediation | Added eight GSD-standard Phase 29 plans for getting the 20 Phase 24 in-scope repos from configured-but-blocked to adoption-ready, preserving local CI replacement policy and keeping dirty-tree hygiene separate from readiness. |
 | 2026-06-24 | Set up Phase 24 local CI proof and note failures | Added local CI replacement proof execution, made class-specific required gates authoritative for blocker status, filled runnable commands for every required gate across the 20 in-scope repos, and recorded the current failure ledger in `24-VERIFICATION.md`; all 20 remain blocked but none are blocked by missing AIOS runner setup. |
 | 2026-06-24 | Execute Phase 24 linked-repo readiness blocker remediation | Completed all ten Phase 24 plans, added or replaced AIOS-owned evidence gates across linked repositories, excluded deprecated `video-pipeline` and `manga-sync` alongside scoped-out `agent-router`, recorded local CI replacement exceptions because GitHub Actions credits are constrained, downgraded production env validation to warning-level evidence, fixed readiness-report placeholder inventory contamination, and wrote `24-VERIFICATION.md`; final verdict is 0 ready repos, 0 evidence-required repos, 20 blocked repos, and 3 excluded repos. |
 | 2026-06-24 | Execute Phase 23 linked-repo strict readiness maturation | Completed all eight Phase 23 plans, added class-based quality-pipeline coverage, replaced weak `floor_only`/`pre_cr_only` maturity with blocked readiness metadata, fixed all-inventory proof contamination, and wrote `23-VERIFICATION.md`; final verdict is 0 ready repos, 2 evidence-required repos, and 21 blocked repos. |
@@ -194,7 +202,7 @@ progress:
 | 2026-05-23 | Add Phase 11 Testing, Benchmark Evaluation, And Shadow Workflows | Phase 11 directory created with 11-RESEARCH.md and plans 11-01 through 11-07. Phase 10 extended with plans 10-07 (Agent Eval Foundation) and 10-08 (Quality Hotspot Checklist and Backfill Docs). REQUIREMENTS.md extended with EVAL-01 through EVAL-08. ROADMAP.md extended with Milestone 6 and Phase 11 scope. Total phases: 11, total plans: 47. |
 | 2026-05-23 | Add Phase 12 Graph-Native Memory Architecture And Cache-Aware Context Compilation | Phase 12 directory created with 12-RESEARCH.md and plans 12-01 through 12-08 (audit, schema, memory compiler, context compiler, packet contract, quality checks, backfill plan, KV-cache future note). REQUIREMENTS.md extended with MEM-01 through MEM-08. ROADMAP.md extended with Milestone 7 and Phase 12 scope. config/agent-rules.md extended with Rule 9. Total phases: 12, total plans: 55. |
 | 2026-05-23 | Add Phase 13 Multi-Provider Session Ingestion And Second Brain Data Pipeline | Phase 13 directory created with 13-RESEARCH.md and plans 13-01 through 13-08 (pipeline audit, provider interface + DB migrations, Cursor provider, Antigravity provider, incremental sync + CLI, privacy + redaction, summarization + writeback, tests + docs + backfill report). REQUIREMENTS.md extended with SESS-01 through SESS-08. ROADMAP.md extended with Milestone 8 and Phase 13 scope. Total phases: 13, total plans: 63. |
-| 2026-05-23 | Add Phase 14 Code Quality Gates And Cross-Project Complexity Standards | Phase 14 directory created with 14-RESEARCH.md and plans 14-01 through 14-08 (agent rule + workflow gate, pre-check questions, root gate doc, complexity pattern checklist, AIOS backfill, soundscape-app + portfolio backfill, amos-saas + GitNexus + tm backfill, Terrace backfill + cross-project summary). REQUIREMENTS.md extended with QUAL-01 through QUAL-08. ROADMAP.md extended with Milestone 9 and Phase 14 scope. Total phases: 14, total plans: 71. |
+| 2026-05-23 | Add Phase 14 Code Quality Gates And Cross-Project Complexity Standards | Phase 14 directory created with 14-RESEARCH.md and plans 14-01 through 14-08 (agent rule + workflow gate, pre-check questions, root gate doc, complexity pattern checklist, AIOS backfill, soundscape-app + portfolio backfill, amos-saas + tm backfill, Terrace backfill + cross-project summary). REQUIREMENTS.md extended with QUAL-01 through QUAL-08. ROADMAP.md extended with Milestone 9 and Phase 14 scope. Total phases: 14, total plans: 71. |
 | 2026-05-23 | Add Phase 15 Agent Skill Portfolio Audit And External Library Integration | Phase 15 directory created with 15-RESEARCH.md and plans 15-01 through 15-08 (skill inventory audit + backup, interrogate upgrade with grill-with-docs behaviors, diagnose skill, simplifier upgrade with architecture-first report discipline, to-issues skill with aios.db issues_store, prototype skill, write-a-skill consolidation, handoff skill with aios.db handoff_store). REQUIREMENTS.md extended with SKIL-01 through SKIL-08. ROADMAP.md extended with Milestone 10 and Phase 15 scope. Total phases: 15, total plans: 79. |
 | 2026-06-01 | Add Phase 16 Harness Determinism, Evidence, And Independent Verification | Phase 16 directory created with 16-RESEARCH.md and plans 16-01 through 16-06 (existing harness audit, evidence chain hardening, independent verifier gate, context routing manifest, deterministic phase gates and prompt boundary tightening, retrospective/model-selection/shadow parity metadata). REQUIREMENTS.md extended with HARN-01 through HARN-08. ROADMAP.md extended with Milestone 11 and Phase 16 scope. Total phases: 16, total plans: 85. |
 | 2026-06-01 | Add Phase 17 Developer Experience Capability Pack | Phase 17 directory created with 17-RESEARCH.md and plans 17-01 through 17-06 (DX pack audit, capability contract and metrics, capability assets and routing metadata, dynamic mode/model routing, DX eval hooks and fixtures, documentation and validation report workflow). REQUIREMENTS.md extended with DXPK-01 through DXPK-08. ROADMAP.md extended with Milestone 12 and Phase 17 scope. Total phases: 17, total plans: 91. |

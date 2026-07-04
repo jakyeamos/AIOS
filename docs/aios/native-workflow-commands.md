@@ -4,6 +4,17 @@ AIOS native workflow commands are local-first command surfaces for common agent 
 
 ## Commands
 
+### `aios route`
+
+- Use for: previewing the governed workflow, project, agent, backend, and prompt family for a natural-language objective before creating a run.
+- Do not use for: starting work, writing packets, or replacing `aios start-work` when a governed run should be created.
+- Safety class: `read_only`.
+- Writes: none.
+- Second-brain behavior: disabled by default.
+- Sub-agent or reviewer lanes: none in the MVP.
+- Example: `aios route "Fix the routing bug" --project AIOS`
+- Output includes: route status, selected project, workflow, recommended agent, backend, prompt family, block reason when applicable, and the `aios start-work` command to run next.
+
 ### `aios zoom-out`
 
 - Use for: orienting on an unfamiliar file, directory, or module before editing.
@@ -73,13 +84,15 @@ AIOS native workflow commands are local-first command surfaces for common agent 
 
 ## Metadata Logging
 
-All native commands support optional local metadata logging:
+Runtime native commands that expose `--log-metadata` support optional local metadata logging:
 
 ```bash
 aios zoom-out services/native_commands.py --log-metadata --metadata-log-path .aios/native-command-metadata.jsonl
 ```
 
 Metadata logging is local JSONL only. It can include command name, timestamp, repo, branch, scope, safety class, read-only/modifying status, reviewer lanes, files touched, tests run, pass/fail status, confirmation fields, run/session IDs, model/reasoning labels, token/cost estimate, and runtime. It does not send external telemetry.
+
+`aios route` is a strict read-only preview and does not expose metadata logging in v1.
 
 ## Recommended Workflows
 

@@ -385,6 +385,12 @@ def test_codex_parse_structure(codex_sample):
     assert conv["title"] == "Assess test coverage"
     assert "ai-history/codex" in conv["tags"]
     assert len(conv["slug"]) > 0
+    assert [message["role"] for message in conv["messages"]] == [
+        "user",
+        "assistant",
+        "user",
+        "assistant",
+    ]
 
 
 def test_codex_parse_filters_setup_and_commentary():

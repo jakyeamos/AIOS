@@ -44,7 +44,6 @@ From `~/.claude/CLAUDE.md` project roots table:
 | AIOS | ~/AIOS | AI OS hooks / scripts / db — primary project |
 | soundscape-app | ~/projects/soundscape-app | Music library manager |
 | amos-saas | ~/projects/amos-saas | Amos SaaS platform |
-| GitNexus | ~/projects/GitNexus | GitNexus framework |
 | Terrace | ~/projects/Terrace | Terrace dev framework |
 | tm | ~/projects/tm | Taski — local-first project tracker |
 | portfolio | ~/projects/portfolio | Personal portfolio site |

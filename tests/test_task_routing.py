@@ -111,6 +111,50 @@ def test_route_objective_routes_short_bugfix_to_implementation(tmp_path: Path) -
     assert route["selected_workflow"]["workflow_family"] == "audit_and_implement"
 
 
+def test_route_objective_routes_gsd_phase_add_to_planning_governance(tmp_path: Path) -> None:
+    conn = sqlite3.connect(":memory:")
+    _seed_projects(conn, tmp_path)
+
+    route = route_objective(
+        conn,
+        objective="Add a new GSD phase for planning governance",
+        explicit_project_id="p-aios",
+    ).to_json()
+
+    assert route["status"] == "ready"
+    assert route["selected_workflow"]["workflow_key"] == "planning-governance"
+    assert route["selected_workflow"]["workflow_family"] == "planning_governance"
+    assert route["task_family"] == "audit_and_implement"
+    assert "planning" in route["agent_recommendation"]["rationale"].lower()
+    assert any(
+        candidate["workflow_key"] == "planning-governance"
+        and "planning detection" in candidate["rationale"]
+        for candidate in route["workflow_candidates"]
+    )
+
+
+def test_route_objective_routes_known_gsd_execute_command_to_governed_lane(
+    tmp_path: Path,
+) -> None:
+    conn = sqlite3.connect(":memory:")
+    _seed_projects(conn, tmp_path)
+
+    route = route_objective(
+        conn,
+        objective="gsd-execute-phase 24",
+        explicit_project_id="p-aios",
+    ).to_json()
+
+    assert route["status"] == "ready"
+    assert route["selected_workflow"]["workflow_key"] == "implementation-delivery"
+    assert route["task_family"] == "audit_and_implement"
+    assert any(
+        candidate["workflow_key"] == "implementation-delivery"
+        and "GSD command" in candidate["rationale"]
+        for candidate in route["workflow_candidates"]
+    )
+
+
 def test_route_objective_routes_login_bugfix_to_implementation(tmp_path: Path) -> None:
     conn = sqlite3.connect(":memory:")
     _seed_projects(conn, tmp_path)
@@ -187,6 +231,49 @@ def test_route_objective_routes_investigation_language_to_audit(tmp_path: Path) 
     assert route["selected_workflow"]["workflow_family"] == "audit_only"
 
 
+def test_route_objective_routes_tmcp_expert_rubric_to_expert_workflow(
+    tmp_path: Path,
+) -> None:
+    conn = sqlite3.connect(":memory:")
+    _seed_projects(conn, tmp_path)
+
+    for objective in (
+        "Run the TMCP expert-rubric workflow for AIOS review evidence",
+        "Use the TMCP expert workflow",
+        "Use the TMCP expert workflow to judge this for AIOS",
+        "Judge this with TMCP",
+        "Judge this with TMCP for AIOS",
+        "TMCP judge this AIOS routing evidence",
+        "Use the TMCP expert UI rubric on Hoopscout",
+    ):
+        route = route_objective(
+            conn,
+            objective=objective,
+            explicit_project_id="p-aios",
+        ).to_json()
+
+        assert route["status"] == "ready", objective
+        assert route["selected_workflow"]["workflow_key"] == "expert_rubric_remediation_v1"
+        assert route["selected_workflow"]["workflow_family"] == "audit_and_plan"
+
+
+def test_route_objective_routes_quality_gate_adoption_to_gate_workflow(
+    tmp_path: Path,
+) -> None:
+    conn = sqlite3.connect(":memory:")
+    _seed_projects(conn, tmp_path)
+
+    route = route_objective(
+        conn,
+        objective="Create a quality gate adoption plan for this repo's commit gates",
+        explicit_project_id="p-aios",
+    ).to_json()
+
+    assert route["status"] == "ready"
+    assert route["selected_workflow"]["workflow_key"] == "repo_gate_adoption_v1"
+    assert route["selected_workflow"]["workflow_family"] == "audit_and_plan"
+
+
 def test_semantic_reasoner_routes_high_confidence_no_match() -> None:
     seen_request: dict[str, object] = {}
 
@@ -209,7 +296,10 @@ def test_semantic_reasoner_routes_high_confidence_no_match() -> None:
     assert route["selected_workflow"]["workflow_key"] == "implementation-delivery"
     assert route["selected_workflow"]["routing_source"] == "semantic_reasoner"
     assert route["semantic_recommendation"]["confidence"] == 0.86
-    assert seen_request["objective"] == "Make the router understand intent instead of depending on exact words"
+    assert (
+        seen_request["objective"]
+        == "Make the router understand intent instead of depending on exact words"
+    )
     assert any(
         item["workflow_key"] == "implementation-delivery"
         for item in seen_request["available_workflows"]
@@ -298,7 +388,10 @@ def test_route_objective_uses_configured_semantic_router_command(tmp_path: Path)
     assert route["semantic_recommendation"]["confidence"] == 0.91
     assert run.call_args.args[0] == ["semantic-router", "--json"]
     request = json.loads(run.call_args.kwargs["input"])
-    assert request["objective"] == "Make the router understand intent instead of depending on exact words"
+    assert (
+        request["objective"]
+        == "Make the router understand intent instead of depending on exact words"
+    )
 
 
 def test_configured_semantic_router_command_failure_blocks_without_crashing(tmp_path: Path) -> None:

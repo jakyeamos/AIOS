@@ -28,6 +28,9 @@ VALID_CONDITIONS = {
     "external_clean_room",
 }
 
+NO_EVIDENCE_DIFF_STAT = {"files_changed": 0, "insertions": 0, "deletions": 0}
+NO_EVIDENCE_TEST_DELTA = {"status": "not_run"}
+
 
 class ShadowBranchSafetyError(RuntimeError):
     pass
@@ -66,6 +69,16 @@ def ensure_shadow_branch_schema(conn: sqlite3.Connection) -> None:
           replay_command TEXT,
           replay_unavailable_reason TEXT,
           contamination_check_passed INTEGER NOT NULL DEFAULT 0,
+          execution_status TEXT NOT NULL DEFAULT 'not_started',
+          execution_backend TEXT,
+          execution_pid INTEGER,
+          execution_command_json TEXT NOT NULL DEFAULT '[]',
+          output_jsonl_path TEXT,
+          stderr_path TEXT,
+          final_message_path TEXT,
+          execution_started_at TEXT,
+          execution_ended_at TEXT,
+          execution_metadata_json TEXT NOT NULL DEFAULT '{}',
           created_at TEXT
         );
         """
@@ -77,6 +90,16 @@ def ensure_shadow_branch_schema(conn: sqlite3.Connection) -> None:
         "failure_classification": "TEXT",
         "replay_command": "TEXT",
         "replay_unavailable_reason": "TEXT",
+        "execution_status": "TEXT NOT NULL DEFAULT 'not_started'",
+        "execution_backend": "TEXT",
+        "execution_pid": "INTEGER",
+        "execution_command_json": "TEXT NOT NULL DEFAULT '[]'",
+        "output_jsonl_path": "TEXT",
+        "stderr_path": "TEXT",
+        "final_message_path": "TEXT",
+        "execution_started_at": "TEXT",
+        "execution_ended_at": "TEXT",
+        "execution_metadata_json": "TEXT NOT NULL DEFAULT '{}'",
     }
     for column, ddl in additions.items():
         if column not in columns:
@@ -100,7 +123,9 @@ def create_shadow_worktree(*, repo_path: str | Path, start_sha: str, branch_name
     ).stdout.strip()
     worktree_path = repo / ".aios" / "shadow-worktrees" / branch_name.replace("/", "-")
     if Path(active_root).resolve() == worktree_path.resolve():
-        raise ShadowBranchSafetyError("Refusing to create a shadow worktree on the active tree path.")
+        raise ShadowBranchSafetyError(
+            "Refusing to create a shadow worktree on the active tree path."
+        )
     worktree_path.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run(
         ["git", "worktree", "add", str(worktree_path), "-b", branch_name, start_sha],
@@ -159,7 +184,9 @@ def capture_test_delta(
     }
 
 
-def compute_shadow_branch_delta(*, baseline_score: dict[str, Any], aios_score: dict[str, Any]) -> float:
+def compute_shadow_branch_delta(
+    *, baseline_score: dict[str, Any], aios_score: dict[str, Any]
+) -> float:
     return float(aios_score["overall_score"]) - float(baseline_score["overall_score"])
 
 
@@ -181,18 +208,38 @@ def record_shadow_branch_run(
     start_sha: str,
     aios_branch: str,
     worktree_path: str,
+    no_evidence_reason: str | None = None,
+    contamination_check_passed: bool = False,
 ) -> str:
     ensure_shadow_branch_schema(conn)
+    if not no_evidence_reason or not no_evidence_reason.strip():
+        raise ValueError("no_evidence_reason is required when creating an empty shadow run.")
     run_id = _new_id("shadow-run")
     conn.execute(
         """
         INSERT INTO shadow_branch_runs (
           id, task_id, condition, start_sha, aios_branch, worktree_path,
+          diff_stat_json, test_delta_json, parity_checklist_status,
+          failure_classification, replay_unavailable_reason,
           contamination_check_passed, created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, 0, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        (run_id, task_id, condition, start_sha, aios_branch, worktree_path, _now_iso()),
+        (
+            run_id,
+            task_id,
+            condition,
+            start_sha,
+            aios_branch,
+            worktree_path,
+            json.dumps(NO_EVIDENCE_DIFF_STAT, sort_keys=True, separators=(",", ": ")),
+            json.dumps(NO_EVIDENCE_TEST_DELTA, sort_keys=True, separators=(",", ": ")),
+            "no_evidence",
+            "shadow_execution_not_started",
+            no_evidence_reason.strip(),
+            1 if contamination_check_passed else 0,
+            _now_iso(),
+        ),
     )
     return run_id
 
@@ -234,6 +281,84 @@ def update_shadow_parity_metadata(
     )
 
 
+def get_shadow_run(conn: sqlite3.Connection, shadow_run_id: str) -> dict[str, Any]:
+    ensure_shadow_branch_schema(conn)
+    row = conn.execute(
+        "SELECT * FROM shadow_branch_runs WHERE id = ? LIMIT 1",
+        (shadow_run_id,),
+    ).fetchone()
+    if row is None:
+        raise ValueError(f"Shadow branch run not found: {shadow_run_id}")
+    item = dict(row)
+    item["comparison_refs"] = json.loads(item.pop("comparison_refs_json") or "{}")
+    item["execution_command"] = json.loads(item.pop("execution_command_json") or "[]")
+    item["execution_metadata"] = json.loads(item.pop("execution_metadata_json") or "{}")
+    return item
+
+
+def update_shadow_execution_metadata(
+    conn: sqlite3.Connection,
+    *,
+    shadow_run_id: str,
+    execution_status: str,
+    execution_backend: str | None = None,
+    execution_pid: int | None = None,
+    execution_command: list[str] | None = None,
+    output_jsonl_path: str | None = None,
+    stderr_path: str | None = None,
+    final_message_path: str | None = None,
+    execution_started_at: str | None = None,
+    execution_ended_at: str | None = None,
+    execution_metadata: dict[str, Any] | None = None,
+    failure_classification: str | None = None,
+    replay_command: str | None = None,
+    replay_unavailable_reason: str | None = None,
+) -> None:
+    ensure_shadow_branch_schema(conn)
+    if replay_command and replay_unavailable_reason:
+        raise ValueError("Provide replay_command or replay_unavailable_reason, not both.")
+    existing = get_shadow_run(conn, shadow_run_id)
+    command = execution_command if execution_command is not None else existing["execution_command"]
+    metadata = (
+        execution_metadata if execution_metadata is not None else existing["execution_metadata"]
+    )
+    conn.execute(
+        """
+        UPDATE shadow_branch_runs
+        SET execution_status = ?,
+            execution_backend = COALESCE(?, execution_backend),
+            execution_pid = COALESCE(?, execution_pid),
+            execution_command_json = ?,
+            output_jsonl_path = COALESCE(?, output_jsonl_path),
+            stderr_path = COALESCE(?, stderr_path),
+            final_message_path = COALESCE(?, final_message_path),
+            execution_started_at = COALESCE(?, execution_started_at),
+            execution_ended_at = COALESCE(?, execution_ended_at),
+            execution_metadata_json = ?,
+            failure_classification = COALESCE(?, failure_classification),
+            replay_command = ?,
+            replay_unavailable_reason = ?
+        WHERE id = ?
+        """,
+        (
+            execution_status,
+            execution_backend,
+            execution_pid,
+            json.dumps(command, sort_keys=True),
+            output_jsonl_path,
+            stderr_path,
+            final_message_path,
+            execution_started_at,
+            execution_ended_at,
+            json.dumps(metadata, sort_keys=True),
+            failure_classification,
+            replay_command,
+            replay_unavailable_reason,
+            shadow_run_id,
+        ),
+    )
+
+
 def list_shadow_parity_metadata(
     conn: sqlite3.Connection, *, task_id: str | None = None
 ) -> list[dict[str, Any]]:
@@ -254,6 +379,9 @@ def list_shadow_parity_metadata(
                    worktree_path, diff_stat_json, test_delta_json, comparison_report_path,
                    comparison_refs_json, parity_checklist_status, failure_classification,
                    replay_command, replay_unavailable_reason, contamination_check_passed,
+                   execution_status, execution_backend, execution_pid, execution_command_json,
+                   output_jsonl_path, stderr_path, final_message_path, execution_started_at,
+                   execution_ended_at, execution_metadata_json,
                    created_at
             FROM shadow_branch_runs
             {where}
@@ -278,10 +406,14 @@ def compare_shadow_runs(
     ).fetchone()
     if row is None:
         raise ValueError(f"Shadow branch run not found: {shadow_run_id}")
-    baseline_detail = get_eval_run_detail(conn, baseline_run_id)
     aios_run_id = row["aios_run_id"]
     if not aios_run_id:
-        raise ValueError(f"Shadow branch run has no aios_run_id: {shadow_run_id}")
+        execution_status = row["execution_status"] or "not_started"
+        raise ValueError(
+            f"Shadow branch run has no completed comparison evidence: {shadow_run_id} "
+            f"(execution_status={execution_status})"
+        )
+    baseline_detail = get_eval_run_detail(conn, baseline_run_id)
     aios_detail = get_eval_run_detail(conn, str(aios_run_id))
     if not baseline_detail["scores"] or not aios_detail["scores"]:
         raise ValueError("Both baseline and AIOS runs must have at least one score.")
@@ -293,9 +425,18 @@ def compare_shadow_runs(
         """
         UPDATE shadow_branch_runs
         SET baseline_run_id = ?, shadow_branch_delta = ?, diff_stat_json = ?,
-            test_delta_json = ?, contamination_check_passed = 1
+            test_delta_json = ?, parity_checklist_status = ?,
+            failure_classification = NULL, replay_unavailable_reason = NULL,
+            contamination_check_passed = 1
         WHERE id = ?
         """,
-        (baseline_run_id, delta, json.dumps({}), json.dumps({}), shadow_run_id),
+        (
+            baseline_run_id,
+            delta,
+            json.dumps({}),
+            json.dumps({}),
+            "evidence_recorded",
+            shadow_run_id,
+        ),
     )
     return {"shadow_run_id": shadow_run_id, "baseline_run_id": baseline_run_id, "delta": delta}

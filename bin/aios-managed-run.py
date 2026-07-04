@@ -46,9 +46,10 @@ from services.workflow_orchestration import (  # noqa: E402
 HOOK_SESSION_START = ROOT / "bin" / "hook-session-start.py"
 HOOK_PROMPT_SUBMIT = ROOT / "bin" / "hook-prompt-submit.py"
 HOOK_STOP = ROOT / "bin" / "hook-stop.py"
-REPORT_DIR = ROOT / "logs" / "control-plane" / "invocations"
-WORKFLOW_REPORT_DIR = ROOT / "logs" / "control-plane" / "workflow-reports"
-TMCP_PACKET_DIR = ROOT / "logs" / "control-plane" / "tmcp-packets"
+DEFAULT_LOGS_DIR = ROOT / "logs"
+REPORT_DIR = DEFAULT_LOGS_DIR / "control-plane" / "invocations"
+WORKFLOW_REPORT_DIR = DEFAULT_LOGS_DIR / "control-plane" / "workflow-reports"
+TMCP_PACKET_DIR = DEFAULT_LOGS_DIR / "control-plane" / "tmcp-packets"
 BACKEND_SURFACES = {
     "codex-managed-runtime": "codex",
     "claude-managed-runtime": "claude_code",
@@ -161,7 +162,9 @@ def write_invocation_report(
             f"tool-event-{uuid.uuid4()}",
             session_id,
             now_iso(),
-            json.dumps({"report_path": str(report_path), "run_id": run_id, "backend_key": backend_key}),
+            json.dumps(
+                {"report_path": str(report_path), "run_id": run_id, "backend_key": backend_key}
+            ),
         ),
     )
     conn.commit()
@@ -282,7 +285,12 @@ def ensure_managed_start(
         """,
         (run_id,),
     ).fetchone()
-    if has_event is None or row[0] in {"planned", "ready"} or row[1] != session_id or row[2] != invocation_id:
+    if (
+        has_event is None
+        or row[0] in {"planned", "ready"}
+        or row[1] != session_id
+        or row[2] != invocation_id
+    ):
         transition_run(
             conn,
             run_id=run_id,
@@ -410,17 +418,28 @@ def ensure_managed_closeout(
 
 
 def main() -> int:
+    global REPORT_DIR, TMCP_PACKET_DIR, WORKFLOW_REPORT_DIR
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--invocation-id", required=True)
-    parser.add_argument("--backend-key", default=os.environ.get("AIOS_BACKEND_KEY", "codex-managed-runtime"))
+    parser.add_argument(
+        "--backend-key", default=os.environ.get("AIOS_BACKEND_KEY", "codex-managed-runtime")
+    )
     parser.add_argument("--db", default=os.environ.get("AIOS_DB", default_db_path()))
+    parser.add_argument(
+        "--logs-dir", default=os.environ.get("AIOS_LOGS_DIR", str(DEFAULT_LOGS_DIR))
+    )
     args = parser.parse_args()
 
     run_id = args.run_id
     invocation_id = args.invocation_id
     backend_key = args.backend_key
     db_path = args.db
+    logs_dir = Path(args.logs_dir).expanduser().resolve()
+    REPORT_DIR = logs_dir / "control-plane" / "invocations"
+    WORKFLOW_REPORT_DIR = logs_dir / "control-plane" / "workflow-reports"
+    TMCP_PACKET_DIR = logs_dir / "control-plane" / "tmcp-packets"
     session_id = f"managed-{invocation_id}"
     canceled = {"flag": False}
 
@@ -458,6 +477,7 @@ def main() -> int:
         "AIOS_INVOCATION_ID": invocation_id,
         "AIOS_BACKEND_KEY": backend_key,
         "AIOS_DB": db_path,
+        "AIOS_LOGS_DIR": str(logs_dir),
     }
 
     conn = sqlite3.connect(db_path)
@@ -557,7 +577,9 @@ def main() -> int:
             active_tmcp_receipt_id = tmcp_receipt_id
             if isinstance(active_tmcp_packet, dict):
                 tmcp_packet = active_tmcp_packet
-                active_tmcp_receipt_id = str(active_tmcp_packet.get("receipt_id") or tmcp_receipt_id)
+                active_tmcp_receipt_id = str(
+                    active_tmcp_packet.get("receipt_id") or tmcp_receipt_id
+                )
                 tmcp_packet_path = write_tmcp_packet_artifact(
                     conn,
                     session_id=session_id,

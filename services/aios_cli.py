@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
+import shlex
 import sqlite3
 import subprocess
 import sys
@@ -100,6 +102,16 @@ from services.peer_trace import (
     list_peer_sessions,
     start_peer_session,
 )
+from services.personalized_humanizer import (
+    FeedbackVerdict,
+    ensure_personalized_humanizer_schema,
+    humanize_text,
+    record_eval_result,
+    record_feedback,
+    record_rewrite_run,
+    run_eval_suite,
+)
+from services.planning_lenses import select_planning_lenses
 from services.portable_context_packet_generator import generate_packet
 from services.pre_pr_readiness import (
     DEFAULT_PRE_CR_REPO,
@@ -110,6 +122,7 @@ from services.pre_pr_readiness import (
 )
 from services.project_health_proof import DEFAULT_PROVING_PROJECTS, prove_project_health
 from services.quality_gates import run_gate as run_quality_gate
+from services.repo_gate_adoption import write_adoption_doc_quality_report
 from services.retrospective_artifacts import list_retrospective_artifacts
 from services.rtk_integration import (
     classify_rtk_metrics,
@@ -122,6 +135,35 @@ from services.second_brain_eval import (
     compute_second_brain_lift,
     evaluate_gold_set_run,
 )
+from services.session_intelligence_helpers import (
+    HELPER_FAMILIES as SESSION_INTEL_HELPER_FAMILIES,
+)
+from services.session_intelligence_helpers import (
+    list_session_intelligence_helpers,
+    run_session_intelligence_helper,
+)
+from services.session_intelligence_loop import (
+    SessionIntelligenceBackfillOptions,
+    SessionIntelligenceOptions,
+    implement_session_intelligence_candidates,
+    list_session_intelligence_candidates,
+    list_session_intelligence_clusters,
+    list_session_intelligence_implementations,
+    mark_session_intelligence_candidate,
+    run_session_intelligence,
+    run_session_intelligence_backfill,
+)
+from services.session_intelligence_tools import (
+    codex_workflow_skill_payload,
+    planning_state_payload,
+    quality_ladder_payload,
+    repo_closeout_payload,
+    repo_inspect_payload,
+    service_probe_payload,
+    ship_guard_payload,
+)
+from services.session_providers.claude import ClaudeProvider
+from services.session_providers.codex import CodexProvider
 from services.shadow_automation import (
     approve_candidate,
     run_full_automation_pipeline,
@@ -131,11 +173,18 @@ from services.shadow_branch_runner import (
     cleanup_shadow_worktree,
     compare_shadow_runs,
     create_shadow_worktree,
+    get_shadow_run,
     list_shadow_parity_metadata,
     record_shadow_branch_run,
     shadow_branch_name,
+    verify_no_contamination,
 )
 from services.shadow_candidate_scorer import score_shadow_candidate
+from services.shadow_codex_runner import (
+    cancel_shadow_execution,
+    launch_codex_shadow,
+    shadow_execution_status,
+)
 from services.skills_harvest import HarvestOptions, harvest_skills_library, verify_tmcp_graph
 from services.standards_health import (
     AssessmentStatus,
@@ -198,6 +247,18 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG_ROOT = REPO_ROOT / "config"
 DEFAULT_DB_PATH = Path.home() / "AIOS" / "data" / "aios.db"
 DEFAULT_LOGS_DIR = Path.home() / "AIOS" / "logs"
+DAILY_CODEX_SESSION_INTEL_COMMAND = [
+    ".venv/bin/python",
+    str(Path.home() / "AIOS" / "bin" / "aios.py"),
+    "session-intel",
+    "run",
+    "--provider",
+    "codex",
+    "--since",
+    "last",
+    "--write-report",
+    "--json",
+]
 LOG_SOURCE_FILES = {
     "hooks": "hooks.log",
     "pipeline": "pipeline.log",
@@ -501,6 +562,189 @@ def _tmcp_review_plan_payload(args: argparse.Namespace) -> dict[str, Any]:
         "remediation_slices": remediation_slices,
         "implementation_handoff": artifacts.get("expert_implementation_handoff"),
     }
+
+
+def _gate_adoption_plan_payload(args: argparse.Namespace) -> dict[str, Any]:
+    run_id = args.run_id or f"repo-gate-adoption-{uuid.uuid4().hex[:8]}"
+    repo_root = Path(args.repo_root).expanduser().resolve()
+    report = execute_workflow(
+        WorkflowExecutionContext(
+            objective=(
+                args.objective
+                or "Create a repo quality gate adoption readiness matrix and rollout plan"
+            ),
+            workflow_key="repo_gate_adoption_v1",
+            repo_path=str(repo_root),
+            run_id=run_id,
+        )
+    )
+    artifacts = report["artifacts"]
+    gate_matrix = artifacts.get("repo_gate_matrix")
+    rollout_plan = artifacts.get("repo_gate_rollout_plan")
+    return {
+        "schema": "aios-repo-gate-adoption-result-v0.1",
+        "workflow_key": report["workflow_key"],
+        "run_id": report["run_id"],
+        "status": report["status"],
+        "validations": report["validations"],
+        "artifact_paths": artifacts.get("repo_gate_adoption_artifact_paths", {}),
+        "gate_summary": gate_matrix.get("summary", {}) if isinstance(gate_matrix, dict) else {},
+        "phase_scope_policy": rollout_plan.get("phase_scope_policy", "")
+        if isinstance(rollout_plan, dict)
+        else "",
+        "phase_owner": rollout_plan.get("phase_owner", "")
+        if isinstance(rollout_plan, dict)
+        else "",
+        "aios_role": rollout_plan.get("aios_role", "") if isinstance(rollout_plan, dict) else "",
+        "repo_local_phases": rollout_plan.get("repo_local_phases", [])
+        if isinstance(rollout_plan, dict)
+        else [],
+        "rollout_phases": rollout_plan.get("phases", []) if isinstance(rollout_plan, dict) else [],
+    }
+
+
+def _gate_adoption_doc_quality_payload(args: argparse.Namespace) -> dict[str, Any]:
+    adoption_payload = _gate_adoption_plan_payload(args)
+    artifact_paths = adoption_payload.get("artifact_paths")
+    artifact_paths = artifact_paths if isinstance(artifact_paths, dict) else {}
+    manifest_raw = artifact_paths.get("rubric_detail_manifest_json")
+    output_dir = (
+        Path(str(manifest_raw)).parent if manifest_raw else Path(args.repo_root).expanduser()
+    )
+    quality_paths = write_adoption_doc_quality_report(output_dir)
+    quality_report = json.loads(
+        quality_paths["adoption_doc_quality_json"].read_text(encoding="utf-8")
+    )
+    merged_artifact_paths = {
+        **artifact_paths,
+        **{key: str(path) for key, path in quality_paths.items()},
+    }
+    return {
+        "schema": "aios-repo-gate-adoption-doc-quality-result-v0.1",
+        "workflow_key": adoption_payload["workflow_key"],
+        "run_id": adoption_payload["run_id"],
+        "status": quality_report.get("status", "unknown"),
+        "passed": quality_report.get("passed", False),
+        "structurally_valid": quality_report.get("structurally_valid", False),
+        "ready_for_phase_planning": quality_report.get("ready_for_phase_planning", False),
+        "ready_for_execution": quality_report.get("ready_for_execution", False),
+        "validations": adoption_payload["validations"],
+        "artifact_paths": merged_artifact_paths,
+        "gate_summary": adoption_payload["gate_summary"],
+        "doc_quality": quality_report,
+    }
+
+
+def _resolve_route_project_override(
+    conn: sqlite3.Connection, raw_project: str | None
+) -> str | None:
+    if raw_project is None:
+        return None
+    raw_project = raw_project.strip()
+    if not raw_project:
+        return None
+    if not _table_exists(conn, "projects"):
+        return raw_project
+    rows = conn.execute(
+        """
+        SELECT id, name
+        FROM projects
+        WHERE status = 'active'
+        ORDER BY name
+        """
+    ).fetchall()
+    normalized = raw_project.lower()
+    for row in rows:
+        if normalized in {str(row["id"]).lower(), str(row["name"]).lower()}:
+            return str(row["id"])
+    return raw_project
+
+
+def _route_next_fix(route_payload: dict[str, Any]) -> str | None:
+    if route_payload.get("status") == "ready":
+        return None
+    project = route_payload.get("project") if isinstance(route_payload.get("project"), dict) else {}
+    candidates = project.get("candidates") if isinstance(project, dict) else []
+    if isinstance(candidates, list) and candidates:
+        return "Pass --project with one of the candidate project ids."
+    if isinstance(project, dict) and project.get("outcome") == "unsupported":
+        return "Register the project in AIOS or run from a registered project workspace."
+    return "Refine the objective so a governed workflow can be selected."
+
+
+def _route_preview_payload(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    explicit_project_id = _resolve_route_project_override(conn, args.project)
+    cwd = str(Path(args.cwd).expanduser().resolve()) if args.cwd else None
+    route = route_objective(
+        conn,
+        objective=args.objective,
+        surface=args.surface,
+        cwd=cwd,
+        explicit_project_id=explicit_project_id,
+    )
+    route_payload = route.to_json()
+    project_payload = route_payload["project"]
+    project_candidates = project_payload["candidates"]
+    selected_project_id = project_payload["selected_project_id"]
+    selected_project = next(
+        (candidate for candidate in project_candidates if candidate["id"] == selected_project_id),
+        None,
+    )
+    start_work_command = None
+    if route_payload["status"] == "ready" and selected_project_id:
+        start_work_command = [
+            "aios",
+            "start-work",
+            args.objective,
+            "--project",
+            selected_project_id,
+        ]
+    return {
+        "schema": "aios-route-preview-v0.1",
+        "status": route_payload["status"],
+        "objective": args.objective,
+        "surface": args.surface,
+        "cwd": cwd,
+        "selected_project": selected_project,
+        "selected_workflow": route_payload["selected_workflow"],
+        "recommended_agent": route_payload["agent_recommendation"],
+        "backend_recommendation": route_payload["backend_recommendation"],
+        "prompt_recommendation": route_payload["prompt_recommendation"],
+        "task_family": route_payload["task_family"],
+        "blocked_reason": route_payload["blocked_reason"],
+        "next_fix": _route_next_fix(route_payload),
+        "start_work_command": start_work_command,
+        "project_candidates": project_candidates,
+        "workflow_candidates": route_payload["workflow_candidates"],
+        "workflow_alternatives": route_payload["workflow_alternatives"],
+        "skill_recommendations": route_payload["skill_recommendations"],
+        "route": route_payload,
+    }
+
+
+def _add_expert_rubric_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("objective", help="Natural language review objective")
+    parser.add_argument(
+        "--project-path",
+        default=".",
+        help="Target project path used for TMCP packet compilation",
+    )
+    parser.add_argument(
+        "--output-dir",
+        required=True,
+        help="Directory where review artifacts will be written",
+    )
+    parser.add_argument(
+        "--evidence-json",
+        default="[]",
+        help="JSON object or array of evidence objects",
+    )
+    parser.add_argument(
+        "--selected-slice-id",
+        default=None,
+        help="Optional remediation slice id to include in the implementation handoff",
+    )
+    parser.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
 
 def _resumable_runs(conn: sqlite3.Connection, limit: int = 5) -> list[dict[str, Any]]:
@@ -1409,6 +1653,63 @@ def _prompt_contract_lines(route_payload: dict[str, Any], backend_key: str) -> l
     return lines
 
 
+def _planning_governance_sections(route_payload: dict[str, Any]) -> list[dict[str, Any]]:
+    workflow = route_payload.get("selected_workflow")
+    if not isinstance(workflow, dict) or workflow.get("workflow_key") != "planning-governance":
+        return []
+
+    selection = select_planning_lenses(workflow="planning-governance", phase="plan")
+    lens_lines = [
+        f"{lens.key}: {lens.purpose} Standards: {', '.join(lens.standard_refs) or 'none'}."
+        for lens in selection.lenses
+    ]
+    candidate = next(
+        (
+            row
+            for row in route_payload.get("workflow_candidates", [])
+            if isinstance(row, dict) and row.get("workflow_key") == "planning-governance"
+        ),
+        {},
+    )
+    detection_rationale = str(candidate.get("rationale", "")).strip()
+
+    return [
+        {
+            "title": "Planning Quality Contract",
+            "items": [
+                "Do not start implementation as the first action.",
+                "Create planning artifacts that preserve scope, non-goals, standards, and verification before execution begins.",
+                "Carry acceptance criteria, evidence expectations, and closeout rules into the executable plan.",
+            ]
+            + ([f"Route evidence: {detection_rationale}"] if detection_rationale else []),
+        },
+        {
+            "title": "Required Planning Artifacts",
+            "items": [
+                "GSD-compatible PLAN.md or equivalent planning contract.",
+                "Task-level acceptance criteria and validation commands.",
+                "Evidence expectations for route decisions, changed artifacts, and final verification.",
+                "Truth-file and SUMMARY.md writeback plan after evidence exists.",
+            ],
+        },
+        {
+            "title": "Standards Before Execution",
+            "items": lens_lines
+            or [
+                "No planning lenses were selected; escalate before execution because standards are missing."
+            ],
+        },
+        {
+            "title": "Verification Handoff",
+            "items": [
+                "Hand off only after the plan names automated checks or explicit human verification.",
+                "Verifier must inspect actual artifacts and command output, not just summary claims.",
+                "Blockers, warnings, and accepted tradeoffs must remain visible in durable artifacts.",
+            ],
+        },
+    ]
+
+
 def _required_check_lines(
     workflow_contract: dict[str, Any] | None,
     criteria_rows: Sequence[dict[str, Any]],
@@ -1439,6 +1740,17 @@ def _closeout_lines() -> list[str]:
         "Record unresolved risks, follow-up work, and approval-gated writeback proposals before closeout.",
         "Keep run, invocation, and session identifiers linked through verification and stop-hook evaluation.",
     ]
+
+
+def _next_recommended_action(workflow_key: str) -> str:
+    if workflow_key == "planning-governance":
+        return (
+            "Create planning artifacts from this packet, preserve standards-before-execution, "
+            "and hand off only after verification commands are explicit."
+        )
+    return (
+        "Start the routed runtime with this packet and keep run/invocation/session linkage intact."
+    )
 
 
 def _packet_sections(
@@ -1492,6 +1804,8 @@ def _packet_sections(
             "items": _prompt_contract_lines(route_payload, backend_key),
         }
     )
+
+    sections.extend(_planning_governance_sections(route_payload))
 
     sections.append(
         {
@@ -1730,6 +2044,7 @@ def _start_work_payload(
     run_id = f"run-{uuid.uuid4()}"
     packet_id = f"packet-{uuid.uuid4()}"
     invocation_id = f"invoke-manual-{uuid.uuid4()}"
+    next_recommended_action = _next_recommended_action(workflow_key)
     sections = _packet_sections(
         conn,
         objective=objective,
@@ -1811,7 +2126,7 @@ def _start_work_payload(
                 {
                     "packet_id": packet_id,
                     "current_stage": "packet_ready",
-                    "next_recommended_action": "Start the routed runtime with this packet and keep run/invocation/session linkage intact.",
+                    "next_recommended_action": next_recommended_action,
                     "pending_approval_count": 0,
                     "approval_targets": [],
                     "updated_at": now,
@@ -1985,6 +2300,7 @@ def _start_work_payload(
             "invocation_id": invocation_id,
             "packet_id": packet_id,
             "session_id": linked_session_id,
+            "next_recommended_action": next_recommended_action,
         },
         "route": route_payload,
     }
@@ -2956,6 +3272,103 @@ def cmd_eval_gold_set_run(conn: sqlite3.Connection, args: argparse.Namespace) ->
     )
 
 
+def _read_humanize_input(args: argparse.Namespace) -> str:
+    sources = [
+        bool(args.text),
+        bool(args.input),
+        bool(args.stdin),
+    ]
+    if sum(sources) != 1:
+        raise CLIError(
+            "humanize-input-required",
+            "Specify exactly one of --text, --input, or --stdin.",
+            EXIT_USAGE,
+        )
+    if args.text:
+        return str(args.text)
+    if args.stdin:
+        return sys.stdin.read()
+    input_path = Path(args.input).expanduser().resolve()
+    try:
+        return input_path.read_text(encoding="utf-8")
+    except FileNotFoundError as exc:
+        raise CLIError(
+            "humanize-input-not-found", f"Input file not found: {input_path}", EXIT_NOT_FOUND
+        ) from exc
+
+
+def cmd_humanize_run(conn: sqlite3.Connection | None, args: argparse.Namespace) -> dict[str, Any]:
+    text = _read_humanize_input(args)
+    if not text.strip():
+        raise CLIError("humanize-empty-input", "Input text is empty.", EXIT_USAGE)
+
+    try:
+        result = humanize_text(
+            text,
+            requested_mode=args.mode,
+            pipeline_position=args.pipeline,
+            debug=bool(args.debug),
+        )
+    except ValueError as exc:
+        raise CLIError("humanize-invalid-request", str(exc), EXIT_USAGE) from exc
+
+    output_path = Path(args.output).expanduser().resolve() if args.output else None
+    if output_path is not None:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(result.output, encoding="utf-8")
+
+    run_id = None
+    if conn is not None and not args.no_record:
+        ensure_personalized_humanizer_schema(conn)
+        run_id = record_rewrite_run(conn, result, input_text=text)
+        conn.commit()
+
+    payload: dict[str, Any] = {
+        "output": result.output,
+        "mode": result.mode,
+        "pipeline_position": result.pipeline_position,
+        "changed": result.output != text,
+        "scorecard": result.scorecard,
+        "risks": result.risks,
+        "run_id": run_id,
+        "recorded": run_id is not None,
+        "output_path": str(output_path) if output_path is not None else None,
+    }
+    if args.debug:
+        payload["debug"] = result.debug
+    return payload
+
+
+def cmd_humanize_feedback(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    ensure_personalized_humanizer_schema(conn)
+    revision_text = None
+    if args.revision:
+        revision_text = Path(args.revision).expanduser().resolve().read_text(encoding="utf-8")
+    feedback = record_feedback(
+        conn,
+        run_id=str(args.run_id),
+        verdict=cast(FeedbackVerdict, str(args.verdict)),
+        notes=str(args.notes),
+        user_revision=revision_text,
+    )
+    conn.commit()
+    feedback["verdict"] = str(args.verdict)
+    return feedback
+
+
+def cmd_humanize_eval(conn: sqlite3.Connection | None, args: argparse.Namespace) -> dict[str, Any]:
+    result = run_eval_suite()
+    if conn is not None and args.record:
+        ensure_personalized_humanizer_schema(conn)
+        eval_id = record_eval_result(conn, result)
+        conn.commit()
+        result["eval_id"] = eval_id
+        result["recorded"] = True
+    else:
+        result["recorded"] = False
+    return result
+
+
 def _meta_analyze_session_payload(args: argparse.Namespace) -> dict[str, Any]:
     input_path = Path(args.input).expanduser().resolve()
     with input_path.open("r", encoding="utf-8") as handle:
@@ -3243,11 +3656,17 @@ def cmd_context_loops_metrics(
 def cmd_shadow_create_worktree(
     conn: sqlite3.Connection, args: argparse.Namespace
 ) -> dict[str, Any]:
+    repo_path = Path(args.repo_path).resolve()
     branch_name = shadow_branch_name(task_id=str(args.task_id), condition=str(args.condition))
     worktree_path = create_shadow_worktree(
-        repo_path=Path(args.repo_path).resolve(),
+        repo_path=repo_path,
         start_sha=str(args.start_sha),
         branch_name=branch_name,
+    )
+    contamination_check_passed = verify_no_contamination(
+        baseline_branch=str(args.start_sha),
+        shadow_branch=branch_name,
+        repo_path=repo_path,
     )
     shadow_run_id = record_shadow_branch_run(
         conn,
@@ -3256,6 +3675,11 @@ def cmd_shadow_create_worktree(
         start_sha=str(args.start_sha),
         aios_branch=branch_name,
         worktree_path=worktree_path,
+        no_evidence_reason=(
+            "shadow worktree was created; no implementation, verification, or comparison "
+            "evidence has been recorded yet"
+        ),
+        contamination_check_passed=contamination_check_passed,
     )
     conn.commit()
     return {
@@ -3263,7 +3687,8 @@ def cmd_shadow_create_worktree(
         "task_id": args.task_id,
         "branch_name": branch_name,
         "worktree_path": worktree_path,
-        "contamination_check_passed": False,
+        "contamination_check_passed": contamination_check_passed,
+        "parity_checklist_status": "no_evidence",
     }
 
 
@@ -3416,8 +3841,140 @@ def cmd_shadow_run_pipeline(conn: sqlite3.Connection, args: argparse.Namespace) 
     return result
 
 
+def cmd_shadow_run(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    shadow = get_shadow_run(conn, str(args.shadow_run_id))
+    objective = str(args.objective or shadow.get("task_id") or args.shadow_run_id)
+    execution = launch_codex_shadow(
+        conn,
+        shadow_run_id=str(args.shadow_run_id),
+        objective=objective,
+        run_id=args.run_id,
+        packet_id=args.packet_id,
+        route_id=args.route_id,
+    )
+    conn.commit()
+    return {"shadow_run_id": args.shadow_run_id, "shadow_execution": execution}
+
+
 def cmd_shadow_status(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    if getattr(args, "shadow_run_id", None):
+        execution = shadow_execution_status(conn, shadow_run_id=str(args.shadow_run_id))
+        conn.commit()
+        return {"shadow_run_id": args.shadow_run_id, "shadow_execution": execution}
+    if not getattr(args, "candidate_id", None):
+        raise CLIError(
+            "shadow-status-target-required",
+            "Provide --shadow-run-id for execution status or --candidate-id for candidate status.",
+            EXIT_USAGE,
+        )
     return shadow_status(conn, str(args.candidate_id))
+
+
+def cmd_shadow_cancel(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    execution = cancel_shadow_execution(conn, shadow_run_id=str(args.shadow_run_id))
+    conn.commit()
+    return {"shadow_run_id": args.shadow_run_id, "shadow_execution": execution}
+
+
+def cmd_shadow(conn: sqlite3.Connection | None, args: argparse.Namespace) -> dict[str, Any]:
+    if args.shadow_command == "cleanup":
+        return cmd_shadow_cleanup(args)
+    if conn is None:
+        raise CLIError("db-required", "Shadow command requires a SQLite database.", EXIT_USAGE)
+    if args.shadow_command == "create-worktree":
+        return cmd_shadow_create_worktree(conn, args)
+    if args.shadow_command == "compare":
+        return cmd_shadow_compare(conn, args)
+    if args.shadow_command == "parity":
+        return cmd_shadow_parity(conn, args)
+    if args.shadow_command == "score":
+        return cmd_shadow_score(conn, args)
+    if args.shadow_command == "queue":
+        return cmd_shadow_queue(conn)
+    if args.shadow_command == "approve":
+        return cmd_shadow_approve(conn, args)
+    if args.shadow_command == "run-pipeline":
+        return cmd_shadow_run_pipeline(conn, args)
+    if args.shadow_command == "run":
+        return cmd_shadow_run(conn, args)
+    if args.shadow_command == "status":
+        return cmd_shadow_status(conn, args)
+    if args.shadow_command == "cancel":
+        return cmd_shadow_cancel(conn, args)
+    raise CLIError(
+        "unknown-shadow-command",
+        f"Unknown shadow command: {args.shadow_command}",
+        EXIT_USAGE,
+    )
+
+
+def cmd_eval(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    if args.eval_command == "record-run":
+        return cmd_eval_record_run(conn, args)
+    if args.eval_command == "list-runs":
+        return cmd_eval_list_runs(conn, args)
+    if args.eval_command == "summary":
+        return cmd_eval_summary(conn, args)
+    if args.eval_command == "second-brain-lift":
+        return cmd_eval_second_brain_lift(conn, args)
+    if args.eval_command == "retrieval-metrics":
+        return cmd_eval_retrieval_metrics(conn, args)
+    if args.eval_command == "gold-set-run":
+        return cmd_eval_gold_set_run(conn, args)
+    raise CLIError("unknown-eval-command", f"Unknown eval command: {args.eval_command}", EXIT_USAGE)
+
+
+def cmd_context_loops(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    if args.context_loops_command == "inner-run":
+        data = cmd_context_loops_inner_run(conn, args)
+    elif args.context_loops_command == "email-draft":
+        data = cmd_context_loops_email_draft(conn, args)
+    elif args.context_loops_command == "record-review":
+        data = cmd_context_loops_record_review(conn, args)
+    elif args.context_loops_command == "review":
+        data = cmd_context_loops_review(conn, args)
+    elif args.context_loops_command == "approve":
+        data = cmd_context_loops_approve(conn, args)
+    elif args.context_loops_command == "reject":
+        data = cmd_context_loops_reject(conn, args)
+    elif args.context_loops_command == "apply-approved":
+        data = cmd_context_loops_apply_approved(conn, args)
+    elif args.context_loops_command == "metrics":
+        return cmd_context_loops_metrics(conn, args)
+    else:
+        raise CLIError(
+            "unknown-context-loops-command",
+            f"Unknown context-loops command: {args.context_loops_command}",
+            EXIT_USAGE,
+        )
+    conn.commit()
+    return data
+
+
+def cmd_peer_trace(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    if args.peer_trace_command == "start":
+        return cmd_peer_trace_start(conn, args)
+    if args.peer_trace_command == "stop":
+        return cmd_peer_trace_stop(conn, args)
+    if args.peer_trace_command == "list":
+        return cmd_peer_trace_list(conn, args)
+    raise CLIError(
+        "unknown-peer-trace-command",
+        f"Unknown peer-trace command: {args.peer_trace_command}",
+        EXIT_USAGE,
+    )
+
+
+def cmd_ablation(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    if args.ablation_command == "run":
+        return cmd_ablation_run(conn, args)
+    if args.ablation_command == "compare":
+        return cmd_ablation_compare(conn, args)
+    raise CLIError(
+        "unknown-ablation-command",
+        f"Unknown ablation command: {args.ablation_command}",
+        EXIT_USAGE,
+    )
 
 
 def cmd_packet_generate(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
@@ -4052,16 +4609,18 @@ def _contracts_audit_payload(conn: sqlite3.Connection) -> dict[str, Any]:
             "source": "services/daily_flow.py",
             "source_of_truth": [
                 "services/daily_flow.py",
+                "services/session_intelligence_tools.py:repo_closeout_payload",
                 "services/agentize.py:agentize_request(dry_run=True)",
                 "services/aios_cli.py:cmd_daily_flow",
             ],
-            "storage": "read-only projection across route, packet, run, evaluation, writeback, delta, and next-action sources",
+            "storage": "read-only projection across route, packet, run, repo closeout, evaluation, writeback, delta, and next-action sources",
             "table_available": True,
             "notes": (
                 "Daily-flow trace backend (Phase 10, Plan 03). Preview is dry via "
-                "SAVEPOINT; replay is pure-read. UI mirror lands in Plan 04; tRPC "
-                "router in Plan 05; DailyFlowTrace component on /runs/[id] and "
-                "Command Center in Plan 06."
+                "SAVEPOINT; replay uses persisted run evidence plus read-only repo "
+                "closeout state when a project repo path is known. UI mirror lands "
+                "in Plan 04; tRPC router in Plan 05; DailyFlowTrace component on "
+                "/runs/[id] and Command Center in Plan 06."
             ),
         },
         {
@@ -4354,6 +4913,268 @@ def _health_payload(conn: sqlite3.Connection, logs_dir: Path) -> dict[str, Any]:
             "runs_active": status["run_status_counts"].get("in_progress", 0),
             "open_bugs": status["open_bugs"],
         },
+    }
+
+
+def _doctor_check(
+    check_id: str,
+    status: str,
+    summary: str,
+    remediation: str | None = None,
+    **metadata: Any,
+) -> dict[str, Any]:
+    return {
+        "id": check_id,
+        "status": status,
+        "summary": summary,
+        "remediation": remediation,
+        "metadata": metadata,
+    }
+
+
+def _doctor_dependency_check(module_name: str, package_label: str) -> dict[str, Any]:
+    spec = importlib.util.find_spec(module_name)
+    if spec is None:
+        return _doctor_check(
+            f"python_dependency_{module_name}",
+            "fail",
+            f"{package_label} is not importable from the current Python environment.",
+            f"Run `uv sync` in {REPO_ROOT} or invoke AIOS through `uv run python bin/aios.py`.",
+        )
+    return _doctor_check(
+        f"python_dependency_{module_name}",
+        "pass",
+        f"{package_label} is importable.",
+        origin=str(spec.origin) if spec.origin else None,
+    )
+
+
+def _doctor_sqlite_check(db_path: Path) -> dict[str, Any]:
+    if not db_path.exists():
+        return _doctor_check(
+            "sqlite_db",
+            "fail",
+            f"SQLite database does not exist at {db_path}.",
+            "Run the AIOS DB initialization or point --db at an existing AIOS database.",
+            path=str(db_path),
+        )
+    try:
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        try:
+            conn.execute("SELECT 1").fetchone()
+            required_tables = ("projects", "orchestration_runs", "briefing_packets")
+            missing_tables = [table for table in required_tables if not _table_exists(conn, table)]
+        finally:
+            conn.close()
+    except sqlite3.Error as exc:
+        return _doctor_check(
+            "sqlite_db",
+            "fail",
+            f"SQLite database is not readable: {exc}",
+            "Repair the DB path or restore a valid AIOS SQLite database.",
+            path=str(db_path),
+        )
+    if missing_tables:
+        return _doctor_check(
+            "sqlite_db",
+            "fail",
+            f"SQLite database is reachable but missing required tables: {', '.join(missing_tables)}.",
+            "Run AIOS schema initialization or migrations before daily use.",
+            path=str(db_path),
+            missing_tables=missing_tables,
+        )
+    return _doctor_check("sqlite_db", "pass", "SQLite database is reachable.", path=str(db_path))
+
+
+def _doctor_directory_check(check_id: str, path: Path, label: str) -> dict[str, Any]:
+    if path.exists() and path.is_dir():
+        return _doctor_check(check_id, "pass", f"{label} exists.", path=str(path))
+    return _doctor_check(
+        check_id,
+        "fail",
+        f"{label} does not exist at {path}.",
+        f"Create {path} or pass the correct path with the relevant CLI flag.",
+        path=str(path),
+    )
+
+
+def _doctor_package_manager_check(root: Path, label: str, check_id: str) -> dict[str, Any]:
+    package_json = root / "package.json"
+    pnpm_lock = root / "pnpm-lock.yaml"
+    package_lock = root / "package-lock.json"
+    if not package_json.exists():
+        return _doctor_check(
+            check_id,
+            "warning",
+            f"{label} has no package.json; JavaScript checks are not available.",
+            None,
+            path=str(root),
+        )
+    try:
+        package_data = json.loads(package_json.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return _doctor_check(
+            check_id,
+            "fail",
+            f"{label} package.json is not valid JSON: {exc.msg}.",
+            f"Repair {package_json}.",
+            path=str(package_json),
+        )
+    package_manager = str(package_data.get("packageManager", ""))
+    failures: list[str] = []
+    if not package_manager.startswith("pnpm@"):
+        failures.append("packageManager must start with pnpm@")
+    if not pnpm_lock.exists():
+        failures.append("pnpm-lock.yaml is missing")
+    if package_lock.exists():
+        failures.append("package-lock.json is present")
+    if failures:
+        remediation_parts = []
+        if package_lock.exists():
+            remediation_parts.append(f"Remove {package_lock.relative_to(REPO_ROOT)}")
+        if not pnpm_lock.exists():
+            remediation_parts.append(f"run `pnpm install` in {root.relative_to(REPO_ROOT)}")
+        if not package_manager.startswith("pnpm@"):
+            remediation_parts.append(
+                f"set packageManager to pnpm in {package_json.relative_to(REPO_ROOT)}"
+            )
+        return _doctor_check(
+            check_id,
+            "fail",
+            f"{label} package-manager contract failed: {', '.join(failures)}.",
+            "; ".join(remediation_parts) + ".",
+            path=str(root),
+            package_manager=package_manager or None,
+            has_pnpm_lock=pnpm_lock.exists(),
+            has_package_lock=package_lock.exists(),
+        )
+    return _doctor_check(
+        check_id,
+        "pass",
+        f"{label} uses pnpm only.",
+        path=str(root),
+        package_manager=package_manager,
+    )
+
+
+def _doctor_context_compiler_contract_check() -> dict[str, Any]:
+    package_json = REPO_ROOT / "package.json"
+    if not package_json.exists():
+        return _doctor_check(
+            "context_compiler_contract",
+            "warning",
+            "Root package.json is missing; context compiler package access was not checked.",
+            None,
+        )
+    try:
+        package_data = json.loads(package_json.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return _doctor_check(
+            "context_compiler_contract",
+            "fail",
+            f"Root package.json is not valid JSON: {exc.msg}.",
+            "Repair package.json before running context compiler checks.",
+        )
+    dependencies = package_data.get("dependencies", {})
+    has_dependency = isinstance(dependencies, dict) and "context-compiler-contract" in dependencies
+    installed_path = REPO_ROOT / "node_modules" / "context-compiler-contract"
+    if has_dependency and installed_path.exists():
+        return _doctor_check(
+            "context_compiler_contract",
+            "pass",
+            "context-compiler-contract is declared and installed.",
+            dependency=str(dependencies["context-compiler-contract"]),
+            installed_path=str(installed_path),
+        )
+    status = "fail" if has_dependency else "warning"
+    summary = (
+        "context-compiler-contract is declared but not installed."
+        if has_dependency
+        else "context-compiler-contract is not declared in root package.json."
+    )
+    remediation = "Run `pnpm install` at the AIOS repo root." if has_dependency else None
+    return _doctor_check(
+        "context_compiler_contract",
+        status,
+        summary,
+        remediation,
+        dependency=dependencies.get("context-compiler-contract")
+        if isinstance(dependencies, dict)
+        else None,
+        installed_path=str(installed_path),
+    )
+
+
+def _doctor_audit_surface_check() -> dict[str, Any]:
+    required_commands = {
+        "contracts-audit",
+        "capability-audit",
+        "invocation-audit",
+        "lifecycle-audit",
+        "daily-flow",
+        "next-action",
+        "start-work",
+    }
+    parser = create_parser()
+    subparser_action = next(
+        action for action in parser._actions if isinstance(action, argparse._SubParsersAction)
+    )
+    missing = sorted(required_commands - set(subparser_action.choices))
+    if missing:
+        return _doctor_check(
+            "audit_command_surface",
+            "fail",
+            f"Required daily-use commands are missing: {', '.join(missing)}.",
+            "Restore the daily-use CLI commands before release.",
+            missing_commands=missing,
+        )
+    return _doctor_check(
+        "audit_command_surface",
+        "pass",
+        "Daily-use and audit command surfaces are registered.",
+        commands=sorted(required_commands),
+    )
+
+
+def _doctor_payload(
+    *,
+    db_path: Path,
+    logs_dir: Path,
+    config_root: Path,
+    vault_root: Path,
+) -> dict[str, Any]:
+    checks = [
+        _doctor_dependency_check("quality_evidence_contract", "quality-evidence-contract"),
+        _doctor_dependency_check("repo_quality_certifier", "repo-quality-certifier"),
+        _doctor_context_compiler_contract_check(),
+        _doctor_sqlite_check(db_path),
+        _doctor_directory_check("logs_dir", logs_dir, "Logs directory"),
+        _doctor_directory_check("vault_root", vault_root, "Vault root"),
+        _doctor_directory_check("config_root", config_root, "Config root"),
+        _doctor_package_manager_check(REPO_ROOT, "AIOS root", "root_package_manager"),
+        _doctor_package_manager_check(REPO_ROOT / "aios-ui", "AIOS UI", "ui_package_manager"),
+        _doctor_audit_surface_check(),
+    ]
+    failed = [check for check in checks if check["status"] == "fail"]
+    warnings = [check for check in checks if check["status"] == "warning"]
+    return {
+        "schema": "aios-doctor-v0.1",
+        "ok": not failed,
+        "summary": {
+            "status": "pass" if not failed else "fail",
+            "pass_count": len([check for check in checks if check["status"] == "pass"]),
+            "warning_count": len(warnings),
+            "fail_count": len(failed),
+        },
+        "daily_use_loop": [
+            "doctor",
+            "start-work",
+            "daily-flow --run-id",
+            "next-action --project",
+            "closeout evidence",
+        ],
+        "checks": checks,
     }
 
 
@@ -4775,6 +5596,67 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
             f"terminal_runs={summary['terminal_run_count']} no_learning={summary['no_learning_count']}"
         )
         return
+    if command == "session-intel-run":
+        summary = data["summary"]
+        print(
+            f"sources={summary['source_count']} sessions={summary['session_count']} "
+            f"candidates={summary['candidate_count']} report={data.get('report_path') or 'none'}"
+        )
+        return
+    if command == "session-intel-daily-codex":
+        summary = data["summary"]
+        report_paths = data["report_paths"]
+        print(
+            f"sources={summary['source_count']} sessions={summary['session_count']} "
+            f"candidates={summary['candidate_count']} "
+            f"report={report_paths['markdown']} "
+            f"json={report_paths['json']} "
+            f"decision={report_paths['decision']}"
+        )
+        return
+    if command == "session-intel-backfill":
+        summary = data["summary"]
+        print(
+            f"providers={summary['provider_count']} "
+            f"processed={summary['processed_source_count']} "
+            f"skipped={summary['skipped_source_count']} "
+            f"batches={summary['batch_count']} "
+            f"candidates={summary['candidate_count']}"
+        )
+        return
+    if command == "session-intel-candidates":
+        print(f"candidates={data['count']}")
+        return
+    if command == "session-intel-clusters":
+        print(f"clusters={data['count']}")
+        return
+    if command == "session-intel-mark":
+        print(f"candidate={data['id']} status={data['status']}")
+        return
+    if command == "repo-inspect":
+        git_info = data["git"]
+        print(
+            f"repo={data['repo']['root']} branch={git_info['branch'] or 'unknown'} "
+            f"dirty={git_info['dirty']}"
+        )
+        return
+    if command == "quality-ladder":
+        print(f"profile={data['profile']} steps={len(data['steps'])} mode=plan_only")
+        return
+    if command == "ship-guard":
+        decision = data["decision"]
+        print(f"ready={decision['ready']} blockers={len(decision['blockers'])}")
+        return
+    if command == "service-probe":
+        print(f"probes={len(data['probes'])}")
+        return
+    if command == "workflow-skill-codex":
+        print(f"skill={data['skill']['name']} review_gated={data['promotion']['review_gated']}")
+        return
+    if command == "planning-state":
+        decision = data["decision"]
+        print(f"ready={decision['ready_for_agent_work']} blockers={len(decision['blockers'])}")
+        return
     if command == "contracts-audit":
         summary = data["summary"]
         print(f"contracts={summary['canonical_contract_count']} partial={summary['partial_count']}")
@@ -4922,8 +5804,64 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "eval-gold-set-run":
         print(f"recall={data['recall']} missed_sources={len(data['missed_sources'])}")
         return
+    if command == "humanize-run":
+        if data.get("output_path"):
+            print(
+                f"run={data.get('run_id') or 'unrecorded'} "
+                f"changed={data['changed']} output={data['output_path']}"
+            )
+        else:
+            print(data["output"])
+        return
+    if command == "humanize-feedback":
+        proposal = data.get("proposal") if isinstance(data.get("proposal"), dict) else None
+        print(
+            f"feedback={data['feedback_id']} verdict={data['verdict']} "
+            f"proposal={proposal.get('id') if proposal else 'none'}"
+        )
+        return
+    if command == "humanize-eval":
+        summary = data["summary"]
+        print(
+            f"cases={summary['case_count']} passed={summary['passed_count']} "
+            f"recorded={data.get('recorded', False)}"
+        )
+        return
     if command == "meta-analyze-session":
         print(f"signals={data['signal_count']} input={data['input_path']}")
+        return
+    if command == "route":
+        if data["status"] == "ready":
+            project = data["selected_project"] or {}
+            workflow = data["selected_workflow"] or {}
+            agent = data["recommended_agent"] or {}
+            backend = data["backend_recommendation"] or {}
+            prompt = data["prompt_recommendation"] or {}
+            workflow_label = workflow.get("workflow_key")
+            if workflow.get("name"):
+                workflow_label = f"{workflow_label} ({workflow['name']})"
+            print("status=ready")
+            print(f"project={project.get('name')} ({project.get('id')})")
+            print(
+                f"workflow={workflow_label} "
+                f"family={workflow.get('workflow_family') or data.get('task_family')}"
+            )
+            print(f"agent={agent.get('agent_key')}")
+            print(
+                f"backend={backend.get('selected_backend_key')} "
+                f"surface={backend.get('selected_surface') or data.get('surface')}"
+            )
+            print(f"prompt={prompt.get('prompt_family')}")
+            print(f"run={shlex.join(data['start_work_command'])}")
+            return
+        print("status=blocked")
+        print(f"reason={data['blocked_reason']}")
+        print(f"next={data['next_fix']}")
+        for candidate in data["project_candidates"]:
+            print(
+                f"candidate={candidate['id']} {candidate['name']} "
+                f"score={candidate['score']} match={candidate['match_kind']}"
+            )
         return
     if command in {
         "zoom-out",
@@ -4983,11 +5921,31 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "gate-run":
         print(f"status={data['status']} gate={data['gateId']} summary={data['summary']}")
         return
+    if command == "repo-closeout":
+        git_data = data["git"]
+        diff_stat = data["diff_stat"]
+        print("AIOS Repo Closeout")
+        print(f"repo: {data['repo']}")
+        print(f"branch: {git_data['branch'] or 'unknown'}")
+        print(f"head: {git_data['head'] or 'unknown'}")
+        print(f"dirty: {str(git_data['dirty']).lower()}")
+        print("dirty_files:")
+        for line in git_data["dirty_files"]:
+            print(line)
+        print("diff_stat:")
+        for line in diff_stat["lines"]:
+            print(line)
+        print("recent_commits:")
+        for commit in git_data["recent_commits"]:
+            print(commit["title"])
+        return
 
 
 def _command_name(args: argparse.Namespace) -> str:
     if args.command == "eval":
         return f"eval-{args.eval_command}"
+    if args.command == "humanize":
+        return f"humanize-{args.humanize_command}"
     if args.command == "meta":
         return f"meta-{args.meta_command}"
     if args.command == "review":
@@ -5008,6 +5966,20 @@ def _command_name(args: argparse.Namespace) -> str:
         return f"benchmark-{args.benchmark_command}"
     if args.command == "context-loops":
         return f"context-loops-{args.context_loops_command}"
+    if args.command == "session-intel":
+        return f"session-intel-{args.session_intel_command}"
+    if args.command == "repo":
+        return f"repo-{args.repo_command}"
+    if args.command == "quality":
+        return f"quality-{args.quality_command}"
+    if args.command == "ship":
+        return f"ship-{args.ship_command}"
+    if args.command == "service":
+        return f"service-{args.service_command}"
+    if args.command == "workflow-skill":
+        return f"workflow-skill-{args.workflow_skill_command}"
+    if args.command == "planning":
+        return f"planning-{args.planning_command}"
     if args.command == "gate":
         return f"gate-{args.gate_command}"
     if args.command == "skills":
@@ -5023,6 +5995,67 @@ def _command_name(args: argparse.Namespace) -> str:
     if args.command == "standards-resolution":
         return f"standards-resolution-{args.standards_resolution_command}"
     return args.command
+
+
+def _command_requires_db(args: argparse.Namespace) -> bool:
+    if args.command in {
+        "status",
+        "health",
+        "metadata",
+        "recent-failures",
+        "rtk",
+        "capability-audit",
+        "invocation-audit",
+        "lifecycle-audit",
+        "knowledge-objects",
+        "workflow-learning-audit",
+        "retrospectives",
+        "model-selection",
+        "route",
+        "evidence",
+        "verifier",
+        "learning-analyze",
+        "learning-propose",
+        "learning-impact",
+        "operator-search",
+        "next-action",
+        "daily-flow",
+        "session-intel",
+        "contracts-audit",
+        "governance-audit",
+        "criteria-finding",
+        "standards-resolution",
+        "delta-explain",
+        "recommend-workflow",
+        "standards-override",
+        "asset-lifecycle",
+        "workflow-compare",
+        "promote-asset",
+        "truth-audit",
+        "prove-project-health",
+        "sync-automation-history",
+        "start-work",
+        "harness-brief",
+        "harness-simulate",
+        "harness-replay",
+        "harness-shadow-evaluate",
+        "eval",
+        "context-loops",
+        "shadow",
+        "peer-trace",
+        "ablation",
+        "packet",
+        "benchmark",
+    }:
+        return True
+    return bool(
+        args.command == "humanize"
+        and (
+            args.humanize_command == "feedback"
+            or (args.humanize_command == "eval" and args.record)
+            or (args.humanize_command == "run" and not args.no_record)
+        )
+    )
 
 
 def _evidence_payload(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
@@ -5070,6 +6103,256 @@ def _workflow_gates_payload(args: argparse.Namespace) -> dict[str, Any]:
     if args.workflow:
         rows = [row for row in rows if row["workflow_key"] == args.workflow]
     return {"gates": rows, "count": len(rows)}
+
+
+def _session_intel_payload(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    if args.session_intel_command == "run":
+        report_root = Path(args.report_root).expanduser() if args.report_root else None
+        provider = _session_intel_provider(args.provider, source_root=args.source_root)
+        return run_session_intelligence(
+            conn,
+            provider=provider,
+            options=SessionIntelligenceOptions(
+                since=args.since,
+                lane=args.lane,
+                write_report=bool(args.write_report),
+                report_root=report_root,
+                config_path=Path(getattr(args, "config_root", DEFAULT_CONFIG_ROOT)).expanduser()
+                / "session-provider-config.yaml",
+            ),
+        )
+    if args.session_intel_command == "daily-codex":
+        report_root_arg = getattr(args, "report_root", None)
+        source_root_arg = getattr(args, "source_root", None)
+        report_root = Path(report_root_arg).expanduser() if report_root_arg else None
+        provider = _session_intel_provider("codex", source_root=source_root_arg)
+        result = run_session_intelligence(
+            conn,
+            provider=provider,
+            options=SessionIntelligenceOptions(
+                since="last",
+                lane="all",
+                write_report=True,
+                report_root=report_root,
+                config_path=Path(getattr(args, "config_root", DEFAULT_CONFIG_ROOT)).expanduser()
+                / "session-provider-config.yaml",
+            ),
+        )
+        return {
+            **result,
+            "scanned_range": "last",
+            "review_only": True,
+            "wrapped_command": list(DAILY_CODEX_SESSION_INTEL_COMMAND),
+            "report_paths": {
+                "markdown": result["report_path"],
+                "json": result["report_json_path"],
+                "decision": result["decision_report_path"],
+            },
+        }
+    if args.session_intel_command == "backfill":
+        report_root = Path(args.report_root).expanduser() if args.report_root else None
+        providers = _session_intel_providers(args)
+        provider_results = [
+            run_session_intelligence_backfill(
+                conn,
+                provider=provider,
+                options=SessionIntelligenceBackfillOptions(
+                    since=args.since,
+                    lane=args.lane,
+                    batch_size=args.batch_size,
+                    write_report=bool(args.write_report),
+                    report_root=report_root,
+                    config_path=Path(getattr(args, "config_root", DEFAULT_CONFIG_ROOT)).expanduser()
+                    / "session-provider-config.yaml",
+                ),
+            )
+            for provider in providers
+        ]
+        return {
+            "summary": {
+                "provider_count": len(provider_results),
+                "eligible_source_count": sum(
+                    result["summary"]["eligible_source_count"] for result in provider_results
+                ),
+                "processed_source_count": sum(
+                    result["summary"]["processed_source_count"] for result in provider_results
+                ),
+                "skipped_source_count": sum(
+                    result["summary"]["skipped_source_count"] for result in provider_results
+                ),
+                "batch_count": sum(result["summary"]["batch_count"] for result in provider_results),
+                "session_count": sum(
+                    result["summary"]["session_count"] for result in provider_results
+                ),
+                "candidate_count": sum(
+                    result["summary"]["candidate_count"] for result in provider_results
+                ),
+            },
+            "providers": provider_results,
+            "report_paths": [
+                path for result in provider_results for path in result["report_paths"]
+            ],
+            "report_json_paths": [
+                path for result in provider_results for path in result["report_json_paths"]
+            ],
+        }
+    if args.session_intel_command == "candidates":
+        candidates = list_session_intelligence_candidates(
+            conn,
+            status=None if args.status == "all" else args.status,
+            lane=args.lane,
+        )
+        return {"count": len(candidates), "candidates": candidates}
+    if args.session_intel_command == "clusters":
+        status = None if args.status == "all" else args.status
+        total_clusters = list_session_intelligence_clusters(
+            conn,
+            status=status,
+            lane=args.lane,
+        )
+        clusters = list_session_intelligence_clusters(
+            conn,
+            status=status,
+            lane=args.lane,
+            limit=args.limit,
+        )
+        return {"count": len(clusters), "total_count": len(total_clusters), "clusters": clusters}
+    if args.session_intel_command == "implement":
+        result = implement_session_intelligence_candidates(
+            conn,
+            status=args.status,
+            lane=args.lane,
+            actor_note=args.note,
+        )
+        implementations = list_session_intelligence_implementations(conn)
+        return {**result, "implementations": implementations}
+    if args.session_intel_command == "mark":
+        return mark_session_intelligence_candidate(
+            conn,
+            candidate_id=args.candidate_id,
+            status=args.status,
+            note=args.note,
+        )
+    if args.session_intel_command == "helper":
+        if args.session_intel_helper_command == "list":
+            helpers = list_session_intelligence_helpers(conn)
+            return {"count": len(helpers), "helpers": helpers}
+        if args.session_intel_helper_command == "run":
+            return run_session_intelligence_helper(
+                conn,
+                family=args.family,
+                path=args.path,
+                repo=args.repo,
+                start_line=args.start_line,
+                end_line=args.end_line,
+            )
+    raise CLIError(
+        "unsupported-session-intel-command",
+        f"Unsupported session-intel command: {args.session_intel_command}",
+        EXIT_USAGE,
+    )
+
+
+def _repo_payload(args: argparse.Namespace) -> dict[str, Any]:
+    if args.repo_command == "inspect":
+        return repo_inspect_payload(
+            Path(args.repo),
+            include_processes=bool(args.include_processes),
+        )
+    if args.repo_command == "closeout":
+        return repo_closeout_payload(Path(args.repo), commit_limit=int(args.commits))
+    raise CLIError(
+        "unsupported-repo-command", f"Unsupported repo command: {args.repo_command}", EXIT_USAGE
+    )
+
+
+def _quality_payload(args: argparse.Namespace) -> dict[str, Any]:
+    if args.quality_command == "ladder":
+        return quality_ladder_payload(Path(args.repo), profile=args.profile)
+    raise CLIError(
+        "unsupported-quality-command",
+        f"Unsupported quality command: {args.quality_command}",
+        EXIT_USAGE,
+    )
+
+
+def _ship_payload(args: argparse.Namespace) -> dict[str, Any]:
+    if args.ship_command == "guard":
+        return ship_guard_payload(Path(args.repo))
+    raise CLIError(
+        "unsupported-ship-command", f"Unsupported ship command: {args.ship_command}", EXIT_USAGE
+    )
+
+
+def _service_payload(args: argparse.Namespace) -> dict[str, Any]:
+    if args.service_command == "probe":
+        return service_probe_payload(ports=args.port, names=args.name)
+    raise CLIError(
+        "unsupported-service-command",
+        f"Unsupported service command: {args.service_command}",
+        EXIT_USAGE,
+    )
+
+
+def _workflow_skill_payload(args: argparse.Namespace) -> dict[str, Any]:
+    if args.workflow_skill_command == "codex":
+        return codex_workflow_skill_payload()
+    raise CLIError(
+        "unsupported-workflow-skill-command",
+        f"Unsupported workflow-skill command: {args.workflow_skill_command}",
+        EXIT_USAGE,
+    )
+
+
+def _planning_payload(args: argparse.Namespace) -> dict[str, Any]:
+    if args.planning_command == "state":
+        return planning_state_payload(Path(args.repo))
+    raise CLIError(
+        "unsupported-planning-command",
+        f"Unsupported planning command: {args.planning_command}",
+        EXIT_USAGE,
+    )
+
+
+def _session_intel_provider(
+    provider_name: str,
+    *,
+    source_root: str | None = None,
+) -> ClaudeProvider | CodexProvider:
+    root = Path(source_root).expanduser() if source_root else None
+    if provider_name == "codex":
+        return CodexProvider(source_root=root, db_path=DEFAULT_DB_PATH)
+    if provider_name == "claude":
+        return ClaudeProvider(source_root=root, db_path=DEFAULT_DB_PATH)
+    raise CLIError(
+        "unsupported-session-intel-provider",
+        f"Unsupported session intelligence provider: {provider_name}",
+        EXIT_USAGE,
+    )
+
+
+def _session_intel_providers(args: argparse.Namespace) -> list[ClaudeProvider | CodexProvider]:
+    if args.provider == "all":
+        return [
+            CodexProvider(
+                source_root=Path(args.codex_source_root).expanduser()
+                if args.codex_source_root
+                else None,
+                db_path=DEFAULT_DB_PATH,
+            ),
+            ClaudeProvider(
+                source_root=Path(args.claude_source_root).expanduser()
+                if args.claude_source_root
+                else None,
+                db_path=DEFAULT_DB_PATH,
+            ),
+        ]
+    return [
+        _session_intel_provider(
+            args.provider,
+            source_root=args.source_root,
+        )
+    ]
 
 
 def _dx_pack_report_template() -> dict[str, Any]:
@@ -5127,9 +6410,232 @@ def create_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("status", help="Compact control-plane status snapshot")
     subparsers.add_parser("health", help="Health summary with status + log file checks")
+    subparsers.add_parser("doctor", help="Daily-use release-readiness preflight")
 
     metadata_parser = subparsers.add_parser("metadata", help="One-shot metadata snapshot")
     metadata_parser.add_argument("--project", default=None, help="Optional project id filter")
+
+    session_intel = subparsers.add_parser(
+        "session-intel", help="Run and review Codex session intelligence candidates"
+    )
+    session_intel_subparsers = session_intel.add_subparsers(
+        dest="session_intel_command", required=True
+    )
+    session_intel_run = session_intel_subparsers.add_parser(
+        "run", help="Analyze new Codex sessions and emit review-gated candidates"
+    )
+    session_intel_run.add_argument("--provider", choices=["codex", "claude"], default="codex")
+    session_intel_run.add_argument("--since", default="last")
+    session_intel_run.add_argument(
+        "--lane",
+        choices=["all", "friction_tool", "workflow_skill", "impact_idea"],
+        default="all",
+    )
+    session_intel_run.add_argument("--write-report", action="store_true")
+    session_intel_run.add_argument("--source-root", default=None)
+    session_intel_run.add_argument("--report-root", default=None)
+    session_intel_run.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    session_intel_daily_codex = session_intel_subparsers.add_parser(
+        "daily-codex",
+        help="Run the daily review-only Codex session intelligence report wrapper",
+    )
+    session_intel_daily_codex.add_argument(
+        "--json", action="store_true", default=argparse.SUPPRESS
+    )
+
+    session_intel_backfill = session_intel_subparsers.add_parser(
+        "backfill", help="Backfill historical Codex and Claude sessions in resumable batches"
+    )
+    session_intel_backfill.add_argument(
+        "--provider", choices=["codex", "claude", "all"], default="all"
+    )
+    session_intel_backfill.add_argument("--since", default="all")
+    session_intel_backfill.add_argument(
+        "--lane",
+        choices=["all", "friction_tool", "workflow_skill", "impact_idea"],
+        default="all",
+    )
+    session_intel_backfill.add_argument("--batch-size", type=int, default=250)
+    session_intel_backfill.add_argument("--write-report", action="store_true")
+    session_intel_backfill.add_argument("--source-root", default=None)
+    session_intel_backfill.add_argument("--codex-source-root", default=None)
+    session_intel_backfill.add_argument("--claude-source-root", default=None)
+    session_intel_backfill.add_argument("--report-root", default=None)
+    session_intel_backfill.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    session_intel_candidates = session_intel_subparsers.add_parser(
+        "candidates", help="List review-gated session intelligence candidates"
+    )
+    session_intel_candidates.add_argument(
+        "--status",
+        choices=[
+            "all",
+            "pending_review",
+            "approved",
+            "implemented",
+            "rejected",
+            "observed",
+            "superseded",
+        ],
+        default="pending_review",
+    )
+    session_intel_candidates.add_argument(
+        "--lane",
+        choices=["all", "friction_tool", "workflow_skill", "impact_idea"],
+        default="all",
+    )
+    session_intel_candidates.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    session_intel_clusters = session_intel_subparsers.add_parser(
+        "clusters", help="Group candidates into reviewable triage clusters"
+    )
+    session_intel_clusters.add_argument(
+        "--status",
+        choices=[
+            "all",
+            "pending_review",
+            "approved",
+            "implemented",
+            "rejected",
+            "observed",
+            "superseded",
+        ],
+        default="pending_review",
+    )
+    session_intel_clusters.add_argument(
+        "--lane",
+        choices=["all", "friction_tool", "workflow_skill", "impact_idea"],
+        default="all",
+    )
+    session_intel_clusters.add_argument("--limit", type=int, default=50)
+    session_intel_clusters.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    session_intel_implement = session_intel_subparsers.add_parser(
+        "implement",
+        help="Adopt session intelligence candidates as telemetry-tracked helper families",
+    )
+    session_intel_implement.add_argument(
+        "--status",
+        choices=["all", "pending_review", "approved", "implemented", "observed", "superseded"],
+        default="pending_review",
+    )
+    session_intel_implement.add_argument(
+        "--lane",
+        choices=["all", "friction_tool", "workflow_skill", "impact_idea"],
+        default="all",
+    )
+    session_intel_implement.add_argument("--note", default="")
+    session_intel_implement.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    session_intel_mark = session_intel_subparsers.add_parser(
+        "mark", help="Mark a session intelligence candidate review status"
+    )
+    session_intel_mark.add_argument("--candidate-id", required=True)
+    session_intel_mark.add_argument(
+        "--status",
+        choices=["approved", "implemented", "rejected", "observed", "superseded"],
+        required=True,
+    )
+    session_intel_mark.add_argument("--note", default="")
+    session_intel_mark.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    session_intel_helper = session_intel_subparsers.add_parser(
+        "helper", help="Run deterministic helper-family surfaces for adopted candidates"
+    )
+    session_intel_helper_subparsers = session_intel_helper.add_subparsers(
+        dest="session_intel_helper_command", required=True
+    )
+    session_intel_helper_list = session_intel_helper_subparsers.add_parser(
+        "list", help="List adopted deterministic helper families"
+    )
+    session_intel_helper_list.add_argument(
+        "--json", action="store_true", default=argparse.SUPPRESS
+    )
+    session_intel_helper_run = session_intel_helper_subparsers.add_parser(
+        "run", help="Run one deterministic helper family"
+    )
+    session_intel_helper_run.add_argument(
+        "--family", choices=SESSION_INTEL_HELPER_FAMILIES, required=True
+    )
+    session_intel_helper_run.add_argument("--path", default=None)
+    session_intel_helper_run.add_argument("--repo", default=None)
+    session_intel_helper_run.add_argument("--start-line", type=int, default=None)
+    session_intel_helper_run.add_argument("--end-line", type=int, default=None)
+    session_intel_helper_run.add_argument(
+        "--json", action="store_true", default=argparse.SUPPRESS
+    )
+
+    repo_parser = subparsers.add_parser("repo", help="Deterministic repository inspection tools")
+    repo_subparsers = repo_parser.add_subparsers(dest="repo_command", required=True)
+    repo_inspect = repo_subparsers.add_parser("inspect", help="Inspect repo state and context")
+    repo_inspect.add_argument("--repo", default=".", help="Repository path")
+    repo_inspect.add_argument(
+        "--include-processes",
+        action="store_true",
+        help="Include default local service probes",
+    )
+    repo_inspect.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    repo_closeout = repo_subparsers.add_parser(
+        "closeout",
+        help="Print deterministic Codex repo-state closeout",
+    )
+    repo_closeout.add_argument("--repo", default=".", help="Repository path")
+    repo_closeout.add_argument(
+        "--commits",
+        type=int,
+        default=5,
+        help="Number of recent commits to include",
+    )
+    repo_closeout.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    quality_parser = subparsers.add_parser("quality", help="Quality ladder planning tools")
+    quality_subparsers = quality_parser.add_subparsers(dest="quality_command", required=True)
+    quality_ladder = quality_subparsers.add_parser(
+        "ladder", help="Plan project-aware quality commands without running them"
+    )
+    quality_ladder.add_argument("--repo", default=".", help="Repository path")
+    quality_ladder.add_argument(
+        "--profile",
+        choices=["auto", "python", "javascript", "mixed"],
+        default="auto",
+        help="Quality command profile",
+    )
+    quality_ladder.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    ship_parser = subparsers.add_parser("ship", help="Review-gated shipping tools")
+    ship_subparsers = ship_parser.add_subparsers(dest="ship_command", required=True)
+    ship_guard = ship_subparsers.add_parser(
+        "guard", help="Inspect commit/publish readiness without mutating git state"
+    )
+    ship_guard.add_argument("--repo", default=".", help="Repository path")
+    ship_guard.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    service_parser = subparsers.add_parser("service", help="Local service diagnostics")
+    service_subparsers = service_parser.add_subparsers(dest="service_command", required=True)
+    service_probe = service_subparsers.add_parser("probe", help="Probe local ports and processes")
+    service_probe.add_argument("--port", type=int, action="append", default=None)
+    service_probe.add_argument("--name", action="append", default=None)
+    service_probe.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    workflow_skill_parser = subparsers.add_parser(
+        "workflow-skill", help="Review-gated workflow skill promotion candidates"
+    )
+    workflow_skill_subparsers = workflow_skill_parser.add_subparsers(
+        dest="workflow_skill_command", required=True
+    )
+    workflow_skill_codex = workflow_skill_subparsers.add_parser(
+        "codex", help="Render the Codex tier-one workflow skill candidate"
+    )
+    workflow_skill_codex.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    planning_parser = subparsers.add_parser("planning", help="Planning and truth-state tools")
+    planning_subparsers = planning_parser.add_subparsers(dest="planning_command", required=True)
+    planning_state = planning_subparsers.add_parser(
+        "state", help="Inspect planning and PROJECT_TRUTH readiness"
+    )
+    planning_state.add_argument("--repo", default=".", help="Repository path")
+    planning_state.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     logs_parser = subparsers.add_parser("logs", help="Read AIOS logs")
     logs_parser.add_argument("--source", action="append", default=[], help="Log source filter")
@@ -5366,6 +6872,55 @@ def create_parser() -> argparse.ArgumentParser:
     eval_gold_set_run.add_argument("--gold-task-id", required=True)
     eval_gold_set_run.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
+    humanize_parser = subparsers.add_parser(
+        "humanize", help="Run the personalized humanizer workflow"
+    )
+    humanize_subparsers = humanize_parser.add_subparsers(dest="humanize_command", required=True)
+    humanize_run = humanize_subparsers.add_parser(
+        "run", help="Rewrite text through the personalized humanizer"
+    )
+    humanize_input = humanize_run.add_mutually_exclusive_group(required=True)
+    humanize_input.add_argument("--text", default=None)
+    humanize_input.add_argument("--input", default=None, help="Input UTF-8 text file")
+    humanize_input.add_argument("--stdin", action="store_true", help="Read input from stdin")
+    humanize_run.add_argument(
+        "--mode",
+        choices=[
+            "professional_outreach",
+            "project_build_in_public",
+            "academic_reflective",
+            "prompt_prd",
+            "creative_narrative",
+        ],
+        default=None,
+    )
+    humanize_run.add_argument(
+        "--pipeline",
+        choices=["standalone", "after_generic_humanizer"],
+        default="standalone",
+    )
+    humanize_run.add_argument("--output", default=None, help="Optional output file")
+    humanize_run.add_argument("--debug", action="store_true")
+    humanize_run.add_argument("--no-record", action="store_true")
+    humanize_run.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    humanize_feedback = humanize_subparsers.add_parser(
+        "feedback", help="Record feedback for a personalized humanizer run"
+    )
+    humanize_feedback.add_argument("--run-id", required=True)
+    humanize_feedback.add_argument(
+        "--verdict", choices=["approved", "edited", "rejected"], required=True
+    )
+    humanize_feedback.add_argument("--notes", required=True)
+    humanize_feedback.add_argument("--revision", default=None, help="Optional revised text file")
+    humanize_feedback.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    humanize_eval = humanize_subparsers.add_parser(
+        "eval", help="Run the personalized humanizer eval suite"
+    )
+    humanize_eval.add_argument("--record", action="store_true")
+    humanize_eval.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
     meta = subparsers.add_parser("meta", help="Analyze and review meta-learning signals")
     meta_subparsers = meta.add_subparsers(dest="meta_command", required=True)
     meta_analyze_session = meta_subparsers.add_parser(
@@ -5518,11 +7073,28 @@ def create_parser() -> argparse.ArgumentParser:
     shadow_run_pipeline.add_argument("--repo-path", default=".")
     shadow_run_pipeline.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
-    shadow_status_parser = shadow_subparsers.add_parser(
-        "status", help="Show shadow candidate status"
+    shadow_run = shadow_subparsers.add_parser(
+        "run", help="Launch a headless Codex execution for a shadow worktree"
     )
-    shadow_status_parser.add_argument("--candidate-id", required=True)
+    shadow_run.add_argument("--shadow-run-id", required=True)
+    shadow_run.add_argument("--objective", default=None)
+    shadow_run.add_argument("--run-id", default=None)
+    shadow_run.add_argument("--packet-id", default=None)
+    shadow_run.add_argument("--route-id", default=None)
+    shadow_run.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    shadow_status_parser = shadow_subparsers.add_parser(
+        "status", help="Show shadow execution or candidate status"
+    )
+    shadow_status_parser.add_argument("--shadow-run-id", default=None)
+    shadow_status_parser.add_argument("--candidate-id", default=None)
     shadow_status_parser.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    shadow_cancel = shadow_subparsers.add_parser(
+        "cancel", help="Cancel a running headless Codex shadow execution"
+    )
+    shadow_cancel.add_argument("--shadow-run-id", required=True)
+    shadow_cancel.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     peer_trace = subparsers.add_parser("peer-trace", help="Record privacy-safe peer trace metadata")
     peer_trace_subparsers = peer_trace.add_subparsers(dest="peer_trace_command", required=True)
@@ -5796,6 +7368,16 @@ def create_parser() -> argparse.ArgumentParser:
         help="Report readiness for active backend-neutral harness enforcement",
     )
 
+    route_parser = subparsers.add_parser(
+        "route", help="Preview the governed AIOS workflow route without creating a run"
+    )
+    route_parser.add_argument("objective", help="Work objective to route through AIOS")
+    route_parser.add_argument("--project", default=None, help="Project id or name")
+    route_parser.add_argument(
+        "--cwd", default=None, help="Workspace path used for project inference"
+    )
+    route_parser.add_argument("--surface", default="codex", help="Preferred invocation surface")
+
     start_work = subparsers.add_parser(
         "start-work", help="Create a routed AIOS run packet and session handshake"
     )
@@ -5836,6 +7418,36 @@ def create_parser() -> argparse.ArgumentParser:
         choices=["pre-commit", "full"],
         default="pre-commit",
         help="Gate command set to run",
+    )
+    gate_adoption_plan = gate_subparsers.add_parser(
+        "adoption-plan",
+        help="Write a repo quality-gate adoption matrix and rollout plan",
+    )
+    gate_adoption_plan.add_argument("--repo-root", default=".", help="Repository root to scan")
+    gate_adoption_plan.add_argument("--run-id", default=None, help="Optional deterministic run id")
+    gate_adoption_plan.add_argument(
+        "--objective",
+        default=None,
+        help="Optional objective text for workflow reporting",
+    )
+    gate_adoption_doc_quality = gate_subparsers.add_parser(
+        "adoption-doc-quality",
+        help="Generate adoption docs and validate their agent/human quality",
+    )
+    gate_adoption_doc_quality.add_argument(
+        "--repo-root",
+        default=".",
+        help="Repository root to scan",
+    )
+    gate_adoption_doc_quality.add_argument(
+        "--run-id",
+        default=None,
+        help="Optional deterministic run id",
+    )
+    gate_adoption_doc_quality.add_argument(
+        "--objective",
+        default=None,
+        help="Optional objective text for workflow reporting",
     )
 
     skills_parser = subparsers.add_parser("skills", help="Instruction/skills registry surfaces")
@@ -6061,28 +7673,12 @@ def create_parser() -> argparse.ArgumentParser:
         "review-plan",
         help="Compile TMCP expertise and write expert rubric remediation artifacts",
     )
-    tmcp_review_plan.add_argument("objective", help="Natural language review objective")
-    tmcp_review_plan.add_argument(
-        "--project-path",
-        default=".",
-        help="Target project path used for TMCP packet compilation",
+    _add_expert_rubric_arguments(tmcp_review_plan)
+    expert_rubric = subparsers.add_parser(
+        "expert-rubric",
+        help="Run the TMCP expert-rubric remediation workflow",
     )
-    tmcp_review_plan.add_argument(
-        "--output-dir",
-        required=True,
-        help="Directory where review artifacts will be written",
-    )
-    tmcp_review_plan.add_argument(
-        "--evidence-json",
-        default="[]",
-        help="JSON object or array of evidence objects",
-    )
-    tmcp_review_plan.add_argument(
-        "--selected-slice-id",
-        default=None,
-        help="Optional remediation slice id to include in the implementation handoff",
-    )
-    tmcp_review_plan.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    _add_expert_rubric_arguments(expert_rubric)
 
     corpus_parser = subparsers.add_parser("corpus", help="Corpus evaluation harness")
     corpus_subparsers = corpus_parser.add_subparsers(dest="corpus_command", required=True)
@@ -6130,56 +7726,7 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
     conn: sqlite3.Connection | None = None
 
     try:
-        if args.command in {
-            "status",
-            "health",
-            "metadata",
-            "recent-failures",
-            "rtk",
-            "capability-audit",
-            "invocation-audit",
-            "lifecycle-audit",
-            "knowledge-objects",
-            "workflow-learning-audit",
-            "retrospectives",
-            "model-selection",
-            "evidence",
-            "verifier",
-            "learning-analyze",
-            "learning-propose",
-            "learning-impact",
-            "operator-search",
-            "next-action",
-            "daily-flow",
-            "contracts-audit",
-            "governance-audit",
-            "criteria-finding",
-            "standards-resolution",
-            "delta-explain",
-            "recommend-workflow",
-            "standards-override",
-            "asset-lifecycle",
-            "workflow-compare",
-            "promote-asset",
-            "truth-audit",
-            "prove-project-health",
-            "sync-automation-history",
-            "start-work",
-            "harness-brief",
-            "harness-simulate",
-            "harness-replay",
-            "harness-shadow-evaluate",
-            "eval",
-            "context-loops",
-            "shadow",
-            "peer-trace",
-            "ablation",
-            "packet",
-            "benchmark",
-        }:
-            conn = _connect_db(db_path)
-        else:
-            conn = None
+        conn = _connect_db(db_path) if _command_requires_db(args) else None
 
         if args.command == "corpus":
             return _run_corpus_command(args.corpus_command, args.corpus_args)
@@ -6191,6 +7738,13 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "health":
             assert conn is not None
             data = _health_payload(conn, logs_dir)
+        elif args.command == "doctor":
+            data = _doctor_payload(
+                db_path=db_path,
+                logs_dir=logs_dir,
+                config_root=config_root,
+                vault_root=vault_root,
+            )
         elif args.command == "metadata":
             assert conn is not None
             data = _metadata_payload(
@@ -6227,6 +7781,22 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             data = _workflow_learning_payload(conn)
         elif args.command == "workflow-gates":
             data = _workflow_gates_payload(args)
+        elif args.command == "session-intel":
+            assert conn is not None
+            data = _session_intel_payload(conn, args)
+            conn.commit()
+        elif args.command == "repo":
+            data = _repo_payload(args)
+        elif args.command == "quality":
+            data = _quality_payload(args)
+        elif args.command == "ship":
+            data = _ship_payload(args)
+        elif args.command == "service":
+            data = _service_payload(args)
+        elif args.command == "workflow-skill":
+            data = _workflow_skill_payload(args)
+        elif args.command == "planning":
+            data = _planning_payload(args)
         elif args.command == "retrospectives":
             assert conn is not None
             data = _retrospective_payload(conn, args)
@@ -6342,98 +7912,29 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "harness-shadow-evaluate":
             assert conn is not None
             data = shadow_evaluate_session(conn, session_id=args.session_id)
-        elif args.command == "eval" and args.eval_command == "record-run":
+        elif args.command == "eval":
             assert conn is not None
-            data = cmd_eval_record_run(conn, args)
-        elif args.command == "eval" and args.eval_command == "list-runs":
+            data = cmd_eval(conn, args)
+        elif args.command == "humanize" and args.humanize_command == "run":
+            data = cmd_humanize_run(conn, args)
+        elif args.command == "humanize" and args.humanize_command == "feedback":
             assert conn is not None
-            data = cmd_eval_list_runs(conn, args)
-        elif args.command == "eval" and args.eval_command == "summary":
-            assert conn is not None
-            data = cmd_eval_summary(conn, args)
-        elif args.command == "eval" and args.eval_command == "second-brain-lift":
-            assert conn is not None
-            data = cmd_eval_second_brain_lift(conn, args)
-        elif args.command == "eval" and args.eval_command == "retrieval-metrics":
-            assert conn is not None
-            data = cmd_eval_retrieval_metrics(conn, args)
-        elif args.command == "eval" and args.eval_command == "gold-set-run":
-            assert conn is not None
-            data = cmd_eval_gold_set_run(conn, args)
+            data = cmd_humanize_feedback(conn, args)
+        elif args.command == "humanize" and args.humanize_command == "eval":
+            data = cmd_humanize_eval(conn, args)
         elif args.command == "meta" and args.meta_command == "analyze-session":
             data = _meta_analyze_session_payload(args)
-        elif args.command == "context-loops" and args.context_loops_command == "inner-run":
+        elif args.command == "context-loops":
             assert conn is not None
-            data = cmd_context_loops_inner_run(conn, args)
-            conn.commit()
-        elif args.command == "context-loops" and args.context_loops_command == "email-draft":
+            data = cmd_context_loops(conn, args)
+        elif args.command == "shadow":
+            data = cmd_shadow(conn, args)
+        elif args.command == "peer-trace":
             assert conn is not None
-            data = cmd_context_loops_email_draft(conn, args)
-            conn.commit()
-        elif args.command == "context-loops" and args.context_loops_command == "record-review":
+            data = cmd_peer_trace(conn, args)
+        elif args.command == "ablation":
             assert conn is not None
-            data = cmd_context_loops_record_review(conn, args)
-            conn.commit()
-        elif args.command == "context-loops" and args.context_loops_command == "review":
-            assert conn is not None
-            data = cmd_context_loops_review(conn, args)
-            conn.commit()
-        elif args.command == "context-loops" and args.context_loops_command == "approve":
-            assert conn is not None
-            data = cmd_context_loops_approve(conn, args)
-            conn.commit()
-        elif args.command == "context-loops" and args.context_loops_command == "reject":
-            assert conn is not None
-            data = cmd_context_loops_reject(conn, args)
-            conn.commit()
-        elif args.command == "context-loops" and args.context_loops_command == "apply-approved":
-            assert conn is not None
-            data = cmd_context_loops_apply_approved(conn, args)
-            conn.commit()
-        elif args.command == "context-loops" and args.context_loops_command == "metrics":
-            assert conn is not None
-            data = cmd_context_loops_metrics(conn, args)
-        elif args.command == "shadow" and args.shadow_command == "create-worktree":
-            assert conn is not None
-            data = cmd_shadow_create_worktree(conn, args)
-        elif args.command == "shadow" and args.shadow_command == "compare":
-            assert conn is not None
-            data = cmd_shadow_compare(conn, args)
-        elif args.command == "shadow" and args.shadow_command == "parity":
-            assert conn is not None
-            data = cmd_shadow_parity(conn, args)
-        elif args.command == "shadow" and args.shadow_command == "cleanup":
-            data = cmd_shadow_cleanup(args)
-        elif args.command == "shadow" and args.shadow_command == "score":
-            assert conn is not None
-            data = cmd_shadow_score(conn, args)
-        elif args.command == "shadow" and args.shadow_command == "queue":
-            assert conn is not None
-            data = cmd_shadow_queue(conn)
-        elif args.command == "peer-trace" and args.peer_trace_command == "start":
-            assert conn is not None
-            data = cmd_peer_trace_start(conn, args)
-        elif args.command == "peer-trace" and args.peer_trace_command == "stop":
-            assert conn is not None
-            data = cmd_peer_trace_stop(conn, args)
-        elif args.command == "peer-trace" and args.peer_trace_command == "list":
-            assert conn is not None
-            data = cmd_peer_trace_list(conn, args)
-        elif args.command == "ablation" and args.ablation_command == "run":
-            assert conn is not None
-            data = cmd_ablation_run(conn, args)
-        elif args.command == "ablation" and args.ablation_command == "compare":
-            assert conn is not None
-            data = cmd_ablation_compare(conn, args)
-        elif args.command == "shadow" and args.shadow_command == "approve":
-            assert conn is not None
-            data = cmd_shadow_approve(conn, args)
-        elif args.command == "shadow" and args.shadow_command == "run-pipeline":
-            assert conn is not None
-            data = cmd_shadow_run_pipeline(conn, args)
-        elif args.command == "shadow" and args.shadow_command == "status":
-            assert conn is not None
-            data = cmd_shadow_status(conn, args)
+            data = cmd_ablation(conn, args)
         elif args.command == "packet" and args.packet_command == "generate":
             assert conn is not None
             data = cmd_packet_generate(conn, args)
@@ -6542,10 +8043,15 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
             )
         elif args.command == "tmcp" and args.tmcp_command == "shortcut-governance":
             data = shortcut_governance_recommendation(_parse_json_object(args.shortcut_json))
-        elif args.command == "tmcp" and args.tmcp_command == "review-plan":
+        elif args.command == "expert-rubric" or (
+            args.command == "tmcp" and args.tmcp_command == "review-plan"
+        ):
             data = _tmcp_review_plan_payload(args)
         elif args.command == "harness-active-readiness":
             data = active_readiness()
+        elif args.command == "route":
+            assert conn is not None
+            data = _route_preview_payload(conn, args)
         elif args.command == "start-work":
             assert conn is not None
             data = _start_work_payload(
@@ -6578,6 +8084,10 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
                     str(data["summary"]),
                     EXIT_RUNTIME,
                 )
+        elif args.command == "gate" and args.gate_command == "adoption-plan":
+            data = _gate_adoption_plan_payload(args)
+        elif args.command == "gate" and args.gate_command == "adoption-doc-quality":
+            data = _gate_adoption_doc_quality_payload(args)
         elif args.command == "skills" and args.skills_command == "status":
             data = _instruction_status(config_root, vault_root, project_id=args.project)
         elif args.command == "skills" and args.skills_command == "refresh":

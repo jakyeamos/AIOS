@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+import subprocess
 import sys
 from pathlib import Path
 
@@ -30,6 +31,13 @@ def _conn() -> sqlite3.Connection:
           route_result_json TEXT DEFAULT '{}',
           created_at TEXT,
           updated_at TEXT
+        );
+        CREATE TABLE projects (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          repo_path TEXT,
+          obsidian_path TEXT,
+          status TEXT
         );
         CREATE TABLE briefing_packets (
           id TEXT PRIMARY KEY,
@@ -80,6 +88,24 @@ def _conn() -> sqlite3.Connection:
         """
     )
     return conn
+
+
+def _git(repo: Path, *args: str) -> None:
+    subprocess.run(["git", *args], cwd=repo, check=True, stdout=subprocess.PIPE, text=True)
+
+
+def _sample_repo(tmp_path: Path) -> Path:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init")
+    _git(repo, "config", "user.email", "aios@example.local")
+    _git(repo, "config", "user.name", "AIOS Tests")
+    (repo / "README.md").write_text("# Sample\n", encoding="utf-8")
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-m", "initial")
+    (repo / "README.md").write_text("# Sample\n\nChanged.\n", encoding="utf-8")
+    (repo / "new.txt").write_text("new\n", encoding="utf-8")
+    return repo
 
 
 def _count(conn: sqlite3.Connection, table: str) -> int:
@@ -229,6 +255,36 @@ def test_replay_returns_eight_step_trace_for_existing_run() -> None:
     assert tuple(step.kind for step in trace.steps) == CANONICAL_STEP_ORDER
     assert all(step.drill_down_path.startswith("/") for step in trace.steps)
     assert trace.steps[2].evidence_ref == {"table": "briefing_packets", "id": "packet-r1"}
+
+
+def test_replay_run_step_includes_repo_closeout_payload(tmp_path: Path) -> None:
+    conn = _conn()
+    repo = _sample_repo(tmp_path)
+    conn.execute(
+        """
+        INSERT INTO projects (id, name, repo_path, obsidian_path, status)
+        VALUES ('p1', 'Sample', ?, '03 Projects/Sample', 'active')
+        """,
+        (str(repo),),
+    )
+    _seed_complete_replay(conn)
+
+    trace = replay_from_run(conn, run_id="r1")
+
+    run_step = next(step for step in trace.steps if step.kind == "run")
+    closeout = run_step.metadata["repo_closeout"]
+    git = closeout["git"]
+    assert closeout["schema"] == "aios-repo-closeout-v0.1"
+    assert closeout["repo"] == str(repo)
+    assert git["is_repo"] is True
+    assert git["branch"] in {"master", "main"}
+    assert len(git["head"]) == 40
+    assert git["dirty"] is True
+    assert git["dirty_files"] == [" M README.md", "?? new.txt"]
+    assert closeout["diff_stat"]["lines"] == [
+        "README.md | 2 ++",
+        "1 file changed, 2 insertions(+)",
+    ]
 
 
 def test_replay_finds_evaluation_through_canonical_schema() -> None:

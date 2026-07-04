@@ -96,7 +96,7 @@ uv run pytest -q
 
 ```bash
 cd aios-ui
-npm run lint
+pnpm lint
 ```
 
 ```bash

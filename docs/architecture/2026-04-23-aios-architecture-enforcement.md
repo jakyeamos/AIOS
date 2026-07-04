@@ -17,7 +17,7 @@ Status: Implemented baseline
 - There was no cycle gate and no dedicated architecture-check command.
 
 ### Linked-project readiness
-- Linked repos are known (`amos-saas`, `soundscape-app`, `GitNexus`, `Terrace`, `portfolio`), but architecture checks were not represented in a central AIOS registry.
+- Linked repos are known (`amos-saas`, `soundscape-app`, `Terrace`, `portfolio`), but architecture checks were not represented in a central AIOS registry.
 - Enforceable rollout requires a reusable profile abstraction with project-specific bindings.
 
 ## 2) Rule Model

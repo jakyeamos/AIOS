@@ -58,22 +58,84 @@ def route_scored_signal(scored: ScoredMetaLearningSignal) -> MetaLearningRoute:
             "Contradictory signals are not routed into rule files automatically.",
         )
     if "second brain" in text or "second-brain" in text:
-        return _route(scored, "second_brain", "personal", "second-brain note", "Signal cites second-brain context.")
+        return _route(
+            scored,
+            "second_brain",
+            "personal",
+            "second-brain note",
+            "Signal cites second-brain context.",
+        )
     if recommended == "command_suggestion" or signal.type == "command_repetition":
-        return _route(scored, "command", "project" if project_specific else "global", "command policy", "Signal concerns repeated command behavior.")
+        return _route(
+            scored,
+            "command",
+            "project" if project_specific else "global",
+            "command policy",
+            "Signal concerns repeated command behavior.",
+        )
+    if signal.type == "candidate_skill":
+        return _route(
+            scored,
+            "skill",
+            "project" if project_specific else "global",
+            "skill instruction",
+            "Signal identifies a candidate reusable skill.",
+        )
     if recommended == "skill_or_agent_suggestion":
         if "skill" in text:
-            return _route(scored, "skill", "project" if project_specific else "global", "skill instruction", "Signal explicitly concerns skill behavior.")
-        return _route(scored, "agent", "project" if project_specific else "global", "agent/sub-agent suggestion", "Signal concerns agent routing or behavior.")
+            return _route(
+                scored,
+                "skill",
+                "project" if project_specific else "global",
+                "skill instruction",
+                "Signal explicitly concerns skill behavior.",
+            )
+        return _route(
+            scored,
+            "agent",
+            "project" if project_specific else "global",
+            "agent/sub-agent suggestion",
+            "Signal concerns agent routing or behavior.",
+        )
     if recommended == "model_routing_policy" or signal.type == "model_mismatch":
-        return _route(scored, "agent", "project" if project_specific else "global", "model-routing policy", "Signal concerns model selection or sub-agent routing.")
+        return _route(
+            scored,
+            "agent",
+            "project" if project_specific else "global",
+            "model-routing policy",
+            "Signal concerns model selection or sub-agent routing.",
+        )
     if signal.type in {"context_miss", "tool_friction"} and scored.score >= 5:
-        return _route(scored, "eval", "project" if project_specific else "global", "eval/test case", "Repeated operational miss should become regression evidence before policy.")
+        return _route(
+            scored,
+            "eval",
+            "project" if project_specific else "global",
+            "eval/test case",
+            "Repeated operational miss should become regression evidence before policy.",
+        )
     if recommended == "project_rule" or project_specific:
-        return _route(scored, "project", "project", "project rule or project note", "Project-specific evidence routes away from global rules.")
+        return _route(
+            scored,
+            "project",
+            "project",
+            "project rule or project note",
+            "Project-specific evidence routes away from global rules.",
+        )
     if multi_project and scored.score >= 5:
-        return _route(scored, "global", "global", "global rule proposal", "Multi-project evidence justifies global review.")
-    return _route(scored, "observe_only", "none", "observation log", "Signal lacks a safer specific target layer.")
+        return _route(
+            scored,
+            "global",
+            "global",
+            "global rule proposal",
+            "Multi-project evidence justifies global review.",
+        )
+    return _route(
+        scored,
+        "observe_only",
+        "none",
+        "observation log",
+        "Signal lacks a safer specific target layer.",
+    )
 
 
 def route_scored_signals(signals: Iterable[ScoredMetaLearningSignal]) -> list[MetaLearningRoute]:
@@ -97,7 +159,8 @@ def _route(
         target_scope=target_scope,
         target_hint=target_hint,
         justification=justification,
-        requires_manual_review=scored.requires_manual_review or target_layer in {"global", "skill", "agent"},
+        requires_manual_review=scored.requires_manual_review
+        or target_layer in {"global", "skill", "agent"},
         score=scored.score,
         band=scored.band,
     )

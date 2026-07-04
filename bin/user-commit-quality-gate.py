@@ -6,6 +6,8 @@ import re
 import shutil
 import subprocess
 import sys
+import threading
+import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -54,6 +56,7 @@ HANDLER_PATTERNS = (
 SEND_PATTERNS = (".postMessage(", "postMessage(")
 ALLOW_HANDLER_MARKER = "quality-gate: allow handler-before-send"
 ALLOW_SECRET_MARKER = "quality-gate: allow secret"
+ALLOW_STATIC_UI_TEST_MARKER = "quality-gate: allow static-ui-test"
 SECRET_RE = re.compile(
     r"(?i)\b(api[_-]?key|secret|token|password|private[_-]?key|client[_-]?secret)\b"
     r"\s*[:=]\s*['\"][^'\"\s]{12,}['\"]"
@@ -61,6 +64,17 @@ SECRET_RE = re.compile(
 TS_ANY_RE = re.compile(r"(:\s*any\b|\bas\s+any\b|<\s*any\s*>|Array\s*<\s*any\s*>)")
 PACKAGE_MANAGER_RE = re.compile(r"\b(npm|yarn)\s+(install|add|run|test|ci|start|build|lint|exec)\b")
 CONFLICT_MARKERS = ("<<<<<<< ", "=======", ">>>>>>> ")
+STATIC_UI_RENDER_PATTERNS = ("renderToStaticMarkup(", "@testing-library/react")
+STATIC_UI_COPY_PATTERNS = (".toContain(", ".not.toContain(", "getByText(", "queryByText(")
+UI_BEHAVIOR_PATTERNS = (
+    "fireEvent.",
+    "userEvent.",
+    "waitFor(",
+    "act(",
+    ".toHaveBeenCalled",
+    ".dispatchEvent(",
+    ".click(",
+)
 PRE_CR_SOURCE_EXTENSIONS = {
     ".py",
     ".js",
@@ -73,6 +87,7 @@ PRE_CR_SOURCE_EXTENSIONS = {
     ".rs",
     ".swift",
 }
+PRE_CR_HEARTBEAT_SECONDS = 15.0
 AIOS_ROOT = Path(__file__).resolve().parents[1]
 if str(AIOS_ROOT) not in sys.path:
     sys.path.insert(0, str(AIOS_ROOT))
@@ -301,6 +316,29 @@ def find_weak_python_test(path: str, text: str) -> list[Finding]:
     ]
 
 
+def find_low_value_static_ui_test(path: str, text: str) -> list[Finding]:
+    suffix = Path(path).suffix.lower()
+    if suffix not in {".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"} or not is_test_path(path):
+        return []
+    if ALLOW_STATIC_UI_TEST_MARKER in text:
+        return []
+    if not any(pattern in text for pattern in STATIC_UI_RENDER_PATTERNS):
+        return []
+    if not any(pattern in text for pattern in STATIC_UI_COPY_PATTERNS):
+        return []
+    if any(pattern in text for pattern in UI_BEHAVIOR_PATTERNS):
+        return []
+    return [
+        Finding(
+            path,
+            1,
+            "low-value-static-ui-test",
+            "static UI render/copy test needs explicit behavior value; prefer typecheck/build/runtime verification or add "
+            f"`{ALLOW_STATIC_UI_TEST_MARKER}: <reason>`",
+        )
+    ]
+
+
 def find_handler_before_send(path: str, text: str) -> list[Finding]:
     if Path(path).suffix.lower() not in CODE_EXTENSIONS:
         return []
@@ -350,12 +388,7 @@ def check_pre_cr_requirement(root: Path, paths: Sequence[str]) -> list[Finding]:
             )
         ]
 
-    result = subprocess.run(
-        [cli, "run", "--json", "--workspace", str(root)],
-        text=True,
-        capture_output=True,
-        check=False,
-    )
+    result = run_pre_cr_command([cli, "run", "--json", "--workspace", str(root)], root)
     if result.returncode == 0:
         return []
 
@@ -368,6 +401,48 @@ def check_pre_cr_requirement(root: Path, paths: Sequence[str]) -> list[Finding]:
             summary,
         )
     ]
+
+
+def run_pre_cr_command(
+    command: Sequence[str],
+    root: Path,
+    *,
+    heartbeat_seconds: float = PRE_CR_HEARTBEAT_SECONDS,
+) -> subprocess.CompletedProcess[str]:
+    started = time.monotonic()
+    stop_event = threading.Event()
+
+    print(f"[INFO] Running Pre-CR changed-line readiness for {root}", file=sys.stderr, flush=True)
+
+    def emit_heartbeat() -> None:
+        while not stop_event.wait(heartbeat_seconds):
+            elapsed = int(time.monotonic() - started)
+            print(
+                f"[INFO] Pre-CR still running after {elapsed}s for {root}",
+                file=sys.stderr,
+                flush=True,
+            )
+
+    heartbeat_thread = threading.Thread(target=emit_heartbeat, daemon=True)
+    heartbeat_thread.start()
+    try:
+        result: subprocess.CompletedProcess[str] = subprocess.run(
+            list(command),
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+    finally:
+        stop_event.set()
+        heartbeat_thread.join(timeout=0.2)
+
+    elapsed = int(time.monotonic() - started)
+    print(
+        f"[INFO] Pre-CR finished in {elapsed}s with exit code {result.returncode}",
+        file=sys.stderr,
+        flush=True,
+    )
+    return result
 
 
 def pre_cr_failure_summary(stdout: str, stderr: str) -> str:
@@ -431,6 +506,7 @@ def run_gate(paths: Sequence[str] | None = None) -> list[Finding]:
         findings.extend(find_typescript_any(path, text))
         findings.extend(find_oversized_source(path, text))
         findings.extend(find_weak_python_test(path, text))
+        findings.extend(find_low_value_static_ui_test(path, text))
         findings.extend(find_handler_before_send(path, text))
     findings.extend(check_pre_cr_requirement(root, selected_paths))
     findings.extend(
@@ -529,6 +605,7 @@ def _failure_pattern(rule: str) -> str:
         "typescript-any": "production TypeScript used any",
         "oversized-source": "source file exceeded size limit",
         "weak-test": "test file lacked assertions",
+        "low-value-static-ui-test": "static UI copy test added without behavior value",
         "handler-before-send": "message handler registered before send",
         "pre-cr-required": "source commit missing Pre-CR config",
         "pre-cr-unavailable": "Pre-CR CLI unavailable for source commit",
@@ -554,6 +631,7 @@ def _learning_lesson(rule: str) -> str:
         "typescript-any": "Use concrete TypeScript types before staging production code.",
         "oversized-source": "Split oversized files by responsibility before committing.",
         "weak-test": "Tests need behavior assertions; smoke-only files should be explicit.",
+        "low-value-static-ui-test": "Do not add brittle render-text tests when build/runtime evidence covers the change.",
         "handler-before-send": "Send before registering response handlers unless a documented runtime reason exists.",
         "pre-cr-required": "Add `.pre-cr.json` before source commits so changed-line readiness can run.",
         "pre-cr-unavailable": "Confirm the Pre-CR CLI is installed before source commits.",

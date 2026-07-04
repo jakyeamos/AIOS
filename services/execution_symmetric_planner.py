@@ -162,6 +162,10 @@ def _full_sections(
     if is_gsd_ready:
         sections["gsd_ready"] = True
         sections["handoff_target"] = workflow_context.handoff_target
+        sections["planning_quality_contract"] = _planning_quality_contract(lenses)
+        sections["acceptance_criteria_contract"] = _acceptance_criteria_contract()
+        sections["evidence_contract"] = _evidence_contract(lenses)
+        sections["verification_handoff"] = _verification_handoff(workflow_context)
     return sections
 
 
@@ -198,7 +202,9 @@ def _ordered_steps(is_gsd_ready: bool, has_skill_lenses: bool) -> list[str]:
     if has_skill_lenses:
         steps.insert(2, "Convert selected skill principles into planning constraints.")
     if is_gsd_ready:
-        steps.append("Write GSD-compatible artifacts and update phase state only after verification.")
+        steps.append(
+            "Write GSD-compatible artifacts and update phase state only after verification."
+        )
     return steps
 
 
@@ -210,7 +216,9 @@ def _validation_strategy(
         if "validation" in lens.key or lens.key in {"testing", "regression-safety"}:
             gates.append(f"Validate lens `{lens.key}` with concrete command or evidence.")
     for skill_lens in skill_lenses:
-        gates.extend(f"Skill gate `{gate}` must be planned." for gate in skill_lens.validation_gates)
+        gates.extend(
+            f"Skill gate `{gate}` must be planned." for gate in skill_lens.validation_gates
+        )
     return list(dict.fromkeys(gates))
 
 
@@ -222,7 +230,9 @@ def _failure_modes(
         "Validation evidence is too narrow for the changed behavior.",
     ]
     if any(lens.key in {"security", "threat-modeling", "secrets-safety"} for lens in lenses):
-        modes.append("Security-sensitive behavior changes without threat or secret handling review.")
+        modes.append(
+            "Security-sensitive behavior changes without threat or secret handling review."
+        )
     for skill_lens in skill_lenses:
         modes.extend(skill_lens.source_failure_conditions)
     return list(dict.fromkeys(modes))
@@ -237,9 +247,7 @@ def _rollback_recovery(complexity: str, lens_keys: list[str]) -> list[str]:
     return ["Revert the scoped diff or supersede the generated artifact if validation fails."]
 
 
-def _delegation_strategy(
-    complexity: str, workflow_context: PlanningWorkflowDetection
-) -> list[str]:
+def _delegation_strategy(complexity: str, workflow_context: PlanningWorkflowDetection) -> list[str]:
     if complexity in {"complex", "high_risk"}:
         return [
             "Use explicit executor/reviewer roles when work crosses files, layers, or risk domains.",
@@ -272,3 +280,44 @@ def _definition_of_done(is_gsd_ready: bool) -> list[str]:
     if is_gsd_ready:
         done.append("GSD phase summary/state updates reflect the completed plan.")
     return done
+
+
+def _planning_quality_contract(lenses: tuple[PlanningLens, ...]) -> list[str]:
+    standards = [
+        ref
+        for lens in lenses
+        for ref in lens.standard_refs
+        if ref.startswith("global.") or "." in ref
+    ]
+    return [
+        "Surface standards before execution starts; do not defer quality constraints to closeout.",
+        "Keep the plan scoped to the requested GSD planning artifact and explicit non-goals.",
+        "Selected standards: " + ", ".join(dict.fromkeys(standards[:8]))
+        if standards
+        else "Selected standards: none recorded.",
+    ]
+
+
+def _acceptance_criteria_contract() -> list[str]:
+    return [
+        "Every planned task must carry acceptance criteria that would fail if the behavior regresses.",
+        "Acceptance criteria must name the command, file check, or evidence artifact that proves completion.",
+        "Planning output must keep blockers and accepted tradeoffs visible rather than folding them into success claims.",
+    ]
+
+
+def _evidence_contract(lenses: tuple[PlanningLens, ...]) -> list[str]:
+    lens_keys = ", ".join(lens.key for lens in lenses[:8]) or "none"
+    return [
+        f"Evidence must cover selected planning lenses: {lens_keys}.",
+        "Record validation commands and expected artifacts before implementation work starts.",
+        "Preserve route, packet, summary, and truth-file evidence for later verification.",
+    ]
+
+
+def _verification_handoff(workflow_context: PlanningWorkflowDetection) -> list[str]:
+    return [
+        f"Hand off to `{workflow_context.handoff_target}` only after the plan lists verification commands.",
+        "Verifier must check actual artifacts and command results, not just SUMMARY.md claims.",
+        "Do not mark the plan complete while blocker-level criteria fail without accepted tradeoff metadata.",
+    ]

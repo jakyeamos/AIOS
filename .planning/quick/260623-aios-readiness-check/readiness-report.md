@@ -1,8 +1,9 @@
 # AIOS Readiness Check
 
-Generated: 2026-06-23T23:31:09.562463Z
-Source DB: `/Users/jakyeamos/AIOS/data/aios.db`
-DB copy: `/tmp/aios-readiness-check.db`
+Generated: 2026-07-01T18:33:50.111614Z
+Source DB: `/Users/jakyeamos/projects/AIOS/data/aios.db`
+DB copy: `/var/folders/r7/b6pc8f3d7mjgkqx_wps2p52r0000gn/T/aios-readiness-vkgg719m/aios-readiness.db`
+Logs dir: `/var/folders/r7/b6pc8f3d7mjgkqx_wps2p52r0000gn/T/aios-readiness-vkgg719m/logs`
 Overall: PASS
 
 | Check | Status | Summary |

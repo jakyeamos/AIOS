@@ -351,6 +351,24 @@
           "ci"
         ],
         "readiness_note": "Content and container repos require aggregate or delegated validation; diff-only floor checks are not mature readiness."
+      },
+      "mobile_app": {
+        "label": "Mobile app",
+        "required_gates": [
+          "install",
+          "lint",
+          "typecheck",
+          "test",
+          "architecture",
+          "pre_cr",
+          "anti_slop",
+          "repo_truth",
+          "secret_scan",
+          "dependency_security",
+          "ci",
+          "mobile_release"
+        ],
+        "readiness_note": "Mobile apps require install, static checks, tests, native/mobile release proof, Pre-CR, anti-slop, repo truth, security/dependency checks, and CI or approved local replacement proof."
       }
     },
     "non_remote_ci_exception_schema": {
@@ -367,6 +385,17 @@
     "adoption_readiness_rule": {
       "repo_local_contract": "Repo-local .aios-quality-gate.json declares gate IDs only.",
       "aios_owned_commands": "Executable commands live in AIOS-owned config/quality-gates.json and config/quality-pipeline.json.",
+      "required_quality_certification_workflow": "repo_gate_adoption_v1",
+      "certification_statuses": [
+        "aios_wired",
+        "quality_standard_compliant",
+        "release_ready"
+      ],
+      "final_adoption_statuses": [
+        "adoption_ready",
+        "adopted_but_blocked",
+        "not_adopted"
+      ],
       "weak_markers": [
         "floor_only",
         "pre_cr_only"
@@ -685,6 +714,14 @@
         },
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
+          "working_directory": "."
+        },
+        "secret_scan": {
+          "command": "! rg -n --hidden --glob '!uv.lock' --glob '!package-lock.json' --glob '!pnpm-lock.yaml' --glob '!node_modules/**' --glob '!data/**' --glob '!logs/**' --glob '!*.db' '(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|-----BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY-----)' .",
+          "working_directory": "."
+        },
+        "dependency_security": {
+          "command": "uv run python -m pip check && cd aios-ui && pnpm audit --audit-level high",
           "working_directory": "."
         },
         "divergent_strategy_standard": {
@@ -1952,6 +1989,230 @@
         "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 24 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
         "review_date": "2026-06-24",
         "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project Fantasy",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
+    },
+    {
+      "project_id": "BidCamp",
+      "applies_to": [
+        "typescript_app",
+        "production_app",
+        "public_web",
+        "production_public_web_app"
+      ],
+      "full_pipeline": false,
+      "gates": {
+        "install": {
+          "command": "pnpm install --frozen-lockfile",
+          "working_directory": "/Users/jakyeamos/projects/BidCamp"
+        },
+        "lint": {
+          "command": "pnpm lint",
+          "working_directory": "/Users/jakyeamos/projects/BidCamp"
+        },
+        "typecheck": {
+          "command": "pnpm exec tsc --noEmit",
+          "working_directory": "/Users/jakyeamos/projects/BidCamp"
+        },
+        "test": {
+          "command": "pnpm test",
+          "working_directory": "/Users/jakyeamos/projects/BidCamp"
+        },
+        "build": {
+          "command": "pnpm build",
+          "working_directory": "/Users/jakyeamos/projects/BidCamp"
+        },
+        "architecture": {
+          "command": "node scripts/aios-architecture-check.mjs",
+          "working_directory": "/Users/jakyeamos/projects/BidCamp"
+        },
+        "ci": {
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project BidCamp",
+          "working_directory": "/Users/jakyeamos/projects/BidCamp"
+        },
+        "secret_scan": {
+          "command": "! rg -n --hidden --glob '!uv.lock' --glob '!package-lock.json' --glob '!pnpm-lock.yaml' --glob '!node_modules/**' --glob '!data/**' --glob '!*.db' '(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|-----BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY-----)' .",
+          "working_directory": "/Users/jakyeamos/projects/BidCamp"
+        },
+        "dependency_security": {
+          "command": "pnpm audit --audit-level high",
+          "working_directory": "/Users/jakyeamos/projects/BidCamp"
+        },
+        "e2e_smoke": {
+          "command": "node bidnet-smoke.mjs",
+          "working_directory": "/Users/jakyeamos/projects/BidCamp"
+        },
+        "repo_truth": {
+          "command": "test -f AGENTS.md && test -f CLAUDE.md && test -f README.md",
+          "working_directory": "/Users/jakyeamos/projects/BidCamp"
+        },
+        "pre_cr": {
+          "command": "pre-cr run --json --workspace {repo_root}",
+          "working_directory": "/Users/jakyeamos/projects/BidCamp"
+        },
+        "anti_slop": {
+          "command": "node /Users/jakyeamos/projects/eslint-plugin-anti-slop/bin/anti-slop.mjs check . --mode audit --format json",
+          "working_directory": "/Users/jakyeamos/projects/BidCamp"
+        }
+      },
+      "repo_class": "production_public_web_app",
+      "maturation_blockers": [
+        "Newly added Phase 29 adoption target; needs repo-local AIOS contract, Pre-CR baseline, passing local evidence, and local CI proof before adoption-ready status."
+      ],
+      "strict_readiness_status": "blocked",
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 29 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-26",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project BidCamp",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
+    },
+    {
+      "project_id": "tenure",
+      "applies_to": [
+        "typescript_app",
+        "production_app",
+        "public_web",
+        "database_backed",
+        "production_public_web_app"
+      ],
+      "full_pipeline": false,
+      "gates": {
+        "install": {
+          "command": "npm ci",
+          "working_directory": "/Users/jakyeamos/LayerC0de/tenure"
+        },
+        "lint": {
+          "command": "npm run lint",
+          "working_directory": "/Users/jakyeamos/LayerC0de/tenure"
+        },
+        "typecheck": {
+          "command": "npx tsc --noEmit",
+          "working_directory": "/Users/jakyeamos/LayerC0de/tenure"
+        },
+        "test": {
+          "command": "npm run test:unit",
+          "working_directory": "/Users/jakyeamos/LayerC0de/tenure"
+        },
+        "build": {
+          "command": "npm run build",
+          "working_directory": "/Users/jakyeamos/LayerC0de/tenure"
+        },
+        "architecture": {
+          "command": "npm run check:engine-compliance && npm run check:internal-api-auth-gate",
+          "working_directory": "/Users/jakyeamos/LayerC0de/tenure"
+        },
+        "ci": {
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project tenure",
+          "working_directory": "/Users/jakyeamos/LayerC0de/tenure"
+        },
+        "secret_scan": {
+          "command": "! rg -n --hidden --glob '!uv.lock' --glob '!package-lock.json' --glob '!pnpm-lock.yaml' --glob '!node_modules/**' --glob '!data/**' --glob '!*.db' '(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|-----BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY-----)' .",
+          "working_directory": "/Users/jakyeamos/LayerC0de/tenure"
+        },
+        "dependency_security": {
+          "command": "npm audit --audit-level high",
+          "working_directory": "/Users/jakyeamos/LayerC0de/tenure"
+        },
+        "e2e_smoke": {
+          "command": "npm run test:e2e",
+          "working_directory": "/Users/jakyeamos/LayerC0de/tenure"
+        },
+        "repo_truth": {
+          "command": "test -f AGENTS.md && test -f CLAUDE.md && test -f README.md",
+          "working_directory": "/Users/jakyeamos/LayerC0de/tenure"
+        },
+        "pre_cr": {
+          "command": "pre-cr run --json --workspace {repo_root}",
+          "working_directory": "/Users/jakyeamos/LayerC0de/tenure"
+        },
+        "anti_slop": {
+          "command": "node /Users/jakyeamos/projects/eslint-plugin-anti-slop/bin/anti-slop.mjs check . --mode audit --format json",
+          "working_directory": "/Users/jakyeamos/LayerC0de/tenure"
+        }
+      },
+      "repo_class": "production_public_web_app",
+      "maturation_blockers": [
+        "Newly added Phase 29 adoption target; needs repo-local AIOS contract, fresh passing local evidence, and local CI proof before adoption-ready status."
+      ],
+      "strict_readiness_status": "blocked",
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 29 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-26",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project tenure",
+        "replacement_path": "quality_pipeline_runs.ci"
+      }
+    },
+    {
+      "project_id": "EliHealth",
+      "applies_to": [
+        "typescript_app",
+        "production_app",
+        "mobile_app"
+      ],
+      "full_pipeline": false,
+      "gates": {
+        "install": {
+          "command": "npm ci",
+          "working_directory": "/Users/jakyeamos/EliHealth"
+        },
+        "lint": {
+          "command": "npm run lint",
+          "working_directory": "/Users/jakyeamos/EliHealth"
+        },
+        "typecheck": {
+          "command": "npm run test:types",
+          "working_directory": "/Users/jakyeamos/EliHealth"
+        },
+        "test": {
+          "command": "npm test",
+          "working_directory": "/Users/jakyeamos/EliHealth"
+        },
+        "architecture": {
+          "command": "test -f package.json && test -d src && test -d ios && test -d scripts",
+          "working_directory": "/Users/jakyeamos/EliHealth"
+        },
+        "ci": {
+          "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project EliHealth",
+          "working_directory": "/Users/jakyeamos/EliHealth"
+        },
+        "secret_scan": {
+          "command": "! rg -n --hidden --glob '!uv.lock' --glob '!package-lock.json' --glob '!pnpm-lock.yaml' --glob '!node_modules/**' --glob '!data/**' --glob '!*.db' '(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|-----BEGIN (RSA|OPENSSH|EC|DSA) PRIVATE KEY-----)' .",
+          "working_directory": "/Users/jakyeamos/EliHealth"
+        },
+        "dependency_security": {
+          "command": "npm audit --audit-level high",
+          "working_directory": "/Users/jakyeamos/EliHealth"
+        },
+        "mobile_release": {
+          "command": "xcodebuild -workspace ios/Eli.xcworkspace -scheme Eli -configuration Debug -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build",
+          "working_directory": "/Users/jakyeamos/EliHealth"
+        },
+        "repo_truth": {
+          "command": "test -f CLAUDE.md && test -f README.md",
+          "working_directory": "/Users/jakyeamos/EliHealth"
+        },
+        "pre_cr": {
+          "command": "pre-cr run --json --workspace {repo_root}",
+          "working_directory": "/Users/jakyeamos/EliHealth"
+        },
+        "anti_slop": {
+          "command": "node /Users/jakyeamos/projects/eslint-plugin-anti-slop/bin/anti-slop.mjs check . --mode audit --format json",
+          "working_directory": "/Users/jakyeamos/EliHealth"
+        }
+      },
+      "repo_class": "mobile_app",
+      "maturation_blockers": [
+        "Newly added Phase 29 mobile-app adoption target; needs repo-local AIOS contract, Pre-CR baseline, passing mobile release proof, and local CI proof before adoption-ready status."
+      ],
+      "strict_readiness_status": "blocked",
+      "non_remote_ci_exception": {
+        "owner": "jakyeamos",
+        "reason": "GitHub Actions credits are constrained across the linked repository portfolio; Phase 29 accepts reproducible local CI proof recorded in AIOS instead of remote default-branch CI proof.",
+        "review_date": "2026-06-26",
+        "local_proof_command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project EliHealth",
         "replacement_path": "quality_pipeline_runs.ci"
       }
     }

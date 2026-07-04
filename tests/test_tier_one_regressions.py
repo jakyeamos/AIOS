@@ -107,19 +107,25 @@ def test_tier_one_audits_preserve_core_contracts(tmp_path: Path, capsys) -> None
     repo_path.mkdir()
     _seed_tier_one_db(db_path, repo_path)
 
-    lifecycle_exit = run_cli(["--json", "--db", str(db_path), "--logs-dir", str(logs_dir), "lifecycle-audit"])
+    lifecycle_exit = run_cli(
+        ["--json", "--db", str(db_path), "--logs-dir", str(logs_dir), "lifecycle-audit"]
+    )
     assert lifecycle_exit == EXIT_OK
     lifecycle = json.loads(capsys.readouterr().out)["data"]
     assert lifecycle["summary"]["unsupported_state_count"] == 0
 
-    contracts_exit = run_cli(["--json", "--db", str(db_path), "--logs-dir", str(logs_dir), "contracts-audit"])
+    contracts_exit = run_cli(
+        ["--json", "--db", str(db_path), "--logs-dir", str(logs_dir), "contracts-audit"]
+    )
     assert contracts_exit == EXIT_OK
     contracts = json.loads(capsys.readouterr().out)["data"]
     assert contracts["summary"]["canonical_contract_count"] == 14
     assert contracts["summary"]["implemented_count"] == 14
     assert contracts["summary"]["partial_count"] == 0
 
-    capability_exit = run_cli(["--json", "--db", str(db_path), "--logs-dir", str(logs_dir), "capability-audit"])
+    capability_exit = run_cli(
+        ["--json", "--db", str(db_path), "--logs-dir", str(logs_dir), "capability-audit"]
+    )
     assert capability_exit == EXIT_OK
     capability = json.loads(capsys.readouterr().out)["data"]
     assert capability["prompt_library"]["visibility"]["value"] == "visible"
@@ -133,19 +139,23 @@ def test_tier_one_audits_preserve_core_contracts(tmp_path: Path, capsys) -> None
         for finding in capability["findings"]
     )
 
-    learning_exit = run_cli(["--json", "--db", str(db_path), "--logs-dir", str(logs_dir), "workflow-learning-audit"])
+    learning_exit = run_cli(
+        ["--json", "--db", str(db_path), "--logs-dir", str(logs_dir), "workflow-learning-audit"]
+    )
     assert learning_exit == EXIT_OK
     learning = json.loads(capsys.readouterr().out)["data"]
     assert "no_learning_count" in learning["summary"]
     assert learning["summary"]["terminal_run_count"] >= 1
 
 
-def test_prove_project_health_records_snapshots_and_reports_missing_sources(tmp_path: Path, capsys) -> None:
+def test_prove_project_health_records_snapshots_and_reports_missing_sources(
+    tmp_path: Path, capsys
+) -> None:
     db_path = tmp_path / "aios.db"
     logs_dir = tmp_path / "logs"
     config_root = tmp_path / "config"
     repo_path = tmp_path / "repo"
-    missing_repo_path = tmp_path / "missing-gitnexus"
+    missing_repo_path = tmp_path / "missing-project"
     logs_dir.mkdir()
     repo_path.mkdir()
     standards_dir = config_root / "standards"
@@ -188,8 +198,8 @@ def test_prove_project_health_records_snapshots_and_reports_missing_sources(tmp_
                 "projects": [
                     {"id": "aios", "name": "AIOS", "path": str(repo_path), "profile_bindings": []},
                     {
-                        "id": "gitnexus",
-                        "name": "GitNexus",
+                        "id": "missing-project",
+                        "name": "MissingProject",
                         "path": str(missing_repo_path),
                         "profile_bindings": [],
                     },
@@ -231,7 +241,7 @@ def test_prove_project_health_records_snapshots_and_reports_missing_sources(tmp_
             "--project",
             "AIOS",
             "--project",
-            "GitNexus",
+            "MissingProject",
         ]
     )
     assert exit_code == EXIT_OK
@@ -241,7 +251,7 @@ def test_prove_project_health_records_snapshots_and_reports_missing_sources(tmp_
     assert payload["summary"]["missing_source_count"] == 1
     status_by_name = {project["name"]: project["status"] for project in payload["projects"]}
     assert status_by_name["AIOS"] == "snapshot_recorded"
-    assert status_by_name["GitNexus"] == "missing_source"
+    assert status_by_name["MissingProject"] == "missing_source"
 
     conn = sqlite3.connect(db_path)
     snapshot_count = conn.execute("SELECT COUNT(*) FROM standards_health_snapshots").fetchone()[0]
@@ -266,7 +276,7 @@ def test_prove_project_health_records_snapshots_and_reports_missing_sources(tmp_
     project_ids = {project["project_id"] for project in all_inventory["projects"]}
     project_names = {project["name"] for project in all_inventory["projects"]}
     assert "inactive-duplicate" not in project_ids
-    assert "GitNexus" not in project_names
+    assert "MissingProject" not in project_names
     assert all_inventory["summary"]["missing_source_count"] == 0
 
 
@@ -302,17 +312,23 @@ def test_sync_automation_history_imports_pipeline_log_evidence(tmp_path: Path, c
     conn.commit()
     conn.close()
 
-    sync_exit = run_cli(["--json", "--db", str(db_path), "--logs-dir", str(logs_dir), "sync-automation-history"])
+    sync_exit = run_cli(
+        ["--json", "--db", str(db_path), "--logs-dir", str(logs_dir), "sync-automation-history"]
+    )
     assert sync_exit == EXIT_OK
     sync_payload = json.loads(capsys.readouterr().out)["data"]
     assert sync_payload["summary"]["parsed_run_count"] == 2
     assert sync_payload["latest_run"]["status"] == "success"
 
-    capability_exit = run_cli(["--json", "--db", str(db_path), "--logs-dir", str(logs_dir), "capability-audit"])
+    capability_exit = run_cli(
+        ["--json", "--db", str(db_path), "--logs-dir", str(logs_dir), "capability-audit"]
+    )
     assert capability_exit == EXIT_OK
     capability = json.loads(capsys.readouterr().out)["data"]
     daily = capability["automations"]["items"][0]
     assert daily["status"]["value"] == "healthy"
     assert daily["success_rate"]["value"] == 0.5
     assert daily["urgency"] == "watch"
-    assert not any(finding["code"] == "automation_history_empty" for finding in capability["findings"])
+    assert not any(
+        finding["code"] == "automation_history_empty" for finding in capability["findings"]
+    )

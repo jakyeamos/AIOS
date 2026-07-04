@@ -1,8 +1,10 @@
 data/aios.db
 data/aios-route-failures.jsonl
+data/aios.db.pre-*
 data/*.db-shm
 data/*.db-wal
 data/cts/
+data/session-intelligence/reports/
 logs/hooks.log
 logs/*.log
 logs/session_packet_*.md
@@ -24,10 +26,14 @@ tmcp-benchmark/runs/worktrees/
 .superpowers/
 .aios/audit/
 .aios/shadow-worktrees/
+AIOS-backfill/
 config/cli-keys.env
 data/rule-artifacts/
 data/success-criteria/evaluations/
 archive/legacy-ai-os/logs/
 *.pyc
 __pycache__/
+node_modules/
 .pnpm-store/
+
+.quality-runner/

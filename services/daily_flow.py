@@ -11,6 +11,7 @@ from urllib.parse import quote
 from services.agentize import agentize_request
 from services.capability_truth import Provenance
 from services.next_action import get_next_actions
+from services.session_intelligence_tools import repo_closeout_payload
 from services.task_routing import recommend_route_primitives
 
 logger = logging.getLogger(__name__)
@@ -144,6 +145,7 @@ def replay_from_run(conn: sqlite3.Connection, *, run_id: str) -> DailyFlowTrace:
     finding = _fetch_finding(conn, run_id)
     writeback = _fetch_writeback(conn, run_id)
     delta = _fetch_delta(conn, project_id)
+    repo_closeout = _repo_closeout_for_project(conn, project_id)
     next_actions = get_next_actions(conn, project_id=project_id, limit=1)
 
     steps = (
@@ -158,7 +160,7 @@ def replay_from_run(conn: sqlite3.Connection, *, run_id: str) -> DailyFlowTrace:
         ),
         _route_step_for_replay(run, route_result),
         _packet_step(packet, run_id),
-        _run_step(run),
+        _run_step(run, repo_closeout=repo_closeout),
         _evaluation_step(conn, finding, run),
         _writeback_step(conn, writeback, run_id),
         _delta_step(conn, delta, project_id),
@@ -409,6 +411,35 @@ def _fetch_delta(conn: sqlite3.Connection, project_id: str | None) -> dict[str, 
     return dict(row) if row is not None else None
 
 
+def _fetch_project_repo_path(conn: sqlite3.Connection, project_id: str | None) -> str | None:
+    if not project_id or not _safe_table_exists(conn, "projects"):
+        return None
+    columns = _table_columns(conn, "projects")
+    if "id" not in columns or "repo_path" not in columns:
+        return None
+    row = conn.execute(
+        """
+        SELECT repo_path
+        FROM projects
+        WHERE id = ?
+        LIMIT 1
+        """,
+        (project_id,),
+    ).fetchone()
+    if row is None:
+        return None
+    return _optional_str(row["repo_path"])
+
+
+def _repo_closeout_for_project(
+    conn: sqlite3.Connection, project_id: str | None
+) -> dict[str, Any] | None:
+    repo_path = _fetch_project_repo_path(conn, project_id)
+    if repo_path is None:
+        return None
+    return _safe_metadata(repo_closeout_payload(repo_path))
+
+
 def _route_step_for_replay(run: dict[str, Any], route_result: dict[str, Any]) -> DailyFlowStep:
     run_id = str(run["id"])
     route_id = _optional_str(run.get("route_id"))
@@ -449,8 +480,14 @@ def _packet_step(packet: dict[str, Any] | None, run_id: str) -> DailyFlowStep:
     )
 
 
-def _run_step(run: dict[str, Any]) -> DailyFlowStep:
+def _run_step(run: dict[str, Any], *, repo_closeout: dict[str, Any] | None = None) -> DailyFlowStep:
     run_id = str(run["id"])
+    metadata: dict[str, Any] = {
+        "workflow_key": run.get("workflow_key"),
+        "status": run.get("status"),
+    }
+    if repo_closeout is not None:
+        metadata["repo_closeout"] = repo_closeout
     return _step(
         "run",
         summary=f"Run {run_id} is {run.get('status') or 'unknown'}",
@@ -458,7 +495,7 @@ def _run_step(run: dict[str, Any]) -> DailyFlowStep:
         drill_down_path=_drill_down_for_step("run", run_id=run_id),
         provenance="confirmed",
         freshness=str(run.get("updated_at") or run.get("created_at") or _now_iso()),
-        metadata={"workflow_key": run.get("workflow_key"), "status": run.get("status")},
+        metadata=metadata,
     )
 
 

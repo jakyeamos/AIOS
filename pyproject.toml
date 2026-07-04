@@ -4,11 +4,15 @@ version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
     "agent-eval-contract @ file:///Users/jakyeamos/agent-eval-contract",
+    "quality-runner @ file:///Users/jakyeamos/projects/quality-runner",
 ]
 
 [dependency-groups]
 dev = [
+    "basedpyright",
     "pytest>=9.0.2",
+    "ruff",
+    "vulture",
 ]
 
 [tool.ruff]

@@ -66,7 +66,7 @@ Everything below is remaining work, ordered by dependency.
 
 **Requirements:**
 - Build an AIOS-managed architecture enforcement system for linked development projects. The implementation should support project profiles/adapters instead of assuming this repository's layout is the universal target.
-- Audit this repo as the control-plane implementation home and use `aios-ui/` as one bootstrap TypeScript/Next.js target, but also define how the same enforcement model applies to other linked repos such as `amos-saas`, `soundscape-app`, `GitNexus`, `Terrace`, and `portfolio`.
+- Audit this repo as the control-plane implementation home and use `aios-ui/` as one bootstrap TypeScript/Next.js target, but also define how the same enforcement model applies to other linked repos such as `amos-saas`, `soundscape-app`, `Terrace`, and `portfolio`.
 - Infer architectural layers and module boundaries per project profile, then implement machine-enforced rules using the strongest available tools for each stack: Dependency Cruiser/ESLint for TS/React, ruff/import checks for Python, and other adapters where warranted.
 - Enforce global standards through per-project adapters: layering rules (UI cannot import infra internals), module boundary rules (no arbitrary cross-feature imports), directionality rules (dependencies flow inward), restricted import patterns, and cycle prevention.
 - Wire checks into project-local package scripts/CI where available and expose them through AIOS metadata/status surfaces so agents know which checks apply before editing. Deliver an audit summary, rule configs/adapters, CI or command wiring, and a developer-facing doc explaining each rule and why it exists.

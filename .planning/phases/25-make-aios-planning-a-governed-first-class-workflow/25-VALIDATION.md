@@ -1,7 +1,7 @@
 ---
 phase: 25
 slug: make-aios-planning-a-governed-first-class-workflow
-status: draft
+status: passed
 nyquist_compliant: true
 wave_0_complete: true
 created: 2026-06-24
@@ -30,14 +30,25 @@ created: 2026-06-24
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 25-01-01 | 01 | 1 | planning detection | T-25-01 | Preserve weak-route blocking | unit | `uv run pytest -q tests/test_planning_workflow_detection.py` | yes | pending |
-| 25-01-02 | 01 | 1 | planning detection | T-25-01 | Exact failing phrase is classified | unit | `uv run pytest -q tests/test_planning_workflow_detection.py` | yes | pending |
-| 25-02-01 | 02 | 2 | governed route | T-25-02 | Planning workflow routes only with planning evidence | unit | `uv run pytest -q tests/test_workflow_orchestration.py tests/test_task_routing.py` | yes | pending |
-| 25-02-02 | 02 | 2 | governed route | T-25-02 | Ambiguous routes still block | unit | `uv run pytest -q tests/test_task_routing.py` | yes | pending |
-| 25-03-01 | 03 | 3 | planning packet | T-25-03 | Packet exposes standards/lenses before execution | CLI/unit | `uv run pytest -q tests/test_aios_cli.py tests/test_execution_symmetric_planner.py` | yes | pending |
-| 25-03-02 | 03 | 3 | planning packet | T-25-03 | Route evidence remains drilldown-able | CLI/unit | `uv run pytest -q tests/test_aios_cli.py` | yes | pending |
-| 25-04-01 | 04 | 4 | shadow smoke | T-25-04 | Original shadow route no longer blocks | smoke/unit | `uv run pytest -q tests/test_codex_aios_shadow.py tests/test_codex_aios_route.py` | yes | pending |
-| 25-04-02 | 04 | 4 | closeout docs | T-25-04 | Truth records planning governance route | docs/check | `pnpm context:validate` | yes | pending |
+| 25-01-01 | 01 | 1 | planning detection | T-25-01 | Preserve weak-route blocking | unit | `uv run pytest -q tests/test_planning_workflow_detection.py` | yes | passed |
+| 25-01-02 | 01 | 1 | planning detection | T-25-01 | Exact failing phrase is classified | unit | `uv run pytest -q tests/test_planning_workflow_detection.py` | yes | passed |
+| 25-02-01 | 02 | 2 | governed route | T-25-02 | Planning workflow routes only with planning evidence | unit | `uv run pytest -q tests/test_workflow_orchestration.py tests/test_task_routing.py` | yes | passed |
+| 25-02-02 | 02 | 2 | governed route | T-25-02 | Ambiguous routes still block | unit | `uv run pytest -q tests/test_task_routing.py` | yes | passed |
+| 25-03-01 | 03 | 3 | planning packet | T-25-03 | Packet exposes standards/lenses before execution | CLI/unit | `uv run pytest -q tests/test_aios_cli.py tests/test_execution_symmetric_planner.py` | yes | passed |
+| 25-03-02 | 03 | 3 | planning packet | T-25-03 | Route evidence remains drilldown-able | CLI/unit | `uv run pytest -q tests/test_aios_cli.py` | yes | passed |
+| 25-04-01 | 04 | 4 | shadow smoke | T-25-04 | Original shadow route no longer blocks | smoke/unit | `uv run pytest -q tests/test_codex_aios_shadow.py tests/test_codex_aios_route.py` | yes | passed |
+| 25-04-02 | 04 | 4 | closeout docs | T-25-04 | Truth records planning governance route | docs/check | `pnpm context:validate` | yes | passed |
+
+## Final Validation Evidence
+
+| Command | Result | Evidence |
+| --- | --- | --- |
+| `uv run pytest -q tests/test_planning_workflow_detection.py tests/test_workflow_orchestration.py tests/test_task_routing.py tests/test_aios_cli.py tests/test_execution_symmetric_planner.py tests/test_planning_lenses.py tests/test_codex_aios_route.py tests/test_codex_aios_shadow.py` | passed | 192 passed in 3.14s |
+| `pnpm context:validate` | passed | Context validation passed for `/Users/jakyeamos/AIOS/aios/context` |
+| `uv run ruff check tests/test_planning_workflow_detection.py tests/test_workflow_orchestration.py tests/test_task_routing.py tests/test_aios_cli.py tests/test_execution_symmetric_planner.py tests/test_planning_lenses.py tests/test_codex_aios_route.py tests/test_codex_aios_shadow.py services/workflow_orchestration.py services/task_routing.py services/aios_cli.py services/execution_symmetric_planner.py services/planning_lenses.py services/planning_workflow_detection.py` | passed | All checks passed |
+| `pnpm quality:eval` | passed | Exit 0. Existing repository findings remained: 643 Python files over 500 lines, 2 assertionless test `__init__.py` modules, 3 TypeScript component files over 400 lines, 0 vulture findings, and 2 shellcheck files with findings. |
+| `python3 scripts/codex-aios-shadow.py "Add a new GSD phase to rectify all linked-repo adoption readiness blockers except agent-router" --db /private/tmp/aios-phase25-smoke/aios.db --project AIOS --no-worktree` | passed | `workflow_key: planning-governance`, no worktree created |
+| `python3 scripts/codex-aios-shadow.py "gsd-execute-phase 24" --db /private/tmp/aios-phase25-smoke/aios.db --project AIOS --no-worktree` | passed | `workflow_key: implementation-delivery`, no worktree created |
 
 ## Wave 0 Requirements
 
@@ -49,10 +60,10 @@ All phase behaviors have automated verification. A final copied-DB smoke may be 
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify commands.
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify.
-- [ ] No watch-mode flags.
-- [ ] Feedback latency under 60 seconds for targeted checks.
-- [ ] Full suite command passes before phase verification.
+- [x] All tasks have `<automated>` verify commands.
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify.
+- [x] No watch-mode flags.
+- [x] Feedback latency under 60 seconds for targeted checks.
+- [x] Full suite command passes before phase verification.
 
-**Approval:** pending
+**Approval:** passed with automated evidence on 2026-06-25.

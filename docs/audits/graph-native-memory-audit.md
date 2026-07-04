@@ -50,7 +50,7 @@ Phase 12 Plan 12-01 audit of the current AIOS memory, retrieval, context-packing
 ### Project-Specific Context Retrieval
 
 - `bin/hook-session-start.py` builds a compact session packet using the current project, recent handoffs, open bugs, active rules, success criteria, standards, CTS context, RTK compression rules, and resume snapshots.
-- `bin/hook-prompt-submit.py` classifies each prompt and retrieves prompt templates, open bugs, archive notes, handoff decisions, handoff next actions, active rules, curated wiki snippets, GitNexus hints, and similar reusable prompts according to `config/retrieval-policy.json`.
+- `bin/hook-prompt-submit.py` classifies each prompt and retrieves prompt templates, open bugs, archive notes, handoff decisions, handoff next actions, active rules, curated wiki snippets, and similar reusable prompts according to `config/retrieval-policy.json`.
 - `services/agentize.py` builds an `AgentizedTaskPacket` with required context based on keyword classification, prompt registry metadata, success criteria, standards, relevant skills, and verification steps.
 - `aios-ui/server/aios/packet-assembly.ts` assembles ranked briefing packets from project dossiers, topic graph matches, recent runs, recent memory updates, workflow/agent policy, improvement writebacks, and CTS context.
 - `services/daily_flow.py` previews or replays the goal -> route -> packet -> run -> evaluation -> writeback -> unresolved delta -> next action flow.

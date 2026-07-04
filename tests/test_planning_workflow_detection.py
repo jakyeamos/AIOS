@@ -34,6 +34,48 @@ def test_natural_language_planning_resolves_to_aios_plan() -> None:
     assert result.signals == ("natural_language_planning",)
 
 
+def test_phase_add_objective_resolves_to_gsd_ready_plan() -> None:
+    result = detect_planning_workflow("Add a new GSD phase for planning governance")
+
+    assert result.workflow == "gsd"
+    assert result.phase == "plan"
+    assert result.handoff_target == "gsd"
+    assert result.output_format == "gsd_ready_plan"
+    assert result.matched_alias == "add a new gsd phase"
+    assert result.signals == ("configured_gsd_alias",)
+
+
+def test_gsd_add_phase_alias_resolves_to_gsd_ready_plan() -> None:
+    result = detect_planning_workflow("Use gsd-add-phase to make planning governance Phase 25")
+
+    assert result.workflow == "gsd"
+    assert result.phase == "plan"
+    assert result.handoff_target == "gsd"
+    assert result.output_format == "gsd_ready_plan"
+    assert result.matched_alias == "gsd-add-phase"
+    assert result.signals == ("configured_gsd_alias",)
+
+
+def test_blocker_to_phase_objective_resolves_to_gsd_ready_plan() -> None:
+    result = detect_planning_workflow("Turn these linked-repo readiness blockers into a phase")
+
+    assert result.workflow == "gsd"
+    assert result.phase == "plan"
+    assert result.handoff_target == "gsd"
+    assert result.output_format == "gsd_ready_plan"
+    assert result.matched_alias == "blockers into a phase"
+    assert result.signals == ("configured_gsd_alias",)
+
+
+def test_ordinary_implementation_objective_remains_unknown() -> None:
+    result = detect_planning_workflow("Fix the login redirect bug in the dashboard")
+
+    assert result.workflow == "unknown"
+    assert result.phase == "unknown"
+    assert result.output_format == "unknown"
+    assert result.signals == ()
+
+
 def test_slash_overrides_do_not_replace_workflow_detection() -> None:
     result = detect_planning_workflow("/no-subagents /gsdplanphase 20")
 

@@ -3,8 +3,12 @@
  *
  * Mirrors services/daily_flow.py. Preview mode is read-only: it does not call Python,
  * agentize, write orchestration rows, or persist packets. Replay mode reads persisted
- * run, packet, evaluation, writeback, delta, and next-action evidence.
+ * run, packet, evaluation, writeback, delta, next-action, and read-only repo
+ * closeout evidence.
  */
+
+import { execFileSync } from "node:child_process";
+import { resolve } from "node:path";
 
 import type Database from "better-sqlite3";
 
@@ -32,6 +36,27 @@ export const CANONICAL_STEP_ORDER: readonly DailyFlowStepKind[] = [
 
 type Row = Record<string, unknown>;
 
+type GitCommandResult = {
+  ok: boolean;
+  stdout: string;
+};
+
+type RepoCloseoutPayload = {
+  schema: "aios-repo-closeout-v0.1";
+  repo: string;
+  git: {
+    is_repo: boolean;
+    branch: string | null;
+    head: string | null;
+    dirty: boolean;
+    dirty_files: string[];
+    recent_commits: Array<{ sha: string; title: string }>;
+  };
+  diff_stat: {
+    lines: string[];
+  };
+};
+
 const _safeTableExists = (db: Database.Database, tableName: string): boolean => {
   const row = db
     .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=? LIMIT 1")
@@ -52,6 +77,104 @@ const _text = (value: unknown): string => (value === null || value === undefined
 const _nullableText = (value: unknown): string | null => {
   const text = _text(value);
   return text ? text : null;
+};
+
+const _runGit = (repoPath: string, args: readonly string[]): GitCommandResult => {
+  try {
+    const stdout = execFileSync("git", [...args], {
+      cwd: repoPath,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+      timeout: 5000,
+    });
+    return { ok: true, stdout };
+  } catch {
+    return { ok: false, stdout: "" };
+  }
+};
+
+const _rawLines = (stdout: string): string[] =>
+  stdout.split(/\r?\n/u).filter((line) => line.length > 0);
+
+const _trimmedLines = (stdout: string): string[] =>
+  _rawLines(stdout)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+const _gitRoot = (repoPath: string): string => {
+  const candidate = resolve(repoPath);
+  const result = _runGit(candidate, ["rev-parse", "--show-toplevel"]);
+  const stdout = result.stdout.trim();
+  return result.ok && stdout ? resolve(stdout) : candidate;
+};
+
+const _gitText = (repoPath: string, args: readonly string[]): string | null => {
+  const result = _runGit(repoPath, args);
+  const stdout = result.stdout.trim();
+  return result.ok && stdout ? stdout : null;
+};
+
+const _gitStatusLines = (repoPath: string): string[] => {
+  const result = _runGit(repoPath, ["status", "--short"]);
+  return result.ok ? _rawLines(result.stdout) : [];
+};
+
+const _recentCommits = (repoPath: string, limit: number): Array<{ sha: string; title: string }> => {
+  const result = _runGit(repoPath, ["log", "--oneline", `-${limit}`]);
+  if (!result.ok) {
+    return [];
+  }
+  return _rawLines(result.stdout).map((line) => {
+    const separator = line.indexOf(" ");
+    if (separator === -1) {
+      return { sha: line, title: "" };
+    }
+    return { sha: line.slice(0, separator), title: line.slice(separator + 1) };
+  });
+};
+
+const _repoCloseoutPayload = (repoPath: string, commitLimit = 5): RepoCloseoutPayload => {
+  const repo = _gitRoot(repoPath);
+  const isRepo = _runGit(repo, ["rev-parse", "--is-inside-work-tree"]).ok;
+  const status = isRepo ? _gitStatusLines(repo) : [];
+  const boundedLimit = Math.max(1, Math.min(commitLimit, 20));
+  return {
+    schema: "aios-repo-closeout-v0.1",
+    repo,
+    git: {
+      is_repo: isRepo,
+      branch: isRepo ? _gitText(repo, ["branch", "--show-current"]) : null,
+      head: isRepo ? _gitText(repo, ["rev-parse", "HEAD"]) : null,
+      dirty: status.length > 0,
+      dirty_files: status,
+      recent_commits: isRepo ? _recentCommits(repo, boundedLimit) : [],
+    },
+    diff_stat: {
+      lines: isRepo ? _trimmedLines(_runGit(repo, ["diff", "--stat"]).stdout) : [],
+    },
+  };
+};
+
+const _projectRepoPath = (db: Database.Database, projectId: string | null): string | null => {
+  if (!projectId || !_safeTableExists(db, "projects")) {
+    return null;
+  }
+  const columns = _tableColumns(db, "projects");
+  if (!columns.has("id") || !columns.has("repo_path")) {
+    return null;
+  }
+  const row = db
+    .prepare("SELECT repo_path AS repoPath FROM projects WHERE id = ? LIMIT 1")
+    .get(projectId) as { repoPath?: unknown } | undefined;
+  return _nullableText(row?.repoPath);
+};
+
+const _repoCloseoutForProject = (
+  db: Database.Database,
+  projectId: string | null,
+): RepoCloseoutPayload | null => {
+  const repoPath = _projectRepoPath(db, projectId);
+  return repoPath ? _repoCloseoutPayload(repoPath) : null;
 };
 
 const _jsonRecord = (raw: unknown): Record<string, unknown> => {
@@ -120,17 +243,27 @@ const _stepForPacket = (packet: Row | null): DailyFlowStep =>
       })
     : _missingStep("packet", "No persisted packet evidence is available.");
 
-const _stepForRun = (run: Row | null): DailyFlowStep =>
-  run
-    ? _step("run", {
-        summary: `Run ${_text(run.id)} is ${_text(run.status) || "unknown"}.`,
-        evidenceRef: { runId: run.id },
-        drillDownPath: runPath(_text(run.id)),
-        provenance: "confirmed",
-        freshness: _text(run.updated_at || run.created_at) || "persisted run",
-        metadata: { workflowKey: run.workflow_key, agentKey: run.agent_key, status: run.status },
-      })
-    : _missingStep("run", "No persisted run evidence is available.");
+const _stepForRun = (run: Row | null, repoCloseout: RepoCloseoutPayload | null): DailyFlowStep => {
+  if (!run) {
+    return _missingStep("run", "No persisted run evidence is available.");
+  }
+  const metadata: Record<string, unknown> = {
+    workflowKey: run.workflow_key,
+    agentKey: run.agent_key,
+    status: run.status,
+  };
+  if (repoCloseout) {
+    metadata.repo_closeout = repoCloseout;
+  }
+  return _step("run", {
+    summary: `Run ${_text(run.id)} is ${_text(run.status) || "unknown"}.`,
+    evidenceRef: { runId: run.id },
+    drillDownPath: runPath(_text(run.id)),
+    provenance: "confirmed",
+    freshness: _text(run.updated_at || run.created_at) || "persisted run",
+    metadata,
+  });
+};
 
 const _stepForEvaluation = (evaluation: Row | null, runId: string | null): DailyFlowStep =>
   evaluation
@@ -336,11 +469,12 @@ export const replayDailyFlow = (
   const route = _jsonRecord(run?.route_result_json);
   const selectedWorkflow = route.selected_workflow as { workflow_key?: unknown } | undefined;
   const workflowKey = _text(selectedWorkflow?.workflow_key || run?.workflow_key) || null;
+  const repoCloseout = _repoCloseoutForProject(db, projectId);
   const steps: DailyFlowStep[] = [
     _stepForGoal(objective, projectId, false),
     _stepForRoute(workflowKey, _text(run?.rationale) || null),
     _stepForPacket(_latestPacketForRun(db, input.runId)),
-    _stepForRun(run),
+    _stepForRun(run, repoCloseout),
     _stepForEvaluation(_evaluationForRun(db, input.runId), input.runId),
     _stepForWriteback(_writebackForRun(db, input.runId)),
     _stepForUnresolvedDelta(_unresolvedDeltaForProject(db, projectId)),

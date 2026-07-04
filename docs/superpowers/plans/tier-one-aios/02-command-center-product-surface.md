@@ -84,7 +84,7 @@ Create `AttentionList.tsx` with severity, title, source, and href. Do not includ
 
 ```bash
 cd aios-ui
-npm run lint
+pnpm lint
 ```
 
 ### Task 2: Rebuild Home Page Around Decisions
@@ -173,4 +173,4 @@ Before completion verify screenshot-backed issues are gone:
 - [ ] command center prioritizes decisions over raw telemetry
 - [ ] UI uses backend contract states only
 - [ ] no feature claims exceed backend capability
-- [ ] `npm run lint` passes with no errors
+- [ ] `pnpm lint` passes with no errors

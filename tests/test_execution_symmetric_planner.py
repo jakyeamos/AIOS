@@ -89,6 +89,29 @@ def test_gsd_ready_plan_output_uses_detected_gsd_context() -> None:
     assert any("GSD phase" in item for item in plan.sections["definition_of_done"])
 
 
+def test_gsd_ready_plan_includes_planning_quality_contract_sections() -> None:
+    plan = generate_execution_symmetric_plan(
+        objective="Add a new GSD phase for planning governance",
+        complexity="complex",
+        task_types=("gsd_plan_phase",),
+    )
+
+    assert plan.workflow_context.workflow == "gsd"
+    assert plan.sections["gsd_ready"] is True
+    for section in {
+        "planning_quality_contract",
+        "acceptance_criteria_contract",
+        "evidence_contract",
+        "verification_handoff",
+    }:
+        assert section in plan.sections
+    assert any(
+        "acceptance criteria" in item.lower()
+        for item in plan.sections["acceptance_criteria_contract"]
+    )
+    assert any("verification" in item.lower() for item in plan.sections["verification_handoff"])
+
+
 def test_high_risk_plan_includes_rollback_and_escalation() -> None:
     plan = generate_execution_symmetric_plan(
         objective="Plan a security-sensitive secret handling change",
@@ -103,9 +126,10 @@ def test_high_risk_plan_includes_rollback_and_escalation() -> None:
     assert any("revert path" in item for item in plan.sections["rollback_recovery"])
     assert any("Rollback path" in item for item in plan.sections["escalation_conditions"])
     assert plan.sections["skill_planning_constraints"][0]["skill_key"] == "security_review_executor"
-    assert "completed_work_review" in plan.sections["skill_planning_constraints"][0][
-        "disallowed_outputs"
-    ]
+    assert (
+        "completed_work_review"
+        in plan.sections["skill_planning_constraints"][0]["disallowed_outputs"]
+    )
 
 
 def test_unknown_complexity_is_rejected() -> None:

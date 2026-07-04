@@ -670,7 +670,7 @@ This milestone adds algorithmic complexity and code simplification as mandatory 
 - Create `docs/quality/complexity-simplification-gate.md` — root gate specification (why, when, what, how, fix-vs-defer, Definition of Done)
 - Create `docs/quality/complexity-checklist.md` — local 17-pattern algorithmic complexity checklist derived from codex-complexity-optimizer patterns; no external dependency
 - Create `docs/backfill/complexity-simplification-backfill.md` — AIOS-specific backfill inventory
-- Create backfill docs for all six linked projects: soundscape-app, portfolio, amos-saas, GitNexus, tm, Terrace
+- Create backfill docs for linked projects: soundscape-app, portfolio, amos-saas, tm, Terrace
 - Update AIOS backfill doc with Cross-Project Summary table linking all six external inventories
 
 **Current Surfaces To Evolve:**
@@ -682,7 +682,6 @@ This milestone adds algorithmic complexity and code simplification as mandatory 
 - `~/projects/soundscape-app/docs/complexity-simplification-backfill.md` (new)
 - `~/projects/portfolio/docs/complexity-simplification-backfill.md` (new)
 - `~/projects/amos-saas/docs/complexity-simplification-backfill.md` (new)
-- `~/projects/GitNexus/docs/complexity-simplification-backfill.md` (new)
 - `~/projects/tm/docs/complexity-simplification-backfill.md` (new)
 - `~/projects/Terrace/docs/complexity-simplification-backfill.md` (new)
 
@@ -1239,6 +1238,7 @@ This milestone adds a native macOS app development skill pack to AIOS by transfo
 | Phase 26 | Phase 25 | expert rubric remediation core artifact service, schemas, validators, evidence fixture, audit report builder, remediation planner, and handoff builder |
 | Phase 27 | Phase 26 | workflow runtime wiring for expert rubric remediation, including skill dispatch, artifact persistence, workflow registry, skill registry, and route selection |
 | Phase 28 | Phase 27 | read-only TMCP review-plan CLI, focused quality gates, project truth closeout, smoke verification, and implementation handoff evidence |
+| Phase 29 | Phase 24, Phase 28 | remediate the 23 in-scope linked repositories to AIOS adoption-ready status with passing required gates, local CI proof, standards-health proof, and separate dirty-tree tracking |
 
 ## Requirement Coverage
 
@@ -1272,6 +1272,7 @@ This milestone adds a native macOS app development skill pack to AIOS by transfo
 | Phase 26 | TBD | 0 |
 | Phase 27 | TBD | 0 |
 | Phase 28 | TBD | 0 |
+| Phase 29 | TBD | 0 |
 
 **Coverage Validation:**
 - v1 requirements: 133 (124 prior + 9 MACS)
@@ -1339,12 +1340,13 @@ Plans:
 **Requirements**: TBD
 **Depends on:** Phase 24
 **Plans:** 4 plans
+**2026-06-25 closeout:** Phase 25 completed with active `planning-governance` workflow routing, planning packet standards/evidence/verification handoff sections, regression coverage for the original Codex shadow planning objective, and `gsd-execute-phase 24` command routing to the existing governed implementation lane. Final evidence: 192 targeted pytest tests passed, `pnpm context:validate` passed, focused Ruff check passed, and copied-DB Codex shadow `--no-worktree` smokes passed for both planning and command objectives.
 
 Plans:
-- [ ] 25-01 Planning workflow detection contract
-- [ ] 25-02 Governed planning route selection
-- [ ] 25-03 Planning packet standards and evidence contract
-- [ ] 25-04 Shadow route proof and planning truth closeout
+- [x] 25-01 Planning workflow detection contract
+- [x] 25-02 Governed planning route selection
+- [x] 25-03 Planning packet standards and evidence contract
+- [x] 25-04 Shadow route proof and planning truth closeout
 
 ### Phase 26: Expert rubric remediation core artifacts
 
@@ -1387,5 +1389,30 @@ Plans:
 - [x] 28-02 Focused quality gates and project truth closeout
 - [x] 28-03 Smoke verification and implementation handoff evidence
 
+### Phase 29: Linked repo AIOS adoption readiness remediation
+
+**Goal:** Get the 23 in-scope linked repositories to AIOS adoption-ready status by clearing required failing gates, recording passing local CI proof, and closing with `ready_count: 23`, `blocked_count: 0`, `evidence_required_count: 0`, and `excluded_count: 3`.
+**2026-06-26 baseline:** Phase 24 completed required gate setup for its 20 in-scope repos, and Phase 29 now also includes `BidCamp`, `tenure`, and `EliHealth`. The readiness report shows 0 ready repos, 20 blocked repos, 3 evidence-required repos, and 3 excluded repos (`agent-router`, `video-pipeline`, `manga-sync`). The remaining work is real remediation and proof collection, not setup.
+**Subsystem consolidation goal:** AIOS linked-repo quality governance. Consolidate quality-pipeline runs, standards-health proof, repo-local truth, local CI replacement evidence, and dirty-tree hygiene into one repeatable adoption-readiness loop.
+**Subsystem extraction posture goal:** Keep inside AIOS. The adoption loop currently depends on AIOS inventory, local quality-pipeline records, standards-health snapshots, and GSD closeout artifacts; extraction would require a portable inventory and evidence-store contract.
+**Requirements**: TBD
+**Depends on:** Phase 24, Phase 28
+**Plans:** 8 plans
+
+Plans:
+- [ ] 29-01 Smallest Gate Set Remediation
+- [ ] 29-02 Compact Validation And Security Remediation
+- [ ] 29-03 Content And Container Repo Remediation
+- [ ] 29-04 Python Data Research And Course Repo Remediation
+- [ ] 29-05 Tool And Platform Repo Remediation
+- [ ] 29-06 Medium Production Web App Remediation
+- [ ] 29-07 Complex Production Web App Remediation
+- [ ] 29-08 Final Portfolio Readiness Closeout
+
+Repo-local pilot execution phases:
+- BidCamp: phases 151-155 in `/Users/jakyeamos/projects/BidCamp/.planning/phases/`, one phase each for format, thermo, complexity, visual/runtime proof, and final certification.
+- EliHealth: phases 09-13 in `/Users/jakyeamos/EliHealth/.planning/phases/`, one phase each for format, thermo, complexity, mobile runtime/release proof, and final certification.
+- pre-cr-suite-lsp: phases 04-06 in `/Users/jakyeamos/projects/pre-cr-suite-lsp/.planning/phases/`, with format, coupled server complexity/thermo, and final certification phases.
+
 ---
-*Last updated: 2026-06-24 after completing Phase 28 and smoke-verifying the expert rubric remediation CLI*
+*Last updated: 2026-06-26 after moving pilot remediation planning into repo-local gate phases*
