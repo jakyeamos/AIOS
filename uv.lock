@@ -7,8 +7,7 @@ name = "aios"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "quality-evidence-contract" },
-    { name = "repo-quality-certifier" },
+    { name = "quality-runner" },
 ]
 
 [package.dev-dependencies]
@@ -20,10 +19,7 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "quality-evidence-contract", directory = "/Users/jakyeamos/quality-evidence-contract" },
-    { name = "repo-quality-certifier", directory = "/Users/jakyeamos/repo-quality-certifier" },
-]
+requires-dist = [{ name = "quality-runner", directory = "/Users/jakyeamos/projects/quality-runner" }]
 
 [package.metadata.requires-dev]
 dev = [
@@ -123,14 +119,9 @@ wheels = [
 ]
 
 [[package]]
-name = "quality-evidence-contract"
-version = "0.1.0"
-source = { directory = "/Users/jakyeamos/quality-evidence-contract" }
-
-[[package]]
-name = "repo-quality-certifier"
-version = "0.1.0"
-source = { directory = "/Users/jakyeamos/repo-quality-certifier" }
+name = "quality-runner"
+version = "0.3.0"
+source = { directory = "/Users/jakyeamos/projects/quality-runner" }
 
 [[package]]
 name = "ruff"
