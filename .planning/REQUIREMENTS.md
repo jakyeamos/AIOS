@@ -350,3 +350,6 @@ None currently. The full operating-system vision is intentionally being planned 
 ---
 *Requirements defined: 2026-05-13*
 *Last updated: 2026-06-04 after adding Phase 21 MACS requirements*
+## QR Remediation Requirements
+
+- [ ] **QR-AIOS**: Resolve the Quality Runner advisory clusters from run qr-fleet-continue-20260704-aios for aios without changing intended behavior, then verify with focused repo checks and a post-remediation QR comparison.

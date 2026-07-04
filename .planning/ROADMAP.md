@@ -1414,5 +1414,24 @@ Repo-local pilot execution phases:
 - EliHealth: phases 09-13 in `/Users/jakyeamos/EliHealth/.planning/phases/`, one phase each for format, thermo, complexity, mobile runtime/release proof, and final certification.
 - pre-cr-suite-lsp: phases 04-06 in `/Users/jakyeamos/projects/pre-cr-suite-lsp/.planning/phases/`, with format, coupled server complexity/thermo, and final certification phases.
 
+### Phase 30: QR remediation: aios
+
+
+
+
+
+
+**Goal:** Resolve Quality Runner findings for aios using cluster-oriented, behavior-preserving remediation from run qr-fleet-continue-20260704-aios.
+**Requirements**: QR-AIOS
+**Depends on:** Phase 29
+**Plans:** 2 plans
+
+Plans:
+- [ ] 30-01-PLAN.md - Primary QR cluster remediation
+- [ ] 30-02-PLAN.md - Additional QR cluster remediation
+
+**Cross-cutting constraints:**
+- The post-remediation QR run records no unresolved regression for this plan scope.
+
 ---
 *Last updated: 2026-06-26 after moving pilot remediation planning into repo-local gate phases*

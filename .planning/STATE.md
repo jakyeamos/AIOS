@@ -57,6 +57,7 @@ progress:
 
 ### Roadmap Evolution
 
+- 2026-07-04: Phase 30 planned: QR remediation: aios from QR run qr-fleet-continue-20260704-aios.
 - Phase 23 added: Mature linked repositories to AIOS strict release readiness, split into eight GSD-standard plans for audit, readiness contract, class-specific maturation, evidence reporting, and final closeout.
 - Phase 23 execution produced a full portfolio ledger in `23-VERIFICATION.md`: all 23 active repo gate contracts validate and all-inventory standards-health proof records 23 active snapshots without missing-source contamination, but no repo is adoption-ready yet.
 - Phase 24 added: Rectify linked repo AIOS readiness blockers except agent-router.

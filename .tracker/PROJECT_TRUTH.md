@@ -360,3 +360,7 @@ Doc-only update note: the 2026-06-24 TDD Test Value Adoption Gate commit passed 
 - shellcheck skips `.py` files named like shell scripts — no action needed there.
 - zsh scripts (if any) are intentionally skipped by shellcheck; this is expected, not a gap.
 - Agents should proactively surface better long-term approaches when they see them, including tradeoffs and a recommended path, while keeping the active task moving.
+
+## QR Remediation Planning
+
+- 2026-07-04: Added GSD Phase 30 for QR remediation from qr-fleet-continue-20260704-aios; 2 plan(s) created from aios.md. Execution has not started.
