@@ -35,3 +35,5 @@ archive/legacy-ai-os/logs/
 __pycache__/
 node_modules/
 .pnpm-store/
+
+.quality-runner/
