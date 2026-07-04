@@ -321,5 +321,5 @@ Rules live in `config/rtk/rules.json`; architecture details live in
 
 - Keep `main` deployable.
 - Prefer feature branches for non-trivial code changes.
-- `logs/`, `staging/`, local DB files, and generated caches are operational artifacts unless explicitly promoted.
+- `logs/`, `staging/`, local DB files, and generated caches are operational artifacts unless explicitly promoted. Runtime control-plane receipts and session-effectiveness receipts stay local under `logs/control-plane/` and `logs/session-effectiveness/`.
 - Some UI verification currently reports existing anti-slop warnings and a Turbopack NFT trace warning; both are non-blocking unless the current change touches those areas.

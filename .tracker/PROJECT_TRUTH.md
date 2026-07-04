@@ -1,7 +1,7 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with durable eval-run recording, explicit no-evidence shadow-run marking, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, read-only workflow route preview, daily-flow repo closeout traces, standalone Quality Runner consumption boundary, QR-detectable dead-code/runtime-smoke gate exposure, review-gated session-intelligence tools, and Codex session-ingest meta-learning proposals while broader Ruff and BasedPyright baseline issues remain open.
+summary: Active local-first agent operating system with durable eval-run recording, explicit no-evidence shadow-run marking, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, read-only workflow route preview, daily-flow repo closeout traces, standalone Quality Runner consumption boundary, QR-detectable dead-code/runtime-smoke gate exposure, review-gated session-intelligence tools, Codex session-ingest meta-learning proposals, and ignored runtime control-plane/session-effectiveness operator artifacts while broader Ruff and BasedPyright baseline issues remain open.
 healthScore: 73
 statusLabel: needs_attention
 nextStep: Use the next real AIOS closeout trace to verify whether inline repo state removes repeated manual `git status` and `git diff --stat` checks before deciding whether to persist closeout snapshots.
@@ -71,6 +71,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 ## Recent Progress
 
+- 2026-07-04: Stopped tracked runtime control-plane and session-effectiveness receipts from dirtying the worktree by removing generated `logs/control-plane/` and `logs/session-effectiveness/` artifacts from the index while preserving the ignored local operator paths; added a regression test that future receipts remain ignored and untracked.
 - 2026-07-02: Integrated the repo closeout helper into daily-flow replay and UI operator surfaces: replay run steps now carry `metadata.repo_closeout`, CLI JSON exposes dirty files and diff stat through the trace, and the Command Center/run-detail trace renders repo path, branch, short HEAD, dirty-file count, and diff summary.
 - 2026-07-04: Replaced AIOS's direct `quality-evidence-contract` and `repo-quality-certifier` path dependencies with one local `quality-runner` dependency after Quality Runner absorbed those compatibility imports, CLI/MCP surfaces, and plugin metadata. Focused AIOS compatibility tests passed.
 - 2026-07-02: Exposed the existing Vulture dead-code check through root `pnpm dead-code` and `pnpm audit:dead-code` scripts so Quality Runner detects the `dead_code` capability; final QR run `qr-clean-audit-20260702T200935Z-AIOS-final-2` has no missing repo-owned capabilities while inherited structural findings remain in generated/shadow worktree paths.
@@ -206,6 +207,13 @@ Focused daily-flow repo closeout checks on 2026-07-02:
 - `uv run ruff format --check services/daily_flow.py tests/test_daily_flow.py tests/test_aios_cli.py` passed.
 - `uv run basedpyright services/daily_flow.py tests/test_daily_flow.py tests/test_aios_cli.py` passed with 0 errors and 0 warnings.
 - `cd aios-ui && pnpm lint` passed with existing warnings outside the touched daily-flow files.
+
+Focused runtime artifact ignore checks on 2026-07-04:
+- `uv run pytest -q tests/test_runtime_artifact_gitignore.py` passed with 2 tests.
+- `uv run ruff check tests/test_runtime_artifact_gitignore.py` passed.
+- `uv run ruff format --check tests/test_runtime_artifact_gitignore.py` passed.
+- `uv run basedpyright tests/test_runtime_artifact_gitignore.py` passed with 0 errors and 0 warnings.
+- `git ls-files logs/control-plane logs/session-effectiveness` returned no tracked files.
 
 Full repo checks on 2026-07-02:
 - `uv run pytest -q` passed with 1082 tests.
