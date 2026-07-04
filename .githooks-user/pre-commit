@@ -3,4 +3,21 @@ set -euo pipefail
 
 export PATH="$HOME/.local/bin:$PATH"
 
-python3 /Users/jakyeamos/AIOS/bin/user-commit-quality-gate.py
+# The quality-gate script needs Python 3.11+ (uses datetime.UTC). Bare `python3`
+# may resolve to an older system Python (e.g. Xcode 3.9), so pick a modern one.
+PY=""
+for candidate in python3.13 python3.12 python3.11 python3; do
+  if command -v "$candidate" >/dev/null 2>&1; then
+    ver="$("$candidate" -c 'import sys; print(sys.version_info[0]*100+sys.version_info[1])' 2>/dev/null || echo 0)"
+    if [ "$ver" -ge 311 ] 2>/dev/null; then
+      PY="$candidate"
+      break
+    fi
+  fi
+done
+if [ -z "$PY" ]; then
+  echo "pre-commit: no Python 3.11+ found for quality gate" >&2
+  exit 1
+fi
+
+"$PY" /Users/jakyeamos/AIOS/bin/user-commit-quality-gate.py
