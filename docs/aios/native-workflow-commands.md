@@ -122,6 +122,13 @@ Metadata logging is local JSONL only. It can include command name, timestamp, re
 4. Implement the production version separately.
 5. `aios review squad`
 
+### Multi-Repo Quality Rollout
+
+Use `aios quality rollout` to launch the external Quality Runner rollout
+controller and capture its ledger, controller reports, validation artifacts, and
+fleet planning documents under `~/AIOS/artifacts/quality-rollouts/`. The
+operator flow lives in `docs/quality/quality-runner-rollout-operator-flow.md`.
+
 ## Safety Notes
 
 - Read-only commands must not modify files.

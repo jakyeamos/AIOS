@@ -18,7 +18,6 @@ from typing import Any, cast
 
 import services.next_action as next_action_module
 import services.operator_search as operator_search_module
-from services.ablation_runner import compare_ablation_suite, run_ablation_suite
 from services.asset_lifecycle import (
     AssetKind,
     AssetLifecycleState,
@@ -44,11 +43,6 @@ from services.context_loops import (
     reject_candidate as reject_context_loop_candidate,
 )
 from services.daily_flow import preview_from_objective, replay_from_run
-from services.eval_run_service import (
-    create_eval_run,
-    get_eval_summary,
-    list_eval_runs,
-)
 from services.evidence_artifacts import list_evidence_artifacts, validate_fresh_evidence
 from services.execution_strategy import list_model_selection_records
 from services.external_benchmark_adapter import (
@@ -97,11 +91,6 @@ from services.native_commands import (
     zoom_out as native_zoom_out,
 )
 from services.path_resolution import get_vault_root
-from services.peer_trace import (
-    end_peer_session,
-    list_peer_sessions,
-    start_peer_session,
-)
 from services.personalized_humanizer import (
     FeedbackVerdict,
     ensure_personalized_humanizer_schema,
@@ -122,6 +111,7 @@ from services.pre_pr_readiness import (
 )
 from services.project_health_proof import DEFAULT_PROVING_PROJECTS, prove_project_health
 from services.quality_gates import run_gate as run_quality_gate
+from services.quality_rollout_adapter import launch_quality_rollout
 from services.repo_gate_adoption import write_adoption_doc_quality_report
 from services.retrospective_artifacts import list_retrospective_artifacts
 from services.rtk_integration import (
@@ -129,11 +119,6 @@ from services.rtk_integration import (
     ensure_rtk_schema,
     load_compression_rules,
     rtk_metrics_log,
-)
-from services.second_brain_eval import (
-    compute_retrieval_metrics,
-    compute_second_brain_lift,
-    evaluate_gold_set_run,
 )
 from services.session_intelligence_helpers import (
     HELPER_FAMILIES as SESSION_INTEL_HELPER_FAMILIES,
@@ -164,27 +149,7 @@ from services.session_intelligence_tools import (
 )
 from services.session_providers.claude import ClaudeProvider
 from services.session_providers.codex import CodexProvider
-from services.shadow_automation import (
-    approve_candidate,
-    run_full_automation_pipeline,
-    shadow_status,
-)
-from services.shadow_branch_runner import (
-    cleanup_shadow_worktree,
-    compare_shadow_runs,
-    create_shadow_worktree,
-    get_shadow_run,
-    list_shadow_parity_metadata,
-    record_shadow_branch_run,
-    shadow_branch_name,
-    verify_no_contamination,
-)
 from services.shadow_candidate_scorer import score_shadow_candidate
-from services.shadow_codex_runner import (
-    cancel_shadow_execution,
-    launch_codex_shadow,
-    shadow_execution_status,
-)
 from services.skills_harvest import HarvestOptions, harvest_skills_library, verify_tmcp_graph
 from services.standards_health import (
     AssessmentStatus,
@@ -3209,6 +3174,8 @@ def cmd_daily_flow(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[s
 
 
 def cmd_eval_record_run(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.eval_run_service import create_eval_run
+
     try:
         run_id = create_eval_run(
             conn,
@@ -3231,6 +3198,8 @@ def cmd_eval_record_run(conn: sqlite3.Connection, args: argparse.Namespace) -> d
 
 
 def cmd_eval_list_runs(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.eval_run_service import list_eval_runs
+
     try:
         runs = list_eval_runs(
             conn,
@@ -3245,12 +3214,16 @@ def cmd_eval_list_runs(conn: sqlite3.Connection, args: argparse.Namespace) -> di
 
 
 def cmd_eval_summary(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.eval_run_service import get_eval_summary
+
     return get_eval_summary(conn, project_id=args.project)
 
 
 def cmd_eval_second_brain_lift(
     conn: sqlite3.Connection, args: argparse.Namespace
 ) -> dict[str, Any]:
+    from services.second_brain_eval import compute_second_brain_lift
+
     return compute_second_brain_lift(
         conn,
         full_run_id=str(args.full_run_id),
@@ -3261,10 +3234,14 @@ def cmd_eval_second_brain_lift(
 def cmd_eval_retrieval_metrics(
     conn: sqlite3.Connection, args: argparse.Namespace
 ) -> dict[str, Any]:
+    from services.second_brain_eval import compute_retrieval_metrics
+
     return compute_retrieval_metrics(conn, str(args.run_id))
 
 
 def cmd_eval_gold_set_run(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.second_brain_eval import evaluate_gold_set_run
+
     return evaluate_gold_set_run(
         conn,
         run_id=str(args.run_id),
@@ -3656,6 +3633,13 @@ def cmd_context_loops_metrics(
 def cmd_shadow_create_worktree(
     conn: sqlite3.Connection, args: argparse.Namespace
 ) -> dict[str, Any]:
+    from services.shadow_branch_runner import (
+        create_shadow_worktree,
+        record_shadow_branch_run,
+        shadow_branch_name,
+        verify_no_contamination,
+    )
+
     repo_path = Path(args.repo_path).resolve()
     branch_name = shadow_branch_name(task_id=str(args.task_id), condition=str(args.condition))
     worktree_path = create_shadow_worktree(
@@ -3693,6 +3677,8 @@ def cmd_shadow_create_worktree(
 
 
 def cmd_shadow_compare(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.shadow_branch_runner import compare_shadow_runs
+
     result = compare_shadow_runs(
         conn,
         shadow_run_id=str(args.shadow_run_id),
@@ -3713,11 +3699,15 @@ def _model_selection_payload(conn: sqlite3.Connection, args: argparse.Namespace)
 
 
 def cmd_shadow_parity(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.shadow_branch_runner import list_shadow_parity_metadata
+
     rows = list_shadow_parity_metadata(conn, task_id=args.task_id)
     return {"shadow_parity": rows, "count": len(rows)}
 
 
 def cmd_shadow_cleanup(args: argparse.Namespace) -> dict[str, Any]:
+    from services.shadow_branch_runner import cleanup_shadow_worktree
+
     cleanup_shadow_worktree(
         worktree_path=Path(args.worktree_path).resolve(),
         repo_path=Path(args.repo_path).resolve(),
@@ -3726,6 +3716,8 @@ def cmd_shadow_cleanup(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def cmd_peer_trace_start(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.peer_trace import start_peer_session
+
     session_id = start_peer_session(
         conn,
         anonymous_peer_id=str(args.peer_id),
@@ -3738,12 +3730,16 @@ def cmd_peer_trace_start(conn: sqlite3.Connection, args: argparse.Namespace) -> 
 
 
 def cmd_peer_trace_stop(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.peer_trace import end_peer_session
+
     end_peer_session(conn, str(args.session_id))
     conn.commit()
     return {"session_id": args.session_id, "ended": True}
 
 
 def cmd_peer_trace_list(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.peer_trace import list_peer_sessions
+
     sessions = list_peer_sessions(conn, limit=int(args.limit))
     return {"sessions": sessions, "count": len(sessions), "limit": int(args.limit)}
 
@@ -3804,6 +3800,8 @@ def cmd_shadow_queue(conn: sqlite3.Connection) -> dict[str, Any]:
 
 
 def cmd_ablation_run(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.ablation_runner import run_ablation_suite
+
     policy_paths: list[str | Path] = [item for item in str(args.policies).split(",") if item]
     run_ids = run_ablation_suite(
         conn,
@@ -3818,6 +3816,8 @@ def cmd_ablation_run(conn: sqlite3.Connection, args: argparse.Namespace) -> dict
 
 
 def cmd_ablation_compare(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.ablation_runner import compare_ablation_suite
+
     return compare_ablation_suite(
         conn,
         task_id=str(args.task_id),
@@ -3826,12 +3826,16 @@ def cmd_ablation_compare(conn: sqlite3.Connection, args: argparse.Namespace) -> 
 
 
 def cmd_shadow_approve(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.shadow_automation import approve_candidate
+
     state = approve_candidate(conn, str(args.candidate_id))
     conn.commit()
     return {"candidate_id": args.candidate_id, "automation_state": state}
 
 
 def cmd_shadow_run_pipeline(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.shadow_automation import run_full_automation_pipeline
+
     result = run_full_automation_pipeline(
         conn,
         candidate_id=str(args.candidate_id),
@@ -3842,6 +3846,9 @@ def cmd_shadow_run_pipeline(conn: sqlite3.Connection, args: argparse.Namespace) 
 
 
 def cmd_shadow_run(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.shadow_branch_runner import get_shadow_run
+    from services.shadow_codex_runner import launch_codex_shadow
+
     shadow = get_shadow_run(conn, str(args.shadow_run_id))
     objective = str(args.objective or shadow.get("task_id") or args.shadow_run_id)
     execution = launch_codex_shadow(
@@ -3858,6 +3865,8 @@ def cmd_shadow_run(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[s
 
 def cmd_shadow_status(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
     if getattr(args, "shadow_run_id", None):
+        from services.shadow_codex_runner import shadow_execution_status
+
         execution = shadow_execution_status(conn, shadow_run_id=str(args.shadow_run_id))
         conn.commit()
         return {"shadow_run_id": args.shadow_run_id, "shadow_execution": execution}
@@ -3867,10 +3876,14 @@ def cmd_shadow_status(conn: sqlite3.Connection, args: argparse.Namespace) -> dic
             "Provide --shadow-run-id for execution status or --candidate-id for candidate status.",
             EXIT_USAGE,
         )
+    from services.shadow_automation import shadow_status
+
     return shadow_status(conn, str(args.candidate_id))
 
 
 def cmd_shadow_cancel(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.shadow_codex_runner import cancel_shadow_execution
+
     execution = cancel_shadow_execution(conn, shadow_run_id=str(args.shadow_run_id))
     conn.commit()
     return {"shadow_run_id": args.shadow_run_id, "shadow_execution": execution}
@@ -4007,11 +4020,13 @@ def cmd_benchmark_to_terminal_bench(
 
 def cmd_benchmark_normalize_result(args: argparse.Namespace) -> dict[str, Any]:
     result = json.loads(Path(args.result_file).read_text(encoding="utf-8"))
-    return normalize_external_result(
-        result,
-        eval_task_id=str(args.task_id),
-        harness=str(args.harness),
-        model=str(args.model),
+    return asdict(
+        normalize_external_result(
+            result,
+            eval_task_id=str(args.task_id),
+            harness=str(args.harness),
+            model=str(args.model),
+        )
     )
 
 
@@ -5939,6 +5954,15 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
         for commit in git_data["recent_commits"]:
             print(commit["title"])
         return
+    if command == "quality-rollout":
+        print(f"status={data['status']} repos={data['repo_count']}")
+        print(f"ledger={data['ledger_path']}")
+        print(f"artifact_index={data['artifact_index_path']}")
+        print(
+            "controller_reports="
+            f"{data['accepted_reports']} accepted, {data['rejected_reports']} rejected"
+        )
+        return
 
 
 def _command_name(args: argparse.Namespace) -> str:
@@ -6047,6 +6071,8 @@ def _command_requires_db(args: argparse.Namespace) -> bool:
         "packet",
         "benchmark",
     }:
+        return True
+    if args.command == "quality" and args.quality_command == "rollout":
         return True
     return bool(
         args.command == "humanize"
@@ -6266,9 +6292,33 @@ def _repo_payload(args: argparse.Namespace) -> dict[str, Any]:
     )
 
 
-def _quality_payload(args: argparse.Namespace) -> dict[str, Any]:
+def _quality_payload(
+    args: argparse.Namespace,
+    conn: sqlite3.Connection | None = None,
+) -> dict[str, Any]:
     if args.quality_command == "ladder":
         return quality_ladder_payload(Path(args.repo), profile=args.profile)
+    if args.quality_command == "rollout":
+        return launch_quality_rollout(
+            conn=conn,
+            repo_list_path=Path(args.repo_list) if args.repo_list else None,
+            repos=list(args.repo),
+            run_id_prefix=args.run_id_prefix,
+            output_dir=Path(args.output_dir) if args.output_dir else None,
+            profile=args.profile,
+            ci_status_json=Path(args.ci_status_json) if args.ci_status_json else None,
+            timeout_seconds=max(1, int(args.timeout_seconds)),
+            workflow_timeout_seconds=args.workflow_timeout_seconds,
+            verify_timeout_seconds=args.verify_timeout_seconds,
+            workflow_timeout_reason=args.workflow_timeout_reason,
+            total_timeout_seconds=args.total_timeout_seconds,
+            total_timeout_reason=args.total_timeout_reason,
+            checkout_most_advanced_branch=bool(args.checkout_most_advanced_branch),
+            allow_mutating_gates=bool(args.allow_mutating_gates),
+            task_id=args.task_id,
+            run_id=args.run_id,
+            session_id=args.session_id,
+        )
     raise CLIError(
         "unsupported-quality-command",
         f"Unsupported quality command: {args.quality_command}",
@@ -6440,9 +6490,7 @@ def create_parser() -> argparse.ArgumentParser:
         "daily-codex",
         help="Run the daily review-only Codex session intelligence report wrapper",
     )
-    session_intel_daily_codex.add_argument(
-        "--json", action="store_true", default=argparse.SUPPRESS
-    )
+    session_intel_daily_codex.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     session_intel_backfill = session_intel_subparsers.add_parser(
         "backfill", help="Backfill historical Codex and Claude sessions in resumable batches"
@@ -6549,9 +6597,7 @@ def create_parser() -> argparse.ArgumentParser:
     session_intel_helper_list = session_intel_helper_subparsers.add_parser(
         "list", help="List adopted deterministic helper families"
     )
-    session_intel_helper_list.add_argument(
-        "--json", action="store_true", default=argparse.SUPPRESS
-    )
+    session_intel_helper_list.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
     session_intel_helper_run = session_intel_helper_subparsers.add_parser(
         "run", help="Run one deterministic helper family"
     )
@@ -6562,9 +6608,7 @@ def create_parser() -> argparse.ArgumentParser:
     session_intel_helper_run.add_argument("--repo", default=None)
     session_intel_helper_run.add_argument("--start-line", type=int, default=None)
     session_intel_helper_run.add_argument("--end-line", type=int, default=None)
-    session_intel_helper_run.add_argument(
-        "--json", action="store_true", default=argparse.SUPPRESS
-    )
+    session_intel_helper_run.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     repo_parser = subparsers.add_parser("repo", help="Deterministic repository inspection tools")
     repo_subparsers = repo_parser.add_subparsers(dest="repo_command", required=True)
@@ -6602,6 +6646,41 @@ def create_parser() -> argparse.ArgumentParser:
         help="Quality command profile",
     )
     quality_ladder.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    quality_rollout = quality_subparsers.add_parser(
+        "rollout",
+        help="Launch Quality Runner multi-repo rollout and capture controller reports",
+    )
+    quality_rollout.add_argument(
+        "repo_list",
+        nargs="?",
+        help="Text or JSON repo list. Also accepts repeated --repo entries.",
+    )
+    quality_rollout.add_argument(
+        "--repo",
+        action="append",
+        default=[],
+        help="Repo path to include without a repo-list file; can be repeated",
+    )
+    quality_rollout.add_argument("--run-id-prefix", default=None)
+    quality_rollout.add_argument(
+        "--output-dir",
+        default=None,
+        help="Defaults to ~/AIOS/artifacts/quality-rollouts/<run-id-prefix>",
+    )
+    quality_rollout.add_argument("--profile", default=None)
+    quality_rollout.add_argument("--ci-status-json", default=None)
+    quality_rollout.add_argument("--timeout-seconds", type=int, default=120)
+    quality_rollout.add_argument("--workflow-timeout-seconds", type=int, default=None)
+    quality_rollout.add_argument("--verify-timeout-seconds", type=int, default=None)
+    quality_rollout.add_argument("--workflow-timeout-reason", default=None)
+    quality_rollout.add_argument("--total-timeout-seconds", type=int, default=None)
+    quality_rollout.add_argument("--total-timeout-reason", default=None)
+    quality_rollout.add_argument("--checkout-most-advanced-branch", action="store_true")
+    quality_rollout.add_argument("--allow-mutating-gates", action="store_true")
+    quality_rollout.add_argument("--task-id", default=None)
+    quality_rollout.add_argument("--run-id", default=None)
+    quality_rollout.add_argument("--session-id", default=None)
+    quality_rollout.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     ship_parser = subparsers.add_parser("ship", help="Review-gated shipping tools")
     ship_subparsers = ship_parser.add_subparsers(dest="ship_command", required=True)
@@ -7788,7 +7867,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "repo":
             data = _repo_payload(args)
         elif args.command == "quality":
-            data = _quality_payload(args)
+            data = _quality_payload(args, conn=conn)
+            if conn is not None:
+                conn.commit()
         elif args.command == "ship":
             data = _ship_payload(args)
         elif args.command == "service":

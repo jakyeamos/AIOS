@@ -1,10 +1,10 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with durable eval-run recording, explicit no-evidence shadow-run marking, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, read-only workflow route preview, daily-flow repo closeout traces, standalone Quality Runner consumption boundary, QR-detectable dead-code/runtime-smoke gate exposure, review-gated session-intelligence tools, Codex session-ingest meta-learning proposals, and ignored runtime control-plane/session-effectiveness operator artifacts while broader Ruff and BasedPyright baseline issues remain open.
+summary: Active local-first agent operating system with durable eval-run recording, explicit no-evidence shadow-run marking, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, read-only workflow route preview, daily-flow repo closeout traces, standalone Quality Runner consumption boundary, AIOS-launched QR rollout artifact capture, QR-detectable dead-code/runtime-smoke gate exposure, review-gated session-intelligence tools, Codex session-ingest meta-learning proposals, and ignored runtime control-plane/session-effectiveness operator artifacts while broader Ruff and BasedPyright baseline issues remain open.
 healthScore: 73
 statusLabel: needs_attention
-nextStep: Use the next real AIOS closeout trace to verify whether inline repo state removes repeated manual `git status` and `git diff --stat` checks before deciding whether to persist closeout snapshots.
+nextStep: Use the next real closeout run to confirm whether inline repository context reduces repeated manual review, then decide whether persistent closeout snapshots are worth adding.
 blockers:
   - Full repo Ruff and format baselines are not green: Ruff reports 25 issues and Ruff format reports 153 files needing formatting.
   - Full repo BasedPyright is not green: 107 errors and 78 warnings across existing baseline files.
@@ -55,6 +55,8 @@ AIOS now has a deterministic repo-state closeout helper integrated into daily-fl
 
 Quality Runner now supersedes the older repo-quality-certifier and quality-evidence-contract path dependencies for AIOS consumption. AIOS consumes `/Users/jakyeamos/projects/quality-runner` through one local `quality-runner` dependency, while Quality Runner provides the compatibility imports, CLI/MCP tools, plugin metadata, deterministic gate-certification workflow, and evidence-normalization helpers still used by existing `quality_evidence_contract` and `repo_quality_certifier` callers. `services/repo_gate_adoption.py` remains the AIOS adapter that injects AIOS TMCP enrichment and preserves existing workflow/CLI imports.
 
+AIOS now exposes `aios quality rollout`, a thin adapter over Quality Runner's multi-repo `rollout_payload`. The adapter launches the external QR controller workflow, defaults captured artifacts to `~/AIOS/artifacts/quality-rollouts/<run-id-prefix>`, writes `aios-rollout-artifact-index.json` beside the QR ledger/controller reports/validation artifacts, and records an AIOS evidence pointer for operator lookup without taking ownership of QR's rollout protocol.
+
 Context compiler contract validation now lives in the standalone repository `/Users/jakyeamos/context-compiler-contract`, with remote `git@github.com:jakyeamos/context-compiler-contract.git`. AIOS consumes it through a local file dependency, while `tools/context-compile.mjs` remains AIOS-owned until context-root and routing assumptions are external-fixture backed.
 
 AIOS now has a strict subsystem ownership map in `.planning/SUBSYSTEM_EXTRACTION_PLAN.md`. The map classifies major surfaces as `core_aios`, `adapter_inside_aios`, `contract_package`, `standalone_tool`, or `incubator_candidate`. The current scope truth is that AIOS is better scoped after extracting `repo-quality-certifier`, `quality-evidence-contract`, `context-compiler-contract`, Research Domain Writing, and `agent-eval-contract`. CTS, personalized humanizer, and eval/benchmark runtime have now been audited and intentionally remain AIOS-owned for runtime/state reasons. Portable agent eval contracts now live in `/Users/jakyeamos/agent-eval-contract`, with remote `git@github.com:jakyeamos/agent-eval-contract.git` and pushed tag `v0.1.0` at `7489155`; AIOS consumes `agent-eval-contract @ file:///Users/jakyeamos/agent-eval-contract` while keeping eval runtime/storage in AIOS. The agent-eval-contract split remains gated on tagged AIOS dependency consumption and a second consumer before it is release-complete.
@@ -73,6 +75,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 - 2026-07-04: Stopped tracked runtime control-plane and session-effectiveness receipts from dirtying the worktree by removing generated `logs/control-plane/` and `logs/session-effectiveness/` artifacts from the index while preserving the ignored local operator paths; added a regression test that future receipts remain ignored and untracked.
 - 2026-07-02: Integrated the repo closeout helper into daily-flow replay and UI operator surfaces: replay run steps now carry `metadata.repo_closeout`, CLI JSON exposes dirty files and diff stat through the trace, and the Command Center/run-detail trace renders repo path, branch, short HEAD, dirty-file count, and diff summary.
+- 2026-07-04: Added the `aios quality rollout` Quality Runner adapter, AIOS rollout artifact index, durable evidence pointer recording, operator-flow docs, and lazy CLI imports so unrelated eval/shadow contract drift no longer prevents quality commands from starting.
 - 2026-07-04: Replaced AIOS's direct `quality-evidence-contract` and `repo-quality-certifier` path dependencies with one local `quality-runner` dependency after Quality Runner absorbed those compatibility imports, CLI/MCP surfaces, and plugin metadata. Focused AIOS compatibility tests passed.
 - 2026-07-02: Exposed the existing Vulture dead-code check through root `pnpm dead-code` and `pnpm audit:dead-code` scripts so Quality Runner detects the `dead_code` capability; final QR run `qr-clean-audit-20260702T200935Z-AIOS-final-2` has no missing repo-owned capabilities while inherited structural findings remain in generated/shadow worktree paths.
 - 2026-07-02: Added repo-local Quality Runner scan exclusions for ignored operational worktrees plus root `pnpm smoke`; final QR run `qr-clean-audit-20260702T200935Z-AIOS-final-4` detects no missing capabilities but remains blocked because QR structural scanning still scans excluded ignored paths (`.aios/shadow-worktrees`, `.worktrees`, `.superpowers`, and `tmcp-benchmark/runs/worktrees`) unless whole structural rule groups are disabled.
@@ -200,6 +203,14 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 | Runtime smoke | Pass | `pnpm smoke` passed on 2026-07-02 and Quality Runner final run `qr-clean-audit-20260702T200935Z-AIOS-final-4` detects `runtime_smoke` from `package.json:scripts.smoke`. |
 | Tests | Pass | `uv run pytest -q` passed on 2026-07-02 with 1082 tests. |
 | Structure | Fail | `uv run ruff format --check .` reported 153 files needing formatting on 2026-07-02. The daily-flow repo closeout diff avoids broad legacy file formatting churn. |
+
+Focused Quality Runner rollout adapter checks on 2026-07-04:
+- `uv run pytest -q tests/test_quality_rollout_adapter.py` passed.
+- `uv run ruff check services/quality_rollout_adapter.py services/aios_cli.py tests/test_quality_rollout_adapter.py` passed.
+- `uv run ruff format --check services/quality_rollout_adapter.py services/aios_cli.py tests/test_quality_rollout_adapter.py` passed.
+- `uv run basedpyright services/aios_cli.py services/quality_rollout_adapter.py tests/test_quality_rollout_adapter.py` passed with 0 errors and 0 warnings.
+- `uv run vulture services/quality_rollout_adapter.py --min-confidence 70` exited 0.
+- `uv run python bin/aios.py --json quality rollout --repo /tmp/aios-rollout-missing-fixture --run-id-prefix aios-rollout-smoke-20260704b --output-dir /tmp/aios-rollout-smoke-20260704b` passed, wrote the QR rollout ledger and AIOS artifact index, returned one rejected invalid-repo validation artifact, and recorded AIOS evidence id `993b536a-fc75-4e0b-8b8a-3765e73101ac`.
 
 Focused daily-flow repo closeout checks on 2026-07-02:
 - `uv run pytest -q tests/test_daily_flow.py tests/test_aios_cli.py::test_daily_flow_replay_cli tests/test_aios_cli.py::test_daily_flow_preview_cli` passed with 18 tests.
