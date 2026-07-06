@@ -49,9 +49,9 @@ def review(conn: sqlite3.Connection, domain: str | None, limit: int) -> None:
         print("No observations to review.")
         return
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Reviewing {len(rows)} of {total} total observations")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     promoted = discarded = skipped = annotated = 0
 
@@ -148,7 +148,7 @@ def review(conn: sqlite3.Connection, domain: str | None, limit: int) -> None:
 
 
 def _print_summary(promoted: int, discarded: int, skipped: int, annotated: int) -> None:
-    print(f"\n{'='*40}")
+    print(f"\n{'=' * 40}")
     print("Session summary:")
     print(f"  → knowledge : {promoted} ({annotated} with body)")
     print(f"  discarded   : {discarded}")
@@ -159,8 +159,12 @@ def _print_summary(promoted: int, discarded: int, skipped: int, annotated: int) 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--domain", help="Filter by domain (debugging|prompting|architecture|workflow|system)")
-    parser.add_argument("--limit", type=int, default=25, help="Max patterns to review per session (default 25)")
+    parser.add_argument(
+        "--domain", help="Filter by domain (debugging|prompting|architecture|workflow|system)"
+    )
+    parser.add_argument(
+        "--limit", type=int, default=25, help="Max patterns to review per session (default 25)"
+    )
     args = parser.parse_args()
 
     conn = sqlite3.connect(DB)

@@ -18,8 +18,11 @@ from datetime import UTC, datetime
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 
 CLASS_THRESHOLDS = {
-    "bug_fix": 2, "failure": 2,
-    "architecture": 3, "workflow": 3, "assumption": 3,
+    "bug_fix": 2,
+    "failure": 2,
+    "architecture": 3,
+    "workflow": 3,
+    "assumption": 3,
     "prompt": 4,
 }
 
@@ -72,7 +75,9 @@ def confirm(conn: sqlite3.Connection, pid: str, session_id: str | None, note: st
     print(f"  count={new_count}  confidence={new_conf:.2f}  state={updated['state']}")
 
     if updated["state"] == "hypothesis" and new_count >= threshold:
-        print(f"  Threshold met ({new_count}/{threshold}). Run approve-pattern.py --id {pid} to promote to rule.")
+        print(
+            f"  Threshold met ({new_count}/{threshold}). Run approve-pattern.py --id {pid} to promote to rule."
+        )
     elif updated["state"] == "hypothesis":
         print(f"  Progress: {new_count}/{threshold} confirmations needed for rule promotion.")
 

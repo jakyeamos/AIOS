@@ -44,6 +44,7 @@ CREATE INDEX IF NOT EXISTS idx_pdf_size ON pdf_index(size_bytes);
 
 def make_id(path: str) -> str:
     import hashlib
+
     return hashlib.sha256(path.encode()).hexdigest()[:16]
 
 
@@ -58,10 +59,7 @@ def get_pdf_metadata(path: Path) -> dict:
         "modified": None,
     }
     try:
-        result = subprocess.run(
-            ["pdfinfo", str(path)],
-            capture_output=True, text=True, timeout=5
-        )
+        result = subprocess.run(["pdfinfo", str(path)], capture_output=True, text=True, timeout=5)
         if result.returncode == 0:
             for line in result.stdout.splitlines():
                 if ":" not in line:
@@ -140,9 +138,16 @@ def main() -> None:
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
-                file_id, path_str, pdf_path.name, size,
-                meta["page_count"], meta["title"], meta["author"],
-                meta["subject"], meta["created"], meta["modified"],
+                file_id,
+                path_str,
+                pdf_path.name,
+                size,
+                meta["page_count"],
+                meta["title"],
+                meta["author"],
+                meta["subject"],
+                meta["created"],
+                meta["modified"],
                 now,
             ),
         )

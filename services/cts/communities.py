@@ -32,4 +32,3 @@ def detect_communities(store, repo_id: str, limit: int = 20) -> list[dict[str, A
     for community in communities:
         community["cross_community_links"] = grouped[community["name"]] - 1
     return communities
-

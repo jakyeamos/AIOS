@@ -118,9 +118,9 @@ def test_portable_dev_process_routing_cases_are_satisfied_by_manifest() -> None:
     assert isinstance(task_nodes, dict)
     branch_nodes = manifest["nodes"]["branches"]
     assert isinstance(branch_nodes, dict)
-    cases = json.loads(
-        (PACK_ROOT / "tests" / "routing-cases.json").read_text(encoding="utf-8")
-    )["cases"]
+    cases = json.loads((PACK_ROOT / "tests" / "routing-cases.json").read_text(encoding="utf-8"))[
+        "cases"
+    ]
 
     for case in cases:
         task_id = case["expected_task"]

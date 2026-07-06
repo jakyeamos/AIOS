@@ -10,6 +10,7 @@ Parse session handoff files for Learned: blocks and seed them as notice-state pa
 
 Run: python3 ~/AIOS/bin/extract-handoff-learnings.py [--dry-run]
 """
+
 import argparse
 import json
 import os
@@ -85,16 +86,12 @@ def split_into_items(block: str) -> list[str]:
 def get_project_id(conn: sqlite3.Connection, project_name: str) -> str | None:
     if not project_name:
         return None
-    row = conn.execute(
-        "SELECT id FROM projects WHERE name=? LIMIT 1", (project_name,)
-    ).fetchone()
+    row = conn.execute("SELECT id FROM projects WHERE name=? LIMIT 1", (project_name,)).fetchone()
     return row[0] if row else None
 
 
 def already_exists(conn: sqlite3.Connection, title: str) -> bool:
-    row = conn.execute(
-        "SELECT 1 FROM patterns WHERE title=? LIMIT 1", (title,)
-    ).fetchone()
+    row = conn.execute("SELECT 1 FROM patterns WHERE title=? LIMIT 1", (title,)).fetchone()
     return row is not None
 
 
@@ -159,7 +156,9 @@ def main():
                     project_lower = project_name.lower()
                     if any(k in project_lower for k in ("bball", "fantasy", "sports")):
                         domain = "workflow"
-                    elif any(k in project_lower for k in ("soundscape", "amos", "remodel", "dispatches")):
+                    elif any(
+                        k in project_lower for k in ("soundscape", "amos", "remodel", "dispatches")
+                    ):
                         domain = "architecture"
 
                 conn.execute(

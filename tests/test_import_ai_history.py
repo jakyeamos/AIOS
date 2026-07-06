@@ -49,7 +49,9 @@ def chatgpt_trivial(chatgpt_sample):
 def test_slug_basic():
     from import_ai_history import title_to_slug
 
-    assert title_to_slug("Context Windows and Retrieval Tradeoffs") == "context-windows-and-retrieval"
+    assert (
+        title_to_slug("Context Windows and Retrieval Tradeoffs") == "context-windows-and-retrieval"
+    )
 
 
 def test_slug_limits_to_6_words():
@@ -165,7 +167,13 @@ def test_chatgpt_messages_ordered_by_time():
     from import_ai_history import parse_chatgpt_messages
 
     mapping = {
-        "n1": {"message": {"author": {"role": "user"}, "content": {"parts": ["First"]}, "create_time": 1.0}},
+        "n1": {
+            "message": {
+                "author": {"role": "user"},
+                "content": {"parts": ["First"]},
+                "create_time": 1.0,
+            }
+        },
         "n2": {
             "message": {
                 "author": {"role": "assistant"},
@@ -173,7 +181,13 @@ def test_chatgpt_messages_ordered_by_time():
                 "create_time": 2.0,
             }
         },
-        "n3": {"message": {"author": {"role": "user"}, "content": {"parts": ["Second"]}, "create_time": 3.0}},
+        "n3": {
+            "message": {
+                "author": {"role": "user"},
+                "content": {"parts": ["Second"]},
+                "create_time": 3.0,
+            }
+        },
     }
     msgs = parse_chatgpt_messages(mapping)
     assert [m["role"] for m in msgs] == ["user", "assistant", "user"]
@@ -184,8 +198,16 @@ def test_chatgpt_messages_skips_system_and_empty():
     from import_ai_history import parse_chatgpt_messages
 
     mapping = {
-        "sys": {"message": {"author": {"role": "system"}, "content": {"parts": [""]}, "create_time": 0.0}},
-        "u1": {"message": {"author": {"role": "user"}, "content": {"parts": ["Q"]}, "create_time": 1.0}},
+        "sys": {
+            "message": {
+                "author": {"role": "system"},
+                "content": {"parts": [""]},
+                "create_time": 0.0,
+            }
+        },
+        "u1": {
+            "message": {"author": {"role": "user"}, "content": {"parts": ["Q"]}, "create_time": 1.0}
+        },
     }
     msgs = parse_chatgpt_messages(mapping)
     assert len(msgs) == 1
@@ -312,10 +334,34 @@ def test_claude_parse_handles_capitalized_sender():
         "name": "Sender Variant",
         "created_at": "2025-01-10T10:00:00+00:00",
         "chat_messages": [
-            {"uuid": "m1", "text": "Q1", "content": [{"type": "text", "text": "Q1"}], "sender": "User", "created_at": "2025-01-10T10:00:00+00:00"},
-            {"uuid": "m2", "text": "A1 " + "word " * 60, "content": [{"type": "text", "text": "A1 " + "word " * 60}], "sender": "Assistant", "created_at": "2025-01-10T10:01:00+00:00"},
-            {"uuid": "m3", "text": "Q2", "content": [{"type": "text", "text": "Q2"}], "sender": "User", "created_at": "2025-01-10T10:02:00+00:00"},
-            {"uuid": "m4", "text": "A2 " + "word " * 60, "content": [{"type": "text", "text": "A2 " + "word " * 60}], "sender": "Assistant", "created_at": "2025-01-10T10:03:00+00:00"},
+            {
+                "uuid": "m1",
+                "text": "Q1",
+                "content": [{"type": "text", "text": "Q1"}],
+                "sender": "User",
+                "created_at": "2025-01-10T10:00:00+00:00",
+            },
+            {
+                "uuid": "m2",
+                "text": "A1 " + "word " * 60,
+                "content": [{"type": "text", "text": "A1 " + "word " * 60}],
+                "sender": "Assistant",
+                "created_at": "2025-01-10T10:01:00+00:00",
+            },
+            {
+                "uuid": "m3",
+                "text": "Q2",
+                "content": [{"type": "text", "text": "Q2"}],
+                "sender": "User",
+                "created_at": "2025-01-10T10:02:00+00:00",
+            },
+            {
+                "uuid": "m4",
+                "text": "A2 " + "word " * 60,
+                "content": [{"type": "text", "text": "A2 " + "word " * 60}],
+                "sender": "Assistant",
+                "created_at": "2025-01-10T10:03:00+00:00",
+            },
         ],
     }
     conv = parse_claude_conversation(raw, "test-batch")
@@ -330,7 +376,9 @@ def test_load_codex_export_reads_directory_snapshot(tmp_path):
         json.dumps({"id": session_id, "thread_name": "Assess test coverage"}) + "\n",
         encoding="utf-8",
     )
-    rollout_path = tmp_path / "rollout-2026-04-01T16-54-50-019d4ad3-d7ae-7a32-a3f9-1b3cfb9cdb00.jsonl"
+    rollout_path = (
+        tmp_path / "rollout-2026-04-01T16-54-50-019d4ad3-d7ae-7a32-a3f9-1b3cfb9cdb00.jsonl"
+    )
     rollout_lines = [
         {
             "type": "session_meta",
@@ -363,11 +411,15 @@ def test_load_codex_export_reads_directory_snapshot(tmp_path):
                 "type": "message",
                 "role": "assistant",
                 "phase": "final_answer",
-                "content": [{"type": "output_text", "text": "The tests are broad but not complete."}],
+                "content": [
+                    {"type": "output_text", "text": "The tests are broad but not complete."}
+                ],
             },
         },
     ]
-    rollout_path.write_text("\n".join(json.dumps(line) for line in rollout_lines) + "\n", encoding="utf-8")
+    rollout_path.write_text(
+        "\n".join(json.dumps(line) for line in rollout_lines) + "\n", encoding="utf-8"
+    )
 
     loaded = load_codex_export(str(tmp_path))
     assert len(loaded) == 1
@@ -404,10 +456,18 @@ def test_codex_parse_filters_setup_and_commentary():
         "model_provider": "openai",
         "messages": [
             {"role": "user", "phase": "none", "text": "# AGENTS.md instructions for /tmp/repo"},
-            {"role": "user", "phase": "none", "text": "<environment_context>...</environment_context>"},
+            {
+                "role": "user",
+                "phase": "none",
+                "text": "<environment_context>...</environment_context>",
+            },
             {"role": "user", "phase": "none", "text": "Summarize the import plan"},
             {"role": "assistant", "phase": "commentary", "text": "I am opening the file now."},
-            {"role": "assistant", "phase": "final_answer", "text": "The plan is strong but needs filename disambiguation."},
+            {
+                "role": "assistant",
+                "phase": "final_answer",
+                "text": "The plan is strong but needs filename disambiguation.",
+            },
         ],
     }
     conv = parse_codex_conversation(raw, "test-batch")
@@ -466,7 +526,14 @@ def test_markdown_no_forbidden_frontmatter_fields(chatgpt_substantive):
 
     conv = parse_chatgpt_conversation(chatgpt_substantive, "test-batch")
     md = render_markdown(conv)
-    for field in ("status:", "project:", "priority:", "due:", "outcome_score:", "reusable_candidate:"):
+    for field in (
+        "status:",
+        "project:",
+        "priority:",
+        "due:",
+        "outcome_score:",
+        "reusable_candidate:",
+    ):
         assert field not in md
 
 
@@ -502,9 +569,15 @@ def test_markdown_escapes_title_for_yaml():
 
 # --- Claude Code parser ---
 
-def _make_cc_raw(*, session_id="cc-sess-1", created_at="2026-04-01T20:00:00.000Z",
-                 project_dir="-Users-jakyeamos-Desktop-Fantasy", model="claude-sonnet-4-6",
-                 messages=None):
+
+def _make_cc_raw(
+    *,
+    session_id="cc-sess-1",
+    created_at="2026-04-01T20:00:00.000Z",
+    project_dir="-Users-jakyeamos-Desktop-Fantasy",
+    model="claude-sonnet-4-6",
+    messages=None,
+):
     return {
         "session_id": session_id,
         "created_at": created_at,
@@ -518,10 +591,27 @@ def _make_cc_raw(*, session_id="cc-sess-1", created_at="2026-04-01T20:00:00.000Z
 def _cc_messages_substantive():
     """Two complete Q&A pairs with enough words to qualify as 'keep'."""
     return [
-        {"role": "user",      "text": "How should I structure my dynasty trade value rankings?", "time": 1.0},
-        {"role": "assistant", "text": "Dynasty trade values depend on age, position scarcity, and team context. " + "word " * 55, "time": 2.0},
-        {"role": "user",      "text": "What about rookie picks versus established players?",    "time": 3.0},
-        {"role": "assistant", "text": "Rookie picks carry option value but are volatile. " + "word " * 55,    "time": 4.0},
+        {
+            "role": "user",
+            "text": "How should I structure my dynasty trade value rankings?",
+            "time": 1.0,
+        },
+        {
+            "role": "assistant",
+            "text": "Dynasty trade values depend on age, position scarcity, and team context. "
+            + "word " * 55,
+            "time": 2.0,
+        },
+        {
+            "role": "user",
+            "text": "What about rookie picks versus established players?",
+            "time": 3.0,
+        },
+        {
+            "role": "assistant",
+            "text": "Rookie picks carry option value but are volatile. " + "word " * 55,
+            "time": 4.0,
+        },
     ]
 
 
@@ -566,7 +656,10 @@ def test_cwd_to_project_tag_project():
     from import_ai_history import cwd_to_project_tag
 
     assert cwd_to_project_tag("-Users-jakyeamos-Desktop-Fantasy") == "project/desktop-fantasy"
-    assert cwd_to_project_tag("-Users-jakyeamos-Downloads-soundscape-app") == "project/downloads-soundscape-app"
+    assert (
+        cwd_to_project_tag("-Users-jakyeamos-Downloads-soundscape-app")
+        == "project/downloads-soundscape-app"
+    )
 
 
 def test_claude_code_parse_structure():
@@ -604,12 +697,14 @@ def test_claude_code_title_truncated_at_word_boundary():
     from import_ai_history import parse_claude_code_conversation
 
     long_msg = "word " * 30
-    raw = _make_cc_raw(messages=[
-        {"role": "user",      "text": long_msg,          "time": 1.0},
-        {"role": "assistant", "text": "answer " * 60,    "time": 2.0},
-        {"role": "user",      "text": "follow up?",      "time": 3.0},
-        {"role": "assistant", "text": "response " * 60,  "time": 4.0},
-    ])
+    raw = _make_cc_raw(
+        messages=[
+            {"role": "user", "text": long_msg, "time": 1.0},
+            {"role": "assistant", "text": "answer " * 60, "time": 2.0},
+            {"role": "user", "text": "follow up?", "time": 3.0},
+            {"role": "assistant", "text": "response " * 60, "time": 4.0},
+        ]
+    )
     conv = parse_claude_code_conversation(raw, "test-batch")
     assert len(conv["title"]) <= 80
     assert not conv["title"].endswith(" ")
@@ -618,13 +713,23 @@ def test_claude_code_title_truncated_at_word_boundary():
 def test_claude_code_scaffolding_filtered_from_exchanges():
     from import_ai_history import parse_claude_code_conversation
 
-    raw = _make_cc_raw(messages=[
-        {"role": "user",      "text": "<command-name>/clear</command-name><command-message>clear</command-message>", "time": 1.0},
-        {"role": "user",      "text": "How do I model position scarcity in dynasty?",  "time": 2.0},
-        {"role": "assistant", "text": "Position scarcity drives " + "value " * 60,     "time": 3.0},
-        {"role": "user",      "text": "What positions are scarcest?",                  "time": 4.0},
-        {"role": "assistant", "text": "Wide receiver depth is the thinnest. " + "word " * 55, "time": 5.0},
-    ])
+    raw = _make_cc_raw(
+        messages=[
+            {
+                "role": "user",
+                "text": "<command-name>/clear</command-name><command-message>clear</command-message>",
+                "time": 1.0,
+            },
+            {"role": "user", "text": "How do I model position scarcity in dynasty?", "time": 2.0},
+            {"role": "assistant", "text": "Position scarcity drives " + "value " * 60, "time": 3.0},
+            {"role": "user", "text": "What positions are scarcest?", "time": 4.0},
+            {
+                "role": "assistant",
+                "text": "Wide receiver depth is the thinnest. " + "word " * 55,
+                "time": 5.0,
+            },
+        ]
+    )
     conv = parse_claude_code_conversation(raw, "test-batch")
     assert conv["quality"] == "keep"
     first_q = conv["key_exchanges"][0]["question"]
@@ -643,10 +748,12 @@ def test_claude_code_substantive_is_keep():
 def test_claude_code_trivial_is_deferred():
     from import_ai_history import parse_claude_code_conversation
 
-    raw = _make_cc_raw(messages=[
-        {"role": "user",      "text": "hi", "time": 1.0},
-        {"role": "assistant", "text": "Hello!", "time": 2.0},
-    ])
+    raw = _make_cc_raw(
+        messages=[
+            {"role": "user", "text": "hi", "time": 1.0},
+            {"role": "assistant", "text": "Hello!", "time": 2.0},
+        ]
+    )
     conv = parse_claude_code_conversation(raw, "test-batch")
     assert conv["quality"] == "deferred"
 
@@ -666,20 +773,55 @@ def test_load_claude_code_export_walks_project_dirs(tmp_path):
     proj_dir.mkdir()
     session_file = proj_dir / "abc12345-0000-0000-0000-000000000000.jsonl"
     events = [
-        {"type": "user", "isMeta": False, "isSidechain": False, "timestamp": "2026-04-01T10:00:00.000Z",
-         "cwd": "/Users/jakyeamos/Desktop/Fantasy", "sessionId": "abc12345-0000-0000-0000-000000000000",
-         "message": {"role": "user", "content": "How do I score WR positional scarcity?"}},
-        {"type": "assistant", "isMeta": False, "isSidechain": False, "timestamp": "2026-04-01T10:00:01.000Z",
-         "cwd": "/Users/jakyeamos/Desktop/Fantasy", "sessionId": "abc12345-0000-0000-0000-000000000000",
-         "message": {"role": "assistant", "model": "claude-sonnet-4-6",
-                     "content": [{"type": "text", "text": "WR scarcity is driven by " + "depth " * 60}]}},
-        {"type": "user", "isMeta": False, "isSidechain": False, "timestamp": "2026-04-01T10:00:02.000Z",
-         "cwd": "/Users/jakyeamos/Desktop/Fantasy", "sessionId": "abc12345-0000-0000-0000-000000000000",
-         "message": {"role": "user", "content": "What about TE premium leagues?"}},
-        {"type": "assistant", "isMeta": False, "isSidechain": False, "timestamp": "2026-04-01T10:00:03.000Z",
-         "cwd": "/Users/jakyeamos/Desktop/Fantasy", "sessionId": "abc12345-0000-0000-0000-000000000000",
-         "message": {"role": "assistant", "model": "claude-sonnet-4-6",
-                     "content": [{"type": "text", "text": "TE premium leagues inflate TE values. " + "word " * 55}]}},
+        {
+            "type": "user",
+            "isMeta": False,
+            "isSidechain": False,
+            "timestamp": "2026-04-01T10:00:00.000Z",
+            "cwd": "/Users/jakyeamos/Desktop/Fantasy",
+            "sessionId": "abc12345-0000-0000-0000-000000000000",
+            "message": {"role": "user", "content": "How do I score WR positional scarcity?"},
+        },
+        {
+            "type": "assistant",
+            "isMeta": False,
+            "isSidechain": False,
+            "timestamp": "2026-04-01T10:00:01.000Z",
+            "cwd": "/Users/jakyeamos/Desktop/Fantasy",
+            "sessionId": "abc12345-0000-0000-0000-000000000000",
+            "message": {
+                "role": "assistant",
+                "model": "claude-sonnet-4-6",
+                "content": [{"type": "text", "text": "WR scarcity is driven by " + "depth " * 60}],
+            },
+        },
+        {
+            "type": "user",
+            "isMeta": False,
+            "isSidechain": False,
+            "timestamp": "2026-04-01T10:00:02.000Z",
+            "cwd": "/Users/jakyeamos/Desktop/Fantasy",
+            "sessionId": "abc12345-0000-0000-0000-000000000000",
+            "message": {"role": "user", "content": "What about TE premium leagues?"},
+        },
+        {
+            "type": "assistant",
+            "isMeta": False,
+            "isSidechain": False,
+            "timestamp": "2026-04-01T10:00:03.000Z",
+            "cwd": "/Users/jakyeamos/Desktop/Fantasy",
+            "sessionId": "abc12345-0000-0000-0000-000000000000",
+            "message": {
+                "role": "assistant",
+                "model": "claude-sonnet-4-6",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "TE premium leagues inflate TE values. " + "word " * 55,
+                    }
+                ],
+            },
+        },
     ]
     session_file.write_text("\n".join(json.dumps(e) for e in events), encoding="utf-8")
 
@@ -697,8 +839,16 @@ def test_load_claude_code_export_skips_observer_sessions(tmp_path):
     obs_dir = tmp_path / "-Users-jakyeamos--claude-mem-observer-sessions"
     obs_dir.mkdir()
     (obs_dir / "obs-session.jsonl").write_text(
-        json.dumps({"type": "user", "isMeta": False, "isSidechain": False,
-                    "timestamp": "2026-04-01T10:00:00Z", "message": {"role": "user", "content": "observe"}}) + "\n",
+        json.dumps(
+            {
+                "type": "user",
+                "isMeta": False,
+                "isSidechain": False,
+                "timestamp": "2026-04-01T10:00:00Z",
+                "message": {"role": "user", "content": "observe"},
+            }
+        )
+        + "\n",
         encoding="utf-8",
     )
 
@@ -713,18 +863,49 @@ def test_load_claude_code_export_skips_meta_events(tmp_path):
     proj_dir.mkdir()
     session_file = proj_dir / "sess-0000-0000-0000-000000000000.jsonl"
     events = [
-        {"type": "user", "isMeta": True, "isSidechain": False, "timestamp": "2026-04-01T10:00:00Z",
-         "message": {"role": "user", "content": "Base directory for this skill: /path/to/skill"}},
-        {"type": "user", "isMeta": False, "isSidechain": False, "timestamp": "2026-04-01T10:00:01Z",
-         "message": {"role": "user", "content": "What is the best approach for this refactor?"}},
-        {"type": "assistant", "isMeta": False, "isSidechain": False, "timestamp": "2026-04-01T10:00:02Z",
-         "message": {"role": "assistant", "model": "claude-sonnet-4-6",
-                     "content": [{"type": "text", "text": "The best approach is " + "word " * 60}]}},
-        {"type": "user", "isMeta": False, "isSidechain": False, "timestamp": "2026-04-01T10:00:03Z",
-         "message": {"role": "user", "content": "How do I apply that pattern?"}},
-        {"type": "assistant", "isMeta": False, "isSidechain": False, "timestamp": "2026-04-01T10:00:04Z",
-         "message": {"role": "assistant", "model": "claude-sonnet-4-6",
-                     "content": [{"type": "text", "text": "Apply it by " + "word " * 60}]}},
+        {
+            "type": "user",
+            "isMeta": True,
+            "isSidechain": False,
+            "timestamp": "2026-04-01T10:00:00Z",
+            "message": {"role": "user", "content": "Base directory for this skill: /path/to/skill"},
+        },
+        {
+            "type": "user",
+            "isMeta": False,
+            "isSidechain": False,
+            "timestamp": "2026-04-01T10:00:01Z",
+            "message": {"role": "user", "content": "What is the best approach for this refactor?"},
+        },
+        {
+            "type": "assistant",
+            "isMeta": False,
+            "isSidechain": False,
+            "timestamp": "2026-04-01T10:00:02Z",
+            "message": {
+                "role": "assistant",
+                "model": "claude-sonnet-4-6",
+                "content": [{"type": "text", "text": "The best approach is " + "word " * 60}],
+            },
+        },
+        {
+            "type": "user",
+            "isMeta": False,
+            "isSidechain": False,
+            "timestamp": "2026-04-01T10:00:03Z",
+            "message": {"role": "user", "content": "How do I apply that pattern?"},
+        },
+        {
+            "type": "assistant",
+            "isMeta": False,
+            "isSidechain": False,
+            "timestamp": "2026-04-01T10:00:04Z",
+            "message": {
+                "role": "assistant",
+                "model": "claude-sonnet-4-6",
+                "content": [{"type": "text", "text": "Apply it by " + "word " * 60}],
+            },
+        },
     ]
     session_file.write_text("\n".join(json.dumps(e) for e in events), encoding="utf-8")
 

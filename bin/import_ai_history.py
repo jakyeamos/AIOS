@@ -15,8 +15,8 @@ from pathlib import Path
 
 # --- Configuration ---
 
-MIN_EXCHANGE_COUNT = 2    # minimum complete Q&A pairs to qualify as 'keep'
-MIN_ASSISTANT_WORDS = 100 # minimum total words across all assistant responses for 'keep'
+MIN_EXCHANGE_COUNT = 2  # minimum complete Q&A pairs to qualify as 'keep'
+MIN_ASSISTANT_WORDS = 100  # minimum total words across all assistant responses for 'keep'
 EPOCH_DATE = "1970-01-01"
 CODEX_TEXT_TYPES = {"input_text", "output_text"}
 
@@ -50,6 +50,7 @@ TOPIC_MAP = {
 
 
 # --- Utility functions ---
+
 
 def make_id(source: str, source_id: str, date: str, title: str) -> str:
     """Deterministic 12-char ID for deduplication, preferring source-native IDs."""
@@ -91,7 +92,9 @@ def extract_text_parts(parts: list, allowed_types: set[str] | None = None) -> st
                 continue
             chunk = normalize_whitespace(part.get("text") or "")
             if not chunk and isinstance(part.get("parts"), list):
-                chunk = normalize_whitespace(" ".join(str(item) for item in part["parts"] if isinstance(item, str)))
+                chunk = normalize_whitespace(
+                    " ".join(str(item) for item in part["parts"] if isinstance(item, str))
+                )
         if chunk:
             chunks.append(chunk)
     return "\n\n".join(chunks).strip()
@@ -162,8 +165,7 @@ def score_quality(exchanges: list[dict]) -> str:
     if len(complete_exchanges) < MIN_EXCHANGE_COUNT:
         return "deferred"
     total_words = sum(
-        len(normalize_whitespace(ex.get("answer", "")).split())
-        for ex in complete_exchanges
+        len(normalize_whitespace(ex.get("answer", "")).split()) for ex in complete_exchanges
     )
     if total_words < MIN_ASSISTANT_WORDS:
         return "deferred"
@@ -215,6 +217,7 @@ def select_key_exchanges(exchanges: list[dict], n: int = 5) -> list[dict]:
 
 # --- ChatGPT parser ---
 
+
 def parse_chatgpt_messages(mapping: dict) -> list[dict]:
     """
     Extract user and assistant messages from a ChatGPT mapping dict.
@@ -240,7 +243,9 @@ def parse_chatgpt_messages(mapping: dict) -> list[dict]:
 
 def parse_chatgpt_conversation(raw: dict, batch_id: str) -> dict:
     """Parse a single ChatGPT conversation object into a normalized conv dict."""
-    title = normalize_whitespace(raw.get("title") or "Untitled Conversation") or "Untitled Conversation"
+    title = (
+        normalize_whitespace(raw.get("title") or "Untitled Conversation") or "Untitled Conversation"
+    )
     create_time = float(raw.get("create_time") or 0)
     date = datetime.fromtimestamp(create_time, tz=UTC).strftime("%Y-%m-%d")
     source_id = str(raw.get("conversation_id") or raw.get("id") or "")
@@ -272,6 +277,7 @@ def parse_chatgpt_conversation(raw: dict, batch_id: str) -> dict:
 
 
 # --- Claude parser ---
+
 
 def iso_to_date(value: str) -> str:
     try:
@@ -420,7 +426,9 @@ def load_codex_export(path: str) -> list[dict]:
     if not base_path.exists():
         raise FileNotFoundError(f"Codex export not found: {base_path}")
     if base_path.is_file() and base_path.suffix != ".jsonl":
-        raise ValueError(f"Expected a rollout .jsonl file or snapshot directory, got {base_path.name}")
+        raise ValueError(
+            f"Expected a rollout .jsonl file or snapshot directory, got {base_path.name}"
+        )
 
     title_index = load_codex_title_index(base_path)
     if base_path.is_dir():
@@ -459,7 +467,11 @@ def first_codex_user_prompt(messages: list[dict]) -> str:
 def parse_codex_conversation(raw: dict, batch_id: str) -> dict:
     """Parse a normalized Codex session dict into the shared conversation shape."""
     messages_raw = raw.get("messages") or []
-    title = normalize_whitespace(raw.get("title") or "") or first_codex_user_prompt(messages_raw) or "Untitled Conversation"
+    title = (
+        normalize_whitespace(raw.get("title") or "")
+        or first_codex_user_prompt(messages_raw)
+        or "Untitled Conversation"
+    )
     source_id = str(raw.get("session_id") or "")
     created_at = raw.get("created_at") or ""
     date = iso_to_date(created_at)
@@ -509,13 +521,19 @@ def parse_codex_conversation(raw: dict, batch_id: str) -> dict:
 
 def parse_claude_conversation(raw: dict, batch_id: str) -> dict:
     """Parse a single Claude conversation object into a normalized conv dict."""
-    title = normalize_whitespace(raw.get("name") or "Untitled Conversation") or "Untitled Conversation"
+    title = (
+        normalize_whitespace(raw.get("name") or "Untitled Conversation") or "Untitled Conversation"
+    )
     source_id = str(raw.get("uuid") or "")
     messages_raw = raw.get("chat_messages") or []
     created_at = raw.get("created_at") or raw.get("updated_at") or ""
     if not created_at:
         created_at = next(
-            (m.get("created_at") or m.get("updated_at") or "" for m in messages_raw if isinstance(m, dict)),
+            (
+                m.get("created_at") or m.get("updated_at") or ""
+                for m in messages_raw
+                if isinstance(m, dict)
+            ),
             "",
         )
     date = iso_to_date(created_at)
@@ -530,11 +548,13 @@ def parse_claude_conversation(raw: dict, batch_id: str) -> dict:
             continue
         text = extract_claude_message_text(m)
         if text:
-            messages.append({
-                "role": role,
-                "text": text,
-                "time": iso_to_ts(m.get("created_at") or created_at),
-            })
+            messages.append(
+                {
+                    "role": role,
+                    "text": text,
+                    "time": iso_to_ts(m.get("created_at") or created_at),
+                }
+            )
     messages.sort(key=lambda x: x["time"])
     exchanges = messages_to_exchanges(messages)
     key_exchanges = select_key_exchanges(exchanges)
@@ -665,11 +685,13 @@ def load_claude_code_session(path: Path, project_dir_name: str) -> dict | None:
                 continue
 
             ts = event.get("timestamp") or first_timestamp
-            messages.append({
-                "role": role,
-                "text": text,
-                "time": iso_to_ts(ts) if ts else float(len(messages)),
-            })
+            messages.append(
+                {
+                    "role": role,
+                    "text": text,
+                    "time": iso_to_ts(ts) if ts else float(len(messages)),
+                }
+            )
 
     if not messages:
         return None
@@ -737,10 +759,7 @@ def parse_claude_code_conversation(raw: dict, batch_id: str) -> dict:
         title = first_user
     title = title or "Untitled Conversation"
 
-    messages = [
-        {"role": m["role"], "text": m["text"], "time": m["time"]}
-        for m in messages_raw
-    ]
+    messages = [{"role": m["role"], "text": m["text"], "time": m["time"]} for m in messages_raw]
     exchanges = messages_to_exchanges(messages)
     key_exchanges = select_key_exchanges(exchanges)
     quality = score_quality(exchanges)
@@ -771,6 +790,7 @@ def parse_claude_code_conversation(raw: dict, batch_id: str) -> dict:
 
 
 # --- Markdown renderer ---
+
 
 def yaml_quote(value: str) -> str:
     """Render a YAML-safe scalar without pulling in a YAML dependency."""

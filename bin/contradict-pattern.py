@@ -77,7 +77,9 @@ def contradict(conn: sqlite3.Connection, pid: str, session_id: str | None, note:
     log_contradiction(row["title"], old_state, new_state, note)
 
     print(f"Contradiction recorded: '{row['title'][:60]}'")
-    print(f"  {old_state} → {new_state}  confidence={new_conf:.2f}  contradiction_count={new_count}")
+    print(
+        f"  {old_state} → {new_state}  confidence={new_conf:.2f}  contradiction_count={new_count}"
+    )
 
     if new_state == "hypothesis":
         print("  Rule demoted. human_approved reset to 0. Re-approve after re-confirmation.")

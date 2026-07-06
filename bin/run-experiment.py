@@ -68,12 +68,16 @@ def cmd_start(args: list[str]) -> None:
     print(f"  Name:      {name}")
     print(f"  Surface:   {surface}")
     print(f"  Hypothesis: {hypothesis}")
-    print(f"\nRun at least 3 sessions, then: python3 run-experiment.py end {exp_id} --verdict keep|discard")
+    print(
+        f"\nRun at least 3 sessions, then: python3 run-experiment.py end {exp_id} --verdict keep|discard"
+    )
 
 
 def cmd_end(args: list[str]) -> None:
     if not args:
-        print("Usage: run-experiment.py end <experiment_id> --verdict keep|discard|inconclusive [--notes '...']")
+        print(
+            "Usage: run-experiment.py end <experiment_id> --verdict keep|discard|inconclusive [--notes '...']"
+        )
         sys.exit(1)
 
     exp_id = args[0]
@@ -104,7 +108,9 @@ def cmd_end(args: list[str]) -> None:
         shutil.copy(POLICY_BACKUP, POLICY_PATH)
         print("Baseline config restored.")
 
-    row = conn.execute("SELECT name, surface, hypothesis FROM experiments WHERE id=?", (exp_id,)).fetchone()
+    row = conn.execute(
+        "SELECT name, surface, hypothesis FROM experiments WHERE id=?", (exp_id,)
+    ).fetchone()
     conn.close()
 
     if row:
@@ -147,11 +153,29 @@ def cmd_status(args: list[str]) -> None:
     if not row:
         print(f"Experiment {exp_id} not found")
         sys.exit(1)
-    print(json.dumps(dict(zip(
-        ["id","name","surface","hypothesis","verdict","baseline_value","challenger_value","started_at","ended_at","notes"],
-        row,
-        strict=True,
-    )), indent=2))
+    print(
+        json.dumps(
+            dict(
+                zip(
+                    [
+                        "id",
+                        "name",
+                        "surface",
+                        "hypothesis",
+                        "verdict",
+                        "baseline_value",
+                        "challenger_value",
+                        "started_at",
+                        "ended_at",
+                        "notes",
+                    ],
+                    row,
+                    strict=True,
+                )
+            ),
+            indent=2,
+        )
+    )
 
 
 def main() -> None:

@@ -27,7 +27,11 @@ def test_classify_changed_paths_respects_aios_scope() -> None:
 
     assert classified["supported"] == ["bin/hook-stop.py", "services/aios_cli.py"]
     assert classified["unsupported"] == ["aios-ui/app/page.tsx", "tools/context-compile.mjs"]
-    assert classified["ignored"] == ["README.md", "aios-ui/next-env.d.ts", "config/quality-pipeline.json"]
+    assert classified["ignored"] == [
+        "README.md",
+        "aios-ui/next-env.d.ts",
+        "config/quality-pipeline.json",
+    ]
 
 
 def test_summarize_pre_pr_readiness_fails_on_unsupported_surfaces() -> None:

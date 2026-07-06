@@ -9,6 +9,7 @@ Usage:
   python3 ~/AIOS/bin/lab-report.py --outcome confirmed
   python3 ~/AIOS/bin/lab-report.py --patch-type verification_toggle
 """
+
 import argparse
 import os
 import sqlite3
@@ -20,7 +21,7 @@ OUTCOMES = {"confirmed", "contradicted", "inconclusive", "error"}
 
 
 def _pct(n: int, total: int) -> str:
-    return f"{100*n//total}%" if total else "—"
+    return f"{100 * n // total}%" if total else "—"
 
 
 def _fmt_delta(v) -> str:
@@ -78,7 +79,7 @@ def main():
     total = len(all_runs)
 
     by_outcome: dict[str, list] = defaultdict(list)
-    by_patch:   dict[str, list] = defaultdict(list)
+    by_patch: dict[str, list] = defaultdict(list)
     for r in all_runs:
         by_outcome[r["outcome"] or "unknown"].append(r)
         by_patch[r["patch_type"] or "unknown"].append(r)
@@ -93,7 +94,7 @@ def main():
         for outcome in ["confirmed", "contradicted", "inconclusive", "error"]:
             n = len(by_outcome.get(outcome, []))
             bar = "█" * (n * 20 // total) if total else ""
-            print(f"  {outcome:<16} {n:>4}  {_pct(n,total):>4}  {bar}")
+            print(f"  {outcome:<16} {n:>4}  {_pct(n, total):>4}  {bar}")
 
         print()
         print("By patch type:")
@@ -101,21 +102,23 @@ def main():
             confirmed = sum(1 for r in pt_runs if r["outcome"] == "confirmed")
             deltas = [r["score_delta"] for r in pt_runs if r["score_delta"] is not None]
             avg_delta = sum(deltas) / len(deltas) if deltas else None
-            print(f"  {pt:<28}  runs={len(pt_runs):<4} "
-                  f"confirmed={confirmed:<4} "
-                  f"avg_delta={_fmt_delta(avg_delta)}")
+            print(
+                f"  {pt:<28}  runs={len(pt_runs):<4} "
+                f"confirmed={confirmed:<4} "
+                f"avg_delta={_fmt_delta(avg_delta)}"
+            )
 
     # ── Per-run table ────────────────────────────────────────────────────────
     print()
     print(f"{'Run ID':<28} {'Patch':<24} {'Core Δ':>8} {'Hold Δ':>8} {'Micro Δ':>8} {'Outcome'}")
     print("-" * 90)
     for r in runs:
-        run_id   = (r["id"] or "")[:27]
-        patch    = (r["patch_type"] or "")[:23]
-        core_d   = _fmt_delta(r["score_delta"])
-        hold_d   = _fmt_delta(r["holdout_delta"])
-        micro_d  = _fmt_delta(r["micro_delta"])
-        outcome  = (r["outcome"] or "").upper()
+        run_id = (r["id"] or "")[:27]
+        patch = (r["patch_type"] or "")[:23]
+        core_d = _fmt_delta(r["score_delta"])
+        hold_d = _fmt_delta(r["holdout_delta"])
+        micro_d = _fmt_delta(r["micro_delta"])
+        outcome = (r["outcome"] or "").upper()
         print(f"{run_id:<28} {patch:<24} {core_d:>8} {hold_d:>8} {micro_d:>8}  {outcome}")
 
     if not runs:

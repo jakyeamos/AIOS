@@ -37,7 +37,16 @@ TRUSTED_ROOTS = {
     "08 Bases",
 }
 RAW_ROOTS = {"09 Archive", "Personal-Corpus", "Quarantine"}
-GENERIC_TITLES = {"new note", "untitled document", "untitled spreadsheet", "todo", "to do", "add", "dd", "the"}
+GENERIC_TITLES = {
+    "new note",
+    "untitled document",
+    "untitled spreadsheet",
+    "todo",
+    "to do",
+    "add",
+    "dd",
+    "the",
+}
 
 BBDSE_CHILDREN = [
     "BBDS-Analytics-Product-Suite",
@@ -236,7 +245,9 @@ def _check_stale_trusted_notes(root: Path, paths: list[Path]) -> list[str]:
             failures.append(f"stale_note_invalid_date:{_safe_relative(path, root)}:last_reviewed")
             continue
         if reviewed_date.toordinal() < cutoff:
-            failures.append(f"stale_trusted_note:{_safe_relative(path, root)}:last_reviewed={reviewed[:10]}")
+            failures.append(
+                f"stale_trusted_note:{_safe_relative(path, root)}:last_reviewed={reviewed[:10]}"
+            )
     return failures
 
 
@@ -265,8 +276,10 @@ def _check_quarantine_candidates(root: Path, paths: list[Path]) -> list[str]:
             failures.append(f"quarantine_candidate:{_safe_relative(path, root)}:secret_like")
         elif PHONE_PATTERN.search(combined):
             failures.append(f"quarantine_candidate:{_safe_relative(path, root)}:phone_like")
-        elif _is_under(path, "Personal-Corpus") and not frontmatter and (
-            _word_count(body) <= 12 or _title_key(path) in GENERIC_TITLES
+        elif (
+            _is_under(path, "Personal-Corpus")
+            and not frontmatter
+            and (_word_count(body) <= 12 or _title_key(path) in GENERIC_TITLES)
         ):
             failures.append(f"quarantine_candidate:{_safe_relative(path, root)}:low_context")
     return failures
@@ -332,10 +345,7 @@ def validate_bbdse(root: Path, *, run_delegated: bool) -> int:
     if failures:
         print("\n".join(failures))
         return 1
-    print(
-        "bbdse_validation_pass "
-        f"delegated_children={len(BBDSE_CHILDREN)} independent_children=0"
-    )
+    print(f"bbdse_validation_pass delegated_children={len(BBDSE_CHILDREN)} independent_children=0")
     return 0
 
 

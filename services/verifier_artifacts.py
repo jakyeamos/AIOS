@@ -165,7 +165,9 @@ def validate_closeout_verification(
     if verification_exempt:
         if exemption_reason:
             return _allowed("exempt", exemption_reason)
-        return _blocked("verification_exemption_missing_reason", "Verification exemption lacks a reason.")
+        return _blocked(
+            "verification_exemption_missing_reason", "Verification exemption lacks a reason."
+        )
 
     rows = list_verifier_artifacts(conn, run_id=run_id, session_id=session_id, limit=20)
     if task_id:

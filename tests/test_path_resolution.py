@@ -50,9 +50,7 @@ def test_rewrite_legacy_vault_path_uses_resolved_root(tmp_path: Path, monkeypatc
     monkeypatch.setattr(path_resolution, "CANONICAL_VAULT_ROOT", canonical)
     monkeypatch.setattr(path_resolution, "LEGACY_VAULT_ROOT", legacy)
 
-    rewritten = path_resolution.rewrite_legacy_vault_path(
-        str(legacy / "02 AI OS" / "note.md")
-    )
+    rewritten = path_resolution.rewrite_legacy_vault_path(str(legacy / "02 AI OS" / "note.md"))
 
     assert rewritten == str(canonical / "02 AI OS" / "note.md")
 

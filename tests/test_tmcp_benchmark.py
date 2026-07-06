@@ -114,7 +114,9 @@ def test_create_benchmark_scaffold_writes_required_manifests_and_reports(tmp_pat
     assert repositories["schema"] == "tmcp-benchmark-repositories-v0.1"
     assert repositories["repositories"][0]["project_id"] == "project-a"
 
-    shortcut_registry = json.loads((output_root / "manifest" / "shortcut-registry.json").read_text())
+    shortcut_registry = json.loads(
+        (output_root / "manifest" / "shortcut-registry.json").read_text()
+    )
     assert shortcut_registry["shortcut_states"] == list(SHORTCUT_STATES)
     assert shortcut_registry["shortcuts"] == []
 
@@ -127,7 +129,9 @@ def test_create_benchmark_scaffold_writes_required_manifests_and_reports(tmp_pat
     assert "No public claim is approved until held-out analysis is complete" in claims_register
 
 
-def _task_payload(repo_path: Path, start_sha: str) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
+def _task_payload(
+    repo_path: Path, start_sha: str
+) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
     families = [
         {
             "task_family_id": "family-api",
@@ -207,7 +211,9 @@ def test_preflight_import_randomize_and_freeze_are_reproducible(tmp_path: Path) 
 
     preflight = preflight_benchmark(output_root=output_root, preferred_projects=("BIP-Console",))
     families, tasks = _task_payload(parent / "BIP-Console", start_sha)
-    import_result = import_task_manifest(output_root=output_root, task_families=families, tasks=tasks)
+    import_result = import_task_manifest(
+        output_root=output_root, task_families=families, tasks=tasks
+    )
     first_map = randomize_condition_map(output_root=output_root, seed=42, repeats=2)
     second_map = randomize_condition_map(output_root=output_root, seed=42, repeats=2)
     freeze = freeze_benchmark(
@@ -245,9 +251,7 @@ def test_optimized_tmcp_condition_measures_against_flat_skills(tmp_path: Path) -
         if item["condition_actual"] == "tmcp_behavior_optimized"
     )
     flat_assignment = next(
-        item
-        for item in condition_map["assignments"]
-        if item["condition_actual"] == "flat_skills"
+        item for item in condition_map["assignments"] if item["condition_actual"] == "flat_skills"
     )
 
     optimized = run_task_condition(
@@ -340,7 +344,9 @@ def test_run_task_condition_emits_isolated_records_and_hidden_tests_after_public
     families, tasks = _task_payload(parent / "BIP-Console", start_sha)
     import_task_manifest(output_root=output_root, task_families=families, tasks=tasks)
     condition_map = randomize_condition_map(output_root=output_root, seed=7, repeats=1)
-    assignment = next(item for item in condition_map["assignments"] if item["task_id"] == "task-heldout")
+    assignment = next(
+        item for item in condition_map["assignments"] if item["task_id"] == "task-heldout"
+    )
 
     run = run_task_condition(
         output_root=output_root,
@@ -397,7 +403,9 @@ def test_aggregate_refuses_speed_or_token_win_when_quality_is_worse(tmp_path: Pa
     assert (output_root / "analysis" / "tables" / "condition-summary.json").exists()
 
 
-def test_tmcp_claim_gate_requires_quality_tokens_missed_requirements_and_separate_shortcut() -> None:
+def test_tmcp_claim_gate_requires_quality_tokens_missed_requirements_and_separate_shortcut() -> (
+    None
+):
     runs = [
         {
             "condition_actual": "flat_skills",

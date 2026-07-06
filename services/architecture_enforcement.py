@@ -38,9 +38,9 @@ def _resolve_path(path: str, *, base: Path) -> Path:
     return (base / expanded).resolve()
 
 
-def load_registry(config_dir: Path = DEFAULT_CONFIG_DIR, repo_root: Path = REPO_ROOT) -> tuple[
-    dict[str, dict[str, Any]], list[ProjectConfig]
-]:
+def load_registry(
+    config_dir: Path = DEFAULT_CONFIG_DIR, repo_root: Path = REPO_ROOT
+) -> tuple[dict[str, dict[str, Any]], list[ProjectConfig]]:
     profiles_path = config_dir / "profiles.json"
     projects_path = config_dir / "projects.json"
 
@@ -244,9 +244,8 @@ def _run_python_import_rules(adapter: dict[str, Any], working_dir: Path) -> dict
             if not source_layer or not target_layer:
                 continue
             for rule in forbidden_imports:
-                if (
-                    source_layer == rule.get("source_layer")
-                    and target_layer == rule.get("target_layer")
+                if source_layer == rule.get("source_layer") and target_layer == rule.get(
+                    "target_layer"
                 ):
                     target_display = target_module or import_name
                     violations.append(
@@ -298,9 +297,7 @@ def _run_command_adapter(adapter: dict[str, Any], working_dir: Path) -> dict[str
         }
 
     required_paths = [str(path) for path in adapter.get("requires_paths", [])]
-    missing_paths = [
-        path for path in required_paths if not (working_dir / path).exists()
-    ]
+    missing_paths = [path for path in required_paths if not (working_dir / path).exists()]
     if missing_paths:
         return {
             "status": "skipped",
@@ -403,9 +400,11 @@ def run_enforcement(
     repo_root: Path = REPO_ROOT,
 ) -> dict[str, Any]:
     profiles, projects = load_registry(config_dir=config_dir, repo_root=repo_root)
-    selected_projects = projects if project_ids is None else [
-        _project_for_id(projects, project_id) for project_id in project_ids
-    ]
+    selected_projects = (
+        projects
+        if project_ids is None
+        else [_project_for_id(projects, project_id) for project_id in project_ids]
+    )
 
     project_reports: list[dict[str, Any]] = []
     for project in selected_projects:
@@ -445,8 +444,7 @@ def run_enforcement(
             working_directory = str(binding.get("working_directory", "."))
             working_dir = _resolve_path(working_directory, base=project.path)
             adapters = [
-                _run_adapter(adapter, working_dir)
-                for adapter in profile.get("adapters", [])
+                _run_adapter(adapter, working_dir) for adapter in profile.get("adapters", [])
             ]
             profile_status = "passed"
             if any(adapter["status"] == "error" for adapter in adapters):
@@ -497,6 +495,8 @@ def run_enforcement(
             "total_projects": len(project_reports),
             "failed_projects": failed_projects,
             "error_projects": error_projects,
-            "missing_projects": sum(1 for project in project_reports if project["status"] == "missing"),
+            "missing_projects": sum(
+                1 for project in project_reports if project["status"] == "missing"
+            ),
         },
     }

@@ -16,7 +16,9 @@ from services.cts import incremental_update  # noqa: E402
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run incremental CTS update.")
     parser.add_argument("--repo", type=Path, default=Path.cwd(), help="Repo root path")
-    parser.add_argument("--base", default="HEAD~1", help="Git base reference for changed-file detection")
+    parser.add_argument(
+        "--base", default="HEAD~1", help="Git base reference for changed-file detection"
+    )
     parser.add_argument(
         "--changed-file",
         action="append",
@@ -31,4 +33,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

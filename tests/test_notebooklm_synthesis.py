@@ -28,7 +28,9 @@ def test_source_of_truth_memory_lookup_stays_local() -> None:
 
     assert decision.route_kind == "source_of_truth_memory"
     assert decision.use_notebooklm is False
-    assert decision.reason == "Source-of-truth memory lookups should use canonical local memory first."
+    assert (
+        decision.reason == "Source-of-truth memory lookups should use canonical local memory first."
+    )
 
 
 def test_local_operational_memory_stays_local() -> None:
@@ -58,7 +60,11 @@ def test_existing_tmcp_plus_uploaded_packet_routes_local_first() -> None:
     )
 
     assert decision.route_kind == "local_first_notebooklm_second"
-    assert decision.route_steps == ("local/TMCP first", "NotebookLM MCP second", "stage synthesis output")
+    assert decision.route_steps == (
+        "local/TMCP first",
+        "NotebookLM MCP second",
+        "stage synthesis output",
+    )
     assert decision.local_retrieval_first is True
 
 
@@ -100,7 +106,9 @@ def test_contradiction_detection_routes_to_staged_drift_report() -> None:
 
 
 def test_whole_vault_request_is_rejected() -> None:
-    decision = classify_notebooklm_route("Send my entire second brain to NotebookLM and organize it.")
+    decision = classify_notebooklm_route(
+        "Send my entire second brain to NotebookLM and organize it."
+    )
 
     assert decision.route_kind == "reject_unbounded_notebooklm"
     assert decision.use_notebooklm is False
@@ -186,7 +194,10 @@ def test_jacob_bd_backend_contract_loads_from_registry() -> None:
         "source_add",
         "notebook_query",
     )
-    assert "Uses undocumented NotebookLM internal APIs according to upstream README." in spec.security_notes
+    assert (
+        "Uses undocumented NotebookLM internal APIs according to upstream README."
+        in spec.security_notes
+    )
 
 
 def test_notebooklm_mode_tool_plan_maps_aios_modes_to_mcp_tools() -> None:
@@ -258,7 +269,9 @@ def test_cli_adapter_runs_guarded_notebook_create_add_sources_and_query() -> Non
         if args[:3] == ("nlm", "source", "add"):
             return NotebookLMCommandResult(args=args, returncode=0, stdout="source added")
         if args[:3] == ("nlm", "notebook", "query"):
-            return NotebookLMCommandResult(args=args, returncode=0, stdout="Answer\nSource: notes/a.md")
+            return NotebookLMCommandResult(
+                args=args, returncode=0, stdout="Answer\nSource: notes/a.md"
+            )
         return NotebookLMCommandResult(args=args, returncode=1, stderr="unexpected command")
 
     spec = load_notebooklm_backend_spec()

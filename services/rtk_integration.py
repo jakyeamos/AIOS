@@ -232,15 +232,21 @@ def compress_output(
         f"exit_code={exit_code if exit_code is not None else 'unknown'}",
     ]
     if changed_files:
-        sections.append("changed_files:\n" + "\n".join(f"- {path}" for path in sorted(set(changed_files))[:30]))
+        sections.append(
+            "changed_files:\n" + "\n".join(f"- {path}" for path in sorted(set(changed_files))[:30])
+        )
     if failures:
-        sections.append("failing_tests_or_assertions:\n" + "\n".join(f"- {row}" for row in failures[:20]))
+        sections.append(
+            "failing_tests_or_assertions:\n" + "\n".join(f"- {row}" for row in failures[:20])
+        )
     if preserved:
         sections.append("signal:\n" + "\n".join(preserved[:max_lines]))
     if duplicate_notes:
         sections.append("deduplicated:\n" + "\n".join(f"- {row}" for row in duplicate_notes))
 
-    ambiguous_failure = bool(exit_code and exit_code != 0 and not (failures or ERROR_PATTERNS.search(raw_output)))
+    ambiguous_failure = bool(
+        exit_code and exit_code != 0 and not (failures or ERROR_PATTERNS.search(raw_output))
+    )
     if ambiguous_failure:
         sections.append("warning: non-zero exit with weak error signal; expand with raw mode.")
 
@@ -255,7 +261,10 @@ def _can_delegate_to_upstream(command: str) -> bool:
         shlex.split(command)
     except ValueError:
         return False
-    return any(command.strip().startswith(prefix) for prefix in ("git ", "pnpm ", "npm ", "pytest", "docker ", "tsc"))
+    return any(
+        command.strip().startswith(prefix)
+        for prefix in ("git ", "pnpm ", "npm ", "pytest", "docker ", "tsc")
+    )
 
 
 def _execute(command: str, cwd: str | Path | None, timeout: int | None) -> tuple[int, str]:
@@ -327,7 +336,9 @@ def rtk_run(
         compressed = raw_output
         ambiguous_failure = bool(exit_code != 0 and not ERROR_PATTERNS.search(raw_output))
     else:
-        compressed, ambiguous_failure = compress_output(raw_output, command=command, exit_code=exit_code)
+        compressed, ambiguous_failure = compress_output(
+            raw_output, command=command, exit_code=exit_code
+        )
 
     effective_mode: RTKMode = "raw" if mode == "raw" else "compressed"
     raw_output_path = None
@@ -423,7 +434,9 @@ def compress_tool_output(
                 used_upstream_rtk=False,
             )
 
-    compressed, ambiguous_failure = compress_output(raw_output, command=command, exit_code=exit_code)
+    compressed, ambiguous_failure = compress_output(
+        raw_output, command=command, exit_code=exit_code
+    )
     raw_output_path = None
     output = raw_output if mode == "raw" else compressed
     effective_mode: RTKMode = "raw" if mode == "raw" else "compressed"
@@ -437,7 +450,11 @@ def compress_tool_output(
 
     raw_tokens = estimate_tokens(raw_output)
     compressed_tokens = estimate_tokens(output)
-    reduction = round(max(0.0, (raw_tokens - compressed_tokens) / raw_tokens * 100), 2) if raw_tokens else 0.0
+    reduction = (
+        round(max(0.0, (raw_tokens - compressed_tokens) / raw_tokens * 100), 2)
+        if raw_tokens
+        else 0.0
+    )
     return RTKRunResult(
         command=command,
         mode=mode,
@@ -501,7 +518,10 @@ def record_rtk_event(
         for metric_name, value in (
             ("rtk.raw_tokens", result.estimated_raw_tokens),
             ("rtk.compressed_tokens", result.estimated_compressed_tokens),
-            ("rtk.tokens_saved", max(0, result.estimated_raw_tokens - result.estimated_compressed_tokens)),
+            (
+                "rtk.tokens_saved",
+                max(0, result.estimated_raw_tokens - result.estimated_compressed_tokens),
+            ),
             ("rtk.token_reduction_percent", result.token_reduction_percent),
         ):
             conn.execute(
@@ -559,19 +579,22 @@ def rtk_metrics_log(conn: sqlite3.Connection, *, session_id: str | None = None) 
 
     total_event_count = len(rows)
     total_raw_tokens = sum(int(row_value(row, "estimated_raw_tokens")) for row in rows)
-    total_compressed_tokens = sum(int(row_value(row, "estimated_compressed_tokens")) for row in rows)
+    total_compressed_tokens = sum(
+        int(row_value(row, "estimated_compressed_tokens")) for row in rows
+    )
     ambiguous_failures = sum(int(row_value(row, "ambiguous_failure")) for row in rows)
 
     eligible_rows = [
         row
         for row in rows
         if int(row_value(row, "exit_code") or 0) != 0
-        or int(row_value(row, "raw_chars")) >= _passthrough_threshold(
-            str(row_value(row, "command") or ""), rules
-        )
+        or int(row_value(row, "raw_chars"))
+        >= _passthrough_threshold(str(row_value(row, "command") or ""), rules)
     ]
     raw_tokens = sum(int(row_value(row, "estimated_raw_tokens")) for row in eligible_rows)
-    compressed_tokens = sum(int(row_value(row, "estimated_compressed_tokens")) for row in eligible_rows)
+    compressed_tokens = sum(
+        int(row_value(row, "estimated_compressed_tokens")) for row in eligible_rows
+    )
     tokens_saved = sum(
         max(
             int(row_value(row, "estimated_raw_tokens"))

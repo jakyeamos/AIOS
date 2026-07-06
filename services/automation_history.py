@@ -40,7 +40,9 @@ class PipelineRun:
 
 
 def _history_id(run: PipelineRun) -> str:
-    digest = hashlib.sha256(f"{PIPELINE_AUTOMATION['id']}:{run.started_at}".encode()).hexdigest()[:16]
+    digest = hashlib.sha256(f"{PIPELINE_AUTOMATION['id']}:{run.started_at}".encode()).hexdigest()[
+        :16
+    ]
     return f"automation-history-{digest}"
 
 

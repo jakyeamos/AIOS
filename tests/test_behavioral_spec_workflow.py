@@ -41,7 +41,16 @@ def _seed_project(conn: sqlite3.Connection, root: Path) -> None:
 
 
 def _make_mature_next_app(root: Path) -> None:
-    for name in ("dashboard", "settings", "admin", "search", "billing", "imports", "exports", "users"):
+    for name in (
+        "dashboard",
+        "settings",
+        "admin",
+        "search",
+        "billing",
+        "imports",
+        "exports",
+        "users",
+    ):
         _write(root / "app" / name / "page.tsx", "export default function Page() { return null }\n")
     for name in ("users", "search", "billing", "imports", "exports"):
         _write(root / "app" / "api" / name / "route.ts", "export async function GET() {}\n")
@@ -140,9 +149,7 @@ def test_explicit_route_allows_manual_override_with_eligibility_report(tmp_path:
 
     route = route_objective(
         conn,
-        objective=(
-            "Run the behavioral-spec-verification-loop for Target App with explicit opt-in"
-        ),
+        objective=("Run the behavioral-spec-verification-loop for Target App with explicit opt-in"),
         cwd=str(tmp_path),
     ).to_json()
 

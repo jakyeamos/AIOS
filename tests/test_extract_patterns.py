@@ -69,7 +69,9 @@ def _conn() -> sqlite3.Connection:
     return conn
 
 
-def _seed_session(conn: sqlite3.Connection, session_id: str, classification: str, tool_events: int) -> None:
+def _seed_session(
+    conn: sqlite3.Connection, session_id: str, classification: str, tool_events: int
+) -> None:
     conn.execute(
         """
         INSERT INTO sessions (id, started_at, ended_at, status, objective)

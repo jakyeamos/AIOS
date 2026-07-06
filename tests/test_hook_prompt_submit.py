@@ -169,4 +169,9 @@ def test_reusable_candidate_requires_task_shape() -> None:
     module = _load_hook_module()
 
     assert module.is_reusable_candidate("please review this") == 0
-    assert module.is_reusable_candidate("Please review this architecture proposal and identify the main risks") == 1
+    assert (
+        module.is_reusable_candidate(
+            "Please review this architecture proposal and identify the main risks"
+        )
+        == 1
+    )

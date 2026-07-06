@@ -519,7 +519,9 @@ def test_session_intelligence_implements_pending_candidates_as_tracked_helper_fa
     assert implementations[0]["candidate_count"] == 2
     assert implementations[0]["telemetry_status"] == "awaiting_telemetry"
     assert implementations[0]["removal_status"] == "monitor"
-    assert implementations[0]["implemented_artifact_ref"] == "session-intel-helper-family:repo_state"
+    assert (
+        implementations[0]["implemented_artifact_ref"] == "session-intel-helper-family:repo_state"
+    )
     assert {candidate["status"] for candidate in candidates} == {"implemented"}
     assert "session-intel-repo-state-1" in implementations[0]["candidate_ids"]
 
@@ -1035,7 +1037,9 @@ def test_session_intelligence_daily_codex_wrapper_returns_report_paths_and_revie
     candidates = list_session_intelligence_candidates(conn, status="pending_review", lane="all")
     implementations = list_session_intelligence_implementations(conn)
     review_events = conn.execute("SELECT * FROM session_intelligence_review_events").fetchall()
-    run_row = conn.execute("SELECT provider, scanned_range FROM session_intelligence_runs").fetchone()
+    run_row = conn.execute(
+        "SELECT provider, scanned_range FROM session_intelligence_runs"
+    ).fetchone()
     assert len(candidates) == 1
     assert candidates[0]["status"] == "pending_review"
     assert implementations == []

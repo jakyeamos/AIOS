@@ -4,9 +4,7 @@ from services.shadow_candidate_scorer import score_shadow_candidate
 
 
 def test_hard_blocker_caps_score_at_zero() -> None:
-    result = score_shadow_candidate(
-        {"components": {"complexity": 100}, "blockers": ["dirty_repo"]}
-    )
+    result = score_shadow_candidate({"components": {"complexity": 100}, "blockers": ["dirty_repo"]})
 
     assert result["score"] == 0.0
     assert result["recommendation"] == "trace_only"
@@ -53,7 +51,9 @@ def test_excellent_candidate_scores_85_to_100() -> None:
 
 
 def test_recommendation_tiers() -> None:
-    assert score_shadow_candidate({"components": {"complexity": 0}})["recommendation"] == "trace_only"
+    assert (
+        score_shadow_candidate({"components": {"complexity": 0}})["recommendation"] == "trace_only"
+    )
     assert (
         score_shadow_candidate({"components": {"complexity": 100, "measurability": 100}})[
             "recommendation"

@@ -40,6 +40,7 @@ CREATE INDEX IF NOT EXISTS idx_docx_size ON docx_index(size_bytes);
 
 def make_id(path: str) -> str:
     import hashlib
+
     return hashlib.sha256(path.encode()).hexdigest()[:16]
 
 
@@ -55,6 +56,7 @@ def get_docx_metadata(path: Path) -> dict:
     }
     try:
         import docx
+
         doc = docx.Document(str(path))
         props = doc.core_properties
         meta["title"] = props.title or None
@@ -132,10 +134,17 @@ def main() -> None:
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
-                file_id, path_str, docx_path.name, size,
-                meta["word_count"], meta["paragraph_count"],
-                meta["title"], meta["author"], meta["subject"],
-                meta["created"], meta["modified"],
+                file_id,
+                path_str,
+                docx_path.name,
+                size,
+                meta["word_count"],
+                meta["paragraph_count"],
+                meta["title"],
+                meta["author"],
+                meta["subject"],
+                meta["created"],
+                meta["modified"],
                 now,
             ),
         )

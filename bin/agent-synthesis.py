@@ -32,8 +32,21 @@ def now() -> str:
 
 def extract_title_bigrams(titles: list[str]) -> Counter:
     stopwords = {
-        "the", "and", "for", "with", "from", "this", "that", "have",
-        "what", "when", "where", "which", "will", "your", "about",
+        "the",
+        "and",
+        "for",
+        "with",
+        "from",
+        "this",
+        "that",
+        "have",
+        "what",
+        "when",
+        "where",
+        "which",
+        "will",
+        "your",
+        "about",
     }
     bigrams: Counter = Counter()
     for title in titles:
@@ -56,6 +69,7 @@ def collect_promoted_titles() -> list[str]:
 def collect_topic_tags() -> Counter:
     """Read topic_tags JSON arrays from promoted imports and count occurrences."""
     import json
+
     conn = sqlite3.connect(DB)
     rows = conn.execute(
         "SELECT topic_tags FROM ai_history_imports WHERE status = 'promoted'"
@@ -72,7 +86,9 @@ def collect_topic_tags() -> Counter:
     return tags
 
 
-def upsert_pattern(conn: sqlite3.Connection, title: str, domain: str, count: int, dry_run: bool) -> bool:
+def upsert_pattern(
+    conn: sqlite3.Connection, title: str, domain: str, count: int, dry_run: bool
+) -> bool:
     existing = conn.execute("SELECT id FROM patterns WHERE title = ?", (title,)).fetchone()
     if existing:
         return False
@@ -101,8 +117,12 @@ def upsert_pattern(conn: sqlite3.Connection, title: str, domain: str, count: int
 def main() -> None:
     parser = argparse.ArgumentParser(description="Synthesize patterns from AI history corpus")
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--min-count", type=int, default=MIN_COUNT_DEFAULT,
-                        help=f"Min occurrences to promote (default: {MIN_COUNT_DEFAULT})")
+    parser.add_argument(
+        "--min-count",
+        type=int,
+        default=MIN_COUNT_DEFAULT,
+        help=f"Min occurrences to promote (default: {MIN_COUNT_DEFAULT})",
+    )
     args = parser.parse_args()
 
     print("=== AI History Synthesis ===")

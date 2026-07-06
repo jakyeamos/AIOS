@@ -5,6 +5,7 @@ Schema migration + state rename for notice→hypothesis→rule pipeline.
 
 Safe to run multiple times (idempotent).
 """
+
 import os
 import sqlite3
 from datetime import UTC, datetime
@@ -22,11 +23,11 @@ def main():
 
     # 1. Add new columns (idempotent)
     new_cols = [
-        ("frequency_score",  "REAL    DEFAULT 0"),
-        ("impact_score",     "REAL    DEFAULT 0"),
-        ("frequency_count",  "INTEGER DEFAULT 0"),
-        ("source_sessions",  "INTEGER DEFAULT 0"),
-        ("last_seen_at",     "TEXT"),
+        ("frequency_score", "REAL    DEFAULT 0"),
+        ("impact_score", "REAL    DEFAULT 0"),
+        ("frequency_count", "INTEGER DEFAULT 0"),
+        ("source_sessions", "INTEGER DEFAULT 0"),
+        ("last_seen_at", "TEXT"),
     ]
     for col, typedef in new_cols:
         if not col_exists(conn, "patterns", col):
@@ -36,9 +37,7 @@ def main():
             print(f"  skip (exists): {col}")
 
     # 2. Rename states
-    renamed = conn.execute(
-        "UPDATE patterns SET state='notice' WHERE state='observation'"
-    ).rowcount
+    renamed = conn.execute("UPDATE patterns SET state='notice' WHERE state='observation'").rowcount
     print(f"  observation → notice: {renamed} rows")
 
     renamed = conn.execute(

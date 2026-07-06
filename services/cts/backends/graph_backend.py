@@ -23,7 +23,9 @@ class GraphBackend:
         kind=None,
         limit: int = 20,
     ) -> BackendResult:
-        result = self.searcher.semantic_search_nodes(repo_id=repo_id, query=query, kind=kind, limit=limit)
+        result = self.searcher.semantic_search_nodes(
+            repo_id=repo_id, query=query, kind=kind, limit=limit
+        )
         return BackendResult(
             backend=self.name,
             confidence_floor=self.confidence_floor,
@@ -31,7 +33,9 @@ class GraphBackend:
             extra={"has_embeddings": result.has_embeddings},
         )
 
-    def get_impact_radius(self, repo_id: str, changed_files: list[str], max_depth: int = 3) -> BackendResult:
+    def get_impact_radius(
+        self, repo_id: str, changed_files: list[str], max_depth: int = 3
+    ) -> BackendResult:
         impact = self.impact_analyzer.get_impact_radius(
             repo_id=repo_id,
             changed_files=changed_files,
@@ -55,4 +59,3 @@ class GraphBackend:
                 }
             ],
         )
-

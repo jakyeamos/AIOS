@@ -4,6 +4,7 @@ AIOS: migrate-lab-integration.py
 Add lab integration columns and tables to aios.db.
 Safe to run multiple times (idempotent).
 """
+
 import os
 import sqlite3
 from datetime import UTC, datetime
@@ -22,8 +23,8 @@ def main() -> None:
     # --- patterns: add lab summary columns ---
     lab_cols = [
         ("lab_dispatched_at", "TEXT"),
-        ("lab_status",        "TEXT"),
-        ("last_lab_run_id",   "TEXT"),
+        ("lab_status", "TEXT"),
+        ("last_lab_run_id", "TEXT"),
     ]
     for col, typedef in lab_cols:
         if not col_exists(conn, "patterns", col):

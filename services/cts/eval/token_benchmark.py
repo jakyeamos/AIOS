@@ -29,4 +29,3 @@ def benchmark_payload_tokens(prompt: dict[str, Any], response: dict[str, Any]) -
         response_tokens=response_tokens,
         total_tokens=prompt_tokens + response_tokens,
     )
-

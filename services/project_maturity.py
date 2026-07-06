@@ -110,11 +110,15 @@ def _route_files(files: list[Path], root: Path) -> tuple[str, ...]:
         relative = _relative(path, root)
         parts = set(path.parts)
         if (
-            path.name in {"page.tsx", "page.jsx", "route.ts", "route.js"}
-            or "pages" in parts
-            or "screens" in parts
-            or "routes" in parts
-        ) and "/api/" not in relative and not relative.startswith("pages/api/"):
+            (
+                path.name in {"page.tsx", "page.jsx", "route.ts", "route.js"}
+                or "pages" in parts
+                or "screens" in parts
+                or "routes" in parts
+            )
+            and "/api/" not in relative
+            and not relative.startswith("pages/api/")
+        ):
             candidates.append(relative)
     return tuple(sorted(set(candidates))[:20])
 
@@ -132,7 +136,9 @@ def _api_files(files: list[Path], root: Path) -> tuple[str, ...]:
                 text = path.read_text(encoding="utf-8", errors="ignore")
             except OSError:
                 continue
-            if "export async function" in text and ("action" in relative_lower or "server" in relative_lower):
+            if "export async function" in text and (
+                "action" in relative_lower or "server" in relative_lower
+            ):
                 candidates.append(relative)
     return tuple(sorted(set(candidates))[:20])
 
@@ -154,18 +160,32 @@ def assess_behavioral_spec_eligibility(
         ("admin", "settings", "search", "filter", "sort", "import", "export", "payment", "billing"),
     )
     component_files = _matches(files, root, ("component", "components", "widgets", "ui/"))
-    background_files = _matches(files, root, ("job", "queue", "cron", "email", "notification", "worker"))
+    background_files = _matches(
+        files, root, ("job", "queue", "cron", "email", "notification", "worker")
+    )
     tests = _matches(files, root, ("test.", ".test", ".spec", "tests/", "__tests__"))
     schema_files = _matches(
         files,
         root,
-        ("schema.sql", "schema.prisma", "models.py", "migration", "migrations", "drizzle", "typeorm"),
+        (
+            "schema.sql",
+            "schema.prisma",
+            "models.py",
+            "migration",
+            "migrations",
+            "drizzle",
+            "typeorm",
+        ),
     )
     auth_files = _matches(files, root, ("auth", "session", "permission", "role", "middleware"))
-    package_files = _matches(files, root, ("package.json", "next.config", "vite.config", "app/", "pages/"))
+    package_files = _matches(
+        files, root, ("package.json", "next.config", "vite.config", "app/", "pages/")
+    )
 
     raw_signals = (
-        MaturitySignal("routes_or_screens", "App has 8+ routes/pages/screens.", len(routes) >= 8, routes),
+        MaturitySignal(
+            "routes_or_screens", "App has 8+ routes/pages/screens.", len(routes) >= 8, routes
+        ),
         MaturitySignal(
             "api_endpoints_or_server_actions",
             "App has 5+ API endpoints/server actions.",
@@ -224,9 +244,7 @@ def assess_behavioral_spec_eligibility(
     signals = {signal.key: signal for signal in raw_signals}
     passed_count = sum(1 for signal in raw_signals if signal.passed)
     eligible = explicit_opt_in or passed_count >= min_signals_required
-    recommended_workflow = (
-        BEHAVIORAL_SPEC_WORKFLOW_KEY if eligible else "targeted-quality-loop"
-    )
+    recommended_workflow = BEHAVIORAL_SPEC_WORKFLOW_KEY if eligible else "targeted-quality-loop"
     lighter_recommendations = (
         ()
         if eligible

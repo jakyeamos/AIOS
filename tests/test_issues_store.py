@@ -14,7 +14,9 @@ sys.path.insert(0, str(ROOT))
 from services import issues_store
 
 
-def test_write_issue_creates_schema_and_round_trips(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_write_issue_creates_schema_and_round_trips(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     db_path = tmp_path / "aios.db"
     monkeypatch.setattr(issues_store, "AIOS_DB", db_path)
 

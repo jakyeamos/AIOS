@@ -36,7 +36,9 @@ def _table_exists(conn: sqlite3.Connection, name: str) -> bool:
 def _column_exists(conn: sqlite3.Connection, table: str, column: str) -> bool:
     if not _table_exists(conn, table):
         return False
-    return any(str(row["name"]) == column for row in conn.execute(f"PRAGMA table_info({table})").fetchall())
+    return any(
+        str(row["name"]) == column for row in conn.execute(f"PRAGMA table_info({table})").fetchall()
+    )
 
 
 def _count(conn: sqlite3.Connection, table: str, where: str = "1=1") -> int:
@@ -197,7 +199,11 @@ def _project_signals(conn: sqlite3.Connection) -> dict[str, Any]:
                     "code": "project_missing_source",
                     "severity": "warning",
                     "summary": f"{row['name']} has no available repository source.",
-                    "source": {"label": "Project repository", "table": "projects", "field": "repo_path"},
+                    "source": {
+                        "label": "Project repository",
+                        "table": "projects",
+                        "field": "repo_path",
+                    },
                     "freshness": "missing",
                     "confidence": 0,
                     "missing_reason": f"Project repo_path is not available on disk: {repo_path}",
@@ -208,7 +214,10 @@ def _project_signals(conn: sqlite3.Connection) -> dict[str, Any]:
                 value=None,
                 provenance="missing",
                 confidence=0,
-                source={"label": "Standards health snapshot", "table": "standards_health_snapshots"},
+                source={
+                    "label": "Standards health snapshot",
+                    "table": "standards_health_snapshots",
+                },
                 freshness="missing",
                 explanation="No standards-health snapshot has been recorded for this project.",
                 missing_reason="No standards_health_snapshots row exists for this project.",
@@ -220,7 +229,10 @@ def _project_signals(conn: sqlite3.Connection) -> dict[str, Any]:
                     "code": "project_health_missing",
                     "severity": "warning",
                     "summary": f"{row['name']} has no standards-health snapshot.",
-                    "source": {"label": "Standards health snapshot", "table": "standards_health_snapshots"},
+                    "source": {
+                        "label": "Standards health snapshot",
+                        "table": "standards_health_snapshots",
+                    },
                     "freshness": "missing",
                     "confidence": 0,
                     "missing_reason": "No standards_health_snapshots row exists for this project.",
@@ -231,7 +243,11 @@ def _project_signals(conn: sqlite3.Connection) -> dict[str, Any]:
                 value=float(latest_health["overall_score"]),
                 provenance="confirmed",
                 confidence=0.9,
-                source={"label": "Standards health snapshot", "table": "standards_health_snapshots", "field": "overall_score"},
+                source={
+                    "label": "Standards health snapshot",
+                    "table": "standards_health_snapshots",
+                    "field": "overall_score",
+                },
                 freshness=str(latest_health["created_at"]),
                 explanation="Latest standards-health score on a 0-100 scale.",
             )
@@ -243,7 +259,9 @@ def _project_signals(conn: sqlite3.Connection) -> dict[str, Any]:
             source={"label": "Project health state", "table": "projects"},
             freshness=health.freshness,
             explanation="Project health subtype derived from repository availability and latest standards-health snapshot.",
-            missing_reason=health.missing_reason if health_state_value.startswith("missing_") else None,
+            missing_reason=health.missing_reason
+            if health_state_value.startswith("missing_")
+            else None,
         )
         status_value = _project_status_value(str(row["status"]), session_count, health_state_value)
         status = TrustedSignal(
@@ -253,7 +271,9 @@ def _project_signals(conn: sqlite3.Connection) -> dict[str, Any]:
             source={"label": "Project inventory", "table": "projects", "field": "status"},
             freshness=f"{session_count} recorded session(s)",
             explanation="Project status is persisted in inventory and qualified by linked session activity and source availability.",
-            missing_reason=None if session_count > 0 else "No linked session activity has been recorded for this project.",
+            missing_reason=None
+            if session_count > 0
+            else "No linked session activity has been recorded for this project.",
         )
         items.append(
             {
@@ -332,9 +352,27 @@ def _rtk_signals(conn: sqlite3.Connection) -> dict[str, Any]:
 
 def _automation_signals(conn: sqlite3.Connection) -> dict[str, Any]:
     seeded = [
-        ("automation-1", "Daily ingest status", "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0", 0.97, "healthy"),
-        ("automation-2", "PR health report", "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=11;BYMINUTE=30", 0.83, "warning"),
-        ("automation-3", "Nightly import verify", "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR,SA,SU;BYHOUR=1;BYMINUTE=0", 0.62, "error"),
+        (
+            "automation-1",
+            "Daily ingest status",
+            "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0",
+            0.97,
+            "healthy",
+        ),
+        (
+            "automation-2",
+            "PR health report",
+            "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=11;BYMINUTE=30",
+            0.83,
+            "warning",
+        ),
+        (
+            "automation-3",
+            "Nightly import verify",
+            "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR,SA,SU;BYHOUR=1;BYMINUTE=0",
+            0.62,
+            "error",
+        ),
     ]
     items = []
     findings = []
@@ -345,7 +383,9 @@ def _automation_signals(conn: sqlite3.Connection) -> dict[str, Any]:
         findings.append(
             {
                 "surface": "automations",
-                "code": "automation_history_missing" if not had_history_table else "automation_history_empty",
+                "code": "automation_history_missing"
+                if not had_history_table
+                else "automation_history_empty",
                 "severity": "warning",
                 "summary": "Automation reliability is unknown because durable automation run history has no confirmed runs.",
                 "source": {"label": "Automation run history", "table": "automation_run_history"},
@@ -414,19 +454,27 @@ def _automation_signals(conn: sqlite3.Connection) -> dict[str, Any]:
             if failure_count
             else "none"
         )
-        missing_history = None if run_count else "No durable automation run history exists for this automation."
+        missing_history = (
+            None if run_count else "No durable automation run history exists for this automation."
+        )
         items.append(
             {
                 "id": automation_id,
                 "name": name,
                 "raw_trigger": trigger,
-                "last_run_at": str(history["last_run_at"]) if history and history["last_run_at"] else None,
+                "last_run_at": str(history["last_run_at"])
+                if history and history["last_run_at"]
+                else None,
                 "expected_next_run_at": (
-                    str(history["expected_next_run_at"]) if history and history["expected_next_run_at"] else None
+                    str(history["expected_next_run_at"])
+                    if history and history["expected_next_run_at"]
+                    else None
                 ),
                 "last_status": str(last_run["status"]) if last_run and last_run["status"] else None,
                 "last_failure_summary": (
-                    str(last_run["failure_summary"]) if last_run and last_run["failure_summary"] else None
+                    str(last_run["failure_summary"])
+                    if last_run and last_run["failure_summary"]
+                    else None
                 ),
                 "success_count": success_count,
                 "failure_count": failure_count,
@@ -445,7 +493,11 @@ def _automation_signals(conn: sqlite3.Connection) -> dict[str, Any]:
                     value=confirmed_success_rate,
                     provenance="confirmed" if run_count else "missing",
                     confidence=0.9 if run_count else 0,
-                    source={"label": "Automation run history", "table": "automation_run_history", "field": "status"},
+                    source={
+                        "label": "Automation run history",
+                        "table": "automation_run_history",
+                        "field": "status",
+                    },
                     freshness=f"{run_count} durable run(s)" if run_count else "missing",
                     explanation="Success rate is derived from durable automation run history.",
                     missing_reason=missing_history,
@@ -454,7 +506,11 @@ def _automation_signals(conn: sqlite3.Connection) -> dict[str, Any]:
                     value=confirmed_status,
                     provenance="confirmed" if run_count else "missing",
                     confidence=0.9 if run_count else 0,
-                    source={"label": "Automation run history", "table": "automation_run_history", "field": "status"},
+                    source={
+                        "label": "Automation run history",
+                        "table": "automation_run_history",
+                        "field": "status",
+                    },
                     freshness=f"{run_count} durable run(s)" if run_count else "missing",
                     explanation="Automation status is derived from durable automation run history.",
                     missing_reason=missing_history,
@@ -512,7 +568,9 @@ def _prompt_library_signals(conn: sqlite3.Connection) -> dict[str, Any]:
                 if linked_templates > 0
                 else "Prompt Library is wired, but no body-hash-backed templates are currently visible."
             ),
-            missing_reason=None if linked_templates > 0 else "No rows exist in prompt_library_links.",
+            missing_reason=None
+            if linked_templates > 0
+            else "No rows exist in prompt_library_links.",
         ).to_json(),
         "linked_templates": linked_templates,
         "findings": findings,
@@ -570,7 +628,9 @@ def _knowledge_signals(conn: sqlite3.Connection) -> dict[str, Any]:
                 if reference_count > 0
                 else "Knowledge topics currently lack persisted source references."
             ),
-            missing_reason="No rows exist in knowledge_references." if reference_count == 0 else None,
+            missing_reason="No rows exist in knowledge_references."
+            if reference_count == 0
+            else None,
         ).to_json(),
         "relationship_count": TrustedSignal(
             value=relationship_count,
@@ -583,7 +643,9 @@ def _knowledge_signals(conn: sqlite3.Connection) -> dict[str, Any]:
                 if relationship_count > 0
                 else "Knowledge graph does not yet have persisted relationships."
             ),
-            missing_reason="No rows exist in knowledge_relationships." if relationship_count == 0 else None,
+            missing_reason="No rows exist in knowledge_relationships."
+            if relationship_count == 0
+            else None,
         ).to_json(),
         "findings": findings,
     }

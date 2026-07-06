@@ -49,6 +49,7 @@ SENSITIVE_CLASSES = frozenset({"secret", "credential", "sensitive", "raw_operati
 RAW_OPERATIONAL_PARTS = frozenset({"logs", "data", ".git"})
 DEFAULT_BACKEND_KEY = "jacob_bd_notebooklm_mcp_cli"
 
+
 @dataclass(frozen=True)
 class NotebookLMRouteDecision:
     route_kind: RouteKind
@@ -146,8 +147,7 @@ class NotebookLMCommandResult:
 
 
 class NotebookLMCommandRunner(Protocol):
-    def __call__(self, args: tuple[str, ...], timeout: float) -> NotebookLMCommandResult:
-        ...
+    def __call__(self, args: tuple[str, ...], timeout: float) -> NotebookLMCommandResult: ...
 
 
 @dataclass(frozen=True)
@@ -203,8 +203,7 @@ class NotebookLMBackend(Protocol):
         notebook_id_or_alias: str | None = None,
         agent: str = "aios",
         output_destination: str = "aios/staging/notebooklm",
-    ) -> NotebookLMSynthesisResult:
-        ...
+    ) -> NotebookLMSynthesisResult: ...
 
 
 class NotebookLMMCPAdapter:
@@ -323,7 +322,12 @@ class NotebookLMCLIAdapter:
                 )
 
         try:
-            execution = self._execute(mode=mode, query=query, source_bundle=source_bundle, notebook_id_or_alias=notebook_id_or_alias)
+            execution = self._execute(
+                mode=mode,
+                query=query,
+                source_bundle=source_bundle,
+                notebook_id_or_alias=notebook_id_or_alias,
+            )
         except RuntimeError as error:
             return NotebookLMSynthesisResult(
                 status="skipped_unavailable",
@@ -580,7 +584,9 @@ def classify_notebooklm_route(objective: str) -> NotebookLMRouteDecision:
         )
 
     if _has_any(text, "hidden connections", "cross-note", "reusable modules", "knowledge clusters"):
-        mode: NotebookLMMode = "tmcp_module_discovery" if "module" in text else "connection_discovery"
+        mode: NotebookLMMode = (
+            "tmcp_module_discovery" if "module" in text else "connection_discovery"
+        )
         return NotebookLMRouteDecision(
             route_kind="local_first_notebooklm_second",
             route_steps=(
@@ -630,9 +636,9 @@ def classify_notebooklm_route(objective: str) -> NotebookLMRouteDecision:
             mode="contradiction_drift_detection",
         )
 
-    if _has_any(text, "uploaded", "selected documents", "source bundle", "papers", "transcripts") and _has_any(
-        text, "compare", "synthesis", "summarize", "brief", "digest"
-    ):
+    if _has_any(
+        text, "uploaded", "selected documents", "source bundle", "papers", "transcripts"
+    ) and _has_any(text, "compare", "synthesis", "summarize", "brief", "digest"):
         return NotebookLMRouteDecision(
             route_kind="notebooklm_mcp",
             route_steps=("use NotebookLM MCP over the selected bounded source bundle",),
@@ -795,7 +801,9 @@ def _source_exclusion_reason(
     return None
 
 
-def _source_add_command(cli_command: str, notebook_id: str, source: SourceCandidate) -> tuple[str, ...]:
+def _source_add_command(
+    cli_command: str, notebook_id: str, source: SourceCandidate
+) -> tuple[str, ...]:
     match source.source_type:
         case "url":
             return (cli_command, "source", "add", notebook_id, "--url", source.path, "--wait")
@@ -866,7 +874,9 @@ def _default_prompt_for_bundle(source_bundle: SourceBundle) -> str:
 
 
 def _upload_instructions(source_bundle: SourceBundle) -> str:
-    source_lines = "\n".join(f"- `{source.path}` ({source.source_type})" for source in source_bundle.sources)
+    source_lines = "\n".join(
+        f"- `{source.path}` ({source.source_type})" for source in source_bundle.sources
+    )
     return (
         f"# Upload Instructions: {source_bundle.bundle_name}\n\n"
         "Use this only if live `nlm` automation is unavailable.\n\n"

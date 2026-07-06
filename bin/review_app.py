@@ -18,8 +18,12 @@ CONTRADICTION_LOG = os.path.expanduser("~/AIOS/logs/contradictions.log")
 PORT = 5001
 
 CLASS_THRESHOLDS = {
-    "bug_fix": 2, "failure": 2, "error": 2,
-    "architecture": 3, "workflow": 3, "assumption": 3,
+    "bug_fix": 2,
+    "failure": 2,
+    "error": 2,
+    "architecture": 3,
+    "workflow": 3,
+    "assumption": 3,
     "prompt": 4,
 }
 DEFAULT_THRESHOLD = 3
@@ -49,15 +53,14 @@ def record_metric(conn, metric_name: str, notes: str = "") -> None:
 # Counts
 # ---------------------------------------------------------------------------
 
+
 @app.get("/api/counts")
 def api_counts():
     conn = get_db()
     obs = conn.execute(
         "SELECT COUNT(*) FROM patterns WHERE state IN ('notice','hypothesis') AND status!='discarded' AND class!='personal'"
     ).fetchone()[0]
-    bugs = conn.execute(
-        "SELECT COUNT(*) FROM bug_log"
-    ).fetchone()[0]
+    bugs = conn.execute("SELECT COUNT(*) FROM bug_log").fetchone()[0]
     rules = conn.execute(
         "SELECT COUNT(*) FROM patterns WHERE state='rule' AND class!='personal'"
     ).fetchone()[0]
@@ -71,12 +74,21 @@ def api_counts():
              AND human_approved=0 AND status!='discarded'"""
     ).fetchone()[0]
     conn.close()
-    return jsonify({"observations": obs, "bugs": bugs, "rules": rules, "personal": personal, "high_signal": high_signal})
+    return jsonify(
+        {
+            "observations": obs,
+            "bugs": bugs,
+            "rules": rules,
+            "personal": personal,
+            "high_signal": high_signal,
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
 # Observations
 # ---------------------------------------------------------------------------
+
 
 @app.get("/api/observations")
 def api_observations():
@@ -106,7 +118,11 @@ def api_obs_approve(pid):
         "UPDATE patterns SET state='rule', status='active', human_approved=1, promoted_at=? WHERE id=?",
         (utcnow(), pid),
     )
-    record_metric(conn, "review_approve", f"class={row['class'] if row else ''} domain={row['domain'] if row else ''}")
+    record_metric(
+        conn,
+        "review_approve",
+        f"class={row['class'] if row else ''} domain={row['domain'] if row else ''}",
+    )
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
@@ -117,7 +133,11 @@ def api_obs_discard(pid):
     conn = get_db()
     row = conn.execute("SELECT class, domain FROM patterns WHERE id=?", (pid,)).fetchone()
     conn.execute("UPDATE patterns SET status='discarded' WHERE id=?", (pid,))
-    record_metric(conn, "review_discard", f"class={row['class'] if row else ''} domain={row['domain'] if row else ''}")
+    record_metric(
+        conn,
+        "review_discard",
+        f"class={row['class'] if row else ''} domain={row['domain'] if row else ''}",
+    )
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
@@ -126,6 +146,7 @@ def api_obs_discard(pid):
 # ---------------------------------------------------------------------------
 # Approve
 # ---------------------------------------------------------------------------
+
 
 @app.get("/api/approve")
 def api_approve_list():
@@ -175,7 +196,9 @@ def api_approve(pid):
     ).fetchone()[0]
     gate_fails = []
     if (p.get("confirmation_count") or 0) < threshold:
-        gate_fails.append(f"needs {threshold} confirmations (has {p.get('confirmation_count') or 0})")
+        gate_fails.append(
+            f"needs {threshold} confirmations (has {p.get('confirmation_count') or 0})"
+        )
     if (p.get("first_observed_at") or "") > cutoff:
         gate_fails.append("pattern is less than 14 days old")
     if distinct_sessions < 2:
@@ -187,7 +210,9 @@ def api_approve(pid):
         "UPDATE patterns SET human_approved=1, state='rule', promoted_at=? WHERE id=?",
         (utcnow(), pid),
     )
-    record_metric(conn, "review_approve", f"class={p.get('class','')} domain={p.get('domain','')}")
+    record_metric(
+        conn, "review_approve", f"class={p.get('class', '')} domain={p.get('domain', '')}"
+    )
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
@@ -197,12 +222,14 @@ def api_approve(pid):
 # Bug log
 # ---------------------------------------------------------------------------
 
+
 @app.get("/api/bugs")
 def api_bugs():
     conn = get_db()
-    rows = [dict(r) for r in conn.execute(
-        "SELECT * FROM bug_log ORDER BY created_at DESC LIMIT 200"
-    ).fetchall()]
+    rows = [
+        dict(r)
+        for r in conn.execute("SELECT * FROM bug_log ORDER BY created_at DESC LIMIT 200").fetchall()
+    ]
     # Attach linked pattern id for each bug (stored in pattern evidence JSON)
     for row in rows:
         linked = conn.execute(
@@ -215,11 +242,10 @@ def api_bugs():
     return jsonify(rows)
 
 
-
-
 # ---------------------------------------------------------------------------
 # Confirm / Contradict
 # ---------------------------------------------------------------------------
+
 
 @app.get("/api/patterns/search")
 def api_pattern_search():
@@ -227,10 +253,13 @@ def api_pattern_search():
     if not q:
         return jsonify([])
     conn = get_db()
-    rows = [dict(r) for r in conn.execute(
-        "SELECT * FROM patterns WHERE title LIKE ? AND status!='discarded' ORDER BY confidence DESC LIMIT 20",
-        (f"%{q}%",),
-    ).fetchall()]
+    rows = [
+        dict(r)
+        for r in conn.execute(
+            "SELECT * FROM patterns WHERE title LIKE ? AND status!='discarded' ORDER BY confidence DESC LIMIT 20",
+            (f"%{q}%",),
+        ).fetchall()
+    ]
     conn.close()
     return jsonify(rows)
 
@@ -301,6 +330,7 @@ def api_contradict(pid):
 # Rules
 # ---------------------------------------------------------------------------
 
+
 @app.get("/api/personal")
 def api_personal():
     sub_class = request.args.get("sub_class", "")
@@ -346,6 +376,7 @@ def api_personal_promote_vault(pid):
     """Write an approved personal pattern to the Obsidian mental map."""
     import subprocess
     import sys
+
     conn = get_db()
     row = conn.execute("SELECT * FROM patterns WHERE id=?", (pid,)).fetchone()
     if not row:
@@ -359,9 +390,10 @@ def api_personal_promote_vault(pid):
     # Run promote script for just this pattern — it checks vault_path IS NULL
     try:
         result = subprocess.run(
-            [sys.executable,
-             os.path.expanduser("~/AIOS/bin/promote-personal-patterns.py")],
-            capture_output=True, text=True, timeout=30,
+            [sys.executable, os.path.expanduser("~/AIOS/bin/promote-personal-patterns.py")],
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
         if result.returncode == 0:
             return jsonify({"ok": True, "output": result.stdout.strip()})
@@ -374,8 +406,10 @@ def api_personal_promote_vault(pid):
 def api_high_signal():
     """Filtered queue: high-signal source types, confidence >= 0.5, body present, not yet approved."""
     conn = get_db()
-    rows = [dict(r) for r in conn.execute(
-        """SELECT * FROM patterns
+    rows = [
+        dict(r)
+        for r in conn.execute(
+            """SELECT * FROM patterns
            WHERE source_type IN ('handoff-learned', 'tool-error', 'agent-synthesis')
              AND confidence >= 0.5
              AND body IS NOT NULL AND body != ''
@@ -383,7 +417,8 @@ def api_high_signal():
              AND status != 'discarded'
            ORDER BY confidence DESC, created_at ASC
            LIMIT 100""",
-    ).fetchall()]
+        ).fetchall()
+    ]
     conn.close()
     return jsonify(rows)
 
@@ -396,7 +431,11 @@ def api_high_signal_approve(pid):
         "UPDATE patterns SET state='rule', status='active', human_approved=1, promoted_at=? WHERE id=?",
         (utcnow(), pid),
     )
-    record_metric(conn, "review_high_signal_approve", f"class={row['class'] if row else ''} domain={row['domain'] if row else ''}")
+    record_metric(
+        conn,
+        "review_high_signal_approve",
+        f"class={row['class'] if row else ''} domain={row['domain'] if row else ''}",
+    )
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
@@ -415,9 +454,12 @@ def api_high_signal_discard(pid):
 @app.get("/api/rules")
 def api_rules():
     conn = get_db()
-    rows = [dict(r) for r in conn.execute(
-        "SELECT * FROM patterns WHERE state='rule' ORDER BY confidence DESC"
-    ).fetchall()]
+    rows = [
+        dict(r)
+        for r in conn.execute(
+            "SELECT * FROM patterns WHERE state='rule' ORDER BY confidence DESC"
+        ).fetchall()
+    ]
     conn.close()
     return jsonify(rows)
 

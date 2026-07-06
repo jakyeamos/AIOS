@@ -7,6 +7,7 @@ Each artifact is a self-contained description of a promoted rule that can travel
 into claude-improvement-lab with all metadata needed to generate tasks and
 interpret results.
 """
+
 import json
 from datetime import UTC, datetime
 from pathlib import Path
@@ -16,26 +17,26 @@ ARTIFACTS_DIR = Path.home() / "AIOS/data/rule-artifacts"
 # Capability taxonomy — maps latent behavior class to a string label.
 # Used by generate-rule-bundle.py and for mutation scope selection.
 CAPABILITY_CLASSES = {
-    "verification",          # checking/validating that output is correct
-    "planning",              # structuring approach before acting
-    "inspection",            # reading/understanding before modifying
-    "completion-validation", # verifying done = actually done
-    "incremental-editing",   # making changes in small, reversible steps
+    "verification",  # checking/validating that output is correct
+    "planning",  # structuring approach before acting
+    "inspection",  # reading/understanding before modifying
+    "completion-validation",  # verifying done = actually done
+    "incremental-editing",  # making changes in small, reversible steps
     "multi-step-execution",  # coordinating multiple dependent steps
-    "claim-calibration",     # not asserting without evidence
-    "tool-selection",        # choosing the right tool or approach
+    "claim-calibration",  # not asserting without evidence
+    "tool-selection",  # choosing the right tool or approach
 }
 
 # Mutation scope by capability class — primary patch type to try first.
 CAPABILITY_TO_MUTATION = {
-    "verification":          "verification_toggle",
-    "planning":              "planning_scaffold",
-    "inspection":            "prompt_overlay",
+    "verification": "verification_toggle",
+    "planning": "planning_scaffold",
+    "inspection": "prompt_overlay",
     "completion-validation": "verification_toggle",
-    "incremental-editing":   "prompt_overlay",
-    "multi-step-execution":  "orchestration_flag",
-    "claim-calibration":     "prompt_overlay",
-    "tool-selection":        "prompt_overlay",
+    "incremental-editing": "prompt_overlay",
+    "multi-step-execution": "orchestration_flag",
+    "claim-calibration": "prompt_overlay",
+    "tool-selection": "prompt_overlay",
 }
 
 
@@ -52,27 +53,60 @@ def infer_capability_class(pattern: dict) -> str:
     domain = (pattern.get("domain") or "").lower()
 
     # Keyword signals — ordered from most specific to least specific
-    if any(k in body for k in ("verify output", "verify before", "check output",
-                                "confirm output", "validate output", "before finishing")):
+    if any(
+        k in body
+        for k in (
+            "verify output",
+            "verify before",
+            "check output",
+            "confirm output",
+            "validate output",
+            "before finishing",
+        )
+    ):
         return "completion-validation"
     if any(k in body for k in ("verify", "check that", "assert", "confirm", "validate")):
         return "verification"
-    if any(k in body for k in ("plan", "plan your", "outline", "before starting",
-                                "think through", "step by step")):
+    if any(
+        k in body
+        for k in (
+            "plan",
+            "plan your",
+            "outline",
+            "before starting",
+            "think through",
+            "step by step",
+        )
+    ):
         return "planning"
-    if any(k in body for k in ("read before", "inspect", "explore first", "understand before",
-                                "look at", "check existing")):
+    if any(
+        k in body
+        for k in (
+            "read before",
+            "inspect",
+            "explore first",
+            "understand before",
+            "look at",
+            "check existing",
+        )
+    ):
         return "inspection"
-    if any(k in body for k in ("small step", "incremental", "one file at a time",
-                                "one change", "atomically")):
+    if any(
+        k in body
+        for k in ("small step", "incremental", "one file at a time", "one change", "atomically")
+    ):
         return "incremental-editing"
-    if any(k in body for k in ("assume", "without checking", "don't guess",
-                                "never assert", "calibrate")):
+    if any(
+        k in body
+        for k in ("assume", "without checking", "don't guess", "never assert", "calibrate")
+    ):
         return "claim-calibration"
     if any(k in body for k in ("tool", "use bash", "use python", "choose the right")):
         return "tool-selection"
-    if any(k in body for k in ("multi-step", "sequence", "workflow", "pipeline",
-                                "then run", "then test")):
+    if any(
+        k in body
+        for k in ("multi-step", "sequence", "workflow", "pipeline", "then run", "then test")
+    ):
         return "multi-step-execution"
 
     # Domain fallback
@@ -116,7 +150,7 @@ def build_evidence_summary(pattern: dict) -> str:
         if isinstance(e, dict):
             label = e.get("handoff") or e.get("session_id") or str(e)
             parts.append(label[:60])
-    suffix = f" (+{len(evidence)-3} more)" if len(evidence) > 3 else ""
+    suffix = f" (+{len(evidence) - 3} more)" if len(evidence) > 3 else ""
     return ", ".join(parts) + suffix if parts else "structured evidence present"
 
 
@@ -189,13 +223,15 @@ def append_lab_run(pattern_id: str, run_summary: dict) -> None:
     if not path.exists():
         return
     artifact = json.loads(path.read_text())
-    artifact.setdefault("lab_runs", []).append({
-        "run_id": run_summary.get("id"),
-        "outcome": run_summary.get("outcome"),
-        "score_delta": run_summary.get("score_delta"),
-        "patch_type": run_summary.get("patch_type"),
-        "recorded_at": _now(),
-    })
+    artifact.setdefault("lab_runs", []).append(
+        {
+            "run_id": run_summary.get("id"),
+            "outcome": run_summary.get("outcome"),
+            "score_delta": run_summary.get("score_delta"),
+            "patch_type": run_summary.get("patch_type"),
+            "recorded_at": _now(),
+        }
+    )
     artifact["updated_at"] = _now()
     path.write_text(json.dumps(artifact, indent=2))
 
@@ -210,5 +246,7 @@ if __name__ == "__main__":
             print("No artifacts yet.")
         for f in files:
             a = json.loads(f.read_text())
-            print(f"  {a['pattern_id'][:8]}  cap={a['capability_class']}  "
-                  f"mutation={a['mutation_scope']}  runs={len(a.get('lab_runs', []))}")
+            print(
+                f"  {a['pattern_id'][:8]}  cap={a['capability_class']}  "
+                f"mutation={a['mutation_scope']}  runs={len(a.get('lab_runs', []))}"
+            )

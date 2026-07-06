@@ -20,7 +20,9 @@ from services.quality_pipeline import (  # noqa: E402
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Verify local CI replacement proof for a linked repo.")
+    parser = argparse.ArgumentParser(
+        description="Verify local CI replacement proof for a linked repo."
+    )
     parser.add_argument("--project", required=True)
     parser.add_argument("--db", type=Path, default=DEFAULT_DB_PATH)
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)

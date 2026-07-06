@@ -60,7 +60,11 @@ def resolve_server_entry(
     if server_entry:
         resolved = Path(server_entry).expanduser().resolve()
     else:
-        repo_root = Path(pre_cr_repo).expanduser().resolve() if pre_cr_repo else DEFAULT_PRE_CR_REPO.resolve()
+        repo_root = (
+            Path(pre_cr_repo).expanduser().resolve()
+            if pre_cr_repo
+            else DEFAULT_PRE_CR_REPO.resolve()
+        )
         resolved = repo_root / "packages" / "server" / "dist" / "server.js"
     if not resolved.is_file():
         raise _cli_error(
@@ -125,11 +129,15 @@ def summarize_pre_pr_readiness(
         }
 
     changed_files = result.get("changedFiles")
-    changed_paths = [
-        str(entry.get("path"))
-        for entry in changed_files
-        if isinstance(entry, dict) and isinstance(entry.get("path"), str)
-    ] if isinstance(changed_files, list) else []
+    changed_paths = (
+        [
+            str(entry.get("path"))
+            for entry in changed_files
+            if isinstance(entry, dict) and isinstance(entry.get("path"), str)
+        ]
+        if isinstance(changed_files, list)
+        else []
+    )
     classified = classify_changed_paths(changed_paths)
 
     findings: list[dict[str, Any]] = []
@@ -180,7 +188,9 @@ def summarize_pre_pr_readiness(
             }
         )
 
-    coverage_check = result.get("coverageCheck") if isinstance(result.get("coverageCheck"), dict) else None
+    coverage_check = (
+        result.get("coverageCheck") if isinstance(result.get("coverageCheck"), dict) else None
+    )
     if coverage_check is None:
         findings.append(
             {
@@ -223,7 +233,9 @@ def pre_pr_readiness_payload(
 ) -> dict[str, Any]:
     node_bin = shutil.which("node")
     if not node_bin:
-        raise _cli_error("node-not-found", "Node.js is required for Pre-PR readiness", EXIT_DEPENDENCY)
+        raise _cli_error(
+            "node-not-found", "Node.js is required for Pre-PR readiness", EXIT_DEPENDENCY
+        )
 
     resolved_workspace = Path(workspace_root).expanduser().resolve()
     resolved_server = resolve_server_entry(server_entry=server_entry, pre_cr_repo=pre_cr_repo)
@@ -269,7 +281,9 @@ class _PreCrSession:
             text=False,
         )
         if self.process.stdin is None or self.process.stdout is None or self.process.stderr is None:
-            raise _cli_error("pre-cr-process-failed", "Failed to start Pre-CR server process", EXIT_RUNTIME)
+            raise _cli_error(
+                "pre-cr-process-failed", "Failed to start Pre-CR server process", EXIT_RUNTIME
+            )
         self.stdin = self.process.stdin
         self.stdout = self.process.stdout
         self.stderr = self.process.stderr
@@ -352,25 +366,37 @@ class _PreCrSession:
 def _read_message(stream: BinaryIO, *, timeout_seconds: int) -> dict[str, Any]:
     ready, _, _ = select.select([stream], [], [], timeout_seconds)
     if not ready:
-        raise _cli_error("pre-cr-timeout", "Timed out waiting for Pre-CR server output", EXIT_RUNTIME)
+        raise _cli_error(
+            "pre-cr-timeout", "Timed out waiting for Pre-CR server output", EXIT_RUNTIME
+        )
     headers: dict[str, str] = {}
     while True:
         line = stream.readline()
         if not line:
-            raise _cli_error("pre-cr-eof", "Pre-CR server closed the connection unexpectedly", EXIT_RUNTIME)
+            raise _cli_error(
+                "pre-cr-eof", "Pre-CR server closed the connection unexpectedly", EXIT_RUNTIME
+            )
         if line == b"\r\n":
             break
         key, _, value = line.decode("ascii").partition(":")
         headers[key.strip().lower()] = value.strip()
     content_length = headers.get("content-length")
     if not content_length:
-        raise _cli_error("pre-cr-protocol-error", "Missing Content-Length header from Pre-CR server", EXIT_RUNTIME)
+        raise _cli_error(
+            "pre-cr-protocol-error",
+            "Missing Content-Length header from Pre-CR server",
+            EXIT_RUNTIME,
+        )
     body = stream.read(int(content_length))
     if not body:
-        raise _cli_error("pre-cr-protocol-error", "Empty message body from Pre-CR server", EXIT_RUNTIME)
+        raise _cli_error(
+            "pre-cr-protocol-error", "Empty message body from Pre-CR server", EXIT_RUNTIME
+        )
     payload = json.loads(body.decode("utf-8"))
     if not isinstance(payload, dict):
-        raise _cli_error("pre-cr-protocol-error", "Invalid JSON-RPC payload from Pre-CR server", EXIT_RUNTIME)
+        raise _cli_error(
+            "pre-cr-protocol-error", "Invalid JSON-RPC payload from Pre-CR server", EXIT_RUNTIME
+        )
     return payload
 
 

@@ -71,7 +71,9 @@ def list_motifs(conn: sqlite3.Connection) -> None:
     print(f"\n{'ID':18} {'State':12} {'Appr':5} {'Conf':5} Title")
     print("-" * 80)
     for row_id, title, confidence, state, approved in rows:
-        print(f"{row_id[:16]:18} {state:12} {'Y' if approved else 'N':5} {confidence:.2f}  {title[:60]}")
+        print(
+            f"{row_id[:16]:18} {state:12} {'Y' if approved else 'N':5} {confidence:.2f}  {title[:60]}"
+        )
 
 
 def seed_motif(conn: sqlite3.Connection, motif: dict, dry_run: bool) -> None:
@@ -126,9 +128,7 @@ def extract_from_bug_log(conn: sqlite3.Connection, dry_run: bool) -> None:
     print(f"\nFrequent bug symptom bigrams (threshold={threshold}):")
     for (w1, w2), cnt in candidates[:10]:
         title = f"Bug motif: '{w1} {w2}'"
-        existing = conn.execute(
-            "SELECT id FROM patterns WHERE title = ?", (title,)
-        ).fetchone()
+        existing = conn.execute("SELECT id FROM patterns WHERE title = ?", (title,)).fetchone()
         if existing:
             print(f"  EXISTS   [{cnt}x] {title}")
             continue

@@ -454,7 +454,13 @@ def main() -> None:
               (id, project_id, tool, started_at, objective, status, cwd)
             VALUES (?, ?, 'claude-code', ?, ?, 'open', ?)
             """,
-            (session_id, project_id, datetime.now(UTC).isoformat(), objective or None, resolved_cwd),
+            (
+                session_id,
+                project_id,
+                datetime.now(UTC).isoformat(),
+                objective or None,
+                resolved_cwd,
+            ),
         )
         conn.execute(
             """

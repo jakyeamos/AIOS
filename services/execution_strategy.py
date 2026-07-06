@@ -264,8 +264,7 @@ def validate_model_routing_policy(policy: dict[str, Any]) -> list[str]:
     missing_statuses = required_statuses - status_set
     if missing_statuses:
         errors.append(
-            "Model routing policy valid_statuses missing: "
-            + ", ".join(sorted(missing_statuses))
+            "Model routing policy valid_statuses missing: " + ", ".join(sorted(missing_statuses))
         )
 
     if str(policy.get("status", "")) not in status_set:
@@ -292,7 +291,9 @@ def validate_model_routing_policy(policy: dict[str, Any]) -> list[str]:
     }
     missing_roles = REQUIRED_AGENT_ROLES - agent_roles
     if missing_roles:
-        errors.append("Model routing policy missing agent roles: " + ", ".join(sorted(missing_roles)))
+        errors.append(
+            "Model routing policy missing agent roles: " + ", ".join(sorted(missing_roles))
+        )
 
     categories = policy.get("routing_categories", [])
     if not isinstance(categories, list) or not categories:
@@ -333,12 +334,13 @@ def validate_model_routing_policy(policy: dict[str, Any]) -> list[str]:
         errors.append("Model routing policy default execution mode must be orchestrated_subagents.")
 
     telemetry = policy.get("telemetry_schema", {})
-    telemetry_fields = set(_as_string_list(telemetry.get("run_fields") if isinstance(telemetry, dict) else []))
+    telemetry_fields = set(
+        _as_string_list(telemetry.get("run_fields") if isinstance(telemetry, dict) else [])
+    )
     missing_telemetry = REQUIRED_TELEMETRY_FIELDS - telemetry_fields
     if missing_telemetry:
         errors.append(
-            "Model routing telemetry schema missing fields: "
-            + ", ".join(sorted(missing_telemetry))
+            "Model routing telemetry schema missing fields: " + ", ".join(sorted(missing_telemetry))
         )
 
     marginal_value = policy.get("marginal_value_definition", {})
@@ -376,7 +378,9 @@ def validate_strategy_catalog(
 ) -> list[str]:
     errors: list[str] = []
     valid_statuses = strategy_catalog.get("valid_statuses")
-    status_set = set(valid_statuses) if isinstance(valid_statuses, list) else set(DEFAULT_STATUS_ORDER)
+    status_set = (
+        set(valid_statuses) if isinstance(valid_statuses, list) else set(DEFAULT_STATUS_ORDER)
+    )
 
     adapters = {
         str(row.get("version", "")): row
@@ -430,7 +434,9 @@ def validate_strategy_catalog(
         adapter_version = str(row.get("command_adapter_version", ""))
         adapter = adapters.get(adapter_version)
         if adapter is None:
-            errors.append(f"Strategy {strategy_id} references unknown adapter version: {adapter_version}")
+            errors.append(
+                f"Strategy {strategy_id} references unknown adapter version: {adapter_version}"
+            )
         else:
             adapter_surface = str(adapter.get("surface", ""))
             if adapter_surface != surface:
@@ -689,8 +695,7 @@ def compile_execution_strategy(
     validation_profile = validation_profiles[strategy.validation_profile_version]
 
     rubric_lines = [
-        f"- {key}: {weight}"
-        for key, weight in sorted(task_spec.quality_rubric_profile.items())
+        f"- {key}: {weight}" for key, weight in sorted(task_spec.quality_rubric_profile.items())
     ]
     instruction = "\n".join(
         [

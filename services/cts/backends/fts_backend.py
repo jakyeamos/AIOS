@@ -24,4 +24,3 @@ class FTSBackend:
             items=hits,
             warnings=[] if hits else ["FTS backend returned no results."],
         )
-

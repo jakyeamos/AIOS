@@ -212,7 +212,9 @@ def test_harness_cli_commands_emit_json(tmp_path: Path, capsys) -> None:
     )
     assert brief_exit == EXIT_OK
     brief = json.loads(capsys.readouterr().out)
-    assert brief["data"]["task"] == "Add OIDC federation policy to AIOS global secret handling rules."
+    assert (
+        brief["data"]["task"] == "Add OIDC federation policy to AIOS global secret handling rules."
+    )
 
     simulate_exit = run_cli(
         [

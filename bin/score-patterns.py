@@ -13,6 +13,7 @@ Gates:
 
 Run: python3 ~/AIOS/bin/score-patterns.py [--dry-run]
 """
+
 import argparse
 import os
 import sqlite3
@@ -25,22 +26,22 @@ BIN = Path(__file__).parent
 
 # Impact weight by source type
 IMPACT_BASE = {
-    "handoff-learned":  0.55,
-    "manual":           0.80,
-    "tool-error":       0.40,
-    "agent-synthesis":  0.30,
-    "bigram":           0.05,
+    "handoff-learned": 0.55,
+    "manual": 0.80,
+    "tool-error": 0.40,
+    "agent-synthesis": 0.30,
+    "bigram": 0.05,
 }
 
 # Frequency score: normalised against these ceilings
-FREQ_SESSION_CEIL  = 10   # source_sessions ceiling for normalisation
-FREQ_CONFIRM_CEIL  = 8    # confirmation_count ceiling
-FREQ_COUNT_CEIL    = 20   # frequency_count ceiling
+FREQ_SESSION_CEIL = 10  # source_sessions ceiling for normalisation
+FREQ_CONFIRM_CEIL = 8  # confirmation_count ceiling
+FREQ_COUNT_CEIL = 20  # frequency_count ceiling
 
 DEMOTION_DAYS = 60
 
 # Recency decay: patterns not seen in this many days get a multiplier < 1
-RECENCY_HALF_LIFE_DAYS = 90   # score halves every 90 days of silence
+RECENCY_HALF_LIFE_DAYS = 90  # score halves every 90 days of silence
 
 
 def now() -> str:
@@ -67,22 +68,22 @@ def compute_scores(p: dict) -> tuple[float, float]:
 
     # --- frequency (with recency decay) ---
     sessions_norm = min((p["source_sessions"] or 0) / FREQ_SESSION_CEIL, 1.0)
-    confirm_norm  = min((p["confirmation_count"] or 0) / FREQ_CONFIRM_CEIL, 1.0)
-    count_norm    = min((p["frequency_count"] or 0) / FREQ_COUNT_CEIL, 1.0)
+    confirm_norm = min((p["confirmation_count"] or 0) / FREQ_CONFIRM_CEIL, 1.0)
+    count_norm = min((p["frequency_count"] or 0) / FREQ_COUNT_CEIL, 1.0)
     raw_freq = (sessions_norm * 0.5) + (confirm_norm * 0.3) + (count_norm * 0.2)
     # Apply recency decay to raw frequency — recently-active patterns score higher
     decay = _recency_multiplier(p.get("last_seen_at"))
-    freq  = round(raw_freq * decay, 4)
+    freq = round(raw_freq * decay, 4)
 
     # --- impact ---
-    base    = IMPACT_BASE.get(p["source_type"] or "", 0.2)
+    base = IMPACT_BASE.get(p["source_type"] or "", 0.2)
     # cross-project bonus: project_id is None means it appeared globally
-    cross   = 0.10 if not p.get("project_id") else 0.0
+    cross = 0.10 if not p.get("project_id") else 0.0
     # body quality: has actionable body text
     body_ok = 0.10 if (p.get("body") or "").strip() else 0.0
     # contradiction penalty
-    contra  = min((p["contradiction_count"] or 0) * 0.10, 0.30)
-    impact  = min(base + cross + body_ok - contra, 1.0)
+    contra = min((p["contradiction_count"] or 0) * 0.10, 0.30)
+    impact = min(base + cross + body_ok - contra, 1.0)
 
     return round(freq, 4), round(impact, 4)
 
@@ -91,11 +92,12 @@ def _trigger_lab_pipeline(p: dict, conn: sqlite3.Connection) -> None:
     """Create rule artifact and generate eval bundle for a newly promoted rule."""
     try:
         import importlib.util as _ilu
+
         spec = _ilu.spec_from_file_location("rule_artifacts", BIN / "rule-artifacts.py")
         _ra = _ilu.module_from_spec(spec)
         spec.loader.exec_module(_ra)
         create_artifact = _ra.create_artifact
-        write_artifact  = _ra.write_artifact
+        write_artifact = _ra.write_artifact
         artifact = create_artifact(p)
         write_artifact(artifact)
         conn.execute("UPDATE patterns SET lab_status='pending' WHERE id=?", (p["id"],))
@@ -118,13 +120,11 @@ def main():
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
 
-    patterns = conn.execute(
-        "SELECT * FROM patterns WHERE status != 'discarded'"
-    ).fetchall()
+    patterns = conn.execute("SELECT * FROM patterns WHERE status != 'discarded'").fetchall()
 
-    promoted   = {"notice→hypothesis": 0, "hypothesis→rule": 0}
-    demoted    = {"rule→hypothesis": 0}
-    scored     = 0
+    promoted = {"notice→hypothesis": 0, "hypothesis→rule": 0}
+    demoted = {"rule→hypothesis": 0}
+    scored = 0
     cutoff_str = (datetime.now(UTC) - timedelta(days=DEMOTION_DAYS)).isoformat()
 
     for row in patterns:
@@ -170,7 +170,9 @@ def main():
             tag = "[DRY] " if args.dry_run else ""
             print(f"  {tag}{state} → {new_state}: {p['title'][:80]!r}")
             if not args.dry_run:
-                extra = ", human_approved=0" if new_state == "hypothesis" and state == "rule" else ""
+                extra = (
+                    ", human_approved=0" if new_state == "hypothesis" and state == "rule" else ""
+                )
                 conn.execute(
                     f"UPDATE patterns SET state=?{extra} WHERE id=?",
                     (new_state, p["id"]),

@@ -93,7 +93,9 @@ def create_planning_context(
         task_type=_required(task_type, "task_type"),
         complexity=normalized_complexity,
         risk_level=normalized_risk,
-        selected_lenses=tuple(dict.fromkeys(_normalize_lens(lens) for lens in selected_lenses if lens)),
+        selected_lenses=tuple(
+            dict.fromkeys(_normalize_lens(lens) for lens in selected_lenses if lens)
+        ),
         handoff_target=(handoff_target or workflow).strip() or workflow,
         validation_depth=validation_depth or _default_validation_depth(normalized_complexity),
         output_format=output_format or "execution_symmetric_plan",

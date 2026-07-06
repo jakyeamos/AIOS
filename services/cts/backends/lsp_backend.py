@@ -28,4 +28,3 @@ class LSPBackend:
             confidence_floor=self.confidence_floor,
             items=[{"resolved_symbols": symbols}],
         )
-

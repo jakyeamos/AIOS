@@ -277,7 +277,10 @@ def test_compile_tmcp_packet_uses_graph_metadata_and_source_skill(tmp_path: Path
     assert "Source skill implementation-review" in packet["packet_markdown"]
     assert "read_before_edit" in packet["behavior_atoms"]
     assert packet["packet_optimization"]["strategy"] == "behavior_atom_diff_then_token_cap"
-    assert packet["node_usefulness"]["@source_skill:implementation-review"]["prior"] in {"high", "medium"}
+    assert packet["node_usefulness"]["@source_skill:implementation-review"]["prior"] in {
+        "high",
+        "medium",
+    }
 
 
 def test_persist_tmcp_traversal_receipt_records_packet(tmp_path: Path) -> None:
@@ -432,8 +435,7 @@ def test_compile_tmcp_packet_can_cross_into_registered_portable_namespace(tmp_pa
     assert packet["task_id"] == "visual_polish"
     assert "@namespace:portable_dev_process/@task:visual_polish" in packet["selected_nodes"]
     assert (
-        "@namespace:portable_dev_process/@module:visual_polish_system"
-        in packet["selected_nodes"]
+        "@namespace:portable_dev_process/@module:visual_polish_system" in packet["selected_nodes"]
     )
     assert (
         "@namespace:portable_dev_process/@module:enterprise_saas_visual_polish"
@@ -460,14 +462,8 @@ def test_compile_tmcp_packet_routes_workflow_strategy_comparison_to_planning(
     assert "@task:agent_workflow" not in packet["selected_nodes"]
     assert packet["selected_branches"][0]["branch"] == "@branch:approval_before_edit"
     assert "@module:test_gate" in packet["selected_nodes"]
-    assert (
-        "@namespace:portable_dev_process/@task:planning_review"
-        in packet["selected_nodes"]
-    )
-    assert (
-        "@namespace:portable_dev_process/@module:test_authoring"
-        in packet["selected_nodes"]
-    )
+    assert "@namespace:portable_dev_process/@task:planning_review" in packet["selected_nodes"]
+    assert "@namespace:portable_dev_process/@module:test_authoring" in packet["selected_nodes"]
     assert packet["registry_overlay"]["matched"] is True
 
 
@@ -485,8 +481,7 @@ def test_compile_tmcp_packet_keeps_tmcp_internal_review_on_canonical_graph(
     assert packet["task_id"] == "agent_workflow"
     assert packet["registry_overlay"]["matched"] is False
     assert not any(
-        node.startswith("@namespace:portable_dev_process/")
-        for node in packet["selected_nodes"]
+        node.startswith("@namespace:portable_dev_process/") for node in packet["selected_nodes"]
     )
     assert packet["registry_overlay"]["skipped_namespaces"] == [
         {
@@ -514,10 +509,7 @@ def test_compile_tmcp_packet_allows_tmcp_instruction_hygiene_overlay(
     )
 
     assert packet["registry_overlay"]["matched"] is True
-    assert (
-        "@namespace:portable_dev_process/@task:instruction_hygiene"
-        in packet["selected_nodes"]
-    )
+    assert "@namespace:portable_dev_process/@task:instruction_hygiene" in packet["selected_nodes"]
 
 
 def test_compile_tmcp_packet_skips_overlay_when_no_behavior_is_added(
@@ -558,7 +550,9 @@ def test_compile_tmcp_packet_skips_overlay_when_no_behavior_is_added(
 
     assert packet["task_id"] == "planning"
     assert packet["registry_overlay"]["matched"] is False
-    assert not any(node.startswith("@namespace:portable_dev_process/") for node in packet["selected_nodes"])
+    assert not any(
+        node.startswith("@namespace:portable_dev_process/") for node in packet["selected_nodes"]
+    )
 
 
 def test_compile_tmcp_packet_routes_operating_language_to_canonical_module(
@@ -589,8 +583,7 @@ def test_compile_tmcp_packet_selects_tenure_branch_only_when_intent_matches(
     )
 
     assert (
-        "@namespace:portable_dev_process/@branch:tenure_visual_identity"
-        in packet["selected_nodes"]
+        "@namespace:portable_dev_process/@branch:tenure_visual_identity" in packet["selected_nodes"]
     )
     namespace = packet["registry_overlay"]["namespaces"][0]
     assert namespace["selected_branch"] == "tenure_visual_identity"
@@ -710,7 +703,10 @@ def test_explain_tmcp_packet_reports_scores_atoms_and_token_roi(tmp_path: Path) 
     assert explanation["task_id"] == "implementation"
     assert "@source_skill:implementation-review" in explanation["selected_nodes"]
     assert "read_before_edit" in explanation["behavior_atoms"]
-    assert explanation["estimated_token_roi"]["baseline_skill_tokens"] >= explanation["estimated_token_roi"]["custom_skill_tokens"]
+    assert (
+        explanation["estimated_token_roi"]["baseline_skill_tokens"]
+        >= explanation["estimated_token_roi"]["custom_skill_tokens"]
+    )
     assert explanation["candidate_scores"]["source_skills"]["implementation-review"] > 3
 
 
@@ -763,7 +759,10 @@ def test_packet_adherence_distinguishes_ignored_required_behavior(tmp_path: Path
     assert adherence["status"] == "fail"
     ignored = {row["requirement"] for row in adherence["ignored_requirements"]}
     assert "verification_gate" in ignored
-    assert all(row["failure_mode"] == "agent_compliance_failure" for row in adherence["ignored_requirements"])
+    assert all(
+        row["failure_mode"] == "agent_compliance_failure"
+        for row in adherence["ignored_requirements"]
+    )
 
 
 def test_packet_adherence_persists_granular_events(tmp_path: Path) -> None:

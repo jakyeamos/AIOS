@@ -16,8 +16,12 @@ from services.rtk_integration import rtk_metrics_log, rtk_run  # noqa: E402
 
 
 def create_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run a command through the AIOS RTK compression layer.")
-    parser.add_argument("command", nargs="*", help="Command to run. Use -- before commands with flags.")
+    parser = argparse.ArgumentParser(
+        description="Run a command through the AIOS RTK compression layer."
+    )
+    parser.add_argument(
+        "command", nargs="*", help="Command to run. Use -- before commands with flags."
+    )
     parser.add_argument("--mode", choices=["compressed", "raw", "adaptive"], default="compressed")
     parser.add_argument("--cwd", default=None)
     parser.add_argument("--timeout", type=int, default=None)
@@ -26,7 +30,9 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("--session", default=None)
     parser.add_argument("--run-id", default=None)
     parser.add_argument("--workflow", default=None)
-    parser.add_argument("--metrics", action="store_true", help="Print RTK metrics instead of running a command.")
+    parser.add_argument(
+        "--metrics", action="store_true", help="Print RTK metrics instead of running a command."
+    )
     return parser
 
 

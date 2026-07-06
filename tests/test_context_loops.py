@@ -167,7 +167,9 @@ def test_rejected_lesson_memory_suppresses_repeated_candidate(tmp_path: Path) ->
     make_review()
     first = propose_learning_candidates(conn)
     candidate_id = str(first["candidates"][0]["candidate_id"])
-    reject_candidate(conn, candidate_id, note="Already handled elsewhere", context_loop_root=tmp_path)
+    reject_candidate(
+        conn, candidate_id, note="Already handled elsewhere", context_loop_root=tmp_path
+    )
     make_review()
 
     second = propose_learning_candidates(conn)

@@ -17,6 +17,7 @@ They require human review before promotion to Obsidian.
 Usage:
   python3 ~/AIOS/bin/extract-personal-patterns.py [--dry-run] [--days N]
 """
+
 import argparse
 import re
 import sqlite3
@@ -71,9 +72,9 @@ HABIT_RE = re.compile(
 
 SIGNAL_MAP = [
     ("preference", PREFERENCE_RE),
-    ("learning",   LEARNING_RE),
-    ("blindspot",  BLINDSPOT_RE),
-    ("habit",      HABIT_RE),
+    ("learning", LEARNING_RE),
+    ("blindspot", BLINDSPOT_RE),
+    ("habit", HABIT_RE),
 ]
 
 
@@ -128,9 +129,7 @@ def _insert_pattern(
     return True
 
 
-def _scan_prompts(
-    conn: sqlite3.Connection, cutoff: str, dry_run: bool
-) -> dict[str, int]:
+def _scan_prompts(conn: sqlite3.Connection, cutoff: str, dry_run: bool) -> dict[str, int]:
     """Scan prompts_used table. Two-pass: collect with session context, then
     gate by MIN_SESSIONS before inserting. Prevents single-session noise from
     entering the candidate queue. prompts_used has no created_at so all rows
@@ -145,7 +144,7 @@ def _scan_prompts(
     # Pass 1: collect matches grouped by title, tracking distinct sessions
     # structure: title -> {"sub_class": str, "body": str, "sessions": set}
     matches: dict[str, dict] = {}
-    for (text, session_id) in rows:
+    for text, session_id in rows:
         if not text:
             continue
         for sub_class, pattern in SIGNAL_MAP:
@@ -157,9 +156,7 @@ def _scan_prompts(
 
     # Pass 2: insert only signals that meet the session threshold
     for title, info in matches.items():
-        threshold = (
-            MIN_SESSIONS_BLINDSPOT if info["sub_class"] == "blindspot" else MIN_SESSIONS
-        )
+        threshold = MIN_SESSIONS_BLINDSPOT if info["sub_class"] == "blindspot" else MIN_SESSIONS
         if len(info["sessions"]) >= threshold and _insert_pattern(
             conn, info["sub_class"], title, info["body"], dry_run
         ):
@@ -168,9 +165,7 @@ def _scan_prompts(
     return counts
 
 
-def _scan_ai_history(
-    conn: sqlite3.Connection, cutoff: str, dry_run: bool
-) -> dict[str, int]:
+def _scan_ai_history(conn: sqlite3.Connection, cutoff: str, dry_run: bool) -> dict[str, int]:
     """Scan ai_history_imports markdown files (vault_path column).
     Two-pass: each distinct file counts as one 'session'. Only insert
     signals that appear in MIN_SESSIONS+ distinct files."""
@@ -188,7 +183,7 @@ def _scan_ai_history(
 
     # Pass 1: collect matches grouped by line text, tracking distinct files
     matches: dict[str, dict] = {}
-    for (title, vault_path) in rows:
+    for title, vault_path in rows:
         fpath = Path(vault_path)
         if not fpath.exists():
             continue
@@ -206,9 +201,7 @@ def _scan_ai_history(
 
     # Pass 2: gate by MIN_SESSIONS (distinct files)
     for label, info in matches.items():
-        threshold = (
-            MIN_SESSIONS_BLINDSPOT if info["sub_class"] == "blindspot" else MIN_SESSIONS
-        )
+        threshold = MIN_SESSIONS_BLINDSPOT if info["sub_class"] == "blindspot" else MIN_SESSIONS
         if len(info["files"]) >= threshold and _insert_pattern(
             conn, info["sub_class"], label, info["body"], dry_run
         ):
@@ -217,16 +210,14 @@ def _scan_ai_history(
     return counts
 
 
-def _scan_bug_log(
-    conn: sqlite3.Connection, cutoff: str, dry_run: bool
-) -> dict[str, int]:
+def _scan_bug_log(conn: sqlite3.Connection, cutoff: str, dry_run: bool) -> dict[str, int]:
     """Mine bug_log for blindspot signals — repeated errors are blindspots."""
     counts = {k: 0 for k, _ in SIGNAL_MAP}
     rows = conn.execute(
         "SELECT symptom, root_cause FROM bug_log WHERE created_at >= ?",
         (cutoff,),
     ).fetchall()
-    for (desc, root_cause) in rows:
+    for desc, root_cause in rows:
         for text in [desc, root_cause]:
             if not text or len(text) < 20:
                 continue
@@ -242,9 +233,7 @@ def main() -> None:
     parser.add_argument("--days", type=int, default=DEFAULT_DAYS)
     args = parser.parse_args()
 
-    cutoff = (
-        datetime.now(UTC) - timedelta(days=args.days)
-    ).isoformat()
+    cutoff = (datetime.now(UTC) - timedelta(days=args.days)).isoformat()
 
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
@@ -252,9 +241,9 @@ def main() -> None:
     total: dict[str, int] = {k: 0 for k, _ in SIGNAL_MAP}
 
     for source_name, scanner in [
-        ("prompts_used",    _scan_prompts),
-        ("ai_history",      _scan_ai_history),
-        ("bug_log",         _scan_bug_log),
+        ("prompts_used", _scan_prompts),
+        ("ai_history", _scan_ai_history),
+        ("bug_log", _scan_bug_log),
     ]:
         try:
             counts = scanner(conn, cutoff, args.dry_run)

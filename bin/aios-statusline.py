@@ -78,7 +78,9 @@ def _render_from_receipt(
     *,
     live: bool,
 ) -> str:
-    lights = receipt.get("activity_lights") if isinstance(receipt.get("activity_lights"), dict) else {}
+    lights = (
+        receipt.get("activity_lights") if isinstance(receipt.get("activity_lights"), dict) else {}
+    )
     measures = receipt.get("measures") if isinstance(receipt.get("measures"), dict) else {}
     session_id = str(receipt.get("session_id") or "")[:8] or "session?"
     score = int(float(receipt.get("score") or 0))
@@ -112,7 +114,12 @@ def main() -> None:
     columns = status_input.get("columns")
     width = int(columns) if isinstance(columns, int | float) else None
     if not session_id:
-        print(_truncate(f"AIOS no-session {_short_model(status_input)} {_context_percent(status_input)}", width))
+        print(
+            _truncate(
+                f"AIOS no-session {_short_model(status_input)} {_context_percent(status_input)}",
+                width,
+            )
+        )
         return
 
     try:
@@ -131,7 +138,12 @@ def main() -> None:
     except Exception:
         pass
 
-    print(_truncate(f"AIOS {session_id[:8]} pending {_short_model(status_input)} {_context_percent(status_input)}", width))
+    print(
+        _truncate(
+            f"AIOS {session_id[:8]} pending {_short_model(status_input)} {_context_percent(status_input)}",
+            width,
+        )
+    )
 
 
 if __name__ == "__main__":

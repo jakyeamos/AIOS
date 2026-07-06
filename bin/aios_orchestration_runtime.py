@@ -285,8 +285,12 @@ def ensure_runtime_schema(conn: sqlite3.Connection) -> None:
           ON tmcp_traversal_receipts(traversal_fingerprint, created_at DESC)
         """
     )
-    _ensure_column(conn, "tmcp_traversal_receipts", "node_usefulness_json", "TEXT NOT NULL DEFAULT '{}'")
-    _ensure_column(conn, "tmcp_traversal_receipts", "omitted_requirements_json", "TEXT NOT NULL DEFAULT '[]'")
+    _ensure_column(
+        conn, "tmcp_traversal_receipts", "node_usefulness_json", "TEXT NOT NULL DEFAULT '{}'"
+    )
+    _ensure_column(
+        conn, "tmcp_traversal_receipts", "omitted_requirements_json", "TEXT NOT NULL DEFAULT '[]'"
+    )
     _ensure_column(conn, "tmcp_traversal_receipts", "adherence_json", "TEXT NOT NULL DEFAULT '{}'")
     _ensure_column(conn, "tmcp_traversal_receipts", "phase", "TEXT")
     _ensure_column(conn, "tmcp_traversal_receipts", "domain", "TEXT")

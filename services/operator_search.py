@@ -354,7 +354,11 @@ def _search_writebacks(
             query=query,
             key=_text_or_empty(row["layer_key"] or row["id"]),
             now=now,
-            metadata={"status": row["status"], "layer_key": row["layer_key"], "run_id": row["run_id"]},
+            metadata={
+                "status": row["status"],
+                "layer_key": row["layer_key"],
+                "run_id": row["run_id"],
+            },
         )
         for row in rows
         if _matches_query(
@@ -428,7 +432,9 @@ def _search_findings(
     for row in rows:
         title = f"{_text_or_empty(row['level'])} {_text_or_empty(row['criterion_id'])}".strip()
         summary = _text_or_empty(row["message"])
-        if _matches_query(query, _text_or_empty(row["id"]), _text_or_empty(row["run_id"]), title, summary):
+        if _matches_query(
+            query, _text_or_empty(row["id"]), _text_or_empty(row["run_id"]), title, summary
+        ):
             hits.append(
                 _make_hit(
                     kind="finding",

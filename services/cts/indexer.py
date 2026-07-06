@@ -72,7 +72,9 @@ class CTSIndexer:
         parser = RepoParser(repo.repo_path)
         if changed_files is None:
             changed_files = detect_changed_files(repo.repo_path, base=base)
-        changed_rel = [str(p.resolve().relative_to(repo.repo_path)) for p in changed_files if p.exists()]
+        changed_rel = [
+            str(p.resolve().relative_to(repo.repo_path)) for p in changed_files if p.exists()
+        ]
         if not changed_rel:
             status = store.get_status_report(repo.repo_id)
             return BuildResult(

@@ -23,4 +23,3 @@ class EmbeddingBackend:
             items=[],
             warnings=["Embedding backend scaffold is present but semantic index is not built yet."],
         )
-

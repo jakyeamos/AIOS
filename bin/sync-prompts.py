@@ -51,7 +51,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--db",
-        default=os.environ.get("AIOS_DB", str((Path.home() / "AIOS" / "data" / "aios.db").resolve())),
+        default=os.environ.get(
+            "AIOS_DB", str((Path.home() / "AIOS" / "data" / "aios.db").resolve())
+        ),
         help="SQLite DB path (default: ~/AIOS/data/aios.db or AIOS_DB)",
     )
     parser.add_argument(

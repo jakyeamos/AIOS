@@ -63,7 +63,9 @@ def run_ablation_suite(
             if result.returncode != 0:
                 override_path = Path(worktree_path) / "config" / "ablation-override.json"
                 override_path.parent.mkdir(parents=True, exist_ok=True)
-                override_path.write_text(json.dumps(policy, indent=2, sort_keys=True), encoding="utf-8")
+                override_path.write_text(
+                    json.dumps(policy, indent=2, sort_keys=True), encoding="utf-8"
+                )
         finally:
             cleanup_shadow_worktree(worktree_path=worktree_path, repo_path=repo)
         run_id = create_eval_run(

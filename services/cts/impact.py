@@ -96,8 +96,11 @@ class ImpactAnalyzer:
         reach_factor = min(1.0, len(impacted_nodes) / 120.0)
         confidence_penalty = 1.0 - avg_conf
         stale_penalty = min(1.0, stale_nodes / 20.0)
-        score = (spread_factor * 0.35) + (reach_factor * 0.35) + (confidence_penalty * 0.2) + (
-            stale_penalty * 0.1
+        score = (
+            (spread_factor * 0.35)
+            + (reach_factor * 0.35)
+            + (confidence_penalty * 0.2)
+            + (stale_penalty * 0.1)
         )
         if score >= 0.7:
             tier = "high"
@@ -114,4 +117,3 @@ class ImpactAnalyzer:
             "impacted_files_count": len(set(impacted_files)),
             "impacted_nodes_count": len(impacted_nodes),
         }
-

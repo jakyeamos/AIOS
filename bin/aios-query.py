@@ -72,16 +72,13 @@ def _clamp_limit(n: int) -> int:
 
 # ── Modes ─────────────────────────────────────────────────────────────────────
 
+
 def mode_status(conn: sqlite3.Connection) -> dict:
     """Compact system health snapshot."""
-    rows = conn.execute(
-        "SELECT state, COUNT(*) as cnt FROM patterns GROUP BY state"
-    ).fetchall()
+    rows = conn.execute("SELECT state, COUNT(*) as cnt FROM patterns GROUP BY state").fetchall()
     pattern_counts = {r["state"]: r["cnt"] for r in rows}
 
-    open_bugs = conn.execute(
-        "SELECT COUNT(*) FROM bug_log WHERE status='open'"
-    ).fetchone()[0]
+    open_bugs = conn.execute("SELECT COUNT(*) FROM bug_log WHERE status='open'").fetchone()[0]
 
     sessions_7d = conn.execute(
         "SELECT COUNT(*) FROM sessions WHERE started_at > datetime('now', '-7 days')"
@@ -91,13 +88,11 @@ def mode_status(conn: sqlite3.Connection) -> dict:
         "SELECT COUNT(*) FROM next_action_candidates WHERE status='pending_review'"
     ).fetchone()[0]
 
-    review_queue = conn.execute(
-        "SELECT COUNT(*) FROM patterns WHERE state='knowledge'"
-    ).fetchone()[0]
+    review_queue = conn.execute("SELECT COUNT(*) FROM patterns WHERE state='knowledge'").fetchone()[
+        0
+    ]
 
-    active_rules_count = conn.execute(
-        "SELECT COUNT(*) FROM active_rules"
-    ).fetchone()[0]
+    active_rules_count = conn.execute("SELECT COUNT(*) FROM active_rules").fetchone()[0]
 
     last_session_row = conn.execute(
         """SELECT p.name, s.started_at, s.cwd, s.status
@@ -136,8 +131,13 @@ def mode_status(conn: sqlite3.Connection) -> dict:
     if active_rules_count == 0:
         suggested.append("aios-query --patterns --state hypothesis")
 
-    return {"mode": "status", "data": data, "count": 1, "truncated": False,
-            "suggested_next": suggested[:4]}
+    return {
+        "mode": "status",
+        "data": data,
+        "count": 1,
+        "truncated": False,
+        "suggested_next": suggested[:4],
+    }
 
 
 def mode_bugs(conn: sqlite3.Connection, project: str | None, limit: int) -> dict:
@@ -178,14 +178,22 @@ def mode_bugs(conn: sqlite3.Connection, project: str | None, limit: int) -> dict
     if not bugs:
         suggested.append("aios-query --status")
     else:
-        suggested.append("sqlite3 ~/AIOS/data/aios.db \"UPDATE bug_log SET status='resolved' WHERE id='<id>'\"")
+        suggested.append(
+            "sqlite3 ~/AIOS/data/aios.db \"UPDATE bug_log SET status='resolved' WHERE id='<id>'\""
+        )
 
-    return {"mode": "bugs", "data": bugs, "count": len(bugs),
-            "truncated": truncated, "suggested_next": suggested}
+    return {
+        "mode": "bugs",
+        "data": bugs,
+        "count": len(bugs),
+        "truncated": truncated,
+        "suggested_next": suggested,
+    }
 
 
-def mode_patterns(conn: sqlite3.Connection, domain: str | None, state: str | None,
-                  limit: int) -> dict:
+def mode_patterns(
+    conn: sqlite3.Connection, domain: str | None, state: str | None, limit: int
+) -> dict:
     """Query patterns by state and/or domain."""
     where_parts = []
     params: list = []
@@ -241,8 +249,13 @@ def mode_patterns(conn: sqlite3.Connection, domain: str | None, state: str | Non
         if not state:
             suggested.append("aios-query --patterns --state rule")
 
-    return {"mode": "patterns", "data": patterns, "count": len(patterns),
-            "truncated": truncated, "suggested_next": suggested}
+    return {
+        "mode": "patterns",
+        "data": patterns,
+        "count": len(patterns),
+        "truncated": truncated,
+        "suggested_next": suggested,
+    }
 
 
 def mode_rules(conn: sqlite3.Connection, domain: str | None, limit: int) -> dict:
@@ -283,12 +296,19 @@ def mode_rules(conn: sqlite3.Connection, domain: str | None, limit: int) -> dict
 
     suggested = []
     if not rules:
-        suggested.append("aios-query --patterns --state hypothesis  # no rules yet — check hypotheses")
+        suggested.append(
+            "aios-query --patterns --state hypothesis  # no rules yet — check hypotheses"
+        )
     else:
         suggested.append("confirm-pattern --id <id>  # confirm a rule seen in practice")
 
-    return {"mode": "rules", "data": rules, "count": len(rules),
-            "truncated": truncated, "suggested_next": suggested}
+    return {
+        "mode": "rules",
+        "data": rules,
+        "count": len(rules),
+        "truncated": truncated,
+        "suggested_next": suggested,
+    }
 
 
 def mode_next(conn: sqlite3.Connection, project: str | None, limit: int) -> dict:
@@ -330,11 +350,21 @@ def mode_next(conn: sqlite3.Connection, project: str | None, limit: int) -> dict
     ]
 
     if not actions:
-        return {"mode": "next", "data": [], "count": 0, "truncated": False,
-                "suggested_next": ["aios-query --status"]}
+        return {
+            "mode": "next",
+            "data": [],
+            "count": 0,
+            "truncated": False,
+            "suggested_next": ["aios-query --status"],
+        }
 
-    return {"mode": "next", "data": actions, "count": len(actions),
-            "truncated": truncated, "suggested_next": []}
+    return {
+        "mode": "next",
+        "data": actions,
+        "count": len(actions),
+        "truncated": truncated,
+        "suggested_next": [],
+    }
 
 
 def mode_sessions(conn: sqlite3.Connection, last: int, limit: int) -> dict:
@@ -369,11 +399,17 @@ def mode_sessions(conn: sqlite3.Connection, last: int, limit: int) -> dict:
         for r in rows
     ]
 
-    return {"mode": "sessions", "data": sessions, "count": len(sessions),
-            "truncated": truncated, "suggested_next": []}
+    return {
+        "mode": "sessions",
+        "data": sessions,
+        "count": len(sessions),
+        "truncated": truncated,
+        "suggested_next": [],
+    }
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -393,7 +429,12 @@ def main() -> None:
     parser.add_argument("--domain", help="Pattern domain filter")
     parser.add_argument("--state", help="Pattern state filter")
     parser.add_argument("--last", type=int, default=5, help="Return N most recent (default: 5)")
-    parser.add_argument("--limit", type=int, default=DEFAULT_LIMIT, help=f"Max results (default: {DEFAULT_LIMIT}, max: {MAX_LIMIT})")
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=DEFAULT_LIMIT,
+        help=f"Max results (default: {DEFAULT_LIMIT}, max: {MAX_LIMIT})",
+    )
 
     args = parser.parse_args()
     limit = _clamp_limit(args.limit)

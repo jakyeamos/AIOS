@@ -107,4 +107,3 @@ def watch_repo(
             callback(WatchEvent(changed_files=sorted(pending), reason="polling-watch"))
             pending.clear()
         time.sleep(poll_interval_seconds)
-

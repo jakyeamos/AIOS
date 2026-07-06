@@ -30,13 +30,19 @@ PROJECTS_DIR = str(get_vault_subpath("03 Projects"))
 HANDOFFS_DIR = str(get_vault_subpath("02 AI OS", "02 Session Handoffs"))
 ARCHIVE_DIR = str(get_vault_subpath("09 Archive", "AI History"))
 
-SYNTHESIS_SECTIONS = ["Recurring Themes", "Repeated Blind Spots", "Prompt Patterns", "Concepts Deserving a Page"]
+SYNTHESIS_SECTIONS = [
+    "Recurring Themes",
+    "Repeated Blind Spots",
+    "Prompt Patterns",
+    "Concepts Deserving a Page",
+]
 STALE_DAYS = 30
 
 
 # ---------------------------------------------------------------------------
 # Check 1: Project notes with blank Current Focus
 # ---------------------------------------------------------------------------
+
 
 def check_blank_current_focus() -> list[dict]:
     issues = []
@@ -55,24 +61,23 @@ def check_blank_current_focus() -> list[dict]:
             continue
         section_text = m.group(1).strip()
         # Blank, comment placeholder, or very short
-        is_blank = (
-            not section_text
-            or section_text.startswith("<!--")
-            or len(section_text) <= 20
-        )
+        is_blank = not section_text or section_text.startswith("<!--") or len(section_text) <= 20
         if is_blank:
-            issues.append({
-                "check": "blank_current_focus",
-                "path": path,
-                "note": fname.replace(".md", ""),
-                "detail": f"Current Focus section is empty or placeholder ({len(section_text)} chars)",
-            })
+            issues.append(
+                {
+                    "check": "blank_current_focus",
+                    "path": path,
+                    "note": fname.replace(".md", ""),
+                    "detail": f"Current Focus section is empty or placeholder ({len(section_text)} chars)",
+                }
+            )
     return issues
 
 
 # ---------------------------------------------------------------------------
 # Check 2: Batch notes with empty synthesis sections
 # ---------------------------------------------------------------------------
+
 
 def check_empty_batch_synthesis() -> list[dict]:
     issues = []
@@ -92,23 +97,24 @@ def check_empty_batch_synthesis() -> list[dict]:
                 continue
             section_text = m.group(1).strip()
             is_empty = (
-                not section_text
-                or section_text.startswith("<!--")
-                or len(section_text) <= 30
+                not section_text or section_text.startswith("<!--") or len(section_text) <= 30
             )
             if is_empty:
-                issues.append({
-                    "check": "empty_batch_synthesis",
-                    "path": path,
-                    "note": fname.replace(".md", ""),
-                    "detail": f"Section '{section}' is empty or placeholder",
-                })
+                issues.append(
+                    {
+                        "check": "empty_batch_synthesis",
+                        "path": path,
+                        "note": fname.replace(".md", ""),
+                        "detail": f"Section '{section}' is empty or placeholder",
+                    }
+                )
     return issues
 
 
 # ---------------------------------------------------------------------------
 # Check 3: Stale pattern candidates
 # ---------------------------------------------------------------------------
+
 
 def check_stale_patterns() -> list[dict]:
     issues = []
@@ -127,14 +133,16 @@ def check_stale_patterns() -> list[dict]:
         rows = cur.fetchall()
         conn.close()
         for pid, class_, title, created_at in rows:
-            issues.append({
-                "check": "stale_pattern_candidate",
-                "id": pid,
-                "class": class_,
-                "title": title,
-                "created_at": created_at,
-                "detail": f"Pattern candidate untouched for >{STALE_DAYS} days — promote or discard",
-            })
+            issues.append(
+                {
+                    "check": "stale_pattern_candidate",
+                    "id": pid,
+                    "class": class_,
+                    "title": title,
+                    "created_at": created_at,
+                    "detail": f"Pattern candidate untouched for >{STALE_DAYS} days — promote or discard",
+                }
+            )
     except Exception as e:
         issues.append({"check": "stale_pattern_candidate", "error": str(e)})
     return issues
@@ -143,6 +151,7 @@ def check_stale_patterns() -> list[dict]:
 # ---------------------------------------------------------------------------
 # Check 4: Orphan handoff notes
 # ---------------------------------------------------------------------------
+
 
 def check_orphan_handoffs() -> list[dict]:
     """Handoff notes whose project_id has no active project in the DB."""
@@ -172,12 +181,14 @@ def check_orphan_handoffs() -> list[dict]:
         project_slug = m.group(1).lower()
         if active_names and project_slug not in active_names:
             path = os.path.join(HANDOFFS_DIR, fname)
-            issues.append({
-                "check": "orphan_handoff",
-                "path": path,
-                "note": fname.replace(".md", ""),
-                "detail": f"Project slug '{project_slug}' not found in active projects (may need project registration)",
-            })
+            issues.append(
+                {
+                    "check": "orphan_handoff",
+                    "path": path,
+                    "note": fname.replace(".md", ""),
+                    "detail": f"Project slug '{project_slug}' not found in active projects (may need project registration)",
+                }
+            )
     return issues
 
 
@@ -200,12 +211,14 @@ def check_deferred_imports() -> list[dict]:
         conn.close()
         for source, count in rows:
             if count >= DEFERRED_THRESHOLD:
-                issues.append({
-                    "check": "deferred_import_backlog",
-                    "source": source,
-                    "count": count,
-                    "detail": f"{count} deferred '{source}' imports — run review-imports.sh to process",
-                })
+                issues.append(
+                    {
+                        "check": "deferred_import_backlog",
+                        "source": source,
+                        "count": count,
+                        "detail": f"{count} deferred '{source}' imports — run review-imports.sh to process",
+                    }
+                )
     except Exception as e:
         issues.append({"check": "deferred_import_backlog", "error": str(e)})
     return issues
@@ -214,6 +227,7 @@ def check_deferred_imports() -> list[dict]:
 # ---------------------------------------------------------------------------
 # Check 6: Rules without body text
 # ---------------------------------------------------------------------------
+
 
 def check_rules_missing_body() -> list[dict]:
     """Active rules (state='rule') that have no body text cannot inject useful context."""
@@ -226,12 +240,14 @@ def check_rules_missing_body() -> list[dict]:
         rows = cur.fetchall()
         conn.close()
         for pid, title in rows:
-            issues.append({
-                "check": "rule_missing_body",
-                "id": pid,
-                "title": title,
-                "detail": "Rule has no body — cannot inject meaningful context; add body text via approve-pattern.py",
-            })
+            issues.append(
+                {
+                    "check": "rule_missing_body",
+                    "id": pid,
+                    "title": title,
+                    "detail": "Rule has no body — cannot inject meaningful context; add body text via approve-pattern.py",
+                }
+            )
     except Exception as e:
         issues.append({"check": "rule_missing_body", "error": str(e)})
     return issues
@@ -240,6 +256,7 @@ def check_rules_missing_body() -> list[dict]:
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def main() -> None:
     all_issues = []

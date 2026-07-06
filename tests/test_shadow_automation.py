@@ -51,7 +51,9 @@ def test_approve_candidate_sets_approved_in_person() -> None:
 
     state = approve_candidate(conn, candidate_id)
 
-    row = conn.execute("SELECT automation_state FROM shadow_candidates WHERE id = ?", (candidate_id,)).fetchone()
+    row = conn.execute(
+        "SELECT automation_state FROM shadow_candidates WHERE id = ?", (candidate_id,)
+    ).fetchone()
     assert state == "APPROVED_IN_PERSON"
     assert row["automation_state"] == "APPROVED_IN_PERSON"
 

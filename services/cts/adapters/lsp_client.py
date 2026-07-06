@@ -17,4 +17,3 @@ class LSPClient:
             raise RuntimeError("LSP command not configured.")
         # Placeholder API contract for Phase 6 wiring.
         return []
-

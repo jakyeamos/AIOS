@@ -184,9 +184,13 @@ def _comparison_axes(
 ) -> dict[str, str]:
     return {
         "plan_family": "execution_symmetric" if plan_kind == "execution_symmetric" else "generic",
-        "workflow_family": "gsd_phase" if planning_context.workflow == "gsd" else "natural_language",
+        "workflow_family": "gsd_phase"
+        if planning_context.workflow == "gsd"
+        else "natural_language",
         "invocation_family": "slash_command" if route_trigger == "slash_command" else "auto_routed",
-        "lens_family": "with_selected_lenses" if planning_context.selected_lenses else "without_selected_lenses",
+        "lens_family": "with_selected_lenses"
+        if planning_context.selected_lenses
+        else "without_selected_lenses",
     }
 
 

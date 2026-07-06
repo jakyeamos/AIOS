@@ -39,4 +39,3 @@ def score_set(predicted_items: Iterable[str], actual_items: Iterable[str]) -> Sc
     r = recall(predicted, actual)
     f1 = f1_score(predicted, actual)
     return ScoreBundle(precision=p, recall=r, f1=f1, task_success=bool(predicted & actual))
-

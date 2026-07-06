@@ -1108,9 +1108,10 @@ def test_managed_runtime_completes_via_explicit_handshake(runtime_db: Path, tmp_
     ).fetchone()
     assert tmcp_artifact is not None
     assert Path(tmcp_artifact[1]).exists()
-    assert json.loads(tmcp_artifact[2])["tmcp_receipt_id"] == workflow_payload["artifacts"][
-        "tmcp_packet"
-    ]["receipt_id"]
+    assert (
+        json.loads(tmcp_artifact[2])["tmcp_receipt_id"]
+        == workflow_payload["artifacts"]["tmcp_packet"]["receipt_id"]
+    )
 
     prompt = conn.execute(
         """

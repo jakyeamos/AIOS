@@ -225,7 +225,9 @@ def build_voice_packet(
         if isinstance(rule, dict) and str(rule.get("rule", "")).strip()
     ]
     mode_rules = [str(rule) for rule in mode_profile.get("style_rules", []) if str(rule).strip()]
-    mode_anti = [str(rule) for rule in mode_profile.get("anti_style_rules", []) if str(rule).strip()]
+    mode_anti = [
+        str(rule) for rule in mode_profile.get("anti_style_rules", []) if str(rule).strip()
+    ]
     evidence_refs = []
     for example in examples:
         evidence_refs.append(
@@ -311,7 +313,9 @@ def _transform_outreach(text: str) -> str:
     result = text
     result = re.sub(r"\bI am interested in\b", "I was interested in", result)
     result = re.sub(r"\bwould like to connect\b", "would be glad to connect", result)
-    result = re.sub(r"\bwould appreciate any advice\b", "would appreciate any practical advice", result)
+    result = re.sub(
+        r"\bwould appreciate any advice\b", "would appreciate any practical advice", result
+    )
     return result
 
 
@@ -337,7 +341,9 @@ def _transform_creative(text: str) -> str:
     return result
 
 
-def score_quality(original: str, output: str, packet: VoicePacket) -> tuple[dict[str, int], tuple[str, ...]]:
+def score_quality(
+    original: str, output: str, packet: VoicePacket
+) -> tuple[dict[str, int], tuple[str, ...]]:
     original_tokens = _tokenize(original)
     output_tokens = _tokenize(output)
     overlap = len(original_tokens & output_tokens) / max(len(original_tokens), 1)
@@ -560,7 +566,10 @@ def record_feedback(
 ) -> dict[str, Any]:
     ensure_personalized_humanizer_schema(conn)
     feedback_id = f"phf-{uuid.uuid4().hex[:12]}"
-    evidence = [{"type": "humanizer_run", "id": run_id}, {"type": "feedback_verdict", "value": verdict}]
+    evidence = [
+        {"type": "humanizer_run", "id": run_id},
+        {"type": "feedback_verdict", "value": verdict},
+    ]
     conn.execute(
         """
         INSERT INTO personalized_humanizer_feedback (
@@ -587,7 +596,10 @@ def record_feedback(
             mode=_mode_for_run(conn, run_id),
             proposed_rule=notes.strip(),
             rationale="User feedback supplied a possible reusable voice preference.",
-            evidence=[{"type": "feedback", "id": feedback_id}, {"type": "humanizer_run", "id": run_id}],
+            evidence=[
+                {"type": "feedback", "id": feedback_id},
+                {"type": "humanizer_run", "id": run_id},
+            ],
         )
 
     return {"feedback_id": feedback_id, "proposal": proposal}
@@ -602,7 +614,9 @@ def _profile_version_for_run(conn: sqlite3.Connection, run_id: str) -> str:
 
 
 def _mode_for_run(conn: sqlite3.Connection, run_id: str) -> str | None:
-    row = conn.execute("SELECT mode FROM personalized_humanizer_runs WHERE id = ?", (run_id,)).fetchone()
+    row = conn.execute(
+        "SELECT mode FROM personalized_humanizer_runs WHERE id = ?", (run_id,)
+    ).fetchone()
     return str(row[0]) if row else None
 
 

@@ -161,4 +161,3 @@ class TSConfigResolver:
             return pattern == value
         prefix, suffix = pattern.split("*", 1)
         return value.startswith(prefix) and value.endswith(suffix)
-

@@ -45,7 +45,7 @@ def parse_frontmatter(text: str) -> dict:
             key, _, val = line.partition(":")
             result[key.strip()] = val.strip()
     # Handle tags list
-    tags_match = re.search(r"^tags:\s*\n((?:\s+-\s+.+\n?)+)", text[:end + 4], re.MULTILINE)
+    tags_match = re.search(r"^tags:\s*\n((?:\s+-\s+.+\n?)+)", text[: end + 4], re.MULTILINE)
     if tags_match:
         result["tags"] = re.findall(r"-\s+(.+)", tags_match.group(1))
     return result
@@ -65,7 +65,7 @@ def excerpt(text: str, max_chars: int = MAX_EXCERPT_CHARS) -> str:
     if text.startswith("---"):
         end = text.find("\n---", 3)
         if end != -1:
-            text = text[end + 4:].lstrip()
+            text = text[end + 4 :].lstrip()
     # Skip H1
     text = re.sub(r"^#\s+.+\n", "", text, count=1)
     text = text.strip()
@@ -109,12 +109,14 @@ def mode_note(project_name: str) -> dict:
                 content = f.read()
             fm = parse_frontmatter(content)
             return {
-                "results": [{
-                    "path": path,
-                    "title": get_title(content, path),
-                    "excerpt": excerpt(content, 600),
-                    "tags": fm.get("tags", []),
-                }],
+                "results": [
+                    {
+                        "path": path,
+                        "title": get_title(content, path),
+                        "excerpt": excerpt(content, 600),
+                        "tags": fm.get("tags", []),
+                    }
+                ],
                 "count": 1,
             }
     return {"results": [], "count": 0, "error": f"No project note found for '{project_name}'"}
@@ -134,7 +136,9 @@ def mode_grep(terms: str, section: str | None = None, source: str | None = None)
             continue
         # If section filter, check that section exists and contains terms
         if section:
-            sec_pattern = re.compile(rf"## {re.escape(section)}\n(.*?)(?=\n## |\Z)", re.DOTALL | re.IGNORECASE)
+            sec_pattern = re.compile(
+                rf"## {re.escape(section)}\n(.*?)(?=\n## |\Z)", re.DOTALL | re.IGNORECASE
+            )
             sec_match = sec_pattern.search(content)
             if not sec_match:
                 continue
@@ -148,12 +152,14 @@ def mode_grep(terms: str, section: str | None = None, source: str | None = None)
     matches.sort(key=lambda x: x[0], reverse=True)
     results = []
     for _, path, content, fm in matches[:MAX_RESULTS]:
-        results.append({
-            "path": path,
-            "title": get_title(content, path),
-            "excerpt": excerpt(content),
-            "tags": fm.get("tags", []),
-        })
+        results.append(
+            {
+                "path": path,
+                "title": get_title(content, path),
+                "excerpt": excerpt(content),
+                "tags": fm.get("tags", []),
+            }
+        )
     return {"results": results, "count": len(results)}
 
 
@@ -185,13 +191,15 @@ def mode_handoffs(project_name: str, last: int = 3) -> dict:
         fm = parse_frontmatter(content)
         # Extract key sections for handoffs
         handoff_excerpt = _extract_handoff_sections(content)
-        results.append({
-            "path": path,
-            "title": fname.replace(".md", ""),
-            "excerpt": handoff_excerpt,
-            "tags": fm.get("tags", []),
-            "started": fm.get("started", ""),
-        })
+        results.append(
+            {
+                "path": path,
+                "title": fname.replace(".md", ""),
+                "excerpt": handoff_excerpt,
+                "tags": fm.get("tags", []),
+                "started": fm.get("started", ""),
+            }
+        )
     return {"results": results, "count": len(results)}
 
 
@@ -206,7 +214,7 @@ def _extract_handoff_sections(content: str) -> str:
             text = m.group(1).strip()
             if text and not text.startswith("<!--"):
                 parts.append(f"### {sec}\n{text[:200]}")
-    return "\n\n".join(parts)[:MAX_EXCERPT_CHARS * 2]
+    return "\n\n".join(parts)[: MAX_EXCERPT_CHARS * 2]
 
 
 def mode_tags(tags_str: str) -> dict:
@@ -226,12 +234,14 @@ def mode_tags(tags_str: str) -> dict:
     matches.sort(key=lambda x: x[0], reverse=True)
     results = []
     for _, path, content, fm in matches[:MAX_RESULTS]:
-        results.append({
-            "path": path,
-            "title": get_title(content, path),
-            "excerpt": excerpt(content),
-            "tags": fm.get("tags", []),
-        })
+        results.append(
+            {
+                "path": path,
+                "title": get_title(content, path),
+                "excerpt": excerpt(content),
+                "tags": fm.get("tags", []),
+            }
+        )
     return {"results": results, "count": len(results)}
 
 
@@ -240,9 +250,13 @@ def main() -> None:
     parser.add_argument("--note", help="Project name to retrieve project note")
     parser.add_argument("--grep", help="Terms to search for (space-separated)")
     parser.add_argument("--section", help="Limit grep to a specific H2 section")
-    parser.add_argument("--source", choices=["archive"], help="Restrict search scope (archive = 09 Archive/)")
+    parser.add_argument(
+        "--source", choices=["archive"], help="Restrict search scope (archive = 09 Archive/)"
+    )
     parser.add_argument("--handoffs", help="Project name to retrieve handoff notes")
-    parser.add_argument("--last", type=int, default=3, help="Number of handoffs to return (default: 3)")
+    parser.add_argument(
+        "--last", type=int, default=3, help="Number of handoffs to return (default: 3)"
+    )
     parser.add_argument("--tags", help="Comma-separated tags — return notes matching all")
     args = parser.parse_args()
 

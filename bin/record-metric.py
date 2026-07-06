@@ -29,8 +29,11 @@ DB = os.path.expanduser("~/AIOS/data/aios.db")
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
 
 KNOWN_METRICS = {
-    "first_pass_success", "follow_up_turns", "accepted_diffs",
-    "bug_reopen_rate", "retrieval_hit_rate",
+    "first_pass_success",
+    "follow_up_turns",
+    "accepted_diffs",
+    "bug_reopen_rate",
+    "retrieval_hit_rate",
 }
 
 
@@ -60,13 +63,15 @@ def main() -> None:
         idx = args.index("--session")
         if idx + 1 < len(args):
             session_id = args[idx + 1]
-            args = args[:idx] + args[idx + 2:]
+            args = args[:idx] + args[idx + 2 :]
 
     if not session_id:
         session_id = get_current_session()
 
     if not session_id:
-        print("ERROR: No session ID found. Pass --session <id> or ensure current_session pointer exists.")
+        print(
+            "ERROR: No session ID found. Pass --session <id> or ensure current_session pointer exists."
+        )
         sys.exit(1)
 
     if not args:
@@ -87,7 +92,9 @@ def main() -> None:
             print(f"ERROR: Value '{raw_val}' is not a number.")
             sys.exit(1)
         if name not in KNOWN_METRICS:
-            print(f"WARNING: '{name}' is not a known metric. Known: {', '.join(sorted(KNOWN_METRICS))}")
+            print(
+                f"WARNING: '{name}' is not a known metric. Known: {', '.join(sorted(KNOWN_METRICS))}"
+            )
         metrics[name] = value
 
     try:

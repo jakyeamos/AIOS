@@ -187,7 +187,12 @@ def _script_command(scripts: dict[str, Any], key: str) -> str | None:
 def _infer_project_config(conn: sqlite3.Connection, project_id: str) -> dict[str, Any]:
     row = _load_project_row(conn, project_id)
     if row is None:
-        return {"project_id": project_id, "applies_to": ["all"], "full_pipeline": False, "gates": {}}
+        return {
+            "project_id": project_id,
+            "applies_to": ["all"],
+            "full_pipeline": False,
+            "gates": {},
+        }
     name, repo_path_raw = row
     repo_path = Path(repo_path_raw).expanduser()
     scripts = _load_package_scripts(repo_path)
@@ -210,9 +215,14 @@ def _infer_project_config(conn: sqlite3.Connection, project_id: str) -> dict[str
     if isinstance(scripts.get("test"), str):
         gates["test"] = {"command": "npm test", "working_directory": "."}
     if (repo_path / "scripts" / "aios-architecture-check.mjs").exists():
-        gates["architecture"] = {"command": "node scripts/aios-architecture-check.mjs", "working_directory": "."}
+        gates["architecture"] = {
+            "command": "node scripts/aios-architecture-check.mjs",
+            "working_directory": ".",
+        }
     workflow_dir = repo_path / ".github" / "workflows"
-    if workflow_dir.exists() and any(path.suffix in {".yml", ".yaml"} for path in workflow_dir.iterdir()):
+    if workflow_dir.exists() and any(
+        path.suffix in {".yml", ".yaml"} for path in workflow_dir.iterdir()
+    ):
         gates["ci"] = {"command": ".github/workflows", "working_directory": "."}
     return {
         "project_id": name or project_id,
@@ -304,12 +314,18 @@ def get_project_quality_pipeline(
     )
     if not project_config:
         project_config = _infer_project_config(conn, project_id)
-    project_gates = project_config.get("gates") if isinstance(project_config.get("gates"), dict) else {}
+    project_gates = (
+        project_config.get("gates") if isinstance(project_config.get("gates"), dict) else {}
+    )
     project_applicability = _string_list(project_config.get("applies_to"), ["all"])
     repo_class = _optional_string(project_config.get("repo_class"))
     class_required_gates = _required_gates_for_class(standard, repo_class)
     latest = _latest_runs(conn, project_id)
-    blocked_reason = project_config.get("blocked_reason") if isinstance(project_config.get("blocked_reason"), str) else None
+    blocked_reason = (
+        project_config.get("blocked_reason")
+        if isinstance(project_config.get("blocked_reason"), str)
+        else None
+    )
 
     gates: list[PipelineGateSummary] = []
     for gate in standard_gates:
@@ -327,7 +343,9 @@ def get_project_quality_pipeline(
             if class_required_gates is not None
             else bool(gate.get("required", False))
         )
-        gate_config = project_gates.get(gate_key) if isinstance(project_gates.get(gate_key), dict) else None
+        gate_config = (
+            project_gates.get(gate_key) if isinstance(project_gates.get(gate_key), dict) else None
+        )
         latest_run = latest.get(gate_key)
         configured = gate_config is not None
         status = "missing" if required and not configured else "stale"
@@ -335,7 +353,11 @@ def get_project_quality_pipeline(
             status = "blocked"
         if latest_run:
             raw_status = str(latest_run["status"])
-            status = raw_status if raw_status in {"pass", "fail", "running", "stale", "blocked", "unknown"} else "unknown"
+            status = (
+                raw_status
+                if raw_status in {"pass", "fail", "running", "stale", "blocked", "unknown"}
+                else "unknown"
+            )
         gates.append(
             {
                 "key": gate_key,
@@ -346,10 +368,20 @@ def get_project_quality_pipeline(
                 "required": required,
                 "configured": configured,
                 "status": status,  # type: ignore[typeddict-item]
-                "command": str(gate_config.get("command")) if gate_config and gate_config.get("command") else latest_run.get("command") if latest_run else None,
-                "working_directory": str(gate_config.get("working_directory")) if gate_config and gate_config.get("working_directory") else None,
+                "command": str(gate_config.get("command"))
+                if gate_config and gate_config.get("command")
+                else latest_run.get("command")
+                if latest_run
+                else None,
+                "working_directory": str(gate_config.get("working_directory"))
+                if gate_config and gate_config.get("working_directory")
+                else None,
                 "latest_run_id": latest_run["id"] if latest_run else None,
-                "source": latest_run["source"] if latest_run else "configured" if configured else None,
+                "source": latest_run["source"]
+                if latest_run
+                else "configured"
+                if configured
+                else None,
                 "evidence": latest_run["evidence"] if latest_run else [],
                 "completed_at": latest_run["completed_at"] if latest_run else None,
                 "blocked_reason": blocked_reason if status == "blocked" else None,

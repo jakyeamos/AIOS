@@ -21,14 +21,15 @@ from collections import Counter
 from datetime import UTC, datetime
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
-MIN_FREQUENCY = 2          # min occurrences before a pattern is worth recording
-MIN_PROMPT_LENGTH = 20     # ignore very short prompts as noise
-TOP_N = 10                 # max patterns extracted per class per run
+MIN_FREQUENCY = 2  # min occurrences before a pattern is worth recording
+MIN_PROMPT_LENGTH = 20  # ignore very short prompts as noise
+TOP_N = 10  # max patterns extracted per class per run
 
 
 # ---------------------------------------------------------------------------
 # DB helpers
 # ---------------------------------------------------------------------------
+
 
 def load_existing_titles(conn: sqlite3.Connection) -> set[str]:
     cur = conn.execute("SELECT title FROM patterns")
@@ -41,17 +42,19 @@ def _table_names(conn: sqlite3.Connection) -> set[str]:
 
 
 CLASS_TO_DOMAIN = {
-    "bug_fix":      "debugging",
-    "failure":      "debugging",
-    "prompt":       "prompting",
+    "bug_fix": "debugging",
+    "failure": "debugging",
+    "prompt": "prompting",
     "architecture": "architecture",
-    "refactor":     "architecture",
-    "workflow":     "workflow",
-    "assumption":   "workflow",
+    "refactor": "architecture",
+    "workflow": "workflow",
+    "assumption": "workflow",
 }
 
 
-def insert_pattern(conn: sqlite3.Connection, class_: str, title: str, evidence: list, confidence: float) -> None:
+def insert_pattern(
+    conn: sqlite3.Connection, class_: str, title: str, evidence: list, confidence: float
+) -> None:
     domain = CLASS_TO_DOMAIN.get(class_, "unclassified")
     now = datetime.now(UTC).isoformat()
     conn.execute(
@@ -80,21 +83,96 @@ def insert_pattern(conn: sqlite3.Connection, class_: str, title: str, evidence: 
 # ---------------------------------------------------------------------------
 
 STOP_WORDS = {
-    "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for",
-    "of", "with", "by", "from", "up", "about", "into", "is", "are", "was",
-    "were", "be", "been", "being", "have", "has", "had", "do", "does", "did",
-    "will", "would", "could", "should", "may", "might", "can", "this", "that",
-    "these", "those", "it", "its", "you", "your", "our", "their", "them",
-    "they", "his", "her", "not", "no", "also", "just", "some", "than",
-    "then", "when", "where", "which", "what", "here", "there", "each",
+    "the",
+    "a",
+    "an",
+    "and",
+    "or",
+    "but",
+    "in",
+    "on",
+    "at",
+    "to",
+    "for",
+    "of",
+    "with",
+    "by",
+    "from",
+    "up",
+    "about",
+    "into",
+    "is",
+    "are",
+    "was",
+    "were",
+    "be",
+    "been",
+    "being",
+    "have",
+    "has",
+    "had",
+    "do",
+    "does",
+    "did",
+    "will",
+    "would",
+    "could",
+    "should",
+    "may",
+    "might",
+    "can",
+    "this",
+    "that",
+    "these",
+    "those",
+    "it",
+    "its",
+    "you",
+    "your",
+    "our",
+    "their",
+    "them",
+    "they",
+    "his",
+    "her",
+    "not",
+    "no",
+    "also",
+    "just",
+    "some",
+    "than",
+    "then",
+    "when",
+    "where",
+    "which",
+    "what",
+    "here",
+    "there",
+    "each",
 }
 
 # Path and identity tokens — never meaningful as pattern bigrams
 PATH_TOKENS = {
-    "jakyeamos", "vaults", "command", "center", "downloads", "desktop",
-    "users", "python3", "sqlite3", "obsidian", "claude", "codex",
-    "localhost", "github", "https", "http", "file", "home",
+    "jakyeamos",
+    "vaults",
+    "command",
+    "center",
+    "downloads",
+    "desktop",
+    "users",
+    "python3",
+    "sqlite3",
+    "obsidian",
+    "claude",
+    "codex",
+    "localhost",
+    "github",
+    "https",
+    "http",
+    "file",
+    "home",
 }
+
 
 def tokenize(text: str) -> list[str]:
     words = re.findall(r"[a-z]{4,}", text.lower())
@@ -119,7 +197,7 @@ def extract_prompt_patterns(conn: sqlite3.Connection, existing: set[str]) -> lis
 
     for classification, text in rows:
         tokens = tokenize(text)
-        bigrams = [f"{tokens[i]} {tokens[i+1]}" for i in range(len(tokens) - 1)]
+        bigrams = [f"{tokens[i]} {tokens[i + 1]}" for i in range(len(tokens) - 1)]
         if classification not in class_bigrams:
             class_bigrams[classification] = Counter()
             class_prompt_ids[classification] = {}
@@ -148,6 +226,7 @@ def extract_prompt_patterns(conn: sqlite3.Connection, existing: set[str]) -> lis
 # Source 2: bug_log — class: bug_fix
 # ---------------------------------------------------------------------------
 
+
 def extract_bug_patterns(conn: sqlite3.Connection, existing: set[str]) -> list[dict]:
     try:
         cur = conn.execute("SELECT id, symptom FROM bug_log WHERE symptom IS NOT NULL")
@@ -172,7 +251,7 @@ def extract_bug_patterns(conn: sqlite3.Connection, existing: set[str]) -> list[d
     global_bigrams: Counter = Counter()
     bigram_to_bug_ids: dict[str, list[str]] = {}
     for bug_id, tokens in symptom_tokens:
-        bigrams = {f"{tokens[i]} {tokens[i+1]}" for i in range(len(tokens) - 1)}
+        bigrams = {f"{tokens[i]} {tokens[i + 1]}" for i in range(len(tokens) - 1)}
         global_bigrams.update(bigrams)
         for bg in bigrams:
             bigram_to_bug_ids.setdefault(bg, []).append(bug_id)
@@ -357,7 +436,9 @@ def extract_workflow_patterns(conn: sqlite3.Connection, existing: set[str]) -> l
             group["last_seen"] = seen_at
 
     inserted = []
-    for title, group in sorted(grouped.items(), key=lambda item: len(item[1]["sessions"]), reverse=True)[:TOP_N]:
+    for title, group in sorted(
+        grouped.items(), key=lambda item: len(item[1]["sessions"]), reverse=True
+    )[:TOP_N]:
         session_count = len(group["sessions"])
         if session_count < WORKFLOW_MIN_SESSIONS:
             continue
@@ -400,6 +481,7 @@ def extract_workflow_patterns(conn: sqlite3.Connection, existing: set[str]) -> l
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def main() -> None:
     import argparse

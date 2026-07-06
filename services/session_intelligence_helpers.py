@@ -147,9 +147,7 @@ def _artifact_probe(path: str | None) -> dict[str, object]:
 def _json_summary(loaded: object) -> dict[str, object]:
     if isinstance(loaded, dict):
         array_lengths = {
-            str(key): len(value)
-            for key, value in loaded.items()
-            if isinstance(value, list)
+            str(key): len(value) for key, value in loaded.items() if isinstance(value, list)
         }
         return {
             "kind": "json",
@@ -189,7 +187,9 @@ def _git_history(repo: str | None) -> dict[str, object]:
         "repo": str(repo_path),
         "git": {
             "recent_commits": _git(repo_path, ["log", "--oneline", "--decorate", "-5"]),
-            "latest_commit": _git(repo_path, ["show", "--stat", "--oneline", "--no-renames", "HEAD"]),
+            "latest_commit": _git(
+                repo_path, ["show", "--stat", "--oneline", "--no-renames", "HEAD"]
+            ),
             "recent_tags": _git(repo_path, ["tag", "--sort=-creatordate", "--merged", "HEAD"]),
         },
     }
@@ -232,9 +232,7 @@ def _package_check(repo: str | None) -> dict[str, object]:
         "lockfiles": _lockfiles(repo_path),
         "scripts": {str(key): str(value) for key, value in sorted(scripts.items())},
         "quality_scripts": [
-            name
-            for name in ("lint", "typecheck", "test", "build", "verify")
-            if name in scripts
+            name for name in ("lint", "typecheck", "test", "build", "verify") if name in scripts
         ],
     }
 

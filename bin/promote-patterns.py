@@ -38,15 +38,26 @@ LOG = os.path.expanduser("~/AIOS/logs/promote-patterns.log")
 
 # Tokens that indicate a path/noise bigram — not worth a wiki page
 NOISE_TOKENS = {
-    "jakyeamos", "vaults", "command", "center", "downloads", "desktop",
-    "users", "python3", "sqlite3", "aios", "claude", "codex", "obsidian",
+    "jakyeamos",
+    "vaults",
+    "command",
+    "center",
+    "downloads",
+    "desktop",
+    "users",
+    "python3",
+    "sqlite3",
+    "aios",
+    "claude",
+    "codex",
+    "obsidian",
 }
 
 # Class-specific minimum confidence
 CLASS_THRESHOLDS = {
     "prompt": 0.60,
     "workflow": 0.70,
-    "bug_fix": 0.0,       # all bug_fix candidates
+    "bug_fix": 0.0,  # all bug_fix candidates
     "architecture": 0.0,
     "failure": 0.0,
     "assumption": 0.0,
@@ -94,8 +105,9 @@ def wiki_title(title: str, class_: str) -> str:
     return title
 
 
-def generate_wiki_stub(pattern_id: str, class_: str, title: str,
-                        evidence: list, confidence: float) -> tuple[str, str]:
+def generate_wiki_stub(
+    pattern_id: str, class_: str, title: str, evidence: list, confidence: float
+) -> tuple[str, str]:
     """Returns (wiki_content, slug)."""
     slug = title_to_slug(title)
     page_title = wiki_title(title, class_)
@@ -166,7 +178,7 @@ def promote(dry_run: bool = False) -> None:
     )
     candidates = cur.fetchall()
 
-    promoted = []        # observation → knowledge + wiki stub
+    promoted = []  # observation → knowledge + wiki stub
     skipped_noise = []
     skipped_threshold = []
 
@@ -223,12 +235,16 @@ def promote(dry_run: bool = False) -> None:
     for title, conf, thresh in skipped_threshold:
         print(f"  conf={conf:.2f} < {thresh:.2f}  {title[:60]}")
 
-    log(f"promoted={len(promoted)} noise_discarded={len(skipped_noise)} below_threshold={len(skipped_threshold)}")
+    log(
+        f"promoted={len(promoted)} noise_discarded={len(skipped_noise)} below_threshold={len(skipped_threshold)}"
+    )
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dry-run", action="store_true", help="Show what would happen without writing")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Show what would happen without writing"
+    )
     args = parser.parse_args()
     promote(dry_run=args.dry_run)
 

@@ -177,4 +177,3 @@ class FallbackTrigger:
     affected_files: list[str]
     recommended_action: FallbackAction
     confidence_at_trigger: float
-

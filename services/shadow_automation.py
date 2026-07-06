@@ -121,7 +121,11 @@ def run_full_automation_pipeline(
         repo_path=repo,
     ):
         _set_state(conn, candidate_id, "BLOCKED_DIRTY_REPO")
-        return {"candidate_id": candidate_id, "final_state": "BLOCKED_DIRTY_REPO", "report_path": None}
+        return {
+            "candidate_id": candidate_id,
+            "final_state": "BLOCKED_DIRTY_REPO",
+            "report_path": None,
+        }
     worktree_path = create_shadow_worktree(
         repo_path=repo,
         start_sha=start_sha,
@@ -129,7 +133,11 @@ def run_full_automation_pipeline(
     )
     if Path(worktree_path).resolve() == repo.resolve():
         _set_state(conn, candidate_id, "BLOCKED_DIRTY_REPO")
-        return {"candidate_id": candidate_id, "final_state": "BLOCKED_DIRTY_REPO", "report_path": None}
+        return {
+            "candidate_id": candidate_id,
+            "final_state": "BLOCKED_DIRTY_REPO",
+            "report_path": None,
+        }
     _set_state(conn, candidate_id, "SHADOW_BRANCH_CREATED")
     _set_state(conn, candidate_id, "TASK_PACKET_GENERATED")
     subprocess.run(["aios", "eval", "record-run"], cwd=worktree_path, check=False)
@@ -143,7 +151,9 @@ def run_full_automation_pipeline(
     )
     _set_state(conn, candidate_id, "VERIFICATION_STARTED")
     _set_state(conn, candidate_id, "SCORING_STARTED")
-    report_path = _write_report(candidate_id, start_sha=start_sha, branch_name=f"aios/eval/{candidate_id}/peer-shadow")
+    report_path = _write_report(
+        candidate_id, start_sha=start_sha, branch_name=f"aios/eval/{candidate_id}/peer-shadow"
+    )
     _set_state(conn, candidate_id, "COMPARISON_REPORT_CREATED")
     failures = [] if verification.returncode == 0 else ["Shadow verification command failed."]
     for failure in failures:

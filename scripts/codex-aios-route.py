@@ -21,7 +21,9 @@ def main() -> int:
     parser.add_argument("objective", help="Task objective to route through AIOS")
     parser.add_argument("--project", default=None, help="Project id, name, or repo path")
     parser.add_argument("--db", default=str(DEFAULT_DB), help="AIOS SQLite database")
-    parser.add_argument("--cwd", default=os.getcwd(), help="Workspace path used for project inference")
+    parser.add_argument(
+        "--cwd", default=os.getcwd(), help="Workspace path used for project inference"
+    )
     parser.add_argument(
         "--managed",
         action="store_true",
@@ -159,7 +161,9 @@ def load_projects(db_path: Path) -> list[dict[str, str]]:
 def start_work(*, db_path: Path, objective: str, project_id: str) -> dict[str, Any]:
     result = run_json_command(start_work_command(db_path, objective, project_id))
     if is_implicit_session_not_found(result):
-        result = run_json_command(start_work_command(db_path, objective, project_id, detach_session=True))
+        result = run_json_command(
+            start_work_command(db_path, objective, project_id, detach_session=True)
+        )
     return result
 
 

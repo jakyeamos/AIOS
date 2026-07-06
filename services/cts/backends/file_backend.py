@@ -58,4 +58,3 @@ class FileBackend:
             items=items,
             warnings=[] if items else ["File fallback returned no results."],
         )
-

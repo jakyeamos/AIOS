@@ -170,9 +170,7 @@ def test_harvest_reports_stale_sources_against_existing_lock(tmp_path: Path) -> 
         encoding="utf-8",
     )
 
-    result = harvest_skills_library(
-        HarvestOptions(roots=(project,), out=out, dry_run=True)
-    )
+    result = harvest_skills_library(HarvestOptions(roots=(project,), out=out, dry_run=True))
 
     assert result["summary"]["graph_diff"]["changed_source_count"] >= 1
 

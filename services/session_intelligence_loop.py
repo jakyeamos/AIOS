@@ -490,9 +490,7 @@ def implement_session_intelligence_candidates(
     now = _now()
     grouped: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     for candidate in candidates:
-        grouped[(candidate["lane"], _candidate_implementation_family(candidate))].append(
-            candidate
-        )
+        grouped[(candidate["lane"], _candidate_implementation_family(candidate))].append(candidate)
 
     implementation_ids: list[str] = []
     for (candidate_lane, helper_family), family_candidates in sorted(

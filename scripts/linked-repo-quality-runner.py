@@ -187,7 +187,9 @@ def _print_json(payload: dict[str, Any]) -> None:
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run or report AIOS-owned Phase 24 linked-repo gates.")
+    parser = argparse.ArgumentParser(
+        description="Run or report AIOS-owned Phase 24 linked-repo gates."
+    )
     parser.add_argument("--project")
     parser.add_argument("--gate")
     parser.add_argument("--dry-run", action="store_true")
@@ -196,7 +198,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--db", type=Path, default=DEFAULT_DB_PATH)
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     parser.add_argument("--timeout-seconds", type=int, default=900)
-    parser.add_argument("--status", choices=["pass", "fail", "running", "stale", "missing", "blocked", "unknown"], default="pass")
+    parser.add_argument(
+        "--status",
+        choices=["pass", "fail", "running", "stale", "missing", "blocked", "unknown"],
+        default="pass",
+    )
     parser.add_argument("--evidence", action="append", default=[])
     return parser.parse_args()
 
@@ -230,7 +236,14 @@ def main() -> int:
                 started_at=started_at,
                 completed_at=completed_at,
             )
-        _print_json({**gate, "mode": "record_only" if args.record_only else "execute", "status": status, "run_id": run_id})
+        _print_json(
+            {
+                **gate,
+                "mode": "record_only" if args.record_only else "execute",
+                "status": status,
+                "run_id": run_id,
+            }
+        )
         return 0
     except (OSError, sqlite3.Error, ValueError) as exc:
         print(str(exc), file=sys.stderr)

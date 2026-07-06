@@ -109,8 +109,16 @@ EXCLUDED_SUFFIXES = {
     ".zip",
 }
 SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
-    ("private_key", re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----", re.S)),
-    ("api_key_assignment", re.compile(r"(?i)\b(api[_-]?key|token|secret|password)\s*[:=]\s*['\"]?([A-Za-z0-9_\-./+=]{16,})")),
+    (
+        "private_key",
+        re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----", re.S),
+    ),
+    (
+        "api_key_assignment",
+        re.compile(
+            r"(?i)\b(api[_-]?key|token|secret|password)\s*[:=]\s*['\"]?([A-Za-z0-9_\-./+=]{16,})"
+        ),
+    ),
     ("github_token", re.compile(r"\bgh[pousr]_[A-Za-z0-9_]{20,}\b")),
     ("openai_key", re.compile(r"\bsk-[A-Za-z0-9_\-]{20,}\b")),
     ("connection_string", re.compile(r"(?i)\b(postgres|mysql|mongodb|redis)://[^\s)>\"]+")),
@@ -119,7 +127,16 @@ DEFAULT_GRAPH_PROFILE_PATH = Path("config/tmcp/canonical-graph.json")
 TASK_KEYWORDS = {
     "audit": ("audit", "review", "inspect", "evaluate"),
     "implementation": ("implement", "edit", "patch", "fix", "refactor", "build"),
-    "planning": ("plan", "roadmap", "phase", "acceptance", "strategy", "strategies", "promotion", "compare"),
+    "planning": (
+        "plan",
+        "roadmap",
+        "phase",
+        "acceptance",
+        "strategy",
+        "strategies",
+        "promotion",
+        "compare",
+    ),
     "research": ("research", "investigate", "source", "citation"),
     "debugging": ("debug", "bug", "root cause", "failure"),
     "testing": ("test", "verify", "validate", "quality gate"),
@@ -416,7 +433,9 @@ def validate_generated_library(
 
     files = generation["files"]
     if dry_run:
-        check("dry-run-no-files-required", True, "Dry-run produced a generation plan without writes.")
+        check(
+            "dry-run-no-files-required", True, "Dry-run produced a generation plan without writes."
+        )
     else:
         check("output-exists", out.exists(), str(out))
         check("readme-exists", (out / "README.md").exists(), "README.md")
@@ -486,7 +505,9 @@ def validate_generated_library(
             )
     check("source-dispositions", True, "Every discovered source has an imported/skipped record.")
     check("secret-redaction", True, "Secret patterns are redacted before generated writes.")
-    check("dry-run-rerunnable", True, "Command accepts --dry-run and does not require output writes.")
+    check(
+        "dry-run-rerunnable", True, "Command accepts --dry-run and does not require output writes."
+    )
     failures = [item for item in checks if item["status"] == "fail"]
     passed = not failures
     return {"status": "pass" if passed else "fail", "passed": passed, "checks": checks}
@@ -526,7 +547,13 @@ def verify_tmcp_graph(
     )
 
     repaired = False
-    if repair and root.exists() and manifest and skill_dirs and (refresh or not graph_path.exists()):
+    if (
+        repair
+        and root.exists()
+        and manifest
+        and skill_dirs
+        and (refresh or not graph_path.exists())
+    ):
         graph_path.parent.mkdir(parents=True, exist_ok=True)
         graph_path.write_text(
             _existing_tmcp_graph_json(root, manifest, lock, graph_profile),
@@ -685,7 +712,9 @@ def _classify_candidate(candidate: CandidateFile) -> CandidateFile:
     if "skill.md" in path or "/skills/" in f"/{path}" or "skill" in text:
         classes.append("reusable skill")
     if any(marker in path for marker in ("agents.md", "claude.md", "gemini.md", ".cursorrules")):
-        classes.append("global instruction" if _looks_global(candidate) else "project-specific instruction")
+        classes.append(
+            "global instruction" if _looks_global(candidate) else "project-specific instruction"
+        )
     if any(marker in path for marker in ("workflow", "gsd", "slash", "commands")):
         classes.append("workflow prompt")
     if any(term in text for term in ("route", "routing", "when to use", "trigger")):
@@ -715,7 +744,11 @@ def _classify_candidate(candidate: CandidateFile) -> CandidateFile:
     candidate.slug = _source_slug(candidate)
     candidate.recommended_destination = _recommended_destination(candidate)
     candidate.source_tier = _source_tier(candidate)
-    candidate.risk_level = "high" if candidate.secret_findings else ("medium" if candidate.project_dependencies else "low")
+    candidate.risk_level = (
+        "high"
+        if candidate.secret_findings
+        else ("medium" if candidate.project_dependencies else "low")
+    )
     candidate.rewrite_status = "redacted" if candidate.secret_findings else "standardized"
     candidate.disposition = "imported"
     return candidate
@@ -734,7 +767,9 @@ def _plan_generation(
         candidate for candidate in candidates if "reusable skill" in candidate.classification
     ]
     skills = _consolidate_skill_groups(skill_sources)
-    workflows = [candidate for candidate in candidates if "workflow prompt" in candidate.classification]
+    workflows = [
+        candidate for candidate in candidates if "workflow prompt" in candidate.classification
+    ]
     global_instructions = [
         candidate for candidate in candidates if "global instruction" in candidate.classification
     ]
@@ -755,7 +790,8 @@ def _plan_generation(
     tmcp_sources = [
         candidate
         for candidate in candidates
-        if candidate.source_tier in {"project_authoritative", "personal_agent", "local_agent_config"}
+        if candidate.source_tier
+        in {"project_authoritative", "personal_agent", "local_agent_config"}
     ]
     if not tmcp_sources:
         tmcp_sources = candidates
@@ -783,7 +819,9 @@ def _plan_generation(
             _tmcp_files(tmcp_sources, skills, workflows, conflicts, generated_at, graph_profile)
         )
 
-    file_contents.update(_audit_files(candidates, skills, duplicate_groups, conflicts, generated_at))
+    file_contents.update(
+        _audit_files(candidates, skills, duplicate_groups, conflicts, generated_at)
+    )
     file_contents["README.md"] = _readme_markdown(generated_at, options)
     source_hashes = {
         source.slug: hashlib.sha256(source.redacted_content.encode("utf-8")).hexdigest()
@@ -791,31 +829,37 @@ def _plan_generation(
     }
     graph_diff = _graph_diff(out, file_contents, source_hashes, len(skills))
     _guard_large_graph_drop(graph_diff, graph_profile)
-    file_contents["manifest.json"] = json.dumps(
-        {
-            "generated_at": generated_at,
-            "compiler_version": COMPILER_VERSION,
-            "graph_profile": graph_profile,
-            "graph_diff": graph_diff,
-            "source_count": len(candidates),
-            "skill_count": len(skills),
-            "instruction_count": len(global_instructions) + len(project_instructions),
-            "workflow_count": len(workflows),
-            "tmcp": options.tmcp,
-            "skill_groups": [_skill_group_record(group) for group in skills],
-            "sources": manifest_sources,
-        },
-        indent=2,
-        sort_keys=True,
-    ) + "\n"
-    file_contents["skills.lock"] = json.dumps(
-        {
-            "compiler_version": COMPILER_VERSION,
-            "source_hashes": source_hashes,
-        },
-        indent=2,
-        sort_keys=True,
-    ) + "\n"
+    file_contents["manifest.json"] = (
+        json.dumps(
+            {
+                "generated_at": generated_at,
+                "compiler_version": COMPILER_VERSION,
+                "graph_profile": graph_profile,
+                "graph_diff": graph_diff,
+                "source_count": len(candidates),
+                "skill_count": len(skills),
+                "instruction_count": len(global_instructions) + len(project_instructions),
+                "workflow_count": len(workflows),
+                "tmcp": options.tmcp,
+                "skill_groups": [_skill_group_record(group) for group in skills],
+                "sources": manifest_sources,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n"
+    )
+    file_contents["skills.lock"] = (
+        json.dumps(
+            {
+                "compiler_version": COMPILER_VERSION,
+                "source_hashes": source_hashes,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n"
+    )
 
     return {
         "out": str(options.out.expanduser().resolve()),
@@ -901,6 +945,7 @@ def _write_generation(generation: dict[str, Any]) -> None:
             out_marker_written = True
     if not out_marker_written:
         raise ValueError("Generation did not include manifest.json")
+
 
 def _initialize_git_repo(out: Path, github_repo: str | None, push: bool) -> dict[str, Any]:
     result: dict[str, Any] = {
@@ -1026,7 +1071,16 @@ def _is_agent_candidate_path(path: Path, root: Path) -> bool:
 
 
 def _known_hidden_agent_part(part: str) -> bool:
-    return part in {".agent", ".agents", ".claude", ".codex", ".cursor", ".gemini", ".github", ".aios"}
+    return part in {
+        ".agent",
+        ".agents",
+        ".claude",
+        ".codex",
+        ".cursor",
+        ".gemini",
+        ".github",
+        ".aios",
+    }
 
 
 def _redact_secrets(content: str) -> tuple[list[str], str]:
@@ -1041,7 +1095,9 @@ def _redact_secrets(content: str) -> tuple[list[str], str]:
 
 def _looks_global(candidate: CandidateFile) -> bool:
     text = candidate.content.lower()
-    return any(term in text for term in ("personal defaults", "global", "always use", "developer profile"))
+    return any(
+        term in text for term in ("personal defaults", "global", "always use", "developer profile")
+    )
 
 
 def _summarize(content: str) -> str:
@@ -1077,7 +1133,9 @@ def _source_slug(candidate: CandidateFile) -> str:
     stem = candidate.relative_path.replace("/", "-")
     stem = re.sub(r"\.[A-Za-z0-9]+$", "", stem)
     slug = re.sub(r"[^a-zA-Z0-9]+", "-", stem).strip("-").lower()
-    digest = hashlib.sha1(str(candidate.path).encode("utf-8"), usedforsecurity=False).hexdigest()[:6]
+    digest = hashlib.sha1(str(candidate.path).encode("utf-8"), usedforsecurity=False).hexdigest()[
+        :6
+    ]
     return f"{slug or 'source'}-{digest}"
 
 
@@ -1141,7 +1199,9 @@ def _consolidate_skill_groups(sources: list[CandidateFile]) -> list[SkillGroup]:
                 slug=slug,
                 title=title,
                 concept_key=key,
-                sources=sorted(items, key=lambda item: (item.source_tier, item.project, item.relative_path)),
+                sources=sorted(
+                    items, key=lambda item: (item.source_tier, item.project, item.relative_path)
+                ),
                 source_tiers=tiers,
                 classifications=classifications,
             )
@@ -1153,11 +1213,16 @@ def _skill_concept_key(source: CandidateFile) -> str:
     text = f"{source.relative_path}\n{source.summary}\n{source.redacted_content[:4000]}".lower()
     family = _concept_family(text)
     task = _primary_task(text)
-    tier_group = "active" if source.source_tier in {
-        "project_authoritative",
-        "personal_agent",
-        "local_agent_config",
-    } else "reference"
+    tier_group = (
+        "active"
+        if source.source_tier
+        in {
+            "project_authoritative",
+            "personal_agent",
+            "local_agent_config",
+        }
+        else "reference"
+    )
     project_scope = ""
     if source.source_tier == "project_authoritative":
         project_scope = _safe_slug(source.project)
@@ -1248,9 +1313,13 @@ def _detect_conflicts(candidates: list[CandidateFile]) -> list[dict[str, Any]]:
     direct: list[str] = []
     for candidate in candidates:
         text = candidate.content.lower()
-        if "ask" in text and any(term in text for term in ("before edit", "before editing", "permission")):
+        if "ask" in text and any(
+            term in text for term in ("before edit", "before editing", "permission")
+        ):
             ask_first.append(candidate.slug)
-        if any(term in text for term in ("implement directly", "apply the change", "execute the task")):
+        if any(
+            term in text for term in ("implement directly", "apply the change", "execute the task")
+        ):
             direct.append(candidate.slug)
     if ask_first and direct:
         return [
@@ -1378,7 +1447,8 @@ def _branches(conflicts: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "status": "active",
                 "context": conflict["summary"],
                 "competing": conflict["branches"],
-                "sources": conflict.get("ask_first_sources", []) + conflict.get("direct_sources", []),
+                "sources": conflict.get("ask_first_sources", [])
+                + conflict.get("direct_sources", []),
             }
         )
     unique: dict[str, dict[str, Any]] = {}
@@ -1604,7 +1674,9 @@ def _provenance_markdown(source: CandidateFile) -> str:
 
 
 def _examples_markdown(source: CandidateFile) -> str:
-    return f"# Examples: {source.slug}\n\n- Use this skill when a request matches: {source.summary}\n"
+    return (
+        f"# Examples: {source.slug}\n\n- Use this skill when a request matches: {source.summary}\n"
+    )
 
 
 def _skill_tests_markdown(source: CandidateFile) -> str:
@@ -1655,11 +1727,17 @@ def _tmcp_router(task_map: dict[str, list[CandidateFile]]) -> str:
     lines.append("")
     lines.append("[NODE: ROUTER.EXPLORE]")
     lines.append("CONSIDER adjacent task nodes when task intent is compound.")
-    lines.append("SKIP adjacent task nodes when they do not add constraints, validation, or project-specific behavior.")
-    lines.append("WHY record the selected path, skipped nodes, and evidence in the traversal receipt.")
+    lines.append(
+        "SKIP adjacent task nodes when they do not add constraints, validation, or project-specific behavior."
+    )
+    lines.append(
+        "WHY record the selected path, skipped nodes, and evidence in the traversal receipt."
+    )
     lines.append("")
     lines.append("[NODE: ROUTER.EXIT]")
-    lines.append("THEN EXIT after constructing the smallest custom skill packet that preserves required behavior.")
+    lines.append(
+        "THEN EXIT after constructing the smallest custom skill packet that preserves required behavior."
+    )
     return "\n".join(lines) + "\n"
 
 
@@ -1757,7 +1835,9 @@ def _task_file(
 
 def _module_file(module: dict[str, Any]) -> str:
     sources = [f"@source:{source}" for source in module["sources"]]
-    source_lines = [f"- {source}" for source in sources] if sources else ["- none; inferred by compiler"]
+    source_lines = (
+        [f"- {source}" for source in sources] if sources else ["- none; inferred by compiler"]
+    )
     return "\n".join(
         [
             f"# Module: {module['id'].replace('_', ' ').title()}",
@@ -1812,7 +1892,9 @@ def _branch_file(branch: dict[str, Any]) -> str:
     competing = [f"@branch:{item}" for item in branch["competing"]]
     sources = [f"@source:{source}" for source in branch["sources"]]
     competing_lines = [f"- {item}" for item in competing] if competing else ["- none"]
-    source_lines = [f"- {source}" for source in sources] if sources else ["- generated default branch"]
+    source_lines = (
+        [f"- {source}" for source in sources] if sources else ["- generated default branch"]
+    )
     return "\n".join(
         [
             f"# Branch: {branch['id'].replace('_', ' ').title()}",
@@ -1879,9 +1961,7 @@ def _tmcp_graph_json(
             "source_refs": [source.slug for source in task_sources],
             "source_tiers": sorted({source.source_tier for source in task_sources}),
             "required_modules": [
-                module["id"]
-                for module in modules
-                if module["status"] == "active"
+                module["id"] for module in modules if module["status"] == "active"
             ][:6],
         }
         for task_id, task_sources in task_map.items()
@@ -2028,7 +2108,9 @@ def _existing_tmcp_graph_json(
     for skill_path in sorted((library / "skills").glob("*/SKILL.md")):
         skill_id = skill_path.parent.name
         group = skill_groups.get(skill_id, {})
-        title = str(group.get("title") or _first_heading(skill_path) or skill_id.replace("-", " ").title())
+        title = str(
+            group.get("title") or _first_heading(skill_path) or skill_id.replace("-", " ").title()
+        )
         concept_key = str(group.get("concept_key") or skill_id.replace("-", "."))
         source_skills[skill_id] = {
             "id": skill_id,
@@ -2064,12 +2146,19 @@ def _existing_tmcp_graph_json(
 def _existing_task_required_modules(library: Path, task_id: str) -> list[str]:
     task_path = library / "skills.tmcp" / "tasks" / f"{task_id}.md"
     if task_path.exists():
-        refs = re.findall(r"@module:([A-Za-z0-9_-]+)", task_path.read_text(encoding="utf-8", errors="replace"))
+        refs = re.findall(
+            r"@module:([A-Za-z0-9_-]+)", task_path.read_text(encoding="utf-8", errors="replace")
+        )
         if refs:
             return list(dict.fromkeys(refs))[:8]
     return [
         module_id
-        for module_id in ("context_gathering", "evidence_first", "provenance_policy", "output_contract")
+        for module_id in (
+            "context_gathering",
+            "evidence_first",
+            "provenance_policy",
+            "output_contract",
+        )
         if (library / "skills.tmcp" / "modules" / f"{module_id}.md").exists()
     ]
 
@@ -2184,7 +2273,11 @@ def _summary_terms(value: str) -> set[str]:
         "skill",
         "skills",
     }
-    return {term for term in re.split(r"[^a-zA-Z0-9]+", value.lower()) if len(term) >= 4 and term not in stop}
+    return {
+        term
+        for term in re.split(r"[^a-zA-Z0-9]+", value.lower())
+        if len(term) >= 4 and term not in stop
+    }
 
 
 def _node_utility_metadata(node_id: str, node_type: str) -> dict[str, Any]:
@@ -2454,7 +2547,9 @@ def _tmcp_manifest(
     ]
     for task, task_sources in task_map.items():
         lines.append(f"- @task:{task}")
-        lines.append(f"  - Sources: {', '.join('@source:' + source.slug for source in task_sources[:8])}")
+        lines.append(
+            f"  - Sources: {', '.join('@source:' + source.slug for source in task_sources[:8])}"
+        )
     lines.extend(["", "## Module Dependency Map"])
     for module in modules:
         lines.append(f"- @module:{module['id']} sources={module['source_count']}")
@@ -2485,7 +2580,9 @@ def _compiler_report(
 ) -> str:
     source_tokens = sum(len(source.content.split()) for source in sources)
     compiled_tokens = sum(module["source_count"] for module in modules) * 40 + len(branches) * 60
-    reduction = 0 if source_tokens == 0 else max(0, round((1 - compiled_tokens / source_tokens) * 100, 1))
+    reduction = (
+        0 if source_tokens == 0 else max(0, round((1 - compiled_tokens / source_tokens) * 100, 1))
+    )
     return "\n".join(
         [
             "# TMCP Compiler Report",
@@ -2970,7 +3067,16 @@ def _extract_github_url(output: str) -> str | None:
 
 def _rerun_command(options: HarvestOptions) -> str:
     roots = " ".join(str(root) for root in options.roots)
-    parts = ["python3", "bin/aios.py", "skills", "harvest", "--roots", roots, "--out", str(options.out)]
+    parts = [
+        "python3",
+        "bin/aios.py",
+        "skills",
+        "harvest",
+        "--roots",
+        roots,
+        "--out",
+        str(options.out),
+    ]
     if options.include_hidden:
         parts.append("--include-hidden")
     if options.max_file_size != 250_000:

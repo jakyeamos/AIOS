@@ -516,7 +516,10 @@ def _sibling_modules(target: Path) -> list[str]:
 
 def _conventions(target: Path, files: Sequence[Path]) -> list[str]:
     suffixes = Counter(path.suffix or "<none>" for path in files)
-    conventions = [f"Common suffix `{suffix}` appears {count} time(s)." for suffix, count in suffixes.most_common(5)]
+    conventions = [
+        f"Common suffix `{suffix}` appears {count} time(s)."
+        for suffix, count in suffixes.most_common(5)
+    ]
     if any(path.name.startswith("test_") or path.name.endswith(".test.ts") for path in files):
         conventions.append("Target area includes colocated or nearby tests.")
     if (target if target.is_dir() else target.parent).joinpath("__init__.py").exists():
@@ -629,7 +632,11 @@ def _allowed_prototype_path(path: Path, root: Path) -> Path:
 
 def _review_files(root: Path, *, files: Sequence[Path], base_ref: str) -> list[Path]:
     if files:
-        return [_resolve_existing_target(path, root) for path in files if _resolve_existing_target(path, root).is_file()]
+        return [
+            _resolve_existing_target(path, root)
+            for path in files
+            if _resolve_existing_target(path, root).is_file()
+        ]
     diff_files = _git_lines(root, "diff", "--name-only", base_ref)
     resolved = [root / name for name in diff_files if (root / name).is_file()]
     return [path.resolve() for path in resolved if _is_text_file(path.resolve())][:100]
@@ -728,15 +735,27 @@ def _review_lane(lane: str, files: Sequence[Path], root: Path) -> dict[str, Any]
         if lane == "security" and re.search(r"(api[_-]?key|secret|password)\s*=", text, re.I):
             findings.append(_finding(lane, "high", rel, "Possible hardcoded secret assignment."))
         elif lane == "correctness" and "except Exception" in text:
-            findings.append(_finding(lane, "medium", rel, "Broad exception handling may hide failures."))
-        elif lane == "testing" and path.suffix in {".py", ".ts", ".tsx"} and "test" not in rel.lower():
+            findings.append(
+                _finding(lane, "medium", rel, "Broad exception handling may hide failures.")
+            )
+        elif (
+            lane == "testing"
+            and path.suffix in {".py", ".ts", ".tsx"}
+            and "test" not in rel.lower()
+        ):
             test_hint = f"test_{path.stem}.py"
             if not any(candidate.name == test_hint for candidate in root.rglob(test_hint)):
                 findings.append(_finding(lane, "low", rel, "No obvious focused test file found."))
         elif lane == "architecture" and "../" in text:
-            findings.append(_finding(lane, "medium", rel, "Relative parent import/path usage may cross boundaries."))
+            findings.append(
+                _finding(
+                    lane, "medium", rel, "Relative parent import/path usage may cross boundaries."
+                )
+            )
         elif lane == "maintainability" and len(text.splitlines()) > 500:
-            findings.append(_finding(lane, "medium", rel, "Large file may need narrower ownership."))
+            findings.append(
+                _finding(lane, "medium", rel, "Large file may need narrower ownership.")
+            )
         elif lane == "project_alignment" and "use client" in text and path.suffix == ".tsx":
             findings.append(
                 _finding(
@@ -786,7 +805,9 @@ def _security_findings(files: Sequence[Path], root: Path) -> list[dict[str, str]
         text = _read_text(path)
         rel = str(path.relative_to(root)) if path.is_relative_to(root) else str(path)
         lowered = text.lower()
-        if re.search(r"(api[_-]?key|secret|password|private[_-]?key)\s*=\s*['\"][^'\"]+", text, re.I):
+        if re.search(
+            r"(api[_-]?key|secret|password|private[_-]?key)\s*=\s*['\"][^'\"]+", text, re.I
+        ):
             findings.append(
                 _security_finding(
                     severity="high",

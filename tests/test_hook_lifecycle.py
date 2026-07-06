@@ -56,7 +56,10 @@ def test_prompt_submit_recovers_missing_session_before_logging_prompt(
     monkeypatch.setattr(
         hook_prompt,
         "load_policy",
-        lambda: {"prompt_retrieval": {"enabled": False}, "reusable_prompt_hint": {"enabled": False}},
+        lambda: {
+            "prompt_retrieval": {"enabled": False},
+            "reusable_prompt_hint": {"enabled": False},
+        },
     )
     monkeypatch.setattr(
         sys,
@@ -141,7 +144,10 @@ def test_prompt_submit_reassigns_stale_payload_to_current_session(
     monkeypatch.setattr(
         hook_prompt,
         "load_policy",
-        lambda: {"prompt_retrieval": {"enabled": False}, "reusable_prompt_hint": {"enabled": False}},
+        lambda: {
+            "prompt_retrieval": {"enabled": False},
+            "reusable_prompt_hint": {"enabled": False},
+        },
     )
     monkeypatch.setattr(
         sys,

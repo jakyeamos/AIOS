@@ -8,9 +8,7 @@ from typing import Any
 from services.workflow_orchestration import DEFAULT_SKILL_REGISTRY, SkillSpec, load_skill_registry
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_SKILL_PLANNING_LENS_REGISTRY = (
-    ROOT / "config" / "planning" / "skill-planning-lenses.json"
-)
+DEFAULT_SKILL_PLANNING_LENS_REGISTRY = ROOT / "config" / "planning" / "skill-planning-lenses.json"
 
 
 @dataclass(frozen=True)

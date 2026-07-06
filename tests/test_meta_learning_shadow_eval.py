@@ -76,7 +76,9 @@ def test_medium_high_impact_promotion_gate_needs_plan_or_exemption() -> None:
     blocked = promotion_gate(proposal)
     plan = generate_shadow_eval_plan(proposal)
     ready_with_plan = promotion_gate(proposal, eval_plan=plan)
-    ready_with_exemption = promotion_gate(proposal, exemption_reason="manual operator accepted risk")
+    ready_with_exemption = promotion_gate(
+        proposal, exemption_reason="manual operator accepted risk"
+    )
 
     assert blocked["ready_for_durable_global_promotion"] is False
     assert ready_with_plan["ready_for_durable_global_promotion"] is True

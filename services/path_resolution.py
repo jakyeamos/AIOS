@@ -33,5 +33,5 @@ def rewrite_legacy_vault_path(path: str | None, *, explicit: str | None = None) 
     legacy_root = str(LEGACY_VAULT_ROOT.resolve())
     current_root = str(get_vault_root(explicit))
     if path.startswith(legacy_root):
-        return current_root + path[len(legacy_root):]
+        return current_root + path[len(legacy_root) :]
     return path

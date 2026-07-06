@@ -23,7 +23,9 @@ def _packet_id() -> str:
 def _check_private_text(value: str) -> None:
     lowered = value.lower()
     if any(marker in lowered for marker in SENSITIVE_MARKERS):
-        raise PrivacyFilterError("Portable context packets cannot include personal or secret paths.")
+        raise PrivacyFilterError(
+            "Portable context packets cannot include personal or secret paths."
+        )
 
 
 def _repo_files(repo_path: Path) -> list[str]:
@@ -37,7 +39,9 @@ def _repo_files(repo_path: Path) -> list[str]:
         )
         files = result.stdout.splitlines()
     except FileNotFoundError:
-        files = [str(path.relative_to(repo_path)) for path in repo_path.rglob("*") if path.is_file()]
+        files = [
+            str(path.relative_to(repo_path)) for path in repo_path.rglob("*") if path.is_file()
+        ]
     allowed = {".py", ".ts", ".tsx", ".json", ".md"}
     selected = []
     for file_path in files:

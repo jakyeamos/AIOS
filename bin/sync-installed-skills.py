@@ -35,12 +35,18 @@ SKILL_DIRS = [
 # Skill directory prefixes that are infrastructure/orchestration tools,
 # not workflow content skills. These are excluded from skills.json.
 EXCLUDED_PREFIXES = (
-    "gsd-", "gsd_",
-    "opencli-", "opencli_",
-    "claude-mem", "claude_mem",
-    "skill-creator", "skill_creator",
-    "commit-commands", "commit_commands",
-    "claude-md", "claude_md",
+    "gsd-",
+    "gsd_",
+    "opencli-",
+    "opencli_",
+    "claude-mem",
+    "claude_mem",
+    "skill-creator",
+    "skill_creator",
+    "commit-commands",
+    "commit_commands",
+    "claude-md",
+    "claude_md",
 )
 
 # Map skill name keywords → likely allowed_stages

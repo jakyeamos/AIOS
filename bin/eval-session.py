@@ -106,7 +106,9 @@ def main() -> None:
         "retrieval_count": total_retrievals,
         "prompt_breakdown": prompt_stats,
         "metrics": comparison,
-        "baseline_note": f"Baseline from up to 5 prior {project_name} sessions" if baseline else "No baseline yet",
+        "baseline_note": f"Baseline from up to 5 prior {project_name} sessions"
+        if baseline
+        else "No baseline yet",
     }
     print(json.dumps(result, indent=2))
 

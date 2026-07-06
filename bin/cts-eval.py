@@ -33,9 +33,10 @@ def main() -> None:
     report = run_suite(service, args.cases_dir)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
-    print(json.dumps({"ok": True, "output": str(args.output), "summary": report.get("summary", {})}))
+    print(
+        json.dumps({"ok": True, "output": str(args.output), "summary": report.get("summary", {})})
+    )
 
 
 if __name__ == "__main__":
     main()
-

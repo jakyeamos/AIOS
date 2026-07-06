@@ -156,13 +156,20 @@ def _flags(
     lowered_tokens = [token.lower() for token in tokens]
     text = command.lower()
     shell_expansion = any(token in command for token in SHELL_EXPANSION_TOKENS)
-    destructive = primary in DESTRUCTIVE_COMMANDS or any(token in text for token in ("delete", "destroy"))
+    destructive = primary in DESTRUCTIVE_COMMANDS or any(
+        token in text for token in ("delete", "destroy")
+    )
     credential = any(token in text for token in SECRET_TOKENS)
     deploy = any(token in text for token in DEPLOY_TOKENS)
     package_install = primary in PACKAGE_COMMANDS and any(
         token in lowered_tokens for token in ("add", "install", "sync", "lock", "rebuild")
     )
-    network = primary in NETWORK_COMMANDS or text.startswith("open ") or "http://" in text or "https://" in text
+    network = (
+        primary in NETWORK_COMMANDS
+        or text.startswith("open ")
+        or "http://" in text
+        or "https://" in text
+    )
     git_operation = primary in GIT_COMMANDS
     filesystem_writes = (
         primary in WRITE_COMMANDS
@@ -186,7 +193,9 @@ def _flags(
         "reversible": reversible,
         "repo_sensitive": repo_sensitive,
         "sandboxable": sandboxable,
-        "dry_run_support": bool(dry_run_support) if dry_run_support is not None else "--dry-run" in lowered_tokens,
+        "dry_run_support": bool(dry_run_support)
+        if dry_run_support is not None
+        else "--dry-run" in lowered_tokens,
         "test_or_quality": test_or_quality,
         "shell_expansion": shell_expansion,
         "package_install": package_install,

@@ -25,7 +25,7 @@ def _scored(
     target: str = "project_rule",
     risk: str = "low",
     sessions: list[str] | None = None,
-) :
+):
     signal = MetaLearningSignal(
         signal_id=f"sig-{signal_type}-{target}",
         type=signal_type,  # type: ignore[arg-type]

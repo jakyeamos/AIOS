@@ -98,4 +98,3 @@ def confidence_note(summary: ConfidenceSummary, unresolved_call_count: int) -> s
     if not notes:
         return None
     return "; ".join(notes)
-

@@ -78,7 +78,12 @@ def get_existing_ids(conn: sqlite3.Connection) -> set[str]:
 
 
 def source_dir_name(source: str) -> str:
-    names = {"chatgpt": "ChatGPT", "claude": "Claude", "codex": "Codex", "claude-code": "Claude Code"}
+    names = {
+        "chatgpt": "ChatGPT",
+        "claude": "Claude",
+        "codex": "Codex",
+        "claude-code": "Claude Code",
+    }
     return names[source]
 
 
@@ -118,10 +123,22 @@ def write_to_db(conn: sqlite3.Connection, conv: dict) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Import AI conversation history")
-    parser.add_argument("--source", required=True, choices=["chatgpt", "claude", "codex", "claude-code"])
-    parser.add_argument("--file", default="", help="Path to export file or dir (claude-code defaults to ~/.claude/projects/)")
-    parser.add_argument("--batch", default=None, help="Batch ID (default: auto YYYYMMDDHHMMSS--source)")
-    parser.add_argument("--dry-run", action="store_true", help="Print what would be imported without writing files or DB")
+    parser.add_argument(
+        "--source", required=True, choices=["chatgpt", "claude", "codex", "claude-code"]
+    )
+    parser.add_argument(
+        "--file",
+        default="",
+        help="Path to export file or dir (claude-code defaults to ~/.claude/projects/)",
+    )
+    parser.add_argument(
+        "--batch", default=None, help="Batch ID (default: auto YYYYMMDDHHMMSS--source)"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print what would be imported without writing files or DB",
+    )
     args = parser.parse_args()
 
     try:
@@ -182,7 +199,9 @@ def main() -> None:
 
         if args.dry_run:
             flag = "" if conv["quality"] == "keep" else "  [deferred]"
-            print(f"  {conv['date']}  {conv['title'][:60]:<60}  {conv['exchange_count']} exchanges{flag}")
+            print(
+                f"  {conv['date']}  {conv['title'][:60]:<60}  {conv['exchange_count']} exchanges{flag}"
+            )
         else:
             stage_conversation(conv)
             write_to_db(conn, conv)

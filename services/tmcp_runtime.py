@@ -286,7 +286,9 @@ def compile_tmcp_packet(
     project_scope = _project_scope(project_path)
     if graph:
         task_id, task_scores = _select_task_from_graph(objective_text, graph, project_scope)
-        modules, module_scores = _select_modules_from_graph(objective_text, task_id, graph, tmcp_root)
+        modules, module_scores = _select_modules_from_graph(
+            objective_text, task_id, graph, tmcp_root
+        )
         modules = _apply_phase_domain_modules(modules, phase_id, domain_id, tmcp_root)
         source_skill_nodes, source_skill_scores = _select_source_skills_from_graph(
             objective_text,
@@ -358,7 +360,10 @@ def compile_tmcp_packet(
     node_sections = [
         _node_excerpt("Router", tmcp_root / "router.md"),
         _optional_node_excerpt(f"Task {task_id}", tmcp_root / "tasks" / f"{task_id}.md"),
-        *(_node_excerpt(f"Module {module_id}", tmcp_root / "modules" / f"{module_id}.md") for module_id in modules),
+        *(
+            _node_excerpt(f"Module {module_id}", tmcp_root / "modules" / f"{module_id}.md")
+            for module_id in modules
+        ),
         *(
             _source_skill_section_excerpt(
                 f"Source skill {source_skill['id']}",
@@ -367,7 +372,9 @@ def compile_tmcp_packet(
             )
             for source_skill in source_skill_nodes
         ),
-        _optional_node_excerpt(f"Branch {branch_id}", tmcp_root / "branches" / f"{branch_id}.branch.md"),
+        _optional_node_excerpt(
+            f"Branch {branch_id}", tmcp_root / "branches" / f"{branch_id}.branch.md"
+        ),
         *registry_overlay["sections"],
         shortcut,
     ]
@@ -404,7 +411,9 @@ def compile_tmcp_packet(
         "entry_node": entry_node,
         "selected_nodes": selected_nodes,
         "skipped_nodes": skipped_nodes,
-        "selected_branches": [{"branch": f"@branch:{branch_id}", "reason": _branch_reason(branch_id)}],
+        "selected_branches": [
+            {"branch": f"@branch:{branch_id}", "reason": _branch_reason(branch_id)}
+        ],
         "registry_overlay": registry_overlay["metadata"],
         "graph_metadata": {
             "matched": bool(graph),
@@ -844,9 +853,7 @@ def evaluate_tmcp_packet_adherence(
         "required_behavior_atoms": required_atoms,
         "atom_results": atom_results,
         "ignored_requirements": ignored,
-        "failure_classification": (
-            "agent_compliance_failure" if ignored else "adhered_to_packet"
-        ),
+        "failure_classification": ("agent_compliance_failure" if ignored else "adhered_to_packet"),
     }
 
 
@@ -891,7 +898,9 @@ def persist_tmcp_packet_adherence(
         record_tmcp_receipt_event(
             conn,
             receipt_id=receipt_id,
-            event_type="agent_action_observed" if result.get("observed") else "required_behavior_ignored",
+            event_type="agent_action_observed"
+            if result.get("observed")
+            else "required_behavior_ignored",
             summary=f"Behavior atom {atom} adherence status: {result.get('status')}.",
             run_id=run_id,
             invocation_id=invocation_id,
@@ -1078,9 +1087,14 @@ def _select_task_from_graph(
         if not isinstance(task_id, str) or not isinstance(row, dict):
             continue
         score = _score_graph_row(objective, row)
-        if task_id == "agent_workflow" and any(term in objective.lower() for term in ("skill", "tmcp", "agent", "workflow")):
+        if task_id == "agent_workflow" and any(
+            term in objective.lower() for term in ("skill", "tmcp", "agent", "workflow")
+        ):
             score += 2
-        if project_scope != "unknown" and project_scope in str(row.get("project_scope", "")).lower():
+        if (
+            project_scope != "unknown"
+            and project_scope in str(row.get("project_scope", "")).lower()
+        ):
             score += 3
         scores[task_id] = score
     if not scores:
@@ -1103,7 +1117,9 @@ def _select_modules_from_graph(
     modules = _json_object(graph.get("modules"))
     tasks = _json_object(graph.get("tasks"))
     task = _json_object(tasks.get(task_id))
-    required = [str(item) for item in _json_list(task.get("required_modules")) if isinstance(item, str)]
+    required = [
+        str(item) for item in _json_list(task.get("required_modules")) if isinstance(item, str)
+    ]
     selected = list(DEFAULT_MODULES)
     scores: dict[str, int] = {}
     for module_id, row in modules.items():
@@ -1117,12 +1133,16 @@ def _select_modules_from_graph(
             or any(term in objective.lower() for term in ("test", "verify", "validate"))
         ):
             score += 4
-        if module_id == "tool_use_policy" and any(term in objective.lower() for term in ("tool", "command", "browser", "shell", "mcp")):
+        if module_id == "tool_use_policy" and any(
+            term in objective.lower() for term in ("tool", "command", "browser", "shell", "mcp")
+        ):
             score += 4
         if score > 0:
             selected.append(module_id)
         scores[module_id] = score
-    return [module_id for module_id in dict.fromkeys(selected) if _module_exists(tmcp_root, module_id)], scores
+    return [
+        module_id for module_id in dict.fromkeys(selected) if _module_exists(tmcp_root, module_id)
+    ], scores
 
 
 def _apply_phase_domain_modules(
@@ -1136,7 +1156,9 @@ def _apply_phase_domain_modules(
         selected.append(module_id)
     if domain == "ui_polish":
         selected.extend(("visual_polish_system", "test_gate"))
-    return [module_id for module_id in dict.fromkeys(selected) if _module_exists(tmcp_root, module_id)]
+    return [
+        module_id for module_id in dict.fromkeys(selected) if _module_exists(tmcp_root, module_id)
+    ]
 
 
 def _select_source_skills_from_graph(
@@ -1161,7 +1183,9 @@ def _select_source_skills_from_graph(
         tiers = _json_list(row.get("source_tiers"))
         if "project_authoritative" in tiers:
             score += 2
-        searchable = " ".join(str(row.get(key, "")) for key in ("id", "concept_key", "title")).lower()
+        searchable = " ".join(
+            str(row.get(key, "")) for key in ("id", "concept_key", "title")
+        ).lower()
         if project_scope != "unknown" and project_scope in searchable:
             score += 3
         if domain != "general" and domain.replace("_", "-") in searchable.replace("_", "-"):
@@ -1245,8 +1269,7 @@ def _score_graph_row(objective: str, row: dict[str, Any]) -> int:
         elif trigger_text and trigger_text in _terms(lowered):
             score += 2
     searchable = " ".join(
-        str(row.get(key, ""))
-        for key in ("id", "node", "concept_key", "title", "type")
+        str(row.get(key, "")) for key in ("id", "node", "concept_key", "title", "type")
     ).lower()
     score += len(_terms(lowered) & _terms(searchable))
     return score
@@ -1254,10 +1277,16 @@ def _score_graph_row(objective: str, row: dict[str, Any]) -> int:
 
 def _terms(value: str) -> set[str]:
     stop = {"this", "that", "with", "from", "into", "the", "and", "for", "your"}
-    return {term for term in re.split(r"[^a-z0-9]+", value.lower()) if len(term) >= 3 and term not in stop}
+    return {
+        term
+        for term in re.split(r"[^a-z0-9]+", value.lower())
+        if len(term) >= 3 and term not in stop
+    }
 
 
-def _selected_source_hashes(library: Path, source_skill_nodes: list[dict[str, Any]]) -> dict[str, str]:
+def _selected_source_hashes(
+    library: Path, source_skill_nodes: list[dict[str, Any]]
+) -> dict[str, str]:
     hashes: dict[str, str] = {}
     for source_skill in source_skill_nodes:
         node = str(source_skill.get("node", ""))
@@ -1292,9 +1321,7 @@ def _optimize_selection(
 
     optimized_modules: list[str] = []
     skipped_nodes: list[dict[str, str]] = []
-    covered_atoms: set[str] = {
-        str(atom) for atom in _json_list(task_row.get("behavior_atoms"))
-    }
+    covered_atoms: set[str] = {str(atom) for atom in _json_list(task_row.get("behavior_atoms"))}
     for module_id in modules:
         row = _json_object(module_rows.get(module_id))
         atoms = {str(atom) for atom in _json_list(row.get("behavior_atoms"))}
@@ -1330,7 +1357,9 @@ def _optimize_selection(
         row = _json_object(source_rows.get(str(source_skill.get("id", ""))))
         covered_atoms.update(str(atom) for atom in _json_list(row.get("behavior_atoms")))
 
-    omitted_requirements = _omitted_requirements(objective, covered_atoms, optimized_modules, task_id)
+    omitted_requirements = _omitted_requirements(
+        objective, covered_atoms, optimized_modules, task_id
+    )
     node_usefulness = {
         f"@task:{task_id}": {
             "prior": "required",
@@ -1340,7 +1369,9 @@ def _optimize_selection(
         **{
             f"@module:{module_id}": {
                 "prior": _node_usefulness_prior(_json_object(module_rows.get(module_id))),
-                "behavior_atoms": _json_list(_json_object(module_rows.get(module_id)).get("behavior_atoms")),
+                "behavior_atoms": _json_list(
+                    _json_object(module_rows.get(module_id)).get("behavior_atoms")
+                ),
             }
             for module_id in optimized_modules
         },
@@ -1348,7 +1379,9 @@ def _optimize_selection(
             str(source_skill["node"]): {
                 "prior": "high" if source_skill.get("score", 0) >= 8 else "medium",
                 "behavior_atoms": _json_list(
-                    _json_object(source_rows.get(str(source_skill.get("id", "")))).get("behavior_atoms")
+                    _json_object(source_rows.get(str(source_skill.get("id", "")))).get(
+                        "behavior_atoms"
+                    )
                 ),
             }
             for source_skill in source_skill_nodes
@@ -1389,21 +1422,31 @@ def _omitted_requirements(
 ) -> list[dict[str, str]]:
     lowered = objective.lower()
     omitted: list[dict[str, str]] = []
-    if any(term in lowered for term in ("test", "verify", "validate")) and "verification_gate" not in covered_atoms:
+    if (
+        any(term in lowered for term in ("test", "verify", "validate"))
+        and "verification_gate" not in covered_atoms
+    ):
         omitted.append(
             {
                 "requirement": "verification_gate",
                 "reason": "Prompt requested validation but no selected node contributed a verification behavior atom.",
             }
         )
-    if any(term in lowered for term in ("browser", "screenshot", "visual")) and "ui_quality" not in covered_atoms:
+    if (
+        any(term in lowered for term in ("browser", "screenshot", "visual"))
+        and "ui_quality" not in covered_atoms
+    ):
         omitted.append(
             {
                 "requirement": "ui_quality",
                 "reason": "Prompt requested UI/visual work but no selected node contributed a UI quality behavior atom.",
             }
         )
-    if task_id == "implementation" and "test_gate" not in modules and "verification_gate" not in covered_atoms:
+    if (
+        task_id == "implementation"
+        and "test_gate" not in modules
+        and "verification_gate" not in covered_atoms
+    ):
         omitted.append(
             {
                 "requirement": "implementation_validation",
@@ -1425,8 +1468,12 @@ def _select_modules(objective: str, task_id: str, tmcp_root: Path) -> list[str]:
     if any(term in lowered for term in ("tool", "command", "browser", "shell", "mcp")):
         modules.append("tool_use_policy")
     if task_id == "visual_polish":
-        modules.extend(("visual_polish_system", "enterprise_saas_visual_polish", "data_realism_polish"))
-    return [module_id for module_id in dict.fromkeys(modules) if _module_exists(tmcp_root, module_id)]
+        modules.extend(
+            ("visual_polish_system", "enterprise_saas_visual_polish", "data_realism_polish")
+        )
+    return [
+        module_id for module_id in dict.fromkeys(modules) if _module_exists(tmcp_root, module_id)
+    ]
 
 
 def _select_branch(objective: str, task_id: str) -> str:
@@ -1444,7 +1491,9 @@ def _skipped_nodes(task_id: str, modules: list[str]) -> list[dict[str, str]]:
     skipped: list[dict[str, str]] = []
     for candidate in ("research", "documentation", "testing"):
         if candidate not in selected and candidate != task_id:
-            skipped.append({"node": f"@task:{candidate}", "reason": "Not required by objective classifier."})
+            skipped.append(
+                {"node": f"@task:{candidate}", "reason": "Not required by objective classifier."}
+            )
     return skipped
 
 
@@ -1541,7 +1590,9 @@ def _promoted_shortcut_from_receipts(
 
     if len(qualifying) < 3:
         return None
-    successful = [row for row in qualifying if row["outcome"] in {"completed", "pass", "passed", "success"}]
+    successful = [
+        row for row in qualifying if row["outcome"] in {"completed", "pass", "passed", "success"}
+    ]
     success_rate = len(successful) / len(qualifying)
     positive_roi_count = sum(1 for row in successful if row["positive_token_roi"])
     if len(successful) < 3 or success_rate < 0.8 or positive_roi_count < 2:
@@ -1683,7 +1734,9 @@ def _repair_recommendations_from_counts(counts: dict[str, int]) -> list[dict[str
         elif requirement == "ui_quality":
             action = "Raise visual_polish scoring and require visual_verification for browser or screenshot prompts."
         else:
-            action = "Add or retune a trigger so traversal covers this behavior atom when requested."
+            action = (
+                "Add or retune a trigger so traversal covers this behavior atom when requested."
+            )
         recommendations.append(
             {
                 "requirement": requirement,
@@ -1734,7 +1787,11 @@ def _routing_change_reason(before: dict[str, Any], after: dict[str, Any]) -> str
     after_shortcut = _json_object(after.get("shortcut_candidate"))
     if before_shortcut.get("node") != after_shortcut.get("node"):
         reasons.append("shortcut candidate changed")
-    return ", ".join(reasons) if reasons else "same task/phase/domain; node selection changed by scoring or graph metadata"
+    return (
+        ", ".join(reasons)
+        if reasons
+        else "same task/phase/domain; node selection changed by scoring or graph metadata"
+    )
 
 
 def shortcut_governance_recommendation(shortcut: dict[str, Any]) -> dict[str, Any]:
@@ -1962,7 +2019,11 @@ def _graph_version(tmcp_root: Path) -> str:
     if not tmcp_root.exists():
         return "missing"
     digest = hashlib.sha256()
-    graph_inputs = [*tmcp_root.rglob("*.md"), tmcp_root / "graph.json", tmcp_root.parent / "skills.lock"]
+    graph_inputs = [
+        *tmcp_root.rglob("*.md"),
+        tmcp_root / "graph.json",
+        tmcp_root.parent / "skills.lock",
+    ]
     for path in sorted({path for path in graph_inputs if path.exists()}):
         try:
             content = path.read_bytes()
@@ -2189,7 +2250,8 @@ def _select_manifest_task(
     if len(best_matched_triggers) < 2 and best_task_id != "visual_polish":
         return None
     if best_task_id == "planning_review" and not any(
-        term in lowered for term in ("compare", "strategy", "workflow", "promotion", "quality", "test")
+        term in lowered
+        for term in ("compare", "strategy", "workflow", "promotion", "quality", "test")
     ):
         return None
 
@@ -2205,9 +2267,7 @@ def _select_manifest_task(
     ]
     branch_id = _select_manifest_branch(objective, optional)
     behavior_added = [
-        f"module:{module_id}"
-        for module_id in modules
-        if module_id not in canonical_modules
+        f"module:{module_id}" for module_id in modules if module_id not in canonical_modules
     ]
     if branch_id:
         behavior_added.append(f"branch:{branch_id}")
@@ -2229,9 +2289,8 @@ def _select_manifest_task(
 
 def _select_manifest_branch(objective: str, optional_nodes: list[str]) -> str | None:
     lowered = objective.lower()
-    if (
-        "branches/tenure_visual_identity.branch.md" in optional_nodes
-        and ("tenure" in lowered or "sop" in lowered)
+    if "branches/tenure_visual_identity.branch.md" in optional_nodes and (
+        "tenure" in lowered or "sop" in lowered
     ):
         return "tenure_visual_identity"
     return None

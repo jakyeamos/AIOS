@@ -196,7 +196,9 @@ def build_session_effectiveness_receipt(
         "receipts": _light(
             "green" if snapshot["summary_present"] else "yellow",
             "receipts",
-            "Summary receipt present." if snapshot["summary_present"] else "Summary receipt pending.",
+            "Summary receipt present."
+            if snapshot["summary_present"]
+            else "Summary receipt pending.",
         ),
     }
 

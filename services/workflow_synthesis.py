@@ -44,7 +44,16 @@ WORKFLOW_ARCHETYPES: list[dict] = [
         "key": "feature_implementation",
         "name": "Feature Implementation",
         "description": "End-to-end implementation of a new feature from spec to working code.",
-        "keywords": ["implement", "build", "create", "add", "feature", "write the", "code the", "develop"],
+        "keywords": [
+            "implement",
+            "build",
+            "create",
+            "add",
+            "feature",
+            "write the",
+            "code the",
+            "develop",
+        ],
         "best_practices": [
             "Clarify acceptance criteria before writing code.",
             "Write the simplest passing implementation first, then iterate.",
@@ -56,7 +65,17 @@ WORKFLOW_ARCHETYPES: list[dict] = [
         "key": "code_review_audit",
         "name": "Code Review & Audit",
         "description": "Structured review or audit of existing code for quality, correctness, or security.",
-        "keywords": ["review", "pull request", "audit", "check", "analyze", "evaluate", "assess", "inspect", "security"],
+        "keywords": [
+            "review",
+            "pull request",
+            "audit",
+            "check",
+            "analyze",
+            "evaluate",
+            "assess",
+            "inspect",
+            "security",
+        ],
         "best_practices": [
             "Read the entire diff before leaving any comments.",
             "Separate correctness issues from style preferences.",
@@ -68,7 +87,16 @@ WORKFLOW_ARCHETYPES: list[dict] = [
         "key": "refactor_cleanup",
         "name": "Refactoring & Code Cleanup",
         "description": "Improving structure, clarity, or performance without changing observable behavior.",
-        "keywords": ["refactor", "clean up", "simplify", "improve", "optimize", "extract", "rename", "reorganize"],
+        "keywords": [
+            "refactor",
+            "clean up",
+            "simplify",
+            "improve",
+            "optimize",
+            "extract",
+            "rename",
+            "reorganize",
+        ],
         "best_practices": [
             "Confirm tests pass before starting — refactors must not change behavior.",
             "Make one type of change at a time (rename, extract, move).",
@@ -80,7 +108,17 @@ WORKFLOW_ARCHETYPES: list[dict] = [
         "key": "planning_architecture",
         "name": "Architecture & Planning",
         "description": "Designing systems, planning implementations, or creating technical roadmaps.",
-        "keywords": ["plan", "design", "architect", "roadmap", "schema", "spec", "proposal", "decision", "tradeoff"],
+        "keywords": [
+            "plan",
+            "design",
+            "architect",
+            "roadmap",
+            "schema",
+            "spec",
+            "proposal",
+            "decision",
+            "tradeoff",
+        ],
         "best_practices": [
             "Write down constraints before proposing solutions.",
             "Enumerate at least two alternatives and the key tradeoff for each.",
@@ -92,7 +130,19 @@ WORKFLOW_ARCHETYPES: list[dict] = [
         "key": "academic_writing",
         "name": "Academic & Long-form Writing",
         "description": "Writing, editing, or structuring research papers, reports, or long-form documents.",
-        "keywords": ["paper", "thesis", "essay", "academic", "research", "citation", "bibliography", "abstract", "literature", "journal", "manuscript"],
+        "keywords": [
+            "paper",
+            "thesis",
+            "essay",
+            "academic",
+            "research",
+            "citation",
+            "bibliography",
+            "abstract",
+            "literature",
+            "journal",
+            "manuscript",
+        ],
         "best_practices": [
             "Define the argument and audience before drafting.",
             "Write structure first (outline) before prose.",
@@ -104,7 +154,19 @@ WORKFLOW_ARCHETYPES: list[dict] = [
         "key": "data_analysis",
         "name": "Data Analysis & Reporting",
         "description": "Querying, transforming, visualizing, or summarizing data for decisions.",
-        "keywords": ["query", "sql", "data", "report", "dashboard", "metric", "analyze", "aggregate", "chart", "visualize", "csv"],
+        "keywords": [
+            "query",
+            "sql",
+            "data",
+            "report",
+            "dashboard",
+            "metric",
+            "analyze",
+            "aggregate",
+            "chart",
+            "visualize",
+            "csv",
+        ],
         "best_practices": [
             "Validate assumptions about the data before aggregating.",
             "Check for nulls and outliers that skew summary statistics.",
@@ -116,7 +178,17 @@ WORKFLOW_ARCHETYPES: list[dict] = [
         "key": "migration_upgrade",
         "name": "Migration & Upgrade",
         "description": "Migrating data, upgrading dependencies, or porting code to a new system.",
-        "keywords": ["migrate", "migration", "upgrade", "update", "port", "convert", "move", "replace", "deprecat"],
+        "keywords": [
+            "migrate",
+            "migration",
+            "upgrade",
+            "update",
+            "port",
+            "convert",
+            "move",
+            "replace",
+            "deprecat",
+        ],
         "best_practices": [
             "Audit the blast radius before starting — list all affected call sites.",
             "Run the full test suite against both old and new versions before switching.",
@@ -245,7 +317,11 @@ def _skill_key(proposal_key: str) -> str:
 
 
 def _workflow_spec(proposal_key: str, title: str, evidence: list[str]) -> dict[str, Any]:
-    readable = title.replace("Recurring workflow pattern:", "").replace("Recurring prompt pattern:", "").strip()
+    readable = (
+        title.replace("Recurring workflow pattern:", "")
+        .replace("Recurring prompt pattern:", "")
+        .strip()
+    )
     return {
         "key": proposal_key,
         "name": readable[:80].title(),
@@ -260,7 +336,11 @@ def _workflow_spec(proposal_key: str, title: str, evidence: list[str]) -> dict[s
         "required_validations": ["scope_check"],
         "stages": [
             {"key": "parse_request", "kind": "parse_request", "required_skills": []},
-            {"key": "normalize_prompt", "kind": "normalize_prompt", "required_skills": ["prompt_library_normalizer"]},
+            {
+                "key": "normalize_prompt",
+                "kind": "normalize_prompt",
+                "required_skills": ["prompt_library_normalizer"],
+            },
             {
                 "key": "execute_pattern",
                 "kind": "generate",
@@ -355,7 +435,9 @@ def _proposal_from_row(row: sqlite3.Row | tuple[Any, ...]) -> WorkflowProposal:
     }
 
 
-def _eligible_patterns(conn: sqlite3.Connection, min_confidence: float, limit: int) -> list[dict[str, Any]]:
+def _eligible_patterns(
+    conn: sqlite3.Connection, min_confidence: float, limit: int
+) -> list[dict[str, Any]]:
     if not _table_exists(conn, "patterns"):
         return []
     rows = conn.execute(
@@ -420,7 +502,9 @@ def _archetype_by_key(key: str) -> dict[str, Any] | None:
     return next((item for item in WORKFLOW_ARCHETYPES if item["key"] == key), None)
 
 
-def _workflow_spec_from_archetype(archetype: dict, proposal_key: str, evidence_count: int) -> dict[str, Any]:
+def _workflow_spec_from_archetype(
+    archetype: dict, proposal_key: str, evidence_count: int
+) -> dict[str, Any]:
     return {
         "key": proposal_key,
         "name": archetype["name"],
@@ -435,7 +519,11 @@ def _workflow_spec_from_archetype(archetype: dict, proposal_key: str, evidence_c
         "required_validations": ["scope_check"],
         "stages": [
             {"key": "parse_request", "kind": "parse_request", "required_skills": []},
-            {"key": "normalize_prompt", "kind": "normalize_prompt", "required_skills": ["prompt_library_normalizer"]},
+            {
+                "key": "normalize_prompt",
+                "kind": "normalize_prompt",
+                "required_skills": ["prompt_library_normalizer"],
+            },
             {
                 "key": "execute_pattern",
                 "kind": "generate",
@@ -815,13 +903,17 @@ def synthesize_workflow_proposals(
             for candidate in candidates:
                 evidence.extend(candidate["evidence"])
             deduped_evidence = list(dict.fromkeys(evidence))[:12]
-            avg_confidence = sum(float(candidate["confidence"]) for candidate in candidates) / len(candidates)
+            avg_confidence = sum(float(candidate["confidence"]) for candidate in candidates) / len(
+                candidates
+            )
             summary = (
                 f"{archetype['description']} "
                 f"Synthesized from {len(candidates)} vault workflow signal(s) "
                 f"(avg confidence {avg_confidence:.2f}). Review for general reuse before registry mutation."
             )
-            workflow_spec = _workflow_spec_from_archetype(archetype, proposal_key, len(deduped_evidence))
+            workflow_spec = _workflow_spec_from_archetype(
+                archetype, proposal_key, len(deduped_evidence)
+            )
             skill_specs = [_skill_spec(proposal_key, archetype["name"])]
             validation_plan = _validation_plan(proposal_key, deduped_evidence)
             proposal = _store_archetype_proposal(
@@ -882,14 +974,18 @@ def approve_workflow_proposal(
     if proposal["status"] == "approved":
         return proposal
 
-    workflow_registry = _load_json_object(registry_path, {"version": "generated", "stage_kinds": [], "workflows": []})
+    workflow_registry = _load_json_object(
+        registry_path, {"version": "generated", "stage_kinds": [], "workflows": []}
+    )
     skill_registry = _load_json_object(skills_path, {"version": "generated", "skills": []})
     workflows = workflow_registry.setdefault("workflows", [])
     skills = skill_registry.setdefault("skills", [])
     if not isinstance(workflows, list) or not isinstance(skills, list):
         raise ValueError("Workflow and skill registries must contain list fields.")
 
-    if not any(isinstance(item, dict) and item.get("key") == proposal["proposal_key"] for item in workflows):
+    if not any(
+        isinstance(item, dict) and item.get("key") == proposal["proposal_key"] for item in workflows
+    ):
         workflows.append(proposal["workflow_spec"])
     existing_skill_keys = {item.get("key") for item in skills if isinstance(item, dict)}
     for skill in proposal["skill_specs"]:

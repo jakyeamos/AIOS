@@ -109,11 +109,7 @@ def discover_repositories(parent_dir: Path, *, max_depth: int = 4) -> list[dict[
     for current, dirs, _files in os.walk(root):
         current_path = Path(current)
         depth = len(current_path.relative_to(root).parts)
-        dirs[:] = [
-            name
-            for name in dirs
-            if name not in SKIP_DIR_NAMES and not name.startswith(".")
-        ]
+        dirs[:] = [name for name in dirs if name not in SKIP_DIR_NAMES and not name.startswith(".")]
         if depth >= max_depth:
             dirs[:] = []
         if (current_path / ".git").exists():
@@ -144,8 +140,12 @@ def create_benchmark_scaffold(*, parent_dir: Path, output_root: Path) -> dict[st
         },
     )
     _write_json(benchmark_root / "manifest" / "environments.json", _environment_manifest())
-    _write_json(benchmark_root / "manifest" / "skill-equivalence.json", _skill_equivalence_manifest())
-    _write_json(benchmark_root / "manifest" / "shortcut-registry.json", _shortcut_registry_manifest())
+    _write_json(
+        benchmark_root / "manifest" / "skill-equivalence.json", _skill_equivalence_manifest()
+    )
+    _write_json(
+        benchmark_root / "manifest" / "shortcut-registry.json", _shortcut_registry_manifest()
+    )
     _write_json(benchmark_root / "manifest" / "freeze-manifest.json", _freeze_manifest())
     for filename, content in REPORT_STUBS.items():
         report_path = benchmark_root / "reports" / filename
@@ -194,7 +194,9 @@ def preflight_benchmark(
         repo_path = Path(str(repo.get("repo_path", "")))
         checks = {
             "repo_exists": repo_path.exists(),
-            "clean_worktree": not bool(_git(repo_path, "status", "--porcelain")) if repo_path.exists() else False,
+            "clean_worktree": not bool(_git(repo_path, "status", "--porcelain"))
+            if repo_path.exists()
+            else False,
             "has_start_commit": bool(repo.get("current_commit")),
             "has_lockfile": bool(repo.get("dependency_lockfiles")),
             "has_quality_command": any(
@@ -286,7 +288,9 @@ def randomize_condition_map(
             for order_index, condition in enumerate(conditions):
                 assignments.append(
                     {
-                        "condition_anonymous_id": _condition_id(task_id, repeat_index, condition, seed),
+                        "condition_anonymous_id": _condition_id(
+                            task_id, repeat_index, condition, seed
+                        ),
                         "task_id": task_id,
                         "condition_actual": condition,
                         "repeat_index": repeat_index,
@@ -309,7 +313,10 @@ def randomize_condition_map(
 def freeze_benchmark(*, output_root: Path, model_config: dict[str, object]) -> dict[str, object]:
     benchmark_root = output_root.expanduser().resolve()
     manifest_dir = benchmark_root / "manifest"
-    _write_json(manifest_dir / "model-config.json", {"schema": "tmcp-benchmark-model-config-v0.1", **model_config})
+    _write_json(
+        manifest_dir / "model-config.json",
+        {"schema": "tmcp-benchmark-model-config-v0.1", **model_config},
+    )
     hashes = {
         "repositories_json": _file_sha256(manifest_dir / "repositories.json"),
         "skill_equivalence_json": _file_sha256(manifest_dir / "skill-equivalence.json"),
@@ -365,7 +372,9 @@ def run_task_condition(
     executor: str = "stub",
 ) -> dict[str, object]:
     if executor != "stub":
-        raise ValueError("Only the deterministic stub executor is implemented in this benchmark slice.")
+        raise ValueError(
+            "Only the deterministic stub executor is implemented in this benchmark slice."
+        )
     benchmark_root = output_root.expanduser().resolve()
     tasks = _tasks_by_id(benchmark_root)
     task = tasks[task_id]
@@ -400,11 +409,15 @@ def run_task_condition(
     )
     first_relevant_action_at = now_iso()
     first_edit_at = ""
-    public_result = _run_commands(_string_list(task.get("required_test_commands")), worktree, artifact_dir, "public")
+    public_result = _run_commands(
+        _string_list(task.get("required_test_commands")), worktree, artifact_dir, "public"
+    )
     first_test_at = public_result["first_started_at"] or ""
     first_successful_test_at = public_result["first_success_at"] or ""
     public_tests_completed_at = now_iso()
-    hidden_result = _run_commands(_string_list(task.get("hidden_test_commands")), worktree, artifact_dir, "hidden")
+    hidden_result = _run_commands(
+        _string_list(task.get("hidden_test_commands")), worktree, artifact_dir, "hidden"
+    )
     hidden_tests_completed_at = now_iso()
     agent_completed_at = now_iso()
     evaluation_completed_at = now_iso()
@@ -489,7 +502,9 @@ def run_task_condition(
         "notes": "Deterministic stub executor; no agent patch was attempted.",
     }
     _write_json(raw_path, record)
-    _write_json(benchmark_root / "evaluation" / "automated" / f"{run_id}.json", _evaluation_payload(record))
+    _write_json(
+        benchmark_root / "evaluation" / "automated" / f"{run_id}.json", _evaluation_payload(record)
+    )
     return record
 
 
@@ -542,7 +557,9 @@ def tmcp_claim_gate(runs: list[dict[str, object]]) -> dict[str, object]:
     for run in runs:
         by_condition.setdefault(str(run.get("condition_actual")), []).append(run)
     baseline = by_condition.get("flat_skills") or by_condition.get("baseline") or []
-    optimized = by_condition.get("tmcp_behavior_optimized") or by_condition.get("tmcp_cold_start") or []
+    optimized = (
+        by_condition.get("tmcp_behavior_optimized") or by_condition.get("tmcp_cold_start") or []
+    )
     shortcut = by_condition.get("tmcp_validated_shortcut") or []
     if not baseline or not optimized:
         return {
@@ -556,7 +573,9 @@ def tmcp_claim_gate(runs: list[dict[str, object]]) -> dict[str, object]:
     shortcut_separated = bool(shortcut) and optimized is not shortcut
     token_ok = bool(comparison["token_claim_allowed"])
     missed_ok = optimized_missed <= baseline_missed
-    claim_allowed = bool(comparison["quality_claim_allowed"] and token_ok and missed_ok and shortcut_separated)
+    claim_allowed = bool(
+        comparison["quality_claim_allowed"] and token_ok and missed_ok and shortcut_separated
+    )
     if not comparison["quality_claim_allowed"]:
         reason = "quality_or_completion_regression"
     elif not token_ok:
@@ -595,7 +614,9 @@ def _repository_record(repo_path: Path) -> dict[str, object]:
         "current_commit": _git(repo_path, "rev-parse", "HEAD") or None,
         "upstream_remote": _git(repo_path, "remote", "get-url", "origin") or None,
         "uncommitted_changes": bool(_git(repo_path, "status", "--porcelain")),
-        "existing_skills": _relative_matches(repo_path, ("skills", ".agents/skills", ".codex/skills")),
+        "existing_skills": _relative_matches(
+            repo_path, ("skills", ".agents/skills", ".codex/skills")
+        ),
         "has_tmcp_graph": (repo_path / "skills.tmcp").exists()
         or (repo_path / "skills-library" / "skills.tmcp").exists(),
         "existing_shortcut_registry": _relative_matches(
@@ -667,7 +688,9 @@ def _package_manager(repo_path: Path, package: object) -> str | None:
     return "pnpm" if (repo_path / "package.json").exists() else None
 
 
-def _script_commands(scripts: object, names: tuple[str, ...], package_manager: str | None) -> list[str]:
+def _script_commands(
+    scripts: object, names: tuple[str, ...], package_manager: str | None
+) -> list[str]:
     if not isinstance(scripts, dict):
         return []
     commands: list[str] = []
@@ -968,7 +991,9 @@ def _validate_task_manifest(
     for task in tasks:
         missing = sorted(field for field in required_task_fields if field not in task)
         if missing:
-            raise ValueError(f"Task {task.get('task_id', '<unknown>')} missing required fields: {missing}")
+            raise ValueError(
+                f"Task {task.get('task_id', '<unknown>')} missing required fields: {missing}"
+            )
         task_id = str(task["task_id"])
         if task_id in task_ids:
             raise ValueError(f"Duplicate task_id: {task_id}")
@@ -1003,7 +1028,10 @@ def _file_sha256(path: Path) -> str | None:
 def _condition_assignment(benchmark_root: Path, condition_anonymous_id: str) -> dict[str, object]:
     payload = _read_json_object(benchmark_root / "manifest" / "condition-map.json")
     for assignment in _json_list(payload.get("assignments")):
-        if isinstance(assignment, dict) and assignment.get("condition_anonymous_id") == condition_anonymous_id:
+        if (
+            isinstance(assignment, dict)
+            and assignment.get("condition_anonymous_id") == condition_anonymous_id
+        ):
             return assignment
     raise ValueError(f"Unknown condition_anonymous_id: {condition_anonymous_id}")
 
@@ -1034,7 +1062,9 @@ def _create_worktree(repo_path: Path, worktree: Path, commit: str) -> None:
         check=False,
     )
     if result.returncode != 0:
-        raise RuntimeError(result.stderr.strip() or result.stdout.strip() or "git worktree add failed")
+        raise RuntimeError(
+            result.stderr.strip() or result.stdout.strip() or "git worktree add failed"
+        )
 
 
 def _monotonic() -> float:
@@ -1149,8 +1179,12 @@ def _condition_token_payload(condition: str, task: dict[str, object]) -> dict[st
         "reasoning_tokens": None,
         "repository_context_tokens": None,
         "skill_tokens_loaded": route_tokens,
-        "relevant_skill_tokens": min(route_tokens, len(expected_modules) * 225) if route_tokens else None,
-        "irrelevant_skill_tokens": max(0, route_tokens - len(expected_modules) * 225) if route_tokens else None,
+        "relevant_skill_tokens": min(route_tokens, len(expected_modules) * 225)
+        if route_tokens
+        else None,
+        "irrelevant_skill_tokens": max(0, route_tokens - len(expected_modules) * 225)
+        if route_tokens
+        else None,
         "shortcut_lookup_tokens": 120 if condition == "tmcp_validated_shortcut" else None,
         "shortcut_validation_tokens": 80 if condition == "tmcp_validated_shortcut" else None,
         "routing_tokens": route_tokens if condition.startswith("tmcp_") else None,
@@ -1183,7 +1217,9 @@ def _condition_summary(runs: list[dict[str, object]]) -> dict[str, object]:
         "success_count": len(completed),
         "completion_rate": round(len(completed) / len(runs), 4) if runs else None,
         "median_quality_score": _median_number(run.get("quality_score_adjusted") for run in runs),
-        "median_total_benchmark_seconds": _median_number(run.get("total_benchmark_seconds") for run in runs),
+        "median_total_benchmark_seconds": _median_number(
+            run.get("total_benchmark_seconds") for run in runs
+        ),
         "median_total_tokens": _median_number(_total_tokens(run) for run in runs),
         "median_estimated_loaded_context_tokens": _median_number(
             run.get("estimated_loaded_context_tokens") for run in runs
@@ -1220,7 +1256,9 @@ def _comparison_summary(
         baseline["median_estimated_loaded_context_tokens"],
         challenger["median_estimated_loaded_context_tokens"],
     )
-    speed_claim_allowed = quality_claim_allowed and isinstance(speed_delta, int | float) and speed_delta > 0
+    speed_claim_allowed = (
+        quality_claim_allowed and isinstance(speed_delta, int | float) and speed_delta > 0
+    )
     token_claim_allowed = (
         quality_claim_allowed
         and isinstance(estimated_token_delta, int | float)
@@ -1235,7 +1273,9 @@ def _comparison_summary(
         "token_claim_allowed": token_claim_allowed,
         "reason": reason,
         "speed_delta_seconds": speed_delta if quality_claim_allowed else None,
-        "estimated_loaded_context_token_delta": estimated_token_delta if quality_claim_allowed else None,
+        "estimated_loaded_context_token_delta": estimated_token_delta
+        if quality_claim_allowed
+        else None,
     }
 
 
@@ -1292,7 +1332,10 @@ def _write_report_summaries(benchmark_root: Path, aggregate: dict[str, object]) 
         indent=2,
         sort_keys=True,
     )
-    technical.write_text(f"# TMCP Multi-Project Benchmark Technical Report\n\n```json\n{summary}\n```\n", encoding="utf-8")
+    technical.write_text(
+        f"# TMCP Multi-Project Benchmark Technical Report\n\n```json\n{summary}\n```\n",
+        encoding="utf-8",
+    )
     executive.write_text(
         "# Executive Summary\n\nCalibration data exists, but promotional claims remain unapproved.\n",
         encoding="utf-8",

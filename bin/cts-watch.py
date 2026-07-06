@@ -18,7 +18,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Watch repo and run CTS incremental updates.")
     parser.add_argument("--repo", type=Path, default=Path.cwd(), help="Repo root path")
     parser.add_argument("--base", default="HEAD~1", help="Fallback git base for manual update mode")
-    parser.add_argument("--debounce-ms", type=int, default=300, help="Debounce window in milliseconds")
+    parser.add_argument(
+        "--debounce-ms", type=int, default=300, help="Debounce window in milliseconds"
+    )
     args = parser.parse_args()
 
     def on_change(event: WatchEvent) -> None:
@@ -39,4 +41,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

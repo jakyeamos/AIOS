@@ -47,7 +47,9 @@ def main() -> None:
         project_ids = ["aios"]
 
     report = run_enforcement(project_ids=project_ids)
-    actionable_projects = [project for project in report["projects"] if _project_is_actionable(project)]
+    actionable_projects = [
+        project for project in report["projects"] if _project_is_actionable(project)
+    ]
     failures = [
         project for project in actionable_projects if project["status"] in {"failed", "error"}
     ]

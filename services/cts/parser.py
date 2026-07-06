@@ -71,7 +71,9 @@ def _node_id(repo_id: str, qualified_name: str) -> str:
     return _sha256(f"{repo_id}:{qualified_name}")
 
 
-def _edge_id(repo_id: str, kind: EdgeKind, source: str, target: str, file_path: str, line: int) -> str:
+def _edge_id(
+    repo_id: str, kind: EdgeKind, source: str, target: str, file_path: str, line: int
+) -> str:
     return _sha256(f"{repo_id}:{kind.value}:{source}:{target}:{file_path}:{line}")
 
 
@@ -289,7 +291,9 @@ class RepoParser:
                         )
                         edges.append(
                             CTSEdge(
-                                id=_edge_id(repo_id, EdgeKind.INHERITS, qn, target_qn, rel, node.lineno),
+                                id=_edge_id(
+                                    repo_id, EdgeKind.INHERITS, qn, target_qn, rel, node.lineno
+                                ),
                                 repo_id=repo_id,
                                 kind=EdgeKind.INHERITS,
                                 source_qualified=qn,
@@ -348,7 +352,9 @@ class RepoParser:
                     target_qn = f"module.{alias.name}"
                     edges.append(
                         CTSEdge(
-                            id=_edge_id(repo_id, EdgeKind.IMPORTS_FROM, file_qn, target_qn, rel, node.lineno),
+                            id=_edge_id(
+                                repo_id, EdgeKind.IMPORTS_FROM, file_qn, target_qn, rel, node.lineno
+                            ),
                             repo_id=repo_id,
                             kind=EdgeKind.IMPORTS_FROM,
                             source_qualified=file_qn,
@@ -369,7 +375,9 @@ class RepoParser:
                 target_qn = f"module.{mod}" if mod else "module.unknown"
                 edges.append(
                     CTSEdge(
-                        id=_edge_id(repo_id, EdgeKind.IMPORTS_FROM, file_qn, target_qn, rel, node.lineno),
+                        id=_edge_id(
+                            repo_id, EdgeKind.IMPORTS_FROM, file_qn, target_qn, rel, node.lineno
+                        ),
                         repo_id=repo_id,
                         kind=EdgeKind.IMPORTS_FROM,
                         source_qualified=file_qn,
@@ -413,7 +421,9 @@ class RepoParser:
                             target_qualified=target_qn,
                             file_path=rel,
                             line=getattr(node, "lineno", 1),
-                            confidence=default_edge_confidence(ExtractionMethod.TREE_SITTER, resolution),
+                            confidence=default_edge_confidence(
+                                ExtractionMethod.TREE_SITTER, resolution
+                            ),
                             resolution_method=resolution,
                             extraction_method=ExtractionMethod.TREE_SITTER,
                         )
@@ -592,7 +602,9 @@ class RepoParser:
                         target_qualified=target_qn,
                         file_path=rel,
                         line=line_no,
-                        confidence=default_edge_confidence(ExtractionMethod.TREE_SITTER, resolution),
+                        confidence=default_edge_confidence(
+                            ExtractionMethod.TREE_SITTER, resolution
+                        ),
                         resolution_method=resolution,
                         extraction_method=ExtractionMethod.TREE_SITTER,
                     )
@@ -652,7 +664,9 @@ class RepoParser:
     def _class_scope_for_line(blocks: list[ScopeBlock], line: int) -> str | None:
         class_blocks = [b for b in blocks if ".class." not in b.qn]
         for block in class_blocks:
-            if block.start_line <= line <= block.end_line and block.qn.rsplit(".", 1)[-1][0].isupper():
+            if (
+                block.start_line <= line <= block.end_line
+                and block.qn.rsplit(".", 1)[-1][0].isupper()
+            ):
                 return block.qn
         return None
-

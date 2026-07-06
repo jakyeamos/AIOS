@@ -103,7 +103,9 @@ def update_note(note_path: str, commits: list[str]) -> None:
         commit_lines = "\n".join(f"- {c}" for c in commits[:10])
         new_focus = f"## Current Focus\n\n{commit_lines}\n\n<!-- Add context here -->"
     else:
-        new_focus = "## Current Focus\n\n<!-- No commits this session -->\n\n<!-- Add context here -->"
+        new_focus = (
+            "## Current Focus\n\n<!-- No commits this session -->\n\n<!-- Add context here -->"
+        )
 
     # Ensure ## Notes section exists after Current Focus
     notes_section = "## Notes\n\n<!-- Manual additions -->"
@@ -183,7 +185,11 @@ def main() -> None:
         log(f"error: {e}")
         print(f"AIOS · focus update failed: {e}")
         subprocess.run(
-            ["osascript", "-e", f'display notification "Focus update failed: {e}" with title "AIOS · Error"'],
+            [
+                "osascript",
+                "-e",
+                f'display notification "Focus update failed: {e}" with title "AIOS · Error"',
+            ],
             capture_output=True,
         )
 

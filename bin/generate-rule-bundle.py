@@ -11,6 +11,7 @@ Usage:
   python3 ~/AIOS/bin/generate-rule-bundle.py --pattern-id <id>
   python3 ~/AIOS/bin/generate-rule-bundle.py --artifact <path.json>
 """
+
 import argparse
 import importlib.util as _ilu
 import json
@@ -30,16 +31,17 @@ def _load_rule_artifacts():
     spec.loader.exec_module(mod)
     return mod
 
+
 _ra = _load_rule_artifacts()
-read_artifact  = _ra.read_artifact
+read_artifact = _ra.read_artifact
 write_artifact = _ra.write_artifact
 
-LAB_DIR   = Path.home() / "projects/claude-improvement-lab"
+LAB_DIR = Path.home() / "projects/claude-improvement-lab"
 TASKS_DIR = LAB_DIR / "tasks/rule-linked"
-DB        = Path.home() / "AIOS/data/aios.db"
+DB = Path.home() / "AIOS/data/aios.db"
 
 TASK_TOML = """schema_version = "1.1"\n\n[verifier]\ntimeout_sec = 60\n\n[environment]\ntimeout_sec = 180\n"""
-TEST_SH   = "#!/bin/bash\nset -e\nmkdir -p /logs/verifier\npython3 /tests/test.py\n"
+TEST_SH = "#!/bin/bash\nset -e\nmkdir -p /logs/verifier\npython3 /tests/test.py\n"
 
 DOCKERFILE_TMPL = """\
 FROM autoagent-base
@@ -51,6 +53,7 @@ RUN mkdir -p /task/output
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _now() -> str:
     return datetime.now(UTC).isoformat()
@@ -74,6 +77,7 @@ def _write_task(bundle_dir: Path, task_name: str, files: dict[str, str]) -> Path
 # ---------------------------------------------------------------------------
 # Template families
 # ---------------------------------------------------------------------------
+
 
 def _tasks_verification() -> list[tuple[str, dict[str, str]]]:
     """Tasks that require running tests to confirm correctness before finishing."""
@@ -377,7 +381,9 @@ def _tasks_planning() -> list[tuple[str, dict[str, str]]]:
             3. Sum the amounts by region.
             4. Write the result to `/task/output/regional_totals.json` as a JSON object: `{"region": total_amount, ...}`
         """),
-        "environment/Dockerfile": DOCKERFILE_TMPL.format(copy_lines="COPY sales.csv /task/sales.csv"),
+        "environment/Dockerfile": DOCKERFILE_TMPL.format(
+            copy_lines="COPY sales.csv /task/sales.csv"
+        ),
         "environment/sales.csv": sales_csv,
         "tests/test.py": verifier_csv,
         "tests/test.sh": TEST_SH,
@@ -476,7 +482,9 @@ def _tasks_inspection() -> list[tuple[str, dict[str, str]]]:
                A hex color is valid if it starts with `#` followed by exactly 6 hexadecimal characters (0-9, a-f, A-F).
             3. Write the updated file (all four functions) to `/task/output/validators.py`.
         """),
-        "environment/Dockerfile": DOCKERFILE_TMPL.format(copy_lines="COPY validators.py /task/validators.py"),
+        "environment/Dockerfile": DOCKERFILE_TMPL.format(
+            copy_lines="COPY validators.py /task/validators.py"
+        ),
         "environment/validators.py": validators_py,
         "tests/test.py": verifier_val,
         "tests/test.sh": TEST_SH,
@@ -782,14 +790,14 @@ def _tasks_incremental() -> list[tuple[str, dict[str, str]]]:
 # ---------------------------------------------------------------------------
 
 FAMILY_MAP = {
-    "verification":          _tasks_verification,
+    "verification": _tasks_verification,
     "completion-validation": _tasks_verification,
-    "planning":              _tasks_planning,
-    "multi-step-execution":  _tasks_planning,
-    "inspection":            _tasks_inspection,
-    "claim-calibration":     _tasks_inspection,
-    "tool-selection":        _tasks_inspection,
-    "incremental-editing":   _tasks_incremental,
+    "planning": _tasks_planning,
+    "multi-step-execution": _tasks_planning,
+    "inspection": _tasks_inspection,
+    "claim-calibration": _tasks_inspection,
+    "tool-selection": _tasks_inspection,
+    "incremental-editing": _tasks_incremental,
 }
 
 
@@ -797,10 +805,11 @@ FAMILY_MAP = {
 # Main generation logic
 # ---------------------------------------------------------------------------
 
+
 def generate_bundle(artifact: dict, dry_run: bool = False) -> dict:
     pattern_id = artifact["pattern_id"]
-    cap_class   = artifact.get("capability_class", "multi-step-execution")
-    bundle_id   = _bundle_id(pattern_id)
+    cap_class = artifact.get("capability_class", "multi-step-execution")
+    bundle_id = _bundle_id(pattern_id)
 
     family_fn = FAMILY_MAP.get(cap_class, _tasks_planning)
     tasks = family_fn()  # list of (task_name, files_dict)
@@ -812,12 +821,14 @@ def generate_bundle(artifact: dict, dry_run: bool = False) -> dict:
         task_path = bundle_dir / task_name
         if not dry_run:
             _write_task(bundle_dir, task_name, files)
-        task_manifest.append({
-            "name": task_name,
-            "path": str(task_path.relative_to(LAB_DIR)),
-            "capability_class": cap_class,
-            "family": family_fn.__name__,
-        })
+        task_manifest.append(
+            {
+                "name": task_name,
+                "path": str(task_path.relative_to(LAB_DIR)),
+                "capability_class": cap_class,
+                "family": family_fn.__name__,
+            }
+        )
         print(f"  {'[DRY] ' if dry_run else ''}wrote task: {task_name}")
 
     return {
@@ -863,7 +874,9 @@ def main():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--pattern-id", help="Pattern ID to look up artifact for")
     group.add_argument("--artifact", help="Path to artifact JSON file")
-    parser.add_argument("--dry-run", action="store_true", help="Print what would be written, don't write")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Print what would be written, don't write"
+    )
     args = parser.parse_args()
 
     if args.pattern_id:
@@ -874,8 +887,10 @@ def main():
     else:
         artifact = json.loads(Path(args.artifact).read_text())
 
-    print(f"Generating bundle for pattern {artifact['pattern_id'][:8]} "
-          f"(cap={artifact.get('capability_class')}, mutation={artifact.get('mutation_scope')})")
+    print(
+        f"Generating bundle for pattern {artifact['pattern_id'][:8]} "
+        f"(cap={artifact.get('capability_class')}, mutation={artifact.get('mutation_scope')})"
+    )
 
     bundle = generate_bundle(artifact, dry_run=args.dry_run)
 

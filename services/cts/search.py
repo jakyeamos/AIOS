@@ -56,8 +56,10 @@ class HybridSearcher:
         kind: NodeKind | None = None,
         limit: int = 20,
     ) -> SearchResult:
-        phrase_query = f"\"{query}\"" if " " in query.strip() else query
-        fts_hits = self.store.search_fts(repo_id=repo_id, query=phrase_query, kind=kind, limit=limit * 2)
+        phrase_query = f'"{query}"' if " " in query.strip() else query
+        fts_hits = self.store.search_fts(
+            repo_id=repo_id, query=phrase_query, kind=kind, limit=limit * 2
+        )
         like_hits = self.store.search_like(repo_id=repo_id, query=query, kind=kind, limit=limit * 2)
         fused = reciprocal_rank_fusion([fts_hits, like_hits])
         boosted: list[dict[str, Any]] = []
@@ -68,4 +70,3 @@ class HybridSearcher:
             boosted.append(row)
         boosted.sort(key=lambda r: r["score"], reverse=True)
         return SearchResult(items=boosted[:limit], has_embeddings=False)
-

@@ -12,9 +12,7 @@ sys.path.insert(0, str(ROOT))
 from services import handoff_store
 
 
-def test_write_handoff_creates_schema_and_round_trips(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_write_handoff_creates_schema_and_round_trips(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(handoff_store, "AIOS_DB", tmp_path / "aios.db")
 
     handoff_id = handoff_store.write_handoff(

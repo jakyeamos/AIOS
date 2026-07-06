@@ -69,7 +69,9 @@ def _project_id_for_cwd(conn: sqlite3.Connection, cwd: str | None) -> str | None
     normalized = _normalize_path(cwd)
     if not normalized:
         return None
-    row = conn.execute("SELECT id FROM projects WHERE repo_path = ? LIMIT 1", (normalized,)).fetchone()
+    row = conn.execute(
+        "SELECT id FROM projects WHERE repo_path = ? LIMIT 1", (normalized,)
+    ).fetchone()
     if row:
         return str(row[0])
     return None
@@ -97,7 +99,9 @@ def resolve_session_cwd(conn: sqlite3.Connection, payload_cwd: str | None) -> st
     return resolved_payload or process_cwd or os.getcwd()
 
 
-def _session_row(conn: sqlite3.Connection, session_id: str | None) -> sqlite3.Row | tuple[Any, ...] | None:
+def _session_row(
+    conn: sqlite3.Connection, session_id: str | None
+) -> sqlite3.Row | tuple[Any, ...] | None:
     if not session_id:
         return None
     return conn.execute(
@@ -119,7 +123,9 @@ def _row_value(row: sqlite3.Row | tuple[Any, ...] | None, key: str, index: int) 
     return row[index]
 
 
-def _is_newer(candidate: sqlite3.Row | tuple[Any, ...], current: sqlite3.Row | tuple[Any, ...] | None) -> bool:
+def _is_newer(
+    candidate: sqlite3.Row | tuple[Any, ...], current: sqlite3.Row | tuple[Any, ...] | None
+) -> bool:
     if current is None:
         return True
     candidate_started = str(_row_value(candidate, "started_at", 2) or "")
@@ -163,7 +169,9 @@ def resolve_hook_session_id(
     pointer_cwd_value = _normalize_path(str(_row_value(pointer_row, "cwd", 3) or ""))
 
     pointer_matches_cwd = bool(effective_cwd and pointer_cwd_value == effective_cwd)
-    payload_mismatches_cwd = bool(effective_cwd and payload_cwd_value and payload_cwd_value != effective_cwd)
+    payload_mismatches_cwd = bool(
+        effective_cwd and payload_cwd_value and payload_cwd_value != effective_cwd
+    )
     payload_missing = payload_row is None
     payload_closed = str(_row_value(payload_row, "status", 1) or "") == "closed"
 

@@ -102,7 +102,10 @@ def test_vault_synthesis_skips_low_signal_notes(tmp_path: Path) -> None:
     vault = tmp_path / "Command-Center"
     note = vault / "03 Projects" / "Loose Thought.md"
     note.parent.mkdir(parents=True)
-    note.write_text("# Loose Thought\n\nThis is a plain note without repeatable operating structure.\n", encoding="utf-8")
+    note.write_text(
+        "# Loose Thought\n\nThis is a plain note without repeatable operating structure.\n",
+        encoding="utf-8",
+    )
 
     proposals = synthesize_workflow_proposals(conn, min_confidence=0.75, vault_root=vault)
 

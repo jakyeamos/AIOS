@@ -17,7 +17,9 @@ from services.workflow_experiments import (  # noqa: E402
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run queued workflow-skill experiments without an LLM agent.")
+    parser = argparse.ArgumentParser(
+        description="Run queued workflow-skill experiments without an LLM agent."
+    )
     parser.add_argument("--db", default=str(ROOT / "data" / "aios.db"))
     parser.add_argument("--id", help="Run one workflow_skill_experiments row by id.")
     parser.add_argument("--limit", type=int, default=20)

@@ -116,9 +116,7 @@ def brief_task(
         "project_id": project_id,
         "task_type": task_classification,
         "selected_context_packets": selected_packets,
-        "standards": [
-            item for item in selected_packets if item["id"].startswith("global.")
-        ],
+        "standards": [item for item in selected_packets if item["id"].startswith("global.")],
         "success_criteria": criteria_rows,
         "risks": context_payload.get("known_risks", []),
         "expected_artifacts": ["orchestration_run", "briefing_packet", "harness_evaluation"],
@@ -402,7 +400,11 @@ def simulate_fixture(
                 events=events,
                 record=True,
             )
-            target_status = "completed" if evaluation["completion_status"] == "complete" else "failed_validation"
+            target_status = (
+                "completed"
+                if evaluation["completion_status"] == "complete"
+                else "failed_validation"
+            )
         else:
             target_status = EVENT_STATUS.get(event_type)
         _record_event(
@@ -456,7 +458,9 @@ def replay_session(conn: sqlite3.Connection, *, session_id: str) -> dict[str, An
     ).fetchone()
     if row is None:
         raise ValueError(f"Session not found: {session_id}")
-    objective = str(row["objective"] if isinstance(row, sqlite3.Row) else row[2] or "Replay session")
+    objective = str(
+        row["objective"] if isinstance(row, sqlite3.Row) else row[2] or "Replay session"
+    )
     project_id = str(row["project_id"] if isinstance(row, sqlite3.Row) else row[1])
     status = str(row["status"] if isinstance(row, sqlite3.Row) else row[3])
     events: list[dict[str, Any]] = [
@@ -473,13 +477,20 @@ def replay_session(conn: sqlite3.Connection, *, session_id: str) -> dict[str, An
         (session_id,),
     ).fetchall()
     for tool_row in tool_rows:
-        payload = json.loads(str(tool_row["payload_json"] if isinstance(tool_row, sqlite3.Row) else tool_row[1]) or "{}")
+        payload = json.loads(
+            str(tool_row["payload_json"] if isinstance(tool_row, sqlite3.Row) else tool_row[1])
+            or "{}"
+        )
         command = str(payload.get("command") or "")
         exit_code = payload.get("exit_code")
         if "pytest" in command and exit_code not in (0, "0", None):
-            events.append({"type": "tests_failed", "command": command, "summary": "Replayed tests failed."})
+            events.append(
+                {"type": "tests_failed", "command": command, "summary": "Replayed tests failed."}
+            )
         elif "pytest" in command and exit_code in (0, "0"):
-            events.append({"type": "tests_passed", "command": command, "summary": "Replayed tests passed."})
+            events.append(
+                {"type": "tests_passed", "command": command, "summary": "Replayed tests passed."}
+            )
     artifact_rows = conn.execute(
         """
         SELECT artifact_type, path
@@ -490,13 +501,23 @@ def replay_session(conn: sqlite3.Connection, *, session_id: str) -> dict[str, An
         (session_id,),
     ).fetchall()
     for artifact_row in artifact_rows:
-        artifact_type = str(artifact_row["artifact_type"] if isinstance(artifact_row, sqlite3.Row) else artifact_row[0])
-        artifact_path = str(artifact_row["path"] if isinstance(artifact_row, sqlite3.Row) else artifact_row[1])
+        artifact_type = str(
+            artifact_row["artifact_type"]
+            if isinstance(artifact_row, sqlite3.Row)
+            else artifact_row[0]
+        )
+        artifact_path = str(
+            artifact_row["path"] if isinstance(artifact_row, sqlite3.Row) else artifact_row[1]
+        )
         if artifact_type in {"patch", "file", "changed-file"} and artifact_path:
-            events.append({"type": "file_changed", "path": artifact_path, "summary": "Replayed file change."})
+            events.append(
+                {"type": "file_changed", "path": artifact_path, "summary": "Replayed file change."}
+            )
     has_failed_tests = any(event["type"] == "tests_failed" for event in events)
     if status == "closed" and has_failed_tests:
-        events.append({"type": "run_closed_failed", "summary": "Replayed session closed with failed tests."})
+        events.append(
+            {"type": "run_closed_failed", "summary": "Replayed session closed with failed tests."}
+        )
     elif status == "closed":
         events.append({"type": "run_closed_completed", "summary": "Replayed session closed."})
     evaluation = _evaluate_from_events(

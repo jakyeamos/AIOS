@@ -358,7 +358,9 @@ def propose_learning_candidates(
     candidates: list[dict[str, Any]] = []
     for row in rows:
         candidate = _candidate_from_review(row)
-        if candidate is None or _matches_rejected_candidate(conn, str(candidate["proposed_change"])):
+        if candidate is None or _matches_rejected_candidate(
+            conn, str(candidate["proposed_change"])
+        ):
             continue
         candidate_id = _insert_candidate(conn, candidate)
         candidates.append({"candidate_id": candidate_id, **candidate})
@@ -419,7 +421,11 @@ def apply_approved_candidates(
             (now, now, str(row[0])),
         )
         applied.append(entry)
-    return {"applied_count": len(applied), "approved_lessons_path": str(context_loop_root / APPROVED_LESSONS_FILE), "applied": applied}
+    return {
+        "applied_count": len(applied),
+        "approved_lessons_path": str(context_loop_root / APPROVED_LESSONS_FILE),
+        "applied": applied,
+    }
 
 
 def context_loop_metrics(conn: sqlite3.Connection) -> dict[str, Any]:
@@ -585,7 +591,9 @@ def _candidate_from_review(row: sqlite3.Row | tuple[Any, ...]) -> dict[str, Any]
     if str(outcome) == "human_judgment_only":
         category = "human_judgment_only"
         destination = "human_handoff_rule"
-        proposed_change = "Escalate similar cases to human-only judgment instead of drafting final language."
+        proposed_change = (
+            "Escalate similar cases to human-only judgment instead of drafting final language."
+        )
         interpretation = "The reviewer marked this as judgment that should not be automated."
     elif unsupported_claims:
         category = "unsupported_commitment"
@@ -596,7 +604,9 @@ def _candidate_from_review(row: sqlite3.Row | tuple[Any, ...]) -> dict[str, Any]
         category = "task_misunderstood"
         destination = "human_handoff_rule"
         proposed_change = "When review deletes or replaces the draft, ask for task clarification before proposing a durable style or memory rule."
-        interpretation = "The review outcome is a weak signal that the task may have been misunderstood."
+        interpretation = (
+            "The review outcome is a weak signal that the task may have been misunderstood."
+        )
     elif not retrieved_context and float(edit_distance) > 0.25:
         category = "incomplete_retrieval"
         destination = "retrieval_policy"

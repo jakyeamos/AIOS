@@ -48,9 +48,7 @@ class CTSRegistry:
                     "SELECT id, name, repo_path, status FROM projects WHERE status='active'"
                 ).fetchall()
             else:
-                rows = conn.execute(
-                    "SELECT id, name, repo_path, status FROM projects"
-                ).fetchall()
+                rows = conn.execute("SELECT id, name, repo_path, status FROM projects").fetchall()
         finally:
             conn.close()
         repos: list[CTSRepo] = []
@@ -128,4 +126,3 @@ class CTSRegistry:
         for store in self._pool.values():
             store.close()
         self._pool.clear()
-

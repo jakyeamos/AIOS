@@ -16,4 +16,3 @@ class EmbeddingAdapter:
         # Placeholder deterministic vector until provider wiring is configured.
         seed = sum(ord(ch) for ch in text)
         return [float((seed + i) % 101) / 100.0 for i in range(32)]
-

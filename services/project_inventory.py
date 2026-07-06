@@ -213,7 +213,9 @@ def rank_project_candidates(
             name_overlap = len(name_tokens & objective_tokens)
             if name_overlap:
                 score += name_overlap * 12
-                reasons.append(f"Objective overlaps project-name tokens {sorted(name_tokens & objective_tokens)}.")
+                reasons.append(
+                    f"Objective overlaps project-name tokens {sorted(name_tokens & objective_tokens)}."
+                )
             if repo_name and repo_name in objective_lower:
                 score += 35
                 if match_kind == "weak_match":
@@ -223,7 +225,9 @@ def rank_project_candidates(
             repo_overlap = len(repo_tokens & objective_tokens)
             if repo_overlap:
                 score += repo_overlap * 8
-                reasons.append(f"Objective overlaps repo-name tokens {sorted(repo_tokens & objective_tokens)}.")
+                reasons.append(
+                    f"Objective overlaps repo-name tokens {sorted(repo_tokens & objective_tokens)}."
+                )
 
         if score <= 0:
             continue

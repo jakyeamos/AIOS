@@ -162,7 +162,9 @@ def validate_contract(
                 )
             )
         else:
-            configured_gates = project.get("gates") if isinstance(project.get("gates"), dict) else {}
+            configured_gates = (
+                project.get("gates") if isinstance(project.get("gates"), dict) else {}
+            )
             declared_gates = (
                 [*pre_commit_gates, *full_gates]
                 if isinstance(pre_commit_gates, list) and isinstance(full_gates, list)
@@ -306,7 +308,9 @@ def _known_gates(registry: dict[str, Any]) -> set[str]:
     return {str(gate) for gate in gates if isinstance(gate, str) and gate.strip()}
 
 
-def _registered_project_for_root(registry: dict[str, Any], repo_root: Path) -> dict[str, Any] | None:
+def _registered_project_for_root(
+    registry: dict[str, Any], repo_root: Path
+) -> dict[str, Any] | None:
     resolved_root = repo_root.expanduser().resolve()
     for project in _projects(registry):
         roots = project.get("roots")

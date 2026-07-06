@@ -23,7 +23,9 @@ from services.tmcp_benchmark import (  # noqa: E402
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Manage the TMCP multi-project benchmark scaffold.")
+    parser = argparse.ArgumentParser(
+        description="Manage the TMCP multi-project benchmark scaffold."
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     init_parser = subparsers.add_parser("init")

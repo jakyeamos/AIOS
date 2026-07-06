@@ -19,7 +19,9 @@ def create_meta_learning_parser() -> argparse.ArgumentParser:
     analyze_session = subparsers.add_parser("analyze-session", help="Analyze one JSON session")
     analyze_session.add_argument("path")
 
-    analyze_sessions = subparsers.add_parser("analyze-sessions", help="Analyze JSON sessions in a directory")
+    analyze_sessions = subparsers.add_parser(
+        "analyze-sessions", help="Analyze JSON sessions in a directory"
+    )
     analyze_sessions.add_argument("directory")
 
     proposals = subparsers.add_parser("proposals", help="List stored proposal records")
@@ -61,7 +63,10 @@ def meta_learning_cli_payload(argv: list[str]) -> dict[str, Any]:
         return _analyze_sessions(Path(args.directory))
     if args.command == "proposals":
         proposals = read_proposals_jsonl(Path(args.file))
-        return {"proposal_count": len(proposals), "proposals": [proposal.to_dict() for proposal in proposals]}
+        return {
+            "proposal_count": len(proposals),
+            "proposals": [proposal.to_dict() for proposal in proposals],
+        }
     if args.command == "apply":
         return {
             "proposal_id": args.proposal_id,

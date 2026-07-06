@@ -29,17 +29,17 @@ def migrate(conn: sqlite3.Connection) -> None:
     # Step 1: Extend patterns table (backward-safe ALTER TABLE)
     # -----------------------------------------------------------------------
     new_columns = [
-        ("domain",                "TEXT DEFAULT 'unclassified'"),
-        ("state",                 "TEXT DEFAULT 'observation'"),
-        ("body",                  "TEXT"),
-        ("source_type",           "TEXT DEFAULT 'bigram'"),
-        ("confirmation_count",    "INTEGER DEFAULT 0"),
-        ("contradiction_count",   "INTEGER DEFAULT 0"),
-        ("last_confirmed_at",     "TEXT"),
-        ("last_contradicted_at",  "TEXT"),
-        ("first_observed_at",     "TEXT"),
-        ("human_approved",        "INTEGER DEFAULT 0"),
-        ("project_id",            "TEXT"),
+        ("domain", "TEXT DEFAULT 'unclassified'"),
+        ("state", "TEXT DEFAULT 'observation'"),
+        ("body", "TEXT"),
+        ("source_type", "TEXT DEFAULT 'bigram'"),
+        ("confirmation_count", "INTEGER DEFAULT 0"),
+        ("contradiction_count", "INTEGER DEFAULT 0"),
+        ("last_confirmed_at", "TEXT"),
+        ("last_contradicted_at", "TEXT"),
+        ("first_observed_at", "TEXT"),
+        ("human_approved", "INTEGER DEFAULT 0"),
+        ("project_id", "TEXT"),
     ]
 
     added = []
@@ -54,24 +54,30 @@ def migrate(conn: sqlite3.Connection) -> None:
     # Step 2: Migrate existing data
     # -----------------------------------------------------------------------
     # Map old status → new state
-    conn.execute("UPDATE patterns SET state = 'rule'        WHERE status = 'promoted' AND state = 'observation'")
-    conn.execute("UPDATE patterns SET state = 'observation' WHERE status IN ('candidate', 'discarded') AND state = 'observation'")
+    conn.execute(
+        "UPDATE patterns SET state = 'rule'        WHERE status = 'promoted' AND state = 'observation'"
+    )
+    conn.execute(
+        "UPDATE patterns SET state = 'observation' WHERE status IN ('candidate', 'discarded') AND state = 'observation'"
+    )
 
     # Quarantine everything — nothing injects as a rule until manually approved
     conn.execute("UPDATE patterns SET human_approved = 0")
 
     # Backfill first_observed_at from created_at
-    conn.execute("UPDATE patterns SET first_observed_at = created_at WHERE first_observed_at IS NULL")
+    conn.execute(
+        "UPDATE patterns SET first_observed_at = created_at WHERE first_observed_at IS NULL"
+    )
 
     # Domain classification based on class
     domain_map = [
-        ("bug_fix",      "debugging"),
-        ("failure",      "debugging"),
-        ("prompt",       "prompting"),
+        ("bug_fix", "debugging"),
+        ("failure", "debugging"),
+        ("prompt", "prompting"),
         ("architecture", "architecture"),
-        ("refactor",     "architecture"),
-        ("workflow",     "workflow"),
-        ("assumption",   "workflow"),
+        ("refactor", "architecture"),
+        ("workflow", "workflow"),
+        ("assumption", "workflow"),
     ]
     for class_, domain in domain_map:
         conn.execute(
@@ -79,14 +85,10 @@ def migrate(conn: sqlite3.Connection) -> None:
             (domain, class_),
         )
 
-    stats = conn.execute(
-        "SELECT state, COUNT(*) FROM patterns GROUP BY state"
-    ).fetchall()
+    stats = conn.execute("SELECT state, COUNT(*) FROM patterns GROUP BY state").fetchall()
     print("Post-migration state distribution:", dict(stats))
 
-    domain_stats = conn.execute(
-        "SELECT domain, COUNT(*) FROM patterns GROUP BY domain"
-    ).fetchall()
+    domain_stats = conn.execute("SELECT domain, COUNT(*) FROM patterns GROUP BY domain").fetchall()
     print("Domain distribution:", dict(domain_stats))
 
     # -----------------------------------------------------------------------

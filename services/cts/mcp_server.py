@@ -84,7 +84,9 @@ class CTSService:
         summary = summarize_nodes(nodes)
         warning_list = list(warnings or [])
         if summary.stale_count > 0:
-            warning_list.append("Stale nodes present; run incremental update before trusting results.")
+            warning_list.append(
+                "Stale nodes present; run incremental update before trusting results."
+            )
         if summary.low_confidence_count > 0:
             warning_list.append("Low-confidence relations present; verify source before acting.")
         result = CTSQueryResult(
@@ -139,7 +141,9 @@ class CTSService:
                     f"{k}:{round((float(v) / total_lang) * 100)}%" for k, v in lang.items()
                 )
             else:
-                language_preview = ", ".join(f"{k}:{round(float(v) * 100)}%" for k, v in lang.items())
+                language_preview = ", ".join(
+                    f"{k}:{round(float(v) * 100)}%" for k, v in lang.items()
+                )
         else:
             language_preview = "unknown"
         architecture_summary = (
@@ -206,7 +210,9 @@ class CTSService:
             file_hits = file_backend.search("|".join(Path(f).name for f in unindexed), limit=20)
             results.append({"fallback_file_hits": file_hits.items})
             fallback = FallbackType.FILE_EXPLORATION
-            warnings.append("More than 30% of changed files are unindexed; fallback file scan attached.")
+            warnings.append(
+                "More than 30% of changed files are unindexed; fallback file scan attached."
+            )
         return self._build_envelope(
             query_type="impact_radius",
             repo_id=repo.repo_id,
@@ -334,10 +340,16 @@ class CTSService:
         status = store.get_status_report(repo.repo_id)
         if changed_files is None:
             changed_paths = detect_changed_files(Path(repo_root), base=base)
-            changed_files = [str(p.resolve().relative_to(Path(repo_root).resolve())) for p in changed_paths]
+            changed_files = [
+                str(p.resolve().relative_to(Path(repo_root).resolve())) for p in changed_paths
+            ]
         analyzer = ImpactAnalyzer(store)
-        detection = analyzer.detect_changes(repo_id=repo.repo_id, changed_files=changed_files, base=base)
-        impacted_nodes = store.get_impact_radius(repo.repo_id, changed_files, max_depth=2)["impacted_nodes"]
+        detection = analyzer.detect_changes(
+            repo_id=repo.repo_id, changed_files=changed_files, base=base
+        )
+        impacted_nodes = store.get_impact_radius(repo.repo_id, changed_files, max_depth=2)[
+            "impacted_nodes"
+        ]
         warnings: list[str] = []
         if detection["low_confidence_estimate"]:
             warnings.append("Risk score includes low-confidence graph segments.")
@@ -382,7 +394,9 @@ def run_stdio_mcp(service: CTSService | None = None) -> None:
         max_depth: int = 3,
         repo_root: str | None = None,
     ) -> dict[str, Any]:
-        return srv.get_impact_radius(changed_files=changed_files, max_depth=max_depth, repo_root=repo_root)
+        return srv.get_impact_radius(
+            changed_files=changed_files, max_depth=max_depth, repo_root=repo_root
+        )
 
     @mcp.tool()
     def semantic_search_nodes(

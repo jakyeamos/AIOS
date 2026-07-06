@@ -65,7 +65,9 @@ def test_quality_gate_registry_contains_expected_new_gates() -> None:
         "agent-claim-verification",
     } <= criterion_ids
 
-    missing_paths = [item.path for item in registry if item.path and not (ROOT / item.path).exists()]
+    missing_paths = [
+        item.path for item in registry if item.path and not (ROOT / item.path).exists()
+    ]
     assert missing_paths == []
 
 

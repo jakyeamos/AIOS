@@ -100,7 +100,10 @@ def test_vault_checks_only_trusted_wikilinks(tmp_path: Path, capsys) -> None:
 
     output = capsys.readouterr().out
     assert result == 1
-    assert "broken_trusted_wikilink:Command-Center/06 Knowledge/Wiki/Trusted.md->Missing Trusted Target" in output
+    assert (
+        "broken_trusted_wikilink:Command-Center/06 Knowledge/Wiki/Trusted.md->Missing Trusted Target"
+        in output
+    )
     assert "Archive Missing Target" not in output
 
 
@@ -148,7 +151,8 @@ def test_vault_ignores_wikilinks_inside_html_comments(tmp_path: Path, capsys) ->
     templates = root / "Command-Center" / "07 Templates"
     templates.mkdir(parents=True)
     (templates / "Project.md").write_text(
-        _trusted_frontmatter() + "# Project\n<!-- [[03 Projects/PROJECT_NAME/Sessions/SESSION_DATE]] -->\n",
+        _trusted_frontmatter()
+        + "# Project\n<!-- [[03 Projects/PROJECT_NAME/Sessions/SESSION_DATE]] -->\n",
         encoding="utf-8",
     )
 
@@ -173,4 +177,7 @@ def test_vault_redacts_secret_like_paths(tmp_path: Path, capsys) -> None:
     assert result == 1
     assert secret not in output
     assert "<redacted-secret>" in output
-    assert "quarantine_candidate:Command-Center/Personal-Corpus/Notes/<redacted-secret>.md:secret_like" in output
+    assert (
+        "quarantine_candidate:Command-Center/Personal-Corpus/Notes/<redacted-secret>.md:secret_like"
+        in output
+    )

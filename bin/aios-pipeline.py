@@ -22,6 +22,7 @@ Usage:
 Cron (daily at 06:00):
   0 6 * * * python3 ~/AIOS/bin/aios-pipeline.py >> ~/AIOS/logs/pipeline.log 2>&1
 """
+
 import argparse
 import shlex
 import subprocess
@@ -33,8 +34,8 @@ from aios_paths import get_vault_subpath
 
 from services.rtk_integration import rtk_run
 
-BIN  = Path(__file__).parent
-LOG  = Path.home() / "AIOS/logs/pipeline.log"
+BIN = Path(__file__).parent
+LOG = Path.home() / "AIOS/logs/pipeline.log"
 VAULT = get_vault_subpath("02 AI OS")
 
 PHASES = [
@@ -88,9 +89,7 @@ def _run(cmd: list[str], label: str, verbose: bool) -> tuple[bool, str]:
 
 def _docker_available() -> bool:
     try:
-        result = subprocess.run(
-            ["docker", "info"], capture_output=True, timeout=10
-        )
+        result = subprocess.run(["docker", "info"], capture_output=True, timeout=10)
         return result.returncode == 0
     except Exception:
         return False
@@ -102,22 +101,17 @@ def _write_vault_report(report_text: str, verbose: bool) -> None:
     vault_dir.mkdir(parents=True, exist_ok=True)
     date_str = datetime.now().strftime("%Y-%m-%d")
     report_path = vault_dir / f"lab-report-{date_str}.md"
-    report_path.write_text(
-        f"# Lab Report — {date_str}\n\n"
-        "```\n"
-        f"{report_text}\n"
-        "```\n"
-    )
+    report_path.write_text(f"# Lab Report — {date_str}\n\n```\n{report_text}\n```\n")
     if verbose:
         _log(f"  vault report written to {report_path}", verbose)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--skip-lab", action="store_true",
-                        help="Skip lab experiment phase")
-    parser.add_argument("--dry-run", action="store_true",
-                        help="Pass --dry-run to sub-scripts where supported")
+    parser.add_argument("--skip-lab", action="store_true", help="Skip lab experiment phase")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Pass --dry-run to sub-scripts where supported"
+    )
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
 
@@ -202,6 +196,7 @@ def main() -> None:
     # ── Phase 6: Bundle new rules ─────────────────────────────────────────────
     _log("phase 6/11: bundle new rules (lab_status=pending)")
     import sqlite3
+
     DB = Path.home() / "AIOS/data/aios.db"
     try:
         conn = sqlite3.connect(DB)
@@ -212,8 +207,7 @@ def main() -> None:
         if pending:
             for (pid,) in pending:
                 ok, out = _run(
-                    ["python3", str(BIN / "generate-rule-bundle.py"),
-                     "--pattern-id", pid],
+                    ["python3", str(BIN / "generate-rule-bundle.py"), "--pattern-id", pid],
                     "generate-rule-bundle",
                     args.verbose,
                 )
@@ -323,7 +317,7 @@ def main() -> None:
 
     # ── Summary ───────────────────────────────────────────────────────────────
     _log("=== pipeline complete ===")
-    ok_count  = sum(1 for v in results.values() if v.startswith("ok"))
+    ok_count = sum(1 for v in results.values() if v.startswith("ok"))
     skip_count = sum(1 for v in results.values() if v.startswith("skip"))
     fail_count = sum(1 for v in results.values() if v.startswith("FAILED"))
     _log(f"  {ok_count} ok, {skip_count} skipped, {fail_count} failed")

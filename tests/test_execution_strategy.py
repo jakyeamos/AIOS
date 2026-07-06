@@ -29,7 +29,9 @@ from services.execution_strategy import (  # noqa: E402
 
 def test_catalog_validation_and_snapshot() -> None:
     task_specs = load_task_specs(ROOT / "config" / "execution-strategies" / "task-specs.json")
-    strategy_catalog = load_strategy_catalog(ROOT / "config" / "execution-strategies" / "strategies.json")
+    strategy_catalog = load_strategy_catalog(
+        ROOT / "config" / "execution-strategies" / "strategies.json"
+    )
 
     errors = validate_strategy_catalog(task_specs, strategy_catalog)
     assert errors == []

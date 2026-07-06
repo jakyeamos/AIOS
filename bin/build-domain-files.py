@@ -87,8 +87,11 @@ def build_hypotheses_md(domain: str, rows: list[dict]) -> str:
 
     # Compute class thresholds for confirmations_needed display
     class_thresholds = {
-        "bug_fix": 2, "failure": 2,
-        "architecture": 3, "workflow": 3, "assumption": 3,
+        "bug_fix": 2,
+        "failure": 2,
+        "architecture": 3,
+        "workflow": 3,
+        "assumption": 3,
         "prompt": 4,
     }
 
@@ -220,9 +223,19 @@ def main() -> None:
             (domain,),
         ).fetchall()
 
-        write_file(domain_dir / "rules.md",      build_rules_md(domain, [dict(r) for r in rules]),           args.dry_run)
-        write_file(domain_dir / "hypotheses.md", build_hypotheses_md(domain, [dict(r) for r in hypotheses]), args.dry_run)
-        write_file(domain_dir / "knowledge.md",  build_knowledge_md(domain, [dict(r) for r in knowledge]),   args.dry_run)
+        write_file(
+            domain_dir / "rules.md", build_rules_md(domain, [dict(r) for r in rules]), args.dry_run
+        )
+        write_file(
+            domain_dir / "hypotheses.md",
+            build_hypotheses_md(domain, [dict(r) for r in hypotheses]),
+            args.dry_run,
+        )
+        write_file(
+            domain_dir / "knowledge.md",
+            build_knowledge_md(domain, [dict(r) for r in knowledge]),
+            args.dry_run,
+        )
 
     # Build INDEX.md
     stats = conn.execute("SELECT * FROM domain_stats ORDER BY domain").fetchall()
@@ -230,10 +243,19 @@ def main() -> None:
     stats_by_domain = {row["domain"]: dict(row) for row in stats}
     full_stats = []
     for d in DOMAINS:
-        full_stats.append(stats_by_domain.get(d, {
-            "domain": d, "rule_count": 0, "hypothesis_count": 0,
-            "knowledge_count": 0, "observation_count": 0, "last_activity": None,
-        }))
+        full_stats.append(
+            stats_by_domain.get(
+                d,
+                {
+                    "domain": d,
+                    "rule_count": 0,
+                    "hypothesis_count": 0,
+                    "knowledge_count": 0,
+                    "observation_count": 0,
+                    "last_activity": None,
+                },
+            )
+        )
 
     index_path = Path(DOMAINS_DIR) / "INDEX.md"
     write_file(index_path, build_index_md(full_stats), args.dry_run)

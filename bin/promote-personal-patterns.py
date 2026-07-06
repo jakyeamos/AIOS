@@ -22,6 +22,7 @@ Note format:
 Usage:
   python3 ~/AIOS/bin/promote-personal-patterns.py [--dry-run]
 """
+
 import argparse
 import re
 import sqlite3
@@ -30,9 +31,9 @@ from pathlib import Path
 
 from aios_paths import get_vault_subpath
 
-DB         = Path.home() / "AIOS/data/aios.db"
+DB = Path.home() / "AIOS/data/aios.db"
 MENTAL_MAP = get_vault_subpath("04 Personal", "Mental-Map")
-MOC_PATH   = MENTAL_MAP / "_index.md"
+MOC_PATH = MENTAL_MAP / "_index.md"
 
 
 def _now() -> str:
@@ -117,7 +118,7 @@ def main() -> None:
         return
 
     promoted = []
-    skipped  = 0
+    skipped = 0
 
     for row in patterns:
         p = dict(row)

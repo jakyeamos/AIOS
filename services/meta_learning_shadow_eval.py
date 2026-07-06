@@ -114,7 +114,9 @@ def promotion_gate(
 
 
 def stable_eval_plan_id(proposal_id: str) -> str:
-    digest = hashlib.sha256(json.dumps({"proposal_id": proposal_id}, sort_keys=True).encode("utf-8"))
+    digest = hashlib.sha256(
+        json.dumps({"proposal_id": proposal_id}, sort_keys=True).encode("utf-8")
+    )
     return f"meta-eval-{digest.hexdigest()[:16]}"
 
 
@@ -125,7 +127,9 @@ def _evaluation_tasks(proposal: MetaLearningProposal) -> list[str]:
         "Measure shadow task completion with the proposed learning applied in isolation.",
     ]
     if proposal.target_layer == "global":
-        tasks.append("Include at least one unrelated project task to detect over-broad global behavior.")
+        tasks.append(
+            "Include at least one unrelated project task to detect over-broad global behavior."
+        )
     if proposal.target_layer in {"agent", "skill"}:
         tasks.append("Include one task where the target agent/skill should not trigger.")
     return tasks

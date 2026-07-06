@@ -45,6 +45,7 @@ def _pdf_to_text(f: Path) -> str | None:
             return r.stdout.decode("utf-8", errors="replace")
     try:
         import pypdf
+
         reader = pypdf.PdfReader(str(f))
         pages = [page.extract_text() or "" for page in reader.pages]
         return "\n\n".join(p for p in pages if p.strip())
@@ -54,6 +55,7 @@ def _pdf_to_text(f: Path) -> str | None:
 
 def _xlsx_to_md(f: Path) -> str:
     import openpyxl
+
     wb = openpyxl.load_workbook(str(f), read_only=True, data_only=True)
     parts = []
     for sheet in wb.worksheets:
@@ -74,6 +76,7 @@ def _xlsx_to_md(f: Path) -> str:
 
 def _pptx_to_md(f: Path) -> str:
     from pptx import Presentation
+
     prs = Presentation(str(f))
     parts = []
     for i, slide in enumerate(prs.slides, 1):
@@ -260,7 +263,12 @@ def process_calendar(takeout: Path, vault: Path) -> None:
             year = dt.year
             date_str = dt.strftime("%Y-%m-%d") if hasattr(dt, "strftime") else str(dt)
             events_by_year.setdefault(year, []).append(
-                {"date": date_str, "summary": summary, "description": description, "location": location}
+                {
+                    "date": date_str,
+                    "summary": summary,
+                    "description": description,
+                    "location": location,
+                }
             )
 
     for year, events in sorted(events_by_year.items()):
@@ -437,7 +445,9 @@ def main():
     print(f"Vault   : {vault_dir / CORPUS_DIR}")
     print()
 
-    targets = SERVICES.items() if args.service == "all" else [(args.service, SERVICES[args.service])]
+    targets = (
+        SERVICES.items() if args.service == "all" else [(args.service, SERVICES[args.service])]
+    )
     for name, fn in targets:
         print(f"Processing {name}...")
         fn(takeout_dir, vault_dir)

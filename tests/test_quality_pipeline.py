@@ -61,13 +61,55 @@ def test_unconfigured_taski_project_infers_pipeline_from_repo_scripts(tmp_path: 
                 "standard": {
                     "version": "2026-04-26",
                     "gates": [
-                        {"key": "install", "label": "Install", "tier": "tier_1_core", "required": True, "applicability": ["all"]},
-                        {"key": "lint", "label": "Lint", "tier": "tier_1_core", "required": True, "applicability": ["all"]},
-                        {"key": "typecheck", "label": "Typecheck", "tier": "tier_1_core", "required": True, "applicability": ["typescript_app"]},
-                        {"key": "test", "label": "Test", "tier": "tier_1_core", "required": True, "applicability": ["all"]},
-                        {"key": "build", "label": "Build", "tier": "tier_1_core", "required": True, "applicability": ["typescript_app"]},
-                        {"key": "architecture", "label": "Architecture", "tier": "tier_1_core", "required": True, "applicability": ["all"]},
-                        {"key": "ci", "label": "CI", "tier": "tier_1_core", "required": True, "applicability": ["all"]},
+                        {
+                            "key": "install",
+                            "label": "Install",
+                            "tier": "tier_1_core",
+                            "required": True,
+                            "applicability": ["all"],
+                        },
+                        {
+                            "key": "lint",
+                            "label": "Lint",
+                            "tier": "tier_1_core",
+                            "required": True,
+                            "applicability": ["all"],
+                        },
+                        {
+                            "key": "typecheck",
+                            "label": "Typecheck",
+                            "tier": "tier_1_core",
+                            "required": True,
+                            "applicability": ["typescript_app"],
+                        },
+                        {
+                            "key": "test",
+                            "label": "Test",
+                            "tier": "tier_1_core",
+                            "required": True,
+                            "applicability": ["all"],
+                        },
+                        {
+                            "key": "build",
+                            "label": "Build",
+                            "tier": "tier_1_core",
+                            "required": True,
+                            "applicability": ["typescript_app"],
+                        },
+                        {
+                            "key": "architecture",
+                            "label": "Architecture",
+                            "tier": "tier_1_core",
+                            "required": True,
+                            "applicability": ["all"],
+                        },
+                        {
+                            "key": "ci",
+                            "label": "CI",
+                            "tier": "tier_1_core",
+                            "required": True,
+                            "applicability": ["all"],
+                        },
                     ],
                 },
                 "projects": [],
@@ -333,7 +375,10 @@ def test_portable_standard_tracks_tiers_and_applicability(tmp_path: Path) -> Non
     assert summary["coverage_by_tier"]["production_app"]["required"] == 1
     assert summary["coverage_by_tier"]["domain_specific"]["required"] == 1
     assert all(gate["applicable"] for gate in summary["gates"])
-    assert all(gate["tier"] in {"tier_1_core", "production_app", "domain_specific"} for gate in summary["gates"])
+    assert all(
+        gate["tier"] in {"tier_1_core", "production_app", "domain_specific"}
+        for gate in summary["gates"]
+    )
 
 
 def test_repo_class_required_gates_override_global_applicability(tmp_path: Path) -> None:

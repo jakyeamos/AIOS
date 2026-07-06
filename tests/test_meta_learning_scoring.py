@@ -29,8 +29,7 @@ def _signal(
         signal_id=f"sig-{signal_type}-{frequency}",
         type=signal_type,  # type: ignore[arg-type]
         summary=summary,
-        evidence=evidence
-        or [{"session_id": "s1", "kind": "message:user", "summary": summary}],
+        evidence=evidence or [{"session_id": "s1", "kind": "message:user", "summary": summary}],
         source_sessions=sessions or ["s1"],
         frequency=frequency,
         recency=recency,
@@ -139,7 +138,9 @@ def test_contradictions_are_conflicts_without_auto_promotion() -> None:
 def test_batch_scoring_preserves_one_result_per_signal() -> None:
     signals = [
         _signal(summary="User correction: Always use pnpm in this repo."),
-        _signal(signal_type="approval", summary="Repeated approval language", target="observe_only"),
+        _signal(
+            signal_type="approval", summary="Repeated approval language", target="observe_only"
+        ),
     ]
 
     scored = score_meta_learning_signals(signals)

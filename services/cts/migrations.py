@@ -119,4 +119,3 @@ def apply_migrations(conn: sqlite3.Connection) -> int:
         conn.execute("INSERT INTO schema_migrations (version) VALUES (?)", (version,))
     conn.commit()
     return current_version(conn)
-

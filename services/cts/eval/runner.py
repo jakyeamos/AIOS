@@ -47,7 +47,9 @@ def _extract_labels(query_type: str, response: dict[str, Any]) -> list[str]:
             if "node" in row:
                 labels.append(row["node"].get("qualified_name", ""))
             if "edge" in row:
-                labels.append(f"{row['edge'].get('source_qualified', '')}->{row['edge'].get('target_qualified', '')}")
+                labels.append(
+                    f"{row['edge'].get('source_qualified', '')}->{row['edge'].get('target_qualified', '')}"
+                )
         return labels
     return []
 

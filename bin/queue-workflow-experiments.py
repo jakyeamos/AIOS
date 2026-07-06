@@ -40,7 +40,9 @@ def _pending_workflow_skills(conn: sqlite3.Connection) -> list[tuple[str, str]]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Queue workflow skill experiments across AIOS test repos.")
+    parser = argparse.ArgumentParser(
+        description="Queue workflow skill experiments across AIOS test repos."
+    )
     parser.add_argument("--db", default=str(ROOT / "data" / "aios.db"))
     parser.add_argument("--workflow-key")
     parser.add_argument("--skill-key")

@@ -57,14 +57,19 @@ def get_git_commits(cwd: str, since: str) -> list[str]:
         since_dt = datetime.fromisoformat(since)
         result = subprocess.run(
             ["git", "log", "--oneline", f"--since={since_dt.strftime('%Y-%m-%d %H:%M:%S')}"],
-            cwd=path, capture_output=True, text=True, timeout=5,
+            cwd=path,
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         return [line.strip() for line in result.stdout.strip().splitlines() if line.strip()]
     except Exception:
         return []
 
 
-def write_fallback_note(session_id, project_name, started_at, ended_at, cwd, prompts, artifacts, commits):
+def write_fallback_note(
+    session_id, project_name, started_at, ended_at, cwd, prompts, artifacts, commits
+):
     os.makedirs(HANDOFFS, exist_ok=True)
     try:
         file_date = datetime.fromisoformat(started_at).strftime("%Y-%m-%d")
@@ -75,9 +80,7 @@ def write_fallback_note(session_id, project_name, started_at, ended_at, cwd, pro
     short_id = session_id[:8]
     note_path = os.path.join(HANDOFFS, f"{file_date}-{safe_project}-{short_id}.md")
 
-    artifact_lines = "\n".join(
-        f"- {a[1]}" for a in artifacts if a[1]
-    ) or "- (none)"
+    artifact_lines = "\n".join(f"- {a[1]}" for a in artifacts if a[1]) or "- (none)"
     commit_lines = "\n".join(f"- {c}" for c in commits) or "- (none)"
     classifications = ", ".join({p[0] for p in prompts if p[0]}) or "(none)"
     reusable = [p[2] for p in prompts if p[1]] or []
@@ -185,22 +188,25 @@ def main() -> None:
 
         commits = get_git_commits(cwd or repo_path or "", started_at or "")
         note_path = write_fallback_note(
-            session_id, project_name, started_at or "", now,
-            cwd or "", prompts, artifacts, commits
+            session_id, project_name, started_at or "", now, cwd or "", prompts, artifacts, commits
         )
 
         log(f"fallback note written: {os.path.basename(note_path)}")
-        print(f"AIOS · basic note saved ({len(commits)} commits, {len(artifacts)} artifacts) — use /close before /clear for full synthesis")
+        print(
+            f"AIOS · basic note saved ({len(commits)} commits, {len(artifacts)} artifacts) — use /close before /clear for full synthesis"
+        )
         notify(
             "AIOS · Use /close next time",
-            f"{len(commits)} commits captured. Run /close before /clear for complete session notes."
+            f"{len(commits)} commits captured. Run /close before /clear for complete session notes.",
         )
 
         # Also run focus update
         subprocess.run(
             ["python3", os.path.expanduser("~/AIOS/bin/hook-update-focus.py")],
             input=json.dumps({"session_id": session_id}),
-            text=True, capture_output=True, timeout=10,
+            text=True,
+            capture_output=True,
+            timeout=10,
         )
 
     except Exception as e:

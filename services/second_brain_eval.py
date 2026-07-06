@@ -107,13 +107,9 @@ def compute_retrieval_metrics(conn: sqlite3.Connection, run_id: str) -> dict[str
         (run_id,),
     ).fetchall()
     required = {
-        (str(row["required_source_id"]), str(row["required_source_type"]))
-        for row in required_rows
+        (str(row["required_source_id"]), str(row["required_source_type"])) for row in required_rows
     }
-    retrieved = {
-        (str(row["source_id"]), str(row["source_type"]))
-        for row in rows
-    }
+    retrieved = {(str(row["source_id"]), str(row["source_type"])) for row in rows}
     recall = len(required & retrieved) / len(required) if required else precision
     return {
         "precision": precision,
@@ -194,13 +190,9 @@ def evaluate_gold_set_run(
         (run_id,),
     ).fetchall()
     required = {
-        (str(row["required_source_id"]), str(row["required_source_type"]))
-        for row in required_rows
+        (str(row["required_source_id"]), str(row["required_source_type"])) for row in required_rows
     }
-    retrieved = {
-        (str(row["source_id"]), str(row["source_type"]))
-        for row in retrieved_rows
-    }
+    retrieved = {(str(row["source_id"]), str(row["source_type"])) for row in retrieved_rows}
     matched = required & retrieved
     metrics = compute_retrieval_metrics(conn, run_id)
     missed_sources = [

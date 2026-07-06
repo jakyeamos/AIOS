@@ -18,4 +18,3 @@ class CTSBackend(Protocol):
     confidence_floor: float
 
     def is_available(self, repo_id: str) -> bool: ...
-
