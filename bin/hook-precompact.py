@@ -59,7 +59,7 @@ def get_git_commits(cwd: str, since: str) -> list[str]:
             ["git", "log", "--oneline", f"--since={since_dt.strftime('%Y-%m-%d %H:%M:%S')}"],
             cwd=path, capture_output=True, text=True, timeout=5,
         )
-        return [l.strip() for l in result.stdout.strip().splitlines() if l.strip()]
+        return [line.strip() for line in result.stdout.strip().splitlines() if line.strip()]
     except Exception:
         return []
 

@@ -14,6 +14,7 @@ Options:
 """
 
 import argparse
+import contextlib
 import sqlite3
 import subprocess
 import sys
@@ -69,10 +70,8 @@ def get_pdf_metadata(path: Path) -> dict:
                 val = val.strip()
                 key = key.strip().lower()
                 if key == "pages":
-                    try:
+                    with contextlib.suppress(ValueError):
                         meta["page_count"] = int(val)
-                    except ValueError:
-                        pass
                 elif key == "title":
                     meta["title"] = val or None
                 elif key == "author":

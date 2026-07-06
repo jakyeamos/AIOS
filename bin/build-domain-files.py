@@ -183,10 +183,7 @@ def build_index_md(stats: list[dict]) -> str:
 
 def write_file(path: Path, new_header: str, dry_run: bool) -> None:
     annotations = load_human_annotations(path)
-    if annotations:
-        content = new_header + "\n\n" + annotations + "\n"
-    else:
-        content = new_header + "\n"
+    content = new_header + "\n\n" + annotations + "\n" if annotations else new_header + "\n"
     if dry_run:
         print(f"  [dry-run] would write {path}")
     else:

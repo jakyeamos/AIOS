@@ -142,16 +142,12 @@ def _build_patch_spec(artifact: dict) -> dict:
     mutation_scope = artifact.get("mutation_scope", "prompt_overlay")
     rule_text = artifact.get("rule_text", "")
 
-    if mutation_scope == "prompt_overlay":
-        return {"patch_type": "prompt_overlay", "payload": {"text": rule_text}}
-    elif mutation_scope == "verification_toggle":
-        return {"patch_type": "verification_toggle", "payload": {"enabled": True}}
-    elif mutation_scope == "planning_scaffold":
-        return {"patch_type": "planning_scaffold", "payload": {"enabled": True}}
-    elif mutation_scope == "orchestration_flag":
-        return {"patch_type": "orchestration_flag", "payload": {"flags": {"MAX_TURNS": 40}}}
-    else:
-        return {"patch_type": "prompt_overlay", "payload": {"text": rule_text}}
+    scoped_specs = {
+        "verification_toggle": {"patch_type": "verification_toggle", "payload": {"enabled": True}},
+        "planning_scaffold": {"patch_type": "planning_scaffold", "payload": {"enabled": True}},
+        "orchestration_flag": {"patch_type": "orchestration_flag", "payload": {"flags": {"MAX_TURNS": 40}}},
+    }
+    return scoped_specs.get(mutation_scope, {"patch_type": "prompt_overlay", "payload": {"text": rule_text}})
 
 
 def _apply_patch(spec: dict) -> bool:

@@ -7,6 +7,7 @@ Runs on every /clear. Two jobs:
      observations before compacting context.
 """
 
+import contextlib
 import json
 import os
 import subprocess
@@ -36,7 +37,7 @@ def main() -> None:
 
     # Run focus update — captures its own output, we don't relay it
     # (it also fires osascript notification, so user gets feedback)
-    try:
+    with contextlib.suppress(Exception):
         subprocess.run(
             ["python3", FOCUS_HOOK],
             input=payload,
@@ -44,8 +45,6 @@ def main() -> None:
             capture_output=True,
             timeout=10,
         )
-    except Exception:
-        pass
 
     # Output customSummaryPrompt for Claude to receive during compaction
     print(json.dumps({"customSummaryPrompt": CUSTOM_PROMPT}))

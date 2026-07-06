@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import select
@@ -302,14 +303,10 @@ class _PreCrSession:
             self._close()
 
     def _close(self) -> None:
-        try:
+        with contextlib.suppress(Exception):
             self._request("shutdown", {})
-        except Exception:
-            pass
-        try:
+        with contextlib.suppress(Exception):
             self._notify("exit", {})
-        except Exception:
-            pass
         try:
             self.process.communicate(timeout=2)
         except subprocess.TimeoutExpired:

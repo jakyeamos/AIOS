@@ -160,9 +160,10 @@ def _scan_prompts(
         threshold = (
             MIN_SESSIONS_BLINDSPOT if info["sub_class"] == "blindspot" else MIN_SESSIONS
         )
-        if len(info["sessions"]) >= threshold:
-            if _insert_pattern(conn, info["sub_class"], title, info["body"], dry_run):
-                counts[info["sub_class"]] += 1
+        if len(info["sessions"]) >= threshold and _insert_pattern(
+            conn, info["sub_class"], title, info["body"], dry_run
+        ):
+            counts[info["sub_class"]] += 1
 
     return counts
 
@@ -208,9 +209,10 @@ def _scan_ai_history(
         threshold = (
             MIN_SESSIONS_BLINDSPOT if info["sub_class"] == "blindspot" else MIN_SESSIONS
         )
-        if len(info["files"]) >= threshold:
-            if _insert_pattern(conn, info["sub_class"], label, info["body"], dry_run):
-                counts[info["sub_class"]] += 1
+        if len(info["files"]) >= threshold and _insert_pattern(
+            conn, info["sub_class"], label, info["body"], dry_run
+        ):
+            counts[info["sub_class"]] += 1
 
     return counts
 
