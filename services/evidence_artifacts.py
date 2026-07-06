@@ -84,7 +84,9 @@ def record_evidence_artifact(
 
     has_output_reference = bool(stdout_path or stderr_path or normalized_hash)
     has_absence_reason = any(item.startswith("output-absent:") for item in normalized_caveats)
-    if normalized_status == "pass" and (not command or not (has_output_reference or has_absence_reason)):
+    if normalized_status == "pass" and (
+        not command or not (has_output_reference or has_absence_reason)
+    ):
         normalized_status = "unknown"
         if "empty-marker" not in normalized_caveats:
             normalized_caveats.append("empty-marker")

@@ -68,7 +68,11 @@ def extract_artifact(tool_name: str, tool_input: dict) -> dict | None:
             return {"artifact_type": "patch", "path": path}
     if tool_name == "Bash":
         cmd = tool_input.get("command", "")[:200]
-        return {"artifact_type": "patch", "path": None, "metadata_json": json.dumps({"command": cmd})}
+        return {
+            "artifact_type": "patch",
+            "path": None,
+            "metadata_json": json.dumps({"command": cmd}),
+        }
     return None
 
 
@@ -126,9 +130,37 @@ def query_matching_patterns(conn: sqlite3.Connection, symptom: str, cmd: str) ->
     Matches by keyword overlap between error text and pattern title/body.
     """
     # Extract 2-5 char tokens that are likely meaningful (skip stop words)
-    STOP = {"the", "a", "an", "in", "on", "at", "is", "was", "for", "not", "and", "or",
-            "to", "of", "it", "be", "by", "as", "if", "we", "do", "no", "so", "up",
-            "cmd", "exit", "code", "error", "file"}
+    STOP = {
+        "the",
+        "a",
+        "an",
+        "in",
+        "on",
+        "at",
+        "is",
+        "was",
+        "for",
+        "not",
+        "and",
+        "or",
+        "to",
+        "of",
+        "it",
+        "be",
+        "by",
+        "as",
+        "if",
+        "we",
+        "do",
+        "no",
+        "so",
+        "up",
+        "cmd",
+        "exit",
+        "code",
+        "error",
+        "file",
+    }
     combined = (symptom + " " + cmd).lower()
     tokens = {t for t in re.split(r"\W+", combined) if len(t) >= 4 and t not in STOP}
     if not tokens:
@@ -168,10 +200,10 @@ def format_context_injection(patterns: list[dict], symptom: str) -> str:
     ]
     for p in patterns:
         state = p.get("state", "")
-        conf  = p.get("confidence") or 0
+        conf = p.get("confidence") or 0
         title = (p.get("title") or "")[:120]
-        body  = (p.get("body") or "")[:160].strip()
-        tag   = f"[{state} {conf:.0%}]"
+        body = (p.get("body") or "")[:160].strip()
+        tag = f"[{state} {conf:.0%}]"
         lines.append(f"  {tag} {title}")
         if body and body != title:
             lines.append(f"        → {body}")
@@ -237,6 +269,7 @@ def _safe_load_stdin() -> dict:
     # Replace literal control chars inside string tokens.
     # Strategy: use a regex to find string values and escape control chars within them.
     import re
+
     _CTRL = re.compile(r"[\x00-\x1f]")
 
     def _escape_string(m: re.Match) -> str:
