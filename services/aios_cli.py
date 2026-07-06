@@ -4124,13 +4124,11 @@ def cmd_benchmark_to_terminal_bench(
 
 def cmd_benchmark_normalize_result(args: argparse.Namespace) -> dict[str, Any]:
     result = json.loads(Path(args.result_file).read_text(encoding="utf-8"))
-    return asdict(
-        normalize_external_result(
-            result,
-            eval_task_id=str(args.task_id),
-            harness=str(args.harness),
-            model=str(args.model),
-        )
+    return normalize_external_result(
+        result,
+        eval_task_id=str(args.task_id),
+        harness=str(args.harness),
+        model=str(args.model),
     )
 
 

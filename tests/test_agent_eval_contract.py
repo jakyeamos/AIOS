@@ -9,6 +9,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -34,27 +35,45 @@ from agent_eval_contract import (
 from agent_eval_contract.fixture_runner import write_contract_fixture_bundle
 
 from services.eval_run_service import create_eval_run, create_eval_task
+from services.harness_eval import DIMENSION_NAMES
+
+
+def _pop_cached_modules(prefixes: tuple[str, ...]) -> dict[str, Any]:
+    removed: dict[str, Any] = {}
+    for module_name in list(sys.modules):
+        if any(
+            module_name == prefix or module_name.startswith(f"{prefix}.") for prefix in prefixes
+        ):
+            removed[module_name] = sys.modules.pop(module_name)
+    return removed
+
+
+def _restore_cached_modules(removed: dict[str, Any]) -> None:
+    # Later tests patch services.* by dotted path; leaving purged modules out
+    # of sys.modules would split module identity between patch target and the
+    # already-imported functions under test.
+    sys.modules.update(removed)
 
 
 def test_agent_eval_contract_import_does_not_import_aios_services() -> None:
-    for module_name in list(sys.modules):
-        if module_name == "agent_eval_contract" or module_name.startswith("agent_eval_contract."):
-            del sys.modules[module_name]
-        if module_name == "services" or module_name.startswith("services."):
-            del sys.modules[module_name]
+    removed = _pop_cached_modules(("agent_eval_contract", "services"))
+    try:
+        imported = importlib.import_module("agent_eval_contract")
+        direct_url = importlib.metadata.distribution("agent-eval-contract").read_text(
+            "direct_url.json"
+        )
 
-    imported = importlib.import_module("agent_eval_contract")
-    direct_url = importlib.metadata.distribution("agent-eval-contract").read_text("direct_url.json")
-
-    assert "external_clean_room" in imported.CONTEXT_PROFILES
-    assert direct_url is not None
-    assert "file:///Users/jakyeamos/agent-eval-contract" in direct_url
-    assert "services" not in sys.modules
-    assert not any(module_name.startswith("services.") for module_name in sys.modules)
+        assert "clean_room" in imported.CONTEXT_PROFILES
+        assert direct_url is not None
+        assert "file:///Users/jakyeamos/agent-eval-contract" in direct_url
+        assert "services" not in sys.modules
+        assert not any(module_name.startswith("services.") for module_name in sys.modules)
+    finally:
+        _restore_cached_modules(removed)
 
 
 def test_contract_validates_context_profile_and_priority() -> None:
-    validate_context_profile("peer_portable_context_packet")
+    validate_context_profile("tool_augmented")
     validate_priority("critical")
 
     with pytest.raises(ValueError, match="Invalid context_profile"):
@@ -64,7 +83,7 @@ def test_contract_validates_context_profile_and_priority() -> None:
         validate_priority("urgent")
 
 
-def test_eval_service_uses_contract_context_profile_validation(tmp_path: Path) -> None:
+def test_eval_service_validates_aios_context_profile_vocabulary(tmp_path: Path) -> None:
     import sqlite3
 
     root = Path(__file__).resolve().parents[1]
@@ -116,11 +135,13 @@ def test_external_result_normalization_matches_contract() -> None:
         model="gpt-5",
     )
 
-    assert normalized["context_profile"] == "external_clean_room"
-    assert normalized["final_status"] == "failed"
-    assert normalized["tests_run"] == ["pytest"]
-    assert set(CONTEXT_PROFILES) >= {"external_clean_room", "peer_repo_only"}
-    assert "false_completion_caught" in HARNESS_DIMENSION_NAMES
+    assert normalized.context_profile == "clean_room"
+    assert normalized.final_status == "failed"
+    assert normalized.checks == ["pytest"]
+    assert normalized.duration_ms == 10
+    assert set(CONTEXT_PROFILES) >= {"clean_room", "repo_only"}
+    assert "task_success" in HARNESS_DIMENSION_NAMES
+    assert "false_completion_caught" in DIMENSION_NAMES
 
 
 def test_eval_template_validator_accepts_checked_in_templates() -> None:
@@ -148,7 +169,7 @@ def test_agent_eval_contract_bundled_samples_validate() -> None:
     validated = validate_all_samples()
 
     assert "eval_task" in validated
-    assert load_sample("eval_run")["context_profile"] == "peer_repo_only"
+    assert load_sample("eval_run")["context_profile"] == "repo_only"
 
 
 def test_agent_eval_contract_release_metadata_validates() -> None:
@@ -157,36 +178,35 @@ def test_agent_eval_contract_release_metadata_validates() -> None:
     validate_release_metadata(metadata)
 
     assert metadata["package_name"] == "agent-eval-contract"
-    assert "clean-room fixture production" in metadata["portable_surfaces"]
-    assert "SQLite eval storage" in metadata["aios_owned_surfaces"]
+    assert "fixture bundle generation" in metadata["public_surfaces"]
+    assert "private workflow vocabulary" in metadata["out_of_scope"]
 
 
 def test_clean_room_contract_runner_does_not_import_aios_services() -> None:
-    for module_name in list(sys.modules):
-        if module_name == "agent_eval_contract" or module_name.startswith("agent_eval_contract."):
-            del sys.modules[module_name]
-        if module_name == "services" or module_name.startswith("services."):
-            del sys.modules[module_name]
+    removed = _pop_cached_modules(("agent_eval_contract", "services"))
+    try:
+        imported = importlib.import_module("agent_eval_contract")
+        result = imported.run_clean_room_contract_check(
+            template_root=ROOT / "docs" / "evals" / "templates"
+        )
 
-    imported = importlib.import_module("agent_eval_contract")
-    result = imported.run_clean_room_contract_check(
-        template_root=ROOT / "docs" / "evals" / "templates"
-    )
-
-    assert result["ok"] is True
-    assert result["template_count"] == 5
-    assert result["sample_count"] == 6
-    assert "services" not in sys.modules
-    assert not any(module_name.startswith("services.") for module_name in sys.modules)
+        assert result["ok"] is True
+        assert result["template_count"] == 5
+        assert result["sample_count"] == 5
+        assert "services" not in sys.modules
+        assert not any(module_name.startswith("services.") for module_name in sys.modules)
+    finally:
+        _restore_cached_modules(removed)
 
 
 def test_fixture_bundle_writer_produces_non_aios_artifacts(tmp_path: Path) -> None:
     result = write_contract_fixture_bundle(tmp_path)
 
-    assert result["clean_room_check"]["ok"] is True
+    assert result["metadata"]["clean_room_check"]["ok"] is True
     assert (tmp_path / "manifest.json").exists()
     assert (tmp_path / "samples" / "eval_task.json").exists()
     assert (tmp_path / "templates" / "major-task-eval.md").exists()
+    assert (tmp_path / "schemas" / "eval_run.schema.json").exists()
     assert json.loads((tmp_path / "manifest.json").read_text(encoding="utf-8"))["package"] == (
         "agent-eval-contract"
     )
@@ -213,6 +233,6 @@ def test_fixture_runner_cli_works_outside_aios_cwd(tmp_path: Path) -> None:
     )
 
     manifest = json.loads(completed.stdout)
-    assert manifest["clean_room_check"]["ok"] is True
-    assert manifest["clean_room_check"]["sample_count"] == 6
+    assert manifest["metadata"]["clean_room_check"]["ok"] is True
+    assert manifest["metadata"]["clean_room_check"]["sample_count"] == 5
     assert (output_dir / "manifest.json").exists()

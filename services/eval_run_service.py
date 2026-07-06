@@ -6,11 +6,21 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from agent_eval_contract import (
-    validate_context_profile,
-    validate_final_status,
-    validate_priority,
+# agent-eval-contract 0.3.0 dropped the AIOS workflow vocabulary from its
+# public surface ("private workflow vocabulary" is explicitly out of scope),
+# so the authoritative vocabulary for the local SQLite schema lives here.
+CONTEXT_PROFILES = frozenset(
+    {
+        "jakye_second_brain_full",
+        "jakye_second_brain_limited",
+        "jakye_repo_only",
+        "peer_repo_only",
+        "peer_portable_context_packet",
+        "external_clean_room",
+    }
 )
+FINAL_STATUSES = frozenset({"success", "partial", "failed", "abandoned"})
+FAILURE_PRIORITIES = frozenset({"low", "medium", "high", "critical"})
 
 # Dimension columns of the local eval_scores table. agent-eval-contract 0.3.0
 # replaced its flat SCORE_FIELDS constant with a Pydantic metrics map, so the
@@ -50,16 +60,23 @@ def _loads_list(raw: str | None) -> list[Any]:
     return parsed if isinstance(parsed, list) else []
 
 
+def _allowed_message(label: str, allowed: frozenset[str]) -> str:
+    return f"Invalid {label}. Use one of: {', '.join(sorted(allowed))}."
+
+
 def _validate_context_profile(context_profile: str) -> None:
-    validate_context_profile(context_profile)
+    if context_profile not in CONTEXT_PROFILES:
+        raise ValueError(_allowed_message("context_profile", CONTEXT_PROFILES))
 
 
 def _validate_final_status(final_status: str) -> None:
-    validate_final_status(final_status)
+    if final_status not in FINAL_STATUSES:
+        raise ValueError(_allowed_message("final_status", FINAL_STATUSES))
 
 
 def _validate_priority(priority: str) -> None:
-    validate_priority(priority)
+    if priority not in FAILURE_PRIORITIES:
+        raise ValueError(_allowed_message("priority", FAILURE_PRIORITIES))
 
 
 def _validate_task_exists(conn: sqlite3.Connection, task_id: str) -> None:

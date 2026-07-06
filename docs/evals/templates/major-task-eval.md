@@ -18,7 +18,7 @@ Select one: `jakye_second_brain_full`, `jakye_second_brain_limited`, `jakye_repo
 - Selected profile:
 - Why this profile fits:
 
-## AIOS Condition
+## Harness Condition
 
 Select one condition from `docs/evals/benchmark-eval-architecture.md`.
 

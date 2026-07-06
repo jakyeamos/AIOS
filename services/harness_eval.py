@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from agent_eval_contract import HARNESS_DIMENSION_NAMES, validate_harness_fixture_components
+from agent_eval_contract import validate_harness_fixture_components
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG_PATH = REPO_ROOT / "docs" / "aios" / "harness-eval" / "config.json"
@@ -20,7 +20,18 @@ REQUIRED_DX_FIXTURE_IDS = frozenset(
         "typescript_package_boundary_change",
     }
 )
-DIMENSION_NAMES = HARNESS_DIMENSION_NAMES
+# agent-eval-contract 0.3.0 replaced its harness dimension vocabulary with
+# generic public names; these fixture-scoring dimensions are AIOS-owned.
+DIMENSION_NAMES = (
+    "context_precision",
+    "context_recall",
+    "gate_accuracy",
+    "success_criteria_recall",
+    "trace_completeness",
+    "false_completion_caught",
+    "recovery_evidence_present",
+    "writeback_usefulness_present",
+)
 
 
 @dataclass(frozen=True)
