@@ -91,6 +91,18 @@ def record_evidence_artifact(
         if "empty-marker" not in normalized_caveats:
             normalized_caveats.append("empty-marker")
 
+    # Command-backed pass verdicts must be provable: no exit code means unknown,
+    # and a nonzero exit code can never be pass.
+    if command:
+        if normalized_status == "pass" and exit_code is None:
+            normalized_status = "unknown"
+            if "exit-code-unavailable" not in normalized_caveats:
+                normalized_caveats.append("exit-code-unavailable")
+        elif normalized_status == "pass" and exit_code != 0:
+            normalized_status = "fail"
+            if "status-exit-code-mismatch" not in normalized_caveats:
+                normalized_caveats.append("status-exit-code-mismatch")
+
     artifact_id = evidence_id or str(uuid.uuid4())
     observed_at = timestamp or datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     conn.execute(

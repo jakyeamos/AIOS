@@ -4,6 +4,7 @@ AIOS hook: PostToolUse
 Logs tool events and detects artifact candidates.
 """
 
+import hashlib
 import json
 import os
 import re
@@ -19,7 +20,7 @@ if str(ROOT) not in sys.path:
 
 from hook_lifecycle import resolve_hook_session_id  # noqa: E402
 
-from services.evidence_artifacts import record_evidence_artifact  # noqa: E402
+from services.evidence_artifacts import EvidenceStatus, record_evidence_artifact  # noqa: E402
 from services.rtk_integration import (  # noqa: E402
     compress_tool_output,
     load_compression_rules,
@@ -92,6 +93,20 @@ def parse_tool_response(raw) -> tuple[str, int | None]:
         return text, exit_code
     text = str(raw) if raw else ""
     return text, None
+
+
+def evidence_status(exit_code: int | None) -> tuple[EvidenceStatus, list[str]]:
+    """
+    Map a command exit code to an evidence verdict.
+    Claude Code's PostToolUse payload for Bash carries no exit code
+    (only stdout/stderr/interrupted), so most hook-captured evidence is
+    'unknown' — a pass verdict requires a proven zero exit code.
+    """
+    if exit_code is None:
+        return "unknown", ["exit-code-unavailable:post-tool-use-payload"]
+    if exit_code == 0:
+        return "pass", []
+    return "fail", []
 
 
 def detect_bug(tool_name: str, tool_input: dict, raw_response) -> str | None:
@@ -359,6 +374,7 @@ def main() -> None:
             command = (data.get("tool_input") or {}).get("command", "")
             raw_text, exit_code = parse_tool_response(tool_response)
             run_id = get_run_id(conn, session_id)
+            status, status_caveats = evidence_status(exit_code)
             if raw_text:
                 rules = load_compression_rules()
                 mode = rules.get("default_mode", "compressed")
@@ -391,9 +407,11 @@ def main() -> None:
                     command=command,
                     exit_code=exit_code,
                     stdout_path=rtk_result.raw_output_path,
+                    output_hash=hashlib.sha256(raw_text.encode("utf-8")).hexdigest(),
                     parsed_summary=rtk_result.output[:500],
-                    status="fail" if exit_code is not None and exit_code != 0 else "pass",
-                    caveats=[] if rtk_result.raw_output_path else ["output-absent:inline-output"],
+                    status=status,
+                    caveats=status_caveats
+                    + ([] if rtk_result.raw_output_path else ["output-absent:inline-output"]),
                 )
             else:
                 record_evidence_artifact(
@@ -406,8 +424,8 @@ def main() -> None:
                     model=os.environ.get("AIOS_MODEL"),
                     command=command,
                     exit_code=exit_code,
-                    status="unknown",
-                    caveats=["output-absent:empty-tool-response"],
+                    status="fail" if status == "fail" else "unknown",
+                    caveats=status_caveats + ["output-absent:empty-tool-response"],
                 )
 
         symptom = detect_bug(tool_name, data.get("tool_input") or {}, tool_response)
