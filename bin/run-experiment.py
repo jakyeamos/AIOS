@@ -128,7 +128,7 @@ def cmd_list() -> None:
         print("No experiments recorded yet.")
         return
 
-    for exp_id, name, surface, verdict, started, ended in rows:
+    for exp_id, name, surface, verdict, started, _ended in rows:
         status = verdict.upper() if verdict else "ACTIVE"
         print(f"  {exp_id}  [{status}]  {name}  ({surface})  started={started[:10]}")
 

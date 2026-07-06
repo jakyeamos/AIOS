@@ -17,7 +17,6 @@ import re
 import sqlite3
 import uuid
 from datetime import UTC, datetime
-from pathlib import Path
 
 from aios_paths import get_vault_subpath
 

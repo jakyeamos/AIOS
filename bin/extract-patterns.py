@@ -116,10 +116,6 @@ def extract_prompt_patterns(conn: sqlite3.Connection, existing: set[str]) -> lis
     # Count bigrams per classification
     class_bigrams: dict[str, Counter] = {}
     class_prompt_ids: dict[str, dict[str, list]] = {}  # bigram → [session_ids]
-    all_session_ids: dict = {}
-
-    cur2 = conn.execute("SELECT id, session_id, prompt_text FROM prompts_used WHERE prompt_text IS NOT NULL")
-    id_map = {row[1] + row[2][:30]: row[0] for row in cur2.fetchall()}
 
     for classification, text in rows:
         tokens = tokenize(text)

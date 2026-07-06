@@ -15,7 +15,6 @@ Safe to run multiple times — uses IF NOT EXISTS and checks before ALTER.
 
 import os
 import sqlite3
-from datetime import UTC, datetime
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 
@@ -26,8 +25,6 @@ def column_exists(conn: sqlite3.Connection, table: str, column: str) -> bool:
 
 
 def migrate(conn: sqlite3.Connection) -> None:
-    ts = datetime.now(UTC).isoformat()
-
     # -----------------------------------------------------------------------
     # Step 1: Extend patterns table (backward-safe ALTER TABLE)
     # -----------------------------------------------------------------------

@@ -339,8 +339,6 @@ def run_experiment(
     _run_harbor([TASKS_CORE, TASKS_HOLD], baseline_job)
 
     base_job_dir  = LAB_DIR / "jobs" / baseline_job
-    base_core     = _read_rewards(base_job_dir / "core"  if (base_job_dir / "core").exists() else base_job_dir)
-    base_hold     = _read_rewards(base_job_dir / "holdout" if (base_job_dir / "holdout").exists() else base_job_dir)
 
     # Separate core vs holdout by task name prefix (core tasks live in tasks/core/, holdout in tasks/holdout/)
     core_task_names  = {d.name for d in TASKS_CORE.iterdir() if d.is_dir()} if TASKS_CORE.exists() else set()
