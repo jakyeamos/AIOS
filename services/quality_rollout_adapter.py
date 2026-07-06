@@ -144,6 +144,9 @@ def _record_rollout_evidence(
         "rejected_reports": rollout_result.get("rejected_reports", 0),
         "controller_report_paths": artifact_index.get("controller_report_paths", []),
     }
+    # The rollout runs in-process; encode its outcome as an exit code so the
+    # evidence honesty gate can corroborate a command-backed pass verdict.
+    exit_code = {"pass": 0, "fail": 1}.get(status)
     return record_evidence_artifact(
         conn,
         task_id=task_id,
@@ -152,6 +155,7 @@ def _record_rollout_evidence(
         phase="quality-rollout",
         agent="aios-quality-rollout-adapter",
         command=_recorded_command(rollout_result),
+        exit_code=exit_code,
         output_hash=_artifact_hash(artifact_index),
         parsed_summary=json.dumps(summary, sort_keys=True),
         status=status,
