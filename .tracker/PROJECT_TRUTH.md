@@ -1,12 +1,11 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with honest evidence verdicts (no pass without exit codes), an evidence-gated verify-run completion path producing verifier artifacts, start-work duplicate-run dedup, a stale-run reaper (51 stuck runs closed), durable eval-run recording on agent-eval-contract 0.3.0 (full pytest green, 1122 passed), context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption boundary, and review-gated session-intelligence tools; repo-wide Ruff lint and format baselines are now green, while the BasedPyright baseline remains open.
-healthScore: 78
-statusLabel: needs_attention
-nextStep: Wire verify-run into hook-stop closeout and the pipeline reaper cadence; burn down the pre-existing repo-wide BasedPyright baseline (107 errors, 78 warnings).
-blockers:
-  - Full repo BasedPyright is not green: 107 errors and 78 warnings across existing baseline files.
+summary: Active local-first agent operating system with honest evidence verdicts (no pass without exit codes), an evidence-gated verify-run completion path producing verifier artifacts, start-work duplicate-run dedup, a stale-run reaper (51 stuck runs closed), durable eval-run recording on agent-eval-contract 0.3.0 (full pytest green, 1122 passed), context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption boundary, and review-gated session-intelligence tools; the full repo quality ladder is green — Ruff lint, Ruff format, and BasedPyright (0 errors, 0 warnings) all pass.
+healthScore: 85
+statusLabel: healthy
+nextStep: Wire verify-run into hook-stop closeout and the pipeline reaper cadence; keep the now-green Ruff/BasedPyright baselines ratcheted at zero.
+blockers: []
 lastUpdated: 2026-07-06
 tags: [infra, ai-os, hooks, automation]
 areas: [engineering]
@@ -18,7 +17,7 @@ activeBranch: dev
 lastCommitDate: 2026-07-06
 quality:
   lint: pass
-  types: fail
+  types: pass
   tests: pass
   deadCode: pass
   structure: pass
@@ -181,7 +180,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 ## Open Problems
 
-1. **Full BasedPyright baseline is not green** — `uv run basedpyright` failed on 2026-07-06 with 107 errors and 78 warnings, concentrated in tests/test_import_ai_history.py, tests/test_orchestration_runtime.py, tests/test_tmcp_benchmark.py, and services/commit_quality_ladder.py.
+1. (none — the full repo quality ladder went green on 2026-07-06; see Quality Ladder Notes)
 ## Next Concrete Steps
 
 1. Run a real shadow-lane implementation through the generated prompt and verify it transitions from `no_evidence` to `evidence_recorded` only after comparison evidence exists.
@@ -199,7 +198,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 | Step | Status | Notes |
 |------|--------|-------|
 | Lint (ruff) | Pass | `uv run ruff check .` passed on 2026-07-06 after fixing the 24-issue baseline in four atomic commits (imports, dead code, strict zip, simplifications). |
-| Type check (basedpyright) | Fail | `uv run basedpyright` failed on 2026-07-06 with 107 errors and 78 warnings across existing baseline files. Focused daily-flow repo closeout BasedPyright checks pass; the stale `SimpleNamespace` test typing issue in `tests/test_aios_cli.py` was fixed. |
+| Type check (basedpyright) | Pass | `uv run basedpyright` passed on 2026-07-06 with 0 errors and 0 warnings after burning down the 107-error/78-warning baseline: extraPaths for sys.path-loaded bin modules, dict[str, Any] payload typing, single-assignment isinstance narrowing, and per-site fixes (including a real latent NameError in services/harness.py simulate flow). |
 | Dead code (vulture) | Pass | `uv run vulture bin services --min-confidence 70`, `pnpm dead-code`, and `pnpm audit:dead-code` passed on 2026-07-02; Quality Runner final run `qr-clean-audit-20260702T200935Z-AIOS-final-4` detects `dead_code` from `package.json:scripts.dead-code`. |
 | Runtime smoke | Pass | `pnpm smoke` passed on 2026-07-02 and Quality Runner final run `qr-clean-audit-20260702T200935Z-AIOS-final-4` detects `runtime_smoke` from `package.json:scripts.smoke`. |
 | Tests | Pass | `uv run pytest -q` passed on 2026-07-06 with 1122 tests, after both the lint-fix and format-only commits. |
