@@ -6,7 +6,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from services.pre_pr_readiness import classify_changed_paths, summarize_pre_pr_readiness
+from services.pre_pr_readiness import (  # noqa: E402
+    classify_changed_paths,
+    summarize_pre_pr_readiness,
+)
 
 
 def test_classify_changed_paths_respects_aios_scope() -> None:

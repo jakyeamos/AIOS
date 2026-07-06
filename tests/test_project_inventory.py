@@ -7,7 +7,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from services.project_inventory import list_registered_projects, rank_project_candidates, sync_git_projects  # noqa: E402
+from services.project_inventory import (  # noqa: E402
+    list_registered_projects,
+    rank_project_candidates,
+    sync_git_projects,
+)
 
 
 def test_sync_git_projects_registers_missing_repos_once(tmp_path: Path) -> None:

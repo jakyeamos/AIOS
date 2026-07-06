@@ -42,6 +42,7 @@ from repo_quality_certifier.core import (
 from repo_quality_certifier.core import (
     build_tmcp_expert_enrichment as _build_tmcp_expert_enrichment,
 )
+
 from services.tmcp_runtime import DEFAULT_SKILLS_LIBRARY, compile_tmcp_packet
 
 

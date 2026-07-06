@@ -14,6 +14,7 @@ from quality_evidence_contract import (  # noqa: E402
     quality_finding_counts,
     validate_quality_finding,
 )
+
 from services import success_criteria  # noqa: E402
 
 

@@ -13,7 +13,10 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from services.aios_cli import DEFAULT_DB_PATH  # noqa: E402
-from services.quality_pipeline import DEFAULT_CONFIG_PATH, get_project_quality_pipeline  # noqa: E402
+from services.quality_pipeline import (  # noqa: E402
+    DEFAULT_CONFIG_PATH,
+    get_project_quality_pipeline,
+)
 
 
 def _parse_args() -> argparse.Namespace:
