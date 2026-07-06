@@ -1,26 +1,27 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with durable eval-run recording, explicit no-evidence shadow-run marking, context-loop learning primitives, TMCP expertise compilation, repo gate adoption planning, read-only workflow route preview, daily-flow repo closeout traces, standalone Quality Runner consumption boundary, AIOS-launched QR rollout artifact capture, QR-detectable dead-code/runtime-smoke gate exposure, review-gated session-intelligence tools, Codex session-ingest meta-learning proposals, and ignored runtime control-plane/session-effectiveness operator artifacts while broader Ruff and BasedPyright baseline issues remain open.
+summary: Active local-first agent operating system with honest evidence verdicts (no pass without exit codes), an evidence-gated verify-run completion path producing verifier artifacts, start-work duplicate-run dedup, a stale-run reaper (51 stuck runs closed), durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption boundary, and review-gated session-intelligence tools, while broader Ruff/BasedPyright baselines and agent-eval-contract 0.3.0 test fallout remain open.
 healthScore: 73
 statusLabel: needs_attention
-nextStep: Use the next real closeout run to confirm whether inline repository context reduces repeated manual review, then decide whether persistent closeout snapshots are worth adding.
+nextStep: Migrate eval-related services and tests to the agent-eval-contract 0.3.0 Pydantic API (50 pytest failures surfaced once the stale venv contract build was rebuilt), then wire verify-run into hook-stop closeout and the pipeline reaper cadence.
 blockers:
+  - agent-eval-contract 0.3.0 API rework breaks ~50 eval-related tests (eval_run_service, harness_eval, second_brain_eval, external_benchmark_adapter, ablation_runner, agent_eval_contract suites); the venv previously masked this with a stale pre-0.3.0 build.
   - Full repo Ruff and format baselines are not green: Ruff reports 25 issues and Ruff format reports 153 files needing formatting.
   - Full repo BasedPyright is not green: 107 errors and 78 warnings across existing baseline files.
-lastUpdated: 2026-07-04
+lastUpdated: 2026-07-05
 tags: [infra, ai-os, hooks, automation]
 areas: [engineering]
 goals: []
 repoType: infra
 sourceOfTruth: mixed
 primaryLanguage: Python
-activeBranch: codex/project-aios-component-scope
-lastCommitDate: 2026-07-02
+activeBranch: feat/close-run-lifecycle
+lastCommitDate: 2026-07-05
 quality:
   lint: fail
   types: fail
-  tests: pass
+  tests: fail
   deadCode: pass
   structure: fail
 canonicalCommands:
@@ -34,6 +35,8 @@ agentExpectationsVersion: 1
 ---
 
 ## Current State
+
+AIOS now closes the run-completion loop (2026-07-05). Evidence artifacts no longer fabricate verdicts: the PostToolUse hook records `unknown` with an `exit-code-unavailable` caveat when Claude Code's payload carries no exit code (verified live: the payload has only stdout/stderr/interrupted fields), and `services/evidence_artifacts.py` enforces the invariant for every writer — command-backed `pass` requires exit code 0. `aios verify-run <run-id>` is the evidence-gated completion path: it runs the repo's allowlisted quality gates, records per-command evidence with real exit codes, records an independent verifier artifact (the producer side of the gate hook-stop already enforces), and transitions the run completed/failed_validation with an audited event. `aios start-work` dedupes identical objectives within a 10-minute window instead of minting ghost runs, and `aios reap-runs` cancels stale planned/ready runs — the first live run closed 51 stuck runs, dropping the ready backlog from 64 to 12. Known open fallout: rebuilding the stale venv builds of local path deps (agent-eval-contract 0.3.0, quality-runner 0.3.1) surfaced ~50 eval-suite test failures that need a dedicated Pydantic-API migration pass.
 
 AIOS is an active, git-versioned Python/shell infrastructure project (first commit 2026-04-01, latest normalization commits on 2026-04-12). It runs continuously as the backbone of all Claude Code sessions: lifecycle hooks fire on session start, stop, prompt submit, and tool events, writing structured data to a SQLite ops database at `~/AIOS/data/aios.db`.
 
