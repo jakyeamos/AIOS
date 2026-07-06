@@ -120,6 +120,7 @@ from services.rtk_integration import (
     load_compression_rules,
     rtk_metrics_log,
 )
+from services.run_hygiene import reap_stale_runs
 from services.run_verification import RunVerificationError, verify_run
 from services.session_intelligence_helpers import (
     HELPER_FAMILIES as SESSION_INTEL_HELPER_FAMILIES,
@@ -1928,6 +1929,105 @@ def _record_run_event(
     )
 
 
+START_WORK_DEDUP_WINDOW_MINUTES = 10
+
+
+def _recent_duplicate_run(
+    conn: sqlite3.Connection,
+    *,
+    objective: str,
+    project_id: str | None,
+) -> dict[str, Any] | None:
+    """Return an existing start-work payload when the same objective already
+    has a live run inside the dedup window, instead of minting a ghost run."""
+    cutoff = (datetime.now(UTC) - timedelta(minutes=START_WORK_DEDUP_WINDOW_MINUTES)).isoformat()
+    clauses = [
+        "objective = ?",
+        "status IN ('planned', 'ready', 'in_progress')",
+        "created_at >= ?",
+    ]
+    params: list[Any] = [objective, cutoff]
+    if project_id:
+        clauses.append("project_id = ?")
+        params.append(project_id)
+    run = conn.execute(
+        f"""
+        SELECT id, project_id, session_id, objective, workflow_key, agent_key,
+               backend_key, route_id, route_status, status, packet_id,
+               active_invocation_id, route_result_json
+        FROM orchestration_runs
+        WHERE {" AND ".join(clauses)}
+        ORDER BY created_at DESC
+        LIMIT 1
+        """,
+        params,
+    ).fetchone()
+    if run is None:
+        return None
+
+    packet = conn.execute(
+        "SELECT id, packet_markdown, sections_json FROM briefing_packets WHERE id = ? LIMIT 1",
+        (run["packet_id"],),
+    ).fetchone()
+    invocation = conn.execute(
+        """
+        SELECT id, status, backend_key, backend_label, session_id
+        FROM orchestration_invocations
+        WHERE id = ?
+        LIMIT 1
+        """,
+        (run["active_invocation_id"],),
+    ).fetchone()
+    try:
+        route_payload = json.loads(str(run["route_result_json"] or "{}"))
+    except json.JSONDecodeError:
+        route_payload = {}
+    try:
+        sections = json.loads(str(packet["sections_json"] or "[]")) if packet else []
+    except json.JSONDecodeError:
+        sections = []
+
+    return {
+        "run": {
+            "id": run["id"],
+            "project_id": run["project_id"],
+            "session_id": run["session_id"],
+            "objective": run["objective"],
+            "workflow_key": run["workflow_key"],
+            "agent_key": run["agent_key"],
+            "backend_key": run["backend_key"],
+            "route_id": run["route_id"],
+            "route_status": run["route_status"],
+            "status": run["status"],
+            "packet_id": run["packet_id"],
+            "active_invocation_id": run["active_invocation_id"],
+        },
+        "packet": {
+            "id": packet["id"] if packet else run["packet_id"],
+            "policy_mode": "compact-ranked",
+            "markdown": packet["packet_markdown"] if packet else "",
+            "sections": sections,
+            "contract_version": GOVERNED_HANDOFF_CONTRACT_VERSION,
+        },
+        "invocation": {
+            "id": invocation["id"] if invocation else run["active_invocation_id"],
+            "status": invocation["status"] if invocation else None,
+            "backend_key": invocation["backend_key"] if invocation else run["backend_key"],
+            "backend_label": invocation["backend_label"] if invocation else None,
+            "session_id": invocation["session_id"] if invocation else run["session_id"],
+        },
+        "next_agent_context": {
+            "run_id": run["id"],
+            "invocation_id": run["active_invocation_id"],
+            "packet_id": run["packet_id"],
+            "session_id": run["session_id"],
+            "next_recommended_action": _next_recommended_action(str(run["workflow_key"] or "")),
+        },
+        "route": route_payload,
+        "deduplicated": True,
+    }
+
+
 def _start_work_payload(
     conn: sqlite3.Connection,
     logs_dir: Path,
@@ -1940,6 +2040,9 @@ def _start_work_payload(
     session_id: str | None,
 ) -> dict[str, Any]:
     _ensure_start_work_schema(conn)
+    duplicate = _recent_duplicate_run(conn, objective=objective, project_id=project_id)
+    if duplicate is not None:
+        return duplicate
     explicit_session_id = session_id is not None
     linked_session_id = session_id if explicit_session_id else _current_session_id(logs_dir)
     session_cwd: str | None = None
@@ -5756,9 +5859,17 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
         )
         return
     if command == "start-work":
+        dedup_note = " deduplicated=true" if data.get("deduplicated") else ""
         print(
             f"run={data['run']['id']} status={data['run']['status']} "
-            f"session={data['run']['session_id'] or 'unlinked'} packet={data['packet']['id']}"
+            f"session={data['run']['session_id'] or 'unlinked'} "
+            f"packet={data['packet']['id']}{dedup_note}"
+        )
+        return
+    if command == "reap-runs":
+        print(
+            f"reaped={data['count']} max_age_days={data['max_age_days']} "
+            f"dry_run={str(data['dry_run']).lower()}"
         )
         return
     if command == "verify-run":
@@ -6068,6 +6179,7 @@ def _command_requires_db(args: argparse.Namespace) -> bool:
         "sync-automation-history",
         "start-work",
         "verify-run",
+        "reap-runs",
         "harness-brief",
         "harness-simulate",
         "harness-replay",
@@ -7493,6 +7605,17 @@ def create_parser() -> argparse.ArgumentParser:
         help="Gate id override (repeatable); defaults to the repo's .aios-quality-gate.json",
     )
 
+    reap_runs_parser = subparsers.add_parser(
+        "reap-runs",
+        help="Cancel planned/ready orchestration runs that never started within the age limit",
+    )
+    reap_runs_parser.add_argument(
+        "--max-age-days", type=int, default=7, help="Age threshold in days (default 7)"
+    )
+    reap_runs_parser.add_argument(
+        "--dry-run", action="store_true", help="Report stale runs without canceling them"
+    )
+
     pre_pr = subparsers.add_parser("pre-pr-readiness", help="Run the AIOS Pre-CR readiness gate")
     pre_pr.add_argument("--workspace-root", default=".", help="Workspace root to evaluate")
     pre_pr.add_argument(
@@ -7928,6 +8051,15 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
                 conn.commit()
             except RunVerificationError as error:
                 raise CLIError(error.code, str(error), EXIT_RUNTIME) from error
+        elif args.command == "reap-runs":
+            assert conn is not None
+            data = reap_stale_runs(
+                conn,
+                max_age_days=max(1, int(args.max_age_days)),
+                dry_run=bool(args.dry_run),
+            )
+            if not args.dry_run:
+                conn.commit()
         elif args.command == "learning-analyze":
             assert conn is not None
             data = _learning_analyze_payload(conn, args)
