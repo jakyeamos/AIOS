@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK_ROOT = ROOT / "config" / "tmcp" / "portable-dev-process"
 
 
-def _load_manifest() -> dict[str, object]:
+def _load_manifest() -> dict[str, Any]:
     return json.loads((PACK_ROOT / "manifest.json").read_text(encoding="utf-8"))
 
 

@@ -7,6 +7,7 @@ import platform
 import random
 import subprocess
 import time
+from collections.abc import Iterable
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -103,9 +104,9 @@ def now_iso() -> str:
     return datetime.now(UTC).isoformat()
 
 
-def discover_repositories(parent_dir: Path, *, max_depth: int = 4) -> list[dict[str, object]]:
+def discover_repositories(parent_dir: Path, *, max_depth: int = 4) -> list[dict[str, Any]]:
     root = parent_dir.expanduser().resolve()
-    repositories: list[dict[str, object]] = []
+    repositories: list[dict[str, Any]] = []
     for current, dirs, _files in os.walk(root):
         current_path = Path(current)
         depth = len(current_path.relative_to(root).parts)
@@ -118,7 +119,7 @@ def discover_repositories(parent_dir: Path, *, max_depth: int = 4) -> list[dict[
     return sorted(repositories, key=lambda item: str(item["project_id"]))
 
 
-def create_benchmark_scaffold(*, parent_dir: Path, output_root: Path) -> dict[str, object]:
+def create_benchmark_scaffold(*, parent_dir: Path, output_root: Path) -> dict[str, Any]:
     benchmark_root = output_root.expanduser().resolve()
     for relative in BENCHMARK_DIRECTORIES:
         (benchmark_root / relative).mkdir(parents=True, exist_ok=True)
@@ -159,7 +160,7 @@ def create_benchmark_scaffold(*, parent_dir: Path, output_root: Path) -> dict[st
     }
 
 
-def refresh_discovery(*, parent_dir: Path, output_root: Path) -> dict[str, object]:
+def refresh_discovery(*, parent_dir: Path, output_root: Path) -> dict[str, Any]:
     benchmark_root = output_root.expanduser().resolve()
     (benchmark_root / "manifest").mkdir(parents=True, exist_ok=True)
     repositories = discover_repositories(parent_dir)
@@ -183,11 +184,11 @@ def preflight_benchmark(
     *,
     output_root: Path,
     preferred_projects: tuple[str, ...] = ("BIP-Console", "Bballedu"),
-) -> dict[str, object]:
+) -> dict[str, Any]:
     benchmark_root = output_root.expanduser().resolve()
     manifest = _read_json_object(benchmark_root / "manifest" / "repositories.json")
     repositories = _json_list(manifest.get("repositories"))
-    results: list[dict[str, object]] = []
+    results: list[dict[str, Any]] = []
     for repo in repositories:
         if not isinstance(repo, dict):
             continue
@@ -238,9 +239,9 @@ def preflight_benchmark(
 def import_task_manifest(
     *,
     output_root: Path,
-    task_families: list[dict[str, object]],
-    tasks: list[dict[str, object]],
-) -> dict[str, object]:
+    task_families: list[dict[str, Any]],
+    tasks: list[dict[str, Any]],
+) -> dict[str, Any]:
     benchmark_root = output_root.expanduser().resolve()
     task_dir = benchmark_root / "tasks"
     task_dir.mkdir(parents=True, exist_ok=True)
@@ -272,14 +273,14 @@ def randomize_condition_map(
     seed: int,
     repeats: int,
     include_development: bool = False,
-) -> dict[str, object]:
+) -> dict[str, Any]:
     benchmark_root = output_root.expanduser().resolve()
     tasks = {
         task_id: task
         for task_id, task in _tasks_by_id(benchmark_root).items()
         if include_development or task.get("split") != "development"
     }
-    assignments: list[dict[str, object]] = []
+    assignments: list[dict[str, Any]] = []
     rng = random.Random(seed)
     for repeat_index in range(max(1, repeats)):
         for task_id in sorted(tasks):
@@ -310,7 +311,7 @@ def randomize_condition_map(
     return payload
 
 
-def freeze_benchmark(*, output_root: Path, model_config: dict[str, object]) -> dict[str, object]:
+def freeze_benchmark(*, output_root: Path, model_config: dict[str, Any]) -> dict[str, Any]:
     benchmark_root = output_root.expanduser().resolve()
     manifest_dir = benchmark_root / "manifest"
     _write_json(
@@ -342,9 +343,9 @@ def freeze_benchmark(*, output_root: Path, model_config: dict[str, object]) -> d
 def validate_shortcut_for_task(
     *,
     output_root: Path,
-    shortcut: dict[str, object],
+    shortcut: dict[str, Any],
     task_id: str,
-) -> dict[str, object]:
+) -> dict[str, Any]:
     _ = output_root
     created_from = {str(item) for item in _json_list(shortcut.get("created_from_task_ids"))}
     validated_on = {str(item) for item in _json_list(shortcut.get("validated_on_task_ids"))}
@@ -370,7 +371,7 @@ def run_task_condition(
     task_id: str,
     condition_anonymous_id: str,
     executor: str = "stub",
-) -> dict[str, object]:
+) -> dict[str, Any]:
     if executor != "stub":
         raise ValueError(
             "Only the deterministic stub executor is implemented in this benchmark slice."
@@ -508,18 +509,18 @@ def run_task_condition(
     return record
 
 
-def aggregate_results(*, output_root: Path) -> dict[str, object]:
+def aggregate_results(*, output_root: Path) -> dict[str, Any]:
     benchmark_root = output_root.expanduser().resolve()
     raw_dir = benchmark_root / "runs" / "raw"
     runs = [_read_json_object(path) for path in sorted(raw_dir.glob("*.json"))]
-    by_condition: dict[str, list[dict[str, object]]] = {}
+    by_condition: dict[str, list[dict[str, Any]]] = {}
     for run in runs:
         by_condition.setdefault(str(run.get("condition_actual")), []).append(run)
     summaries = {
         condition: _condition_summary(condition_runs)
         for condition, condition_runs in sorted(by_condition.items())
     }
-    comparisons: dict[str, dict[str, object]] = {}
+    comparisons: dict[str, dict[str, Any]] = {}
     for baseline_condition, challenger_condition in (
         ("baseline", "flat_skills"),
         ("flat_skills", "tmcp_cold_start"),
@@ -552,8 +553,8 @@ def aggregate_results(*, output_root: Path) -> dict[str, object]:
     return payload
 
 
-def tmcp_claim_gate(runs: list[dict[str, object]]) -> dict[str, object]:
-    by_condition: dict[str, list[dict[str, object]]] = {}
+def tmcp_claim_gate(runs: list[dict[str, Any]]) -> dict[str, Any]:
+    by_condition: dict[str, list[dict[str, Any]]] = {}
     for run in runs:
         by_condition.setdefault(str(run.get("condition_actual")), []).append(run)
     baseline = by_condition.get("flat_skills") or by_condition.get("baseline") or []
@@ -599,7 +600,7 @@ def tmcp_claim_gate(runs: list[dict[str, object]]) -> dict[str, object]:
     }
 
 
-def _repository_record(repo_path: Path) -> dict[str, object]:
+def _repository_record(repo_path: Path) -> dict[str, Any]:
     package = _load_json_if_exists(repo_path / "package.json")
     scripts = package.get("scripts", {}) if isinstance(package, dict) else {}
     package_manager = _package_manager(repo_path, package)
@@ -730,7 +731,7 @@ def _testing_framework(package: object) -> str | None:
 def _framework(package: object) -> str | None:
     if not isinstance(package, dict):
         return None
-    deps: dict[str, object] = {}
+    deps: dict[str, Any] = {}
     for key in ("dependencies", "devDependencies"):
         value = package.get(key)
         if isinstance(value, dict):
@@ -774,7 +775,7 @@ def _ci_configuration(repo_path: Path) -> list[str]:
     return sorted(str(path.relative_to(repo_path)) for path in workflows.glob("*.yml"))
 
 
-def _environment_manifest() -> dict[str, object]:
+def _environment_manifest() -> dict[str, Any]:
     return {
         "schema": "tmcp-benchmark-environments-v0.1",
         "created_at": now_iso(),
@@ -785,7 +786,7 @@ def _environment_manifest() -> dict[str, object]:
     }
 
 
-def _skill_equivalence_manifest() -> dict[str, object]:
+def _skill_equivalence_manifest() -> dict[str, Any]:
     return {
         "schema": "tmcp-benchmark-skill-equivalence-v0.1",
         "created_at": now_iso(),
@@ -795,7 +796,7 @@ def _skill_equivalence_manifest() -> dict[str, object]:
     }
 
 
-def _shortcut_registry_manifest() -> dict[str, object]:
+def _shortcut_registry_manifest() -> dict[str, Any]:
     return {
         "schema": "tmcp-benchmark-shortcut-registry-v0.1",
         "created_at": now_iso(),
@@ -805,7 +806,7 @@ def _shortcut_registry_manifest() -> dict[str, object]:
     }
 
 
-def _freeze_manifest() -> dict[str, object]:
+def _freeze_manifest() -> dict[str, Any]:
     return {
         "schema": "tmcp-benchmark-freeze-v0.1",
         "created_at": now_iso(),
@@ -826,7 +827,7 @@ def _freeze_manifest() -> dict[str, object]:
     }
 
 
-def run_record_template() -> dict[str, object]:
+def run_record_template() -> dict[str, Any]:
     return {
         "run_id": "",
         "benchmark_version": BENCHMARK_SCHEMA,
@@ -924,7 +925,7 @@ def run_record_template() -> dict[str, object]:
     }
 
 
-def _write_json(path: Path, payload: dict[str, object]) -> None:
+def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
@@ -948,7 +949,7 @@ def _string_list(value: object) -> list[str]:
 
 
 def _select_preflight_projects(
-    results: list[dict[str, object]],
+    results: list[dict[str, Any]],
     preferred_projects: tuple[str, ...],
 ) -> list[str]:
     eligible = [item for item in results if item.get("eligible")]
@@ -964,8 +965,8 @@ def _select_preflight_projects(
 
 
 def _validate_task_manifest(
-    task_families: list[dict[str, object]],
-    tasks: list[dict[str, object]],
+    task_families: list[dict[str, Any]],
+    tasks: list[dict[str, Any]],
 ) -> None:
     family_ids = {str(family.get("task_family_id")) for family in task_families}
     task_ids: set[str] = set()
@@ -1002,7 +1003,7 @@ def _validate_task_manifest(
             raise ValueError(f"Task {task_id} references unknown task family.")
 
 
-def _tasks_by_id(benchmark_root: Path) -> dict[str, dict[str, object]]:
+def _tasks_by_id(benchmark_root: Path) -> dict[str, dict[str, Any]]:
     payload = _read_json_object(benchmark_root / "tasks" / "tasks.json")
     tasks = _json_list(payload.get("tasks"))
     return {
@@ -1025,7 +1026,7 @@ def _file_sha256(path: Path) -> str | None:
     return digest.hexdigest()
 
 
-def _condition_assignment(benchmark_root: Path, condition_anonymous_id: str) -> dict[str, object]:
+def _condition_assignment(benchmark_root: Path, condition_anonymous_id: str) -> dict[str, Any]:
     payload = _read_json_object(benchmark_root / "manifest" / "condition-map.json")
     for assignment in _json_list(payload.get("assignments")):
         if (
@@ -1042,7 +1043,7 @@ def _read_condition_seed(benchmark_root: Path) -> int:
     return int(seed) if isinstance(seed, int | float | str) and str(seed).isdigit() else 0
 
 
-def _repository_for_project(benchmark_root: Path, project_id: str) -> dict[str, object]:
+def _repository_for_project(benchmark_root: Path, project_id: str) -> dict[str, Any]:
     payload = _read_json_object(benchmark_root / "manifest" / "repositories.json")
     for repo in _json_list(payload.get("repositories")):
         if isinstance(repo, dict) and repo.get("project_id") == project_id:
@@ -1076,8 +1077,8 @@ def _run_commands(
     cwd: Path,
     artifact_dir: Path,
     label: str,
-) -> dict[str, object]:
-    results: list[dict[str, object]] = []
+) -> dict[str, Any]:
+    results: list[dict[str, Any]] = []
     first_started_at = ""
     first_success_at = ""
     for index, command in enumerate(commands):
@@ -1119,10 +1120,10 @@ def _run_commands(
 
 
 def _route_payload(
-    task: dict[str, object],
-    assignment: dict[str, object],
+    task: dict[str, Any],
+    assignment: dict[str, Any],
     run_id: str,
-) -> dict[str, object]:
+) -> dict[str, Any]:
     expected = _string_list(task.get("expected_tmcp_route"))
     condition = str(assignment["condition_actual"])
     if condition == "baseline":
@@ -1162,7 +1163,7 @@ def _shortcut_state_for_condition(condition: str) -> str:
     return "NONE"
 
 
-def _condition_token_payload(condition: str, task: dict[str, object]) -> dict[str, object]:
+def _condition_token_payload(condition: str, task: dict[str, Any]) -> dict[str, Any]:
     route_tokens = {
         "baseline": 0,
         "flat_skills": 1400,
@@ -1195,7 +1196,7 @@ def _condition_token_payload(condition: str, task: dict[str, object]) -> dict[st
     }
 
 
-def _evaluation_payload(record: dict[str, object]) -> dict[str, object]:
+def _evaluation_payload(record: dict[str, Any]) -> dict[str, Any]:
     return {
         "schema": "tmcp-benchmark-automated-evaluation-v0.1",
         "run_id": record["run_id"],
@@ -1210,7 +1211,7 @@ def _evaluation_payload(record: dict[str, object]) -> dict[str, object]:
     }
 
 
-def _condition_summary(runs: list[dict[str, object]]) -> dict[str, object]:
+def _condition_summary(runs: list[dict[str, Any]]) -> dict[str, Any]:
     completed = [run for run in runs if run.get("task_completed")]
     return {
         "run_count": len(runs),
@@ -1228,9 +1229,9 @@ def _condition_summary(runs: list[dict[str, object]]) -> dict[str, object]:
 
 
 def _comparison_summary(
-    baseline_runs: list[dict[str, object]],
-    challenger_runs: list[dict[str, object]],
-) -> dict[str, object]:
+    baseline_runs: list[dict[str, Any]],
+    challenger_runs: list[dict[str, Any]],
+) -> dict[str, Any]:
     baseline = _condition_summary(baseline_runs)
     challenger = _condition_summary(challenger_runs)
     baseline_quality = baseline["median_quality_score"]
@@ -1279,7 +1280,7 @@ def _comparison_summary(
     }
 
 
-def _median_number(values: object) -> float | None:
+def _median_number(values: Iterable[Any]) -> float | None:
     numeric = sorted(float(value) for value in values if isinstance(value, int | float))
     if not numeric:
         return None
@@ -1289,7 +1290,7 @@ def _median_number(values: object) -> float | None:
     return (numeric[midpoint - 1] + numeric[midpoint]) / 2
 
 
-def _total_tokens(run: dict[str, object]) -> int | None:
+def _total_tokens(run: dict[str, Any]) -> int | None:
     input_tokens = run.get("input_tokens")
     output_tokens = run.get("output_tokens")
     if isinstance(input_tokens, int | float) and isinstance(output_tokens, int | float):
@@ -1297,7 +1298,7 @@ def _total_tokens(run: dict[str, object]) -> int | None:
     return None
 
 
-def _missed_requirement_rate(runs: list[dict[str, object]]) -> float:
+def _missed_requirement_rate(runs: list[dict[str, Any]]) -> float:
     if not runs:
         return 0.0
     missed = 0
@@ -1318,7 +1319,7 @@ def _delta(baseline: object, challenger: object) -> float | None:
     return None
 
 
-def _write_report_summaries(benchmark_root: Path, aggregate: dict[str, object]) -> None:
+def _write_report_summaries(benchmark_root: Path, aggregate: dict[str, Any]) -> None:
     (benchmark_root / "reports").mkdir(parents=True, exist_ok=True)
     technical = benchmark_root / "reports" / "technical-report.md"
     executive = benchmark_root / "reports" / "executive-summary.md"
