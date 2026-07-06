@@ -55,7 +55,7 @@ def get_docx_metadata(path: Path) -> dict:
         "modified": None,
     }
     try:
-        import docx
+        import docx  # pyright: ignore[reportMissingImports]
 
         doc = docx.Document(str(path))
         props = doc.core_properties
@@ -88,7 +88,7 @@ def main() -> None:
         sys.exit(1)
 
     try:
-        import docx  # noqa: F401
+        import docx  # noqa: F401  # pyright: ignore[reportMissingImports]
     except ImportError:
         print("Error: python-docx not installed. Run: pip install python-docx", file=sys.stderr)
         sys.exit(1)

@@ -11,7 +11,12 @@ import uuid
 import webbrowser
 from datetime import UTC, datetime, timedelta
 
-from flask import Flask, jsonify, render_template_string, request
+from flask import (  # pyright: ignore[reportMissingImports]
+    Flask,
+    jsonify,
+    render_template_string,
+    request,
+)
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 CONTRADICTION_LOG = os.path.expanduser("~/AIOS/logs/contradictions.log")

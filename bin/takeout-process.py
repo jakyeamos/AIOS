@@ -44,7 +44,7 @@ def _pdf_to_text(f: Path) -> str | None:
         if r.returncode == 0:
             return r.stdout.decode("utf-8", errors="replace")
     try:
-        import pypdf
+        import pypdf  # pyright: ignore[reportMissingImports]
 
         reader = pypdf.PdfReader(str(f))
         pages = [page.extract_text() or "" for page in reader.pages]
@@ -75,7 +75,7 @@ def _xlsx_to_md(f: Path) -> str:
 
 
 def _pptx_to_md(f: Path) -> str:
-    from pptx import Presentation
+    from pptx import Presentation  # pyright: ignore[reportMissingImports]
 
     prs = Presentation(str(f))
     parts = []

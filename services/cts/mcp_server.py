@@ -368,7 +368,7 @@ class CTSService:
 def run_stdio_mcp(service: CTSService | None = None) -> None:
     srv = service or CTSService()
     try:
-        from fastmcp import FastMCP
+        from fastmcp import FastMCP  # pyright: ignore[reportMissingImports]
     except ImportError as exc:
         raise RuntimeError("FastMCP is required to run CTS MCP server.") from exc
 

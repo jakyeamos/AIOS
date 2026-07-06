@@ -40,6 +40,8 @@ ignore = [
 [tool.basedpyright]
 pythonVersion = "3.12"
 include = ["bin", "tests", "services"]
+# Tests insert ROOT and ROOT/bin into sys.path at runtime; mirror that here.
+extraPaths = [".", "bin"]
 exclude = ["archive", "staging", "aios-ui"]
 typeCheckingMode = "standard"
 reportMissingImports = "warning"
