@@ -93,8 +93,6 @@ def approve_one(conn: sqlite3.Connection, pid: str, force: bool = False) -> None
         print(f"Pattern not found: {pid}")
         return
 
-    row_dict = dict(zip([d[0] for d in conn.execute("PRAGMA table_info(patterns)").fetchall()], row))
-    # re-fetch via row_factory
     conn.row_factory = sqlite3.Row
     row_dict = dict(conn.execute("SELECT * FROM patterns WHERE id=?", (pid,)).fetchone())
     conn.row_factory = None

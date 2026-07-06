@@ -149,7 +149,8 @@ def cmd_status(args: list[str]) -> None:
         sys.exit(1)
     print(json.dumps(dict(zip(
         ["id","name","surface","hypothesis","verdict","baseline_value","challenger_value","started_at","ended_at","notes"],
-        row
+        row,
+        strict=True,
     )), indent=2))
 
 
