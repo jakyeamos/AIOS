@@ -7,10 +7,24 @@ from datetime import UTC, datetime
 from typing import Any
 
 from agent_eval_contract import (
-    SCORE_FIELDS,
     validate_context_profile,
     validate_final_status,
     validate_priority,
+)
+
+# Dimension columns of the local eval_scores table. agent-eval-contract 0.3.0
+# replaced its flat SCORE_FIELDS constant with a Pydantic metrics map, so the
+# authoritative list for the local SQLite schema lives here.
+SCORE_FIELDS = (
+    "task_success",
+    "quality_adherence",
+    "workflow_speed",
+    "cost_efficiency",
+    "context_effectiveness",
+    "second_brain_effectiveness",
+    "context_portability",
+    "autonomy",
+    "user_trust",
 )
 
 
