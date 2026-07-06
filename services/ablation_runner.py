@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import subprocess
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -28,7 +29,7 @@ def run_ablation_suite(
     *,
     task_id: str,
     start_sha: str,
-    policy_paths: list[str | Path],
+    policy_paths: Sequence[str | Path],
     repo_path: str | Path,
     base_run_id: str | None = None,
 ) -> list[str]:

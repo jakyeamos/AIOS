@@ -85,7 +85,9 @@ def write_issue(
             ),
         )
         conn.commit()
-        return int(cursor.lastrowid)
+        row_id = cursor.lastrowid
+        assert row_id is not None  # set after a successful INSERT
+        return int(row_id)
 
 
 def list_issues(project: str | None = None) -> list[IssueRow]:

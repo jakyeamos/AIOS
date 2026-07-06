@@ -5,6 +5,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import cast
 
 from services.execution_symmetric_planner import ExecutionSymmetricPlan
 from services.planning_context import JSONValue, PlanningContext, create_planning_context
@@ -29,7 +30,7 @@ class PlanningLogEntry:
             "recorded_at": self.recorded_at,
             "plan_kind": self.plan_kind,
             "route_trigger": self.route_trigger,
-            "comparison_axes": self.comparison_axes,
+            "comparison_axes": cast(dict[str, JSONValue], self.comparison_axes),
             "planning_context": self.planning_context.to_json(),
         }
 

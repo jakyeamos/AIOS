@@ -149,7 +149,7 @@ def _workflow_route_payload(workflow: Any) -> dict[str, Any]:
     }
 
 
-def _bounded_float(value: object) -> float:
+def _bounded_float(value: Any) -> float:
     try:
         parsed = float(value)
     except (TypeError, ValueError):

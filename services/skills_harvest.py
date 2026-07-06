@@ -2572,7 +2572,7 @@ def _tmcp_manifest(
 
 def _compiler_report(
     sources: list[CandidateFile],
-    skills: list[CandidateFile],
+    skills: list[SkillGroup],
     workflows: list[CandidateFile],
     modules: list[dict[str, Any]],
     branches: list[dict[str, Any]],

@@ -5,6 +5,7 @@ import sqlite3
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -275,7 +276,7 @@ def test_route_objective_routes_quality_gate_adoption_to_gate_workflow(
 
 
 def test_semantic_reasoner_routes_high_confidence_no_match() -> None:
-    seen_request: dict[str, object] = {}
+    seen_request: dict[str, Any] = {}
 
     def reasoner(request: dict[str, object]) -> dict[str, object]:
         seen_request.update(request)

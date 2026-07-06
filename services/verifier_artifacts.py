@@ -6,7 +6,7 @@ import json
 import sqlite3
 import uuid
 from datetime import UTC, datetime
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 VerifierResult = Literal["pass", "fail", "needs_work"]
 NextPhase = Literal["closeout", "implementation_retry", "human_review"]
@@ -273,7 +273,7 @@ def _json_list(value: Any) -> list[str]:
 def _normalize_result(result: str) -> VerifierResult:
     if result not in {"pass", "fail", "needs_work"}:
         raise ValueError("Verifier result must be pass, fail, or needs_work.")
-    return result
+    return cast(VerifierResult, result)
 
 
 def _default_next_phase(result: VerifierResult) -> NextPhase:

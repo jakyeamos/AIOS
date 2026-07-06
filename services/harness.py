@@ -378,6 +378,7 @@ def simulate_fixture(
     current_status: str | None = None
     packet_id: str | None = None
     briefing: dict[str, Any] | None = None
+    evaluation = None
     for event in events:
         event_type = str(event.get("type"))
         if event_type == "briefing_packet_generated":

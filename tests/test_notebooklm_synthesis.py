@@ -260,7 +260,7 @@ def test_adapter_uses_backend_readiness_warnings_when_skipped() -> None:
 def test_cli_adapter_runs_guarded_notebook_create_add_sources_and_query() -> None:
     calls: list[tuple[str, ...]] = []
 
-    def fake_runner(args: tuple[str, ...], _timeout: float) -> NotebookLMCommandResult:
+    def fake_runner(args: tuple[str, ...], timeout: float) -> NotebookLMCommandResult:
         calls.append(args)
         if args == ("nlm", "login", "--check"):
             return NotebookLMCommandResult(args=args, returncode=0, stdout="authenticated")
@@ -272,7 +272,9 @@ def test_cli_adapter_runs_guarded_notebook_create_add_sources_and_query() -> Non
             return NotebookLMCommandResult(
                 args=args, returncode=0, stdout="Answer\nSource: notes/a.md"
             )
-        return NotebookLMCommandResult(args=args, returncode=1, stderr="unexpected command")
+        return NotebookLMCommandResult(
+            args=args, returncode=1, stdout="", stderr="unexpected command"
+        )
 
     spec = load_notebooklm_backend_spec()
     readiness = NotebookLMBackendReadiness(
@@ -311,7 +313,7 @@ def test_cli_adapter_runs_guarded_notebook_create_add_sources_and_query() -> Non
 
 
 def test_cli_adapter_fails_closed_when_auth_check_fails() -> None:
-    def fake_runner(args: tuple[str, ...], _timeout: float) -> NotebookLMCommandResult:
+    def fake_runner(args: tuple[str, ...], timeout: float) -> NotebookLMCommandResult:
         return NotebookLMCommandResult(
             args=args,
             returncode=1,

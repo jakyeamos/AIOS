@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
-from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -161,7 +161,7 @@ def test_cli_payload_analyzes_json_session_trace(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    payload = aios_cli._meta_analyze_session_payload(SimpleNamespace(input=str(path)))
+    payload = aios_cli._meta_analyze_session_payload(argparse.Namespace(input=str(path)))
 
     assert payload["signal_count"] == 1
     assert payload["signals"][0]["type"] == "explicit_correction"

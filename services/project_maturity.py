@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import Any
 
 BEHAVIORAL_SPEC_WORKFLOW_KEY = "behavioral-spec-verification-loop"
 DEFAULT_MIN_SIGNALS_REQUIRED = 4
@@ -30,7 +31,7 @@ class MaturitySignal:
     passed: bool
     evidence: tuple[str, ...]
 
-    def to_json(self) -> dict[str, object]:
+    def to_json(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -48,7 +49,7 @@ class MaturityEligibilityReport:
     signals: dict[str, MaturitySignal]
     rationale: str
 
-    def to_json(self) -> dict[str, object]:
+    def to_json(self) -> dict[str, Any]:
         return {
             "repo_path": self.repo_path,
             "eligible": self.eligible,

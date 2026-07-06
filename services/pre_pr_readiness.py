@@ -7,7 +7,7 @@ import select
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Any, BinaryIO
+from typing import IO, Any
 
 DEFAULT_TIMEOUT_SECONDS = 330
 DEFAULT_PRE_CR_REPO = Path.home() / "projects" / "pre-cr-suite-lsp"
@@ -160,7 +160,8 @@ def summarize_pre_pr_readiness(
             }
         )
 
-    health = result.get("health") if isinstance(result.get("health"), dict) else {}
+    health_raw = result.get("health")
+    health = health_raw if isinstance(health_raw, dict) else {}
     issues = health.get("issues")
     if isinstance(issues, list):
         for issue in issues:
@@ -363,7 +364,7 @@ class _PreCrSession:
         self.stdin.flush()
 
 
-def _read_message(stream: BinaryIO, *, timeout_seconds: int) -> dict[str, Any]:
+def _read_message(stream: IO[bytes], *, timeout_seconds: int) -> dict[str, Any]:
     ready, _, _ = select.select([stream], [], [], timeout_seconds)
     if not ready:
         raise _cli_error(

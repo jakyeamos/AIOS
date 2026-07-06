@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -13,7 +14,7 @@ from services.planning_lenses import (  # noqa: E402
 )
 
 
-def _keys(selection: object) -> set[str]:
+def _keys(selection: Any) -> set[str]:
     return {lens.key for lens in selection.lenses}
 
 
