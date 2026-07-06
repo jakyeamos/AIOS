@@ -37,3 +37,8 @@ node_modules/
 .pnpm-store/
 
 .quality-runner/
+
+# Generated / cache / audit output
+.aios/
+.turbo/
+.firecrawl/
