@@ -120,6 +120,7 @@ from services.rtk_integration import (
     load_compression_rules,
     rtk_metrics_log,
 )
+from services.run_verification import RunVerificationError, verify_run
 from services.session_intelligence_helpers import (
     HELPER_FAMILIES as SESSION_INTEL_HELPER_FAMILIES,
 )
@@ -5760,6 +5761,13 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
             f"session={data['run']['session_id'] or 'unlinked'} packet={data['packet']['id']}"
         )
         return
+    if command == "verify-run":
+        print(
+            f"result={data['result']} run={data['run_id']} "
+            f"status={data['run_status']['from']}->{data['run_status']['to']} "
+            f"verifier={data['verifier_id']} blocking={len(data['blocking_issues'])}"
+        )
+        return
     if command == "pre-pr-readiness":
         coverage = data.get("coverage") if isinstance(data.get("coverage"), dict) else None
         coverage_percent = coverage.get("coveragePercent") if coverage else None
@@ -6059,6 +6067,7 @@ def _command_requires_db(args: argparse.Namespace) -> bool:
         "prove-project-health",
         "sync-automation-history",
         "start-work",
+        "verify-run",
         "harness-brief",
         "harness-simulate",
         "harness-replay",
@@ -7469,6 +7478,21 @@ def create_parser() -> argparse.ArgumentParser:
     start_work.add_argument("--agent", default=None, help="Agent profile key override")
     start_work.add_argument("--backend", default=None, help="Invocation backend key override")
 
+    verify_run_parser = subparsers.add_parser(
+        "verify-run",
+        help="Run canonical quality gates for a run and gate completion on verifier evidence",
+    )
+    verify_run_parser.add_argument("run_id", help="Orchestration run id to verify")
+    verify_run_parser.add_argument(
+        "--repo-root", default=None, help="Registered repo root override"
+    )
+    verify_run_parser.add_argument(
+        "--gate",
+        action="append",
+        default=None,
+        help="Gate id override (repeatable); defaults to the repo's .aios-quality-gate.json",
+    )
+
     pre_pr = subparsers.add_parser("pre-pr-readiness", help="Run the AIOS Pre-CR readiness gate")
     pre_pr.add_argument("--workspace-root", default=".", help="Workspace root to evaluate")
     pre_pr.add_argument(
@@ -7892,6 +7916,18 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "verifier":
             assert conn is not None
             data = _verifier_payload(conn, args)
+        elif args.command == "verify-run":
+            assert conn is not None
+            try:
+                data = verify_run(
+                    conn,
+                    run_id=str(args.run_id),
+                    repo_root=args.repo_root,
+                    gate_ids=list(args.gate) if args.gate else None,
+                )
+                conn.commit()
+            except RunVerificationError as error:
+                raise CLIError(error.code, str(error), EXIT_RUNTIME) from error
         elif args.command == "learning-analyze":
             assert conn is not None
             data = _learning_analyze_payload(conn, args)
