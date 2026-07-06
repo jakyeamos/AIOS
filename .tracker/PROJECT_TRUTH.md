@@ -1,12 +1,11 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with honest evidence verdicts (no pass without exit codes), an evidence-gated verify-run completion path producing verifier artifacts, start-work duplicate-run dedup, a stale-run reaper (51 stuck runs closed), durable eval-run recording on agent-eval-contract 0.3.0 (full pytest green, 1122 passed), context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption boundary, and review-gated session-intelligence tools, while broader Ruff/BasedPyright baselines remain open.
+summary: Active local-first agent operating system with honest evidence verdicts (no pass without exit codes), an evidence-gated verify-run completion path producing verifier artifacts, start-work duplicate-run dedup, a stale-run reaper (51 stuck runs closed), durable eval-run recording on agent-eval-contract 0.3.0 (full pytest green, 1122 passed), context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption boundary, and review-gated session-intelligence tools; repo-wide Ruff lint and format baselines are now green, while the BasedPyright baseline remains open.
 healthScore: 78
 statusLabel: needs_attention
-nextStep: Wire verify-run into hook-stop closeout and the pipeline reaper cadence; burn down the pre-existing repo-wide Ruff (24 issues) and BasedPyright (107 errors) baselines.
+nextStep: Wire verify-run into hook-stop closeout and the pipeline reaper cadence; burn down the pre-existing repo-wide BasedPyright baseline (107 errors, 78 warnings).
 blockers:
-  - Full repo Ruff and format baselines are not green: Ruff reports 24 issues and Ruff format reports files needing formatting, all in pre-existing baseline files.
   - Full repo BasedPyright is not green: 107 errors and 78 warnings across existing baseline files.
 lastUpdated: 2026-07-06
 tags: [infra, ai-os, hooks, automation]
@@ -18,11 +17,11 @@ primaryLanguage: Python
 activeBranch: dev
 lastCommitDate: 2026-07-06
 quality:
-  lint: fail
+  lint: pass
   types: fail
   tests: pass
   deadCode: pass
-  structure: fail
+  structure: pass
 canonicalCommands:
   install: uv sync
   dev: unknown
@@ -182,9 +181,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 ## Open Problems
 
-1. **Full Ruff baseline is not green** — `uv run ruff check .` failed on 2026-06-29 with 25 existing issues; touched-file Ruff checks pass for the workflow route preview.
-2. **Full format baseline is not green** — `uv run ruff format --check .` reported 162 files needing formatting on 2026-06-29; the final diff keeps legacy parser/test formatting minimal instead of reformatting whole files.
-3. **Full BasedPyright baseline is not green** — `uv run basedpyright` failed on 2026-06-29 with 109 errors and 78 warnings, including existing `run_cli` complexity.
+1. **Full BasedPyright baseline is not green** — `uv run basedpyright` failed on 2026-07-06 with 107 errors and 78 warnings, concentrated in tests/test_import_ai_history.py, tests/test_orchestration_runtime.py, tests/test_tmcp_benchmark.py, and services/commit_quality_ladder.py.
 ## Next Concrete Steps
 
 1. Run a real shadow-lane implementation through the generated prompt and verify it transitions from `no_evidence` to `evidence_recorded` only after comparison evidence exists.
@@ -201,12 +198,12 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 | Step | Status | Notes |
 |------|--------|-------|
-| Lint (ruff) | Fail | `uv run ruff check .` failed on 2026-07-02 with 25 existing repo issues. Focused daily-flow repo closeout Ruff checks pass. |
-| Type check (basedpyright) | Fail | `uv run basedpyright` failed on 2026-07-02 with 107 errors and 78 warnings across existing baseline files. Focused daily-flow repo closeout BasedPyright checks pass; the stale `SimpleNamespace` test typing issue in `tests/test_aios_cli.py` was fixed. |
+| Lint (ruff) | Pass | `uv run ruff check .` passed on 2026-07-06 after fixing the 24-issue baseline in four atomic commits (imports, dead code, strict zip, simplifications). |
+| Type check (basedpyright) | Fail | `uv run basedpyright` failed on 2026-07-06 with 107 errors and 78 warnings across existing baseline files. Focused daily-flow repo closeout BasedPyright checks pass; the stale `SimpleNamespace` test typing issue in `tests/test_aios_cli.py` was fixed. |
 | Dead code (vulture) | Pass | `uv run vulture bin services --min-confidence 70`, `pnpm dead-code`, and `pnpm audit:dead-code` passed on 2026-07-02; Quality Runner final run `qr-clean-audit-20260702T200935Z-AIOS-final-4` detects `dead_code` from `package.json:scripts.dead-code`. |
 | Runtime smoke | Pass | `pnpm smoke` passed on 2026-07-02 and Quality Runner final run `qr-clean-audit-20260702T200935Z-AIOS-final-4` detects `runtime_smoke` from `package.json:scripts.smoke`. |
-| Tests | Pass | `uv run pytest -q` passed on 2026-07-02 with 1082 tests. |
-| Structure | Fail | `uv run ruff format --check .` reported 153 files needing formatting on 2026-07-02. The daily-flow repo closeout diff avoids broad legacy file formatting churn. |
+| Tests | Pass | `uv run pytest -q` passed on 2026-07-06 with 1122 tests, after both the lint-fix and format-only commits. |
+| Structure | Pass | `uv run ruff format --check .` passed on 2026-07-06 after a single format-only commit reformatting 151 files (no logic changes). |
 
 Focused Quality Runner rollout adapter checks on 2026-07-04:
 - `uv run pytest -q tests/test_quality_rollout_adapter.py` passed.
