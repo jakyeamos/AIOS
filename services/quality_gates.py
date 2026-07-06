@@ -204,8 +204,10 @@ def run_gate(
             "summary": f"project {project_id} is not registered",
             "commands": [],
         }
-    gates = project.get("gates") if isinstance(project.get("gates"), dict) else {}
-    gate = gates.get(gate_id) if isinstance(gates.get(gate_id), dict) else None
+    gates_raw = project.get("gates")
+    gates = gates_raw if isinstance(gates_raw, dict) else {}
+    gate_raw = gates.get(gate_id)
+    gate = gate_raw if isinstance(gate_raw, dict) else None
     if gate is None:
         return {
             "status": "fail",

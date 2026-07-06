@@ -299,9 +299,12 @@ def get_project_quality_pipeline(
 ) -> PipelineSummary:
     ensure_quality_pipeline_schema(conn)
     payload = _load_config(config_path)
-    standard = payload.get("standard") if isinstance(payload.get("standard"), dict) else {}
-    standard_gates = standard.get("gates") if isinstance(standard.get("gates"), list) else []
-    projects = payload.get("projects") if isinstance(payload.get("projects"), list) else []
+    standard_raw = payload.get("standard")
+    standard = standard_raw if isinstance(standard_raw, dict) else {}
+    standard_gates_raw = standard.get("gates")
+    standard_gates = standard_gates_raw if isinstance(standard_gates_raw, list) else []
+    projects_raw = payload.get("projects")
+    projects = projects_raw if isinstance(projects_raw, list) else []
     match_keys = _project_match_keys(conn, project_id)
     project_config = next(
         (
@@ -314,9 +317,8 @@ def get_project_quality_pipeline(
     )
     if not project_config:
         project_config = _infer_project_config(conn, project_id)
-    project_gates = (
-        project_config.get("gates") if isinstance(project_config.get("gates"), dict) else {}
-    )
+    project_gates_raw = project_config.get("gates")
+    project_gates = project_gates_raw if isinstance(project_gates_raw, dict) else {}
     project_applicability = _string_list(project_config.get("applies_to"), ["all"])
     repo_class = _optional_string(project_config.get("repo_class"))
     class_required_gates = _required_gates_for_class(standard, repo_class)
@@ -343,9 +345,8 @@ def get_project_quality_pipeline(
             if class_required_gates is not None
             else bool(gate.get("required", False))
         )
-        gate_config = (
-            project_gates.get(gate_key) if isinstance(project_gates.get(gate_key), dict) else None
-        )
+        gate_config_raw = project_gates.get(gate_key)
+        gate_config = gate_config_raw if isinstance(gate_config_raw, dict) else None
         latest_run = latest.get(gate_key)
         configured = gate_config is not None
         status = "missing" if required and not configured else "stale"

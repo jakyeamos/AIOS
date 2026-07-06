@@ -241,8 +241,10 @@ def check_success_criteria_registry(repo_root: Path) -> LadderCheck:
 def check_standards_health_registry(repo_root: Path) -> LadderCheck:
     registry_path = repo_root / STANDARDS_REGISTRY.relative_to(REPO_ROOT)
     payload = _json_file(registry_path)
-    profile = payload.get("profile") if isinstance(payload.get("profile"), dict) else {}
-    standards = payload.get("standards") if isinstance(payload.get("standards"), list) else []
+    profile_raw = payload.get("profile")
+    profile = profile_raw if isinstance(profile_raw, dict) else {}
+    standards_raw = payload.get("standards")
+    standards = standards_raw if isinstance(standards_raw, list) else []
     failures: list[str] = []
     standard_ids: list[str] = []
     if not profile.get("id"):
@@ -292,9 +294,12 @@ def check_standards_health_registry(repo_root: Path) -> LadderCheck:
 
 def check_quality_pipeline_includes_aios(repo_root: Path) -> LadderCheck:
     payload = _json_file(repo_root / QUALITY_PIPELINE_CONFIG.relative_to(REPO_ROOT))
-    standard = payload.get("standard") if isinstance(payload.get("standard"), dict) else {}
-    gates = standard.get("gates") if isinstance(standard.get("gates"), list) else []
-    projects = payload.get("projects") if isinstance(payload.get("projects"), list) else []
+    standard_raw = payload.get("standard")
+    standard = standard_raw if isinstance(standard_raw, dict) else {}
+    gates_raw = standard.get("gates")
+    gates = gates_raw if isinstance(gates_raw, list) else []
+    projects_raw = payload.get("projects")
+    projects = projects_raw if isinstance(projects_raw, list) else []
     gate_keys = [str(gate.get("key", "")).strip() for gate in gates if isinstance(gate, dict)]
     duplicate_keys = sorted({key for key in gate_keys if key and gate_keys.count(key) > 1})
     aios_project = next(
@@ -311,9 +316,8 @@ def check_quality_pipeline_includes_aios(repo_root: Path) -> LadderCheck:
     if aios_project is None:
         failures.append("quality pipeline has no project_id=aios entry")
     else:
-        configured = (
-            aios_project.get("gates") if isinstance(aios_project.get("gates"), dict) else {}
-        )
+        configured_raw = aios_project.get("gates")
+        configured = configured_raw if isinstance(configured_raw, dict) else {}
         for required in (
             "lint",
             "test",
@@ -358,8 +362,10 @@ def check_quality_gate_registry(repo_root: Path) -> LadderCheck:
         )
     registry = _json_file(registry_path)
     contract = _json_file(contract_path)
-    known_gates = registry.get("knownGates") if isinstance(registry.get("knownGates"), list) else []
-    projects = registry.get("projects") if isinstance(registry.get("projects"), list) else []
+    known_gates_raw = registry.get("knownGates")
+    known_gates = known_gates_raw if isinstance(known_gates_raw, list) else []
+    projects_raw = registry.get("projects")
+    projects = projects_raw if isinstance(projects_raw, list) else []
     failures: list[str] = []
     for required in ("test_quality", "architecture", "pre_cr", "thermo_nuclear_simplification"):
         if required not in known_gates:
@@ -375,11 +381,11 @@ def check_quality_gate_registry(repo_root: Path) -> LadderCheck:
     if aios_project is None:
         failures.append("quality gate registry has no projectId=aios entry")
     else:
-        configured = (
-            aios_project.get("gates") if isinstance(aios_project.get("gates"), dict) else {}
-        )
+        configured_raw = aios_project.get("gates")
+        configured = configured_raw if isinstance(configured_raw, dict) else {}
         for required in ("test_quality", "architecture", "pre_cr", "thermo_nuclear_simplification"):
-            gate = configured.get(required) if isinstance(configured.get(required), dict) else None
+            gate_raw = configured.get(required)
+            gate = gate_raw if isinstance(gate_raw, dict) else None
             if gate is None:
                 failures.append(f"aios gate not configured: {required}")
                 continue
