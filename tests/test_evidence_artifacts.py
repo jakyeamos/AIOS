@@ -124,3 +124,62 @@ def test_query_helpers_filter_run_and_session(tmp_path: Path) -> None:
 
     assert len(evidence_artifacts.list_evidence_artifacts(conn, run_id="run-1")) == 1
     assert len(evidence_artifacts.list_evidence_artifacts(conn, session_id="session-2")) == 1
+
+
+def test_command_pass_without_exit_code_is_downgraded_to_unknown() -> None:
+    conn = sqlite3.connect(":memory:")
+
+    evidence_artifacts.record_evidence_artifact(
+        conn,
+        run_id="run-1",
+        session_id="session-1",
+        phase="tool-use",
+        command="pytest -q",
+        exit_code=None,
+        status="pass",
+        caveats=["output-absent:inline-output"],
+    )
+
+    row = evidence_artifacts.list_evidence_artifacts(conn, run_id="run-1")[0]
+
+    assert row["status"] == "unknown"
+    assert "exit-code-unavailable" in json.loads(str(row["caveats_json"]))
+
+
+def test_command_pass_with_nonzero_exit_code_is_forced_to_fail() -> None:
+    conn = sqlite3.connect(":memory:")
+
+    evidence_artifacts.record_evidence_artifact(
+        conn,
+        run_id="run-1",
+        session_id="session-1",
+        phase="tool-use",
+        command="pytest -q",
+        exit_code=2,
+        status="pass",
+        caveats=["output-absent:inline-output"],
+    )
+
+    row = evidence_artifacts.list_evidence_artifacts(conn, run_id="run-1")[0]
+
+    assert row["status"] == "fail"
+    assert "status-exit-code-mismatch" in json.loads(str(row["caveats_json"]))
+
+
+def test_command_pass_with_zero_exit_code_stays_pass() -> None:
+    conn = sqlite3.connect(":memory:")
+
+    evidence_artifacts.record_evidence_artifact(
+        conn,
+        run_id="run-1",
+        session_id="session-1",
+        phase="tool-use",
+        command="pytest -q",
+        exit_code=0,
+        status="pass",
+        caveats=["output-absent:inline-output"],
+    )
+
+    row = evidence_artifacts.list_evidence_artifacts(conn, run_id="run-1")[0]
+
+    assert row["status"] == "pass"

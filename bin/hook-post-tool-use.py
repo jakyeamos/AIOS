@@ -4,6 +4,7 @@ AIOS hook: PostToolUse
 Logs tool events and detects artifact candidates.
 """
 
+import hashlib
 import json
 import os
 import re
@@ -19,7 +20,7 @@ if str(ROOT) not in sys.path:
 
 from hook_lifecycle import resolve_hook_session_id  # noqa: E402
 
-from services.evidence_artifacts import record_evidence_artifact  # noqa: E402
+from services.evidence_artifacts import EvidenceStatus, record_evidence_artifact  # noqa: E402
 from services.rtk_integration import (  # noqa: E402
     compress_tool_output,
     load_compression_rules,
@@ -68,7 +69,11 @@ def extract_artifact(tool_name: str, tool_input: dict) -> dict | None:
             return {"artifact_type": "patch", "path": path}
     if tool_name == "Bash":
         cmd = tool_input.get("command", "")[:200]
-        return {"artifact_type": "patch", "path": None, "metadata_json": json.dumps({"command": cmd})}
+        return {
+            "artifact_type": "patch",
+            "path": None,
+            "metadata_json": json.dumps({"command": cmd}),
+        }
     return None
 
 
@@ -88,6 +93,20 @@ def parse_tool_response(raw) -> tuple[str, int | None]:
         return text, exit_code
     text = str(raw) if raw else ""
     return text, None
+
+
+def evidence_status(exit_code: int | None) -> tuple[EvidenceStatus, list[str]]:
+    """
+    Map a command exit code to an evidence verdict.
+    Claude Code's PostToolUse payload for Bash carries no exit code
+    (only stdout/stderr/interrupted), so most hook-captured evidence is
+    'unknown' — a pass verdict requires a proven zero exit code.
+    """
+    if exit_code is None:
+        return "unknown", ["exit-code-unavailable:post-tool-use-payload"]
+    if exit_code == 0:
+        return "pass", []
+    return "fail", []
 
 
 def detect_bug(tool_name: str, tool_input: dict, raw_response) -> str | None:
@@ -126,9 +145,37 @@ def query_matching_patterns(conn: sqlite3.Connection, symptom: str, cmd: str) ->
     Matches by keyword overlap between error text and pattern title/body.
     """
     # Extract 2-5 char tokens that are likely meaningful (skip stop words)
-    STOP = {"the", "a", "an", "in", "on", "at", "is", "was", "for", "not", "and", "or",
-            "to", "of", "it", "be", "by", "as", "if", "we", "do", "no", "so", "up",
-            "cmd", "exit", "code", "error", "file"}
+    STOP = {
+        "the",
+        "a",
+        "an",
+        "in",
+        "on",
+        "at",
+        "is",
+        "was",
+        "for",
+        "not",
+        "and",
+        "or",
+        "to",
+        "of",
+        "it",
+        "be",
+        "by",
+        "as",
+        "if",
+        "we",
+        "do",
+        "no",
+        "so",
+        "up",
+        "cmd",
+        "exit",
+        "code",
+        "error",
+        "file",
+    }
     combined = (symptom + " " + cmd).lower()
     tokens = {t for t in re.split(r"\W+", combined) if len(t) >= 4 and t not in STOP}
     if not tokens:
@@ -168,10 +215,10 @@ def format_context_injection(patterns: list[dict], symptom: str) -> str:
     ]
     for p in patterns:
         state = p.get("state", "")
-        conf  = p.get("confidence") or 0
+        conf = p.get("confidence") or 0
         title = (p.get("title") or "")[:120]
-        body  = (p.get("body") or "")[:160].strip()
-        tag   = f"[{state} {conf:.0%}]"
+        body = (p.get("body") or "")[:160].strip()
+        tag = f"[{state} {conf:.0%}]"
         lines.append(f"  {tag} {title}")
         if body and body != title:
             lines.append(f"        → {body}")
@@ -237,6 +284,7 @@ def _safe_load_stdin() -> dict:
     # Replace literal control chars inside string tokens.
     # Strategy: use a regex to find string values and escape control chars within them.
     import re
+
     _CTRL = re.compile(r"[\x00-\x1f]")
 
     def _escape_string(m: re.Match) -> str:
@@ -326,6 +374,7 @@ def main() -> None:
             command = (data.get("tool_input") or {}).get("command", "")
             raw_text, exit_code = parse_tool_response(tool_response)
             run_id = get_run_id(conn, session_id)
+            status, status_caveats = evidence_status(exit_code)
             if raw_text:
                 rules = load_compression_rules()
                 mode = rules.get("default_mode", "compressed")
@@ -358,9 +407,11 @@ def main() -> None:
                     command=command,
                     exit_code=exit_code,
                     stdout_path=rtk_result.raw_output_path,
+                    output_hash=hashlib.sha256(raw_text.encode("utf-8")).hexdigest(),
                     parsed_summary=rtk_result.output[:500],
-                    status="fail" if exit_code is not None and exit_code != 0 else "pass",
-                    caveats=[] if rtk_result.raw_output_path else ["output-absent:inline-output"],
+                    status=status,
+                    caveats=status_caveats
+                    + ([] if rtk_result.raw_output_path else ["output-absent:inline-output"]),
                 )
             else:
                 record_evidence_artifact(
@@ -373,8 +424,8 @@ def main() -> None:
                     model=os.environ.get("AIOS_MODEL"),
                     command=command,
                     exit_code=exit_code,
-                    status="unknown",
-                    caveats=["output-absent:empty-tool-response"],
+                    status="fail" if status == "fail" else "unknown",
+                    caveats=status_caveats + ["output-absent:empty-tool-response"],
                 )
 
         symptom = detect_bug(tool_name, data.get("tool_input") or {}, tool_response)
