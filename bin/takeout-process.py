@@ -240,7 +240,7 @@ def process_calendar(takeout: Path, vault: Path) -> None:
 
     for ics in src.rglob("*.ics"):
         try:
-            cal = Calendar.from_ical(ics.read_bytes())
+            cal = Calendar.from_ical(ics.read_bytes())  # pyright: ignore[reportArgumentType]
         except Exception:
             continue
 

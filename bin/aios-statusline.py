@@ -78,10 +78,10 @@ def _render_from_receipt(
     *,
     live: bool,
 ) -> str:
-    lights = (
-        receipt.get("activity_lights") if isinstance(receipt.get("activity_lights"), dict) else {}
-    )
-    measures = receipt.get("measures") if isinstance(receipt.get("measures"), dict) else {}
+    lights_raw = receipt.get("activity_lights")
+    lights = lights_raw if isinstance(lights_raw, dict) else {}
+    measures_raw = receipt.get("measures")
+    measures = measures_raw if isinstance(measures_raw, dict) else {}
     session_id = str(receipt.get("session_id") or "")[:8] or "session?"
     score = int(float(receipt.get("score") or 0))
     rating = str(receipt.get("rating") or "unknown")

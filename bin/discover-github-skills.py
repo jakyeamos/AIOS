@@ -472,6 +472,7 @@ def discover_for_stage(
             if dry_run:
                 print(f"    [DRY RUN] {full_name} ★{stars} — {repo.get('description', '')[:60]}")
             else:
+                assert db_conn is not None  # dry_run=False always opens a connection
                 store_candidate(db_conn, candidate)
                 db_conn.commit()
                 print(f"    ✓ {full_name} ★{stars} — {repo.get('description', '')[:60]}")

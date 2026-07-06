@@ -27,6 +27,8 @@ def _load_rule_artifacts():
         "rule_artifacts",
         Path(__file__).parent / "rule-artifacts.py",
     )
+    assert spec is not None
+    assert spec.loader is not None
     mod = _ilu.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod

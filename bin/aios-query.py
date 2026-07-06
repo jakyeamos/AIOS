@@ -32,6 +32,7 @@ import os
 import sqlite3
 import sys
 from datetime import UTC, datetime
+from typing import NoReturn
 
 DB = os.path.expanduser("~/AIOS/data/aios.db")
 DEFAULT_LIMIT = 10
@@ -40,7 +41,7 @@ MAX_LIMIT = 50
 VALID_PATTERN_STATES = {"rule", "hypothesis", "notice", "observation", "knowledge"}
 
 
-def die(msg: str, code: int = 1) -> None:
+def die(msg: str, code: int = 1) -> NoReturn:
     print(json.dumps({"ok": False, "error": msg}), flush=True)
     sys.exit(code)
 

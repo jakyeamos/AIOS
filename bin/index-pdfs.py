@@ -50,7 +50,7 @@ def make_id(path: str) -> str:
 
 def get_pdf_metadata(path: Path) -> dict:
     """Extract metadata using pdfinfo if available, else basic file stats."""
-    meta = {
+    meta: dict[str, int | str | None] = {
         "page_count": None,
         "title": None,
         "author": None,

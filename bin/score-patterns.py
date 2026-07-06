@@ -94,6 +94,8 @@ def _trigger_lab_pipeline(p: dict, conn: sqlite3.Connection) -> None:
         import importlib.util as _ilu
 
         spec = _ilu.spec_from_file_location("rule_artifacts", BIN / "rule-artifacts.py")
+        assert spec is not None
+        assert spec.loader is not None
         _ra = _ilu.module_from_spec(spec)
         spec.loader.exec_module(_ra)
         create_artifact = _ra.create_artifact

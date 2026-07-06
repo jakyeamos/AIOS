@@ -45,7 +45,7 @@ def make_id(path: str) -> str:
 
 
 def get_docx_metadata(path: Path) -> dict:
-    meta = {
+    meta: dict[str, int | str | None] = {
         "word_count": None,
         "paragraph_count": None,
         "title": None,

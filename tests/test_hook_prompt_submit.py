@@ -6,11 +6,12 @@ import json
 import sqlite3
 import sys
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _load_hook_module():
+def _load_hook_module() -> Any:
     module_path = ROOT / "bin" / "hook-prompt-submit.py"
     bin_path = str(ROOT / "bin")
     if bin_path not in sys.path:
