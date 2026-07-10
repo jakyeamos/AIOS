@@ -1,0 +1,29 @@
+{
+  "manual": {
+    "enabled": true,
+    "inbox_path": "staging/raw-sources/manual/inbox"
+  },
+  "gmail": {
+    "enabled": false,
+    "queries": [
+      "label:students newer_than:30d"
+    ],
+    "exclude": [
+      "in:trash",
+      "in:spam"
+    ]
+  },
+  "discord": {
+    "enabled": false,
+    "guild_ids": [],
+    "channel_ids": []
+  },
+  "x": {
+    "enabled": false,
+    "modes": [
+      "own_posts",
+      "mentions",
+      "bookmarks"
+    ]
+  }
+}

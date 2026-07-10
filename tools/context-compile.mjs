@@ -26,6 +26,18 @@ const PRIORITY_AUTHORITY = {
 };
 const ALWAYS_LOAD_IDS = new Set(["context.index", "context.router", "context.schema", "handoffs.latest"]);
 const AGENT_RULES_CONTEXT_ID = "config.agent-rules";
+const REPO_CONTEXT_DIR = path.join(".agents", "context");
+const MODULE_CONTEXT_DIR = ".context";
+const COLOCATED_EXCLUDED_DIRS = new Set([
+  ".git",
+  ".next",
+  ".turbo",
+  "compiled",
+  "coverage",
+  "dist",
+  "node_modules",
+  "receipts",
+]);
 
 const SIGNALS = [
   {
@@ -273,7 +285,7 @@ export async function compileContext({
   if (!task || !task.trim()) {
     throw new Error("--task is required");
   }
-  const files = await loadContextFiles(contextRoot);
+  const files = await loadContextFiles(contextRoot, { includeColocated: true });
   const agentRulesFile = await loadAgentRulesContextFile(contextRoot);
   if (agentRulesFile) {
     files.push(agentRulesFile);
@@ -519,7 +531,7 @@ export function classifyTask(task) {
   };
 }
 
-async function loadContextFiles(contextRoot) {
+async function loadContextFiles(contextRoot, { includeColocated = false } = {}) {
   const markdownPaths = await walkMarkdown(contextRoot);
   const loaded = [];
   for (const absolutePath of markdownPaths) {
@@ -533,7 +545,133 @@ async function loadContextFiles(contextRoot) {
       token_cost_estimate: estimateTokens(content),
     });
   }
+  if (includeColocated) {
+    const repoRoot = inferRepoRoot(contextRoot);
+    const colocatedPaths = await discoverColocatedContextFiles(repoRoot, contextRoot);
+    for (const contextFile of colocatedPaths) {
+      const content = await readFile(contextFile.absolutePath, "utf8");
+      const parsed = parseContextFile(contextFile.absolutePath, content);
+      loaded.push({
+        ...parsed,
+        absolutePath: contextFile.absolutePath,
+        relativePath: contextFile.relativePath,
+        frontmatter: withColocatedDefaults(parsed.frontmatter, contextFile, content),
+        source_kind: contextFile.sourceKind,
+        context_root_relative_path: contextFile.contextRootRelativePath,
+        token_cost_estimate: estimateTokens(content),
+      });
+    }
+  }
   return loaded;
+}
+
+function inferRepoRoot(contextRoot) {
+  const resolved = path.resolve(contextRoot);
+  if (path.basename(resolved) === "context" && path.basename(path.dirname(resolved)) === "aios") {
+    return path.resolve(resolved, "..", "..");
+  }
+  return resolved;
+}
+
+async function discoverColocatedContextFiles(repoRoot, contextRoot) {
+  const files = [];
+  const repoContextRoot = path.join(repoRoot, REPO_CONTEXT_DIR);
+  for (const absolutePath of await walkMarkdown(repoContextRoot)) {
+    if (isInsidePath(absolutePath, contextRoot)) continue;
+    files.push(buildColocatedContextFile(repoRoot, absolutePath, "repo_context", REPO_CONTEXT_DIR));
+  }
+  for (const absolutePath of await walkModuleContextMarkdown(repoRoot)) {
+    if (isInsidePath(absolutePath, repoContextRoot)) continue;
+    files.push(buildColocatedContextFile(repoRoot, absolutePath, "module_context", moduleContextRootFor(absolutePath)));
+  }
+  return files.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+}
+
+function buildColocatedContextFile(repoRoot, absolutePath, sourceKind, contextRootRelativePath) {
+  return {
+    absolutePath,
+    relativePath: path.relative(repoRoot, absolutePath).split(path.sep).join("/"),
+    sourceKind,
+    contextRootRelativePath: contextRootRelativePath.split(path.sep).join("/"),
+  };
+}
+
+function moduleContextRootFor(absolutePath) {
+  const parts = absolutePath.split(path.sep);
+  const contextIndex = parts.lastIndexOf(MODULE_CONTEXT_DIR);
+  return parts.slice(0, contextIndex + 1).join(path.sep);
+}
+
+function isInsidePath(candidate, root) {
+  const relative = path.relative(path.resolve(root), path.resolve(candidate));
+  return relative && !relative.startsWith("..") && !path.isAbsolute(relative);
+}
+
+async function walkModuleContextMarkdown(root, depth = 0) {
+  if (depth > 8) return [];
+  let entries = [];
+  try {
+    entries = await readdir(root, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  const files = [];
+  for (const entry of entries) {
+    const fullPath = path.join(root, entry.name);
+    if (entry.isDirectory()) {
+      if (COLOCATED_EXCLUDED_DIRS.has(entry.name)) continue;
+      if (entry.name === MODULE_CONTEXT_DIR) {
+        files.push(...(await walkMarkdown(fullPath)));
+        continue;
+      }
+      files.push(...(await walkModuleContextMarkdown(fullPath, depth + 1)));
+    }
+  }
+  return files;
+}
+
+function withColocatedDefaults(frontmatter, contextFile, content) {
+  const existing = { ...frontmatter };
+  const slug = contextFile.relativePath
+    .replace(/\.md$/, "")
+    .replace(/(^|\/)\.agents\/context\//, "")
+    .replace(/(^|\/)\.context\//, "")
+    .replace(/[^a-zA-Z0-9]+/g, ".")
+    .replace(/^\.+|\.+$/g, "")
+    .toLowerCase();
+  const prefix = contextFile.sourceKind === "repo_context" ? "repo" : "module";
+  const tags = asArray(existing.tags);
+  const pathTags = contextFile.relativePath
+    .replace(/\.md$/, "")
+    .split(/[/. _-]+/)
+    .filter((part) => part && part !== "agents" && part !== "context");
+  return {
+    id: existing.id ?? `${prefix}.${slug || "context"}`,
+    title: existing.title ?? titleFromContextPath(contextFile.relativePath),
+    tier: existing.tier ?? (contextFile.sourceKind === "repo_context" ? "project" : "task"),
+    scope: existing.scope ?? ["local_repo"],
+    priority: existing.priority ?? "normal",
+    status: existing.status ?? "active",
+    summary: existing.summary ?? summarizeContextBody(content, contextFile.relativePath),
+    applies_when: existing.applies_when ?? [],
+    tags: Array.from(new Set([...tags, ...pathTags])),
+    ...existing,
+  };
+}
+
+function titleFromContextPath(relativePath) {
+  const base = path.basename(relativePath, ".md");
+  return base
+    .split(/[-_. ]+/)
+    .filter(Boolean)
+    .map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`)
+    .join(" ");
+}
+
+function summarizeContextBody(content, relativePath) {
+  const heading = content.match(/^#\s+(.+)$/m)?.[1];
+  if (heading) return `Colocated context for ${heading}.`;
+  return `Colocated context from ${relativePath}.`;
 }
 
 async function loadAgentRulesContextFile(contextRoot) {
@@ -599,7 +737,12 @@ function scoreOneFile(file, classification, task) {
   const signalMatches = applies.filter((signal) => classification.signals.includes(signal) || signal === "all_tasks").length;
   const tagMatches = tags.filter((tag) => lowerTask.includes(normalize(tag))).length;
   const titleMatches = tokenize(`${fm.id ?? ""} ${fm.title ?? ""} ${fm.summary ?? ""}`).filter((token) => lowerTask.includes(token)).length;
-  const relevanceScore = Math.min(1, signalMatches * 0.38 + tagMatches * 0.22 + titleMatches * 0.08);
+  const colocatedPathMatch = scoreColocatedPathMatch(file, lowerTask);
+  const repoContextBoost = file.source_kind === "repo_context" && (tagMatches > 0 || titleMatches > 0) ? 0.16 : 0;
+  const relevanceScore = Math.min(
+    1,
+    signalMatches * 0.38 + tagMatches * 0.22 + titleMatches * 0.08 + colocatedPathMatch + repoContextBoost,
+  );
   const specificityScore = TIER_SPECIFICITY[fm.tier] ?? 0.4;
   const authorityScore = PRIORITY_AUTHORITY[fm.priority] ?? 0.4;
   const recencyScore = scoreRecency(fm.last_reviewed);
@@ -609,7 +752,7 @@ function scoreOneFile(file, classification, task) {
   );
   const forced = ALWAYS_LOAD_IDS.has(fm.id);
   const indexWithoutSignal = fm.id?.endsWith(".index") && signalMatches === 0;
-  const hasTaskMatch = !indexWithoutSignal && (signalMatches > 0 || tagMatches > 0);
+  const hasTaskMatch = !indexWithoutSignal && (signalMatches > 0 || tagMatches > 0 || colocatedPathMatch > 0);
   const loadDecision = forced || (hasTaskMatch && finalScore >= 0.38) ? "load" : "skip";
   return {
     relevance_score: Number(relevanceScore.toFixed(4)),
@@ -620,16 +763,34 @@ function scoreOneFile(file, classification, task) {
     token_cost_penalty: Number(tokenCostPenalty.toFixed(4)),
     final_score: finalScore,
     load_decision: loadDecision,
-    reason: forced ? "Bootloader context is always loaded." : reasonForScore(signalMatches, tagMatches, titleMatches, loadDecision),
+    reason: forced
+      ? "Bootloader context is always loaded."
+      : reasonForScore(signalMatches, tagMatches, titleMatches, loadDecision, colocatedPathMatch),
   };
 }
 
-function reasonForScore(signalMatches, tagMatches, titleMatches, decision) {
+function scoreColocatedPathMatch(file, lowerTask) {
+  if (!file.source_kind) return 0;
+  const candidates = [file.relativePath, file.context_root_relative_path]
+    .filter(Boolean)
+    .map((value) => normalize(String(value).replace(/\.agents\/context|\/?\.context/g, "")))
+    .filter(Boolean);
+  if (candidates.some((candidate) => lowerTask.includes(candidate))) {
+    return file.source_kind === "module_context" ? 0.5 : 0.24;
+  }
+  const pathTokens = candidates.flatMap((candidate) => tokenize(candidate));
+  const tokenMatches = pathTokens.filter((token) => token.length > 2 && lowerTask.includes(token)).length;
+  if (tokenMatches === 0) return 0;
+  return file.source_kind === "module_context" ? Math.min(0.5, tokenMatches * 0.16) : Math.min(0.24, tokenMatches * 0.08);
+}
+
+function reasonForScore(signalMatches, tagMatches, titleMatches, decision, colocatedPathMatch = 0) {
   if (decision === "skip") return "No sufficient task, tag, or title overlap.";
   const parts = [];
   if (signalMatches) parts.push(`${signalMatches} applies_when signal(s) matched`);
   if (tagMatches) parts.push(`${tagMatches} tag(s) matched`);
   if (titleMatches) parts.push(`${titleMatches} title/summary term(s) matched`);
+  if (colocatedPathMatch) parts.push("colocated path matched task text");
   return parts.join("; ") || "Selected by authority and tier defaults.";
 }
 

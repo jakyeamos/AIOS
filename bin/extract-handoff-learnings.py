@@ -35,6 +35,17 @@ def now() -> str:
     return datetime.now(UTC).isoformat()
 
 
+def _handoff_pattern_class(domain: str) -> str:
+    """Map handoff domain to a durable pattern class (not deprecated observation)."""
+    mapping = {
+        "architecture": "architecture",
+        "debugging": "bug_fix",
+        "prompting": "prompt",
+        "workflow": "workflow",
+    }
+    return mapping.get(domain, "workflow")
+
+
 def extract_frontmatter(text: str) -> dict:
     """Pull simple key: value pairs from YAML frontmatter block."""
     meta = {}
@@ -168,13 +179,14 @@ def main():
                          confidence, state, status, source_type,
                          impact_score, frequency_count, source_sessions,
                          first_observed_at, last_seen_at, created_at, project_id)
-                    VALUES (?, 'observation', ?, ?, ?, ?,
+                    VALUES (?, ?, ?, ?, ?, ?,
                             0.4, 'notice', 'candidate', 'handoff-learned',
                             0.6, 1, 1,
                             ?, ?, ?, ?)
                     """,
                     (
                         str(uuid.uuid4()),
+                        _handoff_pattern_class(domain),
                         domain,
                         title,
                         item,  # full text as body

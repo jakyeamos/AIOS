@@ -12,8 +12,6 @@ echo "=== maintenance run $(date -u +%Y-%m-%dT%H:%M:%SZ) ===" >> "$LOG"
 python3 "$HOME/AIOS/bin/extract-handoff-learnings.py" >> "$LOG" 2>&1
 # Score all patterns and auto-promote/demote based on frequency+impact gates
 python3 "$HOME/AIOS/bin/score-patterns.py" >> "$LOG" 2>&1
-# Legacy (bigram extraction disabled internally, runs as no-op)
-python3 "$HOME/AIOS/bin/extract-patterns.py" >> "$LOG" 2>&1
 python3 "$HOME/AIOS/bin/build-domain-files.py" >> "$LOG" 2>&1
 python3 "$HOME/AIOS/bin/extract-bug-motifs.py" >> "$LOG" 2>&1
 python3 "$HOME/AIOS/bin/vault-lint.py" >> "$LOG" 2>&1

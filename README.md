@@ -79,6 +79,36 @@ All Python entrypoints and bundled shell scripts resolve the vault through
 `services/path_resolution.py` via `bin/aios_paths.py`, so `AIOS_VAULT_ROOT`
 overrides remain honored without hardcoded script defaults drifting.
 
+## Business Memory Wiki
+
+Local-first business memory for course feedback, cohort signals, launches, and student objections. Raw sources stay immutable in staging; compiled wiki **candidates** land under `~/AIOS/staging/business-wiki-candidates/` until you promote reviewed pages to Command-Center `06 Knowledge/Business/`.
+
+Quick start:
+
+```bash
+python3 ~/AIOS/bin/business-ingest.py init
+cp ~/AIOS/tests/business/fixtures/demo-sources/* ~/AIOS/staging/raw-sources/manual/inbox/
+python3 ~/AIOS/bin/business-ingest.py sync --source manual
+python3 ~/AIOS/bin/business-compile.py --since beginning
+python3 ~/AIOS/bin/business-lint.py
+python3 ~/AIOS/bin/business-query.py "What do students think about autocompact?"
+```
+
+Scheduled loop (sync → compile → lint):
+
+```bash
+python3 ~/AIOS/bin/business-daemon.py --once
+python3 ~/AIOS/bin/business-daemon.py --interval-hours 3
+```
+
+Docs:
+
+- Spec: [`docs/specs/2026-07-07-business-memory-wiki-spec.md`](docs/specs/2026-07-07-business-memory-wiki-spec.md)
+- Privacy: [`docs/PRIVACY.md`](docs/PRIVACY.md)
+- Vault agent rules: `06 Knowledge/Business/AGENTS.md` in Command-Center
+
+External connectors (Gmail, Discord, X) ship as skeletons: enable in `config/business-sources.json`, add tokens to `.env`, then `business-ingest.py sync --source gmail|discord|x`. Unconfigured sources skip with `status: skipped` — no scraping, no hard failures.
+
 The UI reads operational state from:
 
 ```text

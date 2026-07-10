@@ -117,6 +117,10 @@ must never be treated as canonical source-of-truth over the code repository itse
 | `staging/ai-history/raw/` | Raw Claude/Codex exports (55.8GB+) | `staging/ai-history/ready/` → vault |
 | `staging/ai-history/ready/` | Processed imports, awaiting review | `ai_history_imports.status='promoted'` + vault |
 | `staging/knowledge-drafts/` | Auto-promoted pattern stubs, need body | `06 Knowledge/Wiki/` after human authors body |
+| `staging/raw-sources/` | Immutable business source JSON (manual, gmail, discord, x) | Indexed in `memory_raw_sources`; never mutated after write |
+| `staging/business-wiki-candidates/` | Business wiki compile output awaiting review | `06 Knowledge/Business/` after promotion |
+| `staging/business-llm-jobs/` | Agent-delegated LLM analysis prompts | `staging/business-llm-responses/` after agent fills JSON |
+| `staging/business-llm-responses/` | Agent-written analysis JSON | Applied via `business-compile.py --llm-apply` |
 | `staging/pattern-candidates/` | Reserved for future use | — |
 | `staging/session-handoffs/` | Session handoff files (active store) | Referenced by `sessions.handoff_path` |
 
@@ -158,6 +162,7 @@ must never be treated as canonical source-of-truth over the code repository itse
   `build-domain-files.py` queries DB directly; do not rely on file-system counts.
 - **Wiki stubs as canonical knowledge** — stubs in `staging/knowledge-drafts/` must never be
   included in retrieval. The `require_human_curated: true` retrieval gate enforces this.
-- **Personal-extract queue poisoning** — `extract-personal-patterns.py` runs daily.
-  Patterns require ≥2 distinct sessions or an explicit trigger to persist. Low-volume
-  signals are discarded immediately, not queued.
+- **Personal-extract queue poisoning** — `extract-personal-patterns.py` is **disabled by default**
+  in `aios-pipeline.py` (set `AIOS_PERSONAL_EXTRACT=1` to enable). Legacy `personal`,
+  `observation`, and `error` class patterns were bulk-discarded via
+  `bin/purge-noise-patterns.py` per kb-architecture audit Phase 0.

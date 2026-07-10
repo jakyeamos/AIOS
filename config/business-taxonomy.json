@@ -1,0 +1,23 @@
+{
+  "business_concepts": [
+    "student pain point",
+    "course section",
+    "objection",
+    "excitement signal",
+    "testimonial",
+    "feature request",
+    "bug/confusion",
+    "launch feedback",
+    "pricing concern",
+    "content gap"
+  ],
+  "course_analysis_fields": [
+    "missing talking points",
+    "repeated questions",
+    "misunderstood concepts",
+    "requested examples",
+    "exercises students want",
+    "objections",
+    "positive reactions"
+  ]
+}

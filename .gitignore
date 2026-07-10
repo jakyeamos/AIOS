@@ -42,3 +42,8 @@ node_modules/
 .aios/
 .turbo/
 .firecrawl/
+.agents/
+logs/
+aios/context/.context/
+services/.context/
+tests/business/

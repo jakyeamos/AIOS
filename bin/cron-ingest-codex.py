@@ -163,21 +163,8 @@ def _extract_codex_patterns(conn: sqlite3.Connection, conversation: dict) -> Non
             for line in content.splitlines():
                 if ERROR_RE.search(line) and len(line.strip()) > 20:
                     title = line.strip()[:200]
-                    # Skip if already in DB
-                    exists = conn.execute(
-                        "SELECT 1 FROM patterns WHERE title=? LIMIT 1", (title,)
-                    ).fetchone()
-                    if not exists:
-                        conn.execute(
-                            """
-                            INSERT INTO patterns
-                              (id, class, domain, title, body, confidence, state,
-                               status, source_type, first_observed_at, created_at)
-                            VALUES (?, 'error', 'tooling', ?, ?, 0.2, 'observation',
-                                    'candidate', 'tool-error', ?, ?)
-                            """,
-                            (str(uuid.uuid4()), title, title, _now(), _now()),
-                        )
+                    # Tool errors are tracked in bug_log; do not poison patterns with class=error.
+                    _ = title
                     break  # one pattern per message
 
 

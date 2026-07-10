@@ -273,6 +273,77 @@ test("emits context routing manifest with loaded and skipped reasons", async () 
   assert.match(result.context_receipt, /## Context Routing Manifest/);
 });
 
+test("selects colocated repo and module context when task-relevant", async () => {
+  const tempRepo = await mkdtemp(path.join(tmpdir(), "aios-colocated-context-"));
+  const tempContextRoot = path.join(tempRepo, "aios", "context");
+  try {
+    await mkdir(path.join(tempContextRoot, "standards"), { recursive: true });
+    await mkdir(path.join(tempRepo, ".agents", "context"), { recursive: true });
+    await mkdir(path.join(tempRepo, "services", ".context"), { recursive: true });
+    await writeFile(
+      path.join(tempContextRoot, "index.md"),
+      `---
+id: context.index
+title: Context Index
+tier: global
+scope:
+  - all_projects
+priority: immutable
+status: active
+summary: Bootloader index.
+applies_when:
+  - all_tasks
+tags:
+  - context
+---
+Bootloader.
+`,
+    );
+    await writeFile(
+      path.join(tempRepo, ".agents", "context", "README.md"),
+      `---
+id: repo.context
+title: Repo Context
+tier: project
+scope:
+  - local_repo
+priority: normal
+status: active
+summary: Repo-local context index.
+applies_when:
+  - task_touches_context_compiler
+tags:
+  - context
+  - repo
+---
+# Repo Context
+Read deeper files only when relevant.
+`,
+    );
+    await writeFile(
+      path.join(tempRepo, "services", ".context", "README.md"),
+      `# Services Module Context
+
+Read before changing services workflow orchestration.
+`,
+    );
+
+    const result = await compileContext({
+      task: "Update services workflow orchestration and context routing receipts.",
+      contextRoot: tempContextRoot,
+      write: false,
+    });
+
+    const selectedPaths = result.selected_context_files.map((file) => file.path);
+    assert(selectedPaths.includes(".agents/context/README.md"));
+    assert(selectedPaths.includes("services/.context/README.md"));
+    assert.match(result.context_receipt, /\.agents\/context\/README\.md/);
+    assert.match(result.context_receipt, /services\/\.context\/README\.md/);
+  } finally {
+    await rm(tempRepo, { recursive: true, force: true });
+  }
+});
+
 test("context routing manifest records second-brain fallback when unavailable", async () => {
   const result = await compileContext({
     task: "Improve Obsidian search so AIOS can answer questions from my second brain.",

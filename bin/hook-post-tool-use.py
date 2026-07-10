@@ -462,26 +462,8 @@ def main() -> None:
                     )
                     log(f"bug auto-confirmed (recurrence #{new_count}): {title[:60]}")
                 else:
-                    # New error — surface in pattern review with body pre-filled
-                    conn.execute(
-                        """
-                        INSERT INTO patterns
-                            (id, class, domain, title, body, evidence, confidence, state,
-                             status, source_type, first_observed_at, created_at, project_id)
-                        VALUES (?, 'error', 'tooling', ?, ?, ?, 0.3, 'observation',
-                                'candidate', 'tool-error', ?, ?, ?)
-                        """,
-                        (
-                            str(uuid.uuid4()),
-                            title,
-                            symptom,
-                            json.dumps([{"bug_id": bug_id, "session_id": session_id}]),
-                            now,
-                            now,
-                            project_id or None,
-                        ),
-                    )
-                    log(f"bug auto-captured: {title[:60]}")
+                    # Bug captured in bug_log; skip patterns-table noise (class=error purge policy).
+                    log(f"bug auto-captured (bug_log only): {title[:60]}")
 
         # ── Reactive context injection ────────────────────────────────────────
         # If a bug was detected, surface matching patterns to Claude via stdout.

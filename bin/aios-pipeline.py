@@ -24,6 +24,7 @@ Cron (daily at 06:00):
 """
 
 import argparse
+import os
 import shlex
 import subprocess
 import sys
@@ -248,7 +249,10 @@ def main() -> None:
     # ── Phase 8: Personal pattern extraction ─────────────────────────────────
     _log("phase 8/11: personal pattern extraction")
     extract_bin = BIN / "extract-personal-patterns.py"
-    if extract_bin.exists():
+    if os.environ.get("AIOS_PERSONAL_EXTRACT") != "1":
+        results["personal-extract"] = "skip — AIOS_PERSONAL_EXTRACT not set"
+        _log("  skipped (set AIOS_PERSONAL_EXTRACT=1 to enable)")
+    elif extract_bin.exists():
         ok, out = _run(
             ["python3", str(extract_bin)],
             "extract-personal",
