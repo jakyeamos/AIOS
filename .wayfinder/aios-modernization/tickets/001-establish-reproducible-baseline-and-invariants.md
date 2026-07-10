@@ -1,8 +1,9 @@
 ---
 title: Establish a Reproducible Baseline and Product Invariants
 type: research
-status: open
-claim: unclaimed
+status: closed
+claim: /root (2026-07-10)
+resolved: 2026-07-10
 blocked_by: []
 blocks:
   - 002-choose-v2-operating-loop-and-trust-boundary
@@ -52,4 +53,10 @@ new implementation begins?
 
 ## Resolution
 
-Unresolved.
+Resolved in [AIOS V2 Modernization — Baseline Audit](../../../docs/modernization/AUDIT.md).
+
+The daily loop and Python regression suite are demonstrably useful, but the
+current system has blocker-level migration, trust-boundary, verification, and
+accessibility constraints. Broad implementation must wait for the next product
+and trust decision; the baseline also surfaced a separate reproducible UI
+validation-contract ticket.

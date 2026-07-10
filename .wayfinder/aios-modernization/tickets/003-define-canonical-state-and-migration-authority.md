@@ -4,7 +4,6 @@ type: research
 status: open
 claim: unclaimed
 blocked_by:
-  - 001-establish-reproducible-baseline-and-invariants
   - 002-choose-v2-operating-loop-and-trust-boundary
 blocks:
   - 005-classify-satellite-subsystems-and-select-modernization-strategy

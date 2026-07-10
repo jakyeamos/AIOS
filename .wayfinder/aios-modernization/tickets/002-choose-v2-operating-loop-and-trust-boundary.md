@@ -3,8 +3,7 @@ title: Choose the V2 Operating Loop and Trust Boundary
 type: grilling
 status: open
 claim: unclaimed
-blocked_by:
-  - 001-establish-reproducible-baseline-and-invariants
+blocked_by: []
 blocks:
   - 003-define-canonical-state-and-migration-authority
   - 004-specify-task-centred-information-architecture-and-design-system

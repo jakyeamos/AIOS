@@ -7,6 +7,7 @@ blocked_by:
   - 003-define-canonical-state-and-migration-authority
   - 004-specify-task-centred-information-architecture-and-design-system
   - 005-classify-satellite-subsystems-and-select-modernization-strategy
+  - 007-establish-reproducible-ui-validation-contract
 blocks: []
 ---
 

@@ -4,7 +4,6 @@ type: prototype
 status: open
 claim: unclaimed
 blocked_by:
-  - 001-establish-reproducible-baseline-and-invariants
   - 002-choose-v2-operating-loop-and-trust-boundary
 blocks:
   - 006-write-v2-target-and-vertical-modernization-plan

@@ -26,17 +26,10 @@ created: 2026-07-10
 
 ## Decisions so far
 
-- None. The current evidence is sufficient to chart the questions but not to
-  choose a redesign strategy responsibly.
+- [Establish a Reproducible Baseline and Product Invariants](tickets/001-establish-reproducible-baseline-and-invariants.md) - The daily loop is real and tested, but data integrity, trust, recovery, UI accessibility, and reproducible verification block an in-place redesign.
 
 ## Fog
 
-- Whether AIOS should remain a single-user local control plane, gain an
-  authenticated remote operator mode, or explicitly split those products.
-- Which satellite surfaces—CTS, business memory, evaluation, and learning—are
-  core to the daily operating loop versus separately owned or removable.
-- The scope of legacy-data migration, compatibility, and cutover once the
-  product and persistence decisions are made.
-- The right implementation slices, release strategy, and adversarial review
-  gates; these become concrete only after the target architecture and operator
-  experience are chosen.
+No additional question is sharp enough to chart yet. New implementation,
+cutover, and adversarial-review questions should be added only after the open
+product, data, UI, subsystem, and validation-contract tickets resolve.
