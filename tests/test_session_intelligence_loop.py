@@ -31,6 +31,26 @@ def _memory_conn() -> sqlite3.Connection:
     return conn
 
 
+def _insert_helper_implementation(conn: sqlite3.Connection, *, family: str) -> None:
+    conn.execute(
+        """
+        INSERT INTO session_intelligence_implementations (
+          id, lane, helper_family, candidate_ids_json, candidate_count,
+          implementation_status, telemetry_status, removal_status, removal_reason,
+          implemented_artifact_type, implemented_artifact_ref, created_at, updated_at
+        )
+        VALUES (?, 'friction_tool', ?, '["candidate-1"]', 1, 'implemented',
+          'awaiting_telemetry', 'monitor', 'Track usage before keeping.',
+          'helper_family_preset', ?, 'now', 'now')
+        """,
+        (
+            f"session-intel-implementation-friction_tool-{family}",
+            family,
+            f"session-intel-helper-family:{family}",
+        ),
+    )
+
+
 def _write_codex_rollout(path: Path, lines: list[dict]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -603,6 +623,50 @@ def test_session_intelligence_decision_report_lists_tracked_implemented_helpers(
             "2026-06-30T10:00:00+00:00",
         ),
     )
+    conn.executemany(
+        """
+        INSERT INTO session_intelligence_helper_telemetry (
+          id, implementation_id, helper_family, candidate_ids_json, invoked_at, status,
+          latency_ms, input_shape_json, error_type, error_message, caller_surface,
+          run_id, session_id, task_id
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        [
+            (
+                "telemetry-1",
+                "session-intel-implementation-friction_tool-repo_state",
+                "repo_state",
+                json.dumps(["session-intel-repo-state-1"]),
+                "2026-06-30T10:01:00+00:00",
+                "success",
+                10,
+                "{}",
+                None,
+                None,
+                "session-intel helper run",
+                None,
+                None,
+                None,
+            ),
+            (
+                "telemetry-2",
+                "session-intel-implementation-friction_tool-repo_state",
+                "repo_state",
+                json.dumps(["session-intel-repo-state-1"]),
+                "2026-06-30T10:02:00+00:00",
+                "failure",
+                30,
+                "{}",
+                "RuntimeError",
+                "failed",
+                "session-intel helper run",
+                None,
+                None,
+                None,
+            ),
+        ],
+    )
     provider = CodexProvider(source_root=tmp_path / "missing", db_path=tmp_path / "aios.db")
 
     result = run_session_intelligence(
@@ -615,6 +679,8 @@ def test_session_intelligence_decision_report_lists_tracked_implemented_helpers(
     assert "## Removal Candidates" in decision_report
     assert "### monitored implemented helpers" in decision_report
     assert "- repo_state: monitor; awaiting_telemetry; candidates covered: 1" in decision_report
+    assert "invocations 2; successes 1; failures 1; bypasses 0; median latency 20ms" in decision_report
+    assert "telemetry candidate coverage: 1" in decision_report
     assert "session-intel-helper-family:repo_state" in decision_report
 
 
@@ -900,6 +966,17 @@ def test_session_intelligence_cli_parser_accepts_run_candidates_and_mark() -> No
             "20",
         ]
     )
+    helper_bypass_args = parser.parse_args(
+        [
+            "session-intel",
+            "helper",
+            "bypass",
+            "--family",
+            "doc_excerpt",
+            "--reason",
+            "manual path was faster",
+        ]
+    )
     backfill_args = parser.parse_args(
         [
             "session-intel",
@@ -926,6 +1003,8 @@ def test_session_intelligence_cli_parser_accepts_run_candidates_and_mark() -> No
     assert helper_run_args.session_intel_command == "helper"
     assert helper_run_args.session_intel_helper_command == "run"
     assert helper_run_args.family == "doc_excerpt"
+    assert helper_bypass_args.session_intel_helper_command == "bypass"
+    assert helper_bypass_args.reason == "manual path was faster"
     assert backfill_args.session_intel_command == "backfill"
     assert backfill_args.provider == "all"
     assert daily_codex_args.session_intel_command == "daily-codex"
@@ -1101,6 +1180,103 @@ def test_session_intelligence_helper_list_returns_adopted_families() -> None:
     assert payload["helpers"][0]["family"] == "doc_excerpt"
     assert payload["helpers"][0]["candidate_count"] == 1
     assert payload["helpers"][0]["implemented"] is True
+
+
+def test_session_intelligence_helper_run_records_success_telemetry(tmp_path: Path) -> None:
+    import services.aios_cli as aios_cli
+
+    target = tmp_path / "notes.md"
+    target.write_text("alpha\nbeta\n", encoding="utf-8")
+    conn = _memory_conn()
+    ensure_session_intelligence_schema(conn)
+    _insert_helper_implementation(conn, family="doc_excerpt")
+
+    payload = aios_cli._session_intel_payload(
+        conn,
+        argparse.Namespace(
+            session_intel_command="helper",
+            session_intel_helper_command="run",
+            family="doc_excerpt",
+            path=str(target),
+            repo=None,
+            start_line=1,
+            end_line=1,
+        ),
+    )
+
+    telemetry_rows = conn.execute(
+        "SELECT helper_family, status, input_shape_json FROM session_intelligence_helper_telemetry"
+    ).fetchall()
+    implementation = list_session_intelligence_implementations(conn)[0]
+    assert payload["telemetry"]["status"] == "success"
+    assert len(telemetry_rows) == 1
+    assert telemetry_rows[0]["helper_family"] == "doc_excerpt"
+    assert telemetry_rows[0]["status"] == "success"
+    assert json.loads(telemetry_rows[0]["input_shape_json"])["path_suffix"] == ".md"
+    assert implementation["telemetry_status"] == "active"
+    assert implementation["removal_status"] == "monitor"
+
+
+def test_session_intelligence_helper_run_records_failure_telemetry(tmp_path: Path) -> None:
+    import services.aios_cli as aios_cli
+
+    conn = _memory_conn()
+    ensure_session_intelligence_schema(conn)
+    _insert_helper_implementation(conn, family="doc_excerpt")
+
+    try:
+        aios_cli._session_intel_payload(
+            conn,
+            argparse.Namespace(
+                session_intel_command="helper",
+                session_intel_helper_command="run",
+                family="doc_excerpt",
+                path=str(tmp_path / "missing.md"),
+                repo=None,
+                start_line=1,
+                end_line=1,
+            ),
+        )
+    except FileNotFoundError:
+        pass
+    else:
+        raise AssertionError("missing helper input should fail")
+
+    telemetry_row = conn.execute(
+        "SELECT status, error_type FROM session_intelligence_helper_telemetry"
+    ).fetchone()
+    implementation = list_session_intelligence_implementations(conn)[0]
+    assert telemetry_row["status"] == "failure"
+    assert telemetry_row["error_type"] == "FileNotFoundError"
+    assert implementation["telemetry_status"] == "insufficient_telemetry"
+    assert implementation["removal_status"] == "monitor"
+
+
+def test_session_intelligence_helper_bypass_records_removal_ready_telemetry() -> None:
+    import services.aios_cli as aios_cli
+
+    conn = _memory_conn()
+    ensure_session_intelligence_schema(conn)
+    _insert_helper_implementation(conn, family="doc_excerpt")
+
+    for _index in range(3):
+        aios_cli._session_intel_payload(
+            conn,
+            argparse.Namespace(
+                session_intel_command="helper",
+                session_intel_helper_command="bypass",
+                family="doc_excerpt",
+                reason="manual command was faster",
+            ),
+        )
+
+    implementation = list_session_intelligence_implementations(conn)[0]
+    telemetry_count = conn.execute(
+        "SELECT COUNT(*) FROM session_intelligence_helper_telemetry WHERE status = 'bypass'"
+    ).fetchone()[0]
+    assert telemetry_count == 3
+    assert implementation["telemetry_status"] == "removal_review_ready"
+    assert implementation["removal_status"] == "removal_candidate"
 
 
 def test_session_intelligence_doc_excerpt_helper_reads_bounded_lines(tmp_path: Path) -> None:

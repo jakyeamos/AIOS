@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-07-02
+Last updated: 2026-07-10
 
 ## What AIOS Is
 
@@ -43,6 +43,14 @@ Codex session-intelligence implementation can now target explicit candidate ids:
 - this prevents a human approval for the latest daily-review candidates from accidentally implementing the full historical pending backlog
 - the four latest approved Codex friction-tool candidates were implemented into the existing `artifact_probe`, `bespoke_review`, `doc_excerpt`, and `package_check` helper-family records with removal monitoring left active
 - focused tests cover parser support, explicit candidate filtering, untouched unrelated pending candidates, and incremental helper-family candidate-id merging
+
+Codex session-intelligence helper-family telemetry is now first-class:
+
+- `session-intelligence_helper_telemetry` records helper family, implementation id, covered candidate ids, invocation status, latency, redacted input shape, error metadata, caller surface, and optional run/session/task ids
+- `python bin/aios.py session-intel helper run ...` records success telemetry and failure telemetry automatically; `python bin/aios.py session-intel helper bypass --family <family> --reason <reason>` records manual bypasses
+- helper-family implementation records now move from `awaiting_telemetry` to `active`, `insufficient_telemetry`, or `removal_review_ready` based on usage evidence; repeated adverse evidence marks the helper as a `removal_candidate`
+- the canonical daily decision report now summarizes helper invocations, successes, failures, bypasses, median latency, last-used timestamp, and telemetry candidate coverage inside Removal Candidates
+- live verification recorded one successful `doc_excerpt` invocation, so `session-intel helper list` now reports `doc_excerpt` as `active` while the other helper families remain awaiting telemetry
 
 ## Implemented On 2026-07-03
 

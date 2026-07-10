@@ -11,6 +11,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from statistics import median
 from typing import Any, Literal
 
 from services.meta_learning_router import route_scored_signals
@@ -175,6 +176,26 @@ def ensure_session_intelligence_schema(conn: sqlite3.Connection) -> None:
     )
     conn.execute(
         """
+        CREATE TABLE IF NOT EXISTS session_intelligence_helper_telemetry (
+          id TEXT PRIMARY KEY,
+          implementation_id TEXT,
+          helper_family TEXT NOT NULL,
+          candidate_ids_json TEXT NOT NULL DEFAULT '[]',
+          invoked_at TEXT NOT NULL,
+          status TEXT NOT NULL,
+          latency_ms INTEGER NOT NULL DEFAULT 0,
+          input_shape_json TEXT NOT NULL DEFAULT '{}',
+          error_type TEXT,
+          error_message TEXT,
+          caller_surface TEXT NOT NULL DEFAULT 'unknown',
+          run_id TEXT,
+          session_id TEXT,
+          task_id TEXT
+        )
+        """
+    )
+    conn.execute(
+        """
         CREATE INDEX IF NOT EXISTS idx_session_intelligence_candidates_review
           ON session_intelligence_candidates(status, lane, updated_at DESC)
         """
@@ -183,6 +204,12 @@ def ensure_session_intelligence_schema(conn: sqlite3.Connection) -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_session_intelligence_implementations_review
           ON session_intelligence_implementations(removal_status, helper_family, updated_at DESC)
+        """
+    )
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_session_intelligence_helper_telemetry_family
+          ON session_intelligence_helper_telemetry(helper_family, invoked_at DESC)
         """
     )
 
@@ -316,6 +343,7 @@ def _run_session_intelligence_for_sources(
             conn, status="pending_review", lane="all"
         )
         implementations = list_session_intelligence_implementations(conn)
+        telemetry_rollups = list_session_intelligence_helper_telemetry_rollups(conn)
         report_path, report_json_path, decision_report_path = _write_report(
             options.report_root or Path("data/session-intelligence/reports"),
             run_id=run_id,
@@ -324,6 +352,7 @@ def _run_session_intelligence_for_sources(
             candidates=stored_candidates,
             all_pending_candidates=all_pending_candidates,
             implementations=implementations,
+            telemetry_rollups=telemetry_rollups,
             generated_at=now,
         )
 
@@ -473,6 +502,128 @@ def list_session_intelligence_implementations(
         params,
     ).fetchall()
     return [_implementation_row_to_dict(row) for row in rows]
+
+
+def record_session_intelligence_helper_telemetry(
+    conn: sqlite3.Connection,
+    *,
+    helper_family: str,
+    implementation_id: str | None,
+    candidate_ids: Sequence[str],
+    status: str,
+    latency_ms: int,
+    input_shape: dict[str, Any],
+    caller_surface: str,
+    error_type: str | None = None,
+    error_message: str | None = None,
+    run_id: str | None = None,
+    session_id: str | None = None,
+    task_id: str | None = None,
+) -> dict[str, Any]:
+    ensure_session_intelligence_schema(conn)
+    now = _now()
+    telemetry_id = f"session-intel-helper-telemetry-{uuid.uuid4()}"
+    clipped_error_message = error_message[:500] if error_message else None
+    conn.execute(
+        """
+        INSERT INTO session_intelligence_helper_telemetry (
+          id, implementation_id, helper_family, candidate_ids_json, invoked_at, status,
+          latency_ms, input_shape_json, error_type, error_message, caller_surface,
+          run_id, session_id, task_id
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            telemetry_id,
+            implementation_id,
+            helper_family,
+            json.dumps(list(candidate_ids)),
+            now,
+            status,
+            max(0, int(latency_ms)),
+            json.dumps(input_shape, sort_keys=True),
+            error_type,
+            clipped_error_message,
+            caller_surface,
+            run_id,
+            session_id,
+            task_id,
+        ),
+    )
+    if implementation_id:
+        _refresh_helper_telemetry_state(conn, implementation_id=implementation_id, now=now)
+    return {
+        "id": telemetry_id,
+        "implementation_id": implementation_id,
+        "helper_family": helper_family,
+        "candidate_ids": list(candidate_ids),
+        "invoked_at": now,
+        "status": status,
+        "latency_ms": max(0, int(latency_ms)),
+        "input_shape": input_shape,
+        "error_type": error_type,
+        "error_message": clipped_error_message,
+        "caller_surface": caller_surface,
+        "run_id": run_id,
+        "session_id": session_id,
+        "task_id": task_id,
+    }
+
+
+def list_session_intelligence_helper_telemetry_rollups(
+    conn: sqlite3.Connection,
+) -> dict[str, dict[str, Any]]:
+    ensure_session_intelligence_schema(conn)
+    rows = conn.execute(
+        """
+        SELECT *
+        FROM session_intelligence_helper_telemetry
+        ORDER BY invoked_at ASC
+        """
+    ).fetchall()
+    rollups: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        family = str(row["helper_family"])
+        rollup = rollups.setdefault(
+            family,
+            {
+                "helper_family": family,
+                "invocation_count": 0,
+                "success_count": 0,
+                "failure_count": 0,
+                "bypass_count": 0,
+                "latencies_ms": [],
+                "last_used_at": None,
+                "candidate_ids": set(),
+            },
+        )
+        rollup["invocation_count"] += 1
+        if row["status"] == "success":
+            rollup["success_count"] += 1
+        elif row["status"] == "bypass":
+            rollup["bypass_count"] += 1
+        else:
+            rollup["failure_count"] += 1
+        rollup["latencies_ms"].append(int(row["latency_ms"]))
+        rollup["last_used_at"] = row["invoked_at"]
+        try:
+            candidate_ids = json.loads(row["candidate_ids_json"])
+        except json.JSONDecodeError:
+            candidate_ids = []
+        if isinstance(candidate_ids, list):
+            rollup["candidate_ids"].update(str(candidate_id) for candidate_id in candidate_ids)
+
+    return {
+        family: {
+            **rollup,
+            "candidate_ids": sorted(rollup["candidate_ids"]),
+            "candidate_count": len(rollup["candidate_ids"]),
+            "median_latency_ms": int(median(rollup["latencies_ms"]))
+            if rollup["latencies_ms"]
+            else 0,
+        }
+        for family, rollup in rollups.items()
+    }
 
 
 def implement_session_intelligence_candidates(
@@ -1207,6 +1358,7 @@ def _write_report(
     candidates: list[dict[str, Any]],
     all_pending_candidates: list[dict[str, Any]],
     implementations: list[dict[str, Any]],
+    telemetry_rollups: dict[str, dict[str, Any]],
     generated_at: str,
 ) -> tuple[str, str, str]:
     report_root.mkdir(parents=True, exist_ok=True)
@@ -1252,6 +1404,7 @@ def _write_report(
             candidates=candidates,
             all_pending_candidates=all_pending_candidates,
             implementations=implementations,
+            telemetry_rollups=telemetry_rollups,
             generated_at=generated_at,
         ),
         encoding="utf-8",
@@ -1267,6 +1420,7 @@ def _decision_report_markdown(
     candidates: list[dict[str, Any]],
     all_pending_candidates: list[dict[str, Any]],
     implementations: list[dict[str, Any]],
+    telemetry_rollups: dict[str, dict[str, Any]],
     generated_at: str,
 ) -> str:
     latest_pending = [
@@ -1298,7 +1452,7 @@ def _decision_report_markdown(
     lines.extend(["## All pending candidates", ""])
     _append_candidate_lane_sections(lines, all_pending_by_lane, lane_heading_level=3)
     lines.extend(_implementation_telemetry_contract_lines())
-    lines.extend(_removal_candidate_lines(implementations))
+    lines.extend(_removal_candidate_lines(implementations, telemetry_rollups))
     return "\n".join(lines)
 
 
@@ -1491,7 +1645,10 @@ def _implementation_telemetry_contract_lines() -> list[str]:
     ]
 
 
-def _removal_candidate_lines(implementations: list[dict[str, Any]]) -> list[str]:
+def _removal_candidate_lines(
+    implementations: list[dict[str, Any]],
+    telemetry_rollups: dict[str, dict[str, Any]],
+) -> list[str]:
     lines = [
         "## Removal Candidates",
         "",
@@ -1504,13 +1661,13 @@ def _removal_candidate_lines(implementations: list[dict[str, Any]]) -> list[str]
     if removal_candidates:
         lines.extend(["### active removal candidates", ""])
         for implementation in removal_candidates:
-            lines.extend(_implementation_review_lines(implementation))
+            lines.extend(_implementation_review_lines(implementation, telemetry_rollups))
     else:
         lines.extend(["No implemented helpers currently meet removal thresholds.", ""])
     if implementations:
         lines.extend(["### monitored implemented helpers", ""])
         for implementation in implementations:
-            lines.extend(_implementation_review_lines(implementation))
+            lines.extend(_implementation_review_lines(implementation, telemetry_rollups))
     else:
         lines.extend(
             [
@@ -1527,8 +1684,13 @@ def _removal_candidate_lines(implementations: list[dict[str, Any]]) -> list[str]
     return lines
 
 
-def _implementation_review_lines(implementation: dict[str, Any]) -> list[str]:
+def _implementation_review_lines(
+    implementation: dict[str, Any],
+    telemetry_rollups: dict[str, dict[str, Any]],
+) -> list[str]:
     helper_family = implementation["helper_family"]
+    rollup = telemetry_rollups.get(str(helper_family))
+    telemetry_lines = _implementation_telemetry_summary_lines(rollup)
     return [
         (
             f"- {helper_family}: {implementation['removal_status']}; "
@@ -1536,8 +1698,28 @@ def _implementation_review_lines(implementation: dict[str, Any]) -> list[str]:
             f"{implementation['candidate_count']}"
         ),
         f"  - artifact: {implementation['implemented_artifact_ref']}",
+        *telemetry_lines,
         f"  - removal basis: {implementation['removal_reason']}",
         "",
+    ]
+
+
+def _implementation_telemetry_summary_lines(rollup: dict[str, Any] | None) -> list[str]:
+    if rollup is None:
+        return [
+            "  - telemetry: invocations 0; successes 0; failures 0; bypasses 0; median latency 0ms; last used: never",
+        ]
+    return [
+        (
+            "  - telemetry: "
+            f"invocations {rollup['invocation_count']}; "
+            f"successes {rollup['success_count']}; "
+            f"failures {rollup['failure_count']}; "
+            f"bypasses {rollup['bypass_count']}; "
+            f"median latency {rollup['median_latency_ms']}ms; "
+            f"last used: {rollup['last_used_at']}"
+        ),
+        f"  - telemetry candidate coverage: {rollup['candidate_count']}",
     ]
 
 
@@ -1577,6 +1759,45 @@ def _candidate_implementation_family(candidate: dict[str, Any]) -> str:
 
 def _implementation_id(lane: str, helper_family: str) -> str:
     return f"session-intel-implementation-{lane}-{helper_family}"
+
+
+def _refresh_helper_telemetry_state(
+    conn: sqlite3.Connection,
+    *,
+    implementation_id: str,
+    now: str,
+) -> None:
+    rows = conn.execute(
+        """
+        SELECT status
+        FROM session_intelligence_helper_telemetry
+        WHERE implementation_id = ?
+        """,
+        (implementation_id,),
+    ).fetchall()
+    if not rows:
+        telemetry_status = "awaiting_telemetry"
+        removal_status = "monitor"
+    else:
+        success_count = sum(1 for row in rows if row["status"] == "success")
+        adverse_count = sum(1 for row in rows if row["status"] in {"failure", "bypass"})
+        if success_count > 0 and adverse_count <= success_count:
+            telemetry_status = "active"
+            removal_status = "monitor"
+        elif len(rows) >= 3 and adverse_count > success_count:
+            telemetry_status = "removal_review_ready"
+            removal_status = "removal_candidate"
+        else:
+            telemetry_status = "insufficient_telemetry"
+            removal_status = "monitor"
+    conn.execute(
+        """
+        UPDATE session_intelligence_implementations
+        SET telemetry_status = ?, removal_status = ?, updated_at = ?
+        WHERE id = ?
+        """,
+        (telemetry_status, removal_status, now, implementation_id),
+    )
 
 
 def _implementation_candidate_ids(conn: sqlite3.Connection, implementation_id: str) -> list[str]:

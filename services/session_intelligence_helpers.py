@@ -3,14 +3,17 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import os
 import sqlite3
 import subprocess
+import time
 from pathlib import Path
 
 from services.session_intelligence_loop import (
     HELPER_FAMILY_PRESETS,
     list_session_intelligence_candidates,
     list_session_intelligence_implementations,
+    record_session_intelligence_helper_telemetry,
 )
 
 HELPER_FAMILIES = tuple(sorted(HELPER_FAMILY_PRESETS))
@@ -46,26 +49,94 @@ def run_session_intelligence_helper(
     if family not in HELPER_FAMILIES:
         raise ValueError(f"Unsupported session intelligence helper family: {family}")
 
+    started = time.monotonic()
+    implementation = _implementation_payload(conn, family)
+    input_shape = _helper_input_shape(
+        family=family,
+        path=path,
+        repo=repo,
+        start_line=start_line,
+        end_line=end_line,
+    )
     base: dict[str, object] = {
         "family": family,
         "description": HELPER_FAMILY_PRESETS[family],
-        "implementation": _implementation_payload(conn, family),
+        "implementation": implementation,
     }
-    if family == "doc_excerpt":
-        return {**base, **_doc_excerpt(path, start_line=start_line, end_line=end_line)}
-    if family == "artifact_probe":
-        return {**base, **_artifact_probe(path)}
-    if family == "repo_state":
-        return {**base, **_repo_state(repo)}
-    if family == "git_history":
-        return {**base, **_git_history(repo)}
-    if family == "package_check":
-        return {**base, **_package_check(repo)}
-    if family == "deployment_flow":
-        return {**base, **_deployment_flow(repo)}
-    if family in {"bespoke_review", "workflow_skill"}:
-        return {**base, **_candidate_triage(conn, family)}
-    raise ValueError(f"Unsupported session intelligence helper family: {family}")
+    try:
+        if family == "doc_excerpt":
+            payload = {**base, **_doc_excerpt(path, start_line=start_line, end_line=end_line)}
+        elif family == "artifact_probe":
+            payload = {**base, **_artifact_probe(path)}
+        elif family == "repo_state":
+            payload = {**base, **_repo_state(repo)}
+        elif family == "git_history":
+            payload = {**base, **_git_history(repo)}
+        elif family == "package_check":
+            payload = {**base, **_package_check(repo)}
+        elif family == "deployment_flow":
+            payload = {**base, **_deployment_flow(repo)}
+        elif family in {"bespoke_review", "workflow_skill"}:
+            payload = {**base, **_candidate_triage(conn, family)}
+        else:
+            raise ValueError(f"Unsupported session intelligence helper family: {family}")
+    except Exception as exc:
+        record_session_intelligence_helper_telemetry(
+            conn,
+            helper_family=family,
+            implementation_id=_implementation_id_from_payload(implementation),
+            candidate_ids=_candidate_ids_from_payload(implementation),
+            status="failure",
+            latency_ms=_elapsed_ms(started),
+            input_shape=input_shape,
+            error_type=type(exc).__name__,
+            error_message=str(exc),
+            caller_surface="session-intel helper run",
+            **_telemetry_context(),
+        )
+        raise
+    telemetry = record_session_intelligence_helper_telemetry(
+        conn,
+        helper_family=family,
+        implementation_id=_implementation_id_from_payload(implementation),
+        candidate_ids=_candidate_ids_from_payload(implementation),
+        status="success",
+        latency_ms=_elapsed_ms(started),
+        input_shape=input_shape,
+        caller_surface="session-intel helper run",
+        **_telemetry_context(),
+    )
+    return {**payload, "telemetry": telemetry}
+
+
+def bypass_session_intelligence_helper(
+    conn: sqlite3.Connection,
+    *,
+    family: str,
+    reason: str,
+) -> dict[str, object]:
+    if family not in HELPER_FAMILIES:
+        raise ValueError(f"Unsupported session intelligence helper family: {family}")
+    implementation = _implementation_payload(conn, family)
+    telemetry = record_session_intelligence_helper_telemetry(
+        conn,
+        helper_family=family,
+        implementation_id=_implementation_id_from_payload(implementation),
+        candidate_ids=_candidate_ids_from_payload(implementation),
+        status="bypass",
+        latency_ms=0,
+        input_shape={"reason_present": bool(reason), "reason_length": len(reason)},
+        error_type="Bypass",
+        error_message=reason,
+        caller_surface="session-intel helper bypass",
+        **_telemetry_context(),
+    )
+    return {
+        "family": family,
+        "description": HELPER_FAMILY_PRESETS[family],
+        "implementation": implementation,
+        "telemetry": telemetry,
+    }
 
 
 def _implementation_payload(conn: sqlite3.Connection, family: str) -> dict[str, object] | None:
@@ -75,11 +146,60 @@ def _implementation_payload(conn: sqlite3.Connection, family: str) -> dict[str, 
                 "id": implementation["id"],
                 "lane": implementation["lane"],
                 "candidate_count": implementation["candidate_count"],
+                "candidate_ids": implementation["candidate_ids"],
                 "telemetry_status": implementation["telemetry_status"],
                 "removal_status": implementation["removal_status"],
                 "artifact_ref": implementation["implemented_artifact_ref"],
             }
     return None
+
+
+def _implementation_id_from_payload(implementation: dict[str, object] | None) -> str | None:
+    if implementation is None:
+        return None
+    return str(implementation["id"])
+
+
+def _candidate_ids_from_payload(implementation: dict[str, object] | None) -> list[str]:
+    if implementation is None:
+        return []
+    candidate_ids = implementation.get("candidate_ids", [])
+    if not isinstance(candidate_ids, list):
+        return []
+    return [str(candidate_id) for candidate_id in candidate_ids]
+
+
+def _elapsed_ms(started: float) -> int:
+    return max(0, int((time.monotonic() - started) * 1000))
+
+
+def _telemetry_context() -> dict[str, str | None]:
+    return {
+        "run_id": os.environ.get("AIOS_RUN_ID"),
+        "session_id": os.environ.get("AIOS_SESSION_ID") or os.environ.get("CODEX_SESSION_ID"),
+        "task_id": os.environ.get("AIOS_TASK_ID") or os.environ.get("CODEX_TASK_ID"),
+    }
+
+
+def _helper_input_shape(
+    *,
+    family: str,
+    path: str | None,
+    repo: str | None,
+    start_line: int | None,
+    end_line: int | None,
+) -> dict[str, object]:
+    path_obj = Path(path).expanduser() if path else None
+    repo_obj = Path(repo).expanduser() if repo else None
+    return {
+        "family": family,
+        "path_present": path is not None,
+        "path_suffix": path_obj.suffix.lower() if path_obj else None,
+        "repo_present": repo is not None,
+        "repo_name_present": bool(repo_obj.name) if repo_obj else False,
+        "start_line_present": start_line is not None,
+        "end_line_present": end_line is not None,
+    }
 
 
 def _required_path(path: str | None) -> Path:
