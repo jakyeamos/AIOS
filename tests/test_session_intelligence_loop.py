@@ -550,6 +550,13 @@ def test_session_intelligence_implements_pending_candidates_as_tracked_helper_fa
 
     conn.execute(
         """
+        UPDATE session_intelligence_implementations
+        SET telemetry_status = 'active', removal_status = 'monitor'
+        WHERE id = 'session-intel-implementation-friction_tool-repo_state'
+        """
+    )
+    conn.execute(
+        """
         INSERT INTO session_intelligence_candidates (
           id, lane, title, summary, impact_score, confidence, status,
           source_sessions_json, redacted_evidence_json, proposed_artifact_type,
@@ -591,6 +598,8 @@ def test_session_intelligence_implements_pending_candidates_as_tracked_helper_fa
         "session-intel-repo-state-1",
         "session-intel-repo-state-3",
     ]
+    assert repo_state["telemetry_status"] == "active"
+    assert repo_state["removal_status"] == "monitor"
 
 
 def test_session_intelligence_decision_report_lists_tracked_implemented_helpers(
@@ -679,7 +688,9 @@ def test_session_intelligence_decision_report_lists_tracked_implemented_helpers(
     assert "## Removal Candidates" in decision_report
     assert "### monitored implemented helpers" in decision_report
     assert "- repo_state: monitor; awaiting_telemetry; candidates covered: 1" in decision_report
-    assert "invocations 2; successes 1; failures 1; bypasses 0; median latency 20ms" in decision_report
+    assert (
+        "invocations 2; successes 1; failures 1; bypasses 0; median latency 20ms" in decision_report
+    )
     assert "telemetry candidate coverage: 1" in decision_report
     assert "session-intel-helper-family:repo_state" in decision_report
 

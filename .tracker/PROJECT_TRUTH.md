@@ -70,6 +70,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-10: Promoted all current pending-review session-intel candidates into telemetry-tracked helper families: 75 candidates across 6 touched implementation records; all 8 helper families remain active/monitor.
 - 2026-07-10: Added repeatable `session-intel implement --candidate-id` targeting and used it to implement four latest Codex friction-tool candidates into `artifact_probe`, `bespoke_review`, `doc_excerpt`, and `package_check` with telemetry/removal monitoring.
 - 2026-07-10: Added first-class session-intel helper telemetry, automatic run/failure recording, explicit helper bypass recording, decision-report telemetry rollups, and live `doc_excerpt` active status from a recorded helper invocation.
 - 2026-07-10: Added the session-intel helper telemetry standard to local governance context and `docs/workflows/session-intel-helper-telemetry-standard.md`: prefer helper runs over equivalent ad hoc probes, record real bypasses, and avoid artificial live adverse telemetry.

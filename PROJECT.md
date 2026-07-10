@@ -1790,3 +1790,9 @@ The spec execution roadmap has been corrected before execution:
 - `services/shadow_codex_runner.py` owns the v1 execution backend: command construction, `workspace-write` sandboxing, `--ask-for-approval never`, JSONL/final-message artifact paths, detached launch metadata, status checks, and cancellation.
 - `shadow_branch_runs` now records execution status, backend, pid, command, output paths, timestamps, and execution metadata; `aios shadow run/status/cancel` exposes those controls without promoting shadow output.
 - Current truth: AIOS shadowing can now collect implementation evidence opportunistically during normal Codex work, but the baseline workspace remains the source of truth and shadow output must not be merged or copied back without explicit review.
+
+## 2026-07-10 - Session-intel candidate helper adoption
+
+- All current `pending_review` Codex session-intelligence candidates were implemented into telemetry-tracked helper-family records: 75 candidates across `artifact_probe`, `bespoke_review`, `doc_excerpt`, `git_history`, `repo_state`, and `workflow_skill`.
+- Candidate implementation upserts now preserve an existing helper family's `telemetry_status` and `removal_status` instead of resetting active telemetry back to `awaiting_telemetry`.
+- Current truth: the pending-review session-intel queue is empty, and all eight helper families remain `active` with `monitor` removal status.
