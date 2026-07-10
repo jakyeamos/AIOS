@@ -51,6 +51,7 @@ Codex session-intelligence helper-family telemetry is now first-class:
 - helper-family implementation records now move from `awaiting_telemetry` to `active`, `insufficient_telemetry`, or `removal_review_ready` based on usage evidence; repeated adverse evidence marks the helper as a `removal_candidate`
 - the canonical daily decision report now summarizes helper invocations, successes, failures, bypasses, median latency, last-used timestamp, and telemetry candidate coverage inside Removal Candidates
 - live verification recorded one successful `doc_excerpt` invocation, so `session-intel helper list` now reports `doc_excerpt` as `active` while the other helper families remain awaiting telemetry
+- `.agents/context/governance.md` and `docs/workflows/session-intel-helper-telemetry-standard.md` now make helper telemetry the standard: use `session-intel helper run` instead of equivalent ad hoc probes when a helper family applies, record real bypasses with `session-intel helper bypass`, and avoid artificial live failure/bypass telemetry
 
 ## Implemented On 2026-07-03
 
