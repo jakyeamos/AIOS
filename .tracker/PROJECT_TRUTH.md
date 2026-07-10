@@ -4,7 +4,7 @@ projectName: AIOS
 summary: Active local-first agent operating system with honest evidence verdicts, evidence-gated verify-run completion, durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption, review-gated session-intelligence tools, and progressive colocated context routing across AIOS and linked repos.
 healthScore: 85
 statusLabel: healthy
-nextStep: Use the new colocated context convention in future repo work while continuing to wire verify-run into hook-stop closeout and the pipeline reaper cadence.
+nextStep: Claim and complete the read-only modernization baseline, then use its evidence to choose the AIOS v2 operating loop and trust boundary.
 blockers: []
 lastUpdated: 2026-07-10
 tags: [infra, ai-os, hooks, automation]
@@ -33,7 +33,7 @@ agentExpectationsVersion: 1
 
 ## Current State
 
-AIOS now uses progressive colocated context routing (2026-07-07). Root and repo `AGENTS.md` files are slim routers, deeper project knowledge lives in `.agents/context/`, module-specific context lives in `.context/`, and `tools/context-compile.mjs` can select repo-local and module-local context with receipt-visible reasons. The rollout also added a warning-only context validator at `/Users/jakyeamos/.agents/bin/validate-context.sh` and migrated linked repo prompt seeds out of the global playbook.
+AIOS now has a staged v2 modernization decision map at `.wayfinder/aios-modernization/`. The active frontier is a read-only reproducible baseline; it must establish current behavior, product invariants, data/trust constraints, and existing failures before a redesign strategy is chosen. The current `dev` worktree was already dirty when this work started, so its shadow lane is trace-only and no application code has changed for the modernization.
 
 _(4 older entries trimmed)_
 
@@ -70,6 +70,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-10: Charted and committed the AIOS v2 modernization decision map (`ea8d464`): baseline/invariants first, then operating-loop/trust, state/migrations, task-centred UI, subsystem strategy, and a vertical implementation plan.
 - 2026-07-10: Promoted all current pending-review session-intel candidates into telemetry-tracked helper families: 75 candidates across 6 touched implementation records; all 8 helper families remain active/monitor.
 - 2026-07-10: Added repeatable `session-intel implement --candidate-id` targeting and used it to implement four latest Codex friction-tool candidates into `artifact_probe`, `bespoke_review`, `doc_excerpt`, and `package_check` with telemetry/removal monitoring.
 - 2026-07-10: Added first-class session-intel helper telemetry, automatic run/failure recording, explicit helper bypass recording, decision-report telemetry rollups, and live `doc_excerpt` active status from a recorded helper invocation.
@@ -84,26 +85,22 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-07-01: Tightened AIOS shadow-run recording so empty shadow lanes must carry an explicit no-evidence reason, persist `parity_checklist_status=no_evidence`, and cannot masquerade as measured shadow output before implementation, verification, or comparison evidence exists.
 - 2026-06-30: Removed stale code-intelligence integration references from AIOS active/default project lists, prompt-submit retrieval hints, benchmark manifests, and linked-project planning docs; targeted Ruff, BasedPyright, JSON parse, and tier-one regression checks pass.
 - 2026-06-25: Added an AIOS quality-pipeline `anti_slop` adoption/backfill gate for platform, production public web app, and developer-tool package repos, with audit-mode linked-repo commands and readiness regression coverage.
-- 2026-06-26: Linked-repo adoption reports now require quality certification through `repo_gate_adoption_v1`, separating `aios_wired`, `quality_standard_compliant`, and `release_ready` stages from final `adoption_ready`, `adopted_but_blocked`, or `not_adopted` status.
-- 2026-06-26: Completed Phase 29 pre-execution prep by refreshing the linked-repo adoption baseline, documenting first-wave repo branch/dirty state, and updating Phase 29 acceptance criteria to require `adoption_ready` plus passing certification stages.
-- 2026-06-26: Added `BidCamp`, `tenure`, and `EliHealth` to the linked-repo adoption list, expanding Phase 29 to 23 in-scope repos; first evidence rows are recorded and the new repos are AIOS-wired but blocked until failing required gates pass.
-- 2026-06-26: Upgraded `repo_gate_adoption_v1` to generate broad and gate-specific rubric packs before rollout planning, preventing sizable repo adoption from being scoped only by failed command gates.
-- 2026-06-26: Wired conditional TMCP expert enrichment into `repo_gate_adoption_v1`; adoption artifacts now record `enriched` only when relevant TMCP source sufficiency passes, otherwise `insufficient_source` with AIOS standard rubric fallback.
 
 ## Open Problems
 
 1. (none — the full repo quality ladder went green on 2026-07-06; see Quality Ladder Notes)
 ## Next Concrete Steps
 
-1. Run a real shadow-lane implementation through the generated prompt and verify it transitions from `no_evidence` to `evidence_recorded` only after comparison evidence exists.
-2. Decide whether AIOS should add a thin shortcut or adapter for invoking external Quality Runner runs.
-3. Resume linked-repo adoption execution with BidCamp repo-local Phase 151, then continue BidCamp 152-155, EliHealth 09-13, and pre-cr-suite-lsp 04-06.
+1. Claim and complete [Establish a Reproducible Baseline and Product Invariants](../.wayfinder/aios-modernization/tickets/001-establish-reproducible-baseline-and-invariants.md).
+2. Use the baseline evidence to resolve [Choose the V2 Operating Loop and Trust Boundary](../.wayfinder/aios-modernization/tickets/002-choose-v2-operating-loop-and-trust-boundary.md).
+3. Keep the daily-use release gates green while the modernization decisions are made; do not treat the trace-only shadow lane as a clean comparison.
 
 ## Risks / Blockers
 
 - Hook regressions are silent — no test safety net catches a broken stop hook until a session closes without writing its record
 - The large number of scripts in `bin/` (60+) means drift and dead code accumulation are likely without regular Vulture runs
 - Quality tooling is explicit but failing at repo level, so completion claims must distinguish targeted eval-run checks from full-repo health.
+- The current dirty worktree prevents a clean modernization shadow comparison; implementation should begin only from an intentionally clean branch/worktree.
 
 ## Quality Ladder Notes
 
