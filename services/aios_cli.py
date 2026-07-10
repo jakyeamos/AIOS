@@ -6367,6 +6367,7 @@ def _session_intel_payload(conn: sqlite3.Connection, args: argparse.Namespace) -
             conn,
             status=args.status,
             lane=args.lane,
+            candidate_ids=getattr(args, "candidate_id", None),
             actor_note=args.note,
         )
         implementations = list_session_intelligence_implementations(conn)
@@ -6691,6 +6692,11 @@ def create_parser() -> argparse.ArgumentParser:
         "--lane",
         choices=["all", "friction_tool", "workflow_skill", "impact_idea"],
         default="all",
+    )
+    session_intel_implement.add_argument(
+        "--candidate-id",
+        action="append",
+        help="Limit implementation to a specific candidate id; repeat for multiple candidates",
     )
     session_intel_implement.add_argument("--note", default="")
     session_intel_implement.add_argument("--json", action="store_true", default=argparse.SUPPRESS)

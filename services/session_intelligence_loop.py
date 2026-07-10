@@ -7,6 +7,7 @@ import shlex
 import sqlite3
 import uuid
 from collections import defaultdict
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -479,6 +480,7 @@ def implement_session_intelligence_candidates(
     *,
     status: str = "pending_review",
     lane: str = "all",
+    candidate_ids: Sequence[str] | None = None,
     actor_note: str = "",
 ) -> dict[str, Any]:
     ensure_session_intelligence_schema(conn)
@@ -487,6 +489,16 @@ def implement_session_intelligence_candidates(
         status=None if status == "all" else status,
         lane=lane,
     )
+    if candidate_ids is not None:
+        selected_ids = {candidate_id for candidate_id in candidate_ids}
+        candidates = [candidate for candidate in candidates if candidate["id"] in selected_ids]
+        found_ids = {candidate["id"] for candidate in candidates}
+        missing_ids = sorted(selected_ids - found_ids)
+        if missing_ids:
+            raise ValueError(
+                "Session intelligence candidate(s) not found for implementation filters: "
+                + ", ".join(missing_ids)
+            )
     now = _now()
     grouped: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     for candidate in candidates:

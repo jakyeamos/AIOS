@@ -505,25 +505,28 @@ def test_session_intelligence_implements_pending_candidates_as_tracked_helper_fa
         conn,
         status="pending_review",
         lane="all",
+        candidate_ids=["session-intel-repo-state-1", "session-intel-package-1"],
         actor_note="Human approved implementation with removal tracking.",
     )
 
     implementations = list_session_intelligence_implementations(conn)
     candidates = list_session_intelligence_candidates(conn, status="implemented", lane="all")
-    assert result["candidate_count"] == 3
+    pending = list_session_intelligence_candidates(conn, status="pending_review", lane="all")
+    assert result["candidate_count"] == 2
     assert result["implementation_count"] == 2
     assert [item["helper_family"] for item in implementations] == [
-        "repo_state",
         "package_check",
+        "repo_state",
     ]
-    assert implementations[0]["candidate_count"] == 2
+    assert implementations[0]["candidate_count"] == 1
     assert implementations[0]["telemetry_status"] == "awaiting_telemetry"
     assert implementations[0]["removal_status"] == "monitor"
     assert (
-        implementations[0]["implemented_artifact_ref"] == "session-intel-helper-family:repo_state"
+        implementations[1]["implemented_artifact_ref"] == "session-intel-helper-family:repo_state"
     )
     assert {candidate["status"] for candidate in candidates} == {"implemented"}
-    assert "session-intel-repo-state-1" in implementations[0]["candidate_ids"]
+    assert {candidate["id"] for candidate in pending} == {"session-intel-repo-state-2"}
+    assert implementations[1]["candidate_ids"] == ["session-intel-repo-state-1"]
 
     conn.execute(
         """
@@ -556,16 +559,16 @@ def test_session_intelligence_implements_pending_candidates_as_tracked_helper_fa
         conn,
         status="pending_review",
         lane="all",
+        candidate_ids=["session-intel-repo-state-3"],
         actor_note="Human approved another repo-state candidate.",
     )
 
     updated_implementations = list_session_intelligence_implementations(conn)
     repo_state = updated_implementations[0]
     assert repo_state["helper_family"] == "repo_state"
-    assert repo_state["candidate_count"] == 3
+    assert repo_state["candidate_count"] == 2
     assert repo_state["candidate_ids"] == [
         "session-intel-repo-state-1",
-        "session-intel-repo-state-2",
         "session-intel-repo-state-3",
     ]
 
@@ -856,7 +859,18 @@ def test_session_intelligence_cli_parser_accepts_run_candidates_and_mark() -> No
         ["session-intel", "clusters", "--status", "pending_review", "--lane", "all"]
     )
     implement_args = parser.parse_args(
-        ["session-intel", "implement", "--status", "pending_review", "--lane", "all"]
+        [
+            "session-intel",
+            "implement",
+            "--status",
+            "pending_review",
+            "--lane",
+            "all",
+            "--candidate-id",
+            "candidate-1",
+            "--candidate-id",
+            "candidate-2",
+        ]
     )
     mark_args = parser.parse_args(
         [
@@ -905,6 +919,7 @@ def test_session_intelligence_cli_parser_accepts_run_candidates_and_mark() -> No
     assert candidates_args.session_intel_command == "candidates"
     assert clusters_args.session_intel_command == "clusters"
     assert implement_args.session_intel_command == "implement"
+    assert implement_args.candidate_id == ["candidate-1", "candidate-2"]
     assert mark_args.session_intel_command == "mark"
     assert helper_list_args.session_intel_command == "helper"
     assert helper_list_args.session_intel_helper_command == "list"

@@ -34,6 +34,16 @@ The repository currently contains five meaningful subsystems:
 
 Root operator documentation now lives in `README.md`, including local UI launch commands, key UI routes, store paths, workflow proposal backfill, and verification commands.
 
+## Implemented On 2026-07-10
+
+Codex session-intelligence implementation can now target explicit candidate ids:
+
+- `python bin/aios.py session-intel implement --candidate-id <id>` limits adoption to named candidates, and the flag can be repeated for review batches
+- targeted implementation still groups adopted candidates into existing helper-family implementation records with `telemetry_status=awaiting_telemetry`, `removal_status=monitor`, removal reasons, artifact refs, and review events
+- this prevents a human approval for the latest daily-review candidates from accidentally implementing the full historical pending backlog
+- the four latest approved Codex friction-tool candidates were implemented into the existing `artifact_probe`, `bespoke_review`, `doc_excerpt`, and `package_check` helper-family records with removal monitoring left active
+- focused tests cover parser support, explicit candidate filtering, untouched unrelated pending candidates, and incremental helper-family candidate-id merging
+
 ## Implemented On 2026-07-03
 
 Codex daily session intelligence now has a first-class review-only wrapper:
