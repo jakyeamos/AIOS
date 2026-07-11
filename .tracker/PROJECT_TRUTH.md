@@ -3,8 +3,8 @@ schemaVersion: 1
 projectName: AIOS
 summary: Active local-first agent operating system with honest evidence verdicts, evidence-gated verify-run completion, durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption, review-gated session-intelligence tools, and progressive colocated context routing across AIOS and linked repos.
 healthScore: 85
-statusLabel: healthy
-nextStep: Claim and complete the read-only modernization baseline, then use its evidence to choose the AIOS v2 operating loop and trust boundary.
+statusLabel: warning
+nextStep: Resolve the AIOS v2 operating-loop and trust-boundary decision using the completed baseline audit, while separately restoring reproducible UI validation.
 blockers: []
 lastUpdated: 2026-07-10
 tags: [infra, ai-os, hooks, automation]
@@ -16,11 +16,11 @@ primaryLanguage: Python
 activeBranch: dev
 lastCommitDate: 2026-07-10
 quality:
-  lint: pass
-  types: pass
+  lint: fail
+  types: fail
   tests: pass
   deadCode: pass
-  structure: pass
+  structure: partial
 canonicalCommands:
   install: uv sync
   dev: unknown
@@ -33,7 +33,7 @@ agentExpectationsVersion: 1
 
 ## Current State
 
-AIOS now has a staged v2 modernization decision map at `.wayfinder/aios-modernization/`. The active frontier is a read-only reproducible baseline; it must establish current behavior, product invariants, data/trust constraints, and existing failures before a redesign strategy is chosen. The current `dev` worktree was already dirty when this work started, so its shadow lane is trace-only and no application code has changed for the modernization.
+AIOS now has a completed v2 modernization baseline at `docs/modernization/AUDIT.md` and a decision map at `.wayfinder/aios-modernization/`. The audit validates the daily loop and Python regression suite, but records 555 persisted SQLite foreign-key violations, divergent schema/bootstrap ownership, an implicit UI mutation trust boundary, and blocked UI lint/build verification. The current `dev` worktree was already dirty when this work started, so its shadow lane remains trace-only and no modernization application code has changed.
 
 _(4 older entries trimmed)_
 
@@ -70,6 +70,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-10: Completed the read-only AIOS v2 baseline audit (`9076776`): copied-DB daily loop passed, Python tests passed, and data integrity, trust, recovery, UI accessibility, and UI-validation blockers were recorded as the next decisions.
 - 2026-07-10: Charted and committed the AIOS v2 modernization decision map (`ea8d464`): baseline/invariants first, then operating-loop/trust, state/migrations, task-centred UI, subsystem strategy, and a vertical implementation plan.
 - 2026-07-10: Promoted all current pending-review session-intel candidates into telemetry-tracked helper families: 75 candidates across 6 touched implementation records; all 8 helper families remain active/monitor.
 - 2026-07-10: Added repeatable `session-intel implement --candidate-id` targeting and used it to implement four latest Codex friction-tool candidates into `artifact_probe`, `bespoke_review`, `doc_excerpt`, and `package_check` with telemetry/removal monitoring.
@@ -84,34 +85,35 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-07-02: Added repo-local Quality Runner scan exclusions for ignored operational worktrees plus root `pnpm smoke`; final QR run `qr-clean-audit-20260702T200935Z-AIOS-final-4` detects no missing capabilities but remains blocked because QR structural scanning still scans excluded ignored paths (`.aios/shadow-worktrees`, `.worktrees`, `.superpowers`, and `tmcp-benchmark/runs/worktrees`) unless whole structural rule groups are disabled.
 - 2026-07-01: Tightened AIOS shadow-run recording so empty shadow lanes must carry an explicit no-evidence reason, persist `parity_checklist_status=no_evidence`, and cannot masquerade as measured shadow output before implementation, verification, or comparison evidence exists.
 - 2026-06-30: Removed stale code-intelligence integration references from AIOS active/default project lists, prompt-submit retrieval hints, benchmark manifests, and linked-project planning docs; targeted Ruff, BasedPyright, JSON parse, and tier-one regression checks pass.
-- 2026-06-25: Added an AIOS quality-pipeline `anti_slop` adoption/backfill gate for platform, production public web app, and developer-tool package repos, with audit-mode linked-repo commands and readiness regression coverage.
 
 ## Open Problems
 
-1. (none — the full repo quality ladder went green on 2026-07-06; see Quality Ladder Notes)
+1. The main store has 555 persisted foreign-key violations, divergent SQL snapshots, distributed runtime DDL, and no tracked restore drill.
+2. UI mutation endpoints lack an explicit application trust boundary; determine and enforce local-only versus authenticated remote operation before expanding UI control surfaces.
+3. UI lint/type checking and offline production build verification are blocked by a missing local rule module, external font fetches, and development-runtime errors.
 ## Next Concrete Steps
 
-1. Claim and complete [Establish a Reproducible Baseline and Product Invariants](../.wayfinder/aios-modernization/tickets/001-establish-reproducible-baseline-and-invariants.md).
-2. Use the baseline evidence to resolve [Choose the V2 Operating Loop and Trust Boundary](../.wayfinder/aios-modernization/tickets/002-choose-v2-operating-loop-and-trust-boundary.md).
+1. Resolve [Choose the V2 Operating Loop and Trust Boundary](../.wayfinder/aios-modernization/tickets/002-choose-v2-operating-loop-and-trust-boundary.md).
+2. Establish [a Reproducible UI Validation Contract](../.wayfinder/aios-modernization/tickets/007-establish-reproducible-ui-validation-contract.md) before accepting UI redesign work.
 3. Keep the daily-use release gates green while the modernization decisions are made; do not treat the trace-only shadow lane as a clean comparison.
 
 ## Risks / Blockers
 
-- Hook regressions are silent — no test safety net catches a broken stop hook until a session closes without writing its record
-- The large number of scripts in `bin/` (60+) means drift and dead code accumulation are likely without regular Vulture runs
-- Quality tooling is explicit but failing at repo level, so completion claims must distinguish targeted eval-run checks from full-repo health.
+- Broad persistence changes are unsafe until one migration/schema owner, foreign-key repair posture, and backup/restore proof are defined.
+- Remote deployment is unsafe until UI mutation authentication/authorization and sensitive-data egress rules are explicit.
+- UI change acceptance is currently unreliable because lint/type checking and production build verification are blocked.
 - The current dirty worktree prevents a clean modernization shadow comparison; implementation should begin only from an intentionally clean branch/worktree.
 
 ## Quality Ladder Notes
 
 | Step | Status | Notes |
 | ------ | -------- | ------- |
-| Lint (ruff) | Pass | `uv run ruff check .` passed on 2026-07-06 after fixing the 24-issue baseline in four atomic commits (imports, dead code, strict zip, simplifications). |
-| Type check (basedpyright) | Pass | `uv run basedpyright` passed on 2026-07-06 with 0 errors and 0 warnings after burning down the 107-error/78-warning baseline: extraPaths for sys.path-loaded bin modules, dict[str, Any] payload typing, single-assignment… |
-| Dead code (vulture) | Pass | `uv run vulture bin services --min-confidence 70`, `pnpm dead-code`, and `pnpm audit:dead-code` passed on 2026-07-02; Quality Runner final run `qr-clean-audit-20260702T200935Z-AIOS-final-4` detects `dead_code` from… |
-| Runtime smoke | Pass | `pnpm smoke` passed on 2026-07-02 and Quality Runner final run `qr-clean-audit-20260702T200935Z-AIOS-final-4` detects `runtime_smoke` from `package.json:scripts.smoke`. |
-| Tests | Pass | `uv run pytest -q` passed on 2026-07-06 with 1122 tests, after both the lint-fix and format-only commits. |
-| Structure | Pass | `uv run ruff format --check .` passed on 2026-07-06 after a single format-only commit reformatting 151 files (no logic changes). |
+| Lint (ruff) | Fail | 2026-07-10 baseline found four diagnostics in `services/business/lint.py` and `services/business/pipeline.py`. |
+| Type check (basedpyright) | Fail | 2026-07-10 baseline found three optional `ModuleSpec`/loader diagnostics in `tests/test_purge_noise_patterns.py`. |
+| Dead code (vulture) | Pass | `pnpm dead-code` passed on 2026-07-10. |
+| Runtime smoke | Pass | `pnpm smoke` and `aios doctor --json` passed on 2026-07-10. |
+| Tests | Pass | `uv run pytest -q` passed on 2026-07-10 with 1,158 tests. |
+| UI structure | Partial | Architecture lint passed; UI lint/typecheck and production build are currently blocked. |
 
 Focused user commit gate checks on 2026-06-25:
 - `uv run pytest tests/test_user_commit_quality_gate.py -q` passed with 28 tests.
