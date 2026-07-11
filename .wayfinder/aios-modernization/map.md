@@ -27,9 +27,12 @@ created: 2026-07-10
 ## Decisions so far
 
 - [Establish a Reproducible Baseline and Product Invariants](tickets/001-establish-reproducible-baseline-and-invariants.md) - The daily loop is real and tested, but data integrity, trust, recovery, UI accessibility, and reproducible verification block an in-place redesign.
+- [Choose the V2 Operating Loop and Trust Boundary](tickets/002-choose-v2-operating-loop-and-trust-boundary.md) - V2 is a single-user, local-first, loopback-only control plane: local human approval gates privileged effects; agents can execute scoped work and propose changes; remote authoritative, split, and shared control planes are out of scope.
 
 ## Fog
 
-No additional question is sharp enough to chart yet. New implementation,
-cutover, and adversarial-review questions should be added only after the open
-product, data, UI, subsystem, and validation-contract tickets resolve.
+No additional question is sharp enough to chart yet. A remote, redacted,
+read-only observer may be reconsidered only after the local state-authority and
+privacy contracts are proven; it is not a v2 implementation ticket. New
+implementation, cutover, and adversarial-review questions should be added only
+after the open data, UI, subsystem, and validation-contract tickets resolve.

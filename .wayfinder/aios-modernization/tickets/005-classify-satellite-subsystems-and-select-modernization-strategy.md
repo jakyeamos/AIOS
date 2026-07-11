@@ -4,7 +4,6 @@ type: research
 status: open
 claim: unclaimed
 blocked_by:
-  - 002-choose-v2-operating-loop-and-trust-boundary
   - 003-define-canonical-state-and-migration-authority
 blocks:
   - 006-write-v2-target-and-vertical-modernization-plan

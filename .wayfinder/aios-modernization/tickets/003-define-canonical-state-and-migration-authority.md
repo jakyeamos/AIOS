@@ -3,8 +3,7 @@ title: Define Canonical State and Migration Authority
 type: research
 status: open
 claim: unclaimed
-blocked_by:
-  - 002-choose-v2-operating-loop-and-trust-boundary
+blocked_by: []
 blocks:
   - 005-classify-satellite-subsystems-and-select-modernization-strategy
   - 006-write-v2-target-and-vertical-modernization-plan

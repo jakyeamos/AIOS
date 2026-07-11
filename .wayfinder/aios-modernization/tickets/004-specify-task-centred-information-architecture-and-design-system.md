@@ -3,8 +3,7 @@ title: Specify a Task-Centred Information Architecture and Accessible Design Sys
 type: prototype
 status: open
 claim: unclaimed
-blocked_by:
-  - 002-choose-v2-operating-loop-and-trust-boundary
+blocked_by: []
 blocks:
   - 006-write-v2-target-and-vertical-modernization-plan
 ---
@@ -24,8 +23,8 @@ accessible responsive interaction?
 - Establish a coherent accessible design-system contract for tokens,
   typography, semantic controls/tables, focus behavior, labels, error/loading
   states, keyboard interactions, contrast, and responsive layouts.
-- Prototype the `start work → daily flow → closeout` vertical slice before
-  redesigning every route.
+- Prototype the `start work → verify → gated review → closeout → daily flow /
+  next action` vertical slice before redesigning every route.
 - Define browser, keyboard, console, screenshot, and responsive proof needed
   for later UI milestones.
 
