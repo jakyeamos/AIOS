@@ -4,7 +4,7 @@ projectName: AIOS
 summary: Active local-first agent operating system with honest evidence verdicts, evidence-gated verify-run completion, durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption, review-gated session-intelligence tools, and progressive colocated context routing across AIOS and linked repos.
 healthScore: 85
 statusLabel: warning
-nextStep: Resolve the AIOS v2 operating-loop and trust-boundary decision using the completed baseline audit, while separately restoring reproducible UI validation.
+nextStep: Define canonical state and migration authority for AIOS v2, using the accepted local-first trust boundary and the completed baseline audit.
 blockers: []
 lastUpdated: 2026-07-10
 tags: [infra, ai-os, hooks, automation]
@@ -33,7 +33,7 @@ agentExpectationsVersion: 1
 
 ## Current State
 
-AIOS now has a completed v2 modernization baseline at `docs/modernization/AUDIT.md` and a decision map at `.wayfinder/aios-modernization/`. The audit validates the daily loop and Python regression suite, but records 555 persisted SQLite foreign-key violations, divergent schema/bootstrap ownership, an implicit UI mutation trust boundary, and blocked UI lint/build verification. The current `dev` worktree was already dirty when this work started, so its shadow lane remains trace-only and no modernization application code has changed.
+AIOS now has a completed v2 modernization baseline, decision map, and accepted local-first operating model: [`AUDIT.md`](../docs/modernization/AUDIT.md), [`ADR-001`](../docs/modernization/ADR-001-v2-operating-loop-and-trust-boundary.md), and `.wayfinder/aios-modernization/`. V2 is a single-user, loopback-only local control plane; the operator approves privileged effects, while agents perform scoped work and propose but do not self-approve durable changes. The audit still records 555 persisted SQLite foreign-key violations, divergent schema/bootstrap ownership, unenforced UI mutation boundaries, and blocked UI lint/build verification. The current `dev` worktree was already dirty when this work started, so its shadow lane remains trace-only and no modernization application code has changed.
 
 _(4 older entries trimmed)_
 
@@ -70,6 +70,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-10: Accepted the AIOS v2 local-first operating model (`7a217e1`): loopback-only local control plane, human approval for privileged effects, and no remote/split/shared product in v2.
 - 2026-07-10: Completed the read-only AIOS v2 baseline audit (`9076776`): copied-DB daily loop passed, Python tests passed, and data integrity, trust, recovery, UI accessibility, and UI-validation blockers were recorded as the next decisions.
 - 2026-07-10: Charted and committed the AIOS v2 modernization decision map (`ea8d464`): baseline/invariants first, then operating-loop/trust, state/migrations, task-centred UI, subsystem strategy, and a vertical implementation plan.
 - 2026-07-10: Promoted all current pending-review session-intel candidates into telemetry-tracked helper families: 75 candidates across 6 touched implementation records; all 8 helper families remain active/monitor.
@@ -84,23 +85,22 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-07-02: Exposed the existing Vulture dead-code check through root `pnpm dead-code` and `pnpm audit:dead-code` scripts so Quality Runner detects the `dead_code` capability; final QR run `qr-clean-audit-20260702T200935Z-AIOS-final-2` has no missing repo-owned capabilities while inherited structural findings remain in generated/shadow worktree paths.
 - 2026-07-02: Added repo-local Quality Runner scan exclusions for ignored operational worktrees plus root `pnpm smoke`; final QR run `qr-clean-audit-20260702T200935Z-AIOS-final-4` detects no missing capabilities but remains blocked because QR structural scanning still scans excluded ignored paths (`.aios/shadow-worktrees`, `.worktrees`, `.superpowers`, and `tmcp-benchmark/runs/worktrees`) unless whole structural rule groups are disabled.
 - 2026-07-01: Tightened AIOS shadow-run recording so empty shadow lanes must carry an explicit no-evidence reason, persist `parity_checklist_status=no_evidence`, and cannot masquerade as measured shadow output before implementation, verification, or comparison evidence exists.
-- 2026-06-30: Removed stale code-intelligence integration references from AIOS active/default project lists, prompt-submit retrieval hints, benchmark manifests, and linked-project planning docs; targeted Ruff, BasedPyright, JSON parse, and tier-one regression checks pass.
 
 ## Open Problems
 
 1. The main store has 555 persisted foreign-key violations, divergent SQL snapshots, distributed runtime DDL, and no tracked restore drill.
-2. UI mutation endpoints lack an explicit application trust boundary; determine and enforce local-only versus authenticated remote operation before expanding UI control surfaces.
+2. V2 now intentionally excludes remote control, but current UI mutation endpoints still lack the required loopback, local-capability, approval-enforcement, and single-mutation-owner implementation.
 3. UI lint/type checking and offline production build verification are blocked by a missing local rule module, external font fetches, and development-runtime errors.
 ## Next Concrete Steps
 
-1. Resolve [Choose the V2 Operating Loop and Trust Boundary](../.wayfinder/aios-modernization/tickets/002-choose-v2-operating-loop-and-trust-boundary.md).
+1. Resolve [Canonical State and Migration Authority](../.wayfinder/aios-modernization/tickets/003-define-canonical-state-and-migration-authority.md) before implementing the v2 mutation boundary or any data migration.
 2. Establish [a Reproducible UI Validation Contract](../.wayfinder/aios-modernization/tickets/007-establish-reproducible-ui-validation-contract.md) before accepting UI redesign work.
-3. Keep the daily-use release gates green while the modernization decisions are made; do not treat the trace-only shadow lane as a clean comparison.
+3. Keep daily-use release gates green while the remaining modernization decisions are made; do not treat the trace-only shadow lane as a clean comparison.
 
 ## Risks / Blockers
 
 - Broad persistence changes are unsafe until one migration/schema owner, foreign-key repair posture, and backup/restore proof are defined.
-- Remote deployment is unsafe until UI mutation authentication/authorization and sensitive-data egress rules are explicit.
+- Remote deployment is intentionally out of scope for v2; current local UI mutation routes still need capability, approval, and egress enforcement before redesign work can use them as a trusted control surface.
 - UI change acceptance is currently unreliable because lint/type checking and production build verification are blocked.
 - The current dirty worktree prevents a clean modernization shadow comparison; implementation should begin only from an intentionally clean branch/worktree.
 
