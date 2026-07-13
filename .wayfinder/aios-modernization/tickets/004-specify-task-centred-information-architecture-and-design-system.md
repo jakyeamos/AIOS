@@ -1,8 +1,8 @@
 ---
 title: Specify a Task-Centred Information Architecture and Accessible Design System
 type: prototype
-status: open
-claim: unclaimed
+status: resolved
+claim: /root (2026-07-13)
 blocked_by: []
 blocks:
   - 006-write-v2-target-and-vertical-modernization-plan
@@ -41,4 +41,13 @@ Blocked by [Establish a Reproducible Baseline and Product Invariants](001-establ
 
 ## Resolution
 
-Unresolved.
+Accepted [ADR-003](../../../docs/modernization/ADR-003-task-centred-ia-and-accessible-design-system.md)
+as the v2 operator-experience contract. The primary surface is now Today →
+Start work → Current run → Verify → Gated review → Closeout, with daily flow
+and next action returning the operator to Today. Current routes have an
+explicit preserve/merge/demote/retire disposition, and the first vertical
+slice has representative structural prototypes, required state coverage,
+semantic interaction rules, responsive behavior, and an executable browser,
+keyboard, accessibility, console, and evidence matrix. Implementation remains
+gated by Ticket 007's reproducible UI validation contract and Ticket 005's
+subsystem strategy.
