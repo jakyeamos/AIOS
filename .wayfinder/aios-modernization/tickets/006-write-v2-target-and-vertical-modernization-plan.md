@@ -1,7 +1,7 @@
 ---
 title: Write the V2 Target and Vertical Modernization Plan
 type: task
-status: in_progress
+status: resolved
 claim: /root (2026-07-13)
 blocked_by: []
 blocks: []
@@ -38,4 +38,4 @@ Blocked by [Define Canonical State and Migration Authority](003-define-canonical
 
 ## Resolution
 
-Unresolved.
+Accepted [TARGET.md](../../../docs/modernization/TARGET.md) and [EXEC_PLAN.md](../../../docs/modernization/EXEC_PLAN.md) as the v2 target and executable modernization contract. The target fixes the operator loop, authority/data model, subsystem ownership, contract envelopes, UI/accessibility bar, privacy/observability rules, quality scores, and non-goals. The plan sequences eight gated vertical milestones: shared fixtures; canonical state and recovery; deterministic UI validation; read-only v2 shell; governed Start work → Verify; review/closeout; contextual satellite migration; and cutover/adversarial review/deletion. Each milestone names dependencies, preserved and changed behavior, proof, rollback, failure modes, completion criteria, and deletion targets. The existing `.planning/ROADMAP.md` now links the modernization overlay. Ticket 006 is resolved; implementation begins only at Milestone 0 with the ADR-002 and ADR-004 gates intact.
