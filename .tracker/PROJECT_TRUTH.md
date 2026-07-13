@@ -4,9 +4,9 @@ projectName: AIOS
 summary: Active local-first agent operating system with honest evidence verdicts, evidence-gated verify-run completion, durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption, review-gated session-intelligence tools, and progressive colocated context routing across AIOS and linked repos.
 healthScore: 85
 statusLabel: warning
-nextStep: Specify the task-centred AIOS v2 operator experience while keeping UI implementation gated by the reproducible validation contract.
+nextStep: Establish the reproducible UI validation contract (Ticket 007), then resolve the satellite-subsystem strategy (Ticket 005) before writing the vertical implementation plan.
 blockers: []
-lastUpdated: 2026-07-10
+lastUpdated: 2026-07-13
 tags: [infra, ai-os, hooks, automation]
 areas: [engineering]
 goals: []
@@ -14,7 +14,7 @@ repoType: infra
 sourceOfTruth: mixed
 primaryLanguage: Python
 activeBranch: dev
-lastCommitDate: 2026-07-10
+lastCommitDate: 2026-07-13
 quality:
   lint: fail
   types: fail
@@ -33,7 +33,7 @@ agentExpectationsVersion: 1
 
 ## Current State
 
-AIOS now has a completed v2 modernization baseline, accepted local-first operating model, and canonical-state contract: [`AUDIT.md`](../docs/modernization/AUDIT.md), [`ADR-001`](../docs/modernization/ADR-001-v2-operating-loop-and-trust-boundary.md), and [`ADR-002`](../docs/modernization/ADR-002-canonical-state-and-migration-authority.md). V2 is a single-user, loopback-only local control plane with a Python-owned migration ledger and one logical mutation authority; orphaned data must be quarantined and restore-tested before migration implementation. The audit still records 557 persisted SQLite foreign-key violations, divergent schema/bootstrap ownership, unenforced UI mutation boundaries, and blocked UI lint/build verification. The current `dev` worktree was already dirty when this work started, so its shadow lane remains trace-only and no modernization application code has changed.
+AIOS now has a completed v2 modernization baseline, accepted local-first operating model, canonical-state contract, and task-centred UI contract: [`AUDIT.md`](../docs/modernization/AUDIT.md), [`ADR-001`](../docs/modernization/ADR-001-v2-operating-loop-and-trust-boundary.md), [`ADR-002`](../docs/modernization/ADR-002-canonical-state-and-migration-authority.md), and [`ADR-003`](../docs/modernization/ADR-003-task-centred-ia-and-accessible-design-system.md). V2 is a single-user, loopback-only local control plane with a Python-owned migration ledger and one logical mutation authority; orphaned data must be quarantined and restore-tested before migration implementation. ADR-003 makes Today → Start work → Current run → Verify → Gated review → Closeout the primary operator loop and defines WCAG 2.2 AA, evidence, responsive, keyboard, and console proof gates. The audit still records 557 persisted SQLite foreign-key violations, divergent schema/bootstrap ownership, unenforced UI mutation boundaries, and blocked UI lint/build verification. The current `dev` worktree was already dirty when this work started, so its shadow lane remains trace-only and no modernization application code has changed.
 
 _(4 older entries trimmed)_
 
@@ -70,6 +70,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-13: Accepted the task-centred AIOS v2 UI contract (`6e7d002`): Today → Start work → Current run → Verify → Gated review → Closeout IA, route disposition, representative slice prototypes, accessible design tokens, and executable browser/keyboard/console proof gates.
 - 2026-07-13: Accepted the AIOS v2 canonical-state and migration contract (`04f02e3`): one Python-owned versioned ledger, shared connection policy, quarantine-first FK repair, backup/restore gates, and explicit privacy invariants.
 - 2026-07-10: Accepted the AIOS v2 local-first operating model (`7a217e1`): loopback-only local control plane, human approval for privileged effects, and no remote/split/shared product in v2.
 - 2026-07-10: Completed the read-only AIOS v2 baseline audit (`9076776`): copied-DB daily loop passed, Python tests passed, and data integrity, trust, recovery, UI accessibility, and UI-validation blockers were recorded as the next decisions.
@@ -93,15 +94,15 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 3. UI lint/type checking and offline production build verification are blocked by a missing local rule module, external font fetches, and development-runtime errors.
 ## Next Concrete Steps
 
-1. Resolve [Specify a Task-Centred Information Architecture and Accessible Design System](../.wayfinder/aios-modernization/tickets/004-specify-task-centred-information-architecture-and-design-system.md) against the accepted operating and state-authority contracts.
-2. Establish [a Reproducible UI Validation Contract](../.wayfinder/aios-modernization/tickets/007-establish-reproducible-ui-validation-contract.md) before accepting UI redesign work.
-3. Resolve [Classify Satellite Subsystems and Select the Modernization Strategy](../.wayfinder/aios-modernization/tickets/005-classify-satellite-subsystems-and-select-modernization-strategy.md) before writing the vertical implementation plan.
+1. Establish [a Reproducible UI Validation Contract](../.wayfinder/aios-modernization/tickets/007-establish-reproducible-ui-validation-contract.md) before accepting UI redesign work.
+2. Resolve [Classify Satellite Subsystems and Select the Modernization Strategy](../.wayfinder/aios-modernization/tickets/005-classify-satellite-subsystems-and-select-modernization-strategy.md) before writing the vertical implementation plan.
+3. Synthesize the accepted product, trust, state, UI, validation, and subsystem decisions in [the V2 target and vertical plan](../.wayfinder/aios-modernization/tickets/006-write-v2-target-and-vertical-modernization-plan.md).
 
 ## Risks / Blockers
 
 - Broad persistence changes are unsafe until the ADR-002 migration owner is implemented, the 557 current FK violations are quarantined or deterministically repaired, and backup/restore proof passes.
 - Remote deployment is intentionally out of scope for v2; current local UI mutation routes still need capability, approval, and egress enforcement before redesign work can use them as a trusted control surface.
-- UI change acceptance is currently unreliable because lint/type checking and production build verification are blocked.
+- UI change acceptance is currently unreliable because lint/type checking and production build verification are blocked; ADR-003 defines the target but does not authorize implementation until Ticket 007 resolves those gates.
 - The current dirty worktree prevents a clean modernization shadow comparison; implementation should begin only from an intentionally clean branch/worktree.
 
 ## Quality Ladder Notes
