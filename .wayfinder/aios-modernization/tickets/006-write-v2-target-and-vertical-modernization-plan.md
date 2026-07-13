@@ -1,8 +1,8 @@
 ---
 title: Write the V2 Target and Vertical Modernization Plan
 type: task
-status: open
-claim: unclaimed
+status: in_progress
+claim: /root (2026-07-13)
 blocked_by: []
 blocks: []
 ---

@@ -11,6 +11,7 @@ The roadmap is backed by deeper planning contracts:
 - [PHASE_01_SUBROADMAP.md](/Users/jakyeamos/AIOS/.planning/PHASE_01_SUBROADMAP.md) for the governed entry-loop implementation sequence
 - [REQUIREMENTS_CODE_SURFACE_MATRIX.md](/Users/jakyeamos/AIOS/.planning/REQUIREMENTS_CODE_SURFACE_MATRIX.md) for requirement-level code-surface traceability
 - [TIER_ONE_ACCEPTANCE_CHECKLIST.md](/Users/jakyeamos/AIOS/.planning/TIER_ONE_ACCEPTANCE_CHECKLIST.md) for per-phase exit gates and proof expectations
+- [V2 Target](../docs/modernization/TARGET.md) and [V2 Vertical Plan](../docs/modernization/EXEC_PLAN.md) for the accepted modernization overlay and its dependency-ordered migration slices
 
 ## Roadmap Intent
 
@@ -23,6 +24,17 @@ The roadmap is not just feature ordering. It is a dependency-managed build seque
 - evidence-backed standards and health scoring
 - reusable workflow/prompt/skill infrastructure
 - operator-visible default-layer behavior
+
+## V2 Modernization Overlay
+
+The accepted AIOS v2 modernization work runs as a protected parallel surface
+with progressive migration. [TARGET.md](../docs/modernization/TARGET.md) is the
+target contract; [EXEC_PLAN.md](../docs/modernization/EXEC_PLAN.md) is the
+execution contract. The overlay preserves this roadmap's feature sequencing
+but places canonical state/recovery, reproducible UI validation, and the
+Today → Start work → Current run → Verify → Gated review → Closeout vertical
+loop ahead of broad surface expansion. No later phase may introduce a second
+state owner or bypass the overlay's migration and browser gates.
 
 ## Sequencing Logic
 
