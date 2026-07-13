@@ -30,6 +30,7 @@ created: 2026-07-10
 - [Choose the V2 Operating Loop and Trust Boundary](tickets/002-choose-v2-operating-loop-and-trust-boundary.md) - V2 is a single-user, local-first, loopback-only control plane: local human approval gates privileged effects; agents can execute scoped work and propose changes; remote authoritative, split, and shared control planes are out of scope.
 - [Define Canonical State and Migration Authority](tickets/003-define-canonical-state-and-migration-authority.md) - One Python-owned, versioned migration ledger and logical mutation authority will govern the local `AIOS_DB`; current schema divergence and 557 FK violations block implementation until quarantine and restore gates pass.
 - [Specify a Task-Centred Information Architecture and Accessible Design System](tickets/004-specify-task-centred-information-architecture-and-design-system.md) - The v2 UI follows Today → Start work → Current run → Verify → Gated review → Closeout, with contextual satellites, explicit authority/evidence states, and WCAG 2.2 AA proof gates; implementation waits for the UI validation and subsystem decisions.
+- [Establish a Reproducible UI Validation Contract](tickets/007-establish-reproducible-ui-validation-contract.md) - UI acceptance now requires deterministic pnpm/Node/package, local-font, explicit-root, independent quality-gate, runtime, browser, network, and console evidence; current anti-slop, font/root, and tRPC failures remain recorded blockers for implementation.
 
 ## Fog
 

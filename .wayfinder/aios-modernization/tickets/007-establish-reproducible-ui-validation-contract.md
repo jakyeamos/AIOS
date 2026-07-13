@@ -1,8 +1,8 @@
 ---
 title: Establish a Reproducible UI Validation Contract
 type: research
-status: open
-claim: unclaimed
+status: resolved
+claim: /root (2026-07-13)
 blocked_by: []
 blocks:
   - 006-write-v2-target-and-vertical-modernization-plan
@@ -35,4 +35,15 @@ deterministically in local and CI environments?
 
 ## Resolution
 
-Unresolved.
+Accepted [ADR-004](../../../docs/modernization/ADR-004-reproducible-ui-validation-contract.md)
+as the v2 UI validation contract. The target is one explicit pnpm/Node
+toolchain, a consolidated workspace/lockfile posture, packaged dependencies,
+local or system fonts, an explicit Next root, independent lint/type/build
+gates, and a browser journey that fails on console, network, semantic,
+responsive, and duplicate-key regressions. Current evidence is recorded as a
+baseline rather than a pass: TypeScript and architecture checks pass
+independently, but the anti-slop file dependency is stale/out-of-repo, the
+Google-font and Turbopack warnings are not deterministic, and the dev tRPC
+handler still reproduces the missing `@trpc/server/adapters/fetch` error.
+Ticket 006 may now synthesize the UI target, but implementation remains gated
+until ADR-004's completion criteria are met.
