@@ -3,8 +3,7 @@ title: Write the V2 Target and Vertical Modernization Plan
 type: task
 status: open
 claim: unclaimed
-blocked_by:
-  - 005-classify-satellite-subsystems-and-select-modernization-strategy
+blocked_by: []
 blocks: []
 ---
 

@@ -31,6 +31,7 @@ created: 2026-07-10
 - [Define Canonical State and Migration Authority](tickets/003-define-canonical-state-and-migration-authority.md) - One Python-owned, versioned migration ledger and logical mutation authority will govern the local `AIOS_DB`; current schema divergence and 557 FK violations block implementation until quarantine and restore gates pass.
 - [Specify a Task-Centred Information Architecture and Accessible Design System](tickets/004-specify-task-centred-information-architecture-and-design-system.md) - The v2 UI follows Today → Start work → Current run → Verify → Gated review → Closeout, with contextual satellites, explicit authority/evidence states, and WCAG 2.2 AA proof gates; implementation waits for the UI validation and subsystem decisions.
 - [Establish a Reproducible UI Validation Contract](tickets/007-establish-reproducible-ui-validation-contract.md) - UI acceptance now requires deterministic pnpm/Node/package, local-font, explicit-root, independent quality-gate, runtime, browser, network, and console evidence; current anti-slop, font/root, and tRPC failures remain recorded blockers for implementation.
+- [Classify Satellite Subsystems and Select the Modernization Strategy](tickets/005-classify-satellite-subsystems-and-select-modernization-strategy.md) - V2 uses a parallel surface with progressive migration and one state/mutation owner: core runtime/UI/eval/learning/session systems stay in AIOS, CTS/business memory remain sidecars, and extracted contracts/tools stay adapter-only.
 
 ## Fog
 

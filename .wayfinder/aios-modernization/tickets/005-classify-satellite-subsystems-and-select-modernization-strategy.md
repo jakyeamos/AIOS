@@ -1,8 +1,8 @@
 ---
 title: Classify Satellite Subsystems and Select the Modernization Strategy
 type: research
-status: open
-claim: unclaimed
+status: resolved
+claim: /root (2026-07-13)
 blocked_by: []
 blocks:
   - 006-write-v2-target-and-vertical-modernization-plan
@@ -39,4 +39,4 @@ Blocked by [Choose the V2 Operating Loop and Trust Boundary](002-choose-v2-opera
 
 ## Resolution
 
-Unresolved.
+Accepted [ADR-005](../../../docs/modernization/ADR-005-subsystem-ownership-and-parallel-v2-strategy.md): use a parallel v2 implementation with progressive migration, while retaining one Python-owned state and mutation authority. Core runtime, routing, operator UI, projections, session intelligence, evaluation, learning, and quality remain AIOS-owned; extracted contracts and tools are consumed through adapters; CTS and business memory remain contextual sidecars/incubators rather than repo splits. The ADR defines the retain/adapt/retire matrix, vertical migration waves, rollback posture, and deletion ledger. Ticket 006 is now unblocked to turn this decision into dependency-ordered vertical slices.
