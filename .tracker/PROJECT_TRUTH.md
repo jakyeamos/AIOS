@@ -4,7 +4,7 @@ projectName: AIOS
 summary: Active local-first agent operating system with honest evidence verdicts, evidence-gated verify-run completion, durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption, review-gated session-intelligence tools, and progressive colocated context routing across AIOS and linked repos.
 healthScore: 85
 statusLabel: warning
-nextStep: Establish the reproducible UI validation contract (Ticket 007), then resolve the satellite-subsystem strategy (Ticket 005) before writing the vertical implementation plan.
+nextStep: Resolve the satellite-subsystem strategy (Ticket 005), then synthesize the accepted v2 target and vertical implementation plan (Ticket 006) with ADR-004's validation gates.
 blockers: []
 lastUpdated: 2026-07-13
 tags: [infra, ai-os, hooks, automation]
@@ -33,7 +33,7 @@ agentExpectationsVersion: 1
 
 ## Current State
 
-AIOS now has a completed v2 modernization baseline, accepted local-first operating model, canonical-state contract, and task-centred UI contract: [`AUDIT.md`](../docs/modernization/AUDIT.md), [`ADR-001`](../docs/modernization/ADR-001-v2-operating-loop-and-trust-boundary.md), [`ADR-002`](../docs/modernization/ADR-002-canonical-state-and-migration-authority.md), and [`ADR-003`](../docs/modernization/ADR-003-task-centred-ia-and-accessible-design-system.md). V2 is a single-user, loopback-only local control plane with a Python-owned migration ledger and one logical mutation authority; orphaned data must be quarantined and restore-tested before migration implementation. ADR-003 makes Today → Start work → Current run → Verify → Gated review → Closeout the primary operator loop and defines WCAG 2.2 AA, evidence, responsive, keyboard, and console proof gates. The audit still records 557 persisted SQLite foreign-key violations, divergent schema/bootstrap ownership, unenforced UI mutation boundaries, and blocked UI lint/build verification. The current `dev` worktree was already dirty when this work started, so its shadow lane remains trace-only and no modernization application code has changed.
+AIOS now has a completed v2 modernization baseline, accepted local-first operating model, canonical-state contract, task-centred UI contract, and reproducible UI validation contract: [`AUDIT.md`](../docs/modernization/AUDIT.md), [`ADR-001`](../docs/modernization/ADR-001-v2-operating-loop-and-trust-boundary.md), [`ADR-002`](../docs/modernization/ADR-002-canonical-state-and-migration-authority.md), [`ADR-003`](../docs/modernization/ADR-003-task-centred-ia-and-accessible-design-system.md), and [`ADR-004`](../docs/modernization/ADR-004-reproducible-ui-validation-contract.md). V2 is a single-user, loopback-only local control plane with a Python-owned migration ledger and one logical mutation authority; orphaned data must be quarantined and restore-tested before migration implementation. ADR-003 makes Today → Start work → Current run → Verify → Gated review → Closeout the primary operator loop, while ADR-004 defines deterministic package, font, root, quality-gate, runtime, browser, network, and console proof. The audit still records 557 persisted SQLite foreign-key violations, divergent schema/bootstrap ownership, unenforced UI mutation boundaries, and blocked UI implementation gates. The current `dev` worktree was already dirty when this work started, so its shadow lane remains trace-only and no modernization application code has changed.
 
 _(4 older entries trimmed)_
 
@@ -70,6 +70,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-13: Accepted the reproducible AIOS UI validation contract (`878b03e`): explicit pnpm/Node and workspace posture, packaged dependencies, local/system fonts, independent quality gates, runtime smoke, browser matrix, and console/network failure policy.
 - 2026-07-13: Accepted the task-centred AIOS v2 UI contract (`6e7d002`): Today → Start work → Current run → Verify → Gated review → Closeout IA, route disposition, representative slice prototypes, accessible design tokens, and executable browser/keyboard/console proof gates.
 - 2026-07-13: Accepted the AIOS v2 canonical-state and migration contract (`04f02e3`): one Python-owned versioned ledger, shared connection policy, quarantine-first FK repair, backup/restore gates, and explicit privacy invariants.
 - 2026-07-10: Accepted the AIOS v2 local-first operating model (`7a217e1`): loopback-only local control plane, human approval for privileged effects, and no remote/split/shared product in v2.
@@ -84,25 +85,23 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-07-02: Integrated the repo closeout helper into daily-flow replay and UI operator surfaces: replay run steps now carry `metadata.repo_closeout`, CLI JSON exposes dirty files and diff stat through the trace, and the Command Center/run-detail trace renders repo path, branch, short HEAD, dirty-file count, and diff summary.
 - 2026-07-04: Added the `aios quality rollout` Quality Runner adapter, AIOS rollout artifact index, durable evidence pointer recording, operator-flow docs, and lazy CLI imports so unrelated eval/shadow contract drift no longer prevents quality commands from starting.
 - 2026-07-04: Replaced AIOS's direct `quality-evidence-contract` and `repo-quality-certifier` path dependencies with one local `quality-runner` dependency after Quality Runner absorbed those compatibility imports, CLI/MCP surfaces, and plugin metadata. Focused AIOS compatibility tests passed.
-- 2026-07-02: Exposed the existing Vulture dead-code check through root `pnpm dead-code` and `pnpm audit:dead-code` scripts so Quality Runner detects the `dead_code` capability; final QR run `qr-clean-audit-20260702T200935Z-AIOS-final-2` has no missing repo-owned capabilities while inherited structural findings remain in generated/shadow worktree paths.
-- 2026-07-02: Added repo-local Quality Runner scan exclusions for ignored operational worktrees plus root `pnpm smoke`; final QR run `qr-clean-audit-20260702T200935Z-AIOS-final-4` detects no missing capabilities but remains blocked because QR structural scanning still scans excluded ignored paths (`.aios/shadow-worktrees`, `.worktrees`, `.superpowers`, and `tmcp-benchmark/runs/worktrees`) unless whole structural rule groups are disabled.
 
 ## Open Problems
 
 1. The main store has 555 persisted foreign-key violations, divergent SQL snapshots, distributed runtime DDL, and no tracked restore drill.
 2. V2 now intentionally excludes remote control, but current UI mutation endpoints still lack the required loopback, local-capability, approval-enforcement, and single-mutation-owner implementation.
-3. UI lint/type checking and offline production build verification are blocked by a missing local rule module, external font fetches, and development-runtime errors.
+3. UI implementation remains blocked by the deterministic validation gates: the external anti-slop file dependency is stale/out-of-repo, fonts are network-sensitive, Turbopack root/tracing warnings remain, and the dev tRPC adapter import still fails.
 ## Next Concrete Steps
 
-1. Establish [a Reproducible UI Validation Contract](../.wayfinder/aios-modernization/tickets/007-establish-reproducible-ui-validation-contract.md) before accepting UI redesign work.
-2. Resolve [Classify Satellite Subsystems and Select the Modernization Strategy](../.wayfinder/aios-modernization/tickets/005-classify-satellite-subsystems-and-select-modernization-strategy.md) before writing the vertical implementation plan.
-3. Synthesize the accepted product, trust, state, UI, validation, and subsystem decisions in [the V2 target and vertical plan](../.wayfinder/aios-modernization/tickets/006-write-v2-target-and-vertical-modernization-plan.md).
+1. Resolve [Classify Satellite Subsystems and Select the Modernization Strategy](../.wayfinder/aios-modernization/tickets/005-classify-satellite-subsystems-and-select-modernization-strategy.md).
+2. Synthesize the accepted product, trust, state, UI, validation, and subsystem decisions in [the V2 target and vertical plan](../.wayfinder/aios-modernization/tickets/006-write-v2-target-and-vertical-modernization-plan.md).
+3. Implement ADR-004's dependency, font, root, runtime, and browser-gate preconditions before accepting UI redesign work.
 
 ## Risks / Blockers
 
 - Broad persistence changes are unsafe until the ADR-002 migration owner is implemented, the 557 current FK violations are quarantined or deterministically repaired, and backup/restore proof passes.
 - Remote deployment is intentionally out of scope for v2; current local UI mutation routes still need capability, approval, and egress enforcement before redesign work can use them as a trusted control surface.
-- UI change acceptance is currently unreliable because lint/type checking and production build verification are blocked; ADR-003 defines the target but does not authorize implementation until Ticket 007 resolves those gates.
+- UI change acceptance is currently unreliable because the anti-slop package, font path, Turbopack root/tracing, tRPC adapter, duplicate keys, and browser harness gates remain unresolved; ADR-004 defines the evidence contract but does not claim those repairs are complete.
 - The current dirty worktree prevents a clean modernization shadow comparison; implementation should begin only from an intentionally clean branch/worktree.
 
 ## Quality Ladder Notes
