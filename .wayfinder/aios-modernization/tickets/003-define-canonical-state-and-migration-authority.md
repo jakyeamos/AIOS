@@ -1,8 +1,8 @@
 ---
 title: Define Canonical State and Migration Authority
 type: research
-status: open
-claim: unclaimed
+status: closed
+claim: /root (2026-07-13)
 blocked_by: []
 blocks:
   - 005-classify-satellite-subsystems-and-select-modernization-strategy
@@ -38,8 +38,22 @@ rewrite safe?
 
 ## Dependencies
 
-Blocked by [Establish a Reproducible Baseline and Product Invariants](001-establish-reproducible-baseline-and-invariants.md) and [Choose the V2 Operating Loop and Trust Boundary](002-choose-v2-operating-loop-and-trust-boundary.md).
+Satisfied by [Establish a Reproducible Baseline and Product Invariants](001-establish-reproducible-baseline-and-invariants.md) and [Choose the V2 Operating Loop and Trust Boundary](002-choose-v2-operating-loop-and-trust-boundary.md).
 
 ## Resolution
 
-Unresolved.
+Accepted [ADR-002: Canonical State and Migration Authority](../../../docs/modernization/ADR-002-canonical-state-and-migration-authority.md).
+
+The main store remains local `AIOS_DB`, with one Python-owned, versioned,
+checksummed migration ledger and one logical mutation authority. The current
+SQL snapshots and runtime DDL are migration inputs, not competing authorities;
+the Next UI must become a client of the shared storage contract. Every
+connection uses the same path and baseline SQLite pragmas, while migrations
+run outside request handlers with a pre-migration backup.
+
+The live store is not migration-ready: its copied snapshot has 557 FK
+violations, `user_version=0`, and no main migration ledger. Orphan and ambiguous
+rows must be quarantined with original payloads before deterministic transforms;
+destructive cleanup requires explicit approval. The ADR records the source of
+truth matrix, recovery gates, privacy invariants, and disposable fixture/backup
+evidence without modifying live data.

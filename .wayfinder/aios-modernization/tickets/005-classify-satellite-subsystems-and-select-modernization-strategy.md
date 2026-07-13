@@ -3,8 +3,7 @@ title: Classify Satellite Subsystems and Select the Modernization Strategy
 type: research
 status: open
 claim: unclaimed
-blocked_by:
-  - 003-define-canonical-state-and-migration-authority
+blocked_by: []
 blocks:
   - 006-write-v2-target-and-vertical-modernization-plan
 ---
