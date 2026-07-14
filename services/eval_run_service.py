@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import uuid
+from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import Any
 
@@ -37,6 +38,12 @@ SCORE_FIELDS = (
     "user_trust",
 )
 
+PAIR_CONTAMINATION_STATUSES = frozenset({"not_checked", "passed", "failed"})
+PAIR_REVIEW_STATUSES = frozenset({"pending", "passed", "failed", "not_run"})
+PAIR_DECISIONS = frozenset({"promote", "revise", "defer"})
+PAIR_REQUIRED_PARITY_FIELDS = frozenset({"model", "effort", "tools", "budget"})
+PAIR_HASH_LENGTH = 64
+
 
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat()
@@ -62,6 +69,35 @@ def _loads_list(raw: str | None) -> list[Any]:
 
 def _allowed_message(label: str, allowed: frozenset[str]) -> str:
     return f"Invalid {label}. Use one of: {', '.join(sorted(allowed))}."
+
+
+def _validate_pair_status(label: str, value: str, allowed: frozenset[str]) -> None:
+    if value not in allowed:
+        raise ValueError(_allowed_message(label, allowed))
+
+
+def _validate_sha256(label: str, value: str) -> None:
+    if len(value) != PAIR_HASH_LENGTH or any(
+        character not in "0123456789abcdef" for character in value
+    ):
+        raise ValueError(f"{label} must be a lowercase SHA-256 hex digest.")
+
+
+def _json_object(value: Mapping[str, object] | None, *, label: str) -> str:
+    if value is None:
+        return "{}"
+    try:
+        return json.dumps(dict(value), sort_keys=True, separators=(",", ":"))
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{label} must be JSON-serializable.") from exc
+
+
+def _validate_pair_metadata(parity_metadata: Mapping[str, object]) -> None:
+    missing = sorted(PAIR_REQUIRED_PARITY_FIELDS - set(parity_metadata))
+    if missing:
+        raise ValueError(f"parity_metadata is missing required fields: {', '.join(missing)}")
+    if any(parity_metadata[field] is None for field in PAIR_REQUIRED_PARITY_FIELDS):
+        raise ValueError("parity_metadata required fields cannot be null.")
 
 
 def _validate_context_profile(context_profile: str) -> None:
@@ -176,6 +212,40 @@ def ensure_eval_schema(conn: sqlite3.Connection) -> None:
           required_source_type TEXT,
           PRIMARY KEY (gold_task_id, required_source_id)
         );
+        CREATE TABLE IF NOT EXISTS eval_pairs (
+          id TEXT PRIMARY KEY,
+          task_id TEXT NOT NULL REFERENCES eval_tasks(id),
+          control_run_id TEXT NOT NULL REFERENCES eval_runs(id),
+          treatment_run_id TEXT NOT NULL REFERENCES eval_runs(id),
+          protected_start_sha TEXT NOT NULL,
+          task_hash TEXT NOT NULL,
+          prompt_hash TEXT NOT NULL,
+          context_hash TEXT NOT NULL,
+          parity_metadata_json TEXT NOT NULL,
+          contamination_status TEXT NOT NULL DEFAULT 'not_checked',
+          contamination_evidence_json TEXT NOT NULL DEFAULT '{}',
+          control_score REAL,
+          treatment_score REAL,
+          delta REAL,
+          independent_review_status TEXT NOT NULL DEFAULT 'pending',
+          independent_review_ref TEXT,
+          decision TEXT,
+          limitations_json TEXT NOT NULL DEFAULT '[]',
+          status TEXT NOT NULL DEFAULT 'open',
+          created_at TEXT NOT NULL,
+          finalized_at TEXT
+        );
+        CREATE TABLE IF NOT EXISTS eval_pair_events (
+          id TEXT PRIMARY KEY,
+          pair_id TEXT NOT NULL REFERENCES eval_pairs(id),
+          event_type TEXT NOT NULL,
+          payload_json TEXT NOT NULL DEFAULT '{}',
+          created_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_eval_pairs_task_created
+          ON eval_pairs(task_id, created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_eval_pair_events_pair_created
+          ON eval_pair_events(pair_id, created_at ASC);
         """
     )
 
@@ -305,6 +375,290 @@ def record_eval_score(conn: sqlite3.Connection, *, run_id: str, **score_fields: 
         ),
     )
     return score_id
+
+
+def _eval_pair_run_context(
+    conn: sqlite3.Connection,
+    *,
+    task_id: str,
+    control_run_id: str,
+    treatment_run_id: str,
+    protected_start_sha: str,
+) -> None:
+    rows = conn.execute(
+        """
+        SELECT r.id, r.task_id, r.condition, t.start_sha
+        FROM eval_runs r
+        JOIN eval_tasks t ON t.id = r.task_id
+        WHERE r.id IN (?, ?)
+        """,
+        (control_run_id, treatment_run_id),
+    ).fetchall()
+    by_id = {str(row["id"]): row for row in rows}
+    if len(by_id) != 2:
+        raise ValueError("Both control_run_id and treatment_run_id must reference eval runs.")
+    control = by_id[control_run_id]
+    treatment = by_id[treatment_run_id]
+    if control_run_id == treatment_run_id:
+        raise ValueError("control_run_id and treatment_run_id must be distinct.")
+    if str(control["task_id"]) != task_id or str(treatment["task_id"]) != task_id:
+        raise ValueError("Both eval runs must belong to task_id.")
+    if str(control["condition"]) == str(treatment["condition"]):
+        raise ValueError("Control and treatment runs must use distinct conditions.")
+    if (
+        str(control["start_sha"]) != protected_start_sha
+        or str(treatment["start_sha"]) != protected_start_sha
+    ):
+        raise ValueError("Both eval runs must use protected_start_sha.")
+
+
+def create_eval_pair(
+    conn: sqlite3.Connection,
+    *,
+    task_id: str,
+    control_run_id: str,
+    treatment_run_id: str,
+    protected_start_sha: str,
+    task_hash: str,
+    prompt_hash: str,
+    context_hash: str,
+    parity_metadata: Mapping[str, object],
+    contamination_status: str = "not_checked",
+    contamination_evidence: Mapping[str, object] | None = None,
+    independent_review_status: str = "pending",
+    independent_review_ref: str | None = None,
+    limitations: list[str] | None = None,
+) -> str:
+    ensure_eval_schema(conn)
+    _validate_sha256("task_hash", task_hash)
+    _validate_sha256("prompt_hash", prompt_hash)
+    _validate_sha256("context_hash", context_hash)
+    _validate_pair_status(
+        "contamination_status", contamination_status, PAIR_CONTAMINATION_STATUSES
+    )
+    _validate_pair_status(
+        "independent_review_status", independent_review_status, PAIR_REVIEW_STATUSES
+    )
+    _validate_pair_metadata(parity_metadata)
+    _eval_pair_run_context(
+        conn,
+        task_id=task_id,
+        control_run_id=control_run_id,
+        treatment_run_id=treatment_run_id,
+        protected_start_sha=protected_start_sha,
+    )
+    existing = conn.execute(
+        """
+        SELECT id FROM eval_pairs
+        WHERE control_run_id = ? AND treatment_run_id = ?
+        LIMIT 1
+        """,
+        (control_run_id, treatment_run_id),
+    ).fetchone()
+    if existing is not None:
+        raise ValueError(f"Eval run pair already exists: {existing['id']}")
+    pair_id = _new_id("eval-pair")
+    conn.execute(
+        """
+        INSERT INTO eval_pairs (
+          id, task_id, control_run_id, treatment_run_id, protected_start_sha,
+          task_hash, prompt_hash, context_hash, parity_metadata_json,
+          contamination_status,
+          contamination_evidence_json, independent_review_status,
+          independent_review_ref, limitations_json, created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            pair_id,
+            task_id,
+            control_run_id,
+            treatment_run_id,
+            protected_start_sha,
+            task_hash,
+            prompt_hash,
+            context_hash,
+            _json_object(parity_metadata, label="parity_metadata"),
+            contamination_status,
+            _json_object(contamination_evidence, label="contamination_evidence"),
+            independent_review_status,
+            independent_review_ref,
+            json.dumps(list(limitations or []), sort_keys=True),
+            _now_iso(),
+        ),
+    )
+    _record_eval_pair_event(
+        conn,
+        pair_id=pair_id,
+        event_type="created",
+        payload={
+            "control_run_id": control_run_id,
+            "treatment_run_id": treatment_run_id,
+            "protected_start_sha": protected_start_sha,
+        },
+    )
+    return pair_id
+
+
+def _record_eval_pair_event(
+    conn: sqlite3.Connection,
+    *,
+    pair_id: str,
+    event_type: str,
+    payload: Mapping[str, object],
+) -> None:
+    conn.execute(
+        """
+        INSERT INTO eval_pair_events (id, pair_id, event_type, payload_json, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            _new_id("eval-pair-event"),
+            pair_id,
+            event_type,
+            _json_object(payload, label="event payload"),
+            _now_iso(),
+        ),
+    )
+
+
+def _latest_eval_score(conn: sqlite3.Connection, run_id: str) -> float | None:
+    row = conn.execute(
+        "SELECT overall_score FROM eval_scores WHERE run_id = ? ORDER BY created_at DESC LIMIT 1",
+        (run_id,),
+    ).fetchone()
+    return float(row["overall_score"]) if row is not None else None
+
+
+def finalize_eval_pair(
+    conn: sqlite3.Connection,
+    *,
+    pair_id: str,
+    decision: str,
+    contamination_status: str,
+    contamination_evidence: Mapping[str, object] | None = None,
+    independent_review_status: str,
+    independent_review_ref: str | None = None,
+    limitations: list[str] | None = None,
+) -> dict[str, Any]:
+    ensure_eval_schema(conn)
+    _validate_pair_status("decision", decision, PAIR_DECISIONS)
+    _validate_pair_status(
+        "contamination_status", contamination_status, PAIR_CONTAMINATION_STATUSES
+    )
+    _validate_pair_status(
+        "independent_review_status", independent_review_status, PAIR_REVIEW_STATUSES
+    )
+    row = conn.execute("SELECT * FROM eval_pairs WHERE id = ? LIMIT 1", (pair_id,)).fetchone()
+    if row is None:
+        raise ValueError(f"Eval pair not found: {pair_id}")
+    if str(row["status"]) != "open":
+        raise ValueError(f"Eval pair is already finalized: {pair_id}")
+    control_score = _latest_eval_score(conn, str(row["control_run_id"]))
+    treatment_score = _latest_eval_score(conn, str(row["treatment_run_id"]))
+    if decision == "promote":
+        if control_score is None or treatment_score is None:
+            raise ValueError("Promotion requires scores for both control and treatment runs.")
+        if contamination_status != "passed":
+            raise ValueError("Promotion requires contamination_status=passed.")
+        if independent_review_status != "passed":
+            raise ValueError("Promotion requires independent_review_status=passed.")
+    delta = (
+        round(treatment_score - control_score, 4)
+        if control_score is not None and treatment_score is not None
+        else None
+    )
+    pair_status = "finalized" if decision == "promote" else "insufficient_evidence"
+    finalized_at = _now_iso()
+    conn.execute(
+        """
+        UPDATE eval_pairs
+        SET contamination_status = ?, contamination_evidence_json = ?,
+            control_score = ?, treatment_score = ?, delta = ?,
+            independent_review_status = ?, independent_review_ref = ?,
+            decision = ?, limitations_json = ?, status = ?, finalized_at = ?
+        WHERE id = ?
+        """,
+        (
+            contamination_status,
+            _json_object(contamination_evidence, label="contamination_evidence"),
+            control_score,
+            treatment_score,
+            delta,
+            independent_review_status,
+            independent_review_ref,
+            decision,
+            json.dumps(list(limitations or []), sort_keys=True),
+            pair_status,
+            finalized_at,
+            pair_id,
+        ),
+    )
+    _record_eval_pair_event(
+        conn,
+        pair_id=pair_id,
+        event_type="finalized",
+        payload={
+            "decision": decision,
+            "contamination_status": contamination_status,
+            "independent_review_status": independent_review_status,
+            "control_score": control_score,
+            "treatment_score": treatment_score,
+            "delta": delta,
+        },
+    )
+    return get_eval_pair(conn, pair_id)
+
+
+def _eval_pair_row_to_dict(row: sqlite3.Row) -> dict[str, Any]:
+    item = dict(row)
+    item["parity_metadata"] = json.loads(item.pop("parity_metadata_json") or "{}")
+    item["contamination_evidence"] = json.loads(
+        item.pop("contamination_evidence_json") or "{}"
+    )
+    item["limitations"] = _loads_list(item.pop("limitations_json", None))
+    return item
+
+
+def get_eval_pair(conn: sqlite3.Connection, pair_id: str) -> dict[str, Any]:
+    ensure_eval_schema(conn)
+    row = conn.execute("SELECT * FROM eval_pairs WHERE id = ? LIMIT 1", (pair_id,)).fetchone()
+    if row is None:
+        raise ValueError(f"Eval pair not found: {pair_id}")
+    pair = _eval_pair_row_to_dict(row)
+    pair["events"] = []
+    for event in conn.execute(
+        "SELECT * FROM eval_pair_events WHERE pair_id = ? ORDER BY created_at ASC",
+        (pair_id,),
+    ).fetchall():
+        item = dict(event)
+        item["payload"] = json.loads(item.pop("payload_json") or "{}")
+        pair["events"].append(item)
+    return pair
+
+
+def list_eval_pairs(
+    conn: sqlite3.Connection,
+    *,
+    task_id: str | None = None,
+    status: str | None = None,
+    limit: int = 50,
+) -> list[dict[str, Any]]:
+    ensure_eval_schema(conn)
+    clauses: list[str] = []
+    params: list[object] = []
+    if task_id:
+        clauses.append("task_id = ?")
+        params.append(task_id)
+    if status:
+        clauses.append("status = ?")
+        params.append(status)
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    rows = conn.execute(
+        f"SELECT * FROM eval_pairs {where} ORDER BY created_at DESC LIMIT ?",
+        (*params, max(1, int(limit))),
+    ).fetchall()
+    return [_eval_pair_row_to_dict(row) for row in rows]
 
 
 def record_eval_failure(

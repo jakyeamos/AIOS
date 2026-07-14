@@ -17,7 +17,11 @@ sys.path.insert(0, str(ROOT))
 import services.aios_cli as aios_cli  # noqa: E402
 from services import standards_health, success_criteria  # noqa: E402
 from services.aios_cli import EXIT_OK, run_cli  # noqa: E402
-from services.eval_run_service import create_eval_task  # noqa: E402
+from services.eval_run_service import (  # noqa: E402
+    create_eval_run,
+    create_eval_task,
+    record_eval_score,
+)
 from services.rtk_integration import ensure_rtk_schema  # noqa: E402
 
 
@@ -3676,6 +3680,108 @@ def test_eval_run_cli_rejects_missing_task_json(tmp_path: Path, capsys) -> None:
     assert output["ok"] is False
     assert output["error"]["code"] == "eval-record-invalid"
     assert "Eval task not found" in output["error"]["message"]
+
+
+def test_eval_pair_cli_create_finalize_and_list_json(tmp_path: Path, capsys) -> None:
+    db_path = tmp_path / "aios.db"
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    _seed_db(db_path)
+    conn = sqlite3.connect(db_path)
+    start_sha = "a" * 40
+    task_id = create_eval_task(
+        conn,
+        repo_id="p1",
+        source="controlled_benchmark",
+        start_sha=start_sha,
+        context_profile="jakye_repo_only",
+        task_type="feature",
+        prompt_summary="Persist paired eval evidence.",
+        acceptance_criteria=["pair runs"],
+        success_criteria_files=["tests/test_aios_cli.py"],
+    )
+    control_run_id = create_eval_run(
+        conn,
+        task_id=task_id,
+        condition="baseline_repo_only",
+        mode="controlled",
+        harness="pytest",
+        model="gpt-5.6",
+        context_profile="jakye_repo_only",
+        final_status="success",
+    )
+    treatment_run_id = create_eval_run(
+        conn,
+        task_id=task_id,
+        condition="aios_workflow_governed",
+        mode="controlled",
+        harness="pytest",
+        model="gpt-5.6",
+        context_profile="jakye_repo_only",
+        final_status="success",
+    )
+    record_eval_score(conn, run_id=control_run_id, overall_score=0.5)
+    record_eval_score(conn, run_id=treatment_run_id, overall_score=0.75)
+    conn.commit()
+    conn.close()
+
+    common = ["--json", "--db", str(db_path), "--logs-dir", str(logs_dir)]
+    create_exit = run_cli(
+        [
+            *common,
+            "eval",
+            "pair-create",
+            "--task-id",
+            task_id,
+            "--control-run-id",
+            control_run_id,
+            "--treatment-run-id",
+            treatment_run_id,
+            "--protected-start-sha",
+            start_sha,
+            "--task-hash",
+            "b" * 64,
+            "--prompt-hash",
+            "c" * 64,
+            "--context-hash",
+            "d" * 64,
+            "--parity-metadata-json",
+            '{"model":"gpt-5.6","effort":"high","tools":["terminal"],"budget":{"tokens":20000}}',
+        ]
+    )
+    assert create_exit == EXIT_OK
+    create_output = json.loads(capsys.readouterr().out)
+    pair_id = create_output["data"]["pair_id"]
+    assert create_output["data"]["pair"]["status"] == "open"
+
+    finalize_exit = run_cli(
+        [
+            *common,
+            "eval",
+            "pair-finalize",
+            "--pair-id",
+            pair_id,
+            "--decision",
+            "defer",
+            "--contamination-status",
+            "failed",
+            "--independent-review-status",
+            "not_run",
+            "--limitation",
+            "fixture-only",
+        ]
+    )
+    assert finalize_exit == EXIT_OK
+    finalize_output = json.loads(capsys.readouterr().out)
+    assert finalize_output["data"]["pair"]["delta"] == 0.25
+
+    list_exit = run_cli(
+        [*common, "eval", "pair-list", "--status", "insufficient_evidence"]
+    )
+    assert list_exit == EXIT_OK
+    list_output = json.loads(capsys.readouterr().out)
+    assert list_output["data"]["count"] == 1
+    assert list_output["data"]["pairs"][0]["decision"] == "defer"
 
 
 def test_humanize_run_no_record_outputs_rewrite(capsys) -> None:

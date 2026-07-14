@@ -7,7 +7,7 @@ resolved: 2026-07-14
 blocked_by:
   - 011-gated-review-and-closeout
 blocks:
-  - 013-migrate-contextual-satellites
+  - 013-close-deferred-live-paired-evidence-gap
 ---
 
 # Measure Paired AIOS Effectiveness

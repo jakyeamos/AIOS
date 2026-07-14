@@ -3334,6 +3334,64 @@ def cmd_eval_list_runs(conn: sqlite3.Connection, args: argparse.Namespace) -> di
     return {"runs": runs, "count": len(runs), "limit": int(args.limit)}
 
 
+def cmd_eval_pair_create(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.eval_run_service import create_eval_pair, get_eval_pair
+
+    try:
+        pair_id = create_eval_pair(
+            conn,
+            task_id=str(args.task_id),
+            control_run_id=str(args.control_run_id),
+            treatment_run_id=str(args.treatment_run_id),
+            protected_start_sha=str(args.protected_start_sha),
+            task_hash=str(args.task_hash),
+            prompt_hash=str(args.prompt_hash),
+            context_hash=str(args.context_hash),
+            parity_metadata=_parse_json_object(args.parity_metadata_json),
+            contamination_status=str(args.contamination_status),
+            contamination_evidence=_parse_json_object(args.contamination_evidence_json),
+            independent_review_status=str(args.independent_review_status),
+            independent_review_ref=args.independent_review_ref,
+            limitations=list(args.limitation),
+        )
+    except ValueError as exc:
+        raise CLIError("eval-pair-create-invalid", str(exc), EXIT_USAGE) from exc
+    conn.commit()
+    return {"pair": get_eval_pair(conn, pair_id), "pair_id": pair_id}
+
+
+def cmd_eval_pair_finalize(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.eval_run_service import finalize_eval_pair
+
+    try:
+        pair = finalize_eval_pair(
+            conn,
+            pair_id=str(args.pair_id),
+            decision=str(args.decision),
+            contamination_status=str(args.contamination_status),
+            contamination_evidence=_parse_json_object(args.contamination_evidence_json),
+            independent_review_status=str(args.independent_review_status),
+            independent_review_ref=args.independent_review_ref,
+            limitations=list(args.limitation),
+        )
+    except ValueError as exc:
+        raise CLIError("eval-pair-finalize-invalid", str(exc), EXIT_USAGE) from exc
+    conn.commit()
+    return {"pair": pair, "pair_id": str(args.pair_id)}
+
+
+def cmd_eval_pair_list(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.eval_run_service import list_eval_pairs
+
+    pairs = list_eval_pairs(
+        conn,
+        task_id=args.task_id,
+        status=args.status,
+        limit=int(args.limit),
+    )
+    return {"pairs": pairs, "count": len(pairs), "limit": int(args.limit)}
+
+
 def cmd_eval_summary(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
     from services.eval_run_service import get_eval_summary
 
@@ -4047,6 +4105,12 @@ def cmd_eval(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, An
         return cmd_eval_record_run(conn, args)
     if args.eval_command == "list-runs":
         return cmd_eval_list_runs(conn, args)
+    if args.eval_command == "pair-create":
+        return cmd_eval_pair_create(conn, args)
+    if args.eval_command == "pair-finalize":
+        return cmd_eval_pair_finalize(conn, args)
+    if args.eval_command == "pair-list":
+        return cmd_eval_pair_list(conn, args)
     if args.eval_command == "summary":
         return cmd_eval_summary(conn, args)
     if args.eval_command == "second-brain-lift":
@@ -5940,6 +6004,16 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "eval-list-runs":
         print(f"runs={data['count']} limit={data['limit']}")
         return
+    if command == "eval-pair-create":
+        print(f"pair={data['pair_id']}")
+        return
+    if command == "eval-pair-finalize":
+        pair = data["pair"]
+        print(f"pair={data['pair_id']} decision={pair['decision']} status={pair['status']}")
+        return
+    if command == "eval-pair-list":
+        print(f"pairs={data['count']} limit={data['limit']}")
+        return
     if command == "eval-summary":
         print(f"runs={data['run_count']} average_score={data['average_score']}")
         return
@@ -7083,6 +7157,56 @@ def create_parser() -> argparse.ArgumentParser:
     eval_list_runs.add_argument("--context-profile", default=None)
     eval_list_runs.add_argument("--limit", type=int, default=50)
     eval_list_runs.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    eval_pair_create = eval_subparsers.add_parser(
+        "pair-create", help="Create a durable control/treatment eval pair"
+    )
+    eval_pair_create.add_argument("--task-id", required=True)
+    eval_pair_create.add_argument("--control-run-id", required=True)
+    eval_pair_create.add_argument("--treatment-run-id", required=True)
+    eval_pair_create.add_argument("--protected-start-sha", required=True)
+    eval_pair_create.add_argument("--task-hash", required=True)
+    eval_pair_create.add_argument("--prompt-hash", required=True)
+    eval_pair_create.add_argument("--context-hash", required=True)
+    eval_pair_create.add_argument("--parity-metadata-json", required=True)
+    eval_pair_create.add_argument(
+        "--contamination-status", choices=["not_checked", "passed", "failed"], default="not_checked"
+    )
+    eval_pair_create.add_argument("--contamination-evidence-json", default=None)
+    eval_pair_create.add_argument(
+        "--independent-review-status",
+        choices=["pending", "passed", "failed", "not_run"],
+        default="pending",
+    )
+    eval_pair_create.add_argument("--independent-review-ref", default=None)
+    eval_pair_create.add_argument("--limitation", action="append", default=[])
+    eval_pair_create.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    eval_pair_finalize = eval_subparsers.add_parser(
+        "pair-finalize", help="Finalize a durable control/treatment eval pair"
+    )
+    eval_pair_finalize.add_argument("--pair-id", required=True)
+    eval_pair_finalize.add_argument("--decision", choices=["promote", "revise", "defer"], required=True)
+    eval_pair_finalize.add_argument(
+        "--contamination-status", choices=["not_checked", "passed", "failed"], required=True
+    )
+    eval_pair_finalize.add_argument("--contamination-evidence-json", default=None)
+    eval_pair_finalize.add_argument(
+        "--independent-review-status",
+        choices=["pending", "passed", "failed", "not_run"],
+        required=True,
+    )
+    eval_pair_finalize.add_argument("--independent-review-ref", default=None)
+    eval_pair_finalize.add_argument("--limitation", action="append", default=[])
+    eval_pair_finalize.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
+    eval_pair_list = eval_subparsers.add_parser("pair-list", help="List durable eval pairs")
+    eval_pair_list.add_argument("--task-id", default=None)
+    eval_pair_list.add_argument(
+        "--status", choices=["open", "insufficient_evidence", "finalized"], default=None
+    )
+    eval_pair_list.add_argument("--limit", type=int, default=50)
+    eval_pair_list.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
     eval_summary = eval_subparsers.add_parser("summary", help="Summarize eval runs")
     eval_summary.add_argument("--project", default=None)

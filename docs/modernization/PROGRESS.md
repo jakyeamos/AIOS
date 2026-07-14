@@ -1,6 +1,6 @@
 # AIOS V2 Modernization Progress
 
-**Status:** M5A paired-effectiveness benchmark complete with promotion deferred; M6 remains blocked
+**Status:** M5A paired-evidence contract complete; live effectiveness remains deferred and M6 blocked
 **Updated:** 2026-07-14
 **Plan:** [EXEC_PLAN.md](EXEC_PLAN.md)
 
@@ -175,6 +175,13 @@ ids, contamination proof, and blinded independent review. The complete
 decision packet is [M5A_EFFECTIVENESS_REPORT.md](../evals/M5A_EFFECTIVENESS_REPORT.md).
 Satellite promotion, cutover, and M6 remain blocked until clean real paired
 runs close those evidence gaps.
+
+The follow-up contract now persists `eval_pairs` and append-only pair events in
+the canonical schema. `eval pair-create`, `eval pair-finalize`, and `eval
+pair-list` enforce shared task/start-SHA identity, task/prompt/context hashes,
+model/effort/tools/budget parity, contamination state, independent review, and
+fail-closed promotion. The focused evaluation surface passed 139 tests. This
+is evidence infrastructure, not a live effectiveness result.
 
 ## Completed
 

@@ -57,6 +57,13 @@ the baseline is dirty and the fixture path lacks live model/tool/budget
 metadata, persisted paired eval ids, contamination proof, and blinded
 independent review. M6 remains blocked until clean real paired runs are
 captured and reviewed.
+The follow-up `eval_pairs` contract now durably links control/treatment runs,
+protected start SHA, task/prompt/context hashes, parity metadata, scores,
+contamination and independent-review state, decisions, and append-only pair
+events. Its CLI create/finalize/list surface fails closed on promotion without
+complete evidence; this is infrastructure only and does not change the M5A
+defer decision. M6 remains blocked until a clean live pair is independently
+reviewed.
 
 ## Implemented On 2026-07-10
 

@@ -12,10 +12,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from services.eval_run_service import (
+    create_eval_pair,
     create_eval_run,
     create_eval_task,
+    finalize_eval_pair,
+    get_eval_pair,
     get_eval_run_detail,
     get_eval_summary,
+    list_eval_pairs,
     list_eval_runs,
     record_eval_failure,
     record_eval_score,
@@ -29,12 +33,14 @@ def _connect() -> sqlite3.Connection:
     return conn
 
 
-def _create_task(conn: sqlite3.Connection, *, repo_id: str = "p1") -> str:
+def _create_task(
+    conn: sqlite3.Connection, *, repo_id: str = "p1", start_sha: str = "abc123"
+) -> str:
     return create_eval_task(
         conn,
         repo_id=repo_id,
         source="controlled_benchmark",
-        start_sha="abc123",
+        start_sha=start_sha,
         context_profile="jakye_repo_only",
         task_type="feature",
         prompt_summary="Implement eval recording.",
@@ -69,6 +75,21 @@ def _create_run(
         tests_run=["uv run pytest -q tests/test_eval_run_service.py"],
         final_status=final_status,
     )
+
+
+PAIR_SHA = "a" * 40
+TASK_HASH = "b" * 64
+PROMPT_HASH = "c" * 64
+CONTEXT_HASH = "d" * 64
+
+
+def _pair_metadata() -> dict[str, object]:
+    return {
+        "model": "gpt-5.6",
+        "effort": "high",
+        "tools": ["terminal"],
+        "budget": {"tokens": 20_000, "seconds": 900},
+    }
 
 
 def test_create_eval_task_round_trip() -> None:
@@ -280,6 +301,134 @@ def test_final_status_validation_raises_value_error() -> None:
 
     with pytest.raises(ValueError, match="Invalid final_status"):
         _create_run(conn, task_id=task_id, final_status="done")
+
+
+def test_eval_pair_round_trip_records_scores_and_defer_decision() -> None:
+    conn = _connect()
+    task_id = _create_task(conn, start_sha=PAIR_SHA)
+    control_run_id = _create_run(conn, task_id=task_id, condition="baseline_repo_only")
+    treatment_run_id = _create_run(conn, task_id=task_id, condition="aios_workflow_governed")
+    record_eval_score(conn, run_id=control_run_id, overall_score=0.4)
+    record_eval_score(conn, run_id=treatment_run_id, overall_score=0.9)
+
+    pair_id = create_eval_pair(
+        conn,
+        task_id=task_id,
+        control_run_id=control_run_id,
+        treatment_run_id=treatment_run_id,
+        protected_start_sha=PAIR_SHA,
+        task_hash=TASK_HASH,
+        prompt_hash=PROMPT_HASH,
+        context_hash=CONTEXT_HASH,
+        parity_metadata=_pair_metadata(),
+    )
+    finalized = finalize_eval_pair(
+        conn,
+        pair_id=pair_id,
+        decision="defer",
+        contamination_status="failed",
+        contamination_evidence={"reason": "dirty baseline"},
+        independent_review_status="not_run",
+        limitations=["fixture-only"],
+    )
+
+    assert finalized["status"] == "insufficient_evidence"
+    assert finalized["control_score"] == 0.4
+    assert finalized["treatment_score"] == 0.9
+    assert finalized["delta"] == 0.5
+    assert finalized["parity_metadata"] == _pair_metadata()
+    assert finalized["contamination_evidence"] == {"reason": "dirty baseline"}
+    assert finalized["limitations"] == ["fixture-only"]
+    assert [event["event_type"] for event in finalized["events"]] == ["created", "finalized"]
+    assert get_eval_pair(conn, pair_id)["decision"] == "defer"
+    assert (
+        list_eval_pairs(conn, task_id=task_id, status="insufficient_evidence")[0]["id"]
+        == pair_id
+    )
+
+
+def test_eval_pair_rejects_mismatched_runs_and_incomplete_metadata() -> None:
+    conn = _connect()
+    task_id = _create_task(conn, start_sha=PAIR_SHA)
+    other_task_id = _create_task(conn, repo_id="p2", start_sha=PAIR_SHA)
+    control_run_id = _create_run(conn, task_id=task_id, condition="baseline_repo_only")
+    treatment_run_id = _create_run(conn, task_id=other_task_id, condition="aios_workflow_governed")
+
+    with pytest.raises(ValueError, match="Both eval runs must belong to task_id"):
+        create_eval_pair(
+            conn,
+            task_id=task_id,
+            control_run_id=control_run_id,
+            treatment_run_id=treatment_run_id,
+            protected_start_sha=PAIR_SHA,
+            task_hash=TASK_HASH,
+            prompt_hash=PROMPT_HASH,
+            context_hash=CONTEXT_HASH,
+            parity_metadata=_pair_metadata(),
+        )
+
+    treatment_run_id = _create_run(conn, task_id=task_id, condition="aios_workflow_governed")
+    with pytest.raises(ValueError, match="missing required fields"):
+        create_eval_pair(
+            conn,
+            task_id=task_id,
+            control_run_id=control_run_id,
+            treatment_run_id=treatment_run_id,
+            protected_start_sha=PAIR_SHA,
+            task_hash=TASK_HASH,
+            prompt_hash=PROMPT_HASH,
+            context_hash=CONTEXT_HASH,
+            parity_metadata={"model": "gpt-5.6"},
+        )
+
+
+def test_eval_pair_promotion_fails_closed_until_scores_contamination_and_review_pass() -> None:
+    conn = _connect()
+    task_id = _create_task(conn, start_sha=PAIR_SHA)
+    control_run_id = _create_run(conn, task_id=task_id, condition="baseline_repo_only")
+    treatment_run_id = _create_run(conn, task_id=task_id, condition="aios_workflow_governed")
+    pair_id = create_eval_pair(
+        conn,
+        task_id=task_id,
+        control_run_id=control_run_id,
+        treatment_run_id=treatment_run_id,
+        protected_start_sha=PAIR_SHA,
+        task_hash=TASK_HASH,
+        prompt_hash=PROMPT_HASH,
+        context_hash=CONTEXT_HASH,
+        parity_metadata=_pair_metadata(),
+    )
+
+    with pytest.raises(ValueError, match="requires scores"):
+        finalize_eval_pair(
+            conn,
+            pair_id=pair_id,
+            decision="promote",
+            contamination_status="passed",
+            independent_review_status="passed",
+        )
+
+    record_eval_score(conn, run_id=control_run_id, overall_score=0.6)
+    record_eval_score(conn, run_id=treatment_run_id, overall_score=0.8)
+    with pytest.raises(ValueError, match="independent_review_status=passed"):
+        finalize_eval_pair(
+            conn,
+            pair_id=pair_id,
+            decision="promote",
+            contamination_status="passed",
+            independent_review_status="pending",
+        )
+
+    finalized = finalize_eval_pair(
+        conn,
+        pair_id=pair_id,
+        decision="promote",
+        contamination_status="passed",
+        independent_review_status="passed",
+        independent_review_ref="review-1",
+    )
+    assert finalized["decision"] == "promote"
+    assert finalized["delta"] == 0.2
 
 
 def test_service_initializes_eval_tables_without_other_phase_11_tables() -> None:

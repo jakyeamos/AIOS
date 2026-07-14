@@ -1233,6 +1233,40 @@ CREATE TABLE IF NOT EXISTS eval_gold_set_context (
   required_source_type TEXT,
   PRIMARY KEY (gold_task_id, required_source_id)
 );
+CREATE TABLE IF NOT EXISTS eval_pairs (
+  id TEXT PRIMARY KEY,
+  task_id TEXT NOT NULL REFERENCES eval_tasks(id),
+  control_run_id TEXT NOT NULL REFERENCES eval_runs(id),
+  treatment_run_id TEXT NOT NULL REFERENCES eval_runs(id),
+  protected_start_sha TEXT NOT NULL,
+  task_hash TEXT NOT NULL,
+  prompt_hash TEXT NOT NULL,
+  context_hash TEXT NOT NULL,
+  parity_metadata_json TEXT NOT NULL,
+  contamination_status TEXT NOT NULL DEFAULT 'not_checked',
+  contamination_evidence_json TEXT NOT NULL DEFAULT '{}',
+  control_score REAL,
+  treatment_score REAL,
+  delta REAL,
+  independent_review_status TEXT NOT NULL DEFAULT 'pending',
+  independent_review_ref TEXT,
+  decision TEXT,
+  limitations_json TEXT NOT NULL DEFAULT '[]',
+  status TEXT NOT NULL DEFAULT 'open',
+  created_at TEXT NOT NULL,
+  finalized_at TEXT
+);
+CREATE TABLE IF NOT EXISTS eval_pair_events (
+  id TEXT PRIMARY KEY,
+  pair_id TEXT NOT NULL REFERENCES eval_pairs(id),
+  event_type TEXT NOT NULL,
+  payload_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_eval_pairs_task_created
+  ON eval_pairs(task_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_eval_pair_events_pair_created
+  ON eval_pair_events(pair_id, created_at ASC);
 CREATE TABLE IF NOT EXISTS shadow_branch_runs (
   id TEXT PRIMARY KEY,
   task_id TEXT REFERENCES eval_tasks(id),
