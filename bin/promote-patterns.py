@@ -24,13 +24,14 @@ import argparse
 import json
 import os
 import re
-import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 
 from aios_paths import get_vault_subpath
 
-DB = os.path.expanduser("~/AIOS/data/aios.db")
+from services.storage import connect as connect_storage
+
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))).expanduser()
 # Stubs land in staging, not directly in vault.
 # Human must author the body, then manually promote to the resolved vault wiki.
 WIKI_DIR = os.path.expanduser("~/AIOS/staging/knowledge-drafts")
@@ -165,7 +166,7 @@ def promote(dry_run: bool = False) -> None:
     Does NOT auto-promote to rule — that requires human_approved=1 via approve-pattern.py.
     """
     os.makedirs(WIKI_DIR, exist_ok=True)
-    conn = sqlite3.connect(DB)
+    conn = connect_storage(DB)
 
     # Candidates: observations that haven't been noise-filtered yet
     cur = conn.execute(

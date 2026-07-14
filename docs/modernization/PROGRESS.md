@@ -44,6 +44,8 @@ Pattern extraction now uses the same shared write boundary while preserving its
 idempotent workflow extraction and rollback-on-`--dry-run` behavior.
 Pattern scoring now uses the same shared write boundary while preserving its
 promotion/demotion rules and rollback-on-`--dry-run` behavior.
+Pattern promotion now uses the same shared write boundary while preserving
+noise/threshold gates and dry-run staging behavior.
 
 ## Completed
 
@@ -119,6 +121,8 @@ promotion/demotion rules and rollback-on-`--dry-run` behavior.
   dry-run rollback smoke passed.
 - Routed `score-patterns.py` through shared storage and made its canonical
   database path honor `AIOS_DB`; a disposable dry-run scoring smoke passed.
+- Routed `promote-patterns.py` through shared storage and made its canonical
+  database path honor `AIOS_DB`; a disposable dry-run staging smoke passed.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -142,6 +146,10 @@ promotion/demotion rules and rollback-on-`--dry-run` behavior.
 - `uv run basedpyright bin/score-patterns.py` — passed (0 errors).
 - Disposable `score-patterns.py --dry-run` integration — passed (one pattern
   scored without persisted score/state writes).
+- `uv run ruff check bin/promote-patterns.py` — passed.
+- `uv run basedpyright bin/promote-patterns.py` — passed (0 errors).
+- Disposable `promote-patterns.py --dry-run` integration — passed (candidate
+  stub plan generated with no pattern or staging writes).
 - `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
@@ -256,7 +264,7 @@ live migration work.
   request-time DDL only after deterministic UI and migration gates are
   accepted; source-backed Apple ingestion writes, the doctor probe, and the
   daily pipeline pending-rule query, pattern schema migration, pattern
-  extraction, and pattern scoring are now covered too.
+  extraction, pattern scoring, and pattern promotion are now covered too.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.
