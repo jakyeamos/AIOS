@@ -24,14 +24,16 @@ Usage:
 """
 
 import argparse
+import os
 import re
-import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 
 from aios_paths import get_vault_subpath
 
-DB = Path.home() / "AIOS/data/aios.db"
+from services.storage import connect as connect_storage
+
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))).expanduser()
 MENTAL_MAP = get_vault_subpath("04 Personal", "Mental-Map")
 MOC_PATH = MENTAL_MAP / "_index.md"
 
@@ -98,8 +100,7 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    conn = sqlite3.connect(DB)
-    conn.row_factory = sqlite3.Row
+    conn = connect_storage(DB)
 
     patterns = conn.execute(
         """

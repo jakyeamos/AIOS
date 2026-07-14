@@ -62,6 +62,8 @@ preserving frontmatter/project mapping, processed-file idempotency, and dry-run
 behavior.
 Personal-pattern extraction now uses the same shared write boundary while
 preserving multi-session signal gates and dry-run behavior.
+Personal-pattern promotion now uses the same shared write boundary while
+preserving human-approval gating and dry-run vault behavior.
 
 ## Completed
 
@@ -157,6 +159,9 @@ preserving multi-session signal gates and dry-run behavior.
 - Routed `extract-personal-patterns.py` through shared storage and made its
   canonical database path honor `AIOS_DB`; a disposable multi-session dry-run
   proof passed.
+- Routed `promote-personal-patterns.py` through shared storage and made its
+  canonical database path honor `AIOS_DB`; a disposable dry-run vault proof
+  passed.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -214,6 +219,10 @@ preserving multi-session signal gates and dry-run behavior.
 - `uv run basedpyright bin/extract-personal-patterns.py` — passed (0 errors).
 - Disposable `extract-personal-patterns.py --dry-run` integration — passed
   (multi-session signal scanned with zero pattern writes).
+- `uv run ruff check bin/promote-personal-patterns.py` — passed.
+- `uv run basedpyright bin/promote-personal-patterns.py` — passed (0 errors).
+- Disposable `promote-personal-patterns.py --dry-run` integration — passed
+  (approved pattern planned with zero vault or database writes).
 - `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
@@ -330,8 +339,8 @@ live migration work.
   daily pipeline pending-rule query, pattern schema migration, pattern
   extraction, pattern scoring, pattern promotion, and pattern lifecycle tools
   plus observation review, noise purging, business-memory CLI adapters, and
-  bug-motif, handoff-learning, and personal-pattern extraction are now covered
-  too.
+  bug-motif, handoff-learning, personal-pattern extraction, and personal
+  promotion are now covered too.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.
