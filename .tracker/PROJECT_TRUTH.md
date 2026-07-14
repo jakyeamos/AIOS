@@ -35,81 +35,15 @@ agentExpectationsVersion: 1
 
 AIOS now has a completed v2 modernization baseline, accepted local-first operating model, canonical-state contract, task-centred UI contract, reproducible UI validation contract, subsystem modernization strategy, and dependency-ordered target/vertical plan: [`AUDIT.md`](../docs/modernization/AUDIT.md), [`TARGET.md`](../docs/modernization/TARGET.md), [`EXEC_PLAN.md`](../docs/modernization/EXEC_PLAN.md), [`ADR-001`](../docs/modernization/ADR-001-v2-operating-loop-and-trust-boundary.md), [`ADR-002`](../docs/modernization/ADR-002-canonical-state-and-migration-authority.md), [`ADR-003`](../docs/modernization/ADR-003-task-centred-ia-and-accessible-design-system.md), [`ADR-004`](../docs/modernization/ADR-004-reproducible-ui-validation-contract.md), and [`ADR-005`](../docs/modernization/ADR-005-subsystem-ownership-and-parallel-v2-strategy.md). Wayfinder Ticket 006 is resolved; Milestone 0 has the shared JSON fixture, TypeScript boundary guard, Python cross-reference tests, disposable SQLite projection, and daily-flow replay proof. Milestone 1 now has the executable Python storage boundary, copied-store runner, evidence-backed FK transformer, and broad adapter adoption: one resolved `AIOS_DB`, canonical pragmas, read-only projections, idempotent migration/quarantine ledger, schema checksums, preflight/postflight health/counts, unique-path mappings, source-payload quarantine, and immutable backup/restore helpers; lifecycle hooks, high-traffic prompt/compaction/post-tool/session-stop hooks, the managed runtime, Codex ingestion, session CLI, all four provider canonical upserts, stale-session repair, prompt sync, workflow experiment utilities, metrics/reporting paths, history import, inventory sync, Apple-backed ingestion writes, the CLI doctor probe, daily pipeline pending-rule query, pattern schema migration, pattern extraction, pattern scoring, pattern promotion, pattern confirmation/approval/contradiction lifecycle tools, observation review, noise purging, bug-motif extraction, handoff-learning extraction, personal-pattern extraction and promotion, agent synthesis, domain-file projection, DOCX/PDF document indexers, rule-bundle registration, the business-memory path resolver and five CLI adapters, issues/handoffs, query/statusline utilities, and the UI database path converge on the override/pragmas. The actual current read-only store preflight reports 561 FK violations (older audit documents record 555/557); the disposable transformer copy reaches zero and the restored copy replays the canonical daily flow. UI-owned request-time DDL, remaining lower-traffic adapters, and human retention review are still gated. V2 is a single-user, loopback-only local control plane with one logical mutation authority; no live rows have been migrated. The target and plan now turn those decisions into eight vertical milestones plus a paired-effectiveness gate before satellite promotion and cutover. Divergent schema/bootstrap ownership, unenforced UI mutation boundaries, and blocked UI implementation gates remain. The current `dev` worktree was already dirty when this work started, so its shadow lane remains trace-only.
 
-Current-state amendment (2026-07-14): the approved archive migration is now
-applied live with zero FK violations, a version-1 ledger entry, immutable
-pre/post backups, and a completed restore/replay check. UI request-time DDL and
-ADR-004 validation is complete; the Python-owned UI mutation boundary remains a later modernization gate.
+Current-state amendment (2026-07-14): M2 and M3 UI validation is green for the
+read-only Today → Start work → Current run shell. M4 now proves the
+Python-owned route → packet → run → invocation → verification envelope against
+the foreign-key-enforced schema, including project-safe session linkage,
+partial-state resume snapshots with verifier provenance, and zero FK findings.
+M5 owns approval, capability, loopback, egress, writeback, and closeout
+enforcement before UI writes are enabled.
 
-Current-state amendment (2026-07-14): the M2 UI validation slice now vendors
-`eslint-plugin-anti-slop` 0.4.0 inside `aios-ui`, removes request-time UI DDL in
-favor of a read-only migration-ledger assertion, and passes ESLint, fixture,
-TypeScript, architecture, warning-baseline, build, and disposable runtime
-smoke gates. Seeded overview/run-detail routes, the three-viewport responsive
-matrix, same-origin network capture, and console evidence now pass locally; a
-duplicate run-detail key was fixed. Playwright 1.61.1 now proves the same
-routes, screenshots, console/network policy, and keyboard traversal. Generated
-prompt/workflow catalogs and static managed-runtime spawn arguments remove the
-NFT tracing warning. M2 is resolved; UI mutation endpoints still need
-Python-owner routing.
-
-Current-state amendment (2026-07-14): M3 now ships the read-only v2 operator
-shell at `/` Today, `/start` Start work, and `/runs/:id` Current run, using
-canonical tRPC projections and preserving legacy session-detail fallback.
-Primary navigation is task-centred with contextual satellites behind
-disclosure; provenance, freshness, authority, next action, and
-healthy/blocked/stale/empty states are visible without UI writes. The M2 and
-M3 Playwright suites pass at all required viewports with zero mutation
-requests, console errors, bad same-origin responses, or horizontal overflow.
-M4 remains the Python-owned governed mutation boundary.
-
-Current-state amendment (2026-07-14): M4 now proves the Python-owned
-route → packet → run → invocation → verification envelope against the
-foreign-key-enforced canonical schema. `start-work` persists the run and
-packet before creating the invocation, then links `active_invocation_id` only
-after its target exists. The integration fixture records zero FK violations,
-preserves partial-state resume snapshots with verifier provenance, blocks
-cross-project session linkage, and completes `verify_run` with source-backed
-evidence and a verifier artifact. Ambiguous and unsupported routes still block
-before durable creation; M5 owns approval/capability/egress/writeback/
-closeout enforcement.
-
-_(4 older entries trimmed)_
-
-Pipeline and lab schema migrations now also use the shared storage boundary
-and `AIOS_DB` override; their schema/data changes remain disposable until the
-main-store migration gate is accepted. RTK execution and tuning, GitHub-skill
-discovery, workflow synthesis, and workflow experiment control now use the
-same boundary while preserving read-only analytics and explicit `--db` paths.
-The Flask review surface, vault-lint checks, and lab-trigger runner now use the
-same boundary; Flask remains runtime-unverified because it is not installed in
-the repository environment. Lifecycle-status migration uses the boundary for
-file-backed databases while preserving `:memory:`, and commit-quality evidence
-reads use the shared read-only path.
-The CTS registry's AIOS project metadata reads also use shared read-only
-storage and honor `AIOS_DB`; CTS graph stores remain CTS-owned.
-The current recovery gate was rerun read-only: the live store remains
-`quick_check=ok` and `integrity_check=ok` with 561 FK violations, while the
-disposable transformer/restore path reaches zero FK violations and replays the
-eight-step daily-flow preview without changing live rows.
-The first ADR-004 UI pass initially had passing TypeScript, architecture,
-warning-baseline, native-module, and production-build checks while ESLint and
-NFT tracing were still open; the subsequent M2 slice resolved both gates.
-The loopback runtime smoke also passed: `/` and the source-backed `projects.list`
-tRPC route returned HTTP 200 with no request errors on a disposable dev server.
-The approved live archive migration (`m001-archive-live-20260714`) then
-reconciled all 561 FK violations, retained 73 unresolved quality payloads in
-quarantine, recorded decisions for all 561 repair records, and passed live
-restore/replay verification.
-
-AIOS now also has a file-backed and SQLite-backed context-loop learning primitive: `services/context_loops.py`, `schema.sql`, and `python bin/aios.py context-loops ...` record inner-loop context/draft runs, review events, learning candidates, explicit approvals/rejections, approved lesson application, metrics, and a draft-only email pilot. Contract docs and examples live under `aios/context-loops/`.
-
-AIOS now has `expert_rubric_remediation_v1` implemented and smoke-verified through the core artifact service, workflow runtime dispatch, active workflow/skill registry contracts, route scoring, and `aios tmcp review-plan`. The workflow compiles TMCP expertise into an explicit rubric, audits concrete evidence, produces ordered remediation slices, and writes an approval-gated implementation handoff without executing implementation.
-
-AIOS also has `repo_gate_adoption_v1`, a narrow audit-and-plan workflow for repository quality-gate adoption. It scans repo-local scripts, Pre-CR, anti-slop, local AIOS quality contracts, CI, hooks, dead-code, structural-scan, and truth-file evidence; produces a core gate readiness matrix; conditionally records TMCP expert enrichment only when source sufficiency passes; writes broad repo-class and gate-specific rubric packs; writes a staged rollout plan under git-ignored `AIOS-backfill/gate-adoption/{run_id}`; and exposes the flow through `aios gate adoption-plan`.
-
-Quality Runner now lives in `/Users/jakyeamos/quality-runner` as a standalone audit-and-plan package with CLI and MCP surfaces. AIOS should consume it as an external tool and may provide adapters, standards profiles, or workflow shortcuts, but the standalone package owns the core workflow and `.quality-runner/` artifact contract.
-
-AIOS now has a review-gated Codex/Claude Session Intelligence loop. The loop enriches Codex session normalization with tool calls, commands, cwd, approval friction, errors, and terminal outcomes; stores lane candidates in SQLite; emits redacted Markdown/JSON reports; exposes `aios session-intel` commands; runs daily through the Codex automation `daily-codex-session-intelligence`; supports resumable historical backfill across Codex and Claude sources; can implement explicitly approved candidate IDs into helper-family records; and now records helper run/failure/bypass telemetry that drives active, insufficient, or removal-review statuses.
+_(11 older entries trimmed)_
 
 AIOS now has a read-only workflow router preview surface: `aios route "objective"` resolves the registered project, governed workflow, agent, backend, prompt family, candidate alternatives, and a ready-to-run `aios start-work ...` command without creating orchestration runs, packets, invocations, or sessions. `~/AIOS/bin/route` is a convenience wrapper around the same command.
 
@@ -149,9 +83,6 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-07-14: Routed review, vault-lint, and lab-trigger adapters through shared storage (`c36cf66`): passed Ruff/BasedPyright and disposable vault/lab proof; Flask runtime remains dependency-blocked.
 - 2026-07-14: Routed RTK, discovery, workflow synthesis, and experiment adapters through shared storage (`cfbab64`): passed Ruff/BasedPyright, 14 focused workflow tests, and disposable operational integration.
 - 2026-07-14: Routed pipeline and lab schema migrations through shared storage (`217f29c`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable state/schema/FK migration proof.
-- 2026-07-14: Routed rule-bundle registration through shared storage (`7c3d509`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable FK-enforced registration proof.
-- 2026-07-14: Routed DOCX/PDF indexers through shared storage (`4c1374e`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable dry-run metadata/index proof.
-- 2026-07-14: Routed `build-domain-files.py` through shared read-only storage (`21bdd63`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable domain projection dry-run proof.
 
 ## Open Problems
 
