@@ -4,7 +4,7 @@ projectName: AIOS
 summary: Active local-first agent operating system with honest evidence verdicts, evidence-gated verify-run completion, durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption, review-gated session-intelligence tools, and progressive colocated context routing across AIOS and linked repos.
 healthScore: 85
 statusLabel: warning
-nextStep: Migrate the first write-capable satellite path behind the Python owner with rollback/deletion proof; keep M6 deferred pending promotion-grade effectiveness evidence.
+nextStep: Migrate the next write-capable satellite path behind the Python owner with rollback/deletion proof; keep M6 deferred pending promotion-grade effectiveness evidence.
 blockers: []
 lastUpdated: 2026-07-14
 tags: [infra, ai-os, hooks, automation]
@@ -96,6 +96,15 @@ pass. The root `pnpm context:validate` wrapper remains blocked by the existing
 external file dependency; no dependency or lockfile changes were made. M6 is
 advanced but still deferred on promotion, write-owner, and rollback gates.
 
+Current-state amendment (2026-07-14): The first write-capable standards-health
+satellite is now Python-owned. Taski Start/Block/Resolve transitions call the
+validated `standards-backfill-update` JSON CLI through a typed server adapter;
+the prior TypeScript SQLite write helper was deleted. Focused Python/CLI proof,
+UI lint/typecheck/build, architecture lint, and the pinned browser contract
+pass. Rollback is the parent revision with no schema migration. M6 remains
+deferred because the benchmark is audit-only with unavailable provider
+telemetry and other legacy write families still need bounded owner migrations.
+
 _(11 older entries trimmed)_
 
 AIOS now has a read-only workflow router preview surface: `aios route "objective"` resolves the registered project, governed workflow, agent, backend, prompt family, candidate alternatives, and a ready-to-run `aios start-work ...` command without creating orchestration runs, packets, invocations, or sessions. `~/AIOS/bin/route` is a convenience wrapper around the same command.
@@ -121,6 +130,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-14: Routed standards backfill Start/Block/Resolve mutations through the Python owner, deleted the direct UI SQLite helper, and passed 4 focused tests, 96 CLI regressions, UI build, architecture, and 3 browser tests (`fdd1c1d`).
 - 2026-07-14: Migrated the Context Compiler page behind an explicit read-only projection contract with three-viewport browser proof; UI lint, architecture, build, and direct validation passed.
 - 2026-07-14: Added durable eval-pair supersession metadata, append-only events, and a fail-closed promotion-ready consumer; audit history remains visible; 108 focused tests, Ruff, and BasedPyright passed.
 - 2026-07-14: Routed the manual business-memory adapter through `capture.v1` for Markdown, JSON, HTML, and CSV, retaining the SourceRecord/raw-sidecar contract; 11 focused tests, Ruff, and BasedPyright passed (`625056d`).
@@ -134,24 +144,16 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-07-14: Fixed canonical start-work FK ordering, cross-project session linkage, and verification resume snapshots; added the M4 route → packet → run → invocation → verify/resume integration proof (`tests/test_m4_start_work.py`, `e190ca5`).
 - 2026-07-14: Shipped the read-only v2 Today → Start work → Current run shell with canonical projections, task-centred navigation, contextual disclosure, explicit state contracts, and zero-mutation browser proof (`a6adf99`).
 - 2026-07-14: Vendored anti-slop 0.4.0, removed UI request-time DDL in favor of the migration-ledger assertion, and passed ESLint/fixtures/TypeScript/architecture/build/runtime gates.
-- 2026-07-14: Added the pinned Playwright 1.61.1 browser contract, generated prompt/workflow catalogs, and static managed-runtime spawn arguments; browser and production-build M2 gates now pass without NFT warnings.
-- 2026-07-14: Ran the UI loopback smoke after the build fix: `/` and `projects.list` tRPC returned HTTP 200 with source-backed data and clean server logs; the pinned browser/build gates are green without NFT warnings.
-- 2026-07-14: Scoped the UI Turbopack root and refreshed native dependencies: TypeScript, architecture, warning-baseline, and production build passed; workspace-root warning resolved.
-- 2026-07-14: Reran the live recovery preflight and disposable restore drill: 561 FK violations captured, 561 quarantined in the copy, zero restored FK violations, and eight-step daily-flow replay passed.
-- 2026-07-14: Created `docs/modernization/M1_RETENTION_DECISION.md` from a fresh disposable run; it became the approved archive record after live reconciliation.
-- 2026-07-14: Added the guarded transactional live migration runner (`eb59adb`): focused migration/storage tests, Ruff, and BasedPyright passed; archive application then completed successfully.
-- 2026-07-14: Applied the approved archive migration: live `quick_check`/`integrity_check` pass, FK violations are 0, `user_version=1`, 561 quarantine decisions recorded, and 8-step replay/restore passed.
-- 2026-07-14: Routed CTS registry AIOS metadata reads through shared storage (`52d22e5`): passed Ruff/BasedPyright and disposable read-only registry proof.
 
 ## Open Problems
 
 1. The live main-store archive migration now reports zero FK violations with an immutable pre/post backup and ledger entry; older 555/557 audit snapshots and distributed runtime DDL still need reconciliation/cleanup.
 2. V2 intentionally excludes remote control. Control-plane and remediation UI mutation endpoints now fail closed behind the Python owner; unrelated legacy UI write surfaces still require later consumer-by-consumer migration.
-3. M2 and M3 UI validation is green, M4 Python route/packet/run/verify proof is green, and M5 governed review/closeout proof is green. M5A fixture evidence and the durable pair contract are recorded; the corrected three-task live audit corpus is independently reviewed but explicitly deferred because it is audit-only and provider telemetry is unavailable. The superseded single-task promote row is now excluded by the promotion-ready consumer while remaining in the audit ledger. The Context Compiler read-only satellite slice is browser-proven, but write-owner migration, rollback/deletion, cutover, and broad effectiveness claims remain blocked.
+3. M2 and M3 UI validation is green, M4 Python route/packet/run/verify proof is green, and M5 governed review/closeout proof is green. M5A fixture evidence and the durable pair contract are recorded; the corrected three-task live audit corpus is independently reviewed but explicitly deferred because it is audit-only and provider telemetry is unavailable. The superseded single-task promote row is now excluded by the promotion-ready consumer while remaining in the audit ledger. The Context Compiler read-only satellite and standards backfill write-owner slices are proven, but remaining write-owner migrations, rollback/deletion, cutover, and broad effectiveness claims remain blocked.
    Milestone 0's fixture/replay contract, storage boundary, copied-store recovery proof, and approved live archive are complete.
 ## Next Concrete Steps
 
-1. Migrate the first write-capable satellite path behind the Python owner with a rollback/deletion ledger and focused proof.
+1. Migrate the next write-capable satellite path behind the Python owner with a rollback/deletion ledger and focused proof.
 2. Keep M6 promotion and v2 cutover deferred while the corrected three-task evidence packet remains the bounded benchmark record and provider telemetry is unavailable.
 3. Migrate remaining legacy UI write surfaces only through the Python owner with focused proofs.
 

@@ -99,6 +99,17 @@ file dependency, with no dependency or lockfile changes made. M6 is advanced
 but remains deferred on promotion-grade effectiveness and write-owner/
 rollback gates.
 
+The first write-capable standards-health satellite is now Python-owned.
+Taski Start/Block/Resolve transitions call the validated
+`standards-backfill-update` JSON CLI through a typed server adapter while the
+existing read projection and button contract remain unchanged. The prior
+TypeScript SQLite write helper was deleted; rollback is the parent revision and
+requires no schema migration. Focused Python/CLI proof, UI lint/typecheck/build,
+dependency architecture, and the pinned three-test browser contract pass. M6
+remains deferred because the paired benchmark is audit-only with unavailable
+provider telemetry and other legacy write families still need bounded owner
+migrations.
+
 ## Implemented On 2026-07-10
 
 Codex session-intelligence implementation can now target explicit candidate ids:

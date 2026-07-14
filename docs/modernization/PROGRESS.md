@@ -1,6 +1,6 @@
 # AIOS V2 Modernization Progress
 
-**Status:** M5A paired-evidence contract complete; live effectiveness remains deferred and M6 blocked
+**Status:** First M6 write-owner slice complete; live effectiveness remains deferred and M6 remains blocked
 **Updated:** 2026-07-14
 **Plan:** [EXEC_PLAN.md](EXEC_PLAN.md)
 
@@ -222,6 +222,16 @@ UI lint, architecture, build, and direct context validation pass. The root
 external `context-compiler-contract` file dependency. M6 is advanced but
 remains deferred on promotion-grade effectiveness and write-owner/
 rollback/deletion gates.
+
+The first write-capable standards-health satellite is now Python-owned. Taski
+Start/Block/Resolve transitions call the validated `standards-backfill-update`
+JSON CLI through a typed server adapter while the existing read projection and
+button contract remain unchanged. The prior TypeScript SQLite write helper was
+deleted; rollback is the parent revision and requires no schema migration.
+Focused Python/CLI proof, UI lint/typecheck/build, dependency architecture, and
+the pinned three-test browser contract pass. M6 remains deferred because the
+paired benchmark is audit-only with unavailable provider telemetry and other
+legacy write families still need bounded owner migrations.
 
 ## Completed
 
