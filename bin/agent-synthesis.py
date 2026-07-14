@@ -12,6 +12,7 @@ Usage:
 """
 
 import argparse
+import os
 import re
 import sqlite3
 import uuid
@@ -21,7 +22,9 @@ from pathlib import Path
 
 from aios_paths import get_vault_subpath
 
-DB = Path.home() / "AIOS" / "data" / "aios.db"
+from services.storage import connect as connect_storage
+
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))).expanduser()
 ARCHIVE = get_vault_subpath("09 Archive", "AI History")
 MIN_COUNT_DEFAULT = 3
 
@@ -58,7 +61,7 @@ def extract_title_bigrams(titles: list[str]) -> Counter:
 
 def collect_promoted_titles() -> list[str]:
     """Read all promoted ai_history_imports titles from DB."""
-    conn = sqlite3.connect(DB)
+    conn = connect_storage(DB, read_only=True)
     rows = conn.execute(
         "SELECT title FROM ai_history_imports WHERE status = 'promoted' AND title IS NOT NULL AND title != ''"
     ).fetchall()
@@ -70,7 +73,7 @@ def collect_topic_tags() -> Counter:
     """Read topic_tags JSON arrays from promoted imports and count occurrences."""
     import json
 
-    conn = sqlite3.connect(DB)
+    conn = connect_storage(DB, read_only=True)
     rows = conn.execute(
         "SELECT topic_tags FROM ai_history_imports WHERE status = 'promoted'"
     ).fetchall()
@@ -136,7 +139,7 @@ def main() -> None:
     tags = collect_topic_tags()
     tag_candidates = [(tag, cnt) for tag, cnt in tags.most_common(20) if cnt >= args.min_count]
 
-    conn = sqlite3.connect(DB)
+    conn = connect_storage(DB)
     added = 0
 
     if candidates:
