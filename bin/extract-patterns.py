@@ -16,11 +16,19 @@ import json
 import os
 import re
 import sqlite3
+import sys
 import uuid
 from collections import Counter
 from datetime import UTC, datetime
+from pathlib import Path
 
-DB = os.path.expanduser("~/AIOS/data/aios.db")
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from services.storage import connect as connect_storage  # noqa: E402
+
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))).expanduser()
 MIN_FREQUENCY = 2  # min occurrences before a pattern is worth recording
 MIN_PROMPT_LENGTH = 20  # ignore very short prompts as noise
 TOP_N = 10  # max patterns extracted per class per run
@@ -496,7 +504,7 @@ def main() -> None:
     bug_inserted: list = []
     workflow_inserted: list = []
 
-    conn = sqlite3.connect(DB)
+    conn = connect_storage(DB)
     existing = load_existing_titles(conn)
     workflow_inserted = extract_workflow_patterns(conn, existing)
     if args.dry_run:

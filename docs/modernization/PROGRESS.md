@@ -40,6 +40,8 @@ connection contract and honors `AIOS_DB`.
 The one-time pattern schema migration now uses the shared write connection and
 honors `AIOS_DB`; its schema/data changes remain explicitly disposable until
 the main-store migration gate is accepted.
+Pattern extraction now uses the same shared write boundary while preserving its
+idempotent workflow extraction and rollback-on-`--dry-run` behavior.
 
 ## Completed
 
@@ -110,6 +112,9 @@ the main-store migration gate is accepted.
 - Routed `migrate-patterns.py` through shared storage and made its canonical
   database path honor `AIOS_DB`; a disposable schema/data migration smoke
   passed without touching live rows.
+- Routed `extract-patterns.py` through shared storage and made its canonical
+  database path honor `AIOS_DB`; workflow extraction tests and a disposable
+  dry-run rollback smoke passed.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -124,6 +129,11 @@ the main-store migration gate is accepted.
 - `uv run basedpyright bin/migrate-patterns.py` — passed (0 errors).
 - Disposable `migrate-patterns.py` integration — passed (columns, views,
   indexes, state/domain backfill, and human-approval quarantine).
+- `uv run pytest tests/test_extract_patterns.py -q` — passed (2 tests).
+- `uv run ruff check bin/extract-patterns.py tests/test_extract_patterns.py` — passed.
+- `uv run basedpyright bin/extract-patterns.py tests/test_extract_patterns.py` — passed (0 errors).
+- Disposable `extract-patterns.py --dry-run` integration — passed (workflow
+  extraction rolled back with zero pattern writes).
 - `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
@@ -237,8 +247,8 @@ live migration work.
   paths, history import, and inventory sync are now complete. Remove UI
   request-time DDL only after deterministic UI and migration gates are
   accepted; source-backed Apple ingestion writes, the doctor probe, and the
-  daily pipeline pending-rule query, and pattern schema migration are now
-  covered too.
+  daily pipeline pending-rule query, pattern schema migration, and pattern
+  extraction are now covered too.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.
