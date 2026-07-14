@@ -85,6 +85,8 @@ repository environment.
 Lifecycle-status migration now uses shared storage for file-backed databases
 while preserving its explicit `:memory:` compatibility; commit-quality
 evidence/verifier reads also use the shared read-only boundary.
+The CTS registry's AIOS project metadata read now uses the shared read-only
+boundary and honors `AIOS_DB`; CTS-owned graph stores remain unchanged.
 
 ## Completed
 
@@ -212,6 +214,10 @@ evidence/verifier reads also use the shared read-only boundary.
   databases while preserving `:memory:` behavior, and routed the two
   commit-quality AIOS artifact checks through shared read-only storage; a
   disposable lifecycle migration proof passed.
+- Routed `services/cts/registry.py`'s AIOS project metadata reads through
+  shared read-only storage and made its default honor `AIOS_DB`; the CTS
+  graph-store database remains CTS-owned, and a disposable registry proof
+  passed.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -310,6 +316,10 @@ evidence/verifier reads also use the shared read-only boundary.
 - `.venv/bin/pytest tests/test_asset_lifecycle.py tests/test_commit_quality_ladder.py -q` — passed (29 tests).
 - Disposable lifecycle migration integration — passed (file-backed status
   remap and explicit `:memory:` compatibility).
+- `.venv/bin/ruff check services/cts/registry.py` — passed.
+- `.venv/bin/basedpyright services/cts/registry.py` — passed (0 errors).
+- Disposable CTS registry integration — passed (read-only project listing and
+  normalized path lookup through the shared AIOS connection).
 - `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
@@ -430,8 +440,8 @@ live migration work.
   promotion, agent synthesis, domain-file projection, and document indexers
   plus rule-bundle registration, pipeline/lab schema migrations, RTK,
   discovery, workflow synthesis, workflow experiment, review, vault-lint, and
-  lab-trigger adapters, lifecycle migration, and commit-quality evidence reads
-  are now covered too.
+  lab-trigger adapters, lifecycle migration, commit-quality evidence reads, and
+  CTS AIOS metadata reads are now covered too.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.

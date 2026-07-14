@@ -7,9 +7,13 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 
+from services.storage import connect as connect_storage
+
 from .graph_store import GraphStore
 
-AIOS_DB_DEFAULT = Path(os.path.expanduser("~/AIOS/data/aios.db"))
+AIOS_DB_DEFAULT = Path(
+    os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))
+).expanduser()
 CTS_DATA_ROOT_DEFAULT = Path(os.path.expanduser("~/AIOS/data/cts"))
 
 
@@ -35,10 +39,7 @@ class CTSRegistry:
         self.cts_data_root.mkdir(parents=True, exist_ok=True)
 
     def _connect_aios(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self.aios_db_path, timeout=30)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA busy_timeout=10000")
-        return conn
+        return connect_storage(self.aios_db_path, read_only=True, timeout=30)
 
     def list_repos(self, active_only: bool = True) -> list[CTSRepo]:
         conn = self._connect_aios()
