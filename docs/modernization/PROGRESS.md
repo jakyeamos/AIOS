@@ -200,6 +200,17 @@ business-memory inbox through `capture.v1` for Markdown, JSON, HTML, and CSV;
 11 focused tests, Ruff, and BasedPyright pass, with no network, enrichment,
 vault write, schema migration, or promotion behavior added.
 
+The superseded-pair consumer blocker is now closed. `eval_pairs` carries
+durable supersession metadata and an append-only event, while the dedicated
+`list_promotion_ready_eval_pairs`/`eval pair-list --promotion-ready` path
+requires finalized promotion, scores, passed contamination, passed independent
+review with a reference, a report path, and no supersession marker. The normal
+pair list remains the complete audit view. The `pair-supersede` CLI records the
+reason without rewriting the original decision. Focused service/CLI proof
+passed 108 tests, Ruff, and BasedPyright. M6 remains blocked on audit-only
+scope, provider telemetry, browser proof, and remaining satellite migration
+gates.
+
 ## Completed
 
 - Added `aios-v2-vertical-fixtures-v0.1` with healthy, empty, blocked, failed,

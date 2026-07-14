@@ -79,6 +79,15 @@ metadata. No network, enrichment, vault write, schema migration, or promotion
 was added; focused adapter proof is recorded in
 `tests/test_business_capture_adapter.py`.
 
+Superseded eval-pair evidence is now excluded at the promotion consumer
+boundary without deleting audit history. The canonical eval schema records
+durable supersession metadata and an append-only event; `eval pair-list
+--promotion-ready` requires complete score, contamination, independent-review,
+report, and unsuperseded gates, while the ordinary pair list remains the full
+ledger. Focused service/CLI proof passed 108 tests, Ruff, and BasedPyright.
+M6 remains blocked by the audit-only corpus, unavailable provider telemetry,
+incomplete browser coverage, and remaining satellite mutation/rollback gates.
+
 ## Implemented On 2026-07-10
 
 Codex session-intelligence implementation can now target explicit candidate ids:
