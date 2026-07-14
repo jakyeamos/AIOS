@@ -15,8 +15,16 @@ Safe to run multiple times — uses IF NOT EXISTS and checks before ALTER.
 
 import os
 import sqlite3
+import sys
+from pathlib import Path
 
-DB = os.path.expanduser("~/AIOS/data/aios.db")
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from services.storage import connect as connect_storage  # noqa: E402
+
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))).expanduser()
 
 
 def column_exists(conn: sqlite3.Connection, table: str, column: str) -> bool:
@@ -166,8 +174,7 @@ def migrate(conn: sqlite3.Connection) -> None:
 
 def main() -> None:
     print(f"Migrating {DB}")
-    conn = sqlite3.connect(DB)
-    conn.execute("PRAGMA foreign_keys = ON")
+    conn = connect_storage(DB)
 
     migrate(conn)
     conn.commit()
