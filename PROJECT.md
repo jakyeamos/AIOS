@@ -88,6 +88,17 @@ ledger. Focused service/CLI proof passed 108 tests, Ruff, and BasedPyright.
 M6 remains blocked by the audit-only corpus, unavailable provider telemetry,
 incomplete browser coverage, and remaining satellite mutation/rollback gates.
 
+The Context Compiler is now the first browser-proven read-only satellite slice.
+Its server projection names the file-backed compiler source, compiler
+authority, CLI mutation owner, freshness state, and next action; `/context`
+renders that contract without adding a second context store or write path.
+The three-viewport browser contract, UI lint, architecture lint, production
+build, and direct context validation pass. The root `pnpm context:validate`
+wrapper remains blocked by the existing external `context-compiler-contract`
+file dependency, with no dependency or lockfile changes made. M6 is advanced
+but remains deferred on promotion-grade effectiveness and write-owner/
+rollback gates.
+
 ## Implemented On 2026-07-10
 
 Codex session-intelligence implementation can now target explicit candidate ids:

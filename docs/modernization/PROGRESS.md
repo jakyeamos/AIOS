@@ -211,6 +211,18 @@ passed 108 tests, Ruff, and BasedPyright. M6 remains blocked on audit-only
 scope, provider telemetry, browser proof, and remaining satellite migration
 gates.
 
+The Context Compiler is now the first browser-proven read-only satellite
+slice. Its projection envelope names the file-backed context source,
+compiler authority, CLI mutation owner, freshness state, and next action;
+`/context` renders that contract without adding a second context store or
+write path. The pinned browser contract passes mobile, tablet, and desktop
+with zero mutation requests, console errors, failed responses, or overflow;
+UI lint, architecture, build, and direct context validation pass. The root
+`pnpm context:validate` wrapper remains environment-blocked by the existing
+external `context-compiler-contract` file dependency. M6 is advanced but
+remains deferred on promotion-grade effectiveness and write-owner/
+rollback/deletion gates.
+
 ## Completed
 
 - Added `aios-v2-vertical-fixtures-v0.1` with healthy, empty, blocked, failed,
