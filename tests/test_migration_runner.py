@@ -13,6 +13,7 @@ if str(ROOT) not in sys.path:
 from services.migration_runner import (  # noqa: E402
     MigrationValidationError,
     run_copied_migration,
+    run_live_migration,
 )
 from services.storage import (  # noqa: E402
     connect,
@@ -159,6 +160,75 @@ def test_failed_copied_migration_keeps_source_unchanged(tmp_path: Path) -> None:
             checksum="fixture-checksum",
             transform=lambda _conn: (),
             count_tables=("projects", "sessions"),
+        )
+
+    with connect(source, read_only=True) as conn:
+        assert len(database_health(conn).foreign_key_violations) == 1
+        assert migration_records(conn) == ()
+
+
+def test_live_migration_records_backup_and_updates_source(tmp_path: Path) -> None:
+    source = tmp_path / "source.db"
+    pre_backup = tmp_path / "backups" / "pre.db"
+    post_backup = tmp_path / "backups" / "post.db"
+    _seed_orphan_store(source)
+
+    def quarantine_orphan(conn: sqlite3.Connection) -> tuple[int, ...]:
+        row = conn.execute(
+            "SELECT id, project_id FROM sessions WHERE project_id = ?",
+            ("missing-project",),
+        ).fetchone()
+        assert row is not None
+        quarantine_id = quarantine_row(
+            conn,
+            migration_id="m001-live-proof",
+            source_table="sessions",
+            source_primary_key=str(row["id"]),
+            original_payload={"id": row["id"], "project_id": row["project_id"]},
+            reason="missing project parent",
+            proposed_disposition="review-or-archive",
+        )
+        conn.execute("DELETE FROM sessions WHERE id = ?", (row["id"],))
+        return (quarantine_id,)
+
+    report = run_live_migration(
+        source,
+        pre_backup,
+        post_backup,
+        version=1,
+        migration_id="m001-live-proof",
+        checksum="fixture-checksum",
+        transform=quarantine_orphan,
+        count_tables=("projects", "sessions"),
+    )
+
+    assert report.before_health.foreign_key_violations
+    assert report.after_health.foreign_key_violations == ()
+    assert report.before_counts == {"projects": 0, "sessions": 1}
+    assert report.after_counts == {"projects": 0, "sessions": 0}
+    assert pre_backup.exists()
+    assert post_backup.exists()
+    with connect(source, read_only=True) as conn:
+        assert database_health(conn).foreign_key_violations == ()
+        assert [record.version for record in migration_records(conn)] == [1]
+        assert len(list_quarantine(conn, migration_id="m001-live-proof")) == 1
+
+
+def test_failed_live_migration_rolls_back_source(tmp_path: Path) -> None:
+    source = tmp_path / "source.db"
+    pre_backup = tmp_path / "backups" / "pre.db"
+    post_backup = tmp_path / "backups" / "post.db"
+    _seed_orphan_store(source)
+
+    with pytest.raises(MigrationValidationError, match="foreign-key violations"):
+        run_live_migration(
+            source,
+            pre_backup,
+            post_backup,
+            version=1,
+            migration_id="m001-live-proof",
+            checksum="fixture-checksum",
+            transform=lambda _conn: (),
         )
 
     with connect(source, read_only=True) as conn:

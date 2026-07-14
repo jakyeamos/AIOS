@@ -306,24 +306,26 @@ def quarantine_row(
     if not all(value.strip() for value in (migration_id, source_table, reason, proposed_disposition)):
         raise ValueError("migration_id, source_table, reason, and proposed_disposition are required")
     ensure_migration_schema(conn)
-    with conn:
-        cursor = conn.execute(
-            """
-            INSERT INTO migration_quarantine (
-              migration_id, source_table, source_primary_key,
-              original_payload_json, reason, detected_at, proposed_disposition
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                migration_id,
-                source_table,
-                source_primary_key,
-                json.dumps(dict(original_payload), sort_keys=True),
-                reason,
-                detected_at or datetime.now(UTC).isoformat(),
-                proposed_disposition,
-            ),
-        )
+    was_in_transaction = conn.in_transaction
+    cursor = conn.execute(
+        """
+        INSERT INTO migration_quarantine (
+          migration_id, source_table, source_primary_key,
+          original_payload_json, reason, detected_at, proposed_disposition
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            migration_id,
+            source_table,
+            source_primary_key,
+            json.dumps(dict(original_payload), sort_keys=True),
+            reason,
+            detected_at or datetime.now(UTC).isoformat(),
+            proposed_disposition,
+        ),
+    )
+    if not was_in_transaction:
+        conn.commit()
     row_id = cursor.lastrowid
     if row_id is None:
         raise RuntimeError("quarantine insert did not return an id")

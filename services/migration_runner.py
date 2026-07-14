@@ -34,6 +34,20 @@ class MigrationReport:
     quarantine_ids: tuple[int, ...]
 
 
+@dataclass(frozen=True)
+class LiveMigrationReport:
+    migration_id: str
+    version: int
+    source_path: Path
+    pre_backup: BackupMetadata
+    post_backup: BackupMetadata
+    before_health: DatabaseHealth
+    after_health: DatabaseHealth
+    before_counts: dict[str, int]
+    after_counts: dict[str, int]
+    quarantine_ids: tuple[int, ...]
+
+
 class MigrationValidationError(RuntimeError):
     def __init__(
         self,
@@ -134,6 +148,73 @@ def run_copied_migration(
         version=version,
         source_path=source,
         working_path=working,
+        pre_backup=pre_backup,
+        post_backup=post_backup,
+        before_health=before_health,
+        after_health=after_health,
+        before_counts=before_counts,
+        after_counts=after_counts,
+        quarantine_ids=quarantine_ids,
+    )
+
+
+def run_live_migration(
+    source_path: Path | str,
+    pre_backup_path: Path | str,
+    post_backup_path: Path | str,
+    *,
+    version: int,
+    migration_id: str,
+    checksum: str,
+    transform: MigrationTransformer,
+    count_tables: Sequence[str] = (),
+) -> LiveMigrationReport:
+    source = Path(source_path).expanduser().resolve()
+    pre_backup_path = Path(pre_backup_path).expanduser().resolve()
+    post_backup_path = Path(post_backup_path).expanduser().resolve()
+    pre_backup = backup_database(source, pre_backup_path)
+
+    with connect(source) as conn:
+        before_health = database_health(conn)
+        before_counts = table_counts(conn, count_tables)
+        conn.execute("BEGIN IMMEDIATE")
+        ensure_migration_schema(conn)
+        quarantine_ids = tuple(int(row_id) for row_id in transform(conn))
+        candidate_health = database_health(conn)
+        if candidate_health.quick_check != "ok":
+            raise MigrationValidationError(
+                "live migration failed SQLite quick_check",
+                working_path=source,
+                health=candidate_health,
+            )
+        if candidate_health.integrity_check != "ok":
+            raise MigrationValidationError(
+                "live migration failed SQLite integrity_check",
+                working_path=source,
+                health=candidate_health,
+            )
+        if candidate_health.foreign_key_violations:
+            raise MigrationValidationError(
+                "live migration left foreign-key violations",
+                working_path=source,
+                health=candidate_health,
+            )
+        record_migration(
+            conn,
+            version=version,
+            migration_id=migration_id,
+            checksum=checksum,
+            pre_backup_ref=str(pre_backup.path),
+            post_backup_ref=str(post_backup_path),
+        )
+        after_health = database_health(conn)
+        after_counts = table_counts(conn, count_tables)
+
+    post_backup = backup_database(source, post_backup_path)
+    return LiveMigrationReport(
+        migration_id=migration_id,
+        version=version,
+        source_path=source,
         pre_backup=pre_backup,
         post_backup=post_backup,
         before_health=before_health,
