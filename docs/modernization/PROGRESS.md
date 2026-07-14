@@ -180,8 +180,15 @@ The follow-up contract now persists `eval_pairs` and append-only pair events in
 the canonical schema. `eval pair-create`, `eval pair-finalize`, and `eval
 pair-list` enforce shared task/start-SHA identity, task/prompt/context hashes,
 model/effort/tools/budget parity, contamination state, independent review, and
-fail-closed promotion. The focused evaluation surface passed 139 tests. This
-is evidence infrastructure, not a live effectiveness result.
+fail-closed promotion. Pair report paths now round-trip through the schema,
+service, CLI, and focused tests. The focused evaluation surface passed 107
+tests after the report-path fix. A clean live control/treatment pair was then
+captured at protected SHA `7797f3e` with model/effort/tools/budget parity,
+passed contamination, persisted IDs, a +0.0500 bounded portable-context delta,
+and independent review; the durable export is
+[M6_LIVE_PAIRED_REPORT.md](../evals/M6_LIVE_PAIRED_REPORT.md). This is a
+single-task live evidence slice, not a broad M6 promotion claim; the broader
+three-to-five-task benchmark and adversarial review remain required.
 
 ## Completed
 

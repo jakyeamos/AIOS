@@ -55,6 +55,8 @@ pairs as `insufficient_evidence`; promotion fails closed without both scores,
 passed contamination, and passed independent review.
 
 The CLI exposes `eval pair-create`, `eval pair-finalize`, and `eval pair-list`.
+The pair schema, service, CLI, and focused tests also persist and round-trip a
+durable `report_path` for review artifacts.
 Focused service, CLI, shadow, ablation, and harness tests pass (139 tests),
 with Ruff and Python compilation clean for the touched implementation. This
 does not execute a live model benchmark or change the M5A defer decision. M6

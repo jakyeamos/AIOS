@@ -1,0 +1,37 @@
+{
+  "schema": "aios-live-paired-evidence-v1",
+  "task_id": "eval-task-cdda9c37-3ffb-4572-b18d-c2a5bd360738",
+  "protected_start_sha": "7797f3ed34f15322d34d296f078cfffc604ef28f",
+  "control_run_id": "eval-run-8f4b9f45-d1b6-4d1d-ac82-1022a6cebe5e",
+  "treatment_run_id": "eval-run-528bc7c9-ac97-4491-90f1-dbad26ee15f2",
+  "pair_id": "eval-pair-c6b68b87-48ac-4268-8908-61c2c5ae5161",
+  "task_hash": "5eeb7ed57f4fd6246e7023406826accd29372f9171710412005821123920d3e3",
+  "prompt_hash": "7c43df777c987d2bfdd6aadd67afdc517f3eb1df75bfb124de8cbaafbb08e3cb",
+  "context_hash": "b8fa6aa3de877ce6a0867464b0f2daa8b613315d7070b9d7169cac4951f68b68",
+  "parity_metadata": {
+    "model": "gpt-5.6-luna",
+    "effort": "high",
+    "tools": ["shell", "rg", "sed", "git", "python3", "uv"],
+    "budget": {"tokens": 20000, "seconds": 900}
+  },
+  "scores": {"control": 0.95, "treatment": 1.0, "delta": 0.05},
+  "contamination": {
+    "status": "passed",
+    "control_worktree": "/tmp/aios-m6-control",
+    "treatment_worktree": "/tmp/aios-m6-treatment",
+    "both_worktrees_clean_after_run": true,
+    "no_production_or_private_state_access": true
+  },
+  "independent_review": {
+    "status": "passed",
+    "ref": "docs/evals/M6_LIVE_PAIRED_REVIEW.md"
+  },
+  "report_path": "docs/evals/M6_LIVE_PAIRED_REPORT.md",
+  "decision": "promote",
+  "status": "finalized",
+  "limitations": [
+    "single bounded task",
+    "provider did not expose durable token/cost telemetry",
+    "treatment used portable packet because clean clones lacked local .agents directory"
+  ]
+}
