@@ -10,8 +10,10 @@ Milestone 1 now establishes the first executable Python-owned storage boundary
 for the main store. The shared connection contract resolves one `AIOS_DB`,
 applies canonical SQLite pragmas, and supports read-only projections. The
 versioned migration ledger, quarantine inventory, and backup/restore helpers
-operate only against explicit disposable paths in this slice; the live store
-has not been migrated.
+operate only against explicit disposable paths in this slice. The copied-store
+runner now snapshots preflight health/counts, applies an explicit transformer,
+requires zero FK violations before recording the ledger, and emits a post-
+migration backup; the live store has not been migrated.
 
 ## Completed
 
@@ -32,6 +34,9 @@ has not been migrated.
   schema checksums, health checks, and immutable local backup/restore helpers.
 - Routed the CLI's shared `_connect_db` path through the storage contract while
   preserving its existing missing-database error behavior.
+- Added `services/migration_runner.py` for copied-store migrations with
+  preflight/postflight health, scoped table-count reconciliation, explicit
+  quarantine ids, forward-only ledger recording, and post-migration backup.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -42,7 +47,7 @@ has not been migrated.
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
 - `.venv/bin/basedpyright tests/test_v2_vertical_fixtures.py` — passed.
-- `.venv/bin/pytest tests/test_storage.py tests/test_aios_cli.py -q` — passed (95 tests).
+- `.venv/bin/pytest tests/test_storage.py tests/test_migration_runner.py tests/test_aios_cli.py -q` — passed (98 tests).
 - `.venv/bin/ruff check services/storage.py services/aios_cli.py tests/test_storage.py` — passed.
 - `.venv/bin/basedpyright services/storage.py services/aios_cli.py tests/test_storage.py` — passed.
 - `pnpm --dir aios-ui lint:architecture` — passed (122 modules, 255 dependencies).
@@ -74,6 +79,9 @@ has not been migrated.
   restore orchestration separate from the connection contract; callers can
   adopt one owner without adding a second runtime schema or silently repairing
   live rows.
+- The copied-store runner accepts an explicit transformer rather than embedding
+  guessed parent-repair rules; known row mappings remain migration-specific and
+  must be evidence-backed before they touch the production-shaped copy.
 
 ### Gate C: verification
 
@@ -94,8 +102,9 @@ live migration work.
 
 - Route hooks, storage helpers, and UI adapters through the shared connection
   contract without changing the canonical `AIOS_DB` meaning.
-- Add a copied-store migration runner that captures preflight counts/checksums,
-  quarantines ambiguous rows, and records every forward-only migration.
+- Add the first production-shaped migration transformer that captures preflight
+  counts/checksums, quarantines ambiguous rows, and records every forward-only
+  migration.
 - Complete the backup/restore drill and reconcile the current store's FK
   violations before any write-capable v2 slice.
 
