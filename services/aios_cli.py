@@ -164,6 +164,7 @@ from services.standards_health import (
 from services.standards_health import (
     load_registry as load_standards_registry,
 )
+from services.standards_health_mutations import update_standards_backfill_task
 from services.storage import connect as connect_storage
 from services.success_criteria import (
     EVALUATION_FINDING_LIFECYCLE_STATES,
@@ -5759,6 +5760,21 @@ def _standards_override_payload(
     return result
 
 
+def _standards_backfill_update_payload(
+    conn: sqlite3.Connection, args: argparse.Namespace
+) -> dict[str, Any]:
+    payload = _parse_json_object(args.payload_json)
+    if not payload:
+        raise CLIError("invalid-payload", "--payload-json must contain a non-empty object", EXIT_USAGE)
+    try:
+        result = update_standards_backfill_task(conn, payload)
+    except LookupError as exc:
+        raise CLIError("backfill-task-not-found", str(exc), EXIT_NOT_FOUND) from exc
+    except ValueError as exc:
+        raise CLIError("backfill-task-update-failed", str(exc), EXIT_USAGE) from exc
+    return dict(result)
+
+
 def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "status":
         print(
@@ -5945,6 +5961,9 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
         return
     if command == "standards-override":
         print(f"{data['project_id']} {data['standard_id']}={data['status']}")
+        return
+    if command == "standards-backfill-update":
+        print(f"task={data['id']} status={data['status']} blocked={data['blocked']}")
         return
     if command == "prove-project-health":
         summary = data["summary"]
@@ -6255,6 +6274,8 @@ def _command_name(args: argparse.Namespace) -> str:
         return f"criteria-finding-{args.criteria_finding_command}"
     if args.command == "standards-resolution":
         return f"standards-resolution-{args.standards_resolution_command}"
+    if args.command == "standards-backfill-update":
+        return "standards-backfill-update"
     return args.command
 
 
@@ -6289,6 +6310,7 @@ def _command_requires_db(args: argparse.Namespace) -> bool:
         "delta-explain",
         "recommend-workflow",
         "standards-override",
+        "standards-backfill-update",
         "asset-lifecycle",
         "workflow-compare",
         "promote-asset",
@@ -7631,6 +7653,16 @@ def create_parser() -> argparse.ArgumentParser:
     standards_override.add_argument("--evidence", action="append", default=[])
     standards_override.add_argument("--waiver-review-at", default=None)
 
+    standards_backfill_update = subparsers.add_parser(
+        "standards-backfill-update",
+        help="Apply one governed standards backfill task state transition",
+    )
+    standards_backfill_update.add_argument(
+        "--payload-json",
+        required=True,
+        help="JSON object containing taskId and one or more mutable task fields",
+    )
+
     asset_lifecycle = subparsers.add_parser(
         "asset-lifecycle", help="List and transition prompt, skill, and workflow assets"
     )
@@ -8318,6 +8350,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "standards-override":
             assert conn is not None
             data = _standards_override_payload(conn, args)
+        elif args.command == "standards-backfill-update":
+            assert conn is not None
+            data = _standards_backfill_update_payload(conn, args)
         elif args.command == "asset-lifecycle" and args.asset_lifecycle_command == "list":
             assert conn is not None
             data = _asset_lifecycle_list_payload(conn, args)
