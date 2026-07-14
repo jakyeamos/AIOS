@@ -4,7 +4,7 @@ projectName: AIOS
 summary: Active local-first agent operating system with honest evidence verdicts, evidence-gated verify-run completion, durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption, review-gated session-intelligence tools, and progressive colocated context routing across AIOS and linked repos.
 healthScore: 85
 statusLabel: warning
-nextStep: Complete the human-reviewed retention decision and reconcile the 561 live FK violations before freezing the paired effectiveness corpus and UI gates.
+nextStep: Complete the human-reviewed retention decision and reconcile the 561 live FK violations, then close the remaining anti-slop/NFT UI gates before freezing the paired effectiveness corpus.
 blockers: []
 lastUpdated: 2026-07-14
 tags: [infra, ai-os, hooks, automation]
@@ -53,6 +53,10 @@ The current recovery gate was rerun read-only: the live store remains
 `quick_check=ok` and `integrity_check=ok` with 561 FK violations, while the
 disposable transformer/restore path reaches zero FK violations and replays the
 eight-step daily-flow preview without changing live rows.
+The first ADR-004 UI pass now has passing TypeScript, architecture,
+warning-baseline, native-module, and production-build checks; ESLint remains
+blocked by a stale local anti-slop package copy, and one NFT tracing warning
+remains in the prompt filesystem adapter.
 
 AIOS now also has a file-backed and SQLite-backed context-loop learning primitive: `services/context_loops.py`, `schema.sql`, and `python bin/aios.py context-loops ...` record inner-loop context/draft runs, review events, learning candidates, explicit approvals/rejections, approved lesson application, metrics, and a draft-only email pilot. Contract docs and examples live under `aios/context-loops/`.
 
@@ -87,6 +91,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-14: Scoped the UI Turbopack root and refreshed native dependencies: TypeScript, architecture, warning-baseline, and production build passed; workspace-root warning resolved, with anti-slop install/NFT tracing blockers recorded.
 - 2026-07-14: Reran the live recovery preflight and disposable restore drill: 561 FK violations captured, 561 quarantined in the copy, zero restored FK violations, and eight-step daily-flow replay passed.
 - 2026-07-14: Routed CTS registry AIOS metadata reads through shared storage (`52d22e5`): passed Ruff/BasedPyright and disposable read-only registry proof.
 - 2026-07-14: Routed lifecycle migration and commit-quality evidence reads through shared storage (`6924d0a`): passed Ruff/BasedPyright, 29 focused tests, and disposable migration proof.
@@ -101,13 +106,12 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-07-13: Routed `extract-personal-patterns.py` through shared storage (`e581f51`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable multi-session dry-run proof.
 - 2026-07-13: Routed `extract-handoff-learnings.py` through shared storage (`bcafed5`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable handoff dry-run proof.
 - 2026-07-13: Routed `extract-bug-motifs.py` through shared storage (`1a47bfd`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable dry-run detection proof.
-- 2026-07-13: Routed the business-memory path resolver and five CLI adapters through shared storage (`2eb414f`): `AIOS_DB`, Ruff/BasedPyright, memory-layer tests, and disposable init/compile/query/lint/daemon proof passed.
 
 ## Open Problems
 
-1. The current main-store preflight reports 561 persisted foreign-key violations (older audit documents record 555/557); divergent SQL snapshots, distributed runtime DDL, and live restore ownership remain unresolved.
+1. The current main-store preflight reports 561 persisted foreign-key violations (older audit documents record 555/557); divergent SQL snapshots, distributed runtime DDL, and human retention approval remain unresolved.
 2. V2 now intentionally excludes remote control, but current UI mutation endpoints still lack the required loopback, local-capability, approval-enforcement, and single-mutation-owner implementation.
-3. UI implementation remains blocked by the deterministic validation gates: the external anti-slop file dependency is stale/out-of-repo, fonts are network-sensitive, Turbopack root/tracing warnings remain, and the dev tRPC adapter import still fails.
+3. UI implementation remains blocked by the stale local anti-slop package copy and one remaining NFT tracing warning from the prompt filesystem adapter; TypeScript, architecture, warning-baseline, and production build now pass.
    Milestone 0's fixture/replay contract, storage boundary, and copied-store recovery proof are complete; adapter adoption, human review of the 73 archived quality rows, and ADR-004 UI preconditions remain before later write-capable/UI work.
 ## Next Concrete Steps
 

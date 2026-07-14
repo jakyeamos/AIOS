@@ -91,6 +91,10 @@ The current recovery gate was rerun read-only against `~/AIOS/data/aios.db`:
 the live copy remains healthy at the SQLite level but reports 561 FK
 violations; a disposable transformer quarantined all 561, reached zero FK
 violations, restored cleanly, and replayed the eight-step daily-flow preview.
+The first ADR-004 UI validation pass now has clean TypeScript, architecture,
+warning-baseline, native-module, and production-build evidence; the build has
+one remaining NFT tracing warning in the prompt filesystem adapter, and ESLint
+is still blocked by a stale local copy of the external anti-slop package.
 
 ## Completed
 
@@ -222,6 +226,9 @@ violations, restored cleanly, and replayed the eight-step daily-flow preview.
   shared read-only storage and made its default honor `AIOS_DB`; the CTS
   graph-store database remains CTS-owned, and a disposable registry proof
   passed.
+- Scoped `aios-ui` Turbopack to its application working directory in
+  `next.config.ts`; the workspace-root warning is gone and a clean production
+  build now completes after rebuilding the local `better-sqlite3` binary.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -330,6 +337,13 @@ violations, restored cleanly, and replayed the eight-step daily-flow preview.
 - Disposable copied-store recovery drill — passed: 561 quarantines, zero
   post-transform FK violations, restored `quick_check=ok` and
   `integrity_check=ok`, and eight-step read-only daily-flow replay.
+- `pnpm --dir aios-ui exec tsc --noEmit` — passed.
+- `pnpm --dir aios-ui lint:architecture` — passed (122 modules, 255 dependencies).
+- `pnpm --dir aios-ui lint:warning-baseline` — passed (0/71 warnings).
+- `pnpm --dir aios-ui build` — passed after local native rebuild; one NFT
+  tracing warning remains in `server/routers/prompts.ts`.
+- `pnpm --dir aios-ui lint` — blocked before TypeScript by the stale local
+  `eslint-plugin-anti-slop` copy missing `no-arbitrary-z-index.mjs`.
 - `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
@@ -474,7 +488,8 @@ canonical eight-step trace.
 
 ## Known blockers
 
-- The baseline UI lint/build gates remain blocked by ADR-004's known external
-  anti-slop dependency, font, root/tracing, and tRPC adapter issues.
+- The UI build and architecture/type gates now pass; ADR-004 remains blocked by
+  the stale external anti-slop installation and one NFT tracing warning from
+  the prompt filesystem adapter. The prior workspace-root warning is resolved.
 - The main store still requires ADR-002 quarantine, migration, and restore
   proof before any write-capable slice.
