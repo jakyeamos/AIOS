@@ -128,8 +128,19 @@ def ensure_migration_schema(conn: sqlite3.Connection) -> None:
     )
 
 
+def _table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
+    return (
+        conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1",
+            (table_name,),
+        ).fetchone()
+        is not None
+    )
+
+
 def migration_records(conn: sqlite3.Connection) -> tuple[MigrationRecord, ...]:
-    ensure_migration_schema(conn)
+    if not _table_exists(conn, "schema_migrations"):
+        return ()
     rows = conn.execute(
         """
         SELECT version, migration_id, checksum, applied_at, tool_version,
@@ -324,7 +335,8 @@ def list_quarantine(
     *,
     migration_id: str | None = None,
 ) -> tuple[QuarantineRecord, ...]:
-    ensure_migration_schema(conn)
+    if not _table_exists(conn, "migration_quarantine"):
+        return ()
     if migration_id is None:
         rows = conn.execute(
             "SELECT * FROM migration_quarantine ORDER BY id"

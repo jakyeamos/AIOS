@@ -8,13 +8,19 @@ Preserves or creates ## Notes section below it for manual additions.
 import json
 import os
 import re
-import sqlite3
 import subprocess
 import sys
 from datetime import UTC, datetime
+from pathlib import Path
 
-from aios_paths import get_vault_subpath
-from hook_lifecycle import ensure_session, load_hook_payload
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from aios_paths import get_vault_subpath  # noqa: E402
+from hook_lifecycle import ensure_session, load_hook_payload  # noqa: E402
+
+from services.storage import connect as connect_storage  # noqa: E402
 
 DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
@@ -133,7 +139,7 @@ def main() -> None:
         sys.exit(0)
 
     try:
-        conn = sqlite3.connect(DB)
+        conn = connect_storage(DB)
         ensure_session(
             conn,
             session_id=session_id,

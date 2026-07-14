@@ -36,6 +36,7 @@ from hook_lifecycle import (  # noqa: E402
 
 from services.agent_rules import agent_rules_context  # noqa: E402
 from services.rtk_integration import ensure_rtk_schema, load_compression_rules  # noqa: E402
+from services.storage import connect as connect_storage  # noqa: E402
 
 DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
@@ -379,7 +380,7 @@ def main() -> None:
     context_packet = ""
 
     try:
-        conn = sqlite3.connect(DB)
+        conn = connect_storage(DB)
         resolved_cwd = resolve_session_cwd(conn, cwd)
         project_id = get_or_create_project(conn, resolved_cwd)
         ensure_runtime_schema(conn)

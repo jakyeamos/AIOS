@@ -13,7 +13,9 @@ versioned migration ledger, quarantine inventory, and backup/restore helpers
 operate only against explicit disposable paths in this slice. The copied-store
 runner now snapshots preflight health/counts, applies an explicit transformer,
 requires zero FK violations before recording the ledger, and emits a post-
-migration backup; the live store has not been migrated.
+The three lifecycle hooks and UI database adapter now converge on the same
+`AIOS_DB` override and baseline pragmas; UI-owned request-time DDL remains a
+known blocker rather than an implicit migration path.
 
 ## Completed
 
@@ -41,6 +43,9 @@ migration backup; the live store has not been migrated.
   classes: unique working-directory project mappings, quarantine/nulling of
   missing session references, and quarantine/nulling of shadow references to
   absent `eval_tasks`; it never creates synthetic parents.
+- Routed `hook-stop.py`, `hook-session-start.py`, and `hook-update-focus.py`
+  through `services.storage.connect`; updated `aios-ui/server/db.ts` to honor
+  `AIOS_DB` and the same foreign-key/WAL/busy-timeout pragmas.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -57,6 +62,9 @@ migration backup; the live store has not been migrated.
 - `.venv/bin/pytest tests/test_migration_transformers.py -q` — passed (2 tests).
 - `.venv/bin/ruff check services/migration_transformers.py tests/test_migration_transformers.py` — passed.
 - `.venv/bin/basedpyright services/migration_transformers.py tests/test_migration_transformers.py` — passed.
+- `.venv/bin/pytest tests/test_hook_stop.py tests/test_hook_lifecycle.py tests/test_orchestration_runtime.py tests/test_agent_rules_runtime.py -q` — passed (51 tests).
+- `pnpm --dir aios-ui exec tsc --noEmit` — passed after adapter adoption.
+- `pnpm --dir aios-ui lint:architecture` — passed (122 modules, 255 dependencies) after adapter adoption.
 - `pnpm --dir aios-ui lint:architecture` — passed (122 modules, 255 dependencies).
 - `pnpm quality:eval` — interrupted after the broad vulture scan expanded into
   historical shadow worktrees; the focused checks above are the relevant proof.
@@ -113,6 +121,8 @@ live migration work.
 
 - Route hooks, storage helpers, and UI adapters through the shared connection
   contract without changing the canonical `AIOS_DB` meaning.
+- Migrate remaining Python direct-connection adapters and remove UI request-time
+  DDL only after the deterministic UI and migration gates are accepted.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.

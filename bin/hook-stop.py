@@ -41,6 +41,7 @@ from hook_lifecycle import (  # noqa: E402
 from services.evidence_artifacts import usable_evidence_refs  # noqa: E402
 from services.rtk_integration import ensure_rtk_schema, rtk_metrics_log  # noqa: E402
 from services.session_effectiveness import write_session_effectiveness_receipt  # noqa: E402
+from services.storage import connect as connect_storage  # noqa: E402
 from services.verifier_artifacts import validate_closeout_verification  # noqa: E402
 from services.workflow_orchestration import (  # noqa: E402
     load_workflow_registry,
@@ -774,7 +775,7 @@ def main() -> None:
         sys.exit(0)
 
     try:
-        conn = sqlite3.connect(DB)
+        conn = connect_storage(DB)
         resolved_session_id = resolve_hook_session_id(
             conn,
             payload_session_id=session_id,
