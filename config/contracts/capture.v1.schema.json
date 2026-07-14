@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/kepano-mining/capture.v1.schema.json",
+  "title": "Second-brain capture envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "captured_at",
+    "source",
+    "metadata",
+    "content",
+    "adapter",
+    "provenance",
+    "validation",
+    "enrichment"
+  ],
+  "properties": {
+    "schema_version": { "const": "capture.v1" },
+    "captured_at": { "type": "string", "format": "date-time" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "input_format", "source_uri", "content_hash"],
+      "properties": {
+        "provider": { "type": "string", "minLength": 1 },
+        "input_format": {
+          "type": "string",
+          "enum": ["URL", "HTML", "Markdown", "JSON", "CSV"]
+        },
+        "source_uri": { "type": ["string", "null"] },
+        "content_hash": { "type": "string", "minLength": 1 }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Source metadata kept separate from normalized body content.",
+      "additionalProperties": true
+    },
+    "content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["html", "markdown", "word_count", "structure"],
+      "properties": {
+        "html": { "type": ["string", "null"] },
+        "markdown": { "type": "string" },
+        "word_count": { "type": "integer", "minimum": 0 },
+        "structure": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["headings", "code_blocks", "footnotes", "math", "callouts"],
+          "properties": {
+            "headings": { "type": "integer", "minimum": 0 },
+            "code_blocks": { "type": "integer", "minimum": 0 },
+            "footnotes": { "type": "integer", "minimum": 0 },
+            "math": { "type": "integer", "minimum": 0 },
+            "callouts": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "adapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "trigger", "field_sources"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "trigger": { "type": "string", "minLength": 1 },
+        "field_sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["canonical_field", "source_expression"],
+            "properties": {
+              "canonical_field": { "type": "string", "minLength": 1 },
+              "source_expression": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["extractor", "content_selector", "options", "retries", "profile", "removals"],
+      "properties": {
+        "extractor": { "type": "string", "minLength": 1 },
+        "content_selector": { "type": ["string", "null"] },
+        "options": { "type": "object", "additionalProperties": true },
+        "retries": { "type": "integer", "minimum": 0 },
+        "profile": { "type": "string", "minLength": 1 },
+        "removals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["stage", "selector", "count", "reason"],
+            "properties": {
+              "stage": { "type": "string", "minLength": 1 },
+              "selector": { "type": ["string", "null"] },
+              "count": { "type": "integer", "minimum": 0 },
+              "reason": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "warnings"],
+      "properties": {
+        "status": { "type": "string", "enum": ["valid", "partial", "invalid"] },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "enrichment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "outputs"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["not_requested", "pending", "complete", "failed"]
+        },
+        "outputs": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

@@ -1,0 +1,116 @@
+[
+  {
+    "source": {
+      "provider": "fixture",
+      "input_format": "Markdown",
+      "source_uri": "https://example.invalid/footnote-math",
+      "content": "# Footnote math fixture\n\n$x^2$\n\nA claim.[^1]\n\n[^1]: A preserved note."
+    },
+    "metadata": {
+      "title": "Footnote math fixture",
+      "author": "Fixture Author"
+    },
+    "adapter": {
+      "name": "defuddle-web",
+      "version": "0.19.1",
+      "trigger": "https://example.invalid/*",
+      "field_sources": [
+        {
+          "canonical_field": "title",
+          "source_expression": "metadata.title"
+        },
+        {
+          "canonical_field": "author",
+          "source_expression": "metadata.author"
+        }
+      ]
+    },
+    "provenance": {
+      "extractor": "aios.capture_v1",
+      "content_selector": "article",
+      "options": {
+        "markdown": true,
+        "debug": true
+      },
+      "retries": 0,
+      "profile": "fixture",
+      "removals": []
+    }
+  },
+  {
+    "source": {
+      "provider": "fixture",
+      "input_format": "HTML",
+      "source_uri": "https://example.invalid/code-docs",
+      "content": "<main><h1>Code docs fixture</h1><div class=\"ad\">ignored advertisement</div><pre><code class=\"language-python\">print(1)</code></pre></main>"
+    },
+    "metadata": {
+      "title": "Code docs fixture",
+      "language": "en"
+    },
+    "adapter": {
+      "name": "defuddle-web",
+      "version": "0.19.1",
+      "trigger": "https://example.invalid/*",
+      "field_sources": [
+        {
+          "canonical_field": "title",
+          "source_expression": "metadata.title"
+        }
+      ]
+    },
+    "provenance": {
+      "extractor": "aios.capture_v1",
+      "content_selector": "main",
+      "options": {
+        "markdown": true,
+        "debug": true
+      },
+      "retries": 1,
+      "profile": "fixture",
+      "removals": []
+    }
+  },
+  {
+    "source": {
+      "provider": "fixture",
+      "input_format": "JSON",
+      "source_uri": "https://example.invalid/recipe",
+      "content": "{\"name\": \"Recipe fixture\", \"recipeIngredient\": [\"Mix\"], \"recipeInstructions\": [{\"text\": \"Bake.\"}]}"
+    },
+    "metadata": {
+      "title": "Recipe fixture",
+      "author": "Recipe Author",
+      "source_type": "recipe"
+    },
+    "adapter": {
+      "name": "clipper-recipes",
+      "version": "0.1.0",
+      "trigger": "schema:@Recipe",
+      "field_sources": [
+        {
+          "canonical_field": "title",
+          "source_expression": "schema:@Recipe:name"
+        },
+        {
+          "canonical_field": "ingredients",
+          "source_expression": "schema:@Recipe:recipeIngredient"
+        },
+        {
+          "canonical_field": "instructions",
+          "source_expression": "schema:@Recipe:recipeInstructions[*].text"
+        }
+      ]
+    },
+    "provenance": {
+      "extractor": "aios.capture_v1",
+      "content_selector": null,
+      "options": {
+        "noteContentFormat": "markdown"
+      },
+      "retries": 0,
+      "profile": "fixture",
+      "removals": []
+    }
+  }
+]
