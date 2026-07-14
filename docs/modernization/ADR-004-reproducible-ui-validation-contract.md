@@ -30,10 +30,11 @@ The authoritative target is:
   responses, hydration failures, missing styles, or duplicate React keys.
 
 The current local setup now has a reproducible in-repository anti-slop package,
-green independent static gates, and a passing disposable home/projects runtime
-smoke. It is not yet v2 validation-ready: the production build still emits one
-NFT tracing warning, and browser keyboard/tablet evidence plus the Python-owned
-UI mutation boundary remain outstanding.
+green independent static gates, seeded control-plane route evidence, and a
+responsive in-app browser pass. It is not yet v2 validation-ready: the
+production build still emits one NFT tracing warning, a checked-in browser
+harness is absent, the available browser surface did not advance focus on Tab,
+and the Python-owned UI mutation boundary remains outstanding.
 
 ## Current evidence
 
@@ -47,6 +48,11 @@ UI mutation boundary remain outstanding.
 | `pnpm --dir aios-ui lint:anti-slop:fixtures` | Pass | Fixture coverage is now deterministic against the committed plugin artifact |
 | `pnpm --dir aios-ui build` | Pass with one NFT tracing warning | The inferred-root warning is resolved; `server/routers/prompts.ts` still causes a whole-project file-tracing warning that needs a narrow fix or reviewed exception |
 | Disposable loopback smoke | `/` returned 200; `projects.list` returned 200 with five source-backed projects | Server log had no request errors; browser viewport and keyboard evidence is still outstanding |
+| Seeded `controlPlane.overview` route | HTTP 200; 16 workflow templates, 20 runs, 12 packets, and 25 findings | Source-backed response, not an HTML error page |
+| Seeded `controlPlane.runDetail` route | HTTP 200; typed response for the latest seeded run with three events | Valid input and typed response confirmed |
+| In-app browser responsive matrix | 375×812, 768×1024, and 1440×900; no horizontal overflow; one `main` and one `nav`; 79 focusable controls | Local exploratory evidence; no console errors after duplicate-key fix |
+| In-app browser same-origin network capture | 24 requests; run-detail tRPC response 200; zero captured 4xx/5xx or loading failures | Local exploratory evidence; no checked-in harness yet |
+| Keyboard-only journey | Browser keypress surface did not advance focus after Tab | Blocked until a pinned/checked-in harness or equivalent reliable input path exists |
 
 The 2026-07-13 rows remain historical baseline evidence in `AUDIT.md`; they
 are not the current package or runtime state.
@@ -56,6 +62,10 @@ The baseline also records these browser/runtime findings in
 `workflow_agent_control.explicit_handshake`, `testing.trust_signal`, and
 `architecture.boundary_enforcement`; an intermittent `runDetail` 500; lost
 stylesheet after reload; and no passing tablet proof.
+
+The duplicate-key finding is now fixed in
+`components/control/ControlPlaneStudio.tsx`; the remaining browser gap is the
+keyboard-only journey and its reproducible harness.
 
 ## Package, lockfile, and workspace contract
 

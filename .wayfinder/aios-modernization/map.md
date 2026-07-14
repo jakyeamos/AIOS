@@ -33,6 +33,7 @@ created: 2026-07-10
 - [Establish a Reproducible UI Validation Contract](tickets/007-establish-reproducible-ui-validation-contract.md) - UI acceptance now requires deterministic pnpm/Node/package, local-font, explicit-root, independent quality-gate, runtime, browser, network, and console evidence; current anti-slop, font/root, and tRPC failures remain recorded blockers for implementation.
 - [Classify Satellite Subsystems and Select the Modernization Strategy](tickets/005-classify-satellite-subsystems-and-select-modernization-strategy.md) - V2 uses a parallel surface with progressive migration and one state/mutation owner: core runtime/UI/eval/learning/session systems stay in AIOS, CTS/business memory remain sidecars, and extracted contracts/tools stay adapter-only.
 - [Write the V2 Target and Vertical Modernization Plan](tickets/006-write-v2-target-and-vertical-modernization-plan.md) - The accepted target and execution contract define one operator loop, one authority boundary, and eight gated vertical milestones from shared fixtures and canonical recovery through UI validation, governed closeout, satellites, cutover, adversarial review, and deletion.
+- [Close the M2 Browser Validation Frontier](tickets/008-close-m2-browser-validation-frontier.md) - Seeded route, responsive, console, network, and duplicate-key evidence now pass locally; the checked-in browser harness and keyboard-only journey remain explicit blockers, so M3 is not started.
 
 ## Fog
 

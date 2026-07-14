@@ -615,8 +615,8 @@ export function ControlPlaneStudio({
               <p className="panel-title">Health Impact</p>
               <ul className="detail-list">
                 {selectedRunDetail.inspection.standardsDeltas.length > 0 ? (
-                  selectedRunDetail.inspection.standardsDeltas.map((delta) => (
-                    <li key={delta.standardId}>
+                  selectedRunDetail.inspection.standardsDeltas.map((delta, index) => (
+                    <li key={`${delta.standardId}-${delta.status}-${index}`}>
                       {delta.standardId}: {delta.status} · impact {delta.estimatedHealthImpact.toFixed(2)} · {delta.priorityBucket}
                     </li>
                   ))

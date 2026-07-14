@@ -112,6 +112,15 @@ Independent ESLint, anti-slop fixtures, TypeScript, architecture, and warning
 baseline checks pass; the production build passes with one NFT tracing warning,
 and a disposable loopback smoke returned HTTP 200 for `/` and `projects.list`.
 
+The M2 browser frontier then verified seeded `controlPlane.overview` (HTTP 200;
+16 workflow templates, 20 runs, 12 packets, 25 findings) and typed
+`controlPlane.runDetail` (HTTP 200; three events). The in-app browser passed
+375×812, 768×1024, and 1440×900 without horizontal overflow or console errors;
+same-origin capture observed 24 requests with no failed response. A duplicate
+React key in run-detail standards deltas was fixed. The ticket remains blocked
+because no checked-in browser harness exists and the available browser input
+surface did not advance focus on Tab, so keyboard-only proof is not claimed.
+
 ## Completed
 
 - Added `aios-v2-vertical-fixtures-v0.1` with healthy, empty, blocked, failed,
