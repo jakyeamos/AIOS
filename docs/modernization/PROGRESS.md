@@ -126,6 +126,19 @@ traversal with visible focus. Prompt and workflow registries are generated and
 checked before build, and the managed-runtime spawn call is statically
 traceable. `pnpm --dir aios-ui build` now completes without the NFT warning.
 
+M3 is now resolved as a read-only operator shell. `/` is Today, `/start` is
+Start work, and `/runs/:id` is the canonical control-plane Current run path;
+legacy session ids still fall back to the existing detail surface. The shell
+uses the existing tRPC projections, exposes source/freshness/authority and
+next-action context, distinguishes healthy/blocked/stale/empty states, and
+keeps mutations behind the Python owner. Primary navigation is task-centred
+with contextual satellites behind disclosure, and the layout adds skip-link,
+focus, responsive, and no-overflow behavior. The M2 and M3 Playwright suites
+pass at all three viewports with zero mutation requests, console errors, bad
+same-origin responses, or horizontal overflow. Full UI lint/typecheck,
+architecture, warning-baseline, anti-slop, production build, and context
+validation pass; M4 remains the governed Start work → Verify mutation slice.
+
 ## Completed
 
 - Added `aios-v2-vertical-fixtures-v0.1` with healthy, empty, blocked, failed,

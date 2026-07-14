@@ -92,10 +92,12 @@ test("M2 seeded control-plane browser contract", async ({ page, request }, testI
       clientWidth: document.documentElement.clientWidth,
       main: document.querySelectorAll("main").length,
       nav: document.querySelectorAll("nav").length,
+      primaryNav: document.querySelectorAll("nav[aria-label='Primary']").length,
     }));
     expect(metrics.scrollWidth).toBe(metrics.clientWidth);
     expect(metrics.main).toBe(1);
-    expect(metrics.nav).toBe(1);
+    expect(metrics.nav).toBeGreaterThanOrEqual(1);
+    expect(metrics.primaryNav).toBe(1);
     await page.screenshot({ path: testInfo.outputPath(`m2-control-${viewport.name}.png`), fullPage: true });
   }
 

@@ -6,6 +6,7 @@ import { PageShell } from "@/components/layout/PageShell";
 import { SessionCard } from "@/components/panels/SessionCard";
 import { StatusBadge } from "@/components/primitives/StatusBadge";
 import { TimelineEvent } from "@/components/primitives/TimelineEvent";
+import { CurrentRunSurface, selectCurrentRun } from "@/components/v2/V2OperatorShell";
 import { formatDateTime } from "@/lib/format";
 import { getCaller } from "@/server/caller";
 
@@ -29,6 +30,25 @@ export default async function RunDetailPage({
   const { id } = await params;
   const query = await searchParams;
   const caller = await getCaller();
+  const controlPlaneRun = await caller.controlPlane.runDetail({ runId: id });
+
+  if (controlPlaneRun) {
+    const overview = await caller.controlPlane.overview();
+    const currentRun = selectCurrentRun(overview.runs);
+    const nextAction = overview.nextActions.find(
+      (action) => action.projectId !== null && action.projectId === controlPlaneRun.run.projectId,
+    ) ?? (currentRun?.id === controlPlaneRun.run.id ? overview.nextActions[0] ?? null : null);
+
+    return (
+      <PageShell
+        title={`Current run · ${controlPlaneRun.run.projectName}`}
+        subtitle="Canonical control-plane run projection with explicit stage, authority, evidence, and freshness."
+      >
+        <CurrentRunSurface detail={controlPlaneRun} nextAction={nextAction} />
+      </PageShell>
+    );
+  }
+
   const [result, trace, evalSummary] = await Promise.all([
     caller.sessions.detail({ id }),
     caller.dailyFlow.replay({ runId: id }),

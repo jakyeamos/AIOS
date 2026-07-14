@@ -26,9 +26,10 @@ export default function RootLayout({ children }: { children: ReactNode }): React
     <html lang="en" suppressHydrationWarning>
       <body className={`${geist.variable} ${jetbrainsMono.variable}`}>
         <Providers>
+          <a className="skip-link" href="#main-content">Skip to main content</a>
           <div className="app-root">
             <Sidebar />
-            <main className="main-content">
+            <main id="main-content" className="main-content">
               <TopBar />
               {children}
             </main>

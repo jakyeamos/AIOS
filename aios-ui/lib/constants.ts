@@ -5,7 +5,12 @@ export type NavItem = {
 };
 
 export const PRIMARY_NAV: NavItem[] = [
-  { href: "/", label: "Command Center", short: "Home" },
+  { href: "/", label: "Today", short: "Today" },
+  { href: "/start", label: "Start work", short: "Start" },
+  { href: "/runs", label: "Current run", short: "Run" },
+];
+
+export const SECONDARY_NAV: NavItem[] = [
   { href: "/knowledge", label: "Knowledge", short: "Wiki" },
   { href: "/search", label: "Search", short: "Search" },
   { href: "/projects", label: "Projects", short: "Projects" },

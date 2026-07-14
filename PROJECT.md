@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-07-10
+Last updated: 2026-07-14
 
 ## What AIOS Is
 
@@ -33,6 +33,17 @@ The repository currently contains five meaningful subsystems:
    The file-backed contract layer for inner/outer context learning loops: approved/rejected lessons, review taxonomy, retrieval policy, examples, and email pilot guidance.
 
 Root operator documentation now lives in `README.md`, including local UI launch commands, key UI routes, store paths, workflow proposal backfill, and verification commands.
+
+## V2 Modernization (2026-07-14)
+
+The read-only v2 operator shell is shipped behind the canonical projections:
+Today (`/`), Start work (`/start`), and Current run (`/runs/:id`). It uses one
+task-centred primary navigation with contextual satellites, preserves legacy
+session detail fallback, and exposes provenance, freshness, authority, next
+action, and explicit healthy/blocked/stale/empty states without emitting
+mutations. M2 and M3 browser, accessibility, network, console, architecture,
+lint, typecheck, anti-slop, context, and production-build gates pass. The next
+gated slice is Python-owned governed Start work → Verify mutation routing.
 
 ## Implemented On 2026-07-10
 
