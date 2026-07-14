@@ -1,6 +1,6 @@
 # AIOS V2 Modernization Progress
 
-**Status:** First M6 write-owner slice complete; live effectiveness remains deferred and M6 remains blocked
+**Status:** M6 write-owner slices advancing; live effectiveness remains deferred and M6 remains blocked
 **Updated:** 2026-07-14
 **Plan:** [EXEC_PLAN.md](EXEC_PLAN.md)
 
@@ -232,6 +232,15 @@ Focused Python/CLI proof, UI lint/typecheck/build, dependency architecture, and
 the pinned three-test browser contract pass. M6 remains deferred because the
 paired benchmark is audit-only with unavailable provider telemetry and other
 legacy write families still need bounded owner migrations.
+
+The Taski project component-settings toggle is now Python-owned. The validated
+`project-component-update` JSON CLI enforces project identity, component-key
+membership, and boolean state before the idempotent upsert; the tRPC mutation
+reuses the existing TypeScript read projection, and the direct UI write helper
+was deleted. Focused Python/CLI proof, UI lint/typecheck/build, dependency
+architecture, and the pinned three-test browser contract pass. Rollback is the
+parent revision with no schema migration. M6 remains deferred while benchmark
+telemetry and the remaining legacy write families are open.
 
 ## Completed
 

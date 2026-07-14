@@ -110,6 +110,15 @@ remains deferred because the paired benchmark is audit-only with unavailable
 provider telemetry and other legacy write families still need bounded owner
 migrations.
 
+The Taski project component-settings toggle is now Python-owned. The validated
+`project-component-update` JSON CLI enforces project identity, component-key
+membership, and boolean state before the idempotent upsert; the tRPC mutation
+reuses the existing TypeScript read projection, and the direct UI write helper
+was deleted. Focused Python/CLI proof, UI lint/typecheck/build, dependency
+architecture, and the pinned three-test browser contract pass. Rollback is the
+parent revision with no schema migration. M6 remains deferred while benchmark
+telemetry and the remaining legacy write families are open.
+
 ## Implemented On 2026-07-10
 
 Codex session-intelligence implementation can now target explicit candidate ids:
