@@ -4,9 +4,9 @@ projectName: AIOS
 summary: Active local-first agent operating system with honest evidence verdicts, evidence-gated verify-run completion, durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption, review-gated session-intelligence tools, and progressive colocated context routing across AIOS and linked repos.
 healthScore: 85
 statusLabel: warning
-nextStep: Migrate the remaining lower-traffic adapters, close the restored-copy retention review, then freeze the paired effectiveness corpus before later execution.
+nextStep: Continue migrating lower-traffic adapters, close the restored-copy retention review, then freeze the paired effectiveness corpus before later execution.
 blockers: []
-lastUpdated: 2026-07-13
+lastUpdated: 2026-07-14
 tags: [infra, ai-os, hooks, automation]
 areas: [engineering]
 goals: []
@@ -14,7 +14,7 @@ repoType: infra
 sourceOfTruth: mixed
 primaryLanguage: Python
 activeBranch: dev
-lastCommitDate: 2026-07-13
+lastCommitDate: 2026-07-14
 quality:
   lint: fail
   types: fail
@@ -36,6 +36,10 @@ agentExpectationsVersion: 1
 AIOS now has a completed v2 modernization baseline, accepted local-first operating model, canonical-state contract, task-centred UI contract, reproducible UI validation contract, subsystem modernization strategy, and dependency-ordered target/vertical plan: [`AUDIT.md`](../docs/modernization/AUDIT.md), [`TARGET.md`](../docs/modernization/TARGET.md), [`EXEC_PLAN.md`](../docs/modernization/EXEC_PLAN.md), [`ADR-001`](../docs/modernization/ADR-001-v2-operating-loop-and-trust-boundary.md), [`ADR-002`](../docs/modernization/ADR-002-canonical-state-and-migration-authority.md), [`ADR-003`](../docs/modernization/ADR-003-task-centred-ia-and-accessible-design-system.md), [`ADR-004`](../docs/modernization/ADR-004-reproducible-ui-validation-contract.md), and [`ADR-005`](../docs/modernization/ADR-005-subsystem-ownership-and-parallel-v2-strategy.md). Wayfinder Ticket 006 is resolved; Milestone 0 has the shared JSON fixture, TypeScript boundary guard, Python cross-reference tests, disposable SQLite projection, and daily-flow replay proof. Milestone 1 now has the executable Python storage boundary, copied-store runner, evidence-backed FK transformer, and broad adapter adoption: one resolved `AIOS_DB`, canonical pragmas, read-only projections, idempotent migration/quarantine ledger, schema checksums, preflight/postflight health/counts, unique-path mappings, source-payload quarantine, and immutable backup/restore helpers; lifecycle hooks, high-traffic prompt/compaction/post-tool/session-stop hooks, the managed runtime, Codex ingestion, session CLI, all four provider canonical upserts, stale-session repair, prompt sync, workflow experiment utilities, metrics/reporting paths, history import, inventory sync, Apple-backed ingestion writes, the CLI doctor probe, daily pipeline pending-rule query, pattern schema migration, pattern extraction, pattern scoring, pattern promotion, pattern confirmation/approval/contradiction lifecycle tools, observation review, noise purging, bug-motif extraction, handoff-learning extraction, personal-pattern extraction and promotion, agent synthesis, domain-file projection, DOCX/PDF document indexers, rule-bundle registration, the business-memory path resolver and five CLI adapters, issues/handoffs, query/statusline utilities, and the UI database path converge on the override/pragmas. The actual current read-only store preflight reports 561 FK violations (older audit documents record 555/557); the disposable transformer copy reaches zero and the restored copy replays the canonical daily flow. UI-owned request-time DDL, remaining lower-traffic adapters, and human retention review are still gated. V2 is a single-user, loopback-only local control plane with one logical mutation authority; no live rows have been migrated. The target and plan now turn those decisions into eight vertical milestones plus a paired-effectiveness gate before satellite promotion and cutover. Divergent schema/bootstrap ownership, unenforced UI mutation boundaries, and blocked UI implementation gates remain. The current `dev` worktree was already dirty when this work started, so its shadow lane remains trace-only.
 
 _(4 older entries trimmed)_
+
+Pipeline and lab schema migrations now also use the shared storage boundary
+and `AIOS_DB` override; their schema/data changes remain disposable until the
+main-store migration gate is accepted.
 
 AIOS now also has a file-backed and SQLite-backed context-loop learning primitive: `services/context_loops.py`, `schema.sql`, and `python bin/aios.py context-loops ...` record inner-loop context/draft runs, review events, learning candidates, explicit approvals/rejections, approved lesson application, metrics, and a draft-only email pilot. Contract docs and examples live under `aios/context-loops/`.
 
@@ -70,6 +74,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-14: Routed pipeline and lab schema migrations through shared storage (`217f29c`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable state/schema/FK migration proof.
 - 2026-07-14: Routed rule-bundle registration through shared storage (`7c3d509`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable FK-enforced registration proof.
 - 2026-07-14: Routed DOCX/PDF indexers through shared storage (`4c1374e`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable dry-run metadata/index proof.
 - 2026-07-14: Routed `build-domain-files.py` through shared read-only storage (`21bdd63`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable domain projection dry-run proof.
@@ -84,7 +89,6 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-07-13: Routed pattern confirmation, approval, and contradiction tools through shared storage (`d9eac7c`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable lifecycle/event-ledger proof.
 - 2026-07-13: Routed `promote-patterns.py` through shared storage (`3a7bf72`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable dry-run staging proof.
 - 2026-07-13: Routed `score-patterns.py` through shared storage (`e94dbf6`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable dry-run scoring proof.
-- 2026-07-13: Routed `extract-patterns.py` through shared storage (`0cf9bb4`): honored `AIOS_DB`, passed two extraction tests plus Ruff/BasedPyright, and passed disposable dry-run rollback proof.
 
 ## Open Problems
 
