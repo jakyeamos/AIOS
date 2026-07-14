@@ -35,6 +35,8 @@ shared boundary; source database reads continue through disposable/read-only
 provider paths.
 The CLI doctor SQLite health probe now uses the same read-only connection
 contract rather than a one-off connection.
+The daily pipeline's pending-rule bundle query now uses the same read-only
+connection contract and honors `AIOS_DB`.
 
 ## Completed
 
@@ -100,12 +102,18 @@ contract rather than a one-off connection.
   database readers and direct-script import paths.
 - Routed the CLI doctor SQLite health probe through shared read-only storage;
   the existing doctor/health release checks still pass.
+- Routed the AIOS pipeline's pending-rule query through shared read-only
+  storage and made its database path honor `AIOS_DB`.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
 ## Verification
 
 - `pnpm context:validate` — passed.
+- `uv run ruff check bin/aios-pipeline.py` — passed.
+- `uv run basedpyright bin/aios-pipeline.py` — passed (0 errors).
+- Disposable pipeline storage smoke — passed (pending-rule query through
+  shared read-only storage with `query_only=1`).
 - `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
@@ -218,8 +226,8 @@ live migration work.
   provider canonical upserts, core utility scripts, and metrics/reporting
   paths, history import, and inventory sync are now complete. Remove UI
   request-time DDL only after deterministic UI and migration gates are
-  accepted; source-backed Apple ingestion writes and the doctor probe are now
-  covered too.
+  accepted; source-backed Apple ingestion writes, the doctor probe, and the
+  daily pipeline pending-rule query are now covered too.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.

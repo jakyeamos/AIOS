@@ -34,6 +34,7 @@ from pathlib import Path
 from aios_paths import get_vault_subpath
 
 from services.rtk_integration import rtk_run
+from services.storage import connect as connect_storage
 
 BIN = Path(__file__).parent
 LOG = Path.home() / "AIOS/logs/pipeline.log"
@@ -196,15 +197,16 @@ def main() -> None:
 
     # ── Phase 6: Bundle new rules ─────────────────────────────────────────────
     _log("phase 6/11: bundle new rules (lab_status=pending)")
-    import sqlite3
 
-    DB = Path.home() / "AIOS/data/aios.db"
+    db_path = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS/data/aios.db"))).expanduser()
     try:
-        conn = sqlite3.connect(DB)
-        pending = conn.execute(
-            "SELECT id FROM patterns WHERE lab_status='pending' AND state='rule'"
-        ).fetchall()
-        conn.close()
+        conn = connect_storage(db_path, read_only=True)
+        try:
+            pending = conn.execute(
+                "SELECT id FROM patterns WHERE lab_status='pending' AND state='rule'"
+            ).fetchall()
+        finally:
+            conn.close()
         if pending:
             for (pid,) in pending:
                 ok, out = _run(
