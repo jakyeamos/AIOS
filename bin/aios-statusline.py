@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import json
 import os
-import sqlite3
 import sys
 from pathlib import Path
 from typing import Any
@@ -23,6 +22,7 @@ from services.session_effectiveness import (  # noqa: E402
     latest_effectiveness_receipt,
     load_activity_snapshot,
 )
+from services.storage import connect as connect_storage  # noqa: E402
 
 DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
 CURRENT_SESSION = os.path.expanduser("~/AIOS/logs/current_session")
@@ -123,7 +123,7 @@ def main() -> None:
         return
 
     try:
-        conn = sqlite3.connect(DB)
+        conn = connect_storage(DB, read_only=True)
         snapshot = load_activity_snapshot(conn, session_id)
         if snapshot:
             receipt = build_session_effectiveness_receipt(snapshot)

@@ -16,6 +16,8 @@ requires zero FK violations before recording the ledger, and emits a post-
 The three lifecycle hooks and UI database adapter now converge on the same
 `AIOS_DB` override and baseline pragmas; UI-owned request-time DDL remains a
 known blocker rather than an implicit migration path.
+Issues, handoffs, the read-only query CLI, and the statusline now use the same
+storage connection contract as well.
 
 ## Completed
 
@@ -46,6 +48,9 @@ known blocker rather than an implicit migration path.
 - Routed `hook-stop.py`, `hook-session-start.py`, and `hook-update-focus.py`
   through `services.storage.connect`; updated `aios-ui/server/db.ts` to honor
   `AIOS_DB` and the same foreign-key/WAL/busy-timeout pragmas.
+- Routed `issues_store`, `handoff_store`, `aios-query.py`, and
+  `aios-statusline.py` through the shared storage connection; the query/status
+  surfaces are explicitly read-only.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -65,6 +70,8 @@ known blocker rather than an implicit migration path.
 - `.venv/bin/pytest tests/test_hook_stop.py tests/test_hook_lifecycle.py tests/test_orchestration_runtime.py tests/test_agent_rules_runtime.py -q` — passed (51 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed after adapter adoption.
 - `pnpm --dir aios-ui lint:architecture` — passed (122 modules, 255 dependencies) after adapter adoption.
+- `.venv/bin/pytest tests/test_issues_store.py tests/test_handoff_store.py tests/test_session_effectiveness.py -q` — passed (10 tests).
+- `AIOS_DB=~/AIOS/data/aios.db .venv/bin/python bin/aios-query.py --status` — passed against the live store through a read-only connection.
 - `pnpm --dir aios-ui lint:architecture` — passed (122 modules, 255 dependencies).
 - `pnpm quality:eval` — interrupted after the broad vulture scan expanded into
   historical shadow worktrees; the focused checks above are the relevant proof.

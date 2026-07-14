@@ -32,9 +32,16 @@ import os
 import sqlite3
 import sys
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import NoReturn
 
-DB = os.path.expanduser("~/AIOS/data/aios.db")
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from services.storage import connect as connect_storage  # noqa: E402
+
+DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
 DEFAULT_LIMIT = 10
 MAX_LIMIT = 50
 
@@ -48,9 +55,7 @@ def die(msg: str, code: int = 1) -> NoReturn:
 
 def connect() -> sqlite3.Connection:
     try:
-        conn = sqlite3.connect(DB)
-        conn.row_factory = sqlite3.Row
-        return conn
+        return connect_storage(DB, read_only=True)
     except Exception as e:
         die(f"db connect failed: {e}", 2)
 
