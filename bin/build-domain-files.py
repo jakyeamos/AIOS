@@ -13,13 +13,14 @@ Usage:
 
 import argparse
 import os
-import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 
 from aios_paths import get_vault_subpath
 
-DB = os.path.expanduser("~/AIOS/data/aios.db")
+from services.storage import connect as connect_storage
+
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))).expanduser()
 DOMAINS_DIR = str(get_vault_subpath("06 Knowledge", "Domains"))
 
 DOMAINS = ["debugging", "prompting", "architecture", "workflow", "system"]
@@ -201,8 +202,7 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    conn = sqlite3.connect(DB)
-    conn.row_factory = sqlite3.Row
+    conn = connect_storage(DB, read_only=True)
 
     domains = [args.domain] if args.domain else DOMAINS
 

@@ -66,6 +66,8 @@ Personal-pattern promotion now uses the same shared write boundary while
 preserving human-approval gating and dry-run vault behavior.
 Agent synthesis now uses shared storage for both read-only corpus scans and
 pattern writes while preserving title/tag clustering and dry-run behavior.
+Domain-file generation now uses shared read-only storage while preserving
+human-annotation retention, domain projections, and dry-run behavior.
 
 ## Completed
 
@@ -167,6 +169,9 @@ pattern writes while preserving title/tag clustering and dry-run behavior.
 - Routed `agent-synthesis.py` through shared storage, keeping corpus scans
   read-only and making its canonical database path honor `AIOS_DB`; a
   disposable dry-run synthesis proof passed.
+- Routed `build-domain-files.py` through shared read-only storage and made its
+  canonical database path honor `AIOS_DB`; a disposable domain projection
+  dry-run proof passed.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -232,6 +237,10 @@ pattern writes while preserving title/tag clustering and dry-run behavior.
 - `uv run basedpyright bin/agent-synthesis.py` — passed (0 errors).
 - Disposable `agent-synthesis.py --dry-run` integration — passed (title/tag
   candidates generated with zero pattern writes).
+- `uv run ruff check bin/build-domain-files.py` — passed.
+- `uv run basedpyright bin/build-domain-files.py` — passed (0 errors).
+- Disposable `build-domain-files.py --dry-run` integration — passed (domain
+  projection targets generated with zero filesystem writes).
 - `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
@@ -349,7 +358,7 @@ live migration work.
   extraction, pattern scoring, pattern promotion, and pattern lifecycle tools
   plus observation review, noise purging, business-memory CLI adapters, and
   bug-motif, handoff-learning, personal-pattern extraction, personal
-  promotion, and agent synthesis are now covered too.
+  promotion, agent synthesis, and domain-file projection are now covered too.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.
