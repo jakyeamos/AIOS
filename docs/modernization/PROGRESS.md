@@ -15,17 +15,22 @@ change live schema, or authorize a UI mutation.
 
 - Added `aios-v2-vertical-fixtures-v0.1` with healthy, empty, blocked, failed,
   needs-review, and closed scenarios.
-- Added a TypeScript `satisfies` check so the UI compiler validates the shared
-  JSON shape without creating a second runtime model.
+- Added a TypeScript runtime shape guard so the UI compiler validates the
+  shared JSON shape without creating a second runtime model.
 - Added Python coverage for state completeness, cross-reference integrity,
-  and Python ownership of route authority.
+  Python ownership of route authority, persisted evidence/writeback rows, and
+  daily-flow replay.
+- Added a disposable SQLite projection that maps the closed fixture to
+  `orchestration_runs`, `briefing_packets`, `evidence_artifacts`,
+  `success_criteria_findings`, and `improvement_writebacks` without touching
+  the live store.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
 ## Verification
 
 - `pnpm context:validate` — passed.
-- `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (2 tests).
+- `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
 - `.venv/bin/basedpyright tests/test_v2_vertical_fixtures.py` — passed.
@@ -75,3 +80,10 @@ instead of being presented as a pass.
   anti-slop dependency, font, root/tracing, and tRPC adapter issues.
 - The main store still requires ADR-002 quarantine, migration, and restore
   proof before any write-capable slice.
+
+## Milestone 0 replay evidence
+
+The closed fixture replay produced the canonical eight-step trace. Route,
+packet, run, evaluation, and writeback steps pointed to the persisted row ids;
+all fixture evidence ids were present in `evidence_artifacts`; and the replay
+performed no writes. The next UI slice may consume this envelope read-only.

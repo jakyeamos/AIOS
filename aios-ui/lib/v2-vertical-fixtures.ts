@@ -22,6 +22,7 @@ export type V2FixtureApproval = {
 export type V2VerticalFixture = {
   id: string;
   state: V2FixtureState;
+  objective: string;
   route: {
     id: string;
     project_id: string | null;
@@ -110,6 +111,7 @@ const isFixture = (value: unknown): value is V2VerticalFixture => {
   return (
     typeof value.id === "string" &&
     isOneOf(value.state, ["healthy", "empty", "blocked", "failed", "needs_review", "closed"] as const) &&
+    typeof value.objective === "string" &&
     typeof route.id === "string" &&
     (typeof route.project_id === "string" || route.project_id === null) &&
     typeof route.task_family === "string" &&

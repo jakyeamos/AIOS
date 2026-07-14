@@ -5,6 +5,7 @@
     {
       "id": "happy-path",
       "state": "healthy",
+      "objective": "Implement the approved AIOS v2 fixture slice",
       "route": {
         "id": "route-fixture-happy",
         "project_id": "project-aios",
@@ -50,6 +51,7 @@
     {
       "id": "empty-start",
       "state": "empty",
+      "objective": "Start a new AIOS v2 fixture slice",
       "route": {
         "id": "route-fixture-empty",
         "project_id": "project-aios",
@@ -87,6 +89,7 @@
     {
       "id": "blocked-ambiguity",
       "state": "blocked",
+      "objective": "Resolve the project for an ambiguous fixture slice",
       "route": {
         "id": "route-fixture-blocked",
         "project_id": null,
@@ -132,6 +135,7 @@
     {
       "id": "failed-verification",
       "state": "failed",
+      "objective": "Verify the AIOS v2 fixture slice",
       "route": {
         "id": "route-fixture-failed",
         "project_id": "project-aios",
@@ -177,6 +181,7 @@
     {
       "id": "needs-review-writeback",
       "state": "needs_review",
+      "objective": "Review the proposed AIOS v2 truth writeback",
       "route": {
         "id": "route-fixture-review",
         "project_id": "project-aios",
@@ -231,6 +236,7 @@
     {
       "id": "closed-success",
       "state": "closed",
+      "objective": "Close out the approved AIOS v2 fixture slice",
       "route": {
         "id": "route-fixture-closed",
         "project_id": "project-aios",
