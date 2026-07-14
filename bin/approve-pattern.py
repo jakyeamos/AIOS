@@ -19,10 +19,18 @@ Usage:
 import argparse
 import os
 import sqlite3
+import sys
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 
-DB = os.path.expanduser("~/AIOS/data/aios.db")
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from services.storage import connect as connect_storage  # noqa: E402
+
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))).expanduser()
 
 CLASS_THRESHOLDS = {
     "bug_fix": 2,
@@ -189,7 +197,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    conn = sqlite3.connect(DB)
+    conn = connect_storage(DB)
 
     if args.list:
         list_approvable(conn)

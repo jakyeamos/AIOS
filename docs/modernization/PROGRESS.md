@@ -46,6 +46,8 @@ Pattern scoring now uses the same shared write boundary while preserving its
 promotion/demotion rules and rollback-on-`--dry-run` behavior.
 Pattern promotion now uses the same shared write boundary while preserving
 noise/threshold gates and dry-run staging behavior.
+Pattern confirmation, approval, and contradiction tools now use the same shared
+write boundary while preserving their event ledger and state-transition gates.
 
 ## Completed
 
@@ -123,6 +125,9 @@ noise/threshold gates and dry-run staging behavior.
   database path honor `AIOS_DB`; a disposable dry-run scoring smoke passed.
 - Routed `promote-patterns.py` through shared storage and made its canonical
   database path honor `AIOS_DB`; a disposable dry-run staging smoke passed.
+- Routed `approve-pattern.py`, `confirm-pattern.py`, and
+  `contradict-pattern.py` through shared storage and made their canonical
+  database paths honor `AIOS_DB`; a disposable lifecycle integration passed.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -150,6 +155,10 @@ noise/threshold gates and dry-run staging behavior.
 - `uv run basedpyright bin/promote-patterns.py` — passed (0 errors).
 - Disposable `promote-patterns.py --dry-run` integration — passed (candidate
   stub plan generated with no pattern or staging writes).
+- `uv run ruff check bin/approve-pattern.py bin/confirm-pattern.py bin/contradict-pattern.py` — passed.
+- `uv run basedpyright bin/approve-pattern.py bin/confirm-pattern.py bin/contradict-pattern.py` — passed (0 errors).
+- Disposable pattern lifecycle integration — passed (confirmation, gated
+  promotion, contradiction demotion, approval reset, and event ledger).
 - `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
@@ -264,7 +273,8 @@ live migration work.
   request-time DDL only after deterministic UI and migration gates are
   accepted; source-backed Apple ingestion writes, the doctor probe, and the
   daily pipeline pending-rule query, pattern schema migration, pattern
-  extraction, pattern scoring, and pattern promotion are now covered too.
+  extraction, pattern scoring, pattern promotion, and pattern lifecycle tools
+  are now covered too.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.
