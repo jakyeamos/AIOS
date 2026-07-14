@@ -1,7 +1,7 @@
 # AIOS V2 Modernization Progress
 
 **Status:** Milestone 1 in progress
-**Updated:** 2026-07-13
+**Updated:** 2026-07-14
 **Plan:** [EXEC_PLAN.md](EXEC_PLAN.md)
 
 ## Current slice
@@ -72,6 +72,9 @@ DOCX and PDF indexers now use the shared write boundary while preserving
 metadata extraction, optional dependency fallbacks, and dry-run behavior.
 Rule-bundle registration now uses the shared write boundary while preserving
 task generation, artifact updates, and bundle-status transitions.
+Pipeline and lab schema migrations now use the same shared write boundary and
+honor `AIOS_DB`; their schema/data changes remain explicitly disposable until
+the main-store migration gate is accepted.
 
 ## Completed
 
@@ -182,6 +185,10 @@ task generation, artifact updates, and bundle-status transitions.
 - Routed `generate-rule-bundle.py` through shared storage and made its
   canonical database path honor `AIOS_DB`; disposable bundle registration
   proof passed with FK enforcement.
+- Routed `migrate-pipeline.py` and `migrate-lab-integration.py` through shared
+  storage and made their canonical database paths honor `AIOS_DB`; a
+  disposable combined migration proof passed for state renaming, schema
+  additions, lab tables, processed-file tracking, and foreign-key integrity.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -259,6 +266,10 @@ task generation, artifact updates, and bundle-status transitions.
 - `uv run basedpyright bin/generate-rule-bundle.py` — passed (0 errors).
 - Disposable rule-bundle registration integration — passed (bundle row
   inserted and `patterns.lab_status` updated with foreign-key enforcement).
+- `.venv/bin/ruff check bin/migrate-pipeline.py bin/migrate-lab-integration.py` — passed.
+- `.venv/bin/basedpyright bin/migrate-pipeline.py bin/migrate-lab-integration.py` — passed (0 errors).
+- Disposable pipeline/lab migration integration — passed (state rename, added
+  columns, migration tables, processed-file ledger, and foreign-key integrity).
 - `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
@@ -377,7 +388,8 @@ live migration work.
   plus observation review, noise purging, business-memory CLI adapters, and
   bug-motif, handoff-learning, personal-pattern extraction, personal
   promotion, agent synthesis, domain-file projection, and document indexers
-  plus rule-bundle registration are now covered too.
+  plus rule-bundle registration and pipeline/lab schema migrations are now
+  covered too.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.

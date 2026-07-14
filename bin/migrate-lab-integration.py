@@ -7,9 +7,17 @@ Safe to run multiple times (idempotent).
 
 import os
 import sqlite3
+import sys
 from datetime import UTC, datetime
+from pathlib import Path
 
-DB = os.path.expanduser("~/AIOS/data/aios.db")
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from services.storage import connect as connect_storage  # noqa: E402
+
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))).expanduser()
 
 
 def col_exists(conn: sqlite3.Connection, table: str, col: str) -> bool:
@@ -18,7 +26,7 @@ def col_exists(conn: sqlite3.Connection, table: str, col: str) -> bool:
 
 
 def main() -> None:
-    conn = sqlite3.connect(DB)
+    conn = connect_storage(DB)
 
     # --- patterns: add lab summary columns ---
     lab_cols = [
