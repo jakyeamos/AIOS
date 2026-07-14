@@ -13,9 +13,20 @@ import subprocess
 import sys
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 
-from aios_paths import get_vault_root, get_vault_subpath, rewrite_legacy_vault_path
-from hook_lifecycle import ensure_session, load_hook_payload, resolve_hook_session_id
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from aios_paths import get_vault_root, get_vault_subpath, rewrite_legacy_vault_path  # noqa: E402
+from hook_lifecycle import (  # noqa: E402
+    ensure_session,
+    load_hook_payload,
+    resolve_hook_session_id,
+)
+
+from services.storage import connect as connect_storage  # noqa: E402
 
 DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
@@ -529,7 +540,7 @@ def main() -> None:
     retrieval_source = ""
 
     try:
-        conn = sqlite3.connect(DB)
+        conn = connect_storage(DB)
         resolved_session_id = resolve_hook_session_id(
             conn,
             payload_session_id=session_id,

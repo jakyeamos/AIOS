@@ -7,14 +7,20 @@ If not, writes a basic fallback note from available data and notifies the user.
 
 import json
 import os
-import sqlite3
 import subprocess
 import sys
 from datetime import UTC, datetime
+from pathlib import Path
 
-from aios_paths import get_vault_root
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
-DB = os.path.expanduser("~/AIOS/data/aios.db")
+from aios_paths import get_vault_root  # noqa: E402
+
+from services.storage import connect as connect_storage  # noqa: E402
+
+DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
 CLOSED_DIR = os.path.expanduser("~/AIOS/logs/closed")
 SUMMARIES_DIR = os.path.expanduser("~/AIOS/logs/summaries")
@@ -154,7 +160,7 @@ def main() -> None:
         sys.exit(0)
 
     try:
-        conn = sqlite3.connect(DB)
+        conn = connect_storage(DB)
         cur = conn.execute(
             "SELECT s.id, s.started_at, s.cwd, s.status, p.name, p.repo_path "
             "FROM sessions s LEFT JOIN projects p ON s.project_id = p.id WHERE s.id = ?",

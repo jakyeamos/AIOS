@@ -26,6 +26,7 @@ from services.rtk_integration import (  # noqa: E402
     load_compression_rules,
     record_rtk_event,
 )
+from services.storage import connect as connect_storage  # noqa: E402
 
 DB = os.environ.get("AIOS_DB", os.path.expanduser("~/AIOS/data/aios.db"))
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
@@ -314,8 +315,7 @@ def main() -> None:
         sys.exit(0)
 
     try:
-        conn = sqlite3.connect(DB)
-        conn.row_factory = sqlite3.Row
+        conn = connect_storage(DB)
         resolved_session_id = resolve_hook_session_id(
             conn,
             payload_session_id=session_id,

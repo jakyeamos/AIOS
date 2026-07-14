@@ -12,11 +12,13 @@ applies canonical SQLite pragmas, and supports read-only projections. The
 versioned migration ledger, quarantine inventory, and backup/restore helpers
 operate only against explicit disposable paths in this slice. The copied-store
 runner now snapshots preflight health/counts, applies an explicit transformer,
-requires zero FK violations before recording the ledger, and emits a post-
-The three lifecycle hooks and UI database adapter now converge on the same
-`AIOS_DB` override and baseline pragmas; UI-owned request-time DDL remains a
-known blocker rather than an implicit migration path.
-Issues, handoffs, the read-only query CLI, and the statusline now use the same
+requires zero FK violations before recording the ledger, and emits a
+post-migration backup. The lifecycle hooks and UI database adapter now
+converge on the same `AIOS_DB` override and baseline pragmas; UI-owned
+request-time DDL remains a known blocker rather than an implicit migration
+path.
+Issues, handoffs, the read-only query CLI, the statusline, and the high-traffic
+prompt-submit, precompact, and post-tool-use hooks now use the same
 storage connection contract as well.
 
 ## Completed
@@ -51,6 +53,9 @@ storage connection contract as well.
 - Routed `issues_store`, `handoff_store`, `aios-query.py`, and
   `aios-statusline.py` through the shared storage connection; the query/status
   surfaces are explicitly read-only.
+- Routed `hook-prompt-submit.py`, `hook-precompact.py`, and
+  `hook-post-tool-use.py` through the shared storage connection, including the
+  `AIOS_DB` override for precompact's previously fixed path.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -72,6 +77,9 @@ storage connection contract as well.
 - `pnpm --dir aios-ui lint:architecture` — passed (122 modules, 255 dependencies) after adapter adoption.
 - `.venv/bin/pytest tests/test_issues_store.py tests/test_handoff_store.py tests/test_session_effectiveness.py -q` — passed (10 tests).
 - `AIOS_DB=~/AIOS/data/aios.db .venv/bin/python bin/aios-query.py --status` — passed against the live store through a read-only connection.
+- `.venv/bin/pytest tests/test_hook_prompt_submit.py tests/test_hook_post_tool_use.py tests/test_hook_lifecycle.py -q` — passed (15 tests) after high-traffic hook adoption.
+- `.venv/bin/ruff check bin/hook-prompt-submit.py bin/hook-precompact.py bin/hook-post-tool-use.py` — passed.
+- `.venv/bin/basedpyright bin/hook-prompt-submit.py bin/hook-precompact.py bin/hook-post-tool-use.py` — passed (0 errors).
 - `pnpm --dir aios-ui lint:architecture` — passed (122 modules, 255 dependencies).
 - `pnpm quality:eval` — interrupted after the broad vulture scan expanded into
   historical shadow worktrees; the focused checks above are the relevant proof.
@@ -126,10 +134,10 @@ live migration work.
 
 ## Remaining Milestone 1 work
 
-- Route hooks, storage helpers, and UI adapters through the shared connection
-  contract without changing the canonical `AIOS_DB` meaning.
-- Migrate remaining Python direct-connection adapters and remove UI request-time
-  DDL only after the deterministic UI and migration gates are accepted.
+- Migrate remaining Python direct-connection adapters through the shared
+  connection contract; the high-traffic prompt, compaction, and post-tool
+  hooks are now complete. Remove UI request-time DDL only after deterministic
+  UI and migration gates are accepted.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.
