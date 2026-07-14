@@ -3747,12 +3747,15 @@ def test_eval_pair_cli_create_finalize_and_list_json(tmp_path: Path, capsys) -> 
             "d" * 64,
             "--parity-metadata-json",
             '{"model":"gpt-5.6","effort":"high","tools":["terminal"],"budget":{"tokens":20000}}',
+            "--report-path",
+            "docs/evals/live-paired-report.md",
         ]
     )
     assert create_exit == EXIT_OK
     create_output = json.loads(capsys.readouterr().out)
     pair_id = create_output["data"]["pair_id"]
     assert create_output["data"]["pair"]["status"] == "open"
+    assert create_output["data"]["pair"]["report_path"] == "docs/evals/live-paired-report.md"
 
     finalize_exit = run_cli(
         [
@@ -3767,6 +3770,8 @@ def test_eval_pair_cli_create_finalize_and_list_json(tmp_path: Path, capsys) -> 
             "failed",
             "--independent-review-status",
             "not_run",
+            "--report-path",
+            "docs/evals/live-paired-report.md",
             "--limitation",
             "fixture-only",
         ]
@@ -3774,6 +3779,7 @@ def test_eval_pair_cli_create_finalize_and_list_json(tmp_path: Path, capsys) -> 
     assert finalize_exit == EXIT_OK
     finalize_output = json.loads(capsys.readouterr().out)
     assert finalize_output["data"]["pair"]["delta"] == 0.25
+    assert finalize_output["data"]["pair"]["report_path"] == "docs/evals/live-paired-report.md"
 
     list_exit = run_cli(
         [*common, "eval", "pair-list", "--status", "insufficient_evidence"]

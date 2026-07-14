@@ -3352,6 +3352,7 @@ def cmd_eval_pair_create(conn: sqlite3.Connection, args: argparse.Namespace) -> 
             contamination_evidence=_parse_json_object(args.contamination_evidence_json),
             independent_review_status=str(args.independent_review_status),
             independent_review_ref=args.independent_review_ref,
+            report_path=args.report_path,
             limitations=list(args.limitation),
         )
     except ValueError as exc:
@@ -3372,6 +3373,7 @@ def cmd_eval_pair_finalize(conn: sqlite3.Connection, args: argparse.Namespace) -
             contamination_evidence=_parse_json_object(args.contamination_evidence_json),
             independent_review_status=str(args.independent_review_status),
             independent_review_ref=args.independent_review_ref,
+            report_path=args.report_path,
             limitations=list(args.limitation),
         )
     except ValueError as exc:
@@ -7179,6 +7181,7 @@ def create_parser() -> argparse.ArgumentParser:
         default="pending",
     )
     eval_pair_create.add_argument("--independent-review-ref", default=None)
+    eval_pair_create.add_argument("--report-path", default=None)
     eval_pair_create.add_argument("--limitation", action="append", default=[])
     eval_pair_create.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
@@ -7197,6 +7200,7 @@ def create_parser() -> argparse.ArgumentParser:
         required=True,
     )
     eval_pair_finalize.add_argument("--independent-review-ref", default=None)
+    eval_pair_finalize.add_argument("--report-path", default=None)
     eval_pair_finalize.add_argument("--limitation", action="append", default=[])
     eval_pair_finalize.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 

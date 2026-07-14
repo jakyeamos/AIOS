@@ -229,6 +229,7 @@ def ensure_eval_schema(conn: sqlite3.Connection) -> None:
           delta REAL,
           independent_review_status TEXT NOT NULL DEFAULT 'pending',
           independent_review_ref TEXT,
+          report_path TEXT,
           decision TEXT,
           limitations_json TEXT NOT NULL DEFAULT '[]',
           status TEXT NOT NULL DEFAULT 'open',
@@ -248,6 +249,12 @@ def ensure_eval_schema(conn: sqlite3.Connection) -> None:
           ON eval_pair_events(pair_id, created_at ASC);
         """
     )
+    pair_columns = {
+        str(row["name"])
+        for row in conn.execute("PRAGMA table_info(eval_pairs)").fetchall()
+    }
+    if "report_path" not in pair_columns:
+        conn.execute("ALTER TABLE eval_pairs ADD COLUMN report_path TEXT")
 
 
 def create_eval_task(
@@ -427,6 +434,7 @@ def create_eval_pair(
     contamination_evidence: Mapping[str, object] | None = None,
     independent_review_status: str = "pending",
     independent_review_ref: str | None = None,
+    report_path: str | None = None,
     limitations: list[str] | None = None,
 ) -> str:
     ensure_eval_schema(conn)
@@ -465,9 +473,9 @@ def create_eval_pair(
           task_hash, prompt_hash, context_hash, parity_metadata_json,
           contamination_status,
           contamination_evidence_json, independent_review_status,
-          independent_review_ref, limitations_json, created_at
+          independent_review_ref, report_path, limitations_json, created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             pair_id,
@@ -483,6 +491,7 @@ def create_eval_pair(
             _json_object(contamination_evidence, label="contamination_evidence"),
             independent_review_status,
             independent_review_ref,
+            report_path,
             json.dumps(list(limitations or []), sort_keys=True),
             _now_iso(),
         ),
@@ -539,6 +548,7 @@ def finalize_eval_pair(
     contamination_evidence: Mapping[str, object] | None = None,
     independent_review_status: str,
     independent_review_ref: str | None = None,
+    report_path: str | None = None,
     limitations: list[str] | None = None,
 ) -> dict[str, Any]:
     ensure_eval_schema(conn)
@@ -576,6 +586,7 @@ def finalize_eval_pair(
         SET contamination_status = ?, contamination_evidence_json = ?,
             control_score = ?, treatment_score = ?, delta = ?,
             independent_review_status = ?, independent_review_ref = ?,
+            report_path = COALESCE(?, report_path),
             decision = ?, limitations_json = ?, status = ?, finalized_at = ?
         WHERE id = ?
         """,
@@ -587,6 +598,7 @@ def finalize_eval_pair(
             delta,
             independent_review_status,
             independent_review_ref,
+            report_path,
             decision,
             json.dumps(list(limitations or []), sort_keys=True),
             pair_status,
