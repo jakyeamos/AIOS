@@ -96,6 +96,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-07-14: Ran the UI loopback smoke after the build fix: `/` and `projects.list` tRPC returned HTTP 200 with source-backed data and clean server logs; anti-slop/NFT warnings remain explicit.
 - 2026-07-14: Scoped the UI Turbopack root and refreshed native dependencies: TypeScript, architecture, warning-baseline, and production build passed; workspace-root warning resolved, with anti-slop install/NFT tracing blockers recorded.
 - 2026-07-14: Reran the live recovery preflight and disposable restore drill: 561 FK violations captured, 561 quarantined in the copy, zero restored FK violations, and eight-step daily-flow replay passed.
+- 2026-07-14: Created `docs/modernization/M1_RETENTION_DECISION.md` from a fresh disposable run: 73 unresolved quality rows remain pending explicit human disposition; no live rows changed.
 - 2026-07-14: Routed CTS registry AIOS metadata reads through shared storage (`52d22e5`): passed Ruff/BasedPyright and disposable read-only registry proof.
 - 2026-07-14: Routed lifecycle migration and commit-quality evidence reads through shared storage (`6924d0a`): passed Ruff/BasedPyright, 29 focused tests, and disposable migration proof.
 - 2026-07-14: Routed review, vault-lint, and lab-trigger adapters through shared storage (`c36cf66`): passed Ruff/BasedPyright and disposable vault/lab proof; Flask runtime remains dependency-blocked.
@@ -107,7 +108,6 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-07-14: Routed `agent-synthesis.py` through shared storage (`cd0854c`): read-only corpus scans, `AIOS_DB`, Ruff/BasedPyright, and disposable dry-run synthesis proof passed.
 - 2026-07-13: Routed `promote-personal-patterns.py` through shared storage (`a68fff6`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable dry-run vault proof.
 - 2026-07-13: Routed `extract-personal-patterns.py` through shared storage (`e581f51`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable multi-session dry-run proof.
-- 2026-07-13: Routed `extract-handoff-learnings.py` through shared storage (`bcafed5`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable handoff dry-run proof.
 
 ## Open Problems
 

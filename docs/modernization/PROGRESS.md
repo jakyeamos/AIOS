@@ -98,6 +98,9 @@ is still blocked by a stale local copy of the external anti-slop package.
 The loopback runtime smoke also passed: `/` and the source-backed
 `projects.list` tRPC route both returned HTTP 200 on a disposable dev server,
 with no request errors in the server log.
+The aggregate M1 retention decision packet now records the fresh disposable
+counts and leaves the 73 unresolved quality rows pending explicit human
+disposition; no live rows were changed.
 
 ## Completed
 
@@ -478,6 +481,9 @@ live migration work.
   against older 555/557 audit snapshots before any write-capable migration.
 - Complete a human-reviewed deletion/retention decision for the 73 unresolved
   quality rows archived by the copied transformer.
+- Record the selected disposition in
+  [M1_RETENTION_DECISION.md](M1_RETENTION_DECISION.md) and reconcile all 561
+  live FK violations against that reviewed decision.
 - Keep the write-capable v2 gate closed until the reviewed disposition and live
   FK reconciliation are accepted; the disposable backup/restore drill is now
   repeatably green.
