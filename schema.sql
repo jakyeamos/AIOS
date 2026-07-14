@@ -1250,6 +1250,7 @@ CREATE TABLE IF NOT EXISTS eval_pairs (
   delta REAL,
   independent_review_status TEXT NOT NULL DEFAULT 'pending',
   independent_review_ref TEXT,
+  report_path TEXT,
   decision TEXT,
   limitations_json TEXT NOT NULL DEFAULT '[]',
   status TEXT NOT NULL DEFAULT 'open',

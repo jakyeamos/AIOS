@@ -13,7 +13,7 @@ goals: []
 repoType: infra
 sourceOfTruth: mixed
 primaryLanguage: Python
-activeBranch: dev
+activeBranch: codex/m6-report-path
 lastCommitDate: 2026-07-14
 quality:
   lint: fail
@@ -53,8 +53,9 @@ The follow-up `eval_pairs` contract now durably links control/treatment runs,
 protected start SHA, task/prompt/context hashes, parity metadata, scores,
 contamination and independent-review state, decisions, and append-only pair
 events. Its CLI create/finalize/list surface fails closed on promotion without
-complete evidence; this is infrastructure only and does not change the M5A
-defer decision.
+complete evidence; report paths are now persisted through the schema, service,
+and CLI so live review artifacts can be linked durably. This is infrastructure
+only and does not change the M5A defer decision.
 
 _(11 older entries trimmed)_
 
@@ -81,6 +82,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-14: Closed the eval-pair report-path contract gap with schema migration compatibility, CLI flags, round-trip tests, and 107 focused tests passing (`10c992a`).
 - 2026-07-14: Implemented the durable M5A `eval_pairs` contract with hash/parity validation, contamination and review gates, append-only pair events, CLI create/finalize/list commands, and 139 focused evaluation tests (`2eec354`).
 - 2026-07-14: Recorded M5A deterministic paired harness evidence (AIOS 1.0000 vs control 0.5379, +0.4621) and deferred promotion pending clean live paired runs and independent review (`078f310`, `docs/evals/M5A_EFFECTIVENESS_REPORT.md`).
 - 2026-07-14: Resolved M5 gated review/closeout with governed effect events, explicit capability/loopback/egress/redaction/rollback metadata, terminal writeback transitions, closeout downgrade gates, and fail-closed control-plane/remediation UI mutation procedures (`1ea29a0`).

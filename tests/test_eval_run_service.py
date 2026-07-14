@@ -321,6 +321,7 @@ def test_eval_pair_round_trip_records_scores_and_defer_decision() -> None:
         prompt_hash=PROMPT_HASH,
         context_hash=CONTEXT_HASH,
         parity_metadata=_pair_metadata(),
+        report_path="docs/evals/live-paired-report.md",
     )
     finalized = finalize_eval_pair(
         conn,
@@ -339,6 +340,7 @@ def test_eval_pair_round_trip_records_scores_and_defer_decision() -> None:
     assert finalized["parity_metadata"] == _pair_metadata()
     assert finalized["contamination_evidence"] == {"reason": "dirty baseline"}
     assert finalized["limitations"] == ["fixture-only"]
+    assert finalized["report_path"] == "docs/evals/live-paired-report.md"
     assert [event["event_type"] for event in finalized["events"]] == ["created", "finalized"]
     assert get_eval_pair(conn, pair_id)["decision"] == "defer"
     assert (
@@ -426,9 +428,11 @@ def test_eval_pair_promotion_fails_closed_until_scores_contamination_and_review_
         contamination_status="passed",
         independent_review_status="passed",
         independent_review_ref="review-1",
+        report_path="docs/evals/live-paired-report.md",
     )
     assert finalized["decision"] == "promote"
     assert finalized["delta"] == 0.2
+    assert finalized["report_path"] == "docs/evals/live-paired-report.md"
 
 
 def test_service_initializes_eval_tables_without_other_phase_11_tables() -> None:
