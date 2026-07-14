@@ -52,6 +52,9 @@ Interactive observation review now uses the same shared write boundary while
 preserving its human-choice state/event transitions.
 Noise-pattern purging now uses the same shared write boundary while preserving
 its idempotent discard filter and dry-run report.
+The business-memory CLI suite now uses the same shared write boundary; its
+path resolver honors `AIOS_DB` while source sync, compilation, lint, query, and
+daemon behavior remain unchanged.
 
 ## Completed
 
@@ -136,6 +139,9 @@ its idempotent discard filter and dry-run report.
   database path honor `AIOS_DB`; a patched-input disposable review passed.
 - Routed `purge-noise-patterns.py` through shared storage and made its canonical
   database path honor `AIOS_DB`; its focused tests and disposable dry-run passed.
+- Routed the business-memory path resolver and five CLI entrypoints through
+  shared storage; disposable init, compile dry-run, query, lint, and daemon
+  connection proofs passed.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -176,6 +182,11 @@ its idempotent discard filter and dry-run report.
 - `uv run basedpyright bin/purge-noise-patterns.py` — passed (0 errors).
 - Disposable `purge-noise-patterns.py --dry-run` integration — passed (eligible
   noise counted with no discard writes).
+- `uv run ruff check services/business/paths.py bin/business-lint.py bin/business-compile.py bin/business-ingest.py bin/business-query.py bin/business-daemon.py` — passed.
+- `uv run basedpyright services/business/paths.py bin/business-lint.py bin/business-compile.py bin/business-ingest.py bin/business-query.py bin/business-daemon.py` — passed (0 errors).
+- `uv run pytest tests/test_memory_layers.py -q` — passed (8 tests).
+- Disposable business CLI integration — passed (init, compile dry-run, query,
+  lint, and daemon writable/FK-enforced connection).
 - `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
@@ -291,7 +302,8 @@ live migration work.
   accepted; source-backed Apple ingestion writes, the doctor probe, and the
   daily pipeline pending-rule query, pattern schema migration, pattern
   extraction, pattern scoring, pattern promotion, and pattern lifecycle tools
-  plus observation review and noise purging are now covered too.
+  plus observation review, noise purging, and business-memory CLI adapters are
+  now covered too.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.

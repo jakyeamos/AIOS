@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sqlite3
 import sys
 from pathlib import Path
@@ -32,13 +33,11 @@ from services.business.sources_db import (  # noqa: E402
     fetch_uncompiled_sources,
     resolve_since_cursor,
 )
+from services.storage import connect as connect_storage  # noqa: E402
 
 
 def _connect() -> sqlite3.Connection:
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    return connect_storage(Path(os.environ.get("AIOS_DB", str(DB_PATH))))
 
 
 def cmd_compile(args: argparse.Namespace) -> int:

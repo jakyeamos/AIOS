@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sqlite3
 import sys
 from dataclasses import asdict
@@ -25,11 +26,11 @@ sys.path.insert(0, str(ROOT / "bin"))
 from services.business.paths import DB_PATH  # noqa: E402
 from services.business.query import answer_question  # noqa: E402
 from services.business.schema import ensure_business_memory_schema  # noqa: E402
+from services.storage import connect as connect_storage  # noqa: E402
 
 
 def _connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    conn = connect_storage(Path(os.environ.get("AIOS_DB", str(DB_PATH))))
     ensure_business_memory_schema(conn)
     return conn
 

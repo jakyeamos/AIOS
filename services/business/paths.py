@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 AIOS_ROOT = Path(os.environ.get("AIOS_ROOT", Path.home() / "AIOS")).expanduser().resolve()
-DB_PATH = AIOS_ROOT / "data" / "aios.db"
+DB_PATH = Path(os.environ.get("AIOS_DB", str(AIOS_ROOT / "data" / "aios.db"))).expanduser().resolve()
 CONFIG_DIR = AIOS_ROOT / "config"
 STAGING_ROOT = AIOS_ROOT / "staging"
 RAW_SOURCES_ROOT = STAGING_ROOT / "raw-sources"

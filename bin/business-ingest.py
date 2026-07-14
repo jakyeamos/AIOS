@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sqlite3
 import sys
 from datetime import datetime
@@ -28,13 +29,11 @@ from services.business.paths import AIOS_ROOT, DB_PATH, ensure_staging_dirs  # n
 from services.business.pipeline import sync_all, sync_source  # noqa: E402
 from services.business.schema import ensure_business_memory_schema  # noqa: E402
 from services.business.store import status_snapshot  # noqa: E402
+from services.storage import connect as connect_storage  # noqa: E402
 
 
 def _connect() -> sqlite3.Connection:
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    return connect_storage(Path(os.environ.get("AIOS_DB", str(DB_PATH))))
 
 
 def cmd_init(_: argparse.Namespace) -> int:

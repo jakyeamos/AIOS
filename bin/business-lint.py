@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import json
-import sqlite3
+import os
 import sys
 from pathlib import Path
 
@@ -20,11 +20,11 @@ from services.business.lint import (  # noqa: E402
 )
 from services.business.paths import DB_PATH  # noqa: E402
 from services.business.schema import ensure_business_memory_schema  # noqa: E402
+from services.storage import connect as connect_storage  # noqa: E402
 
 
 def main() -> int:
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    conn = connect_storage(Path(os.environ.get("AIOS_DB", str(DB_PATH))))
     ensure_business_memory_schema(conn)
     report = run_business_lint(conn)
     conn.close()

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sqlite3
 import sys
 import time
@@ -27,6 +28,7 @@ from services.business.lint import run_business_lint, write_lint_outputs  # noqa
 from services.business.paths import DB_PATH, ensure_staging_dirs  # noqa: E402
 from services.business.pipeline import sync_all  # noqa: E402
 from services.business.schema import ensure_business_memory_schema  # noqa: E402
+from services.storage import connect as connect_storage  # noqa: E402
 
 LOG = ROOT / "logs" / "business-daemon.log"
 
@@ -40,8 +42,7 @@ def _log(message: str) -> None:
 
 
 def _connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    conn = connect_storage(Path(os.environ.get("AIOS_DB", str(DB_PATH))))
     ensure_business_memory_schema(conn)
     return conn
 
