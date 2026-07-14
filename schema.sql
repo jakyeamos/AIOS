@@ -1255,7 +1255,9 @@ CREATE TABLE IF NOT EXISTS eval_pairs (
   limitations_json TEXT NOT NULL DEFAULT '[]',
   status TEXT NOT NULL DEFAULT 'open',
   created_at TEXT NOT NULL,
-  finalized_at TEXT
+  finalized_at TEXT,
+  superseded_at TEXT,
+  superseded_reason TEXT
 );
 CREATE TABLE IF NOT EXISTS eval_pair_events (
   id TEXT PRIMARY KEY,
@@ -1266,6 +1268,8 @@ CREATE TABLE IF NOT EXISTS eval_pair_events (
 );
 CREATE INDEX IF NOT EXISTS idx_eval_pairs_task_created
   ON eval_pairs(task_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_eval_pairs_promotion_ready
+  ON eval_pairs(status, decision, superseded_at, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_eval_pair_events_pair_created
   ON eval_pair_events(pair_id, created_at ASC);
 CREATE TABLE IF NOT EXISTS shadow_branch_runs (

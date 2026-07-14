@@ -3382,15 +3382,37 @@ def cmd_eval_pair_finalize(conn: sqlite3.Connection, args: argparse.Namespace) -
     return {"pair": pair, "pair_id": str(args.pair_id)}
 
 
-def cmd_eval_pair_list(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
-    from services.eval_run_service import list_eval_pairs
+def cmd_eval_pair_supersede(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.eval_run_service import supersede_eval_pair
 
-    pairs = list_eval_pairs(
-        conn,
-        task_id=args.task_id,
-        status=args.status,
-        limit=int(args.limit),
-    )
+    try:
+        pair = supersede_eval_pair(
+            conn,
+            pair_id=str(args.pair_id),
+            reason=str(args.reason),
+        )
+    except ValueError as exc:
+        raise CLIError("eval-pair-supersede-invalid", str(exc), EXIT_USAGE) from exc
+    conn.commit()
+    return {"pair": pair, "pair_id": str(args.pair_id)}
+
+
+def cmd_eval_pair_list(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.eval_run_service import list_eval_pairs, list_promotion_ready_eval_pairs
+
+    if args.promotion_ready:
+        pairs = list_promotion_ready_eval_pairs(
+            conn,
+            task_id=args.task_id,
+            limit=int(args.limit),
+        )
+    else:
+        pairs = list_eval_pairs(
+            conn,
+            task_id=args.task_id,
+            status=args.status,
+            limit=int(args.limit),
+        )
     return {"pairs": pairs, "count": len(pairs), "limit": int(args.limit)}
 
 
@@ -4111,6 +4133,8 @@ def cmd_eval(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, An
         return cmd_eval_pair_create(conn, args)
     if args.eval_command == "pair-finalize":
         return cmd_eval_pair_finalize(conn, args)
+    if args.eval_command == "pair-supersede":
+        return cmd_eval_pair_supersede(conn, args)
     if args.eval_command == "pair-list":
         return cmd_eval_pair_list(conn, args)
     if args.eval_command == "summary":
@@ -6013,6 +6037,10 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
         pair = data["pair"]
         print(f"pair={data['pair_id']} decision={pair['decision']} status={pair['status']}")
         return
+    if command == "eval-pair-supersede":
+        pair = data["pair"]
+        print(f"pair={data['pair_id']} superseded_at={pair['superseded_at']}")
+        return
     if command == "eval-pair-list":
         print(f"pairs={data['count']} limit={data['limit']}")
         return
@@ -7204,10 +7232,22 @@ def create_parser() -> argparse.ArgumentParser:
     eval_pair_finalize.add_argument("--limitation", action="append", default=[])
     eval_pair_finalize.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
+    eval_pair_supersede = eval_subparsers.add_parser(
+        "pair-supersede", help="Mark an eval pair ineligible for promotion"
+    )
+    eval_pair_supersede.add_argument("--pair-id", required=True)
+    eval_pair_supersede.add_argument("--reason", required=True)
+    eval_pair_supersede.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
     eval_pair_list = eval_subparsers.add_parser("pair-list", help="List durable eval pairs")
     eval_pair_list.add_argument("--task-id", default=None)
     eval_pair_list.add_argument(
         "--status", choices=["open", "insufficient_evidence", "finalized"], default=None
+    )
+    eval_pair_list.add_argument(
+        "--promotion-ready",
+        action="store_true",
+        help="List only unsuperseded pairs that satisfy every promotion gate",
     )
     eval_pair_list.add_argument("--limit", type=int, default=50)
     eval_pair_list.add_argument("--json", action="store_true", default=argparse.SUPPRESS)

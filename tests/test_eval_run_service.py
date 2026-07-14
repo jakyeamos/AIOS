@@ -21,8 +21,10 @@ from services.eval_run_service import (
     get_eval_summary,
     list_eval_pairs,
     list_eval_runs,
+    list_promotion_ready_eval_pairs,
     record_eval_failure,
     record_eval_score,
+    supersede_eval_pair,
 )
 
 
@@ -347,6 +349,59 @@ def test_eval_pair_round_trip_records_scores_and_defer_decision() -> None:
         list_eval_pairs(conn, task_id=task_id, status="insufficient_evidence")[0]["id"]
         == pair_id
     )
+
+
+def test_superseded_promote_pair_is_retained_for_audit_but_not_promotion() -> None:
+    conn = _connect()
+    task_id = _create_task(conn, start_sha=PAIR_SHA)
+    control_run_id = _create_run(conn, task_id=task_id, condition="baseline_repo_only")
+    treatment_run_id = _create_run(conn, task_id=task_id, condition="aios_workflow_governed")
+    record_eval_score(conn, run_id=control_run_id, overall_score=0.8)
+    record_eval_score(conn, run_id=treatment_run_id, overall_score=0.9)
+    pair_id = create_eval_pair(
+        conn,
+        task_id=task_id,
+        control_run_id=control_run_id,
+        treatment_run_id=treatment_run_id,
+        protected_start_sha=PAIR_SHA,
+        task_hash=TASK_HASH,
+        prompt_hash=PROMPT_HASH,
+        context_hash=CONTEXT_HASH,
+        parity_metadata=_pair_metadata(),
+        report_path="docs/evals/live-paired-report.md",
+    )
+    finalize_eval_pair(
+        conn,
+        pair_id=pair_id,
+        decision="promote",
+        contamination_status="passed",
+        independent_review_status="passed",
+        independent_review_ref="docs/evals/live-paired-review.md",
+    )
+
+    ready = list_promotion_ready_eval_pairs(conn, task_id=task_id)
+    assert [pair["id"] for pair in ready] == [pair_id]
+
+    superseded = supersede_eval_pair(
+        conn,
+        pair_id=pair_id,
+        reason="Treatment artifact was missing from the corrected benchmark.",
+    )
+
+    assert superseded["superseded_at"]
+    assert superseded["superseded_reason"].startswith("Treatment artifact")
+    assert [pair["id"] for pair in list_promotion_ready_eval_pairs(conn)] == []
+    audit_pair = list_eval_pairs(conn, task_id=task_id)[0]
+    assert audit_pair["id"] == pair_id
+    assert audit_pair["decision"] == "promote"
+    assert [event["event_type"] for event in superseded["events"]] == [
+        "created",
+        "finalized",
+        "superseded",
+    ]
+
+    with pytest.raises(ValueError, match="already superseded"):
+        supersede_eval_pair(conn, pair_id=pair_id, reason="duplicate marker")
 
 
 def test_eval_pair_rejects_mismatched_runs_and_incomplete_metadata() -> None:

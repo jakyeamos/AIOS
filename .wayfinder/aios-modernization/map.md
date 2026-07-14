@@ -41,6 +41,7 @@ created: 2026-07-10
 - [Close the Deferred Live Paired-Effectiveness Evidence Gap](tickets/013-close-deferred-live-paired-evidence-gap.md) - `eval_pairs` now durably links control/treatment runs, hashes, parity metadata, contamination/review state, scores, decisions, and append-only pair events; promotion remains fail-closed pending clean live evidence.
 - [Expand the Clean Live Paired Benchmark and Adversarial Review](tickets/015-expand-clean-live-benchmark-and-adversarial-review.md) - Three corrected live audit pairs now have durable IDs, pair-specific contamination paths, independent review, and a bounded `+0.013` treatment delta; M6 remains deferred because the corpus is audit-only, provider telemetry is unavailable, and the superseded prior promote row must be excluded.
 - [Route Manual Business Sources Through the Capture V1 Boundary](tickets/016-route-business-memory-through-capture-v1.md) - The manual business-memory adapter now consumes deterministic `capture.v1` envelopes for Markdown, JSON, HTML, and CSV while retaining the existing `SourceRecord` and governed raw-sidecar path; no promotion or second authority was added.
+- [Exclude Superseded Eval Pairs from Promotion Consumers](tickets/017-exclude-superseded-eval-pairs-from-promotion-consumers.md) - Durable supersession metadata and append-only events now remove stale pairs from a gate-complete promotion-ready query while preserving the full audit-history view; M6 remains blocked on the remaining evidence and migration gates.
 
 ## Fog
 
