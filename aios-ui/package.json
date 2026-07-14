@@ -6,11 +6,17 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "prebuild": "node scripts/generate-prompt-catalog.mjs --check && node scripts/generate-workflow-catalog.mjs --check",
     "start": "next start",
+    "prompts:generate": "node scripts/generate-prompt-catalog.mjs",
+    "prompts:check": "node scripts/generate-prompt-catalog.mjs --check",
+    "workflows:generate": "node scripts/generate-workflow-catalog.mjs",
+    "workflows:check": "node scripts/generate-workflow-catalog.mjs --check",
     "lint": "eslint . && tsc --noEmit",
     "lint:warning-baseline": "node scripts/assert-eslint-warning-baseline.mjs",
     "lint:architecture": "dependency-cruiser --config .dependency-cruiser.cjs app components lib server --output-type err-long",
-    "lint:anti-slop:fixtures": "eslint --config eslint/anti-slop-fixtures.config.mjs \"eslint/fixtures/anti-slop/pass/**/*.jsx\""
+    "lint:anti-slop:fixtures": "eslint --config eslint/anti-slop-fixtures.config.mjs \"eslint/fixtures/anti-slop/pass/**/*.jsx\"",
+    "test:browser": "playwright test"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.66.11",
@@ -27,6 +33,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@playwright/test": "1.61.1",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.13.1",
     "@types/react": "^19.0.8",

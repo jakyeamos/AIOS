@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
-import path from "node:path";
 
 import type Database from "better-sqlite3";
 
@@ -19,7 +18,6 @@ import type {
   RunInspection,
 } from "@/lib/control-plane";
 import { findInvocationBackend, invocationBackends } from "@/server/aios/catalog";
-import { resolveAiosRoot } from "@/server/aios/filesystem";
 import { ensureControlPlaneSchema } from "@/server/aios/schema";
 
 const parseJsonArray = <T>(raw: string, fallback: T): T => {
@@ -44,6 +42,8 @@ const parseJsonRecord = (raw: string | null): Record<string, unknown> => {
 };
 
 const nowIso = (): string => new Date().toISOString();
+
+const resolveManagedRuntimeRoot = (): string => process.env.AIOS_ROOT ?? "/Users/jakyeamos/AIOS";
 
 const recordRunEvent = (
   db: Database.Database,
@@ -814,8 +814,8 @@ export const startManagedInvocation = (
   if (backend.transport !== "managed_session") {
     throw new Error("Selected backend cannot be launched as a managed invocation.");
   }
-  const root = resolveAiosRoot();
-  const scriptPath = path.join(root, "bin", "aios-managed-run.py");
+  const root = resolveManagedRuntimeRoot();
+  const scriptPath = `${root.replace(/\/$/, "")}/bin/aios-managed-run.py`;
   const invocationId = `invoke-${randomUUID()}`;
   const createdAt = nowIso();
   const command = ["python3", scriptPath, "--run-id", run.id, "--invocation-id", invocationId, "--backend-key", backend.key];
@@ -864,8 +864,7 @@ export const startManagedInvocation = (
   });
 
   try {
-    const child = spawn(command[0], command.slice(1), {
-      cwd: root,
+    const child = spawn("python3", command.slice(1), {
       detached: true,
       stdio: "ignore",
       env: {

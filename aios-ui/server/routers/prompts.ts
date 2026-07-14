@@ -1,10 +1,8 @@
-import fs from "node:fs";
-import crypto from "node:crypto";
-import path from "node:path";
 import { z } from "zod";
 
 import type { Prompt, PromptClassification, PromptTemplate } from "@/lib/types";
 import { tableExists } from "@/server/db";
+import { promptTemplateCatalog } from "@/server/generated/prompt-catalog";
 import { createTRPCRouter, publicProcedure } from "@/server/trpc";
 
 type PromptRow = {
@@ -19,80 +17,8 @@ type PromptRow = {
   retrievalSource: string | null;
 };
 
-type PromptTemplateRegistry = {
-  templates?: Array<{
-    id?: unknown;
-    name?: unknown;
-    version?: unknown;
-    classification?: unknown;
-    tags?: unknown;
-    purpose?: unknown;
-    required_inputs?: unknown;
-    optional_inputs?: unknown;
-    last_updated?: unknown;
-    file?: unknown;
-  }>;
-};
-
 const getAiosRoot = (): string => {
   return process.env.AIOS_ROOT ?? "/Users/jakyeamos/AIOS";
-};
-
-const extractBody = (markdown: string): string => {
-  if (!markdown.startsWith("---\n")) {
-    return markdown;
-  }
-
-  const lines = markdown.split(/\r?\n/);
-  const endIndex = lines.findIndex((line, index) => index > 0 && line.trim() === "---");
-  if (endIndex === -1) {
-    return markdown;
-  }
-
-  return lines.slice(endIndex + 1).join("\n").replace(/^\n+/, "");
-};
-
-const bodyHash = (markdown: string): string =>
-  crypto.createHash("sha256").update(extractBody(markdown), "utf8").digest("hex");
-
-const templateHash = (aiosRoot: string, template: NonNullable<PromptTemplateRegistry["templates"]>[number]): string | null => {
-  const templateId = typeof template.id === "string" ? template.id : "";
-  const file = typeof template.file === "string" ? template.file : "";
-  const candidates = [
-    file ? path.join(aiosRoot, file) : "",
-    file ? path.join(aiosRoot, "prompts", path.basename(file)) : "",
-    templateId ? path.join(aiosRoot, "prompts", `${templateId}.md`) : "",
-  ].filter((candidate, index, rows) => candidate.length > 0 && rows.indexOf(candidate) === index);
-
-  const templatePath = candidates.find((candidate) => fs.existsSync(candidate));
-  if (!templatePath) {
-    return null;
-  }
-
-  return bodyHash(fs.readFileSync(templatePath, "utf8"));
-};
-
-const stringifyInput = (input: unknown): string => {
-  if (typeof input === "string") {
-    return input;
-  }
-
-  if (input && typeof input === "object" && !Array.isArray(input)) {
-    const [key, value] = Object.entries(input as Record<string, unknown>)[0] ?? [];
-    if (key && typeof value === "string") {
-      return `${key}: ${value}`;
-    }
-  }
-
-  return "";
-};
-
-const listFromUnknown = (value: unknown): string[] => {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.map(stringifyInput).filter((item) => item.length > 0);
 };
 
 const normalizeClassification = (classification: string | null): PromptClassification => {
@@ -134,39 +60,30 @@ const mapPrompt = (row: PromptRow): Prompt => ({
 export const promptsRouter = createTRPCRouter({
   templates: publicProcedure.query(({ ctx }): PromptTemplate[] => {
     const aiosRoot = getAiosRoot();
-    const registryPath = path.join(aiosRoot, "prompts", "registry.json");
-    if (!fs.existsSync(registryPath) || !tableExists("prompt_library_links")) {
+    if (!tableExists("prompt_library_links")) {
       return [];
     }
 
-    const registry = JSON.parse(fs.readFileSync(registryPath, "utf8")) as PromptTemplateRegistry;
-    return (registry.templates ?? []).flatMap((template) => {
-      const hash = templateHash(aiosRoot, template);
-      if (!hash) {
-        return [];
-      }
-
+    return promptTemplateCatalog.flatMap((template) => {
       const linked = ctx.db
         .prepare("SELECT 1 FROM prompt_library_links WHERE prompt_hash = ? LIMIT 1")
-        .get(hash);
+        .get(template.hash);
       if (!linked) {
         return [];
       }
 
-      const file = typeof template.file === "string" ? template.file : "";
-
       return [{
-        id: typeof template.id === "string" ? template.id : "unknown",
-        name: typeof template.name === "string" ? template.name : "Unnamed template",
-        version: typeof template.version === "string" ? template.version : "unknown",
-        classification: typeof template.classification === "string" ? template.classification : "other",
-        tags: Array.isArray(template.tags) ? template.tags.filter((tag): tag is string => typeof tag === "string") : [],
-        purpose: typeof template.purpose === "string" ? template.purpose : "",
-        requiredInputs: listFromUnknown(template.required_inputs),
-        optionalInputs: listFromUnknown(template.optional_inputs),
-        lastUpdated: typeof template.last_updated === "string" ? template.last_updated : "",
-        file,
-        path: file ? path.join(aiosRoot, file) : registryPath,
+        id: template.id,
+        name: template.name,
+        version: template.version,
+        classification: template.classification,
+        tags: template.tags,
+        purpose: template.purpose,
+        requiredInputs: template.requiredInputs,
+        optionalInputs: template.optionalInputs,
+        lastUpdated: template.lastUpdated,
+        file: template.file,
+        path: `${aiosRoot.replace(/\/$/, "")}/${template.file}`,
       }];
     });
   }),

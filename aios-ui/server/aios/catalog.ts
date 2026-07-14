@@ -1,7 +1,5 @@
-import fs from "node:fs";
-import path from "node:path";
-
 import type { AgentProfile, InvocationBackend, WorkflowTemplate } from "@/lib/control-plane";
+import { workflowTemplateCatalog } from "@/server/generated/workflow-catalog";
 
 export const invocationBackends: InvocationBackend[] = [
   {
@@ -174,72 +172,14 @@ export const workflowTemplates: WorkflowTemplate[] = [
   },
 ];
 
-type WorkflowRegistryRow = {
-  key?: unknown;
-  name?: unknown;
-  purpose?: unknown;
-  purpose_long?: unknown;
-  trigger_hints?: unknown;
-  output_contract?: unknown;
-  required_validations?: unknown;
-  lifecycle_state?: unknown;
-};
-
-type WorkflowRegistry = {
-  workflows?: unknown;
-};
-
 export type CatalogSnapshot = {
   workflowTemplates: WorkflowTemplate[];
   agentProfiles: AgentProfile[];
   invocationBackends: InvocationBackend[];
 };
 
-const registryCandidates = (): string[] => [
-  path.join(process.cwd(), "../config/workflows/registry.json"),
-  path.join(process.cwd(), "config/workflows/registry.json"),
-];
-
-const stringArray = (value: unknown): string[] =>
-  Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
-
-const registryWorkflowTemplates = (): WorkflowTemplate[] | null => {
-  const registryPath = registryCandidates().find((candidate) => fs.existsSync(candidate));
-  if (!registryPath) {
-    return null;
-  }
-  try {
-    const parsed = JSON.parse(fs.readFileSync(registryPath, "utf8")) as WorkflowRegistry;
-    if (!Array.isArray(parsed.workflows)) {
-      return null;
-    }
-    return parsed.workflows
-      .filter((item): item is WorkflowRegistryRow => item !== null && typeof item === "object")
-      .map((workflow) => {
-        const key = typeof workflow.key === "string" ? workflow.key : "unknown-workflow";
-        return {
-          key,
-          name: typeof workflow.name === "string" ? workflow.name : key,
-          summary:
-            typeof workflow.purpose_long === "string"
-              ? workflow.purpose_long
-              : typeof workflow.purpose === "string"
-                ? workflow.purpose
-                : "Workflow registered without a summary.",
-          triggers: stringArray(workflow.trigger_hints),
-          deliverables: stringArray(workflow.output_contract),
-          validation: stringArray(workflow.required_validations),
-          defaultBackendKey: "codex-managed-runtime",
-          isSeedData: false,
-        };
-      });
-  } catch {
-    return null;
-  }
-};
-
 export const getCatalogSnapshot = (): CatalogSnapshot => ({
-  workflowTemplates: registryWorkflowTemplates() ?? workflowTemplates,
+  workflowTemplates: workflowTemplateCatalog,
   agentProfiles,
   invocationBackends,
 });

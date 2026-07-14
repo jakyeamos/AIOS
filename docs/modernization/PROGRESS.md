@@ -97,8 +97,8 @@ transform under `BEGIN IMMEDIATE`, recorded all 561 quarantine decisions, and
 left the live store at zero FK violations with `user_version=1`.
 The first ADR-004 UI validation pass now has clean ESLint, anti-slop fixture,
 TypeScript, architecture, warning-baseline, native-module, and production-build
-evidence; the build has one remaining NFT tracing warning in the prompt
-filesystem adapter.
+evidence; the final pinned browser contract and generated catalog checks are
+also green, with no remaining NFT tracing warning.
 The loopback runtime smoke also passed: `/` and the source-backed
 `projects.list` tRPC route both returned HTTP 200 on a disposable dev server,
 with no request errors in the server log.
@@ -109,17 +109,22 @@ The M2 validation slice now vendors `eslint-plugin-anti-slop` 0.4.0 inside
 `aios-ui/`, removes the external sibling-path dependency, and removes all
 request-time UI DDL in favor of a Python-owned migration-ledger assertion.
 Independent ESLint, anti-slop fixtures, TypeScript, architecture, and warning
-baseline checks pass; the production build passes with one NFT tracing warning,
-and a disposable loopback smoke returned HTTP 200 for `/` and `projects.list`.
+baseline checks pass; the production build is warning-free, and a disposable
+loopback smoke returned HTTP 200 for `/` and `projects.list`.
 
 The M2 browser frontier then verified seeded `controlPlane.overview` (HTTP 200;
 16 workflow templates, 20 runs, 12 packets, 25 findings) and typed
 `controlPlane.runDetail` (HTTP 200; three events). The in-app browser passed
 375×812, 768×1024, and 1440×900 without horizontal overflow or console errors;
 same-origin capture observed 24 requests with no failed response. A duplicate
-React key in run-detail standards deltas was fixed. The ticket remains blocked
-because no checked-in browser harness exists and the available browser input
-surface did not advance focus on Tab, so keyboard-only proof is not claimed.
+React key in run-detail standards deltas was fixed.
+
+M2 is now resolved. Playwright 1.61.1 is pinned in `aios-ui`; the checked-in
+browser contract passes seeded route typing, 375×812/768×1024/1440×900 layout
+checks, same-origin response checks, console policy, screenshots, and real Tab
+traversal with visible focus. Prompt and workflow registries are generated and
+checked before build, and the managed-runtime spawn call is statically
+traceable. `pnpm --dir aios-ui build` now completes without the NFT warning.
 
 ## Completed
 
@@ -365,8 +370,9 @@ surface did not advance focus on Tab, so keyboard-only proof is not claimed.
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `pnpm --dir aios-ui lint:architecture` — passed (122 modules, 255 dependencies).
 - `pnpm --dir aios-ui lint:warning-baseline` — passed (0/71 warnings).
-- `pnpm --dir aios-ui build` — passed after local native rebuild; one NFT
-  tracing warning remains in `server/routers/prompts.ts`.
+- `pnpm --dir aios-ui build` — the initial pass exposed the prompt NFT tracing
+  warning; the subsequent generated-catalog/static-runtime fix now produces a
+  warning-free build.
 - `pnpm --dir aios-ui exec next dev --hostname 127.0.0.1 --port 3100` plus
   local smoke requests — passed (`/` HTTP 200; `projects.list` tRPC HTTP 200;
   source-backed project payload returned; server stopped cleanly).

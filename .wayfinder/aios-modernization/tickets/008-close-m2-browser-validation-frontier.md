@@ -1,8 +1,9 @@
 ---
 title: Close the M2 Browser Validation Frontier
 type: task
-status: blocked
+status: resolved
 claim: /root (2026-07-14)
+resolved: 2026-07-14
 blocked_by: []
 blocks:
   - 009-ship-read-only-v2-operator-shell
@@ -30,8 +31,7 @@ contract?
 - Source-backed overview and typed run-detail responses return 200.
 - All three viewport checks have no horizontal overflow or browser errors.
 - Same-origin requests have no 4xx/5xx responses.
-- Keyboard-only and pointer checks run through a checked-in harness, or the
-  exact blocker is recorded without advancing to M3.
+- Keyboard-only and pointer checks run through the pinned checked-in harness.
 
 ## Resolution
 
@@ -43,7 +43,9 @@ focusable controls, and no console errors. Same-origin capture observed 24
 requests; the run-detail tRPC response was 200 and no captured request failed.
 
 The duplicate React-key defect in run-detail standards deltas was fixed by
-using a stable composite key. The ticket remains blocked because the checked-in
-browser harness required for CI validation is absent and the available browser
-automation surface did not advance focus on Tab, so a keyboard-only journey
-cannot be honestly marked passed. M3 remains gated.
+using a stable composite key. Playwright 1.61.1 is pinned in the UI package,
+and the checked-in browser contract now passes seeded overview/run-detail
+checks, all three viewports, same-origin response checks, console policy, and
+real Tab traversal with visible focus. The production build is warning-free:
+prompt and workflow registries are generated before build, and managed-runtime
+spawn arguments are statically traceable. M2 is resolved; M3 is unblocked.

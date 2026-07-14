@@ -31,10 +31,9 @@ The authoritative target is:
 
 The current local setup now has a reproducible in-repository anti-slop package,
 green independent static gates, seeded control-plane route evidence, and a
-responsive in-app browser pass. It is not yet v2 validation-ready: the
-production build still emits one NFT tracing warning, a checked-in browser
-harness is absent, the available browser surface did not advance focus on Tab,
-and the Python-owned UI mutation boundary remains outstanding.
+pinned Playwright browser contract. The deterministic M2 validation gate is
+green. The Python-owned UI mutation boundary remains a later modernization
+concern, not a browser-validation exception.
 
 ## Current evidence
 
@@ -44,15 +43,15 @@ and the Python-owned UI mutation boundary remains outstanding.
 | `pnpm --dir aios-ui exec eslint .` | Pass, 0 errors / 0 warnings | ESLint loads the vendored plugin and the warning policy is clean |
 | `pnpm --dir aios-ui exec tsc --noEmit` | Pass | TypeScript is independently green |
 | `pnpm --dir aios-ui lint:warning-baseline` | Pass, `0/71` | Warning ratchet is green |
-| `pnpm --dir aios-ui lint:architecture` | Pass, 122 modules / 255 dependencies | Dependency boundaries are currently clean |
+| `pnpm --dir aios-ui lint:architecture` | Pass, 124 modules / 257 dependencies | Dependency boundaries are currently clean |
 | `pnpm --dir aios-ui lint:anti-slop:fixtures` | Pass | Fixture coverage is now deterministic against the committed plugin artifact |
-| `pnpm --dir aios-ui build` | Pass with one NFT tracing warning | The inferred-root warning is resolved; `server/routers/prompts.ts` still causes a whole-project file-tracing warning that needs a narrow fix or reviewed exception |
-| Disposable loopback smoke | `/` returned 200; `projects.list` returned 200 with five source-backed projects | Server log had no request errors; browser viewport and keyboard evidence is still outstanding |
+| `pnpm --dir aios-ui build` | Pass with no NFT/root/font tracing warnings | Prompt and workflow registries are generated and checked before build; managed-runtime spawn arguments are statically traceable |
+| Disposable loopback smoke | `/` returned 200; `projects.list` returned 200 with five source-backed projects | Server log had no request errors |
 | Seeded `controlPlane.overview` route | HTTP 200; 16 workflow templates, 20 runs, 12 packets, and 25 findings | Source-backed response, not an HTML error page |
 | Seeded `controlPlane.runDetail` route | HTTP 200; typed response for the latest seeded run with three events | Valid input and typed response confirmed |
-| In-app browser responsive matrix | 375×812, 768×1024, and 1440×900; no horizontal overflow; one `main` and one `nav`; 79 focusable controls | Local exploratory evidence; no console errors after duplicate-key fix |
-| In-app browser same-origin network capture | 24 requests; run-detail tRPC response 200; zero captured 4xx/5xx or loading failures | Local exploratory evidence; no checked-in harness yet |
-| Keyboard-only journey | Browser keypress surface did not advance focus after Tab | Blocked until a pinned/checked-in harness or equivalent reliable input path exists |
+| In-app browser responsive matrix | 375×812, 768×1024, and 1440×900; no horizontal overflow; one `main` and one `nav`; 79 focusable controls | Exploratory evidence retained alongside the checked-in harness |
+| In-app browser same-origin network capture | 24 requests; run-detail tRPC response 200; zero captured 4xx/5xx or loading failures | Exploratory evidence retained alongside the checked-in harness |
+| Playwright 1.61.1 browser contract | Pass; seeded routes, 3 viewports, screenshots, console/network policy, and 12-step Tab traversal | Checked-in CI-capable proof; output is stored under ignored `test-results/` |
 
 The 2026-07-13 rows remain historical baseline evidence in `AUDIT.md`; they
 are not the current package or runtime state.
@@ -63,9 +62,8 @@ The baseline also records these browser/runtime findings in
 `architecture.boundary_enforcement`; an intermittent `runDetail` 500; lost
 stylesheet after reload; and no passing tablet proof.
 
-The duplicate-key finding is now fixed in
-`components/control/ControlPlaneStudio.tsx`; the remaining browser gap is the
-keyboard-only journey and its reproducible harness.
+The duplicate-key finding is fixed in `components/control/ControlPlaneStudio.tsx`.
+The browser and NFT tracing gates are now closed for M2.
 
 ## Package, lockfile, and workspace contract
 
@@ -128,12 +126,11 @@ font cache is not evidence of an offline build. Any external font request,
 missing local asset, or fallback-font warning fails the gate.
 
 `aios-ui/next.config.ts` sets the Turbopack root to the app root. The inferred
-root warning is resolved, but the production build still reports a whole-project
-NFT trace through `server/routers/prompts.ts`; that warning remains a hard
-milestone blocker until removed or documented with a narrow, reviewed tracing
-exception. Dynamic filesystem reads must be scoped to the configured
-`AIOS_ROOT`; they must not make the entire repository an accidental deployment
-input.
+root and whole-project NFT warnings are resolved. Prompt and workflow registry
+data is generated into checked-in TypeScript catalogs before build, while the
+managed-runtime command uses statically traceable arguments. Dynamic runtime
+filesystem reads must remain outside the route import graph; they must not make
+the entire repository an accidental deployment input.
 
 ## Required quality ladder
 
@@ -245,7 +242,7 @@ until all of the following are true:
 1. A clean install resolves every dependency from the governing lockfile and
    does not require a sibling checkout.
 2. Fonts are local/system-only and an offline production build completes.
-3. Turbopack root and file-tracing warnings are removed or narrowly justified.
+3. Turbopack root and file-tracing warnings are removed.
 4. ESLint, TypeScript, warning baseline, architecture, and fixture gates pass
    independently.
 5. The tRPC route handler imports successfully and valid seeded overview and

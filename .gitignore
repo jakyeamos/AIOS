@@ -47,3 +47,5 @@ logs/
 aios/context/.context/
 services/.context/
 tests/business/
+aios-ui/test-results/
+aios-ui/playwright-report/
