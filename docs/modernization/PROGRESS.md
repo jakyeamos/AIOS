@@ -37,6 +37,10 @@ migration backup; the live store has not been migrated.
 - Added `services/migration_runner.py` for copied-store migrations with
   preflight/postflight health, scoped table-count reconciliation, explicit
   quarantine ids, forward-only ledger recording, and post-migration backup.
+- Added `services/migration_transformers.py` for the three documented FK
+  classes: unique working-directory project mappings, quarantine/nulling of
+  missing session references, and quarantine/nulling of shadow references to
+  absent `eval_tasks`; it never creates synthetic parents.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -50,6 +54,9 @@ migration backup; the live store has not been migrated.
 - `.venv/bin/pytest tests/test_storage.py tests/test_migration_runner.py tests/test_aios_cli.py -q` — passed (98 tests).
 - `.venv/bin/ruff check services/storage.py services/aios_cli.py tests/test_storage.py` — passed.
 - `.venv/bin/basedpyright services/storage.py services/aios_cli.py tests/test_storage.py` — passed.
+- `.venv/bin/pytest tests/test_migration_transformers.py -q` — passed (2 tests).
+- `.venv/bin/ruff check services/migration_transformers.py tests/test_migration_transformers.py` — passed.
+- `.venv/bin/basedpyright services/migration_transformers.py tests/test_migration_transformers.py` — passed.
 - `pnpm --dir aios-ui lint:architecture` — passed (122 modules, 255 dependencies).
 - `pnpm quality:eval` — interrupted after the broad vulture scan expanded into
   historical shadow worktrees; the focused checks above are the relevant proof.
@@ -82,6 +89,10 @@ migration backup; the live store has not been migrated.
 - The copied-store runner accepts an explicit transformer rather than embedding
   guessed parent-repair rules; known row mappings remain migration-specific and
   must be evidence-backed before they touch the production-shaped copy.
+- The production-shaped transformer is deterministic by construction: path
+  mappings require exactly one project row, unresolved required project rows are
+  archived with payloads, and nullable session/task references are cleared only
+  after quarantine records are written.
 
 ### Gate C: verification
 
@@ -102,11 +113,25 @@ live migration work.
 
 - Route hooks, storage helpers, and UI adapters through the shared connection
   contract without changing the canonical `AIOS_DB` meaning.
-- Add the first production-shaped migration transformer that captures preflight
-  counts/checksums, quarantines ambiguous rows, and records every forward-only
-  migration.
+- Reconcile the live preflight count drift (the current read-only check reports
+  561 violations while older audit documents record 555/557) and retain the
+  command output as migration evidence.
+- Complete the restore drill and a human-reviewed deletion/retention decision
+  for the 73 unresolved quality rows archived by the copied transformer.
 - Complete the backup/restore drill and reconcile the current store's FK
   violations before any write-capable v2 slice.
+
+## Production-shaped copied-store evidence
+
+The disposable copy of `~/AIOS/data/aios.db` reported `quick_check=ok`,
+`integrity_check=ok`, `user_version=0`, and 561 FK violations before the
+transformer. The forward-only copied migration quarantined 561 original
+payloads, mapped 255 quality rows by unique metadata working-directory,
+archived 73 unresolved quality rows, nulled 180 missing session references,
+and nulled 53 absent shadow-task references. The post-migration copy reported
+zero FK violations and `user_version=1`; its restored backup passed quick,
+integrity, and FK checks, and a read-only daily-flow replay produced the
+canonical eight-step trace.
 
 ## Known blockers
 
