@@ -6,8 +6,9 @@ import type { AiosProjectComponentKey, TaskiProjectSummary } from "@/lib/control
 import { invokeControlPlaneRun, planTask } from "@/server/aios/control-plane";
 import {
   isAiosProjectComponentKey,
-  setAiosProjectComponentEnabled,
+  listAiosProjectComponentSettings,
 } from "@/server/aios/project-components";
+import { setAiosProjectComponentEnabledViaPythonOwner } from "@/server/aios/project-components-owner";
 import type { Project, ProjectStatus, Session } from "@/lib/types";
 import { trustedSignal } from "@/lib/trusted-signals";
 import { getProjectQualityPipeline } from "@/server/aios/quality-pipeline";
@@ -425,13 +426,10 @@ export const projectsRouter = createTRPCRouter({
         enabled: z.boolean(),
       }),
     )
-    .mutation(({ ctx, input }) =>
-      setAiosProjectComponentEnabled(ctx.db, {
-        projectId: input.projectId,
-        componentKey: input.componentKey,
-        enabled: input.enabled,
-      }),
-    ),
+    .mutation(({ ctx, input }) => {
+      setAiosProjectComponentEnabledViaPythonOwner(input);
+      return listAiosProjectComponentSettings(ctx.db, input.projectId);
+    }),
 
   updateBackfillTask: publicProcedure
     .input(

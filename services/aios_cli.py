@@ -109,6 +109,7 @@ from services.pre_pr_readiness import (
 from services.pre_pr_readiness import (
     DEFAULT_TIMEOUT_SECONDS as DEFAULT_PRE_PR_TIMEOUT_SECONDS,
 )
+from services.project_components import set_project_component_enabled
 from services.project_health_proof import DEFAULT_PROVING_PROJECTS, prove_project_health
 from services.quality_gates import run_gate as run_quality_gate
 from services.quality_rollout_adapter import launch_quality_rollout
@@ -5775,6 +5776,21 @@ def _standards_backfill_update_payload(
     return dict(result)
 
 
+def _project_component_update_payload(
+    conn: sqlite3.Connection, args: argparse.Namespace
+) -> dict[str, Any]:
+    payload = _parse_json_object(args.payload_json)
+    if not payload:
+        raise CLIError("invalid-payload", "--payload-json must contain a non-empty object", EXIT_USAGE)
+    try:
+        result = set_project_component_enabled(conn, payload)
+    except LookupError as exc:
+        raise CLIError("project-not-found", str(exc), EXIT_NOT_FOUND) from exc
+    except ValueError as exc:
+        raise CLIError("project-component-update-failed", str(exc), EXIT_USAGE) from exc
+    return dict(result)
+
+
 def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "status":
         print(
@@ -5964,6 +5980,12 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
         return
     if command == "standards-backfill-update":
         print(f"task={data['id']} status={data['status']} blocked={data['blocked']}")
+        return
+    if command == "project-component-update":
+        print(
+            f"project={data['project_id']} component={data['component_key']} "
+            f"enabled={data['enabled']}"
+        )
         return
     if command == "prove-project-health":
         summary = data["summary"]
@@ -6311,6 +6333,7 @@ def _command_requires_db(args: argparse.Namespace) -> bool:
         "recommend-workflow",
         "standards-override",
         "standards-backfill-update",
+        "project-component-update",
         "asset-lifecycle",
         "workflow-compare",
         "promote-asset",
@@ -7663,6 +7686,16 @@ def create_parser() -> argparse.ArgumentParser:
         help="JSON object containing taskId and one or more mutable task fields",
     )
 
+    project_component_update = subparsers.add_parser(
+        "project-component-update",
+        help="Apply one governed AIOS project component setting transition",
+    )
+    project_component_update.add_argument(
+        "--payload-json",
+        required=True,
+        help="JSON object containing projectId, componentKey, and enabled",
+    )
+
     asset_lifecycle = subparsers.add_parser(
         "asset-lifecycle", help="List and transition prompt, skill, and workflow assets"
     )
@@ -8353,6 +8386,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "standards-backfill-update":
             assert conn is not None
             data = _standards_backfill_update_payload(conn, args)
+        elif args.command == "project-component-update":
+            assert conn is not None
+            data = _project_component_update_payload(conn, args)
         elif args.command == "asset-lifecycle" and args.asset_lifecycle_command == "list":
             assert conn is not None
             data = _asset_lifecycle_list_payload(conn, args)

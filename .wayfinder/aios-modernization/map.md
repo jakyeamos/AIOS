@@ -44,6 +44,7 @@ created: 2026-07-10
 - [Exclude Superseded Eval Pairs from Promotion Consumers](tickets/017-exclude-superseded-eval-pairs-from-promotion-consumers.md) - Durable supersession metadata and append-only events now remove stale pairs from a gate-complete promotion-ready query while preserving the full audit-history view; M6 remains blocked on the remaining evidence and migration gates.
 - [Migrate the Context Compiler Projection Behind the Core Loop](tickets/018-migrate-context-compiler-projection-behind-core-loop.md) - The Context Compiler page now exposes an explicit file-backed, read-only projection contract with browser proof; no second context authority or write path was introduced, and M6 remains deferred on promotion and mutation-owner gates.
 - [Migrate Standards Backfill Writes Behind the Python Owner](tickets/019-migrate-standards-backfill-write-owner.md) - The first write-capable standards-health satellite now routes Taski Start/Block/Resolve transitions through a validated Python service and JSON CLI adapter; the prior UI SQLite write helper was deleted, with rollback to the parent revision and no schema migration.
+- [Migrate Project Component Settings Behind the Python Owner](tickets/020-migrate-project-component-settings-owner.md) - Taski project-scope component toggles now route through a validated Python service and JSON CLI adapter while the existing UI read projection remains intact; the direct TypeScript write helper was deleted.
 
 ## Fog
 
