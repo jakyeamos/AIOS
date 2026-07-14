@@ -7,8 +7,13 @@ import sqlite3
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
+from services.governed_effects import (
+    EffectStatus,
+    ensure_governed_effect_schema,
+    record_effect_event,
+)
 from services.memory_layers import ensure_memory_layer_schema
 
 RUN_STATUSES = {
@@ -523,6 +528,7 @@ def ensure_runtime_schema(conn: sqlite3.Connection) -> None:
         """
     )
     ensure_memory_layer_schema(conn)
+    ensure_governed_effect_schema(conn)
     ensure_column(conn, "consistency_findings", "resolution_status", "TEXT NOT NULL DEFAULT 'open'")
     ensure_column(conn, "consistency_findings", "resolution_actor", "TEXT")
     ensure_column(conn, "consistency_findings", "resolution_rationale", "TEXT")
@@ -1097,9 +1103,22 @@ def insert_writeback(
     )
     effective_requires_approval = bool(policy["requires_approval"])
     effective_approval_reason = approval_reason or policy.get("reason")
+    target_status = status or ("pending_approval" if effective_requires_approval else "proposed")
     proposed_payload = dict(proposed_change or {})
     proposed_payload.setdefault("approval_policy", policy)
-    target_status = status or ("pending_approval" if effective_requires_approval else "proposed")
+    proposed_payload.setdefault(
+        "governance",
+        {
+            "target": f"{layer_type}:{layer_key}",
+            "actor": str(proposed_payload.get("actor") or "system"),
+            "capability": "writeback.propose",
+            "data_classification": "internal",
+            "redaction_status": "not_required",
+            "evidence_refs": list(evidence),
+            "approval_state": target_status,
+            "rollback_ref": None,
+        },
+    )
     conn.execute(
         """
         INSERT INTO improvement_writebacks (
@@ -1157,6 +1176,29 @@ def insert_writeback(
             "token_regressive": token_regressive,
         },
     )
+    governance = proposed_payload["governance"]
+    if isinstance(governance, dict):
+        record_effect_event(
+            conn,
+            effect_id=writeback_id,
+            run_id=run_id,
+            target=str(governance.get("target") or f"{layer_type}:{layer_key}"),
+            actor=str(governance.get("actor") or "system"),
+            capability=str(governance.get("capability") or "writeback.propose"),
+            origin="loopback",
+            egress_target="local",
+            data_classification=str(governance.get("data_classification") or "internal"),
+            redaction_status=str(governance.get("redaction_status") or "not_required"),
+            rollback_ref=(
+                str(governance["rollback_ref"])
+                if governance.get("rollback_ref") is not None
+                else None
+            ),
+            evidence=[str(item) for item in governance.get("evidence_refs", evidence)],
+            from_status=None,
+            to_status=cast(EffectStatus, target_status),
+            note=summary,
+        )
     return writeback_id
 
 

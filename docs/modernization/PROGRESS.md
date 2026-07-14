@@ -1,6 +1,6 @@
 # AIOS V2 Modernization Progress
 
-**Status:** M4 governed Start work → Verify slice complete; M5 gated review remains
+**Status:** M5 gated review and closeout slice complete; M5A paired effectiveness remains
 **Updated:** 2026-07-14
 **Plan:** [EXEC_PLAN.md](EXEC_PLAN.md)
 
@@ -147,9 +147,27 @@ are persisted first, the invocation is created second, and
 run → invocation → events linkage, persisted partial-state resume snapshots,
 cross-project session blocking, and `verify_run` evidence/verifier completion
 without foreign-key violations. Ambiguous and unsupported routes remain
-blocked before durable creation. M5 is next for approval, capability, egress,
-writeback, and closeout enforcement; the v2 UI remains read-only until that
-gate is executable.
+blocked before durable creation. M5 is now resolved: governed effect events and
+closeout reviews make capability, loopback, egress, redaction, rollback,
+approval, changed-artifact, unresolved-delta, and next-action state explicit.
+Verification and hook-stop downgrade successful-looking runs to
+`partial`/`needs_follow_up` when required approval or closeout accounting is
+missing. The v2 UI mutation procedures remain blocked behind the Python owner.
+
+M5 evidence:
+
+- `tests/test_m5_gated_review.py` proves capability/loopback/egress denials,
+  append-only governed writeback transitions, terminal-state rejection, pending
+  approval blocking, and closeout after approval.
+- `UV_CACHE_DIR=/tmp/uv-cache uv run pytest -q tests/test_m5_gated_review.py tests/test_m4_start_work.py tests/test_run_verification.py tests/test_orchestration_runtime.py tests/test_workflow_promotion.py tests/test_asset_lifecycle.py tests/test_daily_flow.py tests/test_hook_stop.py` — 82 passed.
+- Focused Ruff and BasedPyright checks — passed; `pnpm context:validate` —
+  passed.
+- `pnpm --dir aios-ui lint`, `pnpm --dir aios-ui exec tsc --noEmit`,
+  `pnpm --dir aios-ui lint:architecture`, `pnpm --dir aios-ui build`, and
+  `pnpm --dir aios-ui test:browser` — passed (2 browser tests).
+
+M5A is next: run the paired AIOS/non-AIOS effectiveness benchmark before
+satellite promotion or cutover.
 
 ## Completed
 

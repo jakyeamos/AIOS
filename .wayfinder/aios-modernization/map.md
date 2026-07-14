@@ -36,6 +36,7 @@ created: 2026-07-10
 - [Close the M2 Browser Validation Frontier](tickets/008-close-m2-browser-validation-frontier.md) - Pinned Playwright now proves seeded routes, responsive layouts, console/network policy, and keyboard traversal; generated catalogs and static spawn arguments remove the NFT warning, so M3 is unblocked.
 - [Ship the Read-Only V2 Operator Shell](tickets/009-ship-read-only-v2-operator-shell.md) - Today, Start work, and canonical Current run now render from source-backed projections with task-centred navigation, explicit state/provenance contracts, and zero-mutation browser proof; M4 is next for Python-owned governed writes.
 - [Govern the Start Work Verify Slice](tickets/010-govern-start-work-verify-slice.md) - Python-owned start-work now creates a foreign-key-safe route/packet/run/invocation envelope, preserves partial-state resume evidence and project provenance, and completes source-backed verification; M5 is next for gated review and closeout.
+- [Add Gated Review and Closeout](tickets/011-gated-review-and-closeout.md) - Python-owned governed effect events and closeout reviews now enforce capability, loopback, egress, redaction, rollback, approval, changed-artifact, unresolved-delta, and next-action gates; UI mutation procedures fail closed behind the owner, and M5A is next for paired effectiveness measurement.
 
 ## Fog
 

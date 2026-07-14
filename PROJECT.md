@@ -46,8 +46,12 @@ lint, typecheck, anti-slop, context, and production-build gates pass. M4 now
 proves the Python-owned route → packet → run → invocation → verification
 envelope against foreign-key enforcement, including partial-state resume
 snapshots and source-backed verifier evidence. M5 is the next gated slice for
-approval, capability, egress, writeback, and closeout enforcement; the v2 UI
-remains read-only until then.
+approval, capability, egress, writeback, and closeout enforcement. M5 now adds
+Python-owned governed effect events and closeout reviews, blocks non-loopback
+or unredacted effects, requires explicit approval/rollback/evidence metadata,
+and downgrades incomplete closeout to follow-up instead of claiming success.
+The v2 UI mutation procedures remain read-only guards until they are routed
+through this owner.
 
 ## Implemented On 2026-07-10
 

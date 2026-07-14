@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 
 import {
   cancelControlPlaneRun,
@@ -13,6 +14,13 @@ import {
   reviewControlPlaneWriteback,
 } from "@/server/aios/control-plane";
 import { createTRPCRouter, publicProcedure } from "@/server/trpc";
+
+const pythonOwnerRequired = (): never => {
+  throw new TRPCError({
+    code: "PRECONDITION_FAILED",
+    message: "This mutation is Python-owner-only; use the governed AIOS control-plane path.",
+  });
+};
 
 export const controlPlaneRouter = createTRPCRouter({
   overview: publicProcedure.query(({ ctx }) => getControlPlaneOverview(ctx.db)),
@@ -32,7 +40,10 @@ export const controlPlaneRouter = createTRPCRouter({
         tokenBudget: z.number().int().min(180).max(2200).optional(),
       }),
     )
-    .mutation(({ ctx, input }) => planTask(ctx.db, input)),
+    .mutation(({ ctx, input }) => {
+      pythonOwnerRequired();
+      return planTask(ctx.db, input);
+    }),
 
   invoke: publicProcedure
     .input(
@@ -40,7 +51,10 @@ export const controlPlaneRouter = createTRPCRouter({
         runId: z.string().min(1),
       }),
     )
-    .mutation(({ ctx, input }) => invokeControlPlaneRun(ctx.db, input)),
+    .mutation(({ ctx, input }) => {
+      pythonOwnerRequired();
+      return invokeControlPlaneRun(ctx.db, input);
+    }),
 
   registerManualInvocation: publicProcedure
     .input(
@@ -53,7 +67,10 @@ export const controlPlaneRouter = createTRPCRouter({
         note: z.string().max(400).optional(),
       }),
     )
-    .mutation(({ ctx, input }) => registerControlPlaneManualInvocation(ctx.db, input)),
+    .mutation(({ ctx, input }) => {
+      pythonOwnerRequired();
+      return registerControlPlaneManualInvocation(ctx.db, input);
+    }),
 
   cancel: publicProcedure
     .input(
@@ -61,7 +78,10 @@ export const controlPlaneRouter = createTRPCRouter({
         runId: z.string().min(1),
       }),
     )
-    .mutation(({ ctx, input }) => cancelControlPlaneRun(ctx.db, input)),
+    .mutation(({ ctx, input }) => {
+      pythonOwnerRequired();
+      return cancelControlPlaneRun(ctx.db, input);
+    }),
 
   expand: publicProcedure
     .input(
@@ -74,7 +94,10 @@ export const controlPlaneRouter = createTRPCRouter({
         tokenBudget: z.number().int().min(60).max(600).optional(),
       }),
     )
-    .mutation(({ ctx, input }) => requestPacketExpansion(ctx.db, input)),
+    .mutation(({ ctx, input }) => {
+      pythonOwnerRequired();
+      return requestPacketExpansion(ctx.db, input);
+    }),
 
   reviewWriteback: publicProcedure
     .input(
@@ -84,7 +107,10 @@ export const controlPlaneRouter = createTRPCRouter({
         note: z.string().max(400).optional(),
       }),
     )
-    .mutation(({ ctx, input }) => reviewControlPlaneWriteback(ctx.db, input)),
+    .mutation(({ ctx, input }) => {
+      pythonOwnerRequired();
+      return reviewControlPlaneWriteback(ctx.db, input);
+    }),
 
   resolveFinding: publicProcedure
     .input(
@@ -96,5 +122,8 @@ export const controlPlaneRouter = createTRPCRouter({
         evidence: z.array(z.record(z.string(), z.unknown())).optional(),
       }),
     )
-    .mutation(({ ctx, input }) => resolveControlPlaneFinding(ctx.db, input)),
+    .mutation(({ ctx, input }) => {
+      pythonOwnerRequired();
+      return resolveControlPlaneFinding(ctx.db, input);
+    }),
 });

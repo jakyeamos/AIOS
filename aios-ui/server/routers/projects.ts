@@ -252,6 +252,13 @@ const parseJsonRecord = (raw: string | null): Record<string, unknown> => {
   }
 };
 
+const pythonOwnerRequired = (): never => {
+  throw new TRPCError({
+    code: "PRECONDITION_FAILED",
+    message: "Remediation launch is Python-owner-only; use the governed AIOS control-plane path.",
+  });
+};
+
 export const projectsRouter = createTRPCRouter({
   list: publicProcedure
     .input(z.object({ limit: z.number().int().min(1).max(200).default(100) }).optional())
@@ -450,6 +457,7 @@ export const projectsRouter = createTRPCRouter({
       }),
     )
     .mutation(({ ctx, input }) => {
+      pythonOwnerRequired();
       if (!tableExists("standards_delta_items")) {
         throw new TRPCError({ code: "NOT_FOUND", message: "standards_delta_items table is not available." });
       }

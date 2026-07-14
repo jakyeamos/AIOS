@@ -13,6 +13,7 @@ from services.asset_lifecycle import (
     promote_asset,
     writeback_approval_policy_shim,
 )
+from services.governed_effects import transition_writeback
 from services.workflow_orchestration import load_workflow_registry
 
 
@@ -434,6 +435,17 @@ def finalize_workflow_promotion(
     target_state = str(metadata.get("target_state", ""))
     if not target_state:
         raise ValueError(f"Lifecycle item {lifecycle_id} has no target_state metadata")
+    transition_writeback(
+        conn,
+        writeback_id=approval_writeback_id,
+        to_status="applied",
+        actor=actor,
+        note=f"Applied promotion lifecycle item {lifecycle_id}.",
+        capability="promotion.finalize",
+        origin="loopback",
+        egress_target="local",
+        redaction_status="not_required",
+    )
     previous_status = str(row[0])
     finalized_at = _now_iso()
     conn.execute(

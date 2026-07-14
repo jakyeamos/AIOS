@@ -645,6 +645,48 @@ CREATE TABLE improvement_writeback_events (
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 CREATE INDEX idx_improvement_writeback_events_writeback ON improvement_writeback_events(writeback_id, created_at DESC);
+CREATE TABLE governed_effect_events (
+  event_id TEXT PRIMARY KEY,
+  effect_id TEXT NOT NULL,
+  run_id TEXT REFERENCES orchestration_runs(id),
+  target TEXT NOT NULL,
+  actor TEXT NOT NULL,
+  capability TEXT NOT NULL,
+  origin TEXT NOT NULL,
+  egress_target TEXT NOT NULL,
+  data_classification TEXT NOT NULL,
+  redaction_status TEXT NOT NULL,
+  rollback_ref TEXT,
+  evidence_json TEXT NOT NULL DEFAULT '[]',
+  from_status TEXT,
+  to_status TEXT NOT NULL,
+  note TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX idx_governed_effect_events_effect ON governed_effect_events(effect_id, created_at DESC);
+CREATE TABLE governed_closeout_reviews (
+  review_id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL REFERENCES orchestration_runs(id),
+  status TEXT NOT NULL,
+  actor TEXT NOT NULL,
+  capability TEXT NOT NULL,
+  origin TEXT NOT NULL,
+  egress_target TEXT NOT NULL,
+  data_classification TEXT NOT NULL,
+  redaction_status TEXT NOT NULL,
+  approval_state TEXT NOT NULL,
+  verification_state TEXT NOT NULL,
+  evidence_count INTEGER NOT NULL DEFAULT 0,
+  changed_artifact_count INTEGER NOT NULL DEFAULT 0,
+  unresolved_delta_count INTEGER NOT NULL DEFAULT 0,
+  next_action TEXT,
+  no_follow_up INTEGER NOT NULL DEFAULT 0,
+  rollback_ref TEXT,
+  blockers_json TEXT NOT NULL DEFAULT '[]',
+  evidence_json TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL
+);
+CREATE INDEX idx_governed_closeout_reviews_run ON governed_closeout_reviews(run_id, created_at DESC);
 CREATE TABLE divergent_runs (
   id TEXT PRIMARY KEY,
   created_at TEXT NOT NULL,

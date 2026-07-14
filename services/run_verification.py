@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from services.evidence_artifacts import record_evidence_artifact
+from services.governed_effects import evaluate_governed_closeout
 from services.quality_gates import (
     DEFAULT_REGISTRY_PATH,
     LOCAL_CONTRACT_NAME,
@@ -145,10 +146,20 @@ def verify_run(
         workflow_key=run["workflow_key"],
         implementation_bearing=True,
     )
+    governed_closeout = evaluate_governed_closeout(
+        conn,
+        run_id=run_id,
+        verification=validation,
+        actor=VERIFIER_AGENT,
+        capability="aios.verify",
+        origin="loopback",
+        egress_target="local",
+        redaction_status="not_required",
+    )
 
     from_status = run["status"]
     to_status: str | None = None
-    if result == "pass" and validation["allowed"]:
+    if result == "pass" and validation["allowed"] and governed_closeout["allowed"]:
         to_status = "completed"
     elif result == "fail":
         to_status = "failed_validation"
@@ -192,6 +203,7 @@ def verify_run(
         "evidence_refs": evidence_refs,
         "blocking_issues": blocking_issues,
         "validation": validation,
+        "governed_closeout": governed_closeout,
         "run_status": {"from": from_status, "to": to_status or from_status},
     }
 

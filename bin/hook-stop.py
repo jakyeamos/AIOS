@@ -39,6 +39,7 @@ from hook_lifecycle import (  # noqa: E402
 )
 
 from services.evidence_artifacts import usable_evidence_refs  # noqa: E402
+from services.governed_effects import evaluate_governed_closeout  # noqa: E402
 from services.rtk_integration import ensure_rtk_schema, rtk_metrics_log  # noqa: E402
 from services.session_effectiveness import write_session_effectiveness_receipt  # noqa: E402
 from services.storage import connect as connect_storage  # noqa: E402
@@ -639,7 +640,7 @@ def closeout_verification_for_run(
         implementation_bearing = workflow.implementation_bearing
         verification_exempt = workflow.verification_exempt
         exemption_reason = workflow.verification_exempt_reason
-    return validate_closeout_verification(
+    validation = validate_closeout_verification(
         conn,
         task_id=run_id,
         run_id=run_id,
@@ -649,6 +650,27 @@ def closeout_verification_for_run(
         verification_exempt=verification_exempt,
         exemption_reason=exemption_reason,
     )
+    run_exists = (
+        conn.execute(
+            "SELECT 1 FROM orchestration_runs WHERE id = ? LIMIT 1",
+            (run_id,),
+        ).fetchone()
+        if _table_exists(conn, "orchestration_runs")
+        else None
+    )
+    if not run_exists or not validation["allowed"]:
+        return validation
+    governed = evaluate_governed_closeout(
+        conn,
+        run_id=run_id,
+        verification=validation,
+        actor="hook-stop",
+        capability="run.closeout",
+        origin="loopback",
+        egress_target="local",
+        redaction_status="not_required",
+    )
+    return {**validation, "governed_closeout": governed, **governed}
 
 
 def _tokenize(text: str | None) -> set[str]:
@@ -1036,7 +1058,11 @@ def main() -> None:
                     workflow_key=str(run_row[0]),
                 )
                 if not verifier_gate["allowed"]:
-                    run_outcome = "failed"
+                    run_outcome = (
+                        "needs_follow_up"
+                        if verifier_gate.get("code") == "closeout_blocked"
+                        else "failed"
+                    )
                     reason_json = {**reason_json, "verifier_gate": verifier_gate}
                     explicit_result_summary = (
                         explicit_result_summary
@@ -1120,6 +1146,42 @@ def main() -> None:
                     ),
                     token_regressive=token_regressive,
                 )
+            if run_outcome == "completed" and verifier_gate and verifier_gate.get("allowed"):
+                post_writeback_gate = evaluate_governed_closeout(
+                    conn,
+                    run_id=linked_run_id,
+                    verification=verifier_gate,
+                    actor="hook-stop",
+                    capability="run.closeout",
+                    origin="loopback",
+                    egress_target="local",
+                    redaction_status="not_required",
+                )
+                if not post_writeback_gate["allowed"]:
+                    run_outcome = "needs_follow_up"
+                    reason_json = {**reason_json, "governed_closeout": post_writeback_gate}
+                    transition_run(
+                        conn,
+                        run_id=linked_run_id,
+                        to_status=run_outcome,
+                        event_type="governed_closeout_blocked",
+                        summary="Closeout requires approval or follow-up after writeback proposals.",
+                        reason={"governed_closeout": post_writeback_gate},
+                        session_id=session_id,
+                        invocation_id=linked_invocation_id,
+                        result_summary="Closeout requires approval or follow-up.",
+                        memory_update_id=memory_update_id,
+                        created_at=now,
+                    )
+                    if linked_invocation_id:
+                        update_invocation(
+                            conn,
+                            invocation_id=linked_invocation_id,
+                            status=run_outcome,
+                            session_id=session_id,
+                            metadata={"governed_closeout": post_writeback_gate},
+                            ended_at=now,
+                        )
             consistency_eval_id = evaluate_run_consistency(
                 conn,
                 linked_run_id,
