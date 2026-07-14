@@ -60,6 +60,13 @@ with a bounded +0.0500 portable-context delta; the durable report is
 [`M6_LIVE_PAIRED_REPORT.md`](../docs/evals/M6_LIVE_PAIRED_REPORT.md). M6 still
 requires the broader three-to-five-task benchmark and adversarial review.
 
+Current-state amendment (2026-07-14): The `capture.v1` source-normalization
+boundary is now implemented in commit `b408ad5`. AIOS owns the pinned schema,
+deterministic HTML/Markdown/JSON/CSV adapter runtime, provenance and removal
+records, CLI, fixtures, and focused tests. The boundary performs no network
+fetches, enrichment, or vault writes; downstream writeback remains governed.
+Focused proof passed four tests, Ruff, and BasedPyright.
+
 _(11 older entries trimmed)_
 
 AIOS now has a read-only workflow router preview surface: `aios route "objective"` resolves the registered project, governed workflow, agent, backend, prompt family, candidate alternatives, and a ready-to-run `aios start-work ...` command without creating orchestration runs, packets, invocations, or sessions. `~/AIOS/bin/route` is a convenience wrapper around the same command.
@@ -85,6 +92,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-14: Added the `capture.v1` source-normalization boundary with pinned schema, deterministic adapters, provenance/removal records, CLI, fixtures, and focused proof; no network, enrichment, or vault writes (`b408ad5`).
 - 2026-07-14: Closed the eval-pair report-path contract gap with schema migration compatibility, CLI flags, round-trip tests, and 107 focused tests passing (`10c992a`).
 - 2026-07-14: Captured one clean live control/treatment pair at `7797f3e` with passed contamination, independent review, persisted IDs, and a bounded +0.0500 portable-context delta; broader M6 evidence remains open (`docs/evals/M6_LIVE_PAIRED_REPORT.md`).
 - 2026-07-14: Implemented the durable M5A `eval_pairs` contract with hash/parity validation, contamination and review gates, append-only pair events, CLI create/finalize/list commands, and 139 focused evaluation tests (`2eec354`).
