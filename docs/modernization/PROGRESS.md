@@ -70,6 +70,8 @@ Domain-file generation now uses shared read-only storage while preserving
 human-annotation retention, domain projections, and dry-run behavior.
 DOCX and PDF indexers now use the shared write boundary while preserving
 metadata extraction, optional dependency fallbacks, and dry-run behavior.
+Rule-bundle registration now uses the shared write boundary while preserving
+task generation, artifact updates, and bundle-status transitions.
 
 ## Completed
 
@@ -177,6 +179,9 @@ metadata extraction, optional dependency fallbacks, and dry-run behavior.
 - Routed `index-docx.py` and `index-pdfs.py` through shared storage and made
   their canonical database paths honor `AIOS_DB`; disposable indexer dry-run
   proofs passed without live or indexed-row writes.
+- Routed `generate-rule-bundle.py` through shared storage and made its
+  canonical database path honor `AIOS_DB`; disposable bundle registration
+  proof passed with FK enforcement.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -250,6 +255,10 @@ metadata extraction, optional dependency fallbacks, and dry-run behavior.
 - `uv run basedpyright bin/index-docx.py bin/index-pdfs.py` — passed (0 errors).
 - Disposable DOCX/PDF indexer integration — passed (index plans generated with
   zero indexed-row writes; DOCX used a local optional-dependency stub).
+- `uv run ruff check bin/generate-rule-bundle.py` — passed.
+- `uv run basedpyright bin/generate-rule-bundle.py` — passed (0 errors).
+- Disposable rule-bundle registration integration — passed (bundle row
+  inserted and `patterns.lab_status` updated with foreign-key enforcement).
 - `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
@@ -368,7 +377,7 @@ live migration work.
   plus observation review, noise purging, business-memory CLI adapters, and
   bug-motif, handoff-learning, personal-pattern extraction, personal
   promotion, agent synthesis, domain-file projection, and document indexers
-  are now covered too.
+  plus rule-bundle registration are now covered too.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.

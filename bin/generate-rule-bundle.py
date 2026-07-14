@@ -15,11 +15,17 @@ Usage:
 import argparse
 import importlib.util as _ilu
 import json
-import sqlite3
+import os
 import sys
 import textwrap
 from datetime import UTC, datetime
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from services.storage import connect as connect_storage  # noqa: E402
 
 
 def _load_rule_artifacts():
@@ -40,7 +46,7 @@ write_artifact = _ra.write_artifact
 
 LAB_DIR = Path.home() / "projects/claude-improvement-lab"
 TASKS_DIR = LAB_DIR / "tasks/rule-linked"
-DB = Path.home() / "AIOS/data/aios.db"
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))).expanduser()
 
 TASK_TOML = """schema_version = "1.1"\n\n[verifier]\ntimeout_sec = 60\n\n[environment]\ntimeout_sec = 180\n"""
 TEST_SH = "#!/bin/bash\nset -e\nmkdir -p /logs/verifier\npython3 /tests/test.py\n"
@@ -843,7 +849,7 @@ def generate_bundle(artifact: dict, dry_run: bool = False) -> dict:
 
 
 def register_bundle(bundle: dict, artifact: dict) -> None:
-    conn = sqlite3.connect(DB)
+    conn = connect_storage(DB)
     conn.execute(
         """
         INSERT INTO rule_eval_bundles
