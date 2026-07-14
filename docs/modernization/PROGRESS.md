@@ -68,6 +68,8 @@ Agent synthesis now uses shared storage for both read-only corpus scans and
 pattern writes while preserving title/tag clustering and dry-run behavior.
 Domain-file generation now uses shared read-only storage while preserving
 human-annotation retention, domain projections, and dry-run behavior.
+DOCX and PDF indexers now use the shared write boundary while preserving
+metadata extraction, optional dependency fallbacks, and dry-run behavior.
 
 ## Completed
 
@@ -172,6 +174,9 @@ human-annotation retention, domain projections, and dry-run behavior.
 - Routed `build-domain-files.py` through shared read-only storage and made its
   canonical database path honor `AIOS_DB`; a disposable domain projection
   dry-run proof passed.
+- Routed `index-docx.py` and `index-pdfs.py` through shared storage and made
+  their canonical database paths honor `AIOS_DB`; disposable indexer dry-run
+  proofs passed without live or indexed-row writes.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -241,6 +246,10 @@ human-annotation retention, domain projections, and dry-run behavior.
 - `uv run basedpyright bin/build-domain-files.py` — passed (0 errors).
 - Disposable `build-domain-files.py --dry-run` integration — passed (domain
   projection targets generated with zero filesystem writes).
+- `uv run ruff check bin/index-docx.py bin/index-pdfs.py` — passed.
+- `uv run basedpyright bin/index-docx.py bin/index-pdfs.py` — passed (0 errors).
+- Disposable DOCX/PDF indexer integration — passed (index plans generated with
+  zero indexed-row writes; DOCX used a local optional-dependency stub).
 - `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
@@ -358,7 +367,8 @@ live migration work.
   extraction, pattern scoring, pattern promotion, and pattern lifecycle tools
   plus observation review, noise purging, business-memory CLI adapters, and
   bug-motif, handoff-learning, personal-pattern extraction, personal
-  promotion, agent synthesis, and domain-file projection are now covered too.
+  promotion, agent synthesis, domain-file projection, and document indexers
+  are now covered too.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.

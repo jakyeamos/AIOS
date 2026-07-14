@@ -11,12 +11,18 @@ Usage:
 """
 
 import argparse
-import sqlite3
+import os
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-DB = Path.home() / "AIOS" / "data" / "aios.db"
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from services.storage import connect as connect_storage  # noqa: E402
+
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))).expanduser()
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS docx_index (
@@ -93,7 +99,7 @@ def main() -> None:
         print("Error: python-docx not installed. Run: pip install python-docx", file=sys.stderr)
         sys.exit(1)
 
-    conn = sqlite3.connect(DB)
+    conn = connect_storage(DB)
 
     if args.reset:
         conn.execute("DROP TABLE IF EXISTS docx_index")
