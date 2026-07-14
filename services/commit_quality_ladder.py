@@ -17,6 +17,7 @@ from services.quality_gate_audit import (
     quality_gate_decision,
     safe_append_gate_audit_event,
 )
+from services.storage import connect as connect_storage
 from services.verifier_artifacts import fresh_verifier_refs
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -464,7 +465,7 @@ def check_aios_evidence_artifacts(
             f"AIOS evidence check unknown; database missing at {resolved_db}.",
         )
     try:
-        with sqlite3.connect(resolved_db) as conn:
+        with connect_storage(resolved_db, read_only=True) as conn:
             validation = validate_fresh_evidence(conn, run_id=run_id, session_id=session_id)
     except sqlite3.Error as exc:
         return LadderCheck(
@@ -512,7 +513,7 @@ def check_aios_verifier_artifacts(
             f"AIOS verifier check unknown; database missing at {resolved_db}.",
         )
     try:
-        with sqlite3.connect(resolved_db) as conn:
+        with connect_storage(resolved_db, read_only=True) as conn:
             refs = tuple(fresh_verifier_refs(conn, run_id=run_id, session_id=session_id))
     except sqlite3.Error as exc:
         return LadderCheck(

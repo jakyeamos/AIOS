@@ -82,6 +82,9 @@ The Flask review surface, vault-lint checks, and lab-trigger runner now use the
 same storage boundary; vault and dry-run lab probes pass, while the review
 surface remains runtime-unverified because Flask is not installed in the
 repository environment.
+Lifecycle-status migration now uses shared storage for file-backed databases
+while preserving its explicit `:memory:` compatibility; commit-quality
+evidence/verifier reads also use the shared read-only boundary.
 
 ## Completed
 
@@ -205,6 +208,10 @@ repository environment.
   preserved read-only vault checks plus dry-run lab behavior; a disposable
   vault/lab integration passed. Flask runtime verification remains blocked by
   the existing missing optional dependency.
+- Routed `migrate-lifecycle-statuses.py` through shared storage for file-backed
+  databases while preserving `:memory:` behavior, and routed the two
+  commit-quality AIOS artifact checks through shared read-only storage; a
+  disposable lifecycle migration proof passed.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -298,6 +305,11 @@ repository environment.
   no-eligible-pattern lab dry-run).
 - `review_app.py` runtime probe — blocked because Flask is not installed in
   the repository environment; no dependency was added in this slice.
+- `.venv/bin/ruff check bin/migrate-lifecycle-statuses.py services/commit_quality_ladder.py` — passed.
+- `.venv/bin/basedpyright bin/migrate-lifecycle-statuses.py services/commit_quality_ladder.py` — passed (0 errors).
+- `.venv/bin/pytest tests/test_asset_lifecycle.py tests/test_commit_quality_ladder.py -q` — passed (29 tests).
+- Disposable lifecycle migration integration — passed (file-backed status
+  remap and explicit `:memory:` compatibility).
 - `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
@@ -418,7 +430,8 @@ live migration work.
   promotion, agent synthesis, domain-file projection, and document indexers
   plus rule-bundle registration, pipeline/lab schema migrations, RTK,
   discovery, workflow synthesis, workflow experiment, review, vault-lint, and
-  lab-trigger adapters are now covered too.
+  lab-trigger adapters, lifecycle migration, and commit-quality evidence reads
+  are now covered too.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.

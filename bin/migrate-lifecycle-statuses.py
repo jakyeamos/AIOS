@@ -3,12 +3,19 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sqlite3
+import sys
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_DB = ROOT / "data" / "aios.db"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from services.storage import connect as connect_storage  # noqa: E402
+
+DEFAULT_DB = Path(os.environ.get("AIOS_DB", str(ROOT / "data" / "aios.db"))).expanduser()
 VALID_STATES = {"draft", "candidate", "approved", "active", "deprecated"}
 STATUS_MAPPING = {"promoted": "candidate", "rejected": "deprecated", "pending": "candidate"}
 ASSET_KINDS = {"prompt", "skill", "workflow"}
@@ -106,7 +113,11 @@ def main() -> int:
     args = parser.parse_args()
 
     db_path = args.db
-    conn = sqlite3.connect(":memory:") if db_path == ":memory:" else sqlite3.connect(db_path)
+    conn = (
+        sqlite3.connect(":memory:")
+        if db_path == ":memory:"
+        else connect_storage(Path(db_path).expanduser())
+    )
     with conn:
         summary = migrate_lifecycle_statuses(
             conn,
