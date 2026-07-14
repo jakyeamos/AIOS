@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sqlite3
 import sys
 from pathlib import Path
@@ -10,6 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from services.storage import connect as connect_storage  # noqa: E402
 from services.workflow_experiments import (  # noqa: E402
     queue_test_repo_experiments,
     seed_paper_fixtures,
@@ -43,14 +45,16 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Queue workflow skill experiments across AIOS test repos."
     )
-    parser.add_argument("--db", default=str(ROOT / "data" / "aios.db"))
+    parser.add_argument(
+        "--db", default=os.environ.get("AIOS_DB", str(ROOT / "data" / "aios.db"))
+    )
     parser.add_argument("--workflow-key")
     parser.add_argument("--skill-key")
     parser.add_argument("--all-pending", action="store_true")
     parser.add_argument("--seed-paper-fixtures", action="store_true")
     args = parser.parse_args()
 
-    conn = sqlite3.connect(Path(args.db).expanduser())
+    conn = connect_storage(Path(args.db).expanduser())
     queued = []
     seeded = []
     try:

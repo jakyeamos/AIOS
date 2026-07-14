@@ -6,12 +6,18 @@ import hashlib
 import json
 import os
 import shutil
-import sqlite3
+import sys
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
-from aios_paths import get_vault_subpath
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from aios_paths import get_vault_subpath  # noqa: E402
+
+from services.storage import connect as connect_storage  # noqa: E402
 
 
 def _now_iso() -> str:
@@ -80,7 +86,7 @@ def main(argv: list[str] | None = None) -> int:
     updated = 0
     copied = 0
 
-    conn = sqlite3.connect(db_path)
+    conn = connect_storage(db_path)
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS prompt_library_links (

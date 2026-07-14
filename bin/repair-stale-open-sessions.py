@@ -15,9 +15,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+if str(ROOT / "bin") not in sys.path:
     sys.path.insert(0, str(ROOT / "bin"))
 
 from hook_lifecycle import current_session_id  # noqa: E402
+
+from services.storage import connect as connect_storage  # noqa: E402
 
 
 def now_iso() -> str:
@@ -92,8 +96,7 @@ def main() -> int:
     parser.add_argument("--apply", action="store_true")
     args = parser.parse_args()
 
-    conn = sqlite3.connect(args.db)
-    conn.row_factory = sqlite3.Row
+    conn = connect_storage(args.db)
     current_id = current_session_id(args.logs_dir)
     rows = stale_sessions(conn, older_than_days=args.older_than_days, current_id=current_id)
 
