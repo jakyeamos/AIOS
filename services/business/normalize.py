@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 
 from services.business.citations import content_hash, make_source_id, parse_occurred_at
 from services.business.models import SourceRecord
+from services.capture_v1 import CaptureInputError, build_capture, validate_capture_envelope
 
 _FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
+MANUAL_SOURCE_SUFFIXES = frozenset({".md", ".markdown", ".txt", ".json", ".html", ".htm", ".csv"})
 
 
 def _parse_simple_frontmatter(text: str) -> tuple[dict[str, str], str]:
@@ -34,61 +37,153 @@ def _tags_from_frontmatter(fields: dict[str, str]) -> list[str]:
             parsed = json.loads(raw)
             return [str(item) for item in parsed]
         except json.JSONDecodeError:
-            return []
+            raw = raw.strip("[]")
     return [part.strip() for part in raw.split(",") if part.strip()]
+
+
+def _tags_from_value(value: object) -> list[str]:
+    if isinstance(value, list):
+        return [str(item) for item in value]
+    if isinstance(value, str):
+        return _tags_from_frontmatter({"tags": value})
+    return []
+
+
+def _attachments_from_value(value: object) -> list[dict[str, object]]:
+    if not isinstance(value, list):
+        return []
+    return [dict(item) for item in value if isinstance(item, Mapping)]
+
+
+def _capture_adapter_payload(
+    *,
+    input_format: str,
+    content: str,
+    source_uri: str | None,
+    metadata: Mapping[str, object],
+    path: Path,
+    captured_at: str,
+) -> dict[str, object]:
+    return {
+        "source": {
+            "provider": "business.manual",
+            "input_format": input_format,
+            "source_uri": source_uri,
+            "content": content,
+        },
+        "metadata": dict(metadata),
+        "adapter": {
+            "name": "business.manual",
+            "version": "capture.v1",
+            "trigger": "manual-inbox",
+            "field_sources": [
+                {"canonical_field": "body_text", "source_expression": "source.content"},
+                {"canonical_field": "subject_or_title", "source_expression": "metadata.title"},
+            ],
+        },
+        "provenance": {
+            "extractor": "services.business.normalize",
+            "content_selector": None,
+            "options": {"path": str(path), "captured_at": captured_at},
+            "retries": 0,
+            "profile": "business.manual",
+            "removals": [],
+        },
+    }
+
+
+def _capture_content(envelope: Mapping[str, object]) -> str:
+    content = envelope.get("content")
+    if not isinstance(content, Mapping):
+        raise CaptureInputError("capture.v1 content must be an object")
+    markdown = content.get("markdown")
+    if not isinstance(markdown, str) or not markdown.strip():
+        raise CaptureInputError("capture.v1 content.markdown must be non-empty")
+    return markdown.strip()
+
+
+def _capture_metadata(envelope: Mapping[str, object]) -> dict[str, object]:
+    return {
+        key: envelope[key]
+        for key in ("schema_version", "source", "adapter", "provenance", "validation", "enrichment")
+        if key in envelope
+    }
 
 
 def normalize_manual_file(path: Path, *, fetched_at: str | None = None) -> SourceRecord:
     text = path.read_text(encoding="utf-8")
     fetched = fetched_at or datetime.now(UTC).replace(microsecond=0).isoformat()
+    suffix = path.suffix.lower()
+    if suffix not in MANUAL_SOURCE_SUFFIXES:
+        raise CaptureInputError(f"Unsupported manual source suffix: {suffix or '<none>'}")
 
-    if path.suffix.lower() == ".json":
+    if suffix == ".json":
         data = json.loads(text)
+        if not isinstance(data, dict):
+            raise CaptureInputError("manual JSON source must be an object")
         if "source_id" in data and "hash" in data:
             return SourceRecord.from_json_dict(data)
-        body = str(data.get("body_text") or data.get("body") or "")
-        occurred = parse_occurred_at(data.get("timestamp"))
-        digest = content_hash(body, "manual", data.get("external_id"))
-        source_id = make_source_id("manual", occurred, digest)
-        return SourceRecord(
-            source_id=source_id,
-            source_type="manual",
-            external_id=data.get("external_id"),
-            author_name=data.get("author_name"),
-            author_handle=data.get("author_handle"),
-            timestamp=occurred,
-            fetched_at=fetched,
-            channel_or_thread=data.get("channel_or_thread"),
-            subject_or_title=data.get("subject_or_title") or data.get("title"),
-            body_text=body,
-            url=data.get("url"),
-            attachments=list(data.get("attachments") or []),
-            tags=list(data.get("tags") or []),
-            hash=digest,
-            privacy_level=str(data.get("privacy_level") or "internal"),
-        )
+        fields: dict[str, object] = data
+        input_format = "JSON"
+        body = text
+    else:
+        parsed_fields, body = _parse_simple_frontmatter(text)
+        fields = dict(parsed_fields)
+        input_format = {
+            ".md": "Markdown",
+            ".markdown": "Markdown",
+            ".txt": "Markdown",
+            ".html": "HTML",
+            ".htm": "HTML",
+            ".csv": "CSV",
+        }[suffix]
 
-    fields, body = _parse_simple_frontmatter(text)
-    subject = fields.get("subject_or_title") or fields.get("title") or path.stem.replace("-", " ")
-    occurred = parse_occurred_at(fields.get("timestamp") or fields.get("date"))
-    digest = content_hash(body, "manual", path.name)
+    external_id_value = fields.get("external_id")
+    external_id = str(external_id_value) if external_id_value is not None else path.name
+    source_uri_value = fields.get("url") or fields.get("source_uri")
+    source_uri = str(source_uri_value) if source_uri_value is not None else None
+    payload = _capture_adapter_payload(
+        input_format=input_format,
+        content=body,
+        source_uri=source_uri,
+        metadata=fields,
+        path=path,
+        captured_at=fetched,
+    )
+    envelope = build_capture(payload, captured_at=fetched, profile="business.manual")
+    errors = validate_capture_envelope(envelope)
+    if errors:
+        raise CaptureInputError("capture.v1 validation failed: " + "; ".join(errors))
+    normalized_body = _capture_content(envelope)
+    source_metadata = _capture_metadata(envelope)
+    subject = str(
+        fields.get("subject_or_title") or fields.get("title") or path.stem.replace("-", " ")
+    )
+    occurred_value = fields.get("timestamp") or fields.get("date")
+    occurred = parse_occurred_at(str(occurred_value) if occurred_value is not None else None)
+    digest = content_hash(normalized_body, "manual", external_id)
     source_id = make_source_id("manual", occurred, digest)
     return SourceRecord(
         source_id=source_id,
         source_type="manual",
-        external_id=fields.get("external_id") or path.name,
-        author_name=fields.get("author_name"),
-        author_handle=fields.get("author_handle"),
+        external_id=external_id,
+        author_name=str(fields["author_name"]) if fields.get("author_name") is not None else None,
+        author_handle=str(fields["author_handle"]) if fields.get("author_handle") is not None else None,
         timestamp=occurred,
         fetched_at=fetched,
-        channel_or_thread=fields.get("channel_or_thread"),
+        channel_or_thread=(
+            str(fields["channel_or_thread"])
+            if fields.get("channel_or_thread") is not None
+            else None
+        ),
         subject_or_title=subject,
-        body_text=body.strip(),
-        url=fields.get("url"),
-        attachments=[],
-        tags=_tags_from_frontmatter(fields),
+        body_text=normalized_body,
+        url=source_uri,
+        attachments=_attachments_from_value(fields.get("attachments")),
+        tags=_tags_from_value(fields.get("tags")),
         hash=digest,
-        privacy_level=fields.get("privacy_level") or "internal",
+        privacy_level=str(fields.get("privacy_level") or "internal"),
+        capture=source_metadata,
     )
 
 

@@ -21,6 +21,7 @@ class SourceRecord:
     attachments: list[dict[str, Any]] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
     privacy_level: str = "internal"
+    capture: dict[str, object] = field(default_factory=dict)
 
     def to_json_dict(self) -> dict[str, Any]:
         data = asdict(self)
@@ -46,6 +47,7 @@ class SourceRecord:
             tags=list(data.get("tags") or []),
             hash=str(data["hash"]),
             privacy_level=str(data.get("privacy_level") or "internal"),
+            capture=dict(data.get("capture") or {}),
         )
 
 
