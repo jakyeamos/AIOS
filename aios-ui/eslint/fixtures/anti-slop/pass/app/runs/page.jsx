@@ -1,10 +1,10 @@
 import seededRuns from "@/demo/runs";
 
-const getCaller = () => ({ runs: seededRuns });
+const getCaller = () => null;
 
 export default function RunsPageFixture() {
-  const caller = getCaller();
-  const runs = caller.runs;
+  const realRuns = getCaller();
+  const runs = realRuns ?? seededRuns;
 
   return (
     <main>

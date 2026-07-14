@@ -1,7 +1,7 @@
 # ADR-004: Reproducible UI Validation Contract
 
 **Status:** Accepted v2 validation contract<br>
-**Date:** 2026-07-13<br>
+**Date:** 2026-07-14<br>
 **Scope:** Dependency installation, lint/typecheck, build, local runtime,
 browser, and console evidence for `aios-ui`. This decision defines gates; it
 does not repair the current toolchain or change application code.
@@ -29,25 +29,27 @@ The authoritative target is:
 - a browser journey that fails on console errors, same-origin 4xx/5xx
   responses, hydration failures, missing styles, or duplicate React keys.
 
-Until the workspace consolidation, dependency packaging, local-font, and
-runtime repairs land, the current local and CI setup is a baseline with known
-red gates. It must not be reported as v2 validation-ready.
+The current local setup now has a reproducible in-repository anti-slop package,
+green independent static gates, and a passing disposable home/projects runtime
+smoke. It is not yet v2 validation-ready: the production build still emits one
+NFT tracing warning, and browser keyboard/tablet evidence plus the Python-owned
+UI mutation boundary remain outstanding.
 
 ## Current evidence
 
-| Check | 2026-07-13 result | Interpretation |
+| Check | 2026-07-14 result | Interpretation |
 | --- | --- | --- |
-| `pnpm install --frozen-lockfile --offline` from `aios-ui/` | Exited 0, “Already up to date” | Only proves the existing `node_modules` state is accepted; it did not repair the stale file dependency package |
-| `pnpm lint` from `aios-ui/` | **Fail** before TypeScript | Installed `eslint-plugin-anti-slop@0.2.0` imports missing `no-arbitrary-z-index.mjs`; the source package at the external path is `0.4.0` and has that rule |
-| `pnpm exec tsc --noEmit` | Pass | TypeScript is independently green when ESLint does not short-circuit it |
-| `pnpm lint:warning-baseline` | Pass, `0/71` | Warning ratchet is meaningful once ESLint can load |
-| `pnpm lint:architecture` | Pass, 121 modules / 255 dependencies | Dependency boundaries are currently clean |
-| `pnpm lint:anti-slop:fixtures` | **Fail** with the same missing rule module | Fixture coverage cannot be trusted until the plugin artifact is deterministic |
-| `pnpm build` | Pass locally, with warnings | Current cache allows the build, but Turbopack warns about inferred root, multiple lockfile/workspace signals, and whole-project file tracing |
-| Prior clean-ish audit build | **Fail** on Google-hosted Geist and JetBrains Mono fetch | A cached local pass is not an offline/reproducible proof |
-| `pnpm dev` on free loopback port | `/` returned 200; `controlPlane.overview` returned 500 | Dev server log reproduced `Cannot find module '@trpc/server/adapters/fetch'` |
-| `controlPlane.runDetail` without input | Returned a typed 400 | The route handler can execute far enough to validate input; a seeded valid-input request is still required for the browser gate |
-| Existing browser audit | Desktop and 375px rendered; duplicate React keys observed | Tablet was inconclusive after the runtime/style failure; duplicate keys remain a hard console failure |
+| `pnpm --dir aios-ui install` | Pass; `eslint-plugin-anti-slop@0.4.0` resolved from `aios-ui/vendor/` | The package is now committed inside the checkout; an earlier offline attempt was blocked by missing local mirror metadata for `dependency-cruiser`, so offline install remains a separate clean-runner gate |
+| `pnpm --dir aios-ui exec eslint .` | Pass, 0 errors / 0 warnings | ESLint loads the vendored plugin and the warning policy is clean |
+| `pnpm --dir aios-ui exec tsc --noEmit` | Pass | TypeScript is independently green |
+| `pnpm --dir aios-ui lint:warning-baseline` | Pass, `0/71` | Warning ratchet is green |
+| `pnpm --dir aios-ui lint:architecture` | Pass, 122 modules / 255 dependencies | Dependency boundaries are currently clean |
+| `pnpm --dir aios-ui lint:anti-slop:fixtures` | Pass | Fixture coverage is now deterministic against the committed plugin artifact |
+| `pnpm --dir aios-ui build` | Pass with one NFT tracing warning | The inferred-root warning is resolved; `server/routers/prompts.ts` still causes a whole-project file-tracing warning that needs a narrow fix or reviewed exception |
+| Disposable loopback smoke | `/` returned 200; `projects.list` returned 200 with five source-backed projects | Server log had no request errors; browser viewport and keyboard evidence is still outstanding |
+
+The 2026-07-13 rows remain historical baseline evidence in `AUDIT.md`; they
+are not the current package or runtime state.
 
 The baseline also records these browser/runtime findings in
 [AUDIT.md](AUDIT.md): duplicate keys for
@@ -72,13 +74,11 @@ The UI's anti-slop dependency must be one of:
 2. a committed workspace package inside this repository, included in the same
    lockfile.
 
-The current `file:../../eslint-plugin-anti-slop` dependency is not an
-authoritative CI contract. It resolves to `/Users/jakyeamos/projects/` on this
-machine, points outside the checkout, and allowed `node_modules` to retain a
-0.2.0 package while the source directory is 0.4.0. A clean runner does not have
-that sibling path. The validation gate must fail with a remediation message if
-the dependency is not present; it must not copy a developer's `node_modules`
-or disable the rule.
+The UI now uses `file:vendor/eslint-plugin-anti-slop`, version 0.4.0, with the
+package source and lockfile entry committed inside this repository. The former
+external sibling path is retired. The clean-install gate still must verify the
+resolved path, package version, and lockfile integrity; it must not copy a
+developer's `node_modules` or disable the rule.
 
 ### Install preflight
 
@@ -117,13 +117,13 @@ The build gate runs with network access unavailable or explicitly denied. A
 font cache is not evidence of an offline build. Any external font request,
 missing local asset, or fallback-font warning fails the gate.
 
-`aios-ui/next.config.ts` must set the Turbopack root to the app root and keep
-the production trace scoped to the files the app actually reads. The current
-build warning about the root inferred from the repository lockfile and the
-whole-project NFT trace is a failure until it is either removed or documented
-with a narrow, reviewed tracing exception. Dynamic filesystem reads must be
-scoped to the configured `AIOS_ROOT`; they must not make the entire repository
-an accidental deployment input.
+`aios-ui/next.config.ts` sets the Turbopack root to the app root. The inferred
+root warning is resolved, but the production build still reports a whole-project
+NFT trace through `server/routers/prompts.ts`; that warning remains a hard
+milestone blocker until removed or documented with a narrow, reviewed tracing
+exception. Dynamic filesystem reads must be scoped to the configured
+`AIOS_ROOT`; they must not make the entire repository an accidental deployment
+input.
 
 ## Required quality ladder
 
@@ -139,8 +139,8 @@ pnpm --dir aios-ui build
 ```
 
 The combined `pnpm --dir aios-ui lint` remains a convenience command, not the
-only proof: it currently short-circuits before `tsc` when the plugin import
-fails. The first two commands must remain independently visible in CI.
+only proof. The first two commands must remain independently visible in CI so
+future plugin or bootstrap failures cannot hide the TypeScript result.
 
 ### Failure policy
 

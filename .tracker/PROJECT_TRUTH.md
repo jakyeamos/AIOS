@@ -40,6 +40,13 @@ applied live with zero FK violations, a version-1 ledger entry, immutable
 pre/post backups, and a completed restore/replay check. UI request-time DDL and
 ADR-004 validation remain the active modernization blockers.
 
+Current-state amendment (2026-07-14): the M2 UI validation slice now vendors
+`eslint-plugin-anti-slop` 0.4.0 inside `aios-ui`, removes request-time UI DDL in
+favor of a read-only migration-ledger assertion, and passes ESLint, fixture,
+TypeScript, architecture, warning-baseline, build, and disposable runtime
+smoke gates. One NFT tracing warning and browser/tablet/keyboard evidence remain
+open; UI mutation endpoints still need Python-owner routing.
+
 _(4 older entries trimmed)_
 
 Pipeline and lab schema migrations now also use the shared storage boundary
@@ -102,8 +109,9 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-14: Vendored anti-slop 0.4.0, removed UI request-time DDL in favor of the migration-ledger assertion, and passed ESLint/fixtures/TypeScript/architecture/build/runtime gates; NFT warning remains.
 - 2026-07-14: Ran the UI loopback smoke after the build fix: `/` and `projects.list` tRPC returned HTTP 200 with source-backed data and clean server logs; anti-slop/NFT warnings remain explicit.
-- 2026-07-14: Scoped the UI Turbopack root and refreshed native dependencies: TypeScript, architecture, warning-baseline, and production build passed; workspace-root warning resolved, with anti-slop install/NFT tracing blockers recorded.
+- 2026-07-14: Scoped the UI Turbopack root and refreshed native dependencies: TypeScript, architecture, warning-baseline, and production build passed; workspace-root warning resolved.
 - 2026-07-14: Reran the live recovery preflight and disposable restore drill: 561 FK violations captured, 561 quarantined in the copy, zero restored FK violations, and eight-step daily-flow replay passed.
 - 2026-07-14: Created `docs/modernization/M1_RETENTION_DECISION.md` from a fresh disposable run; it became the approved archive record after live reconciliation.
 - 2026-07-14: Added the guarded transactional live migration runner (`eb59adb`): focused migration/storage tests, Ruff, and BasedPyright passed; archive application then completed successfully.
@@ -116,25 +124,24 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-07-14: Routed rule-bundle registration through shared storage (`7c3d509`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable FK-enforced registration proof.
 - 2026-07-14: Routed DOCX/PDF indexers through shared storage (`4c1374e`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable dry-run metadata/index proof.
 - 2026-07-14: Routed `build-domain-files.py` through shared read-only storage (`21bdd63`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable domain projection dry-run proof.
-- 2026-07-14: Routed `agent-synthesis.py` through shared storage (`cd0854c`): read-only corpus scans, `AIOS_DB`, Ruff/BasedPyright, and disposable dry-run synthesis proof passed.
 
 ## Open Problems
 
 1. The live main-store archive migration now reports zero FK violations with an immutable pre/post backup and ledger entry; older 555/557 audit snapshots and distributed runtime DDL still need reconciliation/cleanup.
 2. V2 now intentionally excludes remote control, but current UI mutation endpoints still lack the required loopback, local-capability, approval-enforcement, and single-mutation-owner implementation.
-3. UI implementation remains blocked by the stale local anti-slop package copy and one remaining NFT tracing warning from the prompt filesystem adapter; TypeScript, architecture, warning-baseline, and production build now pass.
-   Milestone 0's fixture/replay contract, storage boundary, copied-store recovery proof, and approved live archive are complete; UI request-time DDL and ADR-004 preconditions remain before later write-capable/UI work.
+3. UI static validation and disposable runtime smoke now pass, but one NFT tracing warning and browser/tablet/keyboard evidence remain before ADR-004 is validation-ready. UI request-time DDL is removed; direct UI mutation endpoints still need a Python owner.
+   Milestone 0's fixture/replay contract, storage boundary, copied-store recovery proof, and approved live archive are complete.
 ## Next Concrete Steps
 
-1. Remove UI request-time DDL and close the remaining ADR-004 anti-slop/NFT validation preconditions.
-2. Keep v2 product mutations behind approval and operator-validation gates while the UI ownership boundary is completed.
+1. Scope or fix the NFT tracing warning and capture browser/tablet/keyboard ADR-004 evidence.
+2. Route UI mutations through the Python owner with loopback, capability, approval, and egress enforcement.
 3. Freeze the paired effectiveness corpus/control baseline before the v2 read-only shell.
 
 ## Risks / Blockers
 
 - Broad persistence changes are unsafe until the remaining UI/schema owners are retired; the ADR-002 live archive, backup, restore, and zero-FK gates now pass.
 - Remote deployment is intentionally out of scope for v2; current local UI mutation routes still need capability, approval, and egress enforcement before redesign work can use them as a trusted control surface.
-- UI change acceptance is currently unreliable because the anti-slop package, font path, Turbopack root/tracing, tRPC adapter, duplicate keys, and browser harness gates remain unresolved; ADR-004 defines the evidence contract but does not claim those repairs are complete.
+- UI change acceptance is partially reliable: anti-slop, ESLint, TypeScript, architecture, warning-baseline, build, and disposable runtime gates pass, while NFT tracing, browser/tablet/keyboard evidence, and mutation ownership remain unresolved under ADR-004.
 - The parallel v2 strategy still requires strict no-dual-write ownership, immutable backups, restore proof, and an explicit deletion ledger at every migration wave.
 - The current dirty worktree prevents a clean modernization shadow comparison; implementation should begin only from an intentionally clean branch/worktree.
 

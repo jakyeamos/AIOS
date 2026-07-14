@@ -1,4 +1,3 @@
-/* eslint-disable anti-slop/require-empty-state-action */
 import Link from "next/link";
 
 import type { EntityKind, OperatorSearchHit } from "@/lib/control-plane";

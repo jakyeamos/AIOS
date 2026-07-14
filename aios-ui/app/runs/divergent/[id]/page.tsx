@@ -1,4 +1,3 @@
-/* eslint-disable anti-slop/require-empty-state-action */
 import { notFound } from "next/navigation";
 
 import { PageShell } from "@/components/layout/PageShell";

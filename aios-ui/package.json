@@ -34,7 +34,7 @@
     "dependency-cruiser": "^16.10.4",
     "eslint": "^9.19.0",
     "eslint-config-next": "^16.0.0",
-    "eslint-plugin-anti-slop": "file:../../eslint-plugin-anti-slop",
+    "eslint-plugin-anti-slop": "file:vendor/eslint-plugin-anti-slop",
     "typescript": "^5.7.3"
   }
 }

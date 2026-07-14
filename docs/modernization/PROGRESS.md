@@ -95,16 +95,22 @@ The user then approved archive disposition for the 73 unresolved quality rows.
 The guarded live runner captured immutable pre/post backups, applied the same
 transform under `BEGIN IMMEDIATE`, recorded all 561 quarantine decisions, and
 left the live store at zero FK violations with `user_version=1`.
-The first ADR-004 UI validation pass now has clean TypeScript, architecture,
-warning-baseline, native-module, and production-build evidence; the build has
-one remaining NFT tracing warning in the prompt filesystem adapter, and ESLint
-is still blocked by a stale local copy of the external anti-slop package.
+The first ADR-004 UI validation pass now has clean ESLint, anti-slop fixture,
+TypeScript, architecture, warning-baseline, native-module, and production-build
+evidence; the build has one remaining NFT tracing warning in the prompt
+filesystem adapter.
 The loopback runtime smoke also passed: `/` and the source-backed
 `projects.list` tRPC route both returned HTTP 200 on a disposable dev server,
 with no request errors in the server log.
 The aggregate M1 retention decision packet now records the fresh disposable
 counts and records the approved archive decision; the live store is now
 reconciled with zero FK violations.
+The M2 validation slice now vendors `eslint-plugin-anti-slop` 0.4.0 inside
+`aios-ui/`, removes the external sibling-path dependency, and removes all
+request-time UI DDL in favor of a Python-owned migration-ledger assertion.
+Independent ESLint, anti-slop fixtures, TypeScript, architecture, and warning
+baseline checks pass; the production build passes with one NFT tracing warning,
+and a disposable loopback smoke returned HTTP 200 for `/` and `projects.list`.
 
 ## Completed
 
@@ -355,10 +361,10 @@ reconciled with zero FK violations.
 - `pnpm --dir aios-ui exec next dev --hostname 127.0.0.1 --port 3100` plus
   local smoke requests — passed (`/` HTTP 200; `projects.list` tRPC HTTP 200;
   source-backed project payload returned; server stopped cleanly).
-- `pnpm --dir aios-ui lint` — blocked before TypeScript by the stale local
-  `eslint-plugin-anti-slop` copy missing `no-arbitrary-z-index.mjs`.
-- `pnpm --dir aios-ui lint:anti-slop:fixtures` — blocked by the same stale
-  local anti-slop package copy.
+- `pnpm --dir aios-ui exec eslint .` — passed with 0 errors and 0 warnings
+  against the committed `eslint-plugin-anti-slop` 0.4.0 package.
+- `pnpm --dir aios-ui lint:anti-slop:fixtures` — passed against the committed
+  plugin artifact.
 - `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
@@ -505,8 +511,9 @@ eight-step trace against the migrated store.
 ## Known blockers
 
 - The UI build and architecture/type gates now pass; ADR-004 remains blocked by
-  the stale external anti-slop installation and one NFT tracing warning from
-  the prompt filesystem adapter. The prior workspace-root warning is resolved.
+  one NFT tracing warning from the prompt filesystem adapter. The external
+  anti-slop installation and prior workspace-root warning are resolved.
 - ADR-002 quarantine, migration, and restore proof now pass for the main store;
-  UI request-time DDL and ADR-004 validation blockers remain before v2 UI
-  mutations are considered safe.
+  the UI schema module is now read-only, but existing UI mutation endpoints
+  still need to route writes through the Python owner before v2 mutations are
+  considered safe.

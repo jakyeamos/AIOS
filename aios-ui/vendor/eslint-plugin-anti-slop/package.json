@@ -1,0 +1,92 @@
+{
+  "name": "eslint-plugin-anti-slop",
+  "version": "0.4.0",
+  "type": "module",
+  "description": "Config-driven anti-slop ESLint rules for React/TypeScript projects.",
+  "packageManager": "pnpm@11.7.0",
+  "main": "src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./audit": "./src/audit.mjs",
+    "./aios-audit-config": "./src/aios-audit-config.mjs",
+    "./audit-formatter": "./src/audit-formatter.mjs",
+    "./audit-formatter.mjs": "./audit-formatter.mjs",
+    "./cli": "./src/cli.mjs",
+    "./gate": "./src/gate.mjs",
+    "./rule-metadata": "./src/rule-metadata.mjs"
+  },
+  "bin": {
+    "anti-slop": "./bin/anti-slop.mjs"
+  },
+  "files": [
+    "audit-formatter.mjs",
+    "audit-formatter.d.mts",
+    "bin",
+    "eslint.aios-audit.config.mjs",
+    "src",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "audit:anti-slop": "eslint . --config eslint.aios-audit.config.mjs --format ./audit-formatter.mjs",
+    "check:format": "node scripts/format-check.mjs",
+    "check:syntax": "node scripts/check-js-syntax.mjs",
+    "check:dead-code": "node scripts/dead-code-check.mjs",
+    "check:secrets": "node scripts/secret-scan.mjs",
+    "coverage:report": "mkdir -p coverage && node --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/lcov.info test/*.test.mjs",
+    "coverage:check": "node scripts/check-coverage.mjs",
+    "pack:check": "pnpm pack --dry-run",
+    "format": "pnpm check:format",
+    "typecheck": "pnpm check:syntax",
+    "build": "pnpm pack:check",
+    "test": "node --test test/*.test.mjs",
+    "test:coverage": "pnpm coverage:report",
+    "audit:dead-code": "pnpm check:dead-code",
+    "smoke": "pnpm smoke:consumer",
+    "smoke:eslint9": "pnpm --dir smoke-consumer install --frozen-lockfile && pnpm --dir smoke-consumer lint && pnpm --dir smoke-consumer quality:anti-slop && pnpm --dir smoke-consumer audit:anti-slop",
+    "smoke:consumer": "pnpm smoke:eslint9",
+    "smoke:published": "node scripts/smoke-published.mjs",
+    "smoke:published:eslint9-floor": "node scripts/smoke-published.mjs --eslint-version 9.0.0 --skip-types",
+    "secret:scan": "pnpm check:secrets",
+    "dependency:security": "pnpm dependency:security:advisory",
+    "dependency:security:advisory": "node scripts/dependency-security.mjs",
+    "dependency:security:required": "node scripts/dependency-security.mjs --require-registry",
+    "release:assert-version": "node scripts/assert-release-version.mjs",
+    "verify:checks": "pnpm check:format && pnpm check:syntax && pnpm check:dead-code && pnpm check:secrets && pnpm test && pnpm coverage:report && pnpm coverage:check && pnpm pack:check",
+    "verify:consumer": "pnpm smoke:consumer",
+    "verify:consumer-online": "pnpm smoke:published",
+    "verify": "pnpm verify:checks && pnpm verify:consumer",
+    "verify:ci": "pnpm verify && pnpm verify:consumer-online && pnpm dependency:security:required",
+    "verify:release": "pnpm release:assert-version && pnpm verify:ci",
+    "verify:local": "pnpm verify && pre-cr run --workspace ."
+  },
+  "keywords": [
+    "eslint",
+    "eslint-plugin",
+    "react",
+    "typescript",
+    "ui-quality"
+  ],
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || >=24"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/jakyeamos/eslint-plugin-anti-slop.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jakyeamos/eslint-plugin-anti-slop/issues"
+  },
+  "homepage": "https://github.com/jakyeamos/eslint-plugin-anti-slop#readme",
+  "peerDependencies": {
+    "eslint": ">=9.0.0 <10.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.29.0",
+    "typescript": "~6.0.3"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@typescript-eslint/parser": "8.62.0",
+    "picomatch": "^4.0.5"
+  }
+}

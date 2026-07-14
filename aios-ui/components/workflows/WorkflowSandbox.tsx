@@ -2,7 +2,7 @@
 
 import "@xyflow/react/dist/style.css";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   addEdge,
   Background,
@@ -257,13 +257,12 @@ export function WorkflowSandbox({ proposal, skillKeys }: Props) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const handleSelect = useCallback((index: number) => {
-    setSelectedIndex((prev) => (prev === index ? null : index));
-  }, []);
-
   const nodes = useMemo(
-    () => stagesToNodes(stages, selectedIndex, handleSelect),
-    [stages, selectedIndex, handleSelect],
+    () =>
+      stagesToNodes(stages, selectedIndex, (index) => {
+        setSelectedIndex((prev) => (prev === index ? null : index));
+      }),
+    [stages, selectedIndex],
   );
   const initialEdges = useMemo(() => stagesToEdges(stages), [stages]);
 
@@ -272,14 +271,13 @@ export function WorkflowSandbox({ proposal, skillKeys }: Props) {
 
   // Sync stages → flow nodes when stages change
   useEffect(() => {
-    setFlowNodes(stagesToNodes(stages, selectedIndex, handleSelect));
+    setFlowNodes(nodes);
     setEdges(stagesToEdges(stages));
-  }, [stages, selectedIndex, handleSelect, setFlowNodes, setEdges]);
+  }, [nodes, stages, setFlowNodes, setEdges]);
 
-  const onConnect: OnConnect = useCallback(
-    (connection) => setEdges((eds) => addEdge(connection, eds)),
-    [setEdges],
-  );
+  const onConnect: OnConnect = (connection) => {
+    setEdges((eds) => addEdge(connection, eds));
+  };
 
   const updateMutation = trpc.workflows.updateStages.useMutation({
     onSuccess: () => {
