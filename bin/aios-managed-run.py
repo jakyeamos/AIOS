@@ -31,6 +31,7 @@ from aios_orchestration_runtime import (  # noqa: E402
     update_invocation,
 )
 
+from services.storage import connect as connect_storage  # noqa: E402
 from services.tmcp_runtime import (  # noqa: E402
     compile_tmcp_packet,
     ensure_tmcp_schema,
@@ -66,7 +67,7 @@ def now_iso() -> str:
 
 
 def load_run_context(db_path: str, run_id: str) -> dict[str, str | None]:
-    conn = sqlite3.connect(db_path)
+    conn = connect_storage(db_path)
     ensure_runtime_schema(conn)
     row = conn.execute(
         """
@@ -139,7 +140,7 @@ def write_invocation_report(
     }
     report_path.write_text(json.dumps(report, indent=2))
 
-    conn = sqlite3.connect(db_path)
+    conn = connect_storage(db_path)
     conn.execute(
         """
         INSERT INTO artifacts (id, session_id, artifact_type, path, metadata_json, created_at)
@@ -260,7 +261,7 @@ def ensure_managed_start(
     session_id: str,
     backend_key: str,
 ) -> None:
-    conn = sqlite3.connect(db_path)
+    conn = connect_storage(db_path)
     ensure_runtime_schema(conn)
     now = now_iso()
     row = conn.execute(
@@ -360,7 +361,7 @@ def ensure_managed_closeout(
     result_summary: str,
     reason_json: dict[str, object],
 ) -> None:
-    conn = sqlite3.connect(db_path)
+    conn = connect_storage(db_path)
     ensure_runtime_schema(conn)
     now = now_iso()
     row = conn.execute(
@@ -480,7 +481,7 @@ def main() -> int:
         "AIOS_LOGS_DIR": str(logs_dir),
     }
 
-    conn = sqlite3.connect(db_path)
+    conn = connect_storage(db_path)
     ensure_runtime_schema(conn)
     update_invocation(
         conn,
@@ -535,7 +536,7 @@ def main() -> int:
         surface = BACKEND_SURFACES.get(backend_key)
         if surface is None:
             raise RuntimeError(f"Unsupported managed backend key: {backend_key}")
-        conn = sqlite3.connect(db_path)
+        conn = connect_storage(db_path)
         try:
             ensure_runtime_schema(conn)
             ensure_tmcp_schema(conn)
