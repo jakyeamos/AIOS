@@ -61,9 +61,15 @@ The follow-up `eval_pairs` contract now durably links control/treatment runs,
 protected start SHA, task/prompt/context hashes, parity metadata, scores,
 contamination and independent-review state, decisions, and append-only pair
 events. Its CLI create/finalize/list surface fails closed on promotion without
-complete evidence; this is infrastructure only and does not change the M5A
-defer decision. M6 remains blocked until a clean live pair is independently
-reviewed.
+complete evidence. A corrected three-task live audit corpus now has six clean
+runs, three pair-specific contamination records, six durable score IDs, and a
+fresh independent review; the bounded mean is `0.963` control versus `0.977`
+treatment (`+0.013`). Pair decisions remain deferred because the tasks are
+audit-only and provider usage telemetry is unavailable. The earlier single-task
+promote row is superseded because its treatment artifact was missing and is
+excluded from the corrected packet. M6 remains blocked pending the first named
+satellite's adapter, mutation-owner migration, rollback/deletion evidence, and
+full browser proof.
 
 ## Implemented On 2026-07-10
 

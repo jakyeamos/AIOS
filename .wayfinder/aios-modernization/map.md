@@ -39,6 +39,7 @@ created: 2026-07-10
 - [Add Gated Review and Closeout](tickets/011-gated-review-and-closeout.md) - Python-owned governed effect events and closeout reviews now enforce capability, loopback, egress, redaction, rollback, approval, changed-artifact, unresolved-delta, and next-action gates; UI mutation procedures fail closed behind the owner, and M5A is next for paired effectiveness measurement.
 - [Measure Paired AIOS Effectiveness](tickets/012-measure-paired-aios-effectiveness.md) - Deterministic five-fixture control/treatment evidence shows +0.4621 lift with no fixture safety regression, but the dirty baseline and fixture-only execution defer promotion; the durable pair contract is now implemented before M6.
 - [Close the Deferred Live Paired-Effectiveness Evidence Gap](tickets/013-close-deferred-live-paired-evidence-gap.md) - `eval_pairs` now durably links control/treatment runs, hashes, parity metadata, contamination/review state, scores, decisions, and append-only pair events; promotion remains fail-closed pending clean live evidence.
+- [Expand the Clean Live Paired Benchmark and Adversarial Review](tickets/015-expand-clean-live-benchmark-and-adversarial-review.md) - Three corrected live audit pairs now have durable IDs, pair-specific contamination paths, independent review, and a bounded `+0.013` treatment delta; M6 remains deferred because the corpus is audit-only, provider telemetry is unavailable, and the superseded prior promote row must be excluded.
 
 ## Fog
 

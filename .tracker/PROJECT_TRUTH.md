@@ -4,7 +4,7 @@ projectName: AIOS
 summary: Active local-first agent operating system with honest evidence verdicts, evidence-gated verify-run completion, durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption, review-gated session-intelligence tools, and progressive colocated context routing across AIOS and linked repos.
 healthScore: 85
 statusLabel: warning
-nextStep: Expand the clean live pair to the three-to-five-task benchmark and adversarial review; keep M6 blocked.
+nextStep: Exclude the superseded prior pair from consumers, then prepare the first named satellite's read-only adapter, Python-owner mutation migration, rollback/deletion ledger, and full browser proof; keep M6 blocked.
 blockers: []
 lastUpdated: 2026-07-14
 tags: [infra, ai-os, hooks, automation]
@@ -54,11 +54,14 @@ protected start SHA, task/prompt/context hashes, parity metadata, scores,
 contamination and independent-review state, decisions, and append-only pair
 events. Its CLI create/finalize/list surface fails closed on promotion without
 complete evidence; report paths are now persisted through the schema, service,
-and CLI so live review artifacts can be linked durably. A clean single-task
-live pair at protected SHA `7797f3e` passed contamination and independent review
-with a bounded +0.0500 portable-context delta; the durable report is
-[`M6_LIVE_PAIRED_REPORT.md`](../docs/evals/M6_LIVE_PAIRED_REPORT.md). M6 still
-requires the broader three-to-five-task benchmark and adversarial review.
+and CLI so live review artifacts can be linked durably. A corrected three-task
+live audit corpus at protected SHA `7797f3e` now has six clean read-only runs,
+three pair-specific contamination records, six durable score IDs, independent
+review, and a bounded `0.963` control versus `0.977` treatment mean (`+0.013`).
+The durable packet is [`M6_LIVE_BENCHMARK_REPORT.md`](../docs/evals/M6_LIVE_BENCHMARK_REPORT.md).
+Pair decisions are explicitly deferred because this is an audit-only corpus
+with unavailable provider usage telemetry; the earlier single-task promote row
+is superseded because its treatment artifact was missing. M6 remains blocked.
 
 Current-state amendment (2026-07-14): The `capture.v1` source-normalization
 boundary is now implemented in commit `b408ad5`. AIOS owns the pinned schema,
@@ -93,6 +96,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 ## Recent Progress
 - 2026-07-14: Added the `capture.v1` source-normalization boundary with pinned schema, deterministic adapters, provenance/removal records, CLI, fixtures, and focused proof; no network, enrichment, or vault writes (`b408ad5`).
+- 2026-07-14: Closed the corrected three-task live audit benchmark: six clean runs, three pair-specific contamination records, six score IDs, independent review, and a bounded +0.013 treatment delta; M6 remains deferred (`docs/evals/M6_LIVE_BENCHMARK_REPORT.md`).
 - 2026-07-14: Closed the eval-pair report-path contract gap with schema migration compatibility, CLI flags, round-trip tests, and 107 focused tests passing (`10c992a`).
 - 2026-07-14: Captured one clean live control/treatment pair at `7797f3e` with passed contamination, independent review, persisted IDs, and a bounded +0.0500 portable-context delta; broader M6 evidence remains open (`docs/evals/M6_LIVE_PAIRED_REPORT.md`).
 - 2026-07-14: Implemented the durable M5A `eval_pairs` contract with hash/parity validation, contamination and review gates, append-only pair events, CLI create/finalize/list commands, and 139 focused evaluation tests (`2eec354`).
@@ -118,12 +122,12 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 1. The live main-store archive migration now reports zero FK violations with an immutable pre/post backup and ledger entry; older 555/557 audit snapshots and distributed runtime DDL still need reconciliation/cleanup.
 2. V2 intentionally excludes remote control. Control-plane and remediation UI mutation endpoints now fail closed behind the Python owner; unrelated legacy UI write surfaces still require later consumer-by-consumer migration.
-3. M2 and M3 UI validation is green, M4 Python route/packet/run/verify proof is green, and M5 governed review/closeout proof is green. M5A fixture evidence, the durable pair contract, and one bounded clean live pair are recorded; broader real paired effectiveness, satellite migration, cutover, and adversarial review remain blocked.
+3. M2 and M3 UI validation is green, M4 Python route/packet/run/verify proof is green, and M5 governed review/closeout proof is green. M5A fixture evidence and the durable pair contract are recorded; the corrected three-task live audit corpus is independently reviewed but explicitly deferred because it is audit-only and provider telemetry is unavailable. Satellite migration, cutover, and broad effectiveness claims remain blocked. The earlier single-task promote row is superseded and excluded.
    Milestone 0's fixture/replay contract, storage boundary, copied-store recovery proof, and approved live archive are complete.
 ## Next Concrete Steps
 
-1. Expand the clean live AIOS/non-AIOS pair into the three-to-five-task benchmark through `eval_pairs` and obtain adversarial review.
-2. Keep M6, satellite promotion, and v2 cutover blocked behind promotion-ready paired-effectiveness evidence and adversarial review.
+1. Exclude the superseded single-task pair from downstream consumers and keep the corrected three-task evidence packet as the current bounded benchmark record.
+2. Keep M6, satellite promotion, and v2 cutover blocked while completing the first named satellite's adapter, mutation-owner migration, rollback/deletion ledger, and full browser proof.
 3. Migrate remaining legacy UI write surfaces only through the Python owner with focused proofs.
 
 ## Risks / Blockers
