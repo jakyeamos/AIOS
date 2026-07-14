@@ -3,8 +3,8 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import os
 import re
-import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 from types import ModuleType
@@ -19,6 +19,7 @@ from services.session_providers.base import (
     SummaryResult,
     WritebackCandidate,
 )
+from services.storage import connect as connect_storage
 
 AIOS_ROOT = Path(__file__).resolve().parents[2]
 IMPORT_AI_HISTORY_PATH = AIOS_ROOT / "bin" / "import_ai_history.py"
@@ -49,7 +50,9 @@ class CodexProvider(SessionProvider):
         db_path: Path | None = None,
     ) -> None:
         self.source_root = source_root or Path.home() / ".codex" / "sessions"
-        self.db_path = db_path or Path.home() / "AIOS" / "data" / "aios.db"
+        self.db_path = db_path or Path(
+            os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))
+        ).expanduser()
         self._import_ai_history = _load_import_ai_history()
 
     def discover_sources(self) -> list[SourcePath]:
@@ -172,7 +175,7 @@ class CodexProvider(SessionProvider):
         ).hexdigest()
 
     def upsert_session(self, normalized: NormalizedSession) -> str:
-        with sqlite3.connect(self.db_path) as conn:
+        with connect_storage(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT INTO sessions (

@@ -21,7 +21,8 @@ Issues, handoffs, the read-only query CLI, the statusline, and the high-traffic
 prompt-submit, precompact, post-tool-use, and session-stop hooks now use the
 same storage connection contract as well. The managed runtime's six main-store
 connection sites, Codex ingestion job, and session CLI now use that contract
-too.
+too. Codex, Claude, Cursor, and Antigravity canonical session upserts now use
+the same write boundary; provider source inspection remains provider-owned.
 
 ## Completed
 
@@ -70,6 +71,9 @@ too.
 - Routed `bin/sessions.py` canonical database access through the shared storage
   contract while preserving its `:memory:` and missing read-only behavior;
   provider fixture sync and disposable pragma/schema checks passed.
+- Routed the four provider canonical `upsert_session` paths through shared
+  storage and made their default database paths honor `AIOS_DB`; source-store
+  inspection connections were left unchanged.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -109,6 +113,10 @@ too.
 - `.venv/bin/basedpyright bin/sessions.py` — passed (0 errors).
 - Disposable `bin/sessions.py` storage integration — passed (WAL, foreign keys,
   query-only read-only mode, schema creation, and missing-database fallback).
+- `.venv/bin/pytest tests/test_session_providers.py tests/test_session_intelligence_loop.py -q` — passed (39 tests).
+- `.venv/bin/ruff check services/session_providers/codex.py services/session_providers/claude.py services/session_providers/cursor.py services/session_providers/antigravity.py` — passed.
+- `.venv/bin/basedpyright services/session_providers/codex.py services/session_providers/claude.py services/session_providers/cursor.py services/session_providers/antigravity.py` — passed (0 errors).
+- Disposable canonical upsert integration for all four providers — passed with foreign-key enforcement.
 - `pnpm --dir aios-ui lint:architecture` — passed (122 modules, 255 dependencies).
 - `pnpm quality:eval` — interrupted after the broad vulture scan expanded into
   historical shadow worktrees; the focused checks above are the relevant proof.
@@ -163,11 +171,10 @@ live migration work.
 
 ## Remaining Milestone 1 work
 
-- Migrate session-provider canonical upserts and lower-traffic Python adapters
-  through the shared connection contract; the managed runtime, Codex
-  ingestion, session CLI, and high-traffic hooks are now complete. Remove UI
-  request-time DDL only after deterministic UI and migration gates are
-  accepted.
+- Migrate remaining lower-traffic Python adapters through the shared
+  connection contract; the managed runtime, Codex ingestion, session CLI, and
+  all provider canonical upserts are now complete. Remove UI request-time DDL
+  only after deterministic UI and migration gates are accepted.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.

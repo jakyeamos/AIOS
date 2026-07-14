@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import platform
 import sqlite3
 from collections import Counter
@@ -21,6 +22,7 @@ from services.session_providers.base import (
     SummaryResult,
     WritebackCandidate,
 )
+from services.storage import connect as connect_storage
 
 DetectedFormat = Literal[
     "json",
@@ -31,7 +33,9 @@ DetectedFormat = Literal[
     "unknown_binary",
 ]
 
-AIOS_DB_PATH = Path.home() / "AIOS" / "data" / "aios.db"
+AIOS_DB_PATH = Path(
+    os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))
+).expanduser()
 SQLITE_EXTENSIONS = {".db", ".sqlite", ".sqlite3", ".vscdb"}
 TEXT_EXTENSIONS = {
     ".cfg",
@@ -475,7 +479,7 @@ class AntigravityProvider(SessionProvider):
         ).hexdigest()
 
     def upsert_session(self, normalized: NormalizedSession) -> str:
-        with sqlite3.connect(self.db_path) as conn:
+        with connect_storage(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT INTO sessions (

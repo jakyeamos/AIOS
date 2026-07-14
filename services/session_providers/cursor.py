@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import platform
 import shutil
 import sqlite3
@@ -23,6 +24,7 @@ from services.session_providers.base import (
     SummaryResult,
     WritebackCandidate,
 )
+from services.storage import connect as connect_storage
 
 CURSOR_KEY_TERMS = ("chat", "composer", "aichat", "agent", "conversation")
 KNOWN_CURSOR_KEYS = ("aiService.prompts",)
@@ -253,7 +255,9 @@ class CursorProvider(SessionProvider):
         snapshot_root: Path | None = None,
     ) -> None:
         self.home = home or Path.home()
-        self.db_path = db_path or self.home / "AIOS" / "data" / "aios.db"
+        self.db_path = db_path or Path(
+            os.environ.get("AIOS_DB", str(self.home / "AIOS" / "data" / "aios.db"))
+        ).expanduser()
         self.snapshot_root = snapshot_root or self.home / "AIOS" / "staging" / "cursor-snapshots"
         self._read_errors: list[str] = []
 
@@ -414,7 +418,7 @@ class CursorProvider(SessionProvider):
         return _json_hash(payload)
 
     def upsert_session(self, normalized: NormalizedSession) -> str:
-        with sqlite3.connect(self.db_path) as conn:
+        with connect_storage(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT INTO sessions (
