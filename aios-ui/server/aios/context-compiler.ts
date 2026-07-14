@@ -55,6 +55,24 @@ export type ContextCompilerFileSummary = {
   path: string;
 };
 
+export type ContextCompilerProjection = {
+  authority: {
+    owner: "AIOS context compiler";
+    mutationOwner: "context compiler CLI";
+    readOnly: true;
+  };
+  source: {
+    contextRoot: string;
+    compiledPath: string;
+    receiptPath: string;
+  };
+  freshness: {
+    generatedAt: string | null;
+    state: "recorded" | "missing";
+  };
+  nextAction: string;
+};
+
 export type ContextCompilerOverview = {
   exists: boolean;
   contextRoot: string;
@@ -71,6 +89,7 @@ export type ContextCompilerOverview = {
   missingContext: ContextIssue[];
   writebackCandidates: ContextIssue[];
   receiptMarkdown: string;
+  projection: ContextCompilerProjection;
   inventory: {
     totalFiles: number;
     byTier: Array<{ tier: string; count: number }>;
@@ -270,6 +289,22 @@ export const getContextCompilerOverview = async (): Promise<ContextCompilerOverv
   const generatedAt = await stat(compiledPath)
     .then((fileStat) => fileStat.mtime.toISOString())
     .catch(() => null);
+  const projection: ContextCompilerProjection = {
+    authority: {
+      owner: "AIOS context compiler",
+      mutationOwner: "context compiler CLI",
+      readOnly: true,
+    },
+    source: { contextRoot, compiledPath, receiptPath },
+    freshness: {
+      generatedAt,
+      state: compiled === null ? "missing" : "recorded",
+    },
+    nextAction:
+      compiled === null
+        ? 'Run pnpm context:compile --task "..." to create a packet.'
+        : "Review the receipt before acting on a writeback candidate.",
+  };
 
   return {
     exists: compiled !== null,
@@ -292,6 +327,7 @@ export const getContextCompilerOverview = async (): Promise<ContextCompilerOverv
     missingContext: compiled?.missing_context ?? [],
     writebackCandidates: compiled?.writeback_candidates ?? [],
     receiptMarkdown: receiptMarkdown || compiled?.context_receipt || "",
+    projection,
     inventory,
   };
 };

@@ -81,6 +81,37 @@ export default async function ContextCompilerPage(): Promise<React.JSX.Element> 
         </div>
       </section>
 
+      <section className="panel-card" aria-label="Projection contract">
+        <div className="panel-row">
+          <div>
+            <h3 className="section-title">Projection contract</h3>
+            <p className="panel-subtitle">
+              This satellite is a read-only view of the file-backed compiler output; the compiler CLI remains
+              the only mutation owner.
+            </p>
+          </div>
+          <span className="provenance-badge provenance-confirmed">read-only projection</span>
+        </div>
+        <div className="grid grid-2 context-contract-grid">
+          <article className="entity-card">
+            <p className="panel-title">Authority</p>
+            <p className="panel-subtitle">{overview.projection.authority.owner}</p>
+            <p className="panel-subtitle">
+              Mutation owner: {overview.projection.authority.mutationOwner}
+            </p>
+          </article>
+          <article className="entity-card">
+            <p className="panel-title">Freshness</p>
+            <p className="panel-subtitle">
+              {overview.projection.freshness.state === "recorded"
+                ? `Recorded ${formatDate(overview.projection.freshness.generatedAt)}`
+                : "No compiled packet recorded"}
+            </p>
+            <p className="panel-subtitle">Next: {overview.projection.nextAction}</p>
+          </article>
+        </div>
+      </section>
+
       <section className="panel-card">
         <h3 className="section-title">Loaded Context</h3>
         <div className="table-head table-context-loaded">
