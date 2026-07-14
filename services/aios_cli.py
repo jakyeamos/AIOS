@@ -164,6 +164,7 @@ from services.standards_health import (
 from services.standards_health import (
     load_registry as load_standards_registry,
 )
+from services.storage import connect as connect_storage
 from services.success_criteria import (
     EVALUATION_FINDING_LIFECYCLE_STATES,
     preview_applicable_criteria,
@@ -443,10 +444,9 @@ def _connect_db(path: Path) -> sqlite3.Connection:
     if not path.exists():
         raise CLIError("db-not-found", f"SQLite database not found: {path}", EXIT_DEPENDENCY)
     try:
-        conn = sqlite3.connect(path)
+        conn = connect_storage(path)
     except sqlite3.Error as exc:
         raise CLIError("db-connect-failed", str(exc), EXIT_RUNTIME) from exc
-    conn.row_factory = sqlite3.Row
     return conn
 
 

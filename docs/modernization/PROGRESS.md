@@ -1,15 +1,17 @@
 # AIOS V2 Modernization Progress
 
-**Status:** Milestone 0 in progress
+**Status:** Milestone 1 in progress
 **Updated:** 2026-07-13
 **Plan:** [EXEC_PLAN.md](EXEC_PLAN.md)
 
 ## Current slice
 
-Milestone 0 establishes one machine-readable vertical-fixture contract for
-route, packet, run, evidence, approval, and operator projection state. The
-fixture is intentionally read-only: it does not create a second database,
-change live schema, or authorize a UI mutation.
+Milestone 1 now establishes the first executable Python-owned storage boundary
+for the main store. The shared connection contract resolves one `AIOS_DB`,
+applies canonical SQLite pragmas, and supports read-only projections. The
+versioned migration ledger, quarantine inventory, and backup/restore helpers
+operate only against explicit disposable paths in this slice; the live store
+has not been migrated.
 
 ## Completed
 
@@ -24,6 +26,12 @@ change live schema, or authorize a UI mutation.
   `orchestration_runs`, `briefing_packets`, `evidence_artifacts`,
   `success_criteria_findings`, and `improvement_writebacks` without touching
   the live store.
+- Added `services/storage.py` as the first Python-owned main-store contract:
+  resolved `AIOS_DB` paths, `foreign_keys`/WAL/busy-timeout/query-only
+  pragmas, an idempotent `schema_migrations` ledger, quarantine records,
+  schema checksums, health checks, and immutable local backup/restore helpers.
+- Routed the CLI's shared `_connect_db` path through the storage contract while
+  preserving its existing missing-database error behavior.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -34,6 +42,9 @@ change live schema, or authorize a UI mutation.
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
 - `.venv/bin/basedpyright tests/test_v2_vertical_fixtures.py` — passed.
+- `.venv/bin/pytest tests/test_storage.py tests/test_aios_cli.py -q` — passed (95 tests).
+- `.venv/bin/ruff check services/storage.py services/aios_cli.py tests/test_storage.py` — passed.
+- `.venv/bin/basedpyright services/storage.py services/aios_cli.py tests/test_storage.py` — passed.
 - `pnpm --dir aios-ui lint:architecture` — passed (122 modules, 255 dependencies).
 - `pnpm quality:eval` — interrupted after the broad vulture scan expanded into
   historical shadow worktrees; the focused checks above are the relevant proof.
@@ -59,6 +70,10 @@ change live schema, or authorize a UI mutation.
 - The explicit fixture fields are retained because later slices need stable
   machine-readable evidence, approval, and projection semantics; no page-local
   UI behavior was introduced.
+- The storage slice keeps migration execution, quarantine disposition, and
+  restore orchestration separate from the connection contract; callers can
+  adopt one owner without adding a second runtime schema or silently repairing
+  live rows.
 
 ### Gate C: verification
 
@@ -67,12 +82,22 @@ The broad quality-eval command is not a trustworthy focused signal while it
 recurses through historical shadow worktrees, so its interruption is recorded
 instead of being presented as a pass.
 
-## Remaining Milestone 0 work
+## Milestone 0 completion
 
-- Add the same fixture consumer to the Python control-plane contract tests and
-  the first v2 UI read-only slice without adding a second state owner.
-- Attach seeded daily-flow replay evidence and confirm the fixture envelope
-  maps to persisted rows before Milestone 1 migration work.
+The closed fixture replay produced the canonical eight-step trace. Route,
+packet, run, evaluation, and writeback steps pointed to persisted row ids;
+all fixture evidence ids were present in `evidence_artifacts`; and the replay
+performed no writes. This is the seeded read-only evidence required before
+live migration work.
+
+## Remaining Milestone 1 work
+
+- Route hooks, storage helpers, and UI adapters through the shared connection
+  contract without changing the canonical `AIOS_DB` meaning.
+- Add a copied-store migration runner that captures preflight counts/checksums,
+  quarantines ambiguous rows, and records every forward-only migration.
+- Complete the backup/restore drill and reconcile the current store's FK
+  violations before any write-capable v2 slice.
 
 ## Known blockers
 
@@ -80,10 +105,3 @@ instead of being presented as a pass.
   anti-slop dependency, font, root/tracing, and tRPC adapter issues.
 - The main store still requires ADR-002 quarantine, migration, and restore
   proof before any write-capable slice.
-
-## Milestone 0 replay evidence
-
-The closed fixture replay produced the canonical eight-step trace. Route,
-packet, run, evaluation, and writeback steps pointed to the persisted row ids;
-all fixture evidence ids were present in `evidence_artifacts`; and the replay
-performed no writes. The next UI slice may consume this envelope read-only.
