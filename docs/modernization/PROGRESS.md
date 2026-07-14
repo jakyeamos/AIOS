@@ -57,6 +57,9 @@ path resolver honors `AIOS_DB` while source sync, compilation, lint, query, and
 daemon behavior remain unchanged.
 Bug-motif extraction now uses the same shared write boundary while preserving
 known-motif seeding, bug-log scanning, and dry-run behavior.
+Handoff-learning extraction now uses the same shared write boundary while
+preserving frontmatter/project mapping, processed-file idempotency, and dry-run
+behavior.
 
 ## Completed
 
@@ -146,6 +149,9 @@ known-motif seeding, bug-log scanning, and dry-run behavior.
   connection proofs passed.
 - Routed `extract-bug-motifs.py` through shared storage and made its canonical
   database path honor `AIOS_DB`; a disposable dry-run detection proof passed.
+- Routed `extract-handoff-learnings.py` through shared storage and made its
+  canonical database path honor `AIOS_DB`; a disposable handoff dry-run proof
+  passed.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -195,6 +201,10 @@ known-motif seeding, bug-log scanning, and dry-run behavior.
 - `uv run basedpyright bin/extract-bug-motifs.py` — passed (0 errors).
 - Disposable `extract-bug-motifs.py --dry-run` integration — passed (known
   motif and repeated bug-log candidates detected with zero writes).
+- `uv run ruff check bin/extract-handoff-learnings.py` — passed.
+- `uv run basedpyright bin/extract-handoff-learnings.py` — passed (0 errors).
+- Disposable `extract-handoff-learnings.py --dry-run` integration — passed
+  (learned items parsed with zero pattern or processed-file writes).
 - `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
@@ -311,7 +321,7 @@ live migration work.
   daily pipeline pending-rule query, pattern schema migration, pattern
   extraction, pattern scoring, pattern promotion, and pattern lifecycle tools
   plus observation review, noise purging, business-memory CLI adapters, and
-  bug-motif extraction are now covered too.
+  bug-motif and handoff-learning extraction are now covered too.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.

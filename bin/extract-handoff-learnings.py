@@ -18,10 +18,13 @@ import re
 import sqlite3
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 
 from aios_paths import get_vault_subpath
 
-DB = os.path.expanduser("~/AIOS/data/aios.db")
+from services.storage import connect as connect_storage
+
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))).expanduser()
 HANDOFFS_DIR = get_vault_subpath("02 AI OS", "02 Session Handoffs")
 
 # Minimum character length for a learning item to be worth recording
@@ -111,8 +114,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    conn = sqlite3.connect(DB)
-    conn.row_factory = sqlite3.Row
+    conn = connect_storage(DB)
 
     handoff_files = sorted(HANDOFFS_DIR.glob("*.md"))
     total_inserted = 0
