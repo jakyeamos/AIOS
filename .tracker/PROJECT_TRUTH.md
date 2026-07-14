@@ -4,7 +4,7 @@ projectName: AIOS
 summary: Active local-first agent operating system with honest evidence verdicts, evidence-gated verify-run completion, durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption, review-gated session-intelligence tools, and progressive colocated context routing across AIOS and linked repos.
 healthScore: 85
 statusLabel: warning
-nextStep: Start M5's gated review and closeout slice; keep UI mutations gated behind the Python owner.
+nextStep: Start M5A paired AIOS/non-AIOS effectiveness measurement; keep satellite promotion and cutover gated.
 blockers: []
 lastUpdated: 2026-07-14
 tags: [infra, ai-os, hooks, automation]
@@ -36,12 +36,15 @@ agentExpectationsVersion: 1
 AIOS now has a completed v2 modernization baseline, accepted local-first operating model, canonical-state contract, task-centred UI contract, reproducible UI validation contract, subsystem modernization strategy, and dependency-ordered target/vertical plan: [`AUDIT.md`](../docs/modernization/AUDIT.md), [`TARGET.md`](../docs/modernization/TARGET.md), [`EXEC_PLAN.md`](../docs/modernization/EXEC_PLAN.md), [`ADR-001`](../docs/modernization/ADR-001-v2-operating-loop-and-trust-boundary.md), [`ADR-002`](../docs/modernization/ADR-002-canonical-state-and-migration-authority.md), [`ADR-003`](../docs/modernization/ADR-003-task-centred-ia-and-accessible-design-system.md), [`ADR-004`](../docs/modernization/ADR-004-reproducible-ui-validation-contract.md), and [`ADR-005`](../docs/modernization/ADR-005-subsystem-ownership-and-parallel-v2-strategy.md). Wayfinder Ticket 006 is resolved; Milestone 0 has the shared JSON fixture, TypeScript boundary guard, Python cross-reference tests, disposable SQLite projection, and daily-flow replay proof. Milestone 1 now has the executable Python storage boundary, copied-store runner, evidence-backed FK transformer, and broad adapter adoption: one resolved `AIOS_DB`, canonical pragmas, read-only projections, idempotent migration/quarantine ledger, schema checksums, preflight/postflight health/counts, unique-path mappings, source-payload quarantine, and immutable backup/restore helpers; lifecycle hooks, high-traffic prompt/compaction/post-tool/session-stop hooks, the managed runtime, Codex ingestion, session CLI, all four provider canonical upserts, stale-session repair, prompt sync, workflow experiment utilities, metrics/reporting paths, history import, inventory sync, Apple-backed ingestion writes, the CLI doctor probe, daily pipeline pending-rule query, pattern schema migration, pattern extraction, pattern scoring, pattern promotion, pattern confirmation/approval/contradiction lifecycle tools, observation review, noise purging, bug-motif extraction, handoff-learning extraction, personal-pattern extraction and promotion, agent synthesis, domain-file projection, DOCX/PDF document indexers, rule-bundle registration, the business-memory path resolver and five CLI adapters, issues/handoffs, query/statusline utilities, and the UI database path converge on the override/pragmas. The actual current read-only store preflight reports 561 FK violations (older audit documents record 555/557); the disposable transformer copy reaches zero and the restored copy replays the canonical daily flow. UI-owned request-time DDL, remaining lower-traffic adapters, and human retention review are still gated. V2 is a single-user, loopback-only local control plane with one logical mutation authority; no live rows have been migrated. The target and plan now turn those decisions into eight vertical milestones plus a paired-effectiveness gate before satellite promotion and cutover. Divergent schema/bootstrap ownership, unenforced UI mutation boundaries, and blocked UI implementation gates remain. The current `dev` worktree was already dirty when this work started, so its shadow lane remains trace-only.
 
 Current-state amendment (2026-07-14): M2 and M3 UI validation is green for the
-read-only Today → Start work → Current run shell. M4 now proves the
-Python-owned route → packet → run → invocation → verification envelope against
-the foreign-key-enforced schema, including project-safe session linkage,
-partial-state resume snapshots with verifier provenance, and zero FK findings.
-M5 owns approval, capability, loopback, egress, writeback, and closeout
-enforcement before UI writes are enabled.
+read-only Today → Start work → Current run shell. M4 proves the Python-owned
+route → packet → run → invocation → verification envelope against the
+foreign-key-enforced schema, including project-safe session linkage, partial-
+state resume snapshots with verifier provenance, and zero FK findings. M5 is
+resolved: Python-owned governed effect events and closeout reviews enforce
+capability, loopback, egress, redaction, rollback, approval, changed-artifact,
+unresolved-delta, and next-action state. Control-plane and remediation UI
+mutations now fail closed behind the Python owner; M5A paired effectiveness
+measurement is next.
 
 _(11 older entries trimmed)_
 
@@ -68,6 +71,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-14: Resolved M5 gated review/closeout with governed effect events, explicit capability/loopback/egress/redaction/rollback metadata, terminal writeback transitions, closeout downgrade gates, and fail-closed control-plane/remediation UI mutation procedures (`1ea29a0`).
 - 2026-07-14: Fixed canonical start-work FK ordering, cross-project session linkage, and verification resume snapshots; added the M4 route → packet → run → invocation → verify/resume integration proof (`tests/test_m4_start_work.py`, `e190ca5`).
 - 2026-07-14: Shipped the read-only v2 Today → Start work → Current run shell with canonical projections, task-centred navigation, contextual disclosure, explicit state contracts, and zero-mutation browser proof (`a6adf99`).
 - 2026-07-14: Vendored anti-slop 0.4.0, removed UI request-time DDL in favor of the migration-ledger assertion, and passed ESLint/fixtures/TypeScript/architecture/build/runtime gates.
@@ -87,19 +91,19 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 ## Open Problems
 
 1. The live main-store archive migration now reports zero FK violations with an immutable pre/post backup and ledger entry; older 555/557 audit snapshots and distributed runtime DDL still need reconciliation/cleanup.
-2. V2 now intentionally excludes remote control, but current UI mutation endpoints still lack the required loopback, local-capability, approval-enforcement, and single-mutation-owner implementation; M5 owns this boundary.
-3. M2 and M3 UI validation is green, and M4 Python route/packet/run/verify proof is green. Approval, capability, egress, writeback, closeout, and paired-effectiveness proof remain.
+2. V2 intentionally excludes remote control. Control-plane and remediation UI mutation endpoints now fail closed behind the Python owner; unrelated legacy UI write surfaces still require later consumer-by-consumer migration.
+3. M2 and M3 UI validation is green, M4 Python route/packet/run/verify proof is green, and M5 governed review/closeout proof is green. Paired effectiveness, satellite migration, cutover, and adversarial review remain.
    Milestone 0's fixture/replay contract, storage boundary, copied-store recovery proof, and approved live archive are complete.
 ## Next Concrete Steps
 
-1. Start M5's gated review and closeout slice through the Python mutation owner.
-2. Add loopback, capability, approval, and egress enforcement before enabling any UI mutation.
-3. Preserve paired-effectiveness and cutover gates for later milestones.
+1. Run M5A's paired AIOS/non-AIOS effectiveness benchmark from the protected baseline.
+2. Keep satellite promotion and v2 cutover behind paired-effectiveness evidence and adversarial review.
+3. Migrate remaining legacy UI write surfaces only through the Python owner with focused proofs.
 
 ## Risks / Blockers
 
 - Broad persistence changes are unsafe until the remaining UI/schema owners are retired; the ADR-002 live archive, backup, restore, and zero-FK gates now pass.
-- Remote deployment is intentionally out of scope for v2; current local UI mutation routes still need capability, approval, and egress enforcement before they can be a trusted control surface.
+- Remote deployment is intentionally out of scope for v2; remaining legacy local UI write surfaces still need consumer-by-consumer migration to the governed Python owner before they can be trusted control surfaces.
 - UI change acceptance is reliable for M2/M3: anti-slop, ESLint, TypeScript, architecture, warning-baseline, build, seeded routes, responsive browser, console, network, and keyboard gates pass. Mutation ownership remains a separate modernization risk.
 - The parallel v2 strategy still requires strict no-dual-write ownership, immutable backups, restore proof, and an explicit deletion ledger at every migration wave.
 - The current dirty worktree prevents a clean modernization shadow comparison; implementation should begin only from an intentionally clean branch/worktree.
