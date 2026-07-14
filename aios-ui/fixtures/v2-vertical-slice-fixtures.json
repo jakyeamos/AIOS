@@ -1,0 +1,293 @@
+{
+  "schema_version": "aios-v2-vertical-fixtures-v0.1",
+  "owner": "python-control-plane",
+  "fixtures": [
+    {
+      "id": "happy-path",
+      "state": "healthy",
+      "route": {
+        "id": "route-fixture-happy",
+        "project_id": "project-aios",
+        "task_family": "implementation_delivery",
+        "workflow_key": "implementation-delivery",
+        "status": "ready",
+        "authority": "python-control-plane",
+        "rationale": "A clear implementation objective resolved to one project and workflow."
+      },
+      "packet": {
+        "id": "packet-fixture-happy",
+        "source_refs": ["project-truth", "workflow-registry", "success-criteria"],
+        "omitted_refs": ["unrelated-project-history"],
+        "freshness": "current",
+        "selection_status": "complete"
+      },
+      "run": {
+        "id": "run-fixture-happy",
+        "status": "in_progress",
+        "stage": "verify",
+        "evidence_ids": ["evidence-fixture-happy-check"],
+        "approval_ids": [],
+        "next_action_id": "next-fixture-happy-closeout"
+      },
+      "evidence": [
+        {
+          "id": "evidence-fixture-happy-check",
+          "kind": "check",
+          "source": "pnpm test:context",
+          "status": "verified",
+          "summary": "The required context checks completed successfully."
+        }
+      ],
+      "approvals": [],
+      "projection": {
+        "mode": "verify",
+        "title": "Verify the current run",
+        "state_label": "Evidence supports progress",
+        "next_action": "Review the check evidence and close out the run.",
+        "drill_down_path": "/runs/run-fixture-happy/verify"
+      }
+    },
+    {
+      "id": "empty-start",
+      "state": "empty",
+      "route": {
+        "id": "route-fixture-empty",
+        "project_id": "project-aios",
+        "task_family": "implementation_delivery",
+        "workflow_key": "implementation-delivery",
+        "status": "ready",
+        "authority": "python-control-plane",
+        "rationale": "The operator has a project but no run has been started."
+      },
+      "packet": {
+        "id": "packet-fixture-empty",
+        "source_refs": ["project-truth"],
+        "omitted_refs": ["workflow-evidence", "run-history"],
+        "freshness": "current",
+        "selection_status": "partial"
+      },
+      "run": {
+        "id": "run-fixture-empty",
+        "status": "planned",
+        "stage": "start-work",
+        "evidence_ids": [],
+        "approval_ids": [],
+        "next_action_id": "next-fixture-empty-start"
+      },
+      "evidence": [],
+      "approvals": [],
+      "projection": {
+        "mode": "start-work",
+        "title": "Start work",
+        "state_label": "No run exists yet",
+        "next_action": "Confirm the project and describe the work to begin.",
+        "drill_down_path": "/start-work"
+      }
+    },
+    {
+      "id": "blocked-ambiguity",
+      "state": "blocked",
+      "route": {
+        "id": "route-fixture-blocked",
+        "project_id": null,
+        "task_family": "unknown",
+        "workflow_key": "audit-only",
+        "status": "blocked",
+        "authority": "python-control-plane",
+        "rationale": "Two project candidates match; the operator must resolve scope before execution."
+      },
+      "packet": {
+        "id": "packet-fixture-blocked",
+        "source_refs": ["project-candidates"],
+        "omitted_refs": ["run-history", "success-criteria"],
+        "freshness": "current",
+        "selection_status": "blocked"
+      },
+      "run": {
+        "id": "run-fixture-blocked",
+        "status": "planned",
+        "stage": "start-work",
+        "evidence_ids": ["evidence-fixture-blocked-ambiguity"],
+        "approval_ids": [],
+        "next_action_id": "next-fixture-blocked-clarify"
+      },
+      "evidence": [
+        {
+          "id": "evidence-fixture-blocked-ambiguity",
+          "kind": "receipt",
+          "source": "project-resolution",
+          "status": "pending",
+          "summary": "Project resolution produced multiple plausible candidates."
+        }
+      ],
+      "approvals": [],
+      "projection": {
+        "mode": "start-work",
+        "title": "Resolve project scope",
+        "state_label": "Blocked: clarification required",
+        "next_action": "Choose one project before creating a runnable packet.",
+        "drill_down_path": "/start-work?blocked=project-ambiguity"
+      }
+    },
+    {
+      "id": "failed-verification",
+      "state": "failed",
+      "route": {
+        "id": "route-fixture-failed",
+        "project_id": "project-aios",
+        "task_family": "audit_only",
+        "workflow_key": "audit-only",
+        "status": "ready",
+        "authority": "python-control-plane",
+        "rationale": "The audit route was selected from the requested verification scope."
+      },
+      "packet": {
+        "id": "packet-fixture-failed",
+        "source_refs": ["project-truth", "success-criteria"],
+        "omitted_refs": [],
+        "freshness": "current",
+        "selection_status": "complete"
+      },
+      "run": {
+        "id": "run-fixture-failed",
+        "status": "failed",
+        "stage": "verify",
+        "evidence_ids": ["evidence-fixture-failed-check"],
+        "approval_ids": [],
+        "next_action_id": "next-fixture-failed-retry"
+      },
+      "evidence": [
+        {
+          "id": "evidence-fixture-failed-check",
+          "kind": "check",
+          "source": "pnpm --dir aios-ui build",
+          "status": "failed",
+          "summary": "The build failed before the UI validation contract was satisfied."
+        }
+      ],
+      "approvals": [],
+      "projection": {
+        "mode": "verify",
+        "title": "Verification failed",
+        "state_label": "Failed: remediation required",
+        "next_action": "Inspect the failure evidence and retry or return the work.",
+        "drill_down_path": "/runs/run-fixture-failed/verify"
+      }
+    },
+    {
+      "id": "needs-review-writeback",
+      "state": "needs_review",
+      "route": {
+        "id": "route-fixture-review",
+        "project_id": "project-aios",
+        "task_family": "implementation_delivery",
+        "workflow_key": "implementation-delivery",
+        "status": "ready",
+        "authority": "python-control-plane",
+        "rationale": "The run proposes a durable truth update that requires local approval."
+      },
+      "packet": {
+        "id": "packet-fixture-review",
+        "source_refs": ["project-truth", "run-evidence", "writeback-policy"],
+        "omitted_refs": [],
+        "freshness": "current",
+        "selection_status": "complete"
+      },
+      "run": {
+        "id": "run-fixture-review",
+        "status": "ready",
+        "stage": "gated-review",
+        "evidence_ids": ["evidence-fixture-review-change"],
+        "approval_ids": ["approval-fixture-review-writeback"],
+        "next_action_id": "next-fixture-review-decide"
+      },
+      "evidence": [
+        {
+          "id": "evidence-fixture-review-change",
+          "kind": "artifact",
+          "source": "git-diff",
+          "status": "verified",
+          "summary": "The proposed project-truth change is linked to reviewed artifacts."
+        }
+      ],
+      "approvals": [
+        {
+          "id": "approval-fixture-review-writeback",
+          "kind": "truth-writeback",
+          "state": "pending",
+          "target": ".tracker/PROJECT_TRUTH.md",
+          "actor": "local-operator",
+          "reason": "Durable project truth requires explicit local approval."
+        }
+      ],
+      "projection": {
+        "mode": "gated-review",
+        "title": "Review proposed truth update",
+        "state_label": "Needs local approval",
+        "next_action": "Approve, reject, or return the proposed writeback.",
+        "drill_down_path": "/runs/run-fixture-review/review"
+      }
+    },
+    {
+      "id": "closed-success",
+      "state": "closed",
+      "route": {
+        "id": "route-fixture-closed",
+        "project_id": "project-aios",
+        "task_family": "implementation_delivery",
+        "workflow_key": "implementation-delivery",
+        "status": "ready",
+        "authority": "python-control-plane",
+        "rationale": "The scoped implementation completed with verification and approved closeout."
+      },
+      "packet": {
+        "id": "packet-fixture-closed",
+        "source_refs": ["project-truth", "workflow-registry", "success-criteria", "run-evidence"],
+        "omitted_refs": [],
+        "freshness": "current",
+        "selection_status": "complete"
+      },
+      "run": {
+        "id": "run-fixture-closed",
+        "status": "completed",
+        "stage": "closeout",
+        "evidence_ids": ["evidence-fixture-closed-check", "evidence-fixture-closed-artifact"],
+        "approval_ids": ["approval-fixture-closed-writeback"],
+        "next_action_id": null
+      },
+      "evidence": [
+        {
+          "id": "evidence-fixture-closed-check",
+          "kind": "check",
+          "source": "uv run pytest -q",
+          "status": "verified",
+          "summary": "The agreed verification suite passed for the scoped change."
+        },
+        {
+          "id": "evidence-fixture-closed-artifact",
+          "kind": "artifact",
+          "source": "git-diff",
+          "status": "verified",
+          "summary": "Changed artifacts and their final state are recorded."
+        }
+      ],
+      "approvals": [
+        {
+          "id": "approval-fixture-closed-writeback",
+          "kind": "truth-writeback",
+          "state": "approved",
+          "target": ".tracker/PROJECT_TRUTH.md",
+          "actor": "local-operator",
+          "reason": "The reviewed project-truth update was approved."
+        }
+      ],
+      "projection": {
+        "mode": "closeout",
+        "title": "Run closed successfully",
+        "state_label": "Success: durable closeout complete",
+        "next_action": null,
+        "drill_down_path": "/runs/run-fixture-closed/closeout"
+      }
+    }
+  ]
+}
