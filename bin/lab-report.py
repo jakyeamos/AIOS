@@ -12,10 +12,17 @@ Usage:
 
 import argparse
 import os
-import sqlite3
+import sys
 from collections import defaultdict
+from pathlib import Path
 
-DB = os.path.expanduser("~/AIOS/data/aios.db")
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from services.storage import connect as connect_storage  # noqa: E402
+
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))).expanduser()
 
 OUTCOMES = {"confirmed", "contradicted", "inconclusive", "error"}
 
@@ -38,8 +45,7 @@ def main():
     parser.add_argument("--limit", type=int, default=50, help="Max rows to show (default 50)")
     args = parser.parse_args()
 
-    conn = sqlite3.connect(DB)
-    conn.row_factory = sqlite3.Row
+    conn = connect_storage(DB, read_only=True)
 
     # Build query
     where = []

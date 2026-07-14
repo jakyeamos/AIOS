@@ -12,10 +12,16 @@ Output: JSON with metric values and comparison to 5-session baseline.
 
 import json
 import os
-import sqlite3
 import sys
+from pathlib import Path
 
-DB = os.path.expanduser("~/AIOS/data/aios.db")
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from services.storage import connect as connect_storage  # noqa: E402
+
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))).expanduser()
 
 
 def get_current_session() -> str | None:
@@ -32,7 +38,7 @@ def main() -> None:
         print(json.dumps({"error": "No session ID provided and no current session found"}))
         sys.exit(1)
 
-    conn = sqlite3.connect(DB)
+    conn = connect_storage(DB, read_only=True)
 
     # Get session info
     cur = conn.execute(

@@ -25,6 +25,8 @@ too. Codex, Claude, Cursor, and Antigravity canonical session upserts now use
 the same write boundary; provider source inspection remains provider-owned.
 Stale-session repair, prompt-library sync, and workflow-experiment queue/run
 utilities now use the same contract for their main-store connections.
+The session-metric recorder is write-routed, while session evaluation and lab
+reporting use read-only shared connections.
 
 ## Completed
 
@@ -80,6 +82,9 @@ utilities now use the same contract for their main-store connections.
   `queue-workflow-experiments.py`, and `run-workflow-skill-experiments.py`
   through shared storage, including `AIOS_DB` defaults and direct-script import
   paths where needed.
+- Routed `record-metric.py`, `eval-session.py`, and `lab-report.py` through
+  shared storage; reporting paths are explicitly read-only and all three now
+  honor `AIOS_DB`.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -127,6 +132,9 @@ utilities now use the same contract for their main-store connections.
 - `.venv/bin/ruff check bin/repair-stale-open-sessions.py bin/sync-prompts.py bin/queue-workflow-experiments.py bin/run-workflow-skill-experiments.py` — passed.
 - `.venv/bin/basedpyright bin/repair-stale-open-sessions.py bin/sync-prompts.py bin/queue-workflow-experiments.py bin/run-workflow-skill-experiments.py` — passed (0 errors).
 - Disposable utility integration — passed for stale-session abandonment, prompt-library sync, workflow queue, and empty workflow run.
+- `.venv/bin/ruff check bin/record-metric.py bin/eval-session.py bin/lab-report.py` — passed.
+- `.venv/bin/basedpyright bin/record-metric.py bin/eval-session.py bin/lab-report.py` — passed (0 errors).
+- Disposable metrics/reporting integration — passed for metric write, session evaluation, and lab report read-only paths.
 - `pnpm --dir aios-ui lint:architecture` — passed (122 modules, 255 dependencies).
 - `pnpm quality:eval` — interrupted after the broad vulture scan expanded into
   historical shadow worktrees; the focused checks above are the relevant proof.
@@ -183,9 +191,9 @@ live migration work.
 
 - Migrate remaining lower-traffic Python adapters through the shared
   connection contract; the managed runtime, Codex ingestion, session CLI,
-  provider canonical upserts, and core utility scripts are now complete.
-  Remove UI request-time DDL only after deterministic UI and migration gates
-  are accepted.
+  provider canonical upserts, core utility scripts, and metrics/reporting
+  paths are now complete. Remove UI request-time DDL only after deterministic
+  UI and migration gates are accepted.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.

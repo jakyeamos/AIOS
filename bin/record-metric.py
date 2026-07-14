@@ -20,12 +20,18 @@ Examples:
 """
 
 import os
-import sqlite3
 import sys
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 
-DB = os.path.expanduser("~/AIOS/data/aios.db")
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from services.storage import connect as connect_storage  # noqa: E402
+
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))).expanduser()
 LOG = os.path.expanduser("~/AIOS/logs/hooks.log")
 
 KNOWN_METRICS = {
@@ -98,7 +104,7 @@ def main() -> None:
         metrics[name] = value
 
     try:
-        conn = sqlite3.connect(DB)
+        conn = connect_storage(DB)
         now = datetime.now(UTC).isoformat()
         for name, value in metrics.items():
             row_id = str(uuid.uuid4())
