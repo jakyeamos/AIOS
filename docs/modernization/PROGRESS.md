@@ -87,6 +87,10 @@ while preserving its explicit `:memory:` compatibility; commit-quality
 evidence/verifier reads also use the shared read-only boundary.
 The CTS registry's AIOS project metadata read now uses the shared read-only
 boundary and honors `AIOS_DB`; CTS-owned graph stores remain unchanged.
+The current recovery gate was rerun read-only against `~/AIOS/data/aios.db`:
+the live copy remains healthy at the SQLite level but reports 561 FK
+violations; a disposable transformer quarantined all 561, reached zero FK
+violations, restored cleanly, and replayed the eight-step daily-flow preview.
 
 ## Completed
 
@@ -320,6 +324,12 @@ boundary and honors `AIOS_DB`; CTS-owned graph stores remain unchanged.
 - `.venv/bin/basedpyright services/cts/registry.py` — passed (0 errors).
 - Disposable CTS registry integration — passed (read-only project listing and
   normalized path lookup through the shared AIOS connection).
+- Current live recovery preflight — passed for evidence capture only:
+  `quick_check=ok`, `integrity_check=ok`, `user_version=0`, and 561 FK
+  violations reported without live writes.
+- Disposable copied-store recovery drill — passed: 561 quarantines, zero
+  post-transform FK violations, restored `quick_check=ok` and
+  `integrity_check=ok`, and eight-step read-only daily-flow replay.
 - `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
@@ -442,13 +452,13 @@ live migration work.
   discovery, workflow synthesis, workflow experiment, review, vault-lint, and
   lab-trigger adapters, lifecycle migration, commit-quality evidence reads, and
   CTS AIOS metadata reads are now covered too.
-- Reconcile the live preflight count drift (the current read-only check reports
-  561 violations while older audit documents record 555/557) and retain the
-  command output as migration evidence.
-- Complete the restore drill and a human-reviewed deletion/retention decision
-  for the 73 unresolved quality rows archived by the copied transformer.
-- Complete the backup/restore drill and reconcile the current store's FK
-  violations before any write-capable v2 slice.
+- Retain the current live preflight evidence and reconcile its 561 count
+  against older 555/557 audit snapshots before any write-capable migration.
+- Complete a human-reviewed deletion/retention decision for the 73 unresolved
+  quality rows archived by the copied transformer.
+- Keep the write-capable v2 gate closed until the reviewed disposition and live
+  FK reconciliation are accepted; the disposable backup/restore drill is now
+  repeatably green.
 
 ## Production-shaped copied-store evidence
 
