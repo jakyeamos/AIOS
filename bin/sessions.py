@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import sqlite3
 import sys
 from dataclasses import dataclass
@@ -21,8 +22,11 @@ from services.session_providers import (  # noqa: E402
     SourcePath,
 )
 from services.session_providers.base import NormalizedSession  # noqa: E402
+from services.storage import connect as connect_storage  # noqa: E402
 
-DB_PATH = Path.home() / "AIOS" / "data" / "aios.db"
+DB_PATH = Path(
+    os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))
+).expanduser()
 
 
 @dataclass(frozen=True)
@@ -49,15 +53,17 @@ def now_iso() -> str:
 
 
 def connect(db_path: Path = DB_PATH, *, read_only: bool = False) -> sqlite3.Connection:
-    if read_only:
-        if not db_path.exists():
-            return sqlite3.connect(":memory:")
-        conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+    if str(db_path) == ":memory:":
+        conn = sqlite3.connect(":memory:")
         conn.row_factory = sqlite3.Row
+        if not read_only:
+            ensure_schema(conn)
         return conn
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    ensure_schema(conn)
+    if read_only and not db_path.exists():
+        return sqlite3.connect(":memory:")
+    conn = connect_storage(db_path, read_only=read_only)
+    if not read_only:
+        ensure_schema(conn)
     return conn
 
 
