@@ -35,6 +35,11 @@ agentExpectationsVersion: 1
 
 AIOS now has a completed v2 modernization baseline, accepted local-first operating model, canonical-state contract, task-centred UI contract, reproducible UI validation contract, subsystem modernization strategy, and dependency-ordered target/vertical plan: [`AUDIT.md`](../docs/modernization/AUDIT.md), [`TARGET.md`](../docs/modernization/TARGET.md), [`EXEC_PLAN.md`](../docs/modernization/EXEC_PLAN.md), [`ADR-001`](../docs/modernization/ADR-001-v2-operating-loop-and-trust-boundary.md), [`ADR-002`](../docs/modernization/ADR-002-canonical-state-and-migration-authority.md), [`ADR-003`](../docs/modernization/ADR-003-task-centred-ia-and-accessible-design-system.md), [`ADR-004`](../docs/modernization/ADR-004-reproducible-ui-validation-contract.md), and [`ADR-005`](../docs/modernization/ADR-005-subsystem-ownership-and-parallel-v2-strategy.md). Wayfinder Ticket 006 is resolved; Milestone 0 has the shared JSON fixture, TypeScript boundary guard, Python cross-reference tests, disposable SQLite projection, and daily-flow replay proof. Milestone 1 now has the executable Python storage boundary, copied-store runner, evidence-backed FK transformer, and broad adapter adoption: one resolved `AIOS_DB`, canonical pragmas, read-only projections, idempotent migration/quarantine ledger, schema checksums, preflight/postflight health/counts, unique-path mappings, source-payload quarantine, and immutable backup/restore helpers; lifecycle hooks, high-traffic prompt/compaction/post-tool/session-stop hooks, the managed runtime, Codex ingestion, session CLI, all four provider canonical upserts, stale-session repair, prompt sync, workflow experiment utilities, metrics/reporting paths, history import, inventory sync, Apple-backed ingestion writes, the CLI doctor probe, daily pipeline pending-rule query, pattern schema migration, pattern extraction, pattern scoring, pattern promotion, pattern confirmation/approval/contradiction lifecycle tools, observation review, noise purging, bug-motif extraction, handoff-learning extraction, personal-pattern extraction and promotion, agent synthesis, domain-file projection, DOCX/PDF document indexers, rule-bundle registration, the business-memory path resolver and five CLI adapters, issues/handoffs, query/statusline utilities, and the UI database path converge on the override/pragmas. The actual current read-only store preflight reports 561 FK violations (older audit documents record 555/557); the disposable transformer copy reaches zero and the restored copy replays the canonical daily flow. UI-owned request-time DDL, remaining lower-traffic adapters, and human retention review are still gated. V2 is a single-user, loopback-only local control plane with one logical mutation authority; no live rows have been migrated. The target and plan now turn those decisions into eight vertical milestones plus a paired-effectiveness gate before satellite promotion and cutover. Divergent schema/bootstrap ownership, unenforced UI mutation boundaries, and blocked UI implementation gates remain. The current `dev` worktree was already dirty when this work started, so its shadow lane remains trace-only.
 
+Current-state amendment (2026-07-14): the approved archive migration is now
+applied live with zero FK violations, a version-1 ledger entry, immutable
+pre/post backups, and a completed restore/replay check. UI request-time DDL and
+ADR-004 validation remain the active modernization blockers.
+
 _(4 older entries trimmed)_
 
 Pipeline and lab schema migrations now also use the shared storage boundary
@@ -59,6 +64,10 @@ blocked by a stale local anti-slop package copy, and one NFT tracing warning
 remains in the prompt filesystem adapter.
 The loopback runtime smoke also passed: `/` and the source-backed `projects.list`
 tRPC route returned HTTP 200 with no request errors on a disposable dev server.
+The approved live archive migration (`m001-archive-live-20260714`) then
+reconciled all 561 FK violations, retained 73 unresolved quality payloads in
+quarantine, recorded decisions for all 561 repair records, and passed live
+restore/replay verification.
 
 AIOS now also has a file-backed and SQLite-backed context-loop learning primitive: `services/context_loops.py`, `schema.sql`, and `python bin/aios.py context-loops ...` record inner-loop context/draft runs, review events, learning candidates, explicit approvals/rejections, approved lesson application, metrics, and a draft-only email pilot. Contract docs and examples live under `aios/context-loops/`.
 
@@ -96,8 +105,9 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-07-14: Ran the UI loopback smoke after the build fix: `/` and `projects.list` tRPC returned HTTP 200 with source-backed data and clean server logs; anti-slop/NFT warnings remain explicit.
 - 2026-07-14: Scoped the UI Turbopack root and refreshed native dependencies: TypeScript, architecture, warning-baseline, and production build passed; workspace-root warning resolved, with anti-slop install/NFT tracing blockers recorded.
 - 2026-07-14: Reran the live recovery preflight and disposable restore drill: 561 FK violations captured, 561 quarantined in the copy, zero restored FK violations, and eight-step daily-flow replay passed.
-- 2026-07-14: Created `docs/modernization/M1_RETENTION_DECISION.md` from a fresh disposable run: 73 unresolved quality rows remain pending explicit human disposition; no live rows changed.
-- 2026-07-14: Added the guarded transactional live migration runner (`eb59adb`): focused migration/storage tests, Ruff, and BasedPyright passed; live archive application is next.
+- 2026-07-14: Created `docs/modernization/M1_RETENTION_DECISION.md` from a fresh disposable run; it became the approved archive record after live reconciliation.
+- 2026-07-14: Added the guarded transactional live migration runner (`eb59adb`): focused migration/storage tests, Ruff, and BasedPyright passed; archive application then completed successfully.
+- 2026-07-14: Applied the approved archive migration: live `quick_check`/`integrity_check` pass, FK violations are 0, `user_version=1`, 561 quarantine decisions recorded, and 8-step replay/restore passed.
 - 2026-07-14: Routed CTS registry AIOS metadata reads through shared storage (`52d22e5`): passed Ruff/BasedPyright and disposable read-only registry proof.
 - 2026-07-14: Routed lifecycle migration and commit-quality evidence reads through shared storage (`6924d0a`): passed Ruff/BasedPyright, 29 focused tests, and disposable migration proof.
 - 2026-07-14: Routed review, vault-lint, and lab-trigger adapters through shared storage (`c36cf66`): passed Ruff/BasedPyright and disposable vault/lab proof; Flask runtime remains dependency-blocked.
@@ -107,23 +117,22 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-07-14: Routed DOCX/PDF indexers through shared storage (`4c1374e`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable dry-run metadata/index proof.
 - 2026-07-14: Routed `build-domain-files.py` through shared read-only storage (`21bdd63`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable domain projection dry-run proof.
 - 2026-07-14: Routed `agent-synthesis.py` through shared storage (`cd0854c`): read-only corpus scans, `AIOS_DB`, Ruff/BasedPyright, and disposable dry-run synthesis proof passed.
-- 2026-07-13: Routed `promote-personal-patterns.py` through shared storage (`a68fff6`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable dry-run vault proof.
 
 ## Open Problems
 
-1. The current main-store preflight reports 561 persisted foreign-key violations (older audit documents record 555/557); divergent SQL snapshots, distributed runtime DDL, and human retention approval remain unresolved.
+1. The live main-store archive migration now reports zero FK violations with an immutable pre/post backup and ledger entry; older 555/557 audit snapshots and distributed runtime DDL still need reconciliation/cleanup.
 2. V2 now intentionally excludes remote control, but current UI mutation endpoints still lack the required loopback, local-capability, approval-enforcement, and single-mutation-owner implementation.
 3. UI implementation remains blocked by the stale local anti-slop package copy and one remaining NFT tracing warning from the prompt filesystem adapter; TypeScript, architecture, warning-baseline, and production build now pass.
-   Milestone 0's fixture/replay contract, storage boundary, and copied-store recovery proof are complete; adapter adoption, human review of the 73 archived quality rows, and ADR-004 UI preconditions remain before later write-capable/UI work.
+   Milestone 0's fixture/replay contract, storage boundary, copied-store recovery proof, and approved live archive are complete; UI request-time DDL and ADR-004 preconditions remain before later write-capable/UI work.
 ## Next Concrete Steps
 
-1. Complete the human-reviewed retention/deletion decision for archived quality payloads and reconcile the live 561 FK violations against older audit snapshots.
-2. Keep the write-capable v2 gate closed while resolving the remaining UI request-time DDL and ADR-004 validation preconditions.
+1. Remove UI request-time DDL and close the remaining ADR-004 anti-slop/NFT validation preconditions.
+2. Keep v2 product mutations behind approval and operator-validation gates while the UI ownership boundary is completed.
 3. Freeze the paired effectiveness corpus/control baseline before the v2 read-only shell.
 
 ## Risks / Blockers
 
-- Broad persistence changes are unsafe until the ADR-002 migration owner is adopted by all adapters, the current 561 violations are reviewed against the copied proof, and live backup/restore ownership passes.
+- Broad persistence changes are unsafe until the remaining UI/schema owners are retired; the ADR-002 live archive, backup, restore, and zero-FK gates now pass.
 - Remote deployment is intentionally out of scope for v2; current local UI mutation routes still need capability, approval, and egress enforcement before redesign work can use them as a trusted control surface.
 - UI change acceptance is currently unreliable because the anti-slop package, font path, Turbopack root/tracing, tRPC adapter, duplicate keys, and browser harness gates remain unresolved; ADR-004 defines the evidence contract but does not claim those repairs are complete.
 - The parallel v2 strategy still requires strict no-dual-write ownership, immutable backups, restore proof, and an explicit deletion ledger at every migration wave.

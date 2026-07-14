@@ -1,14 +1,16 @@
 # M1 Retention Decision
 
-**Status:** Awaiting explicit human disposition
+**Status:** Approved and applied
 **Updated:** 2026-07-14
 **Scope:** The 73 unresolved `quality_pipeline_runs` rows identified by the
 copied-store M1 transformer.
 
-## Decision required
+## Decision recorded
 
-The live store has not been modified. Before a write-capable migration can be
-approved, choose one disposition for the 73 unresolved quality rows:
+The user approved Option A. The 73 unresolved quality payloads are retained in
+the live store's local read-only `migration_quarantine` archive, while the
+unresolved active rows were removed so the FK graph can be reconciled. No
+payloads were committed to Git or sent externally.
 
 | Option | Meaning | Consequence |
 | --- | --- | --- |
@@ -16,17 +18,17 @@ approved, choose one disposition for the 73 unresolved quality rows:
 | **B — delete after review** | Confirm that every row is derived, rebuildable, and not required for audit or provenance, then record an explicit deletion ledger. | Irreversible; requires a reviewed backup and row-level sign-off. |
 | **C — split by row** | Review the 73 rows individually and assign archive or delete dispositions. | Highest review cost; allows a mixed outcome when evidence differs. |
 
-No option is applied automatically. The reviewer must record the selected
-option, reviewer identity, date, and any row-level exceptions below.
+The decision and the technical dispositions for the remaining deterministic
+repair classes are recorded in `migration_quarantine.reviewer_decision`.
 
 ```text
-Disposition: pending human decision
-Reviewer: pending
-Date: pending
+Disposition: A — retain in a local read-only archive
+Reviewer: user-approved via Codex session
+Date: 2026-07-14
 Exceptions: none recorded
 ```
 
-## Disposable evidence
+## Migration evidence
 
 The evidence run used a fresh temporary copy of the current local store and
 printed aggregate counts only; no original payloads are committed to the
@@ -34,17 +36,19 @@ repository.
 
 | Check | Result |
 | --- | --- |
-| Live preflight | `quick_check=ok`, `integrity_check=ok`, `user_version=0` |
-| Live FK inventory | 561 violations; read-only observation only |
-| Copied transformer | 561 quarantines; 255 quality rows mapped by unique working directory; 73 quality rows unresolved; 180 missing session references retained with null-session review disposition; 53 missing shadow-task references retained with null-task/archive disposition |
-| Copied postflight | `quick_check=ok`, `integrity_check=ok`, zero FK violations, `user_version=1` |
-| Restore drill | Restored copy passed quick, integrity, and FK checks; `user_version=1` |
-| Replay | Read-only `daily-flow` preview produced all 8 canonical steps |
-| Live mutation | None; the source database remained untouched |
+| Disposable preflight | 561 FK violations; copied transform quarantined 561; post-transform and restored copies had zero FK violations; 8-step replay passed |
+| Live migration | `m001-archive-live-20260714` ran under `BEGIN IMMEDIATE`; 561 quarantine rows recorded; all 561 rows have an explicit reviewer/technical decision |
+| Live postflight | `quick_check=ok`, `integrity_check=ok`, zero FK violations, `user_version=1` |
+| Archive scope | 73 `quality_pipeline_runs` rows with `archive-approved-by-user-2026-07-14` |
+| Technical dispositions | 255 deterministic project maps; 180 retained with null session; 53 retained with null task |
+| Restore drill | Pre-backup restored with the original 561 FK violations; post-backup restored with zero FK violations and `user_version=1` |
+| Replay | Read-only `daily-flow` preview produced all 8 canonical steps against the migrated live store |
+| Live mutation | Approved archive and deterministic FK reconciliation only; no external egress |
 
 ## Approval gate
 
-Until the decision above is recorded and the 561 live FK violations are
-reconciled against the accepted disposition, the M1 write-capable migration
-gate remains closed. The copied-store backup, quarantine, restore, and replay
-path is the approved evidence path for further review.
+The archive decision is recorded and the live FK graph is reconciled. The
+immutable backups are retained at the local paths recorded in the migration
+ledger; restore remains the rollback path. Later write-capable v2 product
+features remain subject to their own UI, approval, and operator validation
+gates.

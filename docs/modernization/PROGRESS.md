@@ -1,6 +1,6 @@
 # AIOS V2 Modernization Progress
 
-**Status:** Milestone 1 in progress
+**Status:** Milestone 1 data/recovery gate complete; UI ownership follow-up remains
 **Updated:** 2026-07-14
 **Plan:** [EXEC_PLAN.md](EXEC_PLAN.md)
 
@@ -91,6 +91,10 @@ The current recovery gate was rerun read-only against `~/AIOS/data/aios.db`:
 the live copy remains healthy at the SQLite level but reports 561 FK
 violations; a disposable transformer quarantined all 561, reached zero FK
 violations, restored cleanly, and replayed the eight-step daily-flow preview.
+The user then approved archive disposition for the 73 unresolved quality rows.
+The guarded live runner captured immutable pre/post backups, applied the same
+transform under `BEGIN IMMEDIATE`, recorded all 561 quarantine decisions, and
+left the live store at zero FK violations with `user_version=1`.
 The first ADR-004 UI validation pass now has clean TypeScript, architecture,
 warning-baseline, native-module, and production-build evidence; the build has
 one remaining NFT tracing warning in the prompt filesystem adapter, and ESLint
@@ -99,8 +103,8 @@ The loopback runtime smoke also passed: `/` and the source-backed
 `projects.list` tRPC route both returned HTTP 200 on a disposable dev server,
 with no request errors in the server log.
 The aggregate M1 retention decision packet now records the fresh disposable
-counts and leaves the 73 unresolved quality rows pending explicit human
-disposition; no live rows were changed.
+counts and records the approved archive decision; the live store is now
+reconciled with zero FK violations.
 
 ## Completed
 
@@ -477,16 +481,11 @@ live migration work.
   discovery, workflow synthesis, workflow experiment, review, vault-lint, and
   lab-trigger adapters, lifecycle migration, commit-quality evidence reads, and
   CTS AIOS metadata reads are now covered too.
-- Retain the current live preflight evidence and reconcile its 561 count
-  against older 555/557 audit snapshots before any write-capable migration.
-- Complete a human-reviewed deletion/retention decision for the 73 unresolved
-  quality rows archived by the copied transformer.
-- Record the selected disposition in
-  [M1_RETENTION_DECISION.md](M1_RETENTION_DECISION.md) and reconcile all 561
-  live FK violations against that reviewed decision.
-- Keep the write-capable v2 gate closed until the reviewed disposition and live
-  FK reconciliation are accepted; the disposable backup/restore drill is now
-  repeatably green.
+- Retain the immutable pre/post backups and the 561-row quarantine inventory;
+  the 73 unresolved quality rows are archived under the approved Option A
+  decision in [M1_RETENTION_DECISION.md](M1_RETENTION_DECISION.md).
+- Keep later write-capable v2 product features behind their UI, approval, and
+  operator-validation gates; the M1 data/recovery gate itself is green.
 
 ## Production-shaped copied-store evidence
 
@@ -498,12 +497,16 @@ archived 73 unresolved quality rows, nulled 180 missing session references,
 and nulled 53 absent shadow-task references. The post-migration copy reported
 zero FK violations and `user_version=1`; its restored backup passed quick,
 integrity, and FK checks, and a read-only daily-flow replay produced the
-canonical eight-step trace.
+canonical eight-step trace. The live archive migration produced the same
+zero-FK result, restored from both immutable backups (pre-state retained the
+original 561 violations; post-state retained zero), and replayed the canonical
+eight-step trace against the migrated store.
 
 ## Known blockers
 
 - The UI build and architecture/type gates now pass; ADR-004 remains blocked by
   the stale external anti-slop installation and one NFT tracing warning from
   the prompt filesystem adapter. The prior workspace-root warning is resolved.
-- The main store still requires ADR-002 quarantine, migration, and restore
-  proof before any write-capable slice.
+- ADR-002 quarantine, migration, and restore proof now pass for the main store;
+  UI request-time DDL and ADR-004 validation blockers remain before v2 UI
+  mutations are considered safe.
