@@ -13,7 +13,7 @@ goals: []
 repoType: infra
 sourceOfTruth: mixed
 primaryLanguage: Python
-activeBranch: codex/m6-report-path
+activeBranch: dev
 lastCommitDate: 2026-07-14
 quality:
   lint: fail
