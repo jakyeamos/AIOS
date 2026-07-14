@@ -50,6 +50,8 @@ Pattern confirmation, approval, and contradiction tools now use the same shared
 write boundary while preserving their event ledger and state-transition gates.
 Interactive observation review now uses the same shared write boundary while
 preserving its human-choice state/event transitions.
+Noise-pattern purging now uses the same shared write boundary while preserving
+its idempotent discard filter and dry-run report.
 
 ## Completed
 
@@ -132,6 +134,8 @@ preserving its human-choice state/event transitions.
   database paths honor `AIOS_DB`; a disposable lifecycle integration passed.
 - Routed `review-observations.py` through shared storage and made its canonical
   database path honor `AIOS_DB`; a patched-input disposable review passed.
+- Routed `purge-noise-patterns.py` through shared storage and made its canonical
+  database path honor `AIOS_DB`; its focused tests and disposable dry-run passed.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -167,6 +171,11 @@ preserving its human-choice state/event transitions.
 - `uv run basedpyright bin/review-observations.py` — passed (0 errors).
 - Disposable `review-observations.py` integration — passed (observation→knowledge
   transition and promotion event ledger).
+- `uv run pytest tests/test_purge_noise_patterns.py -q` — passed (2 tests).
+- `uv run ruff check bin/purge-noise-patterns.py tests/test_purge_noise_patterns.py` — passed.
+- `uv run basedpyright bin/purge-noise-patterns.py` — passed (0 errors).
+- Disposable `purge-noise-patterns.py --dry-run` integration — passed (eligible
+  noise counted with no discard writes).
 - `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
@@ -282,7 +291,7 @@ live migration work.
   accepted; source-backed Apple ingestion writes, the doctor probe, and the
   daily pipeline pending-rule query, pattern schema migration, pattern
   extraction, pattern scoring, pattern promotion, and pattern lifecycle tools
-  plus observation review are now covered too.
+  plus observation review and noise purging are now covered too.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.

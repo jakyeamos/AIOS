@@ -16,10 +16,17 @@ import argparse
 import json
 import os
 import sqlite3
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-DB = Path(os.path.expanduser("~/AIOS/data/aios.db"))
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from services.storage import connect as connect_storage  # noqa: E402
+
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))).expanduser()
 LOG = Path(os.path.expanduser("~/AIOS/logs/purge-noise-patterns-latest.json"))
 
 NOISE_CLASSES = ("personal", "observation", "error")
@@ -87,7 +94,7 @@ def main() -> int:
         print(json.dumps({"ok": False, "error": f"database not found: {DB}"}, indent=2))
         return 1
 
-    conn = sqlite3.connect(DB)
+    conn = connect_storage(DB)
     try:
         result = purge_noise_patterns(conn, dry_run=args.dry_run)
     finally:
