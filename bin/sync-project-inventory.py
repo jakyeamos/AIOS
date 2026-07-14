@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import argparse
-import sqlite3
+import os
 import sys
 from pathlib import Path
 
@@ -10,17 +10,20 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from services.project_inventory import sync_git_projects  # noqa: E402
+from services.storage import connect as connect_storage  # noqa: E402
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Sync Git repositories into the AIOS/Taski projects table."
     )
-    parser.add_argument("--db", default=str(ROOT / "data" / "aios.db"))
+    parser.add_argument(
+        "--db", default=os.environ.get("AIOS_DB", str(ROOT / "data" / "aios.db"))
+    )
     parser.add_argument("--root", default=str(Path.home() / "projects"))
     args = parser.parse_args()
 
-    conn = sqlite3.connect(args.db)
+    conn = connect_storage(args.db)
     try:
         results = sync_git_projects(conn, Path(args.root))
         conn.commit()

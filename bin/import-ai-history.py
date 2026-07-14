@@ -5,14 +5,19 @@ AIOS: import-ai-history — CLI entry point.
 
 import argparse
 import json
+import os
 import sqlite3
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+if str(ROOT / "bin") not in sys.path:
+    sys.path.insert(0, str(ROOT / "bin"))
 
-from import_ai_history import (
+from import_ai_history import (  # noqa: E402
     load_claude_code_export,
     load_codex_export,
     make_file_suffix,
@@ -23,7 +28,9 @@ from import_ai_history import (
     render_markdown,
 )
 
-DB = Path.home() / "AIOS" / "data" / "aios.db"
+from services.storage import connect as connect_storage  # noqa: E402
+
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))).expanduser()
 READY_DIR = Path.home() / "AIOS" / "staging" / "ai-history" / "ready"
 
 
@@ -168,7 +175,7 @@ def main() -> None:
         print(f"ERROR: failed to read export: {exc}", file=sys.stderr)
         sys.exit(1)
 
-    conn = sqlite3.connect(str(DB))
+    conn = connect_storage(DB)
     existing_ids = get_existing_ids(conn)
 
     total = 0

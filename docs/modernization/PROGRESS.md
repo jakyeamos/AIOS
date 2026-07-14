@@ -27,6 +27,9 @@ Stale-session repair, prompt-library sync, and workflow-experiment queue/run
 utilities now use the same contract for their main-store connections.
 The session-metric recorder is write-routed, while session evaluation and lab
 reporting use read-only shared connections.
+AI-history import and project-inventory sync now use the shared write boundary
+and honor `AIOS_DB`; their source parsing and repository discovery remain
+unchanged.
 
 ## Completed
 
@@ -85,6 +88,8 @@ reporting use read-only shared connections.
 - Routed `record-metric.py`, `eval-session.py`, and `lab-report.py` through
   shared storage; reporting paths are explicitly read-only and all three now
   honor `AIOS_DB`.
+- Routed `import-ai-history.py` and `sync-project-inventory.py` through shared
+  storage, fixing their direct-script import paths and honoring `AIOS_DB`.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -135,6 +140,9 @@ reporting use read-only shared connections.
 - `.venv/bin/ruff check bin/record-metric.py bin/eval-session.py bin/lab-report.py` — passed.
 - `.venv/bin/basedpyright bin/record-metric.py bin/eval-session.py bin/lab-report.py` — passed (0 errors).
 - Disposable metrics/reporting integration — passed for metric write, session evaluation, and lab report read-only paths.
+- `.venv/bin/ruff check bin/import-ai-history.py bin/sync-project-inventory.py` — passed.
+- `.venv/bin/basedpyright bin/import-ai-history.py bin/sync-project-inventory.py` — passed (0 errors).
+- Disposable history/inventory integration — passed for one ChatGPT import and one discovered Git repository.
 - `pnpm --dir aios-ui lint:architecture` — passed (122 modules, 255 dependencies).
 - `pnpm quality:eval` — interrupted after the broad vulture scan expanded into
   historical shadow worktrees; the focused checks above are the relevant proof.
@@ -192,8 +200,9 @@ live migration work.
 - Migrate remaining lower-traffic Python adapters through the shared
   connection contract; the managed runtime, Codex ingestion, session CLI,
   provider canonical upserts, core utility scripts, and metrics/reporting
-  paths are now complete. Remove UI request-time DDL only after deterministic
-  UI and migration gates are accepted.
+  paths, history import, and inventory sync are now complete. Remove UI
+  request-time DDL only after deterministic UI and migration gates are
+  accepted.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.
