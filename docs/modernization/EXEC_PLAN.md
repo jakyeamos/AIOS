@@ -8,7 +8,8 @@ accepted in [ADR-005](ADR-005-subsystem-ownership-and-parallel-v2-strategy.md).
 
 ## How to use this plan
 
-This is the executable modernization sequence. It supplements the existing
+This is the executable modernization sequence: eight vertical milestones plus
+one explicit paired-effectiveness gate. It supplements the existing
 `.planning/ROADMAP.md`; it does not erase the broader feature roadmap. Each
 milestone is a vertical slice with a runnable boundary, named evidence, a
 rollback path, and a deletion ledger. The lead agent owns integration and
@@ -39,7 +40,10 @@ These decisions are already resolved and are not implementation-time blockers:
 - a pinned Playwright-compatible browser harness may be added when the first
   UI slice needs automated browser proof;
 - v1 remains read-only fallback only during the documented rollback window;
-  v1 and v2 never write the same logical fact independently.
+  v1 and v2 never write the same logical fact independently;
+- modernization acceptance includes a paired AIOS-effectiveness benchmark;
+  shadow worktrees provide isolation and trace evidence but are not themselves
+  evidence that AIOS outperforms a non-AIOS run.
 
 ## Global entry gates
 
@@ -56,6 +60,9 @@ Before Milestone 0 begins:
    treated as implementation proof.
 5. Create disposable database, seed, fixture, screenshot, and artifact paths;
    no production credentials or production data are allowed.
+6. Freeze the effectiveness benchmark corpus, acceptance criteria, metric
+   definitions, and protected baseline SHA before further modernization
+   changes. A moving `dev` branch is never used as the benchmark control.
 
 At every milestone boundary, the lead agent reports the exact commands,
 results, changed behavior, evidence paths, unresolved risks, and deletion
@@ -67,9 +74,9 @@ targets. A blocker-level failure pauses the next milestone.
 run, evidence, approval, and projection fixtures without changing application
 behavior.
 
-**Affected systems:** `docs/modernization/`, `tests/fixtures/`,
-`services/` contract tests, `aios-ui/` fixture consumers, `config/` registries,
-`.planning/ROADMAP.md`, and package/lockfile manifests.
+**Affected systems:** `docs/modernization/`, `docs/evals/`,
+`tests/fixtures/`, `services/` contract tests, `aios-ui/` fixture consumers,
+`config/` registries, `.planning/ROADMAP.md`, and package/lockfile manifests.
 
 **Dependencies:** ADR-001 through ADR-005; no live migration or UI redesign.
 
@@ -303,6 +310,56 @@ the slice and record the failed gate.
 required approvals, changed artifacts, unresolved deltas, and a next action or
 explicit no-follow-up state.
 
+## Milestone 5A — Measure paired AIOS effectiveness
+
+**Objective:** Establish whether the modernized AIOS operating loop produces
+measurable lift over a non-AIOS control before satellite promotion or v2
+cutover.
+
+**Affected systems:** `docs/evals/`, the benchmark task corpus and acceptance
+criteria, `services/eval_run_service.py`, `services/shadow_branch_runner.py`,
+benchmark orchestration/CLI, `eval_runs`, `eval_scores`,
+`shadow_branch_runs`, and comparison artifacts.
+
+**Dependencies:** Milestones 0–5. The benchmark corpus, metric definitions,
+and protected baseline SHA are defined at the global entry gate; paired
+execution begins only after the canonical route, packet, run, evidence,
+approval, and closeout contracts are executable.
+
+**Preserve / change:** Run the same task from the same starting SHA with the
+same model, effort, tools, budget, and acceptance criteria. The control runs
+without AIOS routing/context; the treatment runs with the full AIOS loop.
+Feature ablations may disable context packets, second brain, success criteria,
+subagents, model routing, personal corpus, or project truth. Worktrees are
+ephemeral isolation paths; reports and run identifiers are the durable output.
+
+**Proof:** For every selected task, persist paired control/treatment run IDs,
+start SHA, prompt and context hashes, model/tool settings, and contamination
+checks. Capture task-quality score, acceptance/test/lint/typecheck results,
+user corrections, token usage, tool calls, wall-clock time, cost when
+available, context loaded, model used, and safety failures. Produce a
+per-task and aggregate comparison report, include ablation scorecards for
+high-impact claims, and require independent or blinded quality review.
+
+**Migration / rollback:** Evaluation artifacts are append-only and use the
+canonical store. Temporary worktrees are deleted after evidence capture.
+Failed or incomplete pairs remain explicitly marked as insufficient evidence;
+they cannot be converted into a positive result or promotion decision.
+
+**Deletion targets:** Long-lived benchmark worktrees, unpaired shadow-only
+comparison paths, and duplicate metric serializers after the paired report
+and replay path are proven.
+
+**Failure modes:** Control and treatment start from different SHAs, model or
+tool settings drift, the baseline is dirty, only one side completes, quality
+scoring is unblinded or missing, contamination is detected, or a result has
+no durable evidence. Block the effectiveness gate and record the gap.
+
+**Completion criteria:** The selected benchmark corpus has complete paired
+results, no critical safety regression, a reviewable per-task/aggregate report,
+and an explicit promote, revise, or defer decision. EVAL-03, EVAL-04, and
+EVAL-06 are updated from evidence rather than implementation presence.
+
 ## Milestone 6 — Migrate contextual satellites behind the core loop
 
 **Objective:** Move contextual projections one consumer family at a time while
@@ -313,8 +370,10 @@ compiler/receipts, session intelligence, quality and success-criteria views,
 agent eval/harness, CTS, business memory, workflow learning, and their UI
 contextual drill-downs.
 
-**Dependencies:** Milestone 5; each satellite must satisfy the ownership and
-fixture evidence in ADR-005.
+**Dependencies:** Milestones 5 and 5A; each satellite must satisfy the
+ownership and fixture evidence in ADR-005. Satellite work may remain
+read-only or adapter-scoped while the effectiveness decision is pending, but
+no satellite promotion or v2 cutover may bypass Milestone 5A evidence.
 
 **Preserve / change:** Preserve useful local projections, redaction, raw-source
 immutability, CTS rebuildability, eval evidence, helper telemetry, and
@@ -352,8 +411,9 @@ data, security, UI, performance, and operational evidence passes.
 routes/components, dependency manifests, bootstrap/schema paths, CI artifacts,
 docs, deployment/runbooks, and project truth.
 
-**Dependencies:** Milestones 0–6; no unresolved P0/P1 findings; all ADR-004
-and ADR-002 gates green for a sustained acceptance run.
+**Dependencies:** Milestones 0–6 and the Milestone 5A effectiveness decision;
+no unresolved P0/P1 findings; all ADR-004 and ADR-002 gates green for a
+sustained acceptance run.
 
 **Preserve / change:** Preserve Git history, valid data, CLI/hooks, raw sources,
 approvals, run lineage, and a documented read-only rollback window. Change the
@@ -393,6 +453,7 @@ documented, and `.tracker/PROJECT_TRUTH.md` reflects the shipped state.
 | Peer-level UI destinations and hidden-scroll mobile nav | Milestone 3 browser/a11y proof |
 | Heuristic routing and duplicate packet/run/evidence shapes | Milestone 4 contract and resume proof |
 | Direct UI mutation and unenforced approval labels | Milestone 5 negative security tests |
+| Unpaired AIOS effectiveness claims and long-lived benchmark worktrees | Milestone 5A paired report and ephemeral-worktree cleanup |
 | Duplicate satellite projections and copied external package logic | Milestone 6 consumer-by-consumer proof |
 | Flags, shims, old routes, stale dependencies, and superseded docs | Milestone 7 cutover and rollback-window expiry |
 
@@ -402,7 +463,8 @@ Before declaring modernization complete, the lead agent must:
 
 1. Re-read `TARGET.md`, all ADRs, and this plan against the final diff.
 2. Run the complete quality, migration, browser, security, privacy,
-   accessibility, performance, and observability checks.
+   accessibility, performance, observability, and paired-effectiveness
+   checks.
 3. Search for stale flags, duplicate route/state contracts, direct UI DDL,
    sibling-path dependencies, disabled checks, skipped tests, TODO migration
    shims, and unused packages.
@@ -410,5 +472,5 @@ Before declaring modernization complete, the lead agent must:
 5. Run a fresh adversarial review that classifies findings P0–P3 and fixes all
    confirmed P0/P1 findings before cutover.
 6. Record the final backup, restore drill, rollback window, deletion ledger,
-   verification commands, screenshots, console/network artifacts, and known
-   deferred risks.
+   verification commands, screenshots, console/network artifacts, the paired
+   AIOS comparison report, and known deferred risks.

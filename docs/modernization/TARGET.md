@@ -224,6 +224,7 @@ acceptance bar, not a promise that every dimension reaches five immediately.
 | UI quality and accessibility | 1 | 4 | WCAG 2.2 AA-oriented browser, keyboard, semantic, contrast, and responsive proof |
 | Operability | 2 | 4 | replayable closeout, recovery drill, inspectable receipts, no hidden blockers |
 | Developer experience | 2 | 4 | one package posture, reproducible commands, clear setup and architecture docs |
+| AIOS effectiveness | — | measured | paired control/treatment runs from the same SHA, ablation scorecards, and no critical safety regression |
 
 ## Non-goals
 
