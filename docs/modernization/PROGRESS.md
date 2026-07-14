@@ -95,6 +95,9 @@ The first ADR-004 UI validation pass now has clean TypeScript, architecture,
 warning-baseline, native-module, and production-build evidence; the build has
 one remaining NFT tracing warning in the prompt filesystem adapter, and ESLint
 is still blocked by a stale local copy of the external anti-slop package.
+The loopback runtime smoke also passed: `/` and the source-backed
+`projects.list` tRPC route both returned HTTP 200 on a disposable dev server,
+with no request errors in the server log.
 
 ## Completed
 
@@ -342,8 +345,13 @@ is still blocked by a stale local copy of the external anti-slop package.
 - `pnpm --dir aios-ui lint:warning-baseline` — passed (0/71 warnings).
 - `pnpm --dir aios-ui build` — passed after local native rebuild; one NFT
   tracing warning remains in `server/routers/prompts.ts`.
+- `pnpm --dir aios-ui exec next dev --hostname 127.0.0.1 --port 3100` plus
+  local smoke requests — passed (`/` HTTP 200; `projects.list` tRPC HTTP 200;
+  source-backed project payload returned; server stopped cleanly).
 - `pnpm --dir aios-ui lint` — blocked before TypeScript by the stale local
   `eslint-plugin-anti-slop` copy missing `no-arbitrary-z-index.mjs`.
+- `pnpm --dir aios-ui lint:anti-slop:fixtures` — blocked by the same stale
+  local anti-slop package copy.
 - `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
