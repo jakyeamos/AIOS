@@ -18,8 +18,8 @@ converge on the same `AIOS_DB` override and baseline pragmas; UI-owned
 request-time DDL remains a known blocker rather than an implicit migration
 path.
 Issues, handoffs, the read-only query CLI, the statusline, and the high-traffic
-prompt-submit, precompact, and post-tool-use hooks now use the same
-storage connection contract as well.
+prompt-submit, precompact, post-tool-use, and session-stop hooks now use the
+same storage connection contract as well.
 
 ## Completed
 
@@ -56,6 +56,9 @@ storage connection contract as well.
 - Routed `hook-prompt-submit.py`, `hook-precompact.py`, and
   `hook-post-tool-use.py` through the shared storage connection, including the
   `AIOS_DB` override for precompact's previously fixed path.
+- Routed `hook-session-stop.py` through the shared storage connection and
+  repaired its direct-script repository import path; a disposable peer-trace
+  start/stop integration passed without touching live rows.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -80,6 +83,9 @@ storage connection contract as well.
 - `.venv/bin/pytest tests/test_hook_prompt_submit.py tests/test_hook_post_tool_use.py tests/test_hook_lifecycle.py -q` — passed (15 tests) after high-traffic hook adoption.
 - `.venv/bin/ruff check bin/hook-prompt-submit.py bin/hook-precompact.py bin/hook-post-tool-use.py` — passed.
 - `.venv/bin/basedpyright bin/hook-prompt-submit.py bin/hook-precompact.py bin/hook-post-tool-use.py` — passed (0 errors).
+- `.venv/bin/ruff check bin/hook-session-stop.py` — passed.
+- `.venv/bin/basedpyright bin/hook-session-stop.py` — passed (0 errors).
+- Disposable `hook-session-stop.py` peer-trace start/stop integration — passed.
 - `pnpm --dir aios-ui lint:architecture` — passed (122 modules, 255 dependencies).
 - `pnpm quality:eval` — interrupted after the broad vulture scan expanded into
   historical shadow worktrees; the focused checks above are the relevant proof.
@@ -136,8 +142,8 @@ live migration work.
 
 - Migrate remaining Python direct-connection adapters through the shared
   connection contract; the high-traffic prompt, compaction, and post-tool
-  hooks are now complete. Remove UI request-time DDL only after deterministic
-  UI and migration gates are accepted.
+  hooks and session-stop are now complete. Remove UI request-time DDL only
+  after deterministic UI and migration gates are accepted.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.

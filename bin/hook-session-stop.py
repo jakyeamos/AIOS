@@ -4,11 +4,16 @@ from __future__ import annotations
 import argparse
 import json
 import sqlite3
+import sys
 from pathlib import Path
 
-from services.peer_trace import end_peer_session, record_peer_trace
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from services.peer_trace import end_peer_session, record_peer_trace  # noqa: E402
+from services.storage import connect as connect_storage  # noqa: E402
+
 DEFAULT_POLICY_PATH = REPO_ROOT / "config" / "peer-eval" / "peer-trace-policy.json"
 
 
@@ -52,8 +57,7 @@ def main() -> int:
     parser.add_argument("--session-id", required=True)
     parser.add_argument("--final-status", default="completed")
     args = parser.parse_args()
-    conn = sqlite3.connect(args.db)
-    conn.row_factory = sqlite3.Row
+    conn = connect_storage(args.db)
     close_peer_trace_session(conn, session_id=args.session_id, final_status=args.final_status)
     conn.close()
     return 0
