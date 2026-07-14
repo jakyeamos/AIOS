@@ -10,6 +10,7 @@ the Personal-Corpus vault at Personal-Corpus/Notes/{folder}/{title}.md.
 import argparse
 import hashlib
 import html
+import os
 import re
 import sqlite3
 import subprocess
@@ -17,7 +18,15 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-from aios_paths import get_vault_root
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+if str(ROOT / "bin") not in sys.path:
+    sys.path.insert(0, str(ROOT / "bin"))
+
+from aios_paths import get_vault_root  # noqa: E402
+
+from services.storage import connect as connect_storage  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # HTML → plain text
@@ -242,7 +251,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Ingest Apple Notes into AIOS knowledge system.")
     parser.add_argument(
         "--db",
-        default=str(Path.home() / "AIOS" / "data" / "aios.db"),
+        default=os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db")),
         help="Path to aios.db",
     )
     parser.add_argument(
@@ -307,7 +316,7 @@ def main() -> None:
 
     aios_conn: sqlite3.Connection | None = None
     if not args.dry_run:
-        aios_conn = sqlite3.connect(str(aios_db))
+        aios_conn = connect_storage(aios_db)
         ensure_apple_notes_table(aios_conn)
 
     db_upserted = 0

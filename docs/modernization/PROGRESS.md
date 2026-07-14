@@ -30,6 +30,9 @@ reporting use read-only shared connections.
 AI-history import and project-inventory sync now use the shared write boundary
 and honor `AIOS_DB`; their source parsing and repository discovery remain
 unchanged.
+The iMessage and Apple Notes jobs now route only their AIOS writes through the
+shared boundary; source database reads continue through disposable/read-only
+provider paths.
 
 ## Completed
 
@@ -90,6 +93,9 @@ unchanged.
   honor `AIOS_DB`.
 - Routed `import-ai-history.py` and `sync-project-inventory.py` through shared
   storage, fixing their direct-script import paths and honoring `AIOS_DB`.
+- Routed the AIOS write connections in `ingest-imessage.py` and
+  `ingest-apple-notes.py` through shared storage, preserving their source
+  database readers and direct-script import paths.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -143,6 +149,9 @@ unchanged.
 - `.venv/bin/ruff check bin/import-ai-history.py bin/sync-project-inventory.py` — passed.
 - `.venv/bin/basedpyright bin/import-ai-history.py bin/sync-project-inventory.py` — passed (0 errors).
 - Disposable history/inventory integration — passed for one ChatGPT import and one discovered Git repository.
+- `.venv/bin/ruff check bin/ingest-imessage.py bin/ingest-apple-notes.py` — passed.
+- `.venv/bin/basedpyright bin/ingest-imessage.py bin/ingest-apple-notes.py` — passed (0 errors).
+- Apple-backed ingestion disposable write integration — passed for contact and note upserts with shared pragmas.
 - `pnpm --dir aios-ui lint:architecture` — passed (122 modules, 255 dependencies).
 - `pnpm quality:eval` — interrupted after the broad vulture scan expanded into
   historical shadow worktrees; the focused checks above are the relevant proof.
@@ -202,7 +211,7 @@ live migration work.
   provider canonical upserts, core utility scripts, and metrics/reporting
   paths, history import, and inventory sync are now complete. Remove UI
   request-time DDL only after deterministic UI and migration gates are
-  accepted.
+  accepted; source-backed Apple ingestion writes are now covered too.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.

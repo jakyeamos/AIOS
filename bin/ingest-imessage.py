@@ -8,6 +8,7 @@ per-contact markdown files to the Personal-Corpus vault.
 """
 
 import argparse
+import os
 import re
 import shutil
 import sqlite3
@@ -16,7 +17,15 @@ import tempfile
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from aios_paths import get_vault_root
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+if str(ROOT / "bin") not in sys.path:
+    sys.path.insert(0, str(ROOT / "bin"))
+
+from aios_paths import get_vault_root  # noqa: E402
+
+from services.storage import connect as connect_storage  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -289,7 +298,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--db",
-        default=str(Path.home() / "AIOS" / "data" / "aios.db"),
+        default=os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db")),
         help="Path to aios.db (default: ~/AIOS/data/aios.db)",
     )
     parser.add_argument(
@@ -365,7 +374,7 @@ def main() -> None:
     # Open AIOS DB
     aios_conn: sqlite3.Connection | None = None
     if not args.dry_run:
-        aios_conn = sqlite3.connect(str(aios_db))
+        aios_conn = connect_storage(aios_db)
         ensure_imessage_contacts_table(aios_conn)
 
     db_upserted = 0
