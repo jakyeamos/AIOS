@@ -1,6 +1,6 @@
 # AIOS V2 Modernization Progress
 
-**Status:** M5 gated review and closeout slice complete; M5A paired effectiveness remains
+**Status:** M5A paired-effectiveness benchmark complete with promotion deferred; M6 remains blocked
 **Updated:** 2026-07-14
 **Plan:** [EXEC_PLAN.md](EXEC_PLAN.md)
 
@@ -166,8 +166,15 @@ M5 evidence:
   `pnpm --dir aios-ui lint:architecture`, `pnpm --dir aios-ui build`, and
   `pnpm --dir aios-ui test:browser` — passed (2 browser tests).
 
-M5A is next: run the paired AIOS/non-AIOS effectiveness benchmark before
-satellite promotion or cutover.
+M5A is complete as a deferred evidence decision. The deterministic paired
+harness ran five control/treatment fixture pairs: AIOS scored 1.0000 versus
+0.5379 for the minimal control, a +0.4621 mean delta, with no AIOS fixture
+safety failure. This is fixture-contract evidence only: the baseline was
+dirty and the run lacks live model/tool/budget metadata, persisted paired eval
+ids, contamination proof, and blinded independent review. The complete
+decision packet is [M5A_EFFECTIVENESS_REPORT.md](../evals/M5A_EFFECTIVENESS_REPORT.md).
+Satellite promotion, cutover, and M6 remain blocked until clean real paired
+runs close those evidence gaps.
 
 ## Completed
 

@@ -51,7 +51,12 @@ Python-owned governed effect events and closeout reviews, blocks non-loopback
 or unredacted effects, requires explicit approval/rollback/evidence metadata,
 and downgrades incomplete closeout to follow-up instead of claiming success.
 The v2 UI mutation procedures remain read-only guards until they are routed
-through this owner.
+through this owner. M5A records deterministic paired fixture evidence (AIOS
+1.0000 versus control 0.5379, +0.4621 mean delta), but defers promotion because
+the baseline is dirty and the fixture path lacks live model/tool/budget
+metadata, persisted paired eval ids, contamination proof, and blinded
+independent review. M6 remains blocked until clean real paired runs are
+captured and reviewed.
 
 ## Implemented On 2026-07-10
 
