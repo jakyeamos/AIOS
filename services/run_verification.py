@@ -152,6 +152,8 @@ def verify_run(
         to_status = "completed"
     elif result == "fail":
         to_status = "failed_validation"
+    elif result == "needs_work" or not validation["allowed"]:
+        to_status = "partial"
     if to_status and to_status != from_status:
         _transition_run(
             conn,
@@ -163,6 +165,21 @@ def verify_run(
             summary=f"verify-run {result}: {len(selected_gates)} gate(s), "
             f"{len(blocking_issues)} blocking issue(s).",
             verifier_id=verifier_id,
+        )
+    if to_status:
+        _update_resume_snapshot(
+            conn,
+            run_id=run_id,
+            current_stage="closeout" if to_status == "completed" else "verification",
+            next_recommended_action=(
+                "Review verifier evidence and record the closeout."
+                if to_status == "completed"
+                else "Resolve verifier blockers and resume verification."
+            ),
+            verification_result=result,
+            verifier_id=verifier_id,
+            evidence_ref_count=len(evidence_refs),
+            blocking_issue_count=len(blocking_issues),
         )
 
     return {
@@ -321,4 +338,47 @@ def _transition_run(
             json.dumps({"verifier_id": verifier_id}),
             now,
         ),
+    )
+
+
+def _update_resume_snapshot(
+    conn: sqlite3.Connection,
+    *,
+    run_id: str,
+    current_stage: str,
+    next_recommended_action: str,
+    verification_result: str,
+    verifier_id: str,
+    evidence_ref_count: int,
+    blocking_issue_count: int,
+) -> None:
+    columns = {str(row[1]) for row in conn.execute("PRAGMA table_info(orchestration_runs)")}
+    if "resume_snapshot_json" not in columns:
+        return
+    row = conn.execute(
+        "SELECT resume_snapshot_json FROM orchestration_runs WHERE id = ? LIMIT 1",
+        (run_id,),
+    ).fetchone()
+    if row is None:
+        return
+    try:
+        snapshot = json.loads(str(row[0] or "{}"))
+    except json.JSONDecodeError:
+        snapshot = {}
+    if not isinstance(snapshot, dict):
+        snapshot = {}
+    snapshot.update(
+        {
+            "current_stage": current_stage,
+            "next_recommended_action": next_recommended_action,
+            "verification_result": verification_result,
+            "verifier_id": verifier_id,
+            "evidence_ref_count": evidence_ref_count,
+            "blocking_issue_count": blocking_issue_count,
+            "updated_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+    )
+    conn.execute(
+        "UPDATE orchestration_runs SET resume_snapshot_json = ? WHERE id = ?",
+        (json.dumps(snapshot), run_id),
     )

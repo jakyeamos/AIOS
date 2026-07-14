@@ -42,8 +42,12 @@ task-centred primary navigation with contextual satellites, preserves legacy
 session detail fallback, and exposes provenance, freshness, authority, next
 action, and explicit healthy/blocked/stale/empty states without emitting
 mutations. M2 and M3 browser, accessibility, network, console, architecture,
-lint, typecheck, anti-slop, context, and production-build gates pass. The next
-gated slice is Python-owned governed Start work → Verify mutation routing.
+lint, typecheck, anti-slop, context, and production-build gates pass. M4 now
+proves the Python-owned route → packet → run → invocation → verification
+envelope against foreign-key enforcement, including partial-state resume
+snapshots and source-backed verifier evidence. M5 is the next gated slice for
+approval, capability, egress, writeback, and closeout enforcement; the v2 UI
+remains read-only until then.
 
 ## Implemented On 2026-07-10
 

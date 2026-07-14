@@ -2047,6 +2047,7 @@ def _start_work_payload(
     explicit_session_id = session_id is not None
     linked_session_id = session_id if explicit_session_id else _current_session_id(logs_dir)
     session_cwd: str | None = None
+    session_project_id: str | None = None
     if linked_session_id and _table_exists(conn, "sessions"):
         session = conn.execute(
             "SELECT id, project_id, status, cwd FROM sessions WHERE id = ? LIMIT 1",
@@ -2067,6 +2068,7 @@ def _start_work_payload(
         if linked_session_id is None:
             session = None
         else:
+            session_project_id = str(session["project_id"]) if session["project_id"] else None
             session_cwd = str(session["cwd"]) if session["cwd"] else None
     if linked_session_id and _table_exists(conn, "sessions"):
         session = conn.execute(
@@ -2098,6 +2100,12 @@ def _start_work_payload(
         )
 
     project_id = route.project.selected_project_id
+    if session_project_id and project_id and session_project_id != project_id:
+        raise CLIError(
+            "session-project-mismatch",
+            f"Session {linked_session_id} belongs to project {session_project_id}, not routed project {project_id}.",
+            EXIT_USAGE,
+        )
     workflow_key = workflow_key or str(route.selected_workflow["workflow_key"])
     agent_key = agent_key or str(route.agent_recommendation["agent_key"])
     routed_backend_key = (
@@ -2190,7 +2198,7 @@ def _start_work_payload(
             route_id,
             route.status,
             json.dumps(route_payload),
-            invocation_id,
+            None,
             packet_id,
             json.dumps(
                 {
@@ -2295,6 +2303,14 @@ def _start_work_payload(
             now if linked_session_id else None,
             now,
         ),
+    )
+
+    # The canonical schema enforces orchestration_runs.active_invocation_id →
+    # orchestration_invocations.id. Create the run envelope first, then the
+    # invocation, and only link the FK once both rows exist.
+    conn.execute(
+        "UPDATE orchestration_runs SET active_invocation_id = ?, updated_at = ? WHERE id = ?",
+        (invocation_id, now, run_id),
     )
 
     if linked_session_id:

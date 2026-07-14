@@ -1,6 +1,6 @@
 # AIOS V2 Modernization Progress
 
-**Status:** Milestone 1 data/recovery gate complete; UI ownership follow-up remains
+**Status:** M4 governed Start work → Verify slice complete; M5 gated review remains
 **Updated:** 2026-07-14
 **Plan:** [EXEC_PLAN.md](EXEC_PLAN.md)
 
@@ -138,6 +138,18 @@ pass at all three viewports with zero mutation requests, console errors, bad
 same-origin responses, or horizontal overflow. Full UI lint/typecheck,
 architecture, warning-baseline, anti-slop, production build, and context
 validation pass; M4 remains the governed Start work → Verify mutation slice.
+
+M4 is now resolved at the Python-owned broker boundary. `start-work` creates
+the canonical run envelope with foreign-key-safe ordering: the run and packet
+are persisted first, the invocation is created second, and
+`active_invocation_id` is linked only after its target exists. A canonical
+`schema.sql` fixture with `PRAGMA foreign_keys=ON` now proves route → packet →
+run → invocation → events linkage, persisted partial-state resume snapshots,
+cross-project session blocking, and `verify_run` evidence/verifier completion
+without foreign-key violations. Ambiguous and unsupported routes remain
+blocked before durable creation. M5 is next for approval, capability, egress,
+writeback, and closeout enforcement; the v2 UI remains read-only until that
+gate is executable.
 
 ## Completed
 

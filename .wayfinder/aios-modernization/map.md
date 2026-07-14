@@ -35,6 +35,7 @@ created: 2026-07-10
 - [Write the V2 Target and Vertical Modernization Plan](tickets/006-write-v2-target-and-vertical-modernization-plan.md) - The accepted target and execution contract define one operator loop, one authority boundary, and eight gated vertical milestones from shared fixtures and canonical recovery through UI validation, governed closeout, satellites, cutover, adversarial review, and deletion.
 - [Close the M2 Browser Validation Frontier](tickets/008-close-m2-browser-validation-frontier.md) - Pinned Playwright now proves seeded routes, responsive layouts, console/network policy, and keyboard traversal; generated catalogs and static spawn arguments remove the NFT warning, so M3 is unblocked.
 - [Ship the Read-Only V2 Operator Shell](tickets/009-ship-read-only-v2-operator-shell.md) - Today, Start work, and canonical Current run now render from source-backed projections with task-centred navigation, explicit state/provenance contracts, and zero-mutation browser proof; M4 is next for Python-owned governed writes.
+- [Govern the Start Work Verify Slice](tickets/010-govern-start-work-verify-slice.md) - Python-owned start-work now creates a foreign-key-safe route/packet/run/invocation envelope, preserves partial-state resume evidence and project provenance, and completes source-backed verification; M5 is next for gated review and closeout.
 
 ## Fog
 

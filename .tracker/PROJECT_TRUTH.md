@@ -4,7 +4,7 @@ projectName: AIOS
 summary: Active local-first agent operating system with honest evidence verdicts, evidence-gated verify-run completion, durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption, review-gated session-intelligence tools, and progressive colocated context routing across AIOS and linked repos.
 healthScore: 85
 statusLabel: warning
-nextStep: Start M4's governed Start work → Verify slice; keep UI mutations gated behind the Python owner.
+nextStep: Start M5's gated review and closeout slice; keep UI mutations gated behind the Python owner.
 blockers: []
 lastUpdated: 2026-07-14
 tags: [infra, ai-os, hooks, automation]
@@ -61,6 +61,17 @@ healthy/blocked/stale/empty states are visible without UI writes. The M2 and
 M3 Playwright suites pass at all required viewports with zero mutation
 requests, console errors, bad same-origin responses, or horizontal overflow.
 M4 remains the Python-owned governed mutation boundary.
+
+Current-state amendment (2026-07-14): M4 now proves the Python-owned
+route → packet → run → invocation → verification envelope against the
+foreign-key-enforced canonical schema. `start-work` persists the run and
+packet before creating the invocation, then links `active_invocation_id` only
+after its target exists. The integration fixture records zero FK violations,
+preserves partial-state resume snapshots with verifier provenance, blocks
+cross-project session linkage, and completes `verify_run` with source-backed
+evidence and a verifier artifact. Ambiguous and unsupported routes still block
+before durable creation; M5 owns approval/capability/egress/writeback/
+closeout enforcement.
 
 _(4 older entries trimmed)_
 
@@ -123,6 +134,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-14: Fixed canonical start-work FK ordering, cross-project session linkage, and verification resume snapshots; added the M4 route → packet → run → invocation → verify/resume integration proof (`tests/test_m4_start_work.py`).
 - 2026-07-14: Shipped the read-only v2 Today → Start work → Current run shell with canonical projections, task-centred navigation, contextual disclosure, explicit state contracts, and zero-mutation browser proof (`a6adf99`).
 - 2026-07-14: Vendored anti-slop 0.4.0, removed UI request-time DDL in favor of the migration-ledger assertion, and passed ESLint/fixtures/TypeScript/architecture/build/runtime gates.
 - 2026-07-14: Added the pinned Playwright 1.61.1 browser contract, generated prompt/workflow catalogs, and static managed-runtime spawn arguments; browser and production-build M2 gates now pass without NFT warnings.
@@ -144,12 +156,12 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 ## Open Problems
 
 1. The live main-store archive migration now reports zero FK violations with an immutable pre/post backup and ledger entry; older 555/557 audit snapshots and distributed runtime DDL still need reconciliation/cleanup.
-2. V2 now intentionally excludes remote control, but current UI mutation endpoints still lack the required loopback, local-capability, approval-enforcement, and single-mutation-owner implementation; M4 owns this boundary.
-3. M2 and M3 static validation, seeded routes, responsive browser checks, console capture, same-origin network capture, keyboard traversal, and production build now pass. The read-only shell is complete; governed mutation routing and paired-effectiveness proof remain.
+2. V2 now intentionally excludes remote control, but current UI mutation endpoints still lack the required loopback, local-capability, approval-enforcement, and single-mutation-owner implementation; M5 owns this boundary.
+3. M2 and M3 UI validation is green, and M4 Python route/packet/run/verify proof is green. Approval, capability, egress, writeback, closeout, and paired-effectiveness proof remain.
    Milestone 0's fixture/replay contract, storage boundary, copied-store recovery proof, and approved live archive are complete.
 ## Next Concrete Steps
 
-1. Start M4's governed Start work → Verify slice through the Python mutation owner.
+1. Start M5's gated review and closeout slice through the Python mutation owner.
 2. Add loopback, capability, approval, and egress enforcement before enabling any UI mutation.
 3. Preserve paired-effectiveness and cutover gates for later milestones.
 
