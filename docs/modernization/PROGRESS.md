@@ -33,6 +33,8 @@ unchanged.
 The iMessage and Apple Notes jobs now route only their AIOS writes through the
 shared boundary; source database reads continue through disposable/read-only
 provider paths.
+The CLI doctor SQLite health probe now uses the same read-only connection
+contract rather than a one-off connection.
 
 ## Completed
 
@@ -96,6 +98,8 @@ provider paths.
 - Routed the AIOS write connections in `ingest-imessage.py` and
   `ingest-apple-notes.py` through shared storage, preserving their source
   database readers and direct-script import paths.
+- Routed the CLI doctor SQLite health probe through shared read-only storage;
+  the existing doctor/health release checks still pass.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -152,6 +156,9 @@ provider paths.
 - `.venv/bin/ruff check bin/ingest-imessage.py bin/ingest-apple-notes.py` — passed.
 - `.venv/bin/basedpyright bin/ingest-imessage.py bin/ingest-apple-notes.py` — passed (0 errors).
 - Apple-backed ingestion disposable write integration — passed for contact and note upserts with shared pragmas.
+- `PYTHONPATH=. .venv/bin/pytest tests/test_aios_cli.py -k 'doctor_json_reports_release_preflight or health_json_release_contract' -q` — passed (2 tests).
+- `.venv/bin/ruff check services/aios_cli.py` — passed.
+- `.venv/bin/basedpyright services/aios_cli.py` — passed.
 - `pnpm --dir aios-ui lint:architecture` — passed (122 modules, 255 dependencies).
 - `pnpm quality:eval` — interrupted after the broad vulture scan expanded into
   historical shadow worktrees; the focused checks above are the relevant proof.
@@ -211,7 +218,8 @@ live migration work.
   provider canonical upserts, core utility scripts, and metrics/reporting
   paths, history import, and inventory sync are now complete. Remove UI
   request-time DDL only after deterministic UI and migration gates are
-  accepted; source-backed Apple ingestion writes are now covered too.
+  accepted; source-backed Apple ingestion writes and the doctor probe are now
+  covered too.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.

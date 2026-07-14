@@ -5077,8 +5077,7 @@ def _doctor_sqlite_check(db_path: Path) -> dict[str, Any]:
             path=str(db_path),
         )
     try:
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
+        conn = connect_storage(db_path, read_only=True)
         try:
             conn.execute("SELECT 1").fetchone()
             required_tables = ("projects", "orchestration_runs", "briefing_packets")
