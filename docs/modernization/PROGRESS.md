@@ -78,6 +78,10 @@ the main-store migration gate is accepted.
 RTK execution and threshold tuning, GitHub-skill discovery, workflow synthesis,
 and workflow experiment control now use the shared storage boundary as well;
 analytics remain read-only and explicit `--db` paths are preserved.
+The Flask review surface, vault-lint checks, and lab-trigger runner now use the
+same storage boundary; vault and dry-run lab probes pass, while the review
+surface remains runtime-unverified because Flask is not installed in the
+repository environment.
 
 ## Completed
 
@@ -196,6 +200,11 @@ analytics remain read-only and explicit `--db` paths are preserved.
   `synthesize-workflows.py`, and `run-experiment.py` through shared storage;
   read-only analytics and explicit `--db` behavior were preserved, and a
   disposable RTK/discovery/synthesis/experiment integration passed.
+- Routed `review_app.py`, `vault-lint.py`, and `trigger-lab-experiment.py`
+  through shared storage, made their canonical paths honor `AIOS_DB`, and
+  preserved read-only vault checks plus dry-run lab behavior; a disposable
+  vault/lab integration passed. Flask runtime verification remains blocked by
+  the existing missing optional dependency.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -283,6 +292,12 @@ analytics remain read-only and explicit `--db` paths are preserved.
 - Disposable RTK/discovery/synthesis/experiment integration — passed (RTK
   event write, threshold dry-run, synthesis dry-run, experiment listing, and
   read-only discovery metrics path).
+- `.venv/bin/ruff check bin/review_app.py bin/vault-lint.py bin/trigger-lab-experiment.py` — passed.
+- `.venv/bin/basedpyright bin/review_app.py bin/vault-lint.py bin/trigger-lab-experiment.py` — passed (0 errors).
+- Disposable vault/lab integration — passed (read-only lint checks and
+  no-eligible-pattern lab dry-run).
+- `review_app.py` runtime probe — blocked because Flask is not installed in
+  the repository environment; no dependency was added in this slice.
 - `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
@@ -402,8 +417,8 @@ live migration work.
   bug-motif, handoff-learning, personal-pattern extraction, personal
   promotion, agent synthesis, domain-file projection, and document indexers
   plus rule-bundle registration, pipeline/lab schema migrations, RTK,
-  discovery, workflow synthesis, and workflow experiment adapters are now
-  covered too.
+  discovery, workflow synthesis, workflow experiment, review, vault-lint, and
+  lab-trigger adapters are now covered too.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.

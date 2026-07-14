@@ -16,14 +16,20 @@ Output: ~/AIOS/logs/vault-lint-latest.json
 import json
 import os
 import re
-import sqlite3
+import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from aios_paths import get_vault_root, get_vault_subpath
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from aios_paths import get_vault_root, get_vault_subpath  # noqa: E402
+
+from services.storage import connect as connect_storage  # noqa: E402
 
 VAULT = str(get_vault_root())
-DB = os.path.expanduser("~/AIOS/data/aios.db")
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))).expanduser()
 OUTPUT = os.path.expanduser("~/AIOS/logs/vault-lint-latest.json")
 
 PROJECTS_DIR = str(get_vault_subpath("03 Projects"))
@@ -119,7 +125,7 @@ def check_empty_batch_synthesis() -> list[dict]:
 def check_stale_patterns() -> list[dict]:
     issues = []
     try:
-        conn = sqlite3.connect(DB)
+        conn = connect_storage(DB, read_only=True)
         cutoff = (datetime.now(UTC) - timedelta(days=STALE_DAYS)).isoformat()
         cur = conn.execute(
             """
@@ -162,7 +168,7 @@ def check_orphan_handoffs() -> list[dict]:
     # Get active project names from DB
     active_names: set[str] = set()
     try:
-        conn = sqlite3.connect(DB)
+        conn = connect_storage(DB, read_only=True)
         cur = conn.execute("SELECT name FROM projects WHERE status = 'active'")
         active_names = {row[0].lower() for row in cur.fetchall()}
         conn.close()
@@ -203,7 +209,7 @@ def check_deferred_imports() -> list[dict]:
     """Warn when a large number of AI history imports remain deferred."""
     issues = []
     try:
-        conn = sqlite3.connect(DB)
+        conn = connect_storage(DB, read_only=True)
         cur = conn.execute(
             "SELECT source, COUNT(*) FROM ai_history_imports WHERE quality = 'deferred' GROUP BY source"
         )
@@ -233,7 +239,7 @@ def check_rules_missing_body() -> list[dict]:
     """Active rules (state='rule') that have no body text cannot inject useful context."""
     issues = []
     try:
-        conn = sqlite3.connect(DB)
+        conn = connect_storage(DB, read_only=True)
         cur = conn.execute(
             "SELECT id, title FROM patterns WHERE state = 'rule' AND (body IS NULL OR body = '')"
         )

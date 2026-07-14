@@ -6,19 +6,26 @@ Opens: http://localhost:5001
 """
 
 import os
-import sqlite3
+import sys
 import uuid
 import webbrowser
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
-from flask import (  # pyright: ignore[reportMissingImports]
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from flask import (  # noqa: E402  # pyright: ignore[reportMissingImports]
     Flask,
     jsonify,
     render_template_string,
     request,
 )
 
-DB = os.path.expanduser("~/AIOS/data/aios.db")
+from services.storage import connect as connect_storage  # noqa: E402
+
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))).expanduser()
 CONTRADICTION_LOG = os.path.expanduser("~/AIOS/logs/contradictions.log")
 PORT = 5001
 
@@ -37,9 +44,7 @@ app = Flask(__name__)
 
 
 def get_db():
-    conn = sqlite3.connect(DB)
-    conn.row_factory = sqlite3.Row
-    return conn
+    return connect_storage(DB)
 
 
 def utcnow() -> str:

@@ -33,6 +33,12 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from services.storage import connect as connect_storage  # noqa: E402
+
 
 def _load_rule_artifacts():
     spec = _ilu.spec_from_file_location(
@@ -50,7 +56,7 @@ _ra = _load_rule_artifacts()
 read_artifact = _ra.read_artifact
 append_lab_run = _ra.append_lab_run
 
-DB = Path.home() / "AIOS/data/aios.db"
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))).expanduser()
 LAB_DIR = Path.home() / "projects/claude-improvement-lab"
 APPLY_PATCH = LAB_DIR / "apply-patch.py"
 TASKS_CORE = LAB_DIR / "tasks/core"
@@ -524,8 +530,7 @@ def main():
             )
             sys.exit(1)
 
-    conn = sqlite3.connect(DB)
-    conn.row_factory = sqlite3.Row
+    conn = connect_storage(DB)
 
     patterns = _get_eligible_patterns(conn, args.pattern_id if not args.all else None)
 
