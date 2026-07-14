@@ -20,7 +20,7 @@ path.
 Issues, handoffs, the read-only query CLI, the statusline, and the high-traffic
 prompt-submit, precompact, post-tool-use, and session-stop hooks now use the
 same storage connection contract as well. The managed runtime's six main-store
-connection sites now use that contract too.
+connection sites and the Codex session-ingestion job now use that contract too.
 
 ## Completed
 
@@ -63,6 +63,9 @@ connection sites now use that contract too.
 - Routed all six `aios-managed-run.py` main-store connection sites through the
   shared storage contract; the managed-runtime handshake, TMCP shortcut,
   strategy-routing, and closeout-repair tests passed.
+- Routed `cron-ingest-codex.py` through the shared storage connection and made
+  its database path honor `AIOS_DB`; a disposable empty-rollout ingestion run
+  exercised the processed-file ledger without touching live rows.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -93,6 +96,10 @@ connection sites now use that contract too.
 - `PYTHONPATH=. .venv/bin/pytest tests/test_orchestration_runtime.py -k 'managed_runtime or managed_closeout' -q` — passed (5 tests).
 - `.venv/bin/ruff check bin/aios-managed-run.py` — passed.
 - `.venv/bin/basedpyright bin/aios-managed-run.py` — passed (0 errors).
+- `.venv/bin/pytest tests/test_meta_learning_session_ingest.py -q` — passed (3 tests).
+- `.venv/bin/ruff check bin/cron-ingest-codex.py` — passed.
+- `.venv/bin/basedpyright bin/cron-ingest-codex.py` — passed (0 errors).
+- Disposable `cron-ingest-codex.py` empty-rollout ingestion integration — passed.
 - `pnpm --dir aios-ui lint:architecture` — passed (122 modules, 255 dependencies).
 - `pnpm quality:eval` — interrupted after the broad vulture scan expanded into
   historical shadow worktrees; the focused checks above are the relevant proof.
@@ -147,10 +154,10 @@ live migration work.
 
 ## Remaining Milestone 1 work
 
-- Migrate remaining session-ingestion and lower-traffic Python adapters through
-  the shared connection contract; the managed runtime and high-traffic hooks
-  are now complete. Remove UI request-time DDL only after deterministic UI and
-  migration gates are accepted.
+- Migrate remaining session-provider and lower-traffic Python adapters through
+  the shared connection contract; the managed runtime, Codex ingestion, and
+  high-traffic hooks are now complete. Remove UI request-time DDL only after
+  deterministic UI and migration gates are accepted.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.

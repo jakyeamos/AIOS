@@ -12,6 +12,7 @@ Or hourly:    0 * * * * ...
 """
 
 import json
+import os
 import sqlite3
 import sys
 import uuid
@@ -23,8 +24,9 @@ sys.path.insert(0, str(Path(__file__).parent))
 import import_ai_history as ih  # noqa: E402
 
 from services.meta_learning_session_ingest import propose_session_meta_learning  # noqa: E402
+from services.storage import connect as connect_storage  # noqa: E402
 
-DB = Path.home() / "AIOS/data/aios.db"
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS/data/aios.db"))).expanduser()
 CODEX_SESSIONS = Path.home() / ".codex/sessions"
 LOG = Path.home() / "AIOS/logs/cron.log"
 STAGING_DIR = Path.home() / "AIOS/staging/ai-history/codex"
@@ -197,8 +199,7 @@ def main() -> None:
 
     _log(f"found {len(rollouts)} rollout file(s)")
 
-    conn = sqlite3.connect(DB)
-    conn.row_factory = sqlite3.Row
+    conn = connect_storage(DB)
 
     processed = _get_processed(conn)
     title_index = ih.load_codex_title_index(CODEX_SESSIONS)
