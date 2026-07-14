@@ -4,7 +4,7 @@ projectName: AIOS
 summary: Active local-first agent operating system with honest evidence verdicts, evidence-gated verify-run completion, durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption, review-gated session-intelligence tools, and progressive colocated context routing across AIOS and linked repos.
 healthScore: 85
 statusLabel: warning
-nextStep: Close the deferred M5A evidence gap with clean real control/treatment pairs; keep M6 blocked.
+nextStep: Run clean real control/treatment pairs through eval_pairs with independent review; keep M6 blocked.
 blockers: []
 lastUpdated: 2026-07-14
 tags: [infra, ai-os, hooks, automation]
@@ -49,6 +49,12 @@ delta) with no fixture safety failure, but defers promotion because the
 baseline is dirty and the fixture path lacks live model/tool/budget metadata,
 persisted paired eval ids, contamination proof, and blinded independent
 review. M6 remains blocked pending clean real paired runs.
+The follow-up `eval_pairs` contract now durably links control/treatment runs,
+protected start SHA, task/prompt/context hashes, parity metadata, scores,
+contamination and independent-review state, decisions, and append-only pair
+events. Its CLI create/finalize/list surface fails closed on promotion without
+complete evidence; this is infrastructure only and does not change the M5A
+defer decision.
 
 _(11 older entries trimmed)_
 
@@ -75,6 +81,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-14: Implemented the durable M5A `eval_pairs` contract with hash/parity validation, contamination and review gates, append-only pair events, CLI create/finalize/list commands, and 139 focused evaluation tests (`2eec354`).
 - 2026-07-14: Recorded M5A deterministic paired harness evidence (AIOS 1.0000 vs control 0.5379, +0.4621) and deferred promotion pending clean live paired runs and independent review (`078f310`, `docs/evals/M5A_EFFECTIVENESS_REPORT.md`).
 - 2026-07-14: Resolved M5 gated review/closeout with governed effect events, explicit capability/loopback/egress/redaction/rollback metadata, terminal writeback transitions, closeout downgrade gates, and fail-closed control-plane/remediation UI mutation procedures (`1ea29a0`).
 - 2026-07-14: Fixed canonical start-work FK ordering, cross-project session linkage, and verification resume snapshots; added the M4 route → packet → run → invocation → verify/resume integration proof (`tests/test_m4_start_work.py`, `e190ca5`).
@@ -97,11 +104,11 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 
 1. The live main-store archive migration now reports zero FK violations with an immutable pre/post backup and ledger entry; older 555/557 audit snapshots and distributed runtime DDL still need reconciliation/cleanup.
 2. V2 intentionally excludes remote control. Control-plane and remediation UI mutation endpoints now fail closed behind the Python owner; unrelated legacy UI write surfaces still require later consumer-by-consumer migration.
-3. M2 and M3 UI validation is green, M4 Python route/packet/run/verify proof is green, and M5 governed review/closeout proof is green. M5A fixture evidence is recorded but not promotion-ready; clean real paired effectiveness, satellite migration, cutover, and adversarial review remain blocked.
+3. M2 and M3 UI validation is green, M4 Python route/packet/run/verify proof is green, and M5 governed review/closeout proof is green. M5A fixture evidence and the durable pair contract are recorded but not promotion-ready; clean real paired effectiveness, satellite migration, cutover, and adversarial review remain blocked.
    Milestone 0's fixture/replay contract, storage boundary, copied-store recovery proof, and approved live archive are complete.
 ## Next Concrete Steps
 
-1. Close M5A's deferred evidence gap with a clean real AIOS/non-AIOS paired benchmark and independent review.
+1. Run a clean real AIOS/non-AIOS paired benchmark through `eval_pairs` and obtain independent review.
 2. Keep M6, satellite promotion, and v2 cutover blocked behind promotion-ready paired-effectiveness evidence and adversarial review.
 3. Migrate remaining legacy UI write surfaces only through the Python owner with focused proofs.
 
