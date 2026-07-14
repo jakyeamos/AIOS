@@ -42,6 +42,8 @@ honors `AIOS_DB`; its schema/data changes remain explicitly disposable until
 the main-store migration gate is accepted.
 Pattern extraction now uses the same shared write boundary while preserving its
 idempotent workflow extraction and rollback-on-`--dry-run` behavior.
+Pattern scoring now uses the same shared write boundary while preserving its
+promotion/demotion rules and rollback-on-`--dry-run` behavior.
 
 ## Completed
 
@@ -115,6 +117,8 @@ idempotent workflow extraction and rollback-on-`--dry-run` behavior.
 - Routed `extract-patterns.py` through shared storage and made its canonical
   database path honor `AIOS_DB`; workflow extraction tests and a disposable
   dry-run rollback smoke passed.
+- Routed `score-patterns.py` through shared storage and made its canonical
+  database path honor `AIOS_DB`; a disposable dry-run scoring smoke passed.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -134,6 +138,10 @@ idempotent workflow extraction and rollback-on-`--dry-run` behavior.
 - `uv run basedpyright bin/extract-patterns.py tests/test_extract_patterns.py` — passed (0 errors).
 - Disposable `extract-patterns.py --dry-run` integration — passed (workflow
   extraction rolled back with zero pattern writes).
+- `uv run ruff check bin/score-patterns.py` — passed.
+- `uv run basedpyright bin/score-patterns.py` — passed (0 errors).
+- Disposable `score-patterns.py --dry-run` integration — passed (one pattern
+  scored without persisted score/state writes).
 - `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
@@ -247,8 +255,8 @@ live migration work.
   paths, history import, and inventory sync are now complete. Remove UI
   request-time DDL only after deterministic UI and migration gates are
   accepted; source-backed Apple ingestion writes, the doctor probe, and the
-  daily pipeline pending-rule query, pattern schema migration, and pattern
-  extraction are now covered too.
+  daily pipeline pending-rule query, pattern schema migration, pattern
+  extraction, and pattern scoring are now covered too.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the
   command output as migration evidence.
