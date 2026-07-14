@@ -190,6 +190,16 @@ and independent review; the durable export is
 single-task live evidence slice, not a broad M6 promotion claim; the broader
 three-to-five-task benchmark and adversarial review remain required.
 
+The corrected three-task live audit corpus now has six clean runs, pair-specific
+contamination records, durable score ids, and independent review; its bounded
+`0.963` control versus `0.977` treatment mean (`+0.013`) remains deferred
+because the corpus is audit-only and provider telemetry is unavailable. The
+superseded single-task promote row is excluded from the corrected packet. While
+M6 remains blocked, the first adapter-scoped satellite slice routes the manual
+business-memory inbox through `capture.v1` for Markdown, JSON, HTML, and CSV;
+11 focused tests, Ruff, and BasedPyright pass, with no network, enrichment,
+vault write, schema migration, or promotion behavior added.
+
 ## Completed
 
 - Added `aios-v2-vertical-fixtures-v0.1` with healthy, empty, blocked, failed,

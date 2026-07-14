@@ -71,6 +71,14 @@ excluded from the corrected packet. M6 remains blocked pending the first named
 satellite's adapter, mutation-owner migration, rollback/deletion evidence, and
 full browser proof.
 
+The first adapter-scoped satellite slice now routes manual business-memory
+Markdown, JSON, HTML, and CSV sources through the deterministic `capture.v1`
+boundary. Existing `SourceRecord` ingestion remains the contract, while the
+immutable raw sidecar retains capture validation and provenance/removal
+metadata. No network, enrichment, vault write, schema migration, or promotion
+was added; focused adapter proof is recorded in
+`tests/test_business_capture_adapter.py`.
+
 ## Implemented On 2026-07-10
 
 Codex session-intelligence implementation can now target explicit candidate ids:

@@ -70,6 +70,13 @@ records, CLI, fixtures, and focused tests. The boundary performs no network
 fetches, enrichment, or vault writes; downstream writeback remains governed.
 Focused proof passed four tests, Ruff, and BasedPyright.
 
+Current-state amendment (2026-07-14): The manual business-memory adapter now
+routes Markdown, JSON, HTML, and CSV inbox files through `capture.v1` while
+retaining the existing `SourceRecord` and Python-owned ingest path. Immutable
+raw sidecars retain capture validation and provenance/removal metadata. No
+network, enrichment, vault write, schema migration, or promotion behavior was
+added; 11 focused tests, Ruff, and BasedPyright passed (`625056d`).
+
 _(11 older entries trimmed)_
 
 AIOS now has a read-only workflow router preview surface: `aios route "objective"` resolves the registered project, governed workflow, agent, backend, prompt family, candidate alternatives, and a ready-to-run `aios start-work ...` command without creating orchestration runs, packets, invocations, or sessions. `~/AIOS/bin/route` is a convenience wrapper around the same command.
@@ -95,6 +102,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-14: Routed the manual business-memory adapter through `capture.v1` for Markdown, JSON, HTML, and CSV, retaining the SourceRecord/raw-sidecar contract; 11 focused tests, Ruff, and BasedPyright passed (`625056d`).
 - 2026-07-14: Added the `capture.v1` source-normalization boundary with pinned schema, deterministic adapters, provenance/removal records, CLI, fixtures, and focused proof; no network, enrichment, or vault writes (`b408ad5`).
 - 2026-07-14: Closed the corrected three-task live audit benchmark: six clean runs, three pair-specific contamination records, six score IDs, independent review, and a bounded +0.013 treatment delta; M6 remains deferred (`docs/evals/M6_LIVE_BENCHMARK_REPORT.md`).
 - 2026-07-14: Closed the eval-pair report-path contract gap with schema migration compatibility, CLI flags, round-trip tests, and 107 focused tests passing (`10c992a`).
@@ -127,7 +135,7 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 ## Next Concrete Steps
 
 1. Exclude the superseded single-task pair from downstream consumers and keep the corrected three-task evidence packet as the current bounded benchmark record.
-2. Keep M6, satellite promotion, and v2 cutover blocked while completing the first named satellite's adapter, mutation-owner migration, rollback/deletion ledger, and full browser proof.
+2. Keep M6, satellite promotion, and v2 cutover blocked while completing the first named satellite's Python-owner mutation migration, rollback/deletion ledger, and full browser proof.
 3. Migrate remaining legacy UI write surfaces only through the Python owner with focused proofs.
 
 ## Risks / Blockers
