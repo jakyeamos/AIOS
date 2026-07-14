@@ -19,13 +19,21 @@ Usage:
 """
 
 import argparse
+import os
 import re
 import sqlite3
+import sys
 import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-DB = Path.home() / "AIOS/data/aios.db"
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from services.storage import connect as connect_storage  # noqa: E402
+
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))).expanduser()
 
 DEFAULT_DAYS = 30
 
@@ -235,8 +243,7 @@ def main() -> None:
 
     cutoff = (datetime.now(UTC) - timedelta(days=args.days)).isoformat()
 
-    conn = sqlite3.connect(DB)
-    conn.row_factory = sqlite3.Row
+    conn = connect_storage(DB)
 
     total: dict[str, int] = {k: 0 for k, _ in SIGNAL_MAP}
 
