@@ -42,6 +42,9 @@ and `AIOS_DB` override; their schema/data changes remain disposable until the
 main-store migration gate is accepted. RTK execution and tuning, GitHub-skill
 discovery, workflow synthesis, and workflow experiment control now use the
 same boundary while preserving read-only analytics and explicit `--db` paths.
+The Flask review surface, vault-lint checks, and lab-trigger runner now use the
+same boundary; Flask remains runtime-unverified because it is not installed in
+the repository environment.
 
 AIOS now also has a file-backed and SQLite-backed context-loop learning primitive: `services/context_loops.py`, `schema.sql`, and `python bin/aios.py context-loops ...` record inner-loop context/draft runs, review events, learning candidates, explicit approvals/rejections, approved lesson application, metrics, and a draft-only email pilot. Contract docs and examples live under `aios/context-loops/`.
 
@@ -76,6 +79,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-14: Routed review, vault-lint, and lab-trigger adapters through shared storage (`c36cf66`): passed Ruff/BasedPyright and disposable vault/lab proof; Flask runtime remains dependency-blocked.
 - 2026-07-14: Routed RTK, discovery, workflow synthesis, and experiment adapters through shared storage (`cfbab64`): passed Ruff/BasedPyright, 14 focused workflow tests, and disposable operational integration.
 - 2026-07-14: Routed pipeline and lab schema migrations through shared storage (`217f29c`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable state/schema/FK migration proof.
 - 2026-07-14: Routed rule-bundle registration through shared storage (`7c3d509`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable FK-enforced registration proof.
@@ -90,7 +94,6 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-07-13: Routed `purge-noise-patterns.py` through shared storage (`3d24aa3`): honored `AIOS_DB`, passed two tests plus Ruff/BasedPyright, and passed disposable dry-run proof.
 - 2026-07-13: Routed `review-observations.py` through shared storage (`88a5aaf`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed patched-input disposable state/event proof.
 - 2026-07-13: Routed pattern confirmation, approval, and contradiction tools through shared storage (`d9eac7c`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable lifecycle/event-ledger proof.
-- 2026-07-13: Routed `promote-patterns.py` through shared storage (`3a7bf72`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable dry-run staging proof.
 
 ## Open Problems
 
