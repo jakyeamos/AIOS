@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-import sqlite3
 import sys
 from pathlib import Path
 
@@ -12,6 +11,7 @@ sys.path.insert(0, str(ROOT / "bin"))
 
 from aios_paths import get_vault_root  # noqa: E402
 
+from services.storage import connect as connect_storage  # noqa: E402
 from services.workflow_synthesis import (  # noqa: E402
     approve_workflow_proposal,
     synthesize_workflow_proposals,
@@ -43,7 +43,7 @@ def main() -> int:
     parser.add_argument("--skills", default=str(ROOT / "config" / "workflows" / "skills.json"))
     args = parser.parse_args()
 
-    conn = sqlite3.connect(args.db)
+    conn = connect_storage(Path(args.db).expanduser())
     try:
         if args.approve:
             proposal = approve_workflow_proposal(

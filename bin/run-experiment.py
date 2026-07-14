@@ -24,14 +24,21 @@ import sqlite3
 import sys
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 
-DB = os.path.expanduser("~/AIOS/data/aios.db")
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from services.storage import connect as connect_storage  # noqa: E402
+
+DB = Path(os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))).expanduser()
 POLICY_PATH = os.path.expanduser("~/AIOS/config/retrieval-policy.json")
 POLICY_BACKUP = os.path.expanduser("~/AIOS/config/retrieval-policy.baseline.json")
 
 
 def get_conn() -> sqlite3.Connection:
-    return sqlite3.connect(DB)
+    return connect_storage(DB)
 
 
 def cmd_start(args: list[str]) -> None:

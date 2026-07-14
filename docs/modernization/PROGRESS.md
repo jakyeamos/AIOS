@@ -75,6 +75,9 @@ task generation, artifact updates, and bundle-status transitions.
 Pipeline and lab schema migrations now use the same shared write boundary and
 honor `AIOS_DB`; their schema/data changes remain explicitly disposable until
 the main-store migration gate is accepted.
+RTK execution and threshold tuning, GitHub-skill discovery, workflow synthesis,
+and workflow experiment control now use the shared storage boundary as well;
+analytics remain read-only and explicit `--db` paths are preserved.
 
 ## Completed
 
@@ -189,6 +192,10 @@ the main-store migration gate is accepted.
   storage and made their canonical database paths honor `AIOS_DB`; a
   disposable combined migration proof passed for state renaming, schema
   additions, lab tables, processed-file tracking, and foreign-key integrity.
+- Routed `rtk-run.py`, `rtk-tune-thresholds.py`, `discover-github-skills.py`,
+  `synthesize-workflows.py`, and `run-experiment.py` through shared storage;
+  read-only analytics and explicit `--db` behavior were preserved, and a
+  disposable RTK/discovery/synthesis/experiment integration passed.
 - Preserved user-owned guidance files and generated context artifacts outside
   the scoped implementation change.
 
@@ -270,6 +277,12 @@ the main-store migration gate is accepted.
 - `.venv/bin/basedpyright bin/migrate-pipeline.py bin/migrate-lab-integration.py` — passed (0 errors).
 - Disposable pipeline/lab migration integration — passed (state rename, added
   columns, migration tables, processed-file ledger, and foreign-key integrity).
+- `.venv/bin/ruff check bin/rtk-run.py bin/rtk-tune-thresholds.py bin/discover-github-skills.py bin/synthesize-workflows.py bin/run-experiment.py` — passed.
+- `.venv/bin/basedpyright bin/rtk-run.py bin/rtk-tune-thresholds.py bin/discover-github-skills.py bin/synthesize-workflows.py bin/run-experiment.py` — passed (0 errors).
+- `.venv/bin/pytest tests/test_workflow_synthesis.py tests/test_workflow_experiments.py -q` — passed (14 tests).
+- Disposable RTK/discovery/synthesis/experiment integration — passed (RTK
+  event write, threshold dry-run, synthesis dry-run, experiment listing, and
+  read-only discovery metrics path).
 - `uv run pytest tests/test_v2_vertical_fixtures.py -q` — passed (3 tests).
 - `pnpm --dir aios-ui exec tsc --noEmit` — passed.
 - `.venv/bin/ruff check tests/test_v2_vertical_fixtures.py` — passed.
@@ -388,7 +401,8 @@ live migration work.
   plus observation review, noise purging, business-memory CLI adapters, and
   bug-motif, handoff-learning, personal-pattern extraction, personal
   promotion, agent synthesis, domain-file projection, and document indexers
-  plus rule-bundle registration and pipeline/lab schema migrations are now
+  plus rule-bundle registration, pipeline/lab schema migrations, RTK,
+  discovery, workflow synthesis, and workflow experiment adapters are now
   covered too.
 - Reconcile the live preflight count drift (the current read-only check reports
   561 violations while older audit documents record 555/557) and retain the

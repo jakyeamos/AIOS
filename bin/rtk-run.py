@@ -4,7 +4,6 @@ from __future__ import annotations
 import argparse
 import json
 import shlex
-import sqlite3
 import sys
 from pathlib import Path
 
@@ -13,6 +12,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from services.rtk_integration import rtk_metrics_log, rtk_run  # noqa: E402
+from services.storage import connect as connect_storage  # noqa: E402
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -41,8 +41,7 @@ def main() -> None:
     conn = None
     db_path = Path(args.db).expanduser()
     if db_path.exists():
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
+        conn = connect_storage(db_path)
 
     if args.metrics:
         if conn is None:

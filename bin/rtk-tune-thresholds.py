@@ -33,6 +33,11 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from services.storage import connect as connect_storage  # noqa: E402
+
 DEFAULT_DB = ROOT / "data" / "aios.db"
 RULES_PATH = ROOT / "config" / "rtk" / "rules.json"
 
@@ -112,8 +117,7 @@ def load_events(db_path: Path) -> list[dict]:
     if not db_path.exists():
         print(f"ERROR: DB not found: {db_path}", file=sys.stderr)
         sys.exit(1)
-    conn = sqlite3.connect(str(db_path))
-    conn.row_factory = sqlite3.Row
+    conn = connect_storage(db_path, read_only=True)
     try:
         rows = conn.execute(
             """

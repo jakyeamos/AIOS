@@ -40,6 +40,11 @@ from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from services.storage import connect as connect_storage  # noqa: E402
+
 DEFAULT_DB = ROOT / "data" / "aios.db"
 REGISTRY_PATH = ROOT / "config" / "workflows" / "registry.json"
 SKILLS_PATH = ROOT / "config" / "workflows" / "skills.json"
@@ -195,7 +200,7 @@ def load_stage_metrics(db_path: Path, workflow_key: str) -> dict[str, float]:
     """Return {metric_name: avg_value} for this workflow from workflow_metrics."""
     if not db_path.exists():
         return {}
-    conn = sqlite3.connect(str(db_path))
+    conn = connect_storage(db_path, read_only=True)
     try:
         rows = conn.execute(
             """
@@ -556,7 +561,7 @@ def main() -> None:
         if not db_path.exists():
             print(f"ERROR: DB not found: {db_path}", file=sys.stderr)
             sys.exit(1)
-        db_conn = sqlite3.connect(str(db_path))
+        db_conn = connect_storage(db_path)
         ensure_table(db_conn)
 
     total = 0
