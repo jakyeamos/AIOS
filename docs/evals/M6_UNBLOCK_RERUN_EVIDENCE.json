@@ -1,0 +1,556 @@
+{
+  "decision": "defer",
+  "ledger_db": "/private/tmp/aios-m6-promotion-rerun-ledger-20260715-v2.db",
+  "limitations": [
+    "provider cost telemetry unavailable",
+    "scores intentionally omitted pending independent review"
+  ],
+  "pairs": [
+    {
+      "control_run_id": "eval-run-1540b69d-0213-479f-abb8-bf5273a7b45a",
+      "pair": {
+        "contamination_evidence": {
+          "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "receipt_identity_verified": true,
+          "root_worktree_untouched": true,
+          "status": "passed"
+        },
+        "contamination_status": "passed",
+        "context_hash": "a8f9a7465cc67ccfaa9879e612e580a384da2bcdeafdd739cd7999b71d60d405",
+        "control_run_id": "eval-run-1540b69d-0213-479f-abb8-bf5273a7b45a",
+        "control_score": null,
+        "created_at": "2026-07-15T18:19:39.430036+00:00",
+        "decision": "defer",
+        "delta": null,
+        "events": [
+          {
+            "created_at": "2026-07-15T18:19:39.430315+00:00",
+            "event_type": "created",
+            "id": "eval-pair-event-ab9d1e7c-19c5-48c0-b4ff-a394dd7fe956",
+            "pair_id": "eval-pair-599598aa-3bb0-4b4c-9b77-f1ea2d8cfca8",
+            "payload": {
+              "control_run_id": "eval-run-1540b69d-0213-479f-abb8-bf5273a7b45a",
+              "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+              "treatment_run_id": "eval-run-b918bbcf-6a80-459f-97f7-0a4c61f52ce8"
+            }
+          },
+          {
+            "created_at": "2026-07-15T18:19:39.431446+00:00",
+            "event_type": "finalized",
+            "id": "eval-pair-event-de24190d-dc9c-4ed2-a4b2-1b464bcfe953",
+            "pair_id": "eval-pair-599598aa-3bb0-4b4c-9b77-f1ea2d8cfca8",
+            "payload": {
+              "contamination_status": "passed",
+              "control_score": null,
+              "decision": "defer",
+              "delta": null,
+              "independent_review_status": "pending",
+              "treatment_score": null
+            }
+          }
+        ],
+        "finalized_at": "2026-07-15T18:19:39.431204+00:00",
+        "id": "eval-pair-599598aa-3bb0-4b4c-9b77-f1ea2d8cfca8",
+        "independent_review_ref": null,
+        "independent_review_status": "pending",
+        "limitations": [
+          "provider cost telemetry unavailable",
+          "quantitative scores intentionally omitted pending independent review",
+          "promotion remains deferred until review and score evidence are complete"
+        ],
+        "parity_metadata": {
+          "budget": {
+            "seconds": 900,
+            "tokens": 20000
+          },
+          "control_receipt": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/receipts/b2-control.json",
+          "control_receipt_sha256": "b0bc8bdbfd7fdd9bd7c0fe8af9044327923b03711be37d51a875eb9a4381f13f",
+          "effort": "high",
+          "harness": "codex_exec_jsonl_v2",
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "high",
+          "tools": [
+            "shell",
+            "rg",
+            "sed",
+            "git",
+            "python3",
+            "pnpm",
+            "pytest",
+            "playwright"
+          ],
+          "treatment_packet_id": "m6-owner-migrations-v1",
+          "treatment_packet_sha256": "dcb106c9050566272972f90d54105f11be37065911bc1ce1c2a73e164390e60e",
+          "treatment_receipt": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/receipts/b2-treatment.json",
+          "treatment_receipt_sha256": "290223644bf478703317aa6761efb9ec6c6eb8fe947fe295e67720f0b8be27a7"
+        },
+        "prompt_hash": "66a522debf9e8ca52061b8f7eb97b8b8e2efa2975ffd8be58636143a54ced94e",
+        "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+        "report_path": "docs/evals/M6_UNBLOCK_RERUN_REPORT.md",
+        "status": "insufficient_evidence",
+        "superseded_at": null,
+        "superseded_reason": null,
+        "task_hash": "a8dbd90fc6df76b025edaddc5a56209f820a2d32e65ceb8d8032e7e91f6eef9c",
+        "task_id": "eval-task-50626333-09c3-4a71-a6f7-b10d6895472f",
+        "treatment_run_id": "eval-run-b918bbcf-6a80-459f-97f7-0a4c61f52ce8",
+        "treatment_score": null
+      },
+      "pair_id": "eval-pair-599598aa-3bb0-4b4c-9b77-f1ea2d8cfca8",
+      "receipts": {
+        "control": {
+          "budget": {
+            "seconds": 900,
+            "tokens": 20000
+          },
+          "clean_status_before": "",
+          "condition": "baseline_repo_only",
+          "context_manifest_hash": "a8f9a7465cc67ccfaa9879e612e580a384da2bcdeafdd739cd7999b71d60d405",
+          "context_manifest_sha256": "a8f9a7465cc67ccfaa9879e612e580a384da2bcdeafdd739cd7999b71d60d405",
+          "context_profile": "peer_repo_only",
+          "created_at_utc": "2026-07-15T17:44:05.004496+00:00",
+          "events_path": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/b2-control-events.jsonl",
+          "expected_dependency_mounts": [
+            ".venv",
+            "aios-ui/node_modules"
+          ],
+          "final_path": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/b2-control-final.md",
+          "harness": "codex_exec_jsonl_v2",
+          "launch_command_argv": [
+            "codex",
+            "exec",
+            "--json",
+            "--model",
+            "gpt-5.6-luna",
+            "-c",
+            "model_reasoning_effort=high",
+            "-s",
+            "workspace-write",
+            "-C",
+            "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/b-control",
+            "-o",
+            "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/b2-control-final.md",
+            "-"
+          ],
+          "model": "gpt-5.6-luna",
+          "packet_id": null,
+          "packet_sha256": null,
+          "pair_prompt_hash": "66a522debf9e8ca52061b8f7eb97b8b8e2efa2975ffd8be58636143a54ced94e",
+          "prompt_hash": "2062684d81c6f7568f9fb2c30457ab917e29fdb8aeff6746b9077600f18a42a9",
+          "prompt_sha256": "2062684d81c6f7568f9fb2c30457ab917e29fdb8aeff6746b9077600f18a42a9",
+          "prompt_snapshot_path": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/prompts/task-b-control.md",
+          "prompt_source_path": "/Users/jakyeamos/projects/AIOS/.aios/m6-unblock-ledger/benchmark/m6-promotion-prompts/task-b-rerun-control.md",
+          "protected_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "reasoning_effort": "high",
+          "receipt_id": "m6-b-rerun-control",
+          "receipt_sha256": "b0bc8bdbfd7fdd9bd7c0fe8af9044327923b03711be37d51a875eb9a4381f13f",
+          "sandbox": "workspace-write",
+          "schema": "aios-m6-b-pre-run-receipt-v1",
+          "stderr_path": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/b2-control-stderr.log",
+          "task_hash": "a8dbd90fc6df76b025edaddc5a56209f820a2d32e65ceb8d8032e7e91f6eef9c",
+          "task_slug": "task-b-shadow-approval-owner",
+          "tools": [
+            "shell",
+            "rg",
+            "sed",
+            "git",
+            "python3",
+            "pnpm",
+            "pytest",
+            "playwright"
+          ],
+          "treatment_context_files": [
+            {
+              "byte_count": 12048,
+              "path": "docs/modernization/ADR-002-canonical-state-and-migration-authority.md",
+              "sha256": "19b728fb8c4d74f5b13f5dd369e0b176d6533bdc4cb8ec78770a17e7ed8a8aa3"
+            },
+            {
+              "byte_count": 13300,
+              "path": "docs/modernization/ADR-005-subsystem-ownership-and-parallel-v2-strategy.md",
+              "sha256": "0a185fe9dfaa5404691a94a3541e61824f314ef4c094cb4b8c5d3aa405885f68"
+            },
+            {
+              "byte_count": 46338,
+              "path": "docs/modernization/PROGRESS.md",
+              "sha256": "d98e4264fe979155043ce76dc5da4887a96d71c9ce723bf843e1895385353149"
+            },
+            {
+              "byte_count": 20004,
+              "path": ".tracker/PROJECT_TRUTH.md",
+              "sha256": "3c174176c641457a96ab7cad9d1d102558678d053dcd80e4f6671a356f5c2894"
+            },
+            {
+              "byte_count": 2436,
+              "path": ".wayfinder/aios-modernization/tickets/019-migrate-standards-backfill-write-owner.md",
+              "sha256": "6a611fc22857b60443870979c1a04276bcf84e288f2db132f10a55f001bea644"
+            },
+            {
+              "byte_count": 2459,
+              "path": ".wayfinder/aios-modernization/tickets/020-migrate-project-component-settings-owner.md",
+              "sha256": "3757fe6f2c406493db5bb0ab73ada0512418f1513ccdf9631f71d7f4f46937e1"
+            },
+            {
+              "byte_count": 1476,
+              "path": ".wayfinder/aios-modernization/tickets/021-migrate-automation-trigger-owner.md",
+              "sha256": "4c0b59264425d226553aac5d663461b6a269aff8a47c57fa36f52f1dabdf2f73"
+            },
+            {
+              "byte_count": 1640,
+              "path": ".wayfinder/aios-modernization/tickets/022-migrate-pattern-approval-owner.md",
+              "sha256": "b1037064f33669b3e7af861d00e247d12054815e30c896ae11014ab394f18295"
+            }
+          ],
+          "worktree_head_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "worktree_path": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/b-control"
+        },
+        "treatment": {
+          "budget": {
+            "seconds": 900,
+            "tokens": 20000
+          },
+          "clean_status_before": "",
+          "condition": "aios_portable_context_packet",
+          "context_manifest_hash": "a8f9a7465cc67ccfaa9879e612e580a384da2bcdeafdd739cd7999b71d60d405",
+          "context_manifest_sha256": "a8f9a7465cc67ccfaa9879e612e580a384da2bcdeafdd739cd7999b71d60d405",
+          "context_profile": "peer_portable_context_packet",
+          "created_at_utc": "2026-07-15T17:44:05.004496+00:00",
+          "events_path": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/b2-treatment-events.jsonl",
+          "expected_dependency_mounts": [
+            ".venv",
+            "aios-ui/node_modules"
+          ],
+          "final_path": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/b2-treatment-final.md",
+          "harness": "codex_exec_jsonl_v2",
+          "launch_command_argv": [
+            "codex",
+            "exec",
+            "--json",
+            "--model",
+            "gpt-5.6-luna",
+            "-c",
+            "model_reasoning_effort=high",
+            "-s",
+            "workspace-write",
+            "-C",
+            "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/b-treatment",
+            "-o",
+            "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/b2-treatment-final.md",
+            "-"
+          ],
+          "model": "gpt-5.6-luna",
+          "packet_id": "m6-owner-migrations-v1",
+          "packet_sha256": "dcb106c9050566272972f90d54105f11be37065911bc1ce1c2a73e164390e60e",
+          "pair_prompt_hash": "66a522debf9e8ca52061b8f7eb97b8b8e2efa2975ffd8be58636143a54ced94e",
+          "prompt_hash": "606eff5b0fb28af6b9982b46ebf8349099617c9227d94ba620316cd213fc3979",
+          "prompt_sha256": "606eff5b0fb28af6b9982b46ebf8349099617c9227d94ba620316cd213fc3979",
+          "prompt_snapshot_path": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/prompts/task-b-treatment.md",
+          "prompt_source_path": "/Users/jakyeamos/projects/AIOS/.aios/m6-unblock-ledger/benchmark/m6-promotion-prompts/task-b-rerun-treatment.md",
+          "protected_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "reasoning_effort": "high",
+          "receipt_id": "m6-b-rerun-treatment",
+          "receipt_sha256": "290223644bf478703317aa6761efb9ec6c6eb8fe947fe295e67720f0b8be27a7",
+          "sandbox": "workspace-write",
+          "schema": "aios-m6-b-pre-run-receipt-v1",
+          "stderr_path": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/b2-treatment-stderr.log",
+          "task_hash": "a8dbd90fc6df76b025edaddc5a56209f820a2d32e65ceb8d8032e7e91f6eef9c",
+          "task_slug": "task-b-shadow-approval-owner",
+          "tools": [
+            "shell",
+            "rg",
+            "sed",
+            "git",
+            "python3",
+            "pnpm",
+            "pytest",
+            "playwright"
+          ],
+          "treatment_context_files": [
+            {
+              "byte_count": 12048,
+              "path": "docs/modernization/ADR-002-canonical-state-and-migration-authority.md",
+              "sha256": "19b728fb8c4d74f5b13f5dd369e0b176d6533bdc4cb8ec78770a17e7ed8a8aa3"
+            },
+            {
+              "byte_count": 13300,
+              "path": "docs/modernization/ADR-005-subsystem-ownership-and-parallel-v2-strategy.md",
+              "sha256": "0a185fe9dfaa5404691a94a3541e61824f314ef4c094cb4b8c5d3aa405885f68"
+            },
+            {
+              "byte_count": 46338,
+              "path": "docs/modernization/PROGRESS.md",
+              "sha256": "d98e4264fe979155043ce76dc5da4887a96d71c9ce723bf843e1895385353149"
+            },
+            {
+              "byte_count": 20004,
+              "path": ".tracker/PROJECT_TRUTH.md",
+              "sha256": "3c174176c641457a96ab7cad9d1d102558678d053dcd80e4f6671a356f5c2894"
+            },
+            {
+              "byte_count": 2436,
+              "path": ".wayfinder/aios-modernization/tickets/019-migrate-standards-backfill-write-owner.md",
+              "sha256": "6a611fc22857b60443870979c1a04276bcf84e288f2db132f10a55f001bea644"
+            },
+            {
+              "byte_count": 2459,
+              "path": ".wayfinder/aios-modernization/tickets/020-migrate-project-component-settings-owner.md",
+              "sha256": "3757fe6f2c406493db5bb0ab73ada0512418f1513ccdf9631f71d7f4f46937e1"
+            },
+            {
+              "byte_count": 1476,
+              "path": ".wayfinder/aios-modernization/tickets/021-migrate-automation-trigger-owner.md",
+              "sha256": "4c0b59264425d226553aac5d663461b6a269aff8a47c57fa36f52f1dabdf2f73"
+            },
+            {
+              "byte_count": 1640,
+              "path": ".wayfinder/aios-modernization/tickets/022-migrate-pattern-approval-owner.md",
+              "sha256": "b1037064f33669b3e7af861d00e247d12054815e30c896ae11014ab394f18295"
+            }
+          ],
+          "worktree_head_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "worktree_path": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/b-treatment"
+        }
+      },
+      "task_id": "eval-task-50626333-09c3-4a71-a6f7-b10d6895472f",
+      "treatment_run_id": "eval-run-b918bbcf-6a80-459f-97f7-0a4c61f52ce8"
+    },
+    {
+      "control_run_id": "eval-run-f5ce9613-0008-4921-9a45-58f7894c8db0",
+      "pair": {
+        "contamination_evidence": {
+          "post_rerun_protected_browser_proof": "AIOS_UI_TEST_PORT=3222 pnpm --dir aios-ui test:browser -- m6-verify-review-closeout.spec.ts",
+          "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "receipt_identity_verified": true,
+          "root_worktree_untouched": true,
+          "status": "passed"
+        },
+        "contamination_status": "passed",
+        "context_hash": "ff745064fa9d8188ab3fbcac77c735ddecae7809fa46c6fadd0b7a91beccd7f9",
+        "control_run_id": "eval-run-f5ce9613-0008-4921-9a45-58f7894c8db0",
+        "control_score": null,
+        "created_at": "2026-07-15T18:19:39.446946+00:00",
+        "decision": "defer",
+        "delta": null,
+        "events": [
+          {
+            "created_at": "2026-07-15T18:19:39.447236+00:00",
+            "event_type": "created",
+            "id": "eval-pair-event-c99cce64-a2f3-4ac9-ad45-8215d7e807a1",
+            "pair_id": "eval-pair-a7e40f7d-7efd-4d22-9773-b281baa6521f",
+            "payload": {
+              "control_run_id": "eval-run-f5ce9613-0008-4921-9a45-58f7894c8db0",
+              "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+              "treatment_run_id": "eval-run-3a7e5bd2-b464-4ee0-820f-7b27a37d0e9c"
+            }
+          },
+          {
+            "created_at": "2026-07-15T18:19:39.448869+00:00",
+            "event_type": "finalized",
+            "id": "eval-pair-event-1aa0939b-ac3a-4ac4-a9ad-17ec3dcbd17c",
+            "pair_id": "eval-pair-a7e40f7d-7efd-4d22-9773-b281baa6521f",
+            "payload": {
+              "contamination_status": "passed",
+              "control_score": null,
+              "decision": "defer",
+              "delta": null,
+              "independent_review_status": "pending",
+              "treatment_score": null
+            }
+          }
+        ],
+        "finalized_at": "2026-07-15T18:19:39.448551+00:00",
+        "id": "eval-pair-a7e40f7d-7efd-4d22-9773-b281baa6521f",
+        "independent_review_ref": null,
+        "independent_review_status": "pending",
+        "limitations": [
+          "provider cost telemetry unavailable",
+          "quantitative scores intentionally omitted pending independent review",
+          "promotion remains deferred until review and score evidence are complete"
+        ],
+        "parity_metadata": {
+          "budget": {
+            "seconds": 900,
+            "tokens": 20000
+          },
+          "control_receipt": "/private/tmp/aios-m6-promotion-rerun-c-20260715/artifacts/receipts/c-rerun-control.json",
+          "control_receipt_sha256": "b47fe9fe9892b576218bb29193f9cb79813d5cd9a5fa36a4d78502d299899d30",
+          "effort": "high",
+          "harness": "codex_exec_jsonl_v2",
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "high",
+          "tools": [
+            "shell",
+            "rg",
+            "sed",
+            "git",
+            "python3",
+            "pnpm",
+            "pytest",
+            "playwright"
+          ],
+          "treatment_packet_id": "m6-browser-contract-rerun-v1",
+          "treatment_packet_sha256": "78de4073e69532c6410e352b70466e3d71b8a480de6697d5588a51e009ec5c71",
+          "treatment_receipt": "/private/tmp/aios-m6-promotion-rerun-c-20260715/artifacts/receipts/c-rerun-treatment.json",
+          "treatment_receipt_sha256": "d7dc67dce9ec3a0b172c695c45a50a87824bfa1b0322fb2414893a86e928f73b"
+        },
+        "prompt_hash": "b09b823a7f971ffe55a757266d1d8f98f0f51dfb493a26d7654b7a8697727fab",
+        "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+        "report_path": "docs/evals/M6_UNBLOCK_RERUN_REPORT.md",
+        "status": "insufficient_evidence",
+        "superseded_at": null,
+        "superseded_reason": null,
+        "task_hash": "f75fafae5bf3271a15a982f12331ed49d0bef9e7ceefe4cecbd1eae68144f80a",
+        "task_id": "eval-task-ac1c49b7-d80b-49c0-b61c-0a1fa43c1bda",
+        "treatment_run_id": "eval-run-3a7e5bd2-b464-4ee0-820f-7b27a37d0e9c",
+        "treatment_score": null
+      },
+      "pair_id": "eval-pair-a7e40f7d-7efd-4d22-9773-b281baa6521f",
+      "receipts": {
+        "control": {
+          "budget": {
+            "seconds": 900,
+            "tokens": 20000
+          },
+          "clean_status_before": "",
+          "condition": "baseline_repo_only",
+          "context_files": [
+            {
+              "path": "docs/modernization/ADR-003-task-centred-ia-and-accessible-design-system.md",
+              "sha256": "da99c3d2886fd192d137df4483c560e082668f49f3723b750e275944aa69a9d5"
+            },
+            {
+              "path": "docs/modernization/ADR-004-reproducible-ui-validation-contract.md",
+              "sha256": "b11683fcfce7d82abeba44994da857aea12a7bcb7c66495d50e34be9097ae5ad"
+            },
+            {
+              "path": "docs/modernization/PROGRESS.md",
+              "sha256": "d98e4264fe979155043ce76dc5da4887a96d71c9ce723bf843e1895385353149"
+            },
+            {
+              "path": ".tracker/PROJECT_TRUTH.md",
+              "sha256": "3c174176c641457a96ab7cad9d1d102558678d053dcd80e4f6671a356f5c2894"
+            },
+            {
+              "path": ".wayfinder/aios-modernization/tickets/019-migrate-standards-backfill-write-owner.md",
+              "sha256": "6a611fc22857b60443870979c1a04276bcf84e288f2db132f10a55f001bea644"
+            },
+            {
+              "path": ".wayfinder/aios-modernization/tickets/020-migrate-project-component-settings-owner.md",
+              "sha256": "3757fe6f2c406493db5bb0ab73ada0512418f1513ccdf9631f71d7f4f46937e1"
+            },
+            {
+              "path": ".wayfinder/aios-modernization/tickets/021-migrate-automation-trigger-owner.md",
+              "sha256": "4c0b59264425d226553aac5d663461b6a269aff8a47c57fa36f52f1dabdf2f73"
+            },
+            {
+              "path": ".wayfinder/aios-modernization/tickets/022-migrate-pattern-approval-owner.md",
+              "sha256": "b1037064f33669b3e7af861d00e247d12054815e30c896ae11014ab394f18295"
+            }
+          ],
+          "context_manifest_hash": "ff745064fa9d8188ab3fbcac77c735ddecae7809fa46c6fadd0b7a91beccd7f9",
+          "context_manifest_sha256": "ff745064fa9d8188ab3fbcac77c735ddecae7809fa46c6fadd0b7a91beccd7f9",
+          "context_profile": "peer_repo_only",
+          "created_at_utc": "2026-07-15T17:47:04.601268+00:00",
+          "events_path": "/private/tmp/aios-m6-promotion-rerun-c-20260715/artifacts/c-rerun-control-events.jsonl",
+          "final_path": "/private/tmp/aios-m6-promotion-rerun-c-20260715/artifacts/c-rerun-control-final.md",
+          "harness": "codex_exec_jsonl_v2",
+          "model": "gpt-5.6-luna",
+          "packet_id": null,
+          "packet_sha256": null,
+          "pair_prompt_hash": "b09b823a7f971ffe55a757266d1d8f98f0f51dfb493a26d7654b7a8697727fab",
+          "prompt_hash": "d05d61978b648688178366d03b2369fffcfab4e1a967dbc31fe111f68ce0e6a3",
+          "prompt_sha256": "d05d61978b648688178366d03b2369fffcfab4e1a967dbc31fe111f68ce0e6a3",
+          "prompt_snapshot_path": "/private/tmp/aios-m6-promotion-rerun-c-20260715/artifacts/prompts/task-c-control.md",
+          "prompt_source_path": "/Users/jakyeamos/projects/AIOS/.aios/m6-unblock-ledger/benchmark/m6-promotion-prompts/task-c-rerun-control.md",
+          "protected_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "reasoning_effort": "high",
+          "receipt_id": "m6-c-rerun-control",
+          "receipt_sha256": "b47fe9fe9892b576218bb29193f9cb79813d5cd9a5fa36a4d78502d299899d30",
+          "sandbox": "workspace-write",
+          "schema": "aios-m6-c-pre-run-receipt-v1",
+          "stderr_path": "/private/tmp/aios-m6-promotion-rerun-c-20260715/artifacts/c-rerun-control-stderr.log",
+          "task_hash": "f75fafae5bf3271a15a982f12331ed49d0bef9e7ceefe4cecbd1eae68144f80a",
+          "task_slug": "task-c-browser-contract-rerun",
+          "worktree_head_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "worktree_path": "/private/tmp/aios-m6-promotion-rerun-c-20260715/c-control"
+        },
+        "treatment": {
+          "budget": {
+            "seconds": 900,
+            "tokens": 20000
+          },
+          "clean_status_before": "",
+          "condition": "aios_portable_context_packet",
+          "context_files": [
+            {
+              "path": "docs/modernization/ADR-003-task-centred-ia-and-accessible-design-system.md",
+              "sha256": "da99c3d2886fd192d137df4483c560e082668f49f3723b750e275944aa69a9d5"
+            },
+            {
+              "path": "docs/modernization/ADR-004-reproducible-ui-validation-contract.md",
+              "sha256": "b11683fcfce7d82abeba44994da857aea12a7bcb7c66495d50e34be9097ae5ad"
+            },
+            {
+              "path": "docs/modernization/PROGRESS.md",
+              "sha256": "d98e4264fe979155043ce76dc5da4887a96d71c9ce723bf843e1895385353149"
+            },
+            {
+              "path": ".tracker/PROJECT_TRUTH.md",
+              "sha256": "3c174176c641457a96ab7cad9d1d102558678d053dcd80e4f6671a356f5c2894"
+            },
+            {
+              "path": ".wayfinder/aios-modernization/tickets/019-migrate-standards-backfill-write-owner.md",
+              "sha256": "6a611fc22857b60443870979c1a04276bcf84e288f2db132f10a55f001bea644"
+            },
+            {
+              "path": ".wayfinder/aios-modernization/tickets/020-migrate-project-component-settings-owner.md",
+              "sha256": "3757fe6f2c406493db5bb0ab73ada0512418f1513ccdf9631f71d7f4f46937e1"
+            },
+            {
+              "path": ".wayfinder/aios-modernization/tickets/021-migrate-automation-trigger-owner.md",
+              "sha256": "4c0b59264425d226553aac5d663461b6a269aff8a47c57fa36f52f1dabdf2f73"
+            },
+            {
+              "path": ".wayfinder/aios-modernization/tickets/022-migrate-pattern-approval-owner.md",
+              "sha256": "b1037064f33669b3e7af861d00e247d12054815e30c896ae11014ab394f18295"
+            }
+          ],
+          "context_manifest_hash": "ff745064fa9d8188ab3fbcac77c735ddecae7809fa46c6fadd0b7a91beccd7f9",
+          "context_manifest_sha256": "ff745064fa9d8188ab3fbcac77c735ddecae7809fa46c6fadd0b7a91beccd7f9",
+          "context_profile": "peer_portable_context_packet",
+          "created_at_utc": "2026-07-15T17:47:04.601268+00:00",
+          "events_path": "/private/tmp/aios-m6-promotion-rerun-c-20260715/artifacts/c-rerun-treatment-events.jsonl",
+          "final_path": "/private/tmp/aios-m6-promotion-rerun-c-20260715/artifacts/c-rerun-treatment-final.md",
+          "harness": "codex_exec_jsonl_v2",
+          "model": "gpt-5.6-luna",
+          "packet_id": "m6-browser-contract-rerun-v1",
+          "packet_sha256": "78de4073e69532c6410e352b70466e3d71b8a480de6697d5588a51e009ec5c71",
+          "pair_prompt_hash": "b09b823a7f971ffe55a757266d1d8f98f0f51dfb493a26d7654b7a8697727fab",
+          "prompt_hash": "e60da8398bc0b36fd5dbbe52ffd4dcb5d808e6773e45ea55bf7068961ba21f77",
+          "prompt_sha256": "e60da8398bc0b36fd5dbbe52ffd4dcb5d808e6773e45ea55bf7068961ba21f77",
+          "prompt_snapshot_path": "/private/tmp/aios-m6-promotion-rerun-c-20260715/artifacts/prompts/task-c-treatment.md",
+          "prompt_source_path": "/Users/jakyeamos/projects/AIOS/.aios/m6-unblock-ledger/benchmark/m6-promotion-prompts/task-c-rerun-treatment.md",
+          "protected_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "reasoning_effort": "high",
+          "receipt_id": "m6-c-rerun-treatment",
+          "receipt_sha256": "d7dc67dce9ec3a0b172c695c45a50a87824bfa1b0322fb2414893a86e928f73b",
+          "sandbox": "workspace-write",
+          "schema": "aios-m6-c-pre-run-receipt-v1",
+          "stderr_path": "/private/tmp/aios-m6-promotion-rerun-c-20260715/artifacts/c-rerun-treatment-stderr.log",
+          "task_hash": "f75fafae5bf3271a15a982f12331ed49d0bef9e7ceefe4cecbd1eae68144f80a",
+          "task_slug": "task-c-browser-contract-rerun",
+          "worktree_head_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "worktree_path": "/private/tmp/aios-m6-promotion-rerun-c-20260715/c-treatment"
+        }
+      },
+      "task_id": "eval-task-ac1c49b7-d80b-49c0-b61c-0a1fa43c1bda",
+      "treatment_run_id": "eval-run-3a7e5bd2-b464-4ee0-820f-7b27a37d0e9c"
+    }
+  ],
+  "promotion_ready": [],
+  "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+  "schema": "aios-m6-unblock-rerun-v1"
+}

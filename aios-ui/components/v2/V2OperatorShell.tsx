@@ -25,6 +25,9 @@ const stageIndexForRun = (run: OrchestrationRun): number => {
   if (run.status === "completed") {
     return 5;
   }
+  if (run.status === "canceled" || run.status === "superseded") {
+    return 4;
+  }
   return 3;
 };
 

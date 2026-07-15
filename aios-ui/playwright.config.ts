@@ -1,7 +1,10 @@
 import { defineConfig } from "@playwright/test";
+import path from "node:path";
 
 const port = Number(process.env.AIOS_UI_TEST_PORT ?? "3210");
 const baseURL = `http://127.0.0.1:${port}`;
+const repoRoot = path.resolve(process.cwd(), "..");
+const databasePath = path.join(repoRoot, "aios-ui", "test-results", "m6-verify-review-closeout.sqlite");
 
 export default defineConfig({
   testDir: "./tests/browser",
@@ -15,9 +18,14 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   webServer: {
-    command: `pnpm exec next dev --hostname 127.0.0.1 --port ${port}`,
+    command: `node --experimental-strip-types tests/browser/global-setup.ts --m6-seed && pnpm exec next dev --hostname 127.0.0.1 --port ${port}`,
     url: baseURL,
     reuseExistingServer: false,
     timeout: 120_000,
+    env: {
+      ...process.env,
+      AIOS_DB: databasePath,
+      AIOS_ROOT: repoRoot,
+    },
   },
 });
