@@ -43,6 +43,26 @@ and journal cleanup. Remediation file hashes:
 - `services/workflow_skill_mutations.py` — `4b02713d651962f56f931311aae6fe7b6052f75027624f3a1306f634790d5b87`
 - `tests/test_workflow_skill_mutations.py` — `1582e8699a5398c965a9c9f8e40b9ae84be0c947fa7b5a934f6134d0ad24def5`
 
+The A treatment UI gate was then rerun with the disposable dependency mount
+available:
+
+```text
+CI=true pnpm --dir aios-ui exec eslint .                         passed
+CI=true pnpm --dir aios-ui exec tsc --noEmit                    passed
+CI=true pnpm --dir aios-ui exec next build --webpack             passed
+CI=true pnpm --dir aios-ui exec playwright test --config=/private/tmp/aios-m6-a-browser.config.ts
+3 passed (26.9s)
+```
+
+Raw receipts:
+
+- webpack build: `/private/tmp/aios-m6-a-build-20260715.log` — `f989bca2e8883e3ad69ba65ac885d6b4348a0e4f3456b558e706def96fc2280b`
+- browser suite: `/private/tmp/aios-m6-a-browser-20260715.log` — `b73e779f675907c539cd1d75e102c80f403e8c4ddf54c11eda6daec4fbef4676`
+
+The canonical `next build`/Turbopack path still fails because the external
+`node_modules` symlink is outside the filesystem root; the supported webpack
+build and browser proof pass without changing the treatment source.
+
 ## B — shadow-candidate transition coverage
 
 Worktree: `/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/b-treatment`
@@ -111,6 +131,7 @@ post-fix adversarial review is recorded in
 `M6_UNBLOCK_REMEDIATION_ADVERSARIAL_REVIEW.md`. It found no P0 findings and
 verified the implementation remediations, but retained the authoritative
 provider score/cost gate, the immutable treatment-report provenance mismatch,
-the environment-blocked A UI proof, and the disposable A `.venv` boundary.
+the canonical Turbopack symlink limitation, and the disposable A `.venv`
+boundary.
 M6 promotion remains fail-closed until the promotion evidence gate passes and
 the remaining evidence risks are closed or explicitly accepted.

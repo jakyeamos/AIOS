@@ -4,9 +4,9 @@
 **Protected start SHA:** `4d8adbca3b89d6259e252f26aaad0db69a9bf102`  
 **Decision:** defer promotion; retain fail-closed gates
 
-The fresh read-only review was run after the A/B/C remediation pass with
+The fresh read-only review was rerun after the A UI receipts were captured with
 `gpt-5.6-luna` at high reasoning effort. Its raw event stream and final verdict
-are retained at `/private/tmp/aios-m6-remediation-review-20260715-v4/`.
+are retained at `/private/tmp/aios-m6-remediation-review-20260715-v5/`.
 
 ## Verified remediation
 
@@ -22,6 +22,9 @@ are retained at `/private/tmp/aios-m6-remediation-review-20260715-v4/`.
   and `Review` mapping, and logs the exact observed request/response failure
   sets. TypeScript passes; the focused browser proof is `1 passed (24.0s)` with
   the raw receipt at `/private/tmp/aios-m6-remediation-browser-20260715/c-browser.log`.
+- A's UI treatment now has passing ESLint, TypeScript, webpack production-build,
+  and three-test browser receipts. The canonical Turbopack build remains
+  environment-limited by the external `node_modules` symlink.
 
 ## Residual gates
 
@@ -32,8 +35,10 @@ are retained at `/private/tmp/aios-m6-remediation-review-20260715-v4/`.
    incorrectly labels the protected start SHA as its rollback parent. The
    actual Git parent is `4cd4183f4cb890197507135579a877ac4ade046c`; the durable
    report now records both values separately.
-3. **P2 — A UI proof:** UI checks remain environment-blocked by the external
-   `node_modules` mount returning `EPERM`. This is not counted as a product pass.
+3. **P2 — A canonical build limitation:** ESLint, TypeScript, a webpack
+   production build, and the three-test browser suite pass. The canonical
+   Turbopack build remains environment-limited by the external `node_modules`
+   symlink; it is not counted as a product pass or failure.
 4. **P3 — Disposable boundary:** the A treatment has an untracked `.venv`; it
    is environmental and outside the protected branch, but remains classified.
 
