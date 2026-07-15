@@ -96,6 +96,7 @@ from services.native_commands import (
     zoom_out as native_zoom_out,
 )
 from services.path_resolution import get_vault_root
+from services.pattern_mutations import update_pattern_approval
 from services.personalized_humanizer import (
     FeedbackVerdict,
     ensure_personalized_humanizer_schema,
@@ -5798,6 +5799,19 @@ def _project_component_update_payload(
     return dict(result)
 
 
+def _pattern_approval_update_payload(
+    conn: sqlite3.Connection, args: argparse.Namespace
+) -> dict[str, Any]:
+    payload = _parse_json_object(args.payload_json)
+    if not payload:
+        raise CLIError("invalid-payload", "--payload-json must contain a non-empty object", EXIT_USAGE)
+    try:
+        result = update_pattern_approval(conn, payload)
+    except ValueError as exc:
+        raise CLIError("pattern-approval-invalid", str(exc), EXIT_USAGE) from exc
+    return {"schema": "pattern-approval-update-result-v1", **result, "decision": payload["decision"]}
+
+
 def _automation_trigger_payload(
     conn: sqlite3.Connection,
     args: argparse.Namespace,
@@ -6221,6 +6235,12 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
             f"enabled={data['enabled']}"
         )
         return
+    if command == "pattern-approval-update":
+        print(
+            f"pattern={data['id']} decision={data['decision']} "
+            f"changed={data['changed_rows']}"
+        )
+        return
     if command == "automation-trigger":
         print(
             f"automation={data['automation_id']} run={data['plan']['run']['id']} "
@@ -6574,6 +6594,7 @@ def _command_requires_db(args: argparse.Namespace) -> bool:
         "standards-override",
         "standards-backfill-update",
         "project-component-update",
+        "pattern-approval-update",
         "automation-trigger",
         "asset-lifecycle",
         "workflow-compare",
@@ -7937,6 +7958,16 @@ def create_parser() -> argparse.ArgumentParser:
         help="JSON object containing projectId, componentKey, and enabled",
     )
 
+    pattern_approval_update = subparsers.add_parser(
+        "pattern-approval-update",
+        help="Apply one governed pattern approval or rejection transition",
+    )
+    pattern_approval_update.add_argument(
+        "--payload-json",
+        required=True,
+        help="JSON object containing id and decision (approve or reject)",
+    )
+
     asset_lifecycle = subparsers.add_parser(
         "asset-lifecycle", help="List and transition prompt, skill, and workflow assets"
     )
@@ -8639,6 +8670,9 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "project-component-update":
             assert conn is not None
             data = _project_component_update_payload(conn, args)
+        elif args.command == "pattern-approval-update":
+            assert conn is not None
+            data = _pattern_approval_update_payload(conn, args)
         elif args.command == "asset-lifecycle" and args.asset_lifecycle_command == "list":
             assert conn is not None
             data = _asset_lifecycle_list_payload(conn, args)

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { Pattern, PatternState } from "@/lib/types";
+import { updatePatternApprovalViaPythonOwner } from "@/server/aios/pattern-approval-owner";
 import { getDb, tableExists } from "@/server/db";
 import { createTRPCRouter, publicProcedure } from "@/server/trpc";
 
@@ -120,53 +121,13 @@ export const patternsRouter = createTRPCRouter({
 
   approve: publicProcedure
     .input(z.object({ id: z.string().min(1) }))
-    .mutation(({ ctx, input }): { ok: boolean; id: string; changedRows: number } => {
-      if (!tableExists("patterns")) {
-        return { ok: false, id: input.id, changedRows: 0 };
-      }
-
-      const result = ctx.db
-        .prepare(
-          `
-          UPDATE patterns
-          SET human_approved = 1,
-              state = 'rule',
-              status = 'active',
-              promoted_at = COALESCE(promoted_at, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-          WHERE id = ?
-        `,
-        )
-        .run(input.id);
-
-      return {
-        ok: result.changes > 0,
-        id: input.id,
-        changedRows: result.changes,
-      };
+    .mutation(({ input }): { ok: boolean; id: string; changedRows: number } => {
+      return updatePatternApprovalViaPythonOwner({ id: input.id, decision: "approve" });
     }),
 
   reject: publicProcedure
     .input(z.object({ id: z.string().min(1) }))
-    .mutation(({ ctx, input }): { ok: boolean; id: string; changedRows: number } => {
-      if (!tableExists("patterns")) {
-        return { ok: false, id: input.id, changedRows: 0 };
-      }
-
-      const result = ctx.db
-        .prepare(
-          `
-          UPDATE patterns
-          SET human_approved = 0,
-              status = 'discarded'
-          WHERE id = ?
-        `,
-        )
-        .run(input.id);
-
-      return {
-        ok: result.changes > 0,
-        id: input.id,
-        changedRows: result.changes,
-      };
+    .mutation(({ input }): { ok: boolean; id: string; changedRows: number } => {
+      return updatePatternApprovalViaPythonOwner({ id: input.id, decision: "reject" });
     }),
 });
