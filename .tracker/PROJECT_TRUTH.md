@@ -35,97 +35,11 @@ agentExpectationsVersion: 1
 
 AIOS now has a completed v2 modernization baseline, accepted local-first operating model, canonical-state contract, task-centred UI contract, reproducible UI validation contract, subsystem modernization strategy, and dependency-ordered target/vertical plan: [`AUDIT.md`](../docs/modernization/AUDIT.md), [`TARGET.md`](../docs/modernization/TARGET.md), [`EXEC_PLAN.md`](../docs/modernization/EXEC_PLAN.md), [`ADR-001`](../docs/modernization/ADR-001-v2-operating-loop-and-trust-boundary.md), [`ADR-002`](../docs/modernization/ADR-002-canonical-state-and-migration-authority.md), [`ADR-003`](../docs/modernization/ADR-003-task-centred-ia-and-accessible-design-system.md), [`ADR-004`](../docs/modernization/ADR-004-reproducible-ui-validation-contract.md), and [`ADR-005`](../docs/modernization/ADR-005-subsystem-ownership-and-parallel-v2-strategy.md). Wayfinder Ticket 006 is resolved; Milestone 0 has the shared JSON fixture, TypeScript boundary guard, Python cross-reference tests, disposable SQLite projection, and daily-flow replay proof. Milestone 1 now has the executable Python storage boundary, copied-store runner, evidence-backed FK transformer, and broad adapter adoption: one resolved `AIOS_DB`, canonical pragmas, read-only projections, idempotent migration/quarantine ledger, schema checksums, preflight/postflight health/counts, unique-path mappings, source-payload quarantine, and immutable backup/restore helpers; lifecycle hooks, high-traffic prompt/compaction/post-tool/session-stop hooks, the managed runtime, Codex ingestion, session CLI, all four provider canonical upserts, stale-session repair, prompt sync, workflow experiment utilities, metrics/reporting paths, history import, inventory sync, Apple-backed ingestion writes, the CLI doctor probe, daily pipeline pending-rule query, pattern schema migration, pattern extraction, pattern scoring, pattern promotion, pattern confirmation/approval/contradiction lifecycle tools, observation review, noise purging, bug-motif extraction, handoff-learning extraction, personal-pattern extraction and promotion, agent synthesis, domain-file projection, DOCX/PDF document indexers, rule-bundle registration, the business-memory path resolver and five CLI adapters, issues/handoffs, query/statusline utilities, and the UI database path converge on the override/pragmas. The actual current read-only store preflight reports 561 FK violations (older audit documents record 555/557); the disposable transformer copy reaches zero and the restored copy replays the canonical daily flow. UI-owned request-time DDL, remaining lower-traffic adapters, and human retention review are still gated. V2 is a single-user, loopback-only local control plane with one logical mutation authority; no live rows have been migrated. The target and plan now turn those decisions into eight vertical milestones plus a paired-effectiveness gate before satellite promotion and cutover. Divergent schema/bootstrap ownership, unenforced UI mutation boundaries, and blocked UI implementation gates remain. The current `dev` worktree was already dirty when this work started, so its shadow lane remains trace-only.
 
-Current-state amendment (2026-07-14): M2 and M3 UI validation is green for the
-read-only Today → Start work → Current run shell. M4 proves the Python-owned
-route → packet → run → invocation → verification envelope against the
-foreign-key-enforced schema, including project-safe session linkage, partial-
-state resume snapshots with verifier provenance, and zero FK findings. M5 is
-resolved: Python-owned governed effect events and closeout reviews enforce
-capability, loopback, egress, redaction, rollback, approval, changed-artifact,
-unresolved-delta, and next-action state. Control-plane and remediation UI
-mutations now fail closed behind the Python owner. M5A records deterministic
-paired fixture evidence (AIOS 1.0000 versus control 0.5379, +0.4621 mean
-delta) with no fixture safety failure, but defers promotion because the
-baseline is dirty and the fixture path lacks live model/tool/budget metadata,
-persisted paired eval ids, contamination proof, and blinded independent
-review. M6 remains blocked pending clean real paired runs.
-The follow-up `eval_pairs` contract now durably links control/treatment runs,
-protected start SHA, task/prompt/context hashes, parity metadata, scores,
-contamination and independent-review state, decisions, and append-only pair
-events. Its CLI create/finalize/list surface fails closed on promotion without
-complete evidence; report paths are now persisted through the schema, service,
-and CLI so live review artifacts can be linked durably. A corrected three-task
-live audit corpus at protected SHA `7797f3e` now has six clean read-only runs,
-three pair-specific contamination records, six durable score IDs, independent
-review, and a bounded `0.963` control versus `0.977` treatment mean (`+0.013`).
-The durable packet is [`M6_LIVE_BENCHMARK_REPORT.md`](../docs/evals/M6_LIVE_BENCHMARK_REPORT.md).
-Pair decisions are explicitly deferred because this is an audit-only corpus
-with unavailable provider usage telemetry; the earlier single-task promote row
-is superseded because its treatment artifact was missing. M6 remains blocked.
+Pattern approval and rejection UI mutations now route through the validated
+Python-owned `pattern-approval-update` boundary; direct TypeScript updates were
+deleted, with rollback to the parent revision and no schema migration.
 
-Current-state amendment (2026-07-14): The `capture.v1` source-normalization
-boundary is now implemented in commit `b408ad5`. AIOS owns the pinned schema,
-deterministic HTML/Markdown/JSON/CSV adapter runtime, provenance and removal
-records, CLI, fixtures, and focused tests. The boundary performs no network
-fetches, enrichment, or vault writes; downstream writeback remains governed.
-Focused proof passed four tests, Ruff, and BasedPyright.
-
-Current-state amendment (2026-07-14): The manual business-memory adapter now
-routes Markdown, JSON, HTML, and CSV inbox files through `capture.v1` while
-retaining the existing `SourceRecord` and Python-owned ingest path. Immutable
-raw sidecars retain capture validation and provenance/removal metadata. No
-network, enrichment, vault write, schema migration, or promotion behavior was
-added; 11 focused tests, Ruff, and BasedPyright passed (`625056d`).
-
-Current-state amendment (2026-07-14): Superseded eval-pair evidence is now
-excluded at the promotion consumer boundary without deleting audit history.
-`eval_pairs` records durable supersession metadata and an append-only event;
-`eval pair-list --promotion-ready` requires every score, contamination,
-independent-review, report, and unsuperseded gate. The ordinary pair list still
-returns the complete ledger. Focused service/CLI proof passed 108 tests, Ruff,
-and BasedPyright. M6 remains blocked by audit-only evidence, unavailable
-provider telemetry, incomplete browser coverage, and the remaining satellite
-mutation/rollback gates.
-
-Current-state amendment (2026-07-14): The Context Compiler satellite now has
-an explicit file-backed, read-only projection contract naming its authority,
-CLI mutation owner, freshness, source paths, and next action. Browser proof
-passes at three viewports with zero mutations, console errors, failed
-responses, or overflow; UI lint, architecture, build, and direct validation
-pass. The root `pnpm context:validate` wrapper remains blocked by the existing
-external file dependency; no dependency or lockfile changes were made. M6 is
-advanced but still deferred on promotion, write-owner, and rollback gates.
-
-Current-state amendment (2026-07-14): The first write-capable standards-health
-satellite is now Python-owned. Taski Start/Block/Resolve transitions call the
-validated `standards-backfill-update` JSON CLI through a typed server adapter;
-the prior TypeScript SQLite write helper was deleted. Focused Python/CLI proof,
-UI lint/typecheck/build, architecture lint, and the pinned browser contract
-pass. Rollback is the parent revision with no schema migration. M6 remains
-deferred because the benchmark is audit-only with unavailable provider
-telemetry and other legacy write families still need bounded owner migrations.
-
-Current-state amendment (2026-07-14): The Taski project component-settings
-toggle is now Python-owned. The validated `project-component-update` JSON CLI
-enforces project identity, component-key membership, and boolean state before
-the idempotent upsert; the tRPC mutation reuses the existing TypeScript read
-projection, and the direct UI write helper was deleted. Focused Python/CLI proof,
-UI lint/typecheck/build, architecture lint, and the pinned browser contract
-pass. Rollback is the parent revision with no schema migration. M6 remains
-deferred while benchmark telemetry and the remaining legacy write families are
-open.
-
-Current-state amendment (2026-07-15): The `automations.triggerWorkflow`
-mutation is now Python-owned. The validated `automation-trigger` JSON CLI
-preserves the automation/workflow objective prefix, creates the canonical
-route → packet → run → invocation envelope, and launches the managed runtime;
-the typed server adapter preserves the plan/invocation response shape. The
-direct TypeScript `planTask`/`invokeControlPlaneRun` calls were deleted from
-the automation router. Four focused owner tests, 96 CLI regressions, Ruff,
-BasedPyright, UI lint, architecture, production build, and the pinned
-three-test browser contract pass. Rollback is the parent revision and no
-schema migration was introduced. M6 remains deferred for promotion-grade
-effectiveness evidence and the remaining legacy write families.
+_(9 older entries trimmed)_
 
 _(11 older entries trimmed)_
 
@@ -152,6 +66,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-15: Routed pattern approval/rejection through the Python owner, deleted direct TypeScript updates, and passed 5 focused tests, the 97-test CLI regression slice, UI lint, architecture, build, and 3 browser tests (`4cd4183`).
 - 2026-07-15: Routed `automations.triggerWorkflow` through the Python owner, launched the managed runtime from the validated `automation-trigger` CLI, deleted the direct TypeScript plan/invocation path, and passed 4 focused tests, 96 CLI regressions, UI lint, architecture, build, and 3 browser tests (`85de909`).
 - 2026-07-14: Routed Taski project component toggles through the Python owner, deleted the direct UI SQLite helper, and passed 4 focused tests, 96 CLI regressions, UI build, architecture, and 3 browser tests (`82106f3`).
 - 2026-07-14: Routed standards backfill Start/Block/Resolve mutations through the Python owner, deleted the direct UI SQLite helper, and passed 4 focused tests, 96 CLI regressions, UI build, architecture, and 3 browser tests (`fdd1c1d`).
@@ -166,8 +81,6 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-07-14: Recorded M5A deterministic paired harness evidence (AIOS 1.0000 vs control 0.5379, +0.4621) and deferred promotion pending clean live paired runs and independent review (`078f310`, `docs/evals/M5A_EFFECTIVENESS_REPORT.md`).
 - 2026-07-14: Resolved M5 gated review/closeout with governed effect events, explicit capability/loopback/egress/redaction/rollback metadata, terminal writeback transitions, closeout downgrade gates, and fail-closed control-plane/remediation UI mutation procedures (`1ea29a0`).
 - 2026-07-14: Fixed canonical start-work FK ordering, cross-project session linkage, and verification resume snapshots; added the M4 route → packet → run → invocation → verify/resume integration proof (`tests/test_m4_start_work.py`, `e190ca5`).
-- 2026-07-14: Shipped the read-only v2 Today → Start work → Current run shell with canonical projections, task-centred navigation, contextual disclosure, explicit state contracts, and zero-mutation browser proof (`a6adf99`).
-- 2026-07-14: Vendored anti-slop 0.4.0, removed UI request-time DDL in favor of the migration-ledger assertion, and passed ESLint/fixtures/TypeScript/architecture/build/runtime gates.
 
 ## Open Problems
 

@@ -131,6 +131,18 @@ Rollback is the parent revision and no schema migration was introduced. M6
 remains deferred for promotion-grade effectiveness evidence and the remaining
 legacy write families.
 
+The `patterns.approve` and `patterns.reject` mutations are now Python-owned.
+The validated `pattern-approval-update` JSON CLI preserves the existing
+`{ ok, id, changedRows }` contract through a typed server adapter, and the
+direct TypeScript `UPDATE` statements were deleted from the pattern router.
+Five focused owner tests and the 97-test CLI regression slice pass; the full
+suite passes 1,178 tests with one unrelated pre-existing shadow-branch
+foreign-key failure. Ruff, BasedPyright, UI lint/typecheck, architecture,
+production build, and the pinned three-test browser contract pass. Rollback is
+the parent revision and no schema migration was introduced. Pattern
+extraction, scoring, promotion, and other legacy write families remain
+separate bounded migrations while M6 promotion stays deferred.
+
 ## Implemented On 2026-07-10
 
 Codex session-intelligence implementation can now target explicit candidate ids:

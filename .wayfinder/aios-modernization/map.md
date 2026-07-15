@@ -46,6 +46,7 @@ created: 2026-07-10
 - [Migrate Standards Backfill Writes Behind the Python Owner](tickets/019-migrate-standards-backfill-write-owner.md) - The first write-capable standards-health satellite now routes Taski Start/Block/Resolve transitions through a validated Python service and JSON CLI adapter; the prior UI SQLite write helper was deleted, with rollback to the parent revision and no schema migration.
 - [Migrate Project Component Settings Behind the Python Owner](tickets/020-migrate-project-component-settings-owner.md) - Taski project-scope component toggles now route through a validated Python service and JSON CLI adapter while the existing UI read projection remains intact; the direct TypeScript write helper was deleted.
 - [Route Automation Triggers Through the Python Owner](tickets/021-migrate-automation-trigger-owner.md) - `automations.triggerWorkflow` now validates and launches the managed runtime through the Python-owned `automation-trigger` CLI; its direct TypeScript plan/invocation path was deleted, with rollback and focused proof recorded.
+- [Route Pattern Approval Decisions Through the Python Owner](tickets/022-migrate-pattern-approval-owner.md) - `patterns.approve` and `patterns.reject` now validate and apply decisions through the Python-owned `pattern-approval-update` CLI; the direct TypeScript updates were deleted, with rollback and focused proof recorded.
 
 ## Fog
 
