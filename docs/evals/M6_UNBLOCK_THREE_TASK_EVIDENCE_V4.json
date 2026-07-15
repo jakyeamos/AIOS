@@ -1,0 +1,925 @@
+{
+  "decision": "defer",
+  "ledger_db": "/private/tmp/aios-m6-promotion-rerun-ledger-20260715-v6.db",
+  "limitations": [
+    "provider cost telemetry unavailable",
+    "scores intentionally omitted; independent review is recorded separately",
+    "A treatment report uses the protected start SHA as rollback parent; git confirms the actual parent SHA separately",
+    "A UI verification was blocked by the external node_modules EPERM environment limit"
+  ],
+  "pairs": [
+    {
+      "control_run_id": "eval-run-be65d393-9a0f-40f7-8876-7333664b90ac",
+      "pair": {
+        "contamination_evidence": {
+          "actual_rollback_parent_sha": "4cd4183f4cb890197507135579a877ac4ade046c",
+          "control_rollout_path": "/Users/jakyeamos/.codex/sessions/2026/07/15/rollout-2026-07-15T14-46-14-019f6719-d8a6-7f53-9729-f7ee2dfcf3ab.jsonl",
+          "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "receipt_identity_verified": true,
+          "root_worktree_untouched": true,
+          "status": "passed",
+          "treatment_report_rollback_parent_mismatch": true,
+          "treatment_rollout_path": "/Users/jakyeamos/.codex/sessions/2026/07/15/rollout-2026-07-15T14-46-13-019f6719-d1d2-7710-a828-1fba50afcce6.jsonl"
+        },
+        "contamination_status": "passed",
+        "context_hash": "a8f9a7465cc67ccfaa9879e612e580a384da2bcdeafdd739cd7999b71d60d405",
+        "control_run_id": "eval-run-be65d393-9a0f-40f7-8876-7333664b90ac",
+        "control_score": null,
+        "created_at": "2026-07-15T19:14:10.297453+00:00",
+        "decision": "defer",
+        "delta": null,
+        "events": [
+          {
+            "created_at": "2026-07-15T19:14:10.297826+00:00",
+            "event_type": "created",
+            "id": "eval-pair-event-49e34150-6ef8-42b9-a1be-f5021b944391",
+            "pair_id": "eval-pair-cb820bad-9dcb-422c-8eab-41c89faca680",
+            "payload": {
+              "control_run_id": "eval-run-be65d393-9a0f-40f7-8876-7333664b90ac",
+              "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+              "treatment_run_id": "eval-run-3ed805c5-4a46-4145-ae76-cf6af373ff06"
+            }
+          },
+          {
+            "created_at": "2026-07-15T19:14:10.299136+00:00",
+            "event_type": "finalized",
+            "id": "eval-pair-event-91588502-feff-48fc-bb9f-95a200f6fce3",
+            "pair_id": "eval-pair-cb820bad-9dcb-422c-8eab-41c89faca680",
+            "payload": {
+              "contamination_status": "passed",
+              "control_score": null,
+              "decision": "defer",
+              "delta": null,
+              "independent_review_status": "failed",
+              "treatment_score": null
+            }
+          }
+        ],
+        "finalized_at": "2026-07-15T19:14:10.298827+00:00",
+        "id": "eval-pair-cb820bad-9dcb-422c-8eab-41c89faca680",
+        "independent_review_ref": "docs/evals/M6_UNBLOCK_THREE_TASK_ADVERSARIAL_REVIEW.md",
+        "independent_review_status": "failed",
+        "limitations": [
+          "provider cost telemetry unavailable",
+          "quantitative scores intentionally omitted",
+          "promotion remains deferred until score evidence and review findings are resolved"
+        ],
+        "parity_metadata": {
+          "budget": {
+            "seconds": 900,
+            "tokens": 20000
+          },
+          "control_receipt": "/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/artifacts/receipts/a-control.json",
+          "control_receipt_sha256": "266f6538c3bb003223254d4503608e3859e0f82c13dd154516220ab07eb85d42",
+          "control_rollout": "/Users/jakyeamos/.codex/sessions/2026/07/15/rollout-2026-07-15T14-46-14-019f6719-d8a6-7f53-9729-f7ee2dfcf3ab.jsonl",
+          "control_rollout_telemetry": {
+            "blocked": true,
+            "duration_ms": 518419,
+            "failed_commands": 4,
+            "rollout_path": "/Users/jakyeamos/.codex/sessions/2026/07/15/rollout-2026-07-15T14-46-14-019f6719-d8a6-7f53-9729-f7ee2dfcf3ab.jsonl",
+            "session_id": "019f6719-d8a6-7f53-9729-f7ee2dfcf3ab",
+            "tests": [
+              "const results = await Promise.all([\n  tools.exec_command({cmd:\"sed -n '1,180p' aios-ui/server/aios/pattern-approval-owner.ts\\nsed -n '1,160p' aios-ui/server/aios/project-components-owner.ts\\nsed -n '1,150p' aios-ui/server/aios/standards-health-owner.ts\",\"workdir\":\"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control\",\"yield_time_ms\":10000,\"max_output_tokens\":16000}),\n  tools.exec_command({cmd:\"sed -n '280,430p' services/workflow_experiments.py\\nsed -n '1,260p' tests/test_workflow_experiments.py\\nsed -n '1,240p' tests/test_aios_cli.py\",\"workdir\":\"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control\",\"yield_time_ms\":10000,\"max_output_tokens\":24000}),\n  tools.exec_command({cmd:\"sed -n '6560,6595p' services/aios_cli.py\\nsed -n '6000,6180p' services/aios_cli.py\\nrg -n 'def _.*payload\\\\(|json.dumps|print\\\\(json' services/aios_cli.py | head -120\",\"workdir\":\"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control\",\"yield_time_ms\":10000,\"max_output_tokens\":16000}),\n  tools.exec_command({cmd:\"cat aios-ui/tsconfig.json\\ncat aios-ui/.dependency-cruiser.cjs\\nrg -n 'execFileSync\\\\(' aios-ui/server/aios/*.ts | cut -d: -f1 | sort -u\",\"workdir\":\"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control\",\"yield_time_ms\":10000,\"max_output_tokens\":12000})\n]);\nfor (const r of results) text(r.output);",
+              "const patch = \"*** Begin Patch\\n*** Add File: /private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control/tests/test_workflow_skill_candidates.py\\n+from __future__ import annotations\\n+\\n+import json\\n+import sqlite3\\n+from pathlib import Path\\n+\\n+import pytest\\n+\\n+from services.aios_cli import EXIT_OK, EXIT_USAGE, run_cli\\n+from services.workflow_skill_candidates import (\\n+    dismiss_skill_candidate,\\n+    promote_skill_candidate,\\n+)\\n+\\n+\\n+def _candidate_db() -> sqlite3.Connection:\\n+    conn = sqlite3.connect(\\\":memory:\\\")\\n+    conn.execute(\\n+        \\\"\\\"\\\"\\n+        CREATE TABLE github_skill_candidates (\\n+            id TEXT PRIMARY KEY,\\n+            skill_key TEXT NOT NULL,\\n+            summary TEXT NOT NULL,\\n+            tags_json TEXT NOT NULL,\\n+            detail_json TEXT NOT NULL,\\n+            status TEXT NOT NULL DEFAULT 'candidate',\\n+            updated_at TEXT\\n+        )\\n+        \\\"\\\"\\\"\\n+    )\\n+    conn.execute(\\n+        \\\"\\\"\\\"\\n+        INSERT INTO github_skill_candidates\\n+            (id, skill_key, summary, tags_json, detail_json)\\n+        VALUES ('candidate-1', 'skill-one', 'A useful skill', '[\\\"generate\\\"]',\\n+                '{\\\"invariants\\\":[\\\"must be bounded\\\"],\\\"failure_conditions\\\":[\\\"missing input\\\"],\\\"execution_mode\\\":\\\"strict\\\"}')\\n+        \\\"\\\"\\\"\\n+    )\\n+    return conn\\n+\\n+\\n+def test_promote_updates_state_and_materializes_skill_file(tmp_path: Path) -> None:\\n+    conn = _candidate_db()\\n+    skill_path = tmp_path / \\\"skills.json\\\"\\n+    skill_path.write_text('{\\\"skills\\\": []}\\\\n', encoding=\\\"utf-8\\\")\\n+\\n+    result = promote_skill_candidate(conn, {\\\"id\\\": \\\"candidate-1\\\"}, skill_path=skill_path)\\n+\\n+    assert result == {\\\"ok\\\": True, \\\"skill_key\\\": \\\"skill-one\\\"}\\n+    assert conn.execute(\\n+        \\\"SELECT status FROM github_skill_candidates WHERE id = 'candidate-1'\\\"\\n+    ).fetchone()[0] == \\\"promoted\\\"\\n+    skills = json.loads(skill_path.read_text(encoding=\\\"utf-8\\\"))[\\\"skills\\\"]\\n+    assert skills == [\\n+        {\\n+            \\\"key\\\": \\\"skill-one\\\",\\n+            \\\"purpose\\\": \\\"A useful skill\\\",\\n+            \\\"allowed_stages\\\": [\\\"generate\\\"],\\n+            \\\"input_schema\\\": {},\\n+            \\\"output_schema\\\": {},\\n+            \\\"invariants\\\": [\\\"must be bounded\\\"],\\n+            \\\"failure_conditions\\\": [\\\"missing input\\\"],\\n+            \\\"side_effects\\\": [],\\n+            \\\"execution_mode\\\": \\\"strict\\\",\\n+        }\\n+    ]\\n+\\n+\\n+def test_dismiss_updates_state_without_deleting_or_writing_skill_file(tmp_path: Path) -> None:\\n+    conn = _candidate_db()\\n+    skill_path = tmp_path / \\\"skills.json\\\"\\n+    original = '{\\\"skills\\\": [{\\\"key\\\": \\\"unrelated\\\"}]}\\\\n'\\n+    skill_path.write_text(original, encoding=\\\"utf-8\\\")\\n+\\n+    result = dismiss_skill_candidate(conn, {\\\"id\\\": \\\"candidate-1\\\"})\\n+\\n+    assert result == {\\\"ok\\\": True}\\n+    assert conn.execute(\\n+        \\\"SELECT status FROM github_skill_candidates WHERE id = 'candidate-1'\\\"\\n+    ).fetchone()[0] == \\\"dismissed\\\"\\n+    assert skill_path.read_text(encoding=\\\"utf-8\\\") == original\\n+\\n+\\n+@pytest.mark.parametrize(\\n+    (\\\"operation\\\", \\\"expected\\\"),\\n+    [\\n+        (promote_skill_candidate, {\\\"ok\\\": False, \\\"skill_key\\\": \\\"\\\"}),\\n+        (dismiss_skill_candidate, {\\\"ok\\\": False}),\\n+    ],\\n+)\\n+def test_missing_candidate_is_a_noop(\\n+    operation: object, expected: dict[str, object]\\n+) -> None:\\n+    conn = _candidate_db()\\n+    skill_path = Path(\\\"/tmp/does-not-exist-aios-skills.json\\\")\\n+\\n+    if operation is promote_skill_candidate:\\n+        result = promote_skill_candidate(conn, {\\\"id\\\": \\\"missing\\\"}, skill_path=skill_path)\\n+    else:\\n+        result = dismiss_skill_candidate(conn, {\\\"id\\\": \\\"missing\\\"})\\n+\\n+    assert result == expected\\n+    assert conn.execute(\\n+        \\\"SELECT status FROM github_skill_candidates WHERE id = 'candidate-1'\\\"\\n+    ).fetchone()[0] == \\\"candidate\\\"\\n+\\n+\\n+@pytest.mark.parametrize(\\n+    \\\"payload\\\",\\n+    [{}, {\\\"id\\\": \\\" \\\"}, {\\\"id\\\": 7}, {\\\"id\\\": \\\"candidate-1\\\", \\\"extra\\\": True}],\\n+)\\n+def test_mutations_reject_invalid_payload(payload: dict[str, object]) -> None:\\n+    conn = _candidate_db()\\n+\\n+    with pytest.raises(ValueError):\\n+        promote_skill_candidate(conn, payload)\\n+    with pytest.raises(ValueError):\\n+        dismiss_skill_candidate(conn, payload)\\n+\\n+\\n+def test_json_cli_promotes_and_reports_missing_and_invalid_rows(\\n+    tmp_path: Path, capsys: pytest.CaptureFixture[str]\\n+) -> None:\\n+    db_path = tmp_path / \\\"aios.db\\\"\\n+    conn = sqlite3.connect(db_path)\\n+    conn.execute(\\n+        \\\"\\\"\\\"\\n+        CREATE TABLE github_skill_candidates (\\n+            id TEXT PRIMARY KEY,\\n+            skill_key TEXT NOT NULL,\\n+            summary TEXT NOT NULL,\\n+            tags_json TEXT NOT NULL,\\n+            detail_json TEXT NOT NULL,\\n+            status TEXT NOT NULL DEFAULT 'candidate',\\n+            updated_at TEXT\\n+        )\\n+        \\\"\\\"\\\"\\n+    )\\n+    conn.execute(\\n+        \\\"\\\"\\\"\\n+        INSERT INTO github_skill_candidates\\n+            (id, skill_key, summary, tags_json, detail_json)\\n+        VALUES ('candidate-1', 'prompt_library_normalizer', 'Existing skill', '[]', '{}')\\n+        \\\"\\\"\\\"\\n+    )\\n+    conn.commit()\\n+    conn.close()\\n+\\n+    assert run_cli(\\n+        [\\n+            \\\"--json\\\",\\n+            \\\"--db\\\",\\n+            str(db_path),\\n+            \\\"workflow-skill\\\",\\n+            \\\"promote\\\",\\n+            \\\"--payload-json\\\",\\n+            '{\\\"id\\\":\\\"candidate-1\\\"}',\\n+        ]\\n+    ) == EXIT_OK\\n+    promoted = json.loads(capsys.readouterr().out)\\n+    assert promoted[\\\"data\\\"] == {\\\"ok\\\": True, \\\"skill_key\\\": \\\"prompt_library_normalizer\\\"}\\n+\\n+    assert run_cli(\\n+        [\\n+            \\\"--json\\\",\\n+            \\\"--db\\\",\\n+            str(db_path),\\n+            \\\"workflow-skill\\\",\\n+            \\\"dismiss\\\",\\n+            \\\"--payload-json\\\",\\n+            '{\\\"id\\\":\\\"missing\\\"}',\\n+        ]\\n+    ) == EXIT_OK\\n+    missing = json.loads(capsys.readouterr().out)\\n+    assert missing[\\\"data\\\"] == {\\\"ok\\\": False}\\n+\\n+    assert run_cli(\\n+        [\\n+            \\\"--json\\\",\\n+            \\\"--db\\\",\\n+            str(db_path),\\n+            \\\"workflow-skill\\\",\\n+            \\\"dismiss\\\",\\n+            \\\"--payload-json\\\",\\n+            '{\\\"id\\\":\\\"candidate-1\\\",\\\"unexpected\\\":true}',\\n+        ]\\n+    ) == EXIT_USAGE\\n+    invalid = json.loads(capsys.readouterr().out)\\n+    assert invalid[\\\"error\\\"][\\\"code\\\"] == \\\"workflow-skill-invalid\\\"\\n*** End Patch\";\ntext(await tools.apply_patch(patch));",
+              "const r = await tools.exec_command({cmd:\"uv run pytest -q tests/test_workflow_skill_candidates.py\",\"workdir\":\"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control\",\"yield_time_ms\":1000,\"max_output_tokens\":12000});\ntext(JSON.stringify(r));",
+              "const patch = \"*** Begin Patch\\n*** Update File: /private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control/tests/test_workflow_skill_candidates.py\\n@@\\n import json\\n import sqlite3\\n+import sys\\n from pathlib import Path\\n \\n import pytest\\n \\n+ROOT = Path(__file__).resolve().parents[1]\\n+sys.path.insert(0, str(ROOT))\\n+\\n from services.aios_cli import EXIT_OK, EXIT_USAGE, run_cli\\n*** End Patch\";\ntext(await tools.apply_patch(patch));",
+              "const patch = \"*** Begin Patch\\n*** Update File: /private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control/tests/test_workflow_skill_candidates.py\\n@@\\n def test_missing_candidate_is_a_noop(\\n-    operation: object, expected: dict[str, object]\\n+    operation: object, expected: dict[str, object], tmp_path: Path\\n ) -> None:\\n     conn = _candidate_db()\\n-    skill_path = Path(\\\"/tmp/does-not-exist-aios-skills.json\\\")\\n+    skill_path = tmp_path / \\\"does-not-exist-skills.json\\\"\\n@@\\n     assert conn.execute(\\n         \\\"SELECT status FROM github_skill_candidates WHERE id = 'candidate-1'\\\"\\n     ).fetchone()[0] == \\\"candidate\\\"\\n+\\n+\\n+def test_promote_restores_skill_file_when_database_update_rolls_back(tmp_path: Path) -> None:\\n+    conn = _candidate_db()\\n+    skill_path = tmp_path / \\\"skills.json\\\"\\n+    original = '{\\\"skills\\\": []}\\\\n'\\n+    skill_path.write_text(original, encoding=\\\"utf-8\\\")\\n+    conn.execute(\\n+        \\\"\\\"\\\"\\n+        CREATE TRIGGER reject_candidate_promotion\\n+        BEFORE UPDATE OF status ON github_skill_candidates\\n+        BEGIN\\n+            SELECT RAISE(ABORT, 'promotion rejected');\\n+        END\\n+        \\\"\\\"\\\"\\n+    )\\n+\\n+    with pytest.raises(sqlite3.IntegrityError, match=\\\"promotion rejected\\\"):\\n+        promote_skill_candidate(conn, {\\\"id\\\": \\\"candidate-1\\\"}, skill_path=skill_path)\\n+\\n+    assert skill_path.read_text(encoding=\\\"utf-8\\\") == original\\n+    assert conn.execute(\\n+        \\\"SELECT status FROM github_skill_candidates WHERE id = 'candidate-1'\\\"\\n+    ).fetchone()[0] == \\\"candidate\\\"\\n*** End Patch\";\ntext(await tools.apply_patch(patch));",
+              "const results = await Promise.all([\n  tools.exec_command({cmd:\"uv run pytest -q tests/test_workflow_skill_candidates.py tests/test_workflow_experiments.py tests/test_aios_cli.py\",\"workdir\":\"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control\",\"yield_time_ms\":1000,\"max_output_tokens\":16000}),\n  tools.exec_command({cmd:\"uv run ruff check services/workflow_skill_candidates.py services/aios_cli.py tests/test_workflow_skill_candidates.py\",\"workdir\":\"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control\",\"yield_time_ms\":1000,\"max_output_tokens\":8000}),\n  tools.exec_command({cmd:\"pnpm lint\",\"workdir\":\"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control/aios-ui\",\"yield_time_ms\":1000,\"max_output_tokens\":16000})\n]);\nfor (const r of results) text(JSON.stringify(r));",
+              "const r = await tools.exec_command({cmd:\"sed -n '1,58p' tests/test_workflow_skill_candidates.py\\nuv run pytest -q tests/test_workflow_skill_candidates.py\\nuv run ruff check services/workflow_skill_candidates.py services/aios_cli.py tests/test_workflow_skill_candidates.py\",\"workdir\":\"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control\",\"yield_time_ms\":1000,\"max_output_tokens\":12000});\ntext(JSON.stringify(r));",
+              "const r = await tools.exec_command({cmd:\"set -eu\\n.venv/bin/python -m pytest -q tests/test_workflow_skill_candidates.py\\nif [ -x .venv/bin/ruff ]; then .venv/bin/ruff check services/workflow_skill_candidates.py services/aios_cli.py tests/test_workflow_skill_candidates.py; else echo 'ruff unavailable in protected .venv'; fi\",\"workdir\":\"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control\",\"yield_time_ms\":1000,\"max_output_tokens\":12000});\ntext(JSON.stringify(r));",
+              "const results = await Promise.all([\n  tools.exec_command({cmd:\".venv/bin/python -m pytest -q tests/test_workflow_skill_candidates.py tests/test_workflow_experiments.py tests/test_aios_cli.py\",\"workdir\":\"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control\",\"yield_time_ms\":1000,\"max_output_tokens\":16000}),\n  tools.exec_command({cmd:\".venv/bin/ruff check services/workflow_skill_candidates.py services/aios_cli.py tests/test_workflow_skill_candidates.py\",\"workdir\":\"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control\",\"yield_time_ms\":1000,\"max_output_tokens\":8000}),\n  tools.exec_command({cmd:\"CI=true pnpm lint\",\"workdir\":\"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control/aios-ui\",\"yield_time_ms\":1000,\"max_output_tokens\":16000})\n]);\nfor (const r of results) text(JSON.stringify(r));",
+              "const results = await Promise.all([\n  tools.exec_command({cmd:\"set -eu\\nprotected='4d8adbca3b89d6259e252f26aaad0db69a9bf102'\\nprintf 'protected_sha=%s\\\\n' \\\"$protected\\\"\\nprintf 'rollback_parent_sha=%s\\\\n' \\\"$(git rev-parse \\\"$protected^1\\\")\\\"\\nprintf 'head=%s\\\\n' \\\"$(git rev-parse HEAD)\\\"\\nprintf 'status:\\\\n'\\ngit status --short\\nprintf '\\\\nsource scans:\\\\n'\\nif rg -n 'UPDATE[[:space:]]+github_skill_candidates' aios-ui/server/routers/workflows.ts; then exit 1; else echo 'PASS no direct candidate UPDATE in workflow router'; fi\\nif rg -n 'ctx\\\\.db[[:space:][:alnum:]_.-]*[[:space:][:alnum:]_.-]*UPDATE|prepare\\\\([[:space:]]*`[^`]*UPDATE' aios-ui/server/routers/workflows.ts; then exit 1; else echo 'PASS no direct UPDATE SQL in workflow router'; fi\\nrg -n 'promoteSkillCandidateViaPythonOwner|dismissSkillCandidateViaPythonOwner|workflow-skill-(promote|dismiss)' aios-ui/server/routers/workflows.ts aios-ui/server/aios/workflow-skill-candidates-owner.ts services/aios_cli.py\\nprintf '\\\\ndiff check:\\\\n'\\ngit diff --check\",\"workdir\":\"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control\",\"yield_time_ms\":10000,\"max_output_tokens\":10000}),\n  tools.exec_command({cmd:\"set -eu\\n.venv/bin/python -m py_compile services/workflow_skill_candidates.py services/aios_cli.py\\n.venv/bin/ruff check services/workflow_skill_candidates.py services/aios_cli.py tests/test_workflow_skill_candidates.py\",\"workdir\":\"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control\",\"yield_time_ms\":10000,\"max_output_tokens\":8000}),\n  tools.exec_command({cmd:\"rg -n -C 5 'Rule 12|Complexity.*Simplification|complexity-simplification' config/agent-rules.md docs/quality/complexity-simplification-gate.md\",\"workdir\":\"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control\",\"yield_time_ms\":10000,\"max_output_tokens\":8000})\n]);\nfor (const r of results) text(r.output);"
+            ],
+            "tool_calls": 37,
+            "total_tokens": 3317344
+          },
+          "effort": "high",
+          "harness": "codex_exec_jsonl_v2",
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "high",
+          "tools": [
+            "shell",
+            "rg",
+            "sed",
+            "git",
+            "python3",
+            "pnpm",
+            "pytest",
+            "playwright"
+          ],
+          "treatment_packet_id": "m6-workflow-skill-owner-v1",
+          "treatment_packet_sha256": "220285e0e66d572b67ed7ff1eb586d71f5def05555bdc5c0df1172075b5a02f1",
+          "treatment_receipt": "/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/artifacts/receipts/a-treatment.json",
+          "treatment_receipt_sha256": "67dcd67dc46f2764bc9417205fbfcd5d88d82fc0a5a6faa64886f119a4bae84b",
+          "treatment_rollout": "/Users/jakyeamos/.codex/sessions/2026/07/15/rollout-2026-07-15T14-46-13-019f6719-d1d2-7710-a828-1fba50afcce6.jsonl",
+          "treatment_rollout_telemetry": {
+            "blocked": true,
+            "duration_ms": 467745,
+            "failed_commands": 4,
+            "rollout_path": "/Users/jakyeamos/.codex/sessions/2026/07/15/rollout-2026-07-15T14-46-13-019f6719-d1d2-7710-a828-1fba50afcce6.jsonl",
+            "session_id": "019f6719-d1d2-7710-a828-1fba50afcce6",
+            "tests": [
+              "const plan = await tools.update_plan({plan:[\n  {step:\"Verify receipt/protected SHA and read packet-listed ownership context\",status:\"in_progress\"},\n  {step:\"Trace current workflow skill-candidate mutations and existing tests/contracts\",status:\"pending\"},\n  {step:\"Implement Python owner, JSON CLI, typed tRPC adapter, and deletion proof\",status:\"pending\"},\n  {step:\"Run focused and UI/architecture/build/browser verification\",status:\"pending\"},\n  {step:\"Review diff against acceptance criteria and report exact evidence/risks\",status:\"pending\"}\n]});\ntext(plan);\nconst r = await tools.exec_command({\n  cmd: \"printf '%s\\\\n' '--- relevant files ---'\\nrg --files | rg '(workflow|skill|candidate|PROJECT_TRUTH|PROGRESS|ADR-00[25]|019-|020-|021-|022-|package.json|pyproject.toml)' | head -200\\nprintf '%s\\\\n' '--- mutation/search hits ---'\\nrg -n -i '(skill.?candidate|candidate.*(promot|dismiss)|promot(e|ed|ion)|dismiss)' --glob '!*.lock' --glob '!node_modules/**' . | head -300\",\n  workdir: \"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-treatment\",\n  yield_time_ms: 10000,\n  max_output_tokens: 20000\n});\ntext(r.output);\n",
+              "const patch = \"*** Begin Patch\\n*** Add File: /private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-treatment/services/workflow_skill_mutations.py\\n+from __future__ import annotations\\n+\\n+import json\\n+import sqlite3\\n+from collections.abc import Mapping\\n+from pathlib import Path\\n+from typing import Literal, TypedDict\\n+\\n+ROOT = Path(__file__).resolve().parents[1]\\n+DEFAULT_SKILL_REGISTRY = ROOT / \\\"config\\\" / \\\"workflows\\\" / \\\"skills.json\\\"\\n+WorkflowSkillAction = Literal[\\\"promote\\\", \\\"dismiss\\\"]\\n+MUTABLE_FIELDS = {\\\"id\\\", \\\"action\\\"}\\n+\\n+\\n+class PromotedWorkflowSkill(TypedDict):\\n+    ok: bool\\n+    skill_key: str\\n+\\n+\\n+class DismissedWorkflowSkill(TypedDict):\\n+    ok: bool\\n+\\n+\\n+WorkflowSkillMutationResult = PromotedWorkflowSkill | DismissedWorkflowSkill\\n+\\n+\\n+def _required_id(payload: Mapping[str, object]) -> str:\\n+    value = payload.get(\\\"id\\\")\\n+    if not isinstance(value, str) or not value.strip():\\n+        raise ValueError(\\\"id is required\\\")\\n+    if len(value) > 200:\\n+        raise ValueError(\\\"id exceeds the 200-character limit\\\")\\n+    return value\\n+\\n+\\n+def _validate_payload(payload: Mapping[str, object]) -> tuple[str, WorkflowSkillAction]:\\n+    unknown = set(payload) - MUTABLE_FIELDS\\n+    if unknown:\\n+        names = \\\", \\\".join(sorted(str(name) for name in unknown))\\n+        raise ValueError(f\\\"Unsupported workflow skill candidate fields: {names}\\\")\\n+\\n+    candidate_id = _required_id(payload)\\n+    action = payload.get(\\\"action\\\")\\n+    if action not in (\\\"promote\\\", \\\"dismiss\\\"):\\n+        raise ValueError(\\\"action must be one of: promote, dismiss\\\")\\n+    return candidate_id, action\\n+\\n+\\n+def _table_exists(conn: sqlite3.Connection, name: str) -> bool:\\n+    row = conn.execute(\\n+        \\\"SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1\\\",\\n+        (name,),\\n+    ).fetchone()\\n+    return row is not None\\n+\\n+\\n+def _string_list(raw: object) -> list[str]:\\n+    if not isinstance(raw, list):\\n+        return []\\n+    return [item for item in raw if isinstance(item, str)]\\n+\\n+\\n+def _candidate_skill(row: sqlite3.Row) -> dict[str, object]:\\n+    try:\\n+        detail = json.loads(str(row[\\\"detail_json\\\"]))\\n+    except (json.JSONDecodeError, TypeError):\\n+        detail = {}\\n+    if not isinstance(detail, dict):\\n+        detail = {}\\n+\\n+    try:\\n+        tags = json.loads(str(row[\\\"tags_json\\\"]))\\n+    except (json.JSONDecodeError, TypeError):\\n+        tags = []\\n+\\n+    return {\\n+        \\\"key\\\": str(row[\\\"skill_key\\\"]),\\n+        \\\"purpose\\\": str(row[\\\"summary\\\"]),\\n+        \\\"allowed_stages\\\": _string_list(tags),\\n+        \\\"input_schema\\\": {},\\n+        \\\"output_schema\\\": {},\\n+        \\\"invariants\\\": _string_list(detail.get(\\\"invariants\\\")),\\n+        \\\"failure_conditions\\\": _string_list(detail.get(\\\"failure_conditions\\\")),\\n+        \\\"side_effects\\\": [],\\n+        \\\"execution_mode\\\": str(detail.get(\\\"execution_mode\\\", \\\"heuristic\\\")),\\n+    }\\n+\\n+\\n+def _write_promoted_skill(\\n+    row: sqlite3.Row,\\n+    *,\\n+    skill_registry_path: Path,\\n+) -> None:\\n+    try:\\n+        existing = json.loads(skill_registry_path.read_text(encoding=\\\"utf-8\\\"))\\n+        if not isinstance(existing, dict):\\n+            return\\n+        skills = existing.get(\\\"skills\\\", [])\\n+        if not isinstance(skills, list):\\n+            return\\n+        skill_key = str(row[\\\"skill_key\\\"])\\n+        if any(isinstance(skill, dict) and skill.get(\\\"key\\\") == skill_key for skill in skills):\\n+            return\\n+        skills.append(_candidate_skill(row))\\n+        skill_registry_path.write_text(\\n+            json.dumps({**existing, \\\"skills\\\": skills}, ensure_ascii=False, indent=2) + \\\"\\\\n\\\",\\n+            encoding=\\\"utf-8\\\",\\n+        )\\n+    except (OSError, TypeError, ValueError):\\n+        # Preserve the existing behavior: a missing or malformed skill registry\\n+        # does not prevent the candidate state transition.\\n+        return\\n+\\n+\\n+def update_workflow_skill_candidate(\\n+    conn: sqlite3.Connection,\\n+    payload: Mapping[str, object],\\n+    *,\\n+    skill_registry_path: Path | None = None,\\n+) -> WorkflowSkillMutationResult:\\n+    \\\"\\\"\\\"Apply one workflow skill-candidate transition as the Python owner.\\\"\\\"\\\"\\n+\\n+    candidate_id, action = _validate_payload(payload)\\n+    if not _table_exists(conn, \\\"github_skill_candidates\\\"):\\n+        return {\\\"ok\\\": False, \\\"skill_key\\\": \\\"\\\"} if action == \\\"promote\\\" else {\\\"ok\\\": False}\\n+\\n+    conn.row_factory = sqlite3.Row\\n+    row = conn.execute(\\n+        \\\"\\\"\\\"\\n+        SELECT skill_key, summary, tags_json, detail_json\\n+        FROM github_skill_candidates\\n+        WHERE id = ?\\n+        LIMIT 1\\n+        \\\"\\\"\\\",\\n+        (candidate_id,),\\n+    ).fetchone()\\n+    if row is None:\\n+        return {\\\"ok\\\": False, \\\"skill_key\\\": \\\"\\\"} if action == \\\"promote\\\" else {\\\"ok\\\": False}\\n+\\n+    if action == \\\"promote\\\":\\n+        _write_promoted_skill(\\n+            row,\\n+            skill_registry_path=skill_registry_path or DEFAULT_SKILL_REGISTRY,\\n+        )\\n+        statement = \\\"\\\"\\\"\\n+            UPDATE github_skill_candidates\\n+            SET status = 'promoted',\\n+                updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')\\n+            WHERE id = ?\\n+        \\\"\\\"\\\"\\n+        with conn:\\n+            result = conn.execute(statement, (candidate_id,))\\n+        return {\\\"ok\\\": result.rowcount > 0, \\\"skill_key\\\": str(row[\\\"skill_key\\\"])}\\n+\\n+    statement = \\\"\\\"\\\"\\n+        UPDATE github_skill_candidates\\n+        SET status = 'dismissed',\\n+            updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')\\n+        WHERE id = ?\\n+    \\\"\\\"\\\"\\n+    with conn:\\n+        result = conn.execute(statement, (candidate_id,))\\n+    return {\\\"ok\\\": result.rowcount > 0}\\n*** Add File: /private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-treatment/aios-ui/server/aios/workflow-skill-owner.ts\\n+import { execFileSync } from \\\"node:child_process\\\";\\n+import os from \\\"node:os\\\";\\n+import path from \\\"node:path\\\";\\n+\\n+import { resolveAiosRoot } from \\\"@/server/aios/filesystem\\\";\\n+\\n+export type WorkflowSkillCandidateAction = \\\"promote\\\" | \\\"dismiss\\\";\\n+\\n+export type WorkflowSkillCandidateUpdateInput = {\\n+  id: string;\\n+  action: WorkflowSkillCandidateAction;\\n+};\\n+\\n+export type PromotedWorkflowSkillResult = {\\n+  ok: boolean;\\n+  skillKey: string;\\n+};\\n+\\n+export type DismissedWorkflowSkillResult = {\\n+  ok: boolean;\\n+};\\n+\\n+type PythonWorkflowSkillResult = {\\n+  ok: boolean;\\n+  skill_key?: string;\\n+};\\n+\\n+type PythonEnvelope = {\\n+  data?: PythonWorkflowSkillResult;\\n+  error?: { message?: string };\\n+};\\n+\\n+const resolveDbPath = (): string => {\\n+  const configuredPath = process.env.AIOS_DB?.trim();\\n+  if (!configuredPath) {\\n+    return path.join(os.homedir(), \\\"AIOS\\\", \\\"data\\\", \\\"aios.db\\\");\\n+  }\\n+  if (configuredPath === \\\"~\\\") {\\n+    return os.homedir();\\n+  }\\n+  if (configuredPath.startsWith(\\\"~/\\\")) {\\n+    return path.join(os.homedir(), configuredPath.slice(2));\\n+  }\\n+  return path.resolve(configuredPath);\\n+};\\n+\\n+export function updateWorkflowSkillCandidateViaPythonOwner(\\n+  input: WorkflowSkillCandidateUpdateInput & { action: \\\"promote\\\" },\\n+): PromotedWorkflowSkillResult;\\n+export function updateWorkflowSkillCandidateViaPythonOwner(\\n+  input: WorkflowSkillCandidateUpdateInput & { action: \\\"dismiss\\\" },\\n+): DismissedWorkflowSkillResult;\\n+export function updateWorkflowSkillCandidateViaPythonOwner(\\n+  input: WorkflowSkillCandidateUpdateInput,\\n+): PromotedWorkflowSkillResult | DismissedWorkflowSkillResult {\\n+  const root = resolveAiosRoot();\\n+  const script = path.join(root, \\\"bin\\\", \\\"aios.py\\\");\\n+  try {\\n+    const output = execFileSync(\\n+      \\\"python3\\\",\\n+      [\\n+        script,\\n+        \\\"--json\\\",\\n+        \\\"--db\\\",\\n+        resolveDbPath(),\\n+        \\\"workflow-skill-candidate-update\\\",\\n+        \\\"--payload-json\\\",\\n+        JSON.stringify(input),\\n+      ],\\n+      {\\n+        cwd: root,\\n+        encoding: \\\"utf8\\\",\\n+        maxBuffer: 256 * 1024,\\n+      },\\n+    );\\n+    const envelope = JSON.parse(output) as PythonEnvelope;\\n+    if (!envelope.data) {\\n+      throw new Error(envelope.error?.message ?? \\\"Python owner returned no workflow skill payload.\\\");\\n+    }\\n+    if (input.action === \\\"promote\\\") {\\n+      return { ok: envelope.data.ok, skillKey: envelope.data.skill_key ?? \\\"\\\" };\\n+    }\\n+    return { ok: envelope.data.ok };\\n+  } catch (error) {\\n+    if (error instanceof Error && error.message.startsWith(\\\"Python owner returned\\\")) {\\n+      throw error;\\n+    }\\n+    throw new Error(\\\"Python workflow skill owner rejected the mutation.\\\", { cause: error });\\n+  }\\n+}\\n*** Add File: /private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-treatment/tests/test_workflow_skill_mutations.py\\n+from __future__ import annotations\\n+\\n+import json\\n+import sqlite3\\n+from pathlib import Path\\n+\\n+import pytest\\n+\\n+import services.workflow_skill_mutations as workflow_skill_mutations\\n+from services.aios_cli import EXIT_OK, EXIT_NOT_FOUND, EXIT_USAGE, run_cli\\n+from services.workflow_skill_mutations import update_workflow_skill_candidate\\n+\\n+\\n+def _seed_db(path: Path) -> None:\\n+    conn = sqlite3.connect(path)\\n+    conn.executescript(\\n+        \\\"\\\"\\\"\\n+        CREATE TABLE github_skill_candidates (\\n+          id TEXT PRIMARY KEY,\\n+          workflow_key TEXT NOT NULL,\\n+          skill_key TEXT NOT NULL,\\n+          name TEXT NOT NULL,\\n+          github_url TEXT NOT NULL,\\n+          repo TEXT NOT NULL,\\n+          path TEXT,\\n+          summary TEXT NOT NULL,\\n+          tags_json TEXT NOT NULL DEFAULT '[]',\\n+          detail_json TEXT NOT NULL DEFAULT '{}',\\n+          status TEXT NOT NULL DEFAULT 'candidate',\\n+          created_at TEXT NOT NULL,\\n+          updated_at TEXT NOT NULL\\n+        );\\n+        INSERT INTO github_skill_candidates (\\n+          id, workflow_key, skill_key, name, github_url, repo, path, summary,\\n+          tags_json, detail_json, status, created_at, updated_at\\n+        ) VALUES (\\n+          'candidate-1', 'debug-workflow', 'debug-skill', 'Debug skill',\\n+          'https://github.com/example/debug', 'example/debug', 'SKILL.md',\\n+          'Investigate the reported failure.',\\n+          '[\\\"diagnose\\\", \\\"validate\\\"]',\\n+          '{\\\"invariants\\\":[\\\"Keep the scope bounded.\\\"],\\\"failure_conditions\\\":[\\\"No evidence\\\"],\\\"execution_mode\\\":\\\"deterministic\\\"}',\\n+          'candidate', '2026-07-15T00:00:00Z', '2026-07-15T00:00:00Z'\\n+        );\\n+        \\\"\\\"\\\"\\n+    )\\n+    conn.commit()\\n+    conn.close()\\n+\\n+\\n+def test_promote_writes_skill_file_and_updates_candidate(tmp_path: Path) -> None:\\n+    db_path = tmp_path / \\\"aios.db\\\"\\n+    registry_path = tmp_path / \\\"skills.json\\\"\\n+    registry_path.write_text('{\\\"skills\\\": [{\\\"key\\\": \\\"existing\\\"}]}\\\\n', encoding=\\\"utf-8\\\")\\n+    _seed_db(db_path)\\n+    conn = sqlite3.connect(db_path)\\n+    conn.row_factory = sqlite3.Row\\n+\\n+    result = update_workflow_skill_candidate(\\n+        conn,\\n+        {\\\"id\\\": \\\"candidate-1\\\", \\\"action\\\": \\\"promote\\\"},\\n+        skill_registry_path=registry_path,\\n+    )\\n+\\n+    assert result == {\\\"ok\\\": True, \\\"skill_key\\\": \\\"debug-skill\\\"}\\n+    skill_payload = json.loads(registry_path.read_text(encoding=\\\"utf-8\\\"))\\n+    assert skill_payload[\\\"skills\\\"][-1] == {\\n+        \\\"key\\\": \\\"debug-skill\\\",\\n+        \\\"purpose\\\": \\\"Investigate the reported failure.\\\",\\n+        \\\"allowed_stages\\\": [\\\"diagnose\\\", \\\"validate\\\"],\\n+        \\\"input_schema\\\": {},\\n+        \\\"output_schema\\\": {},\\n+        \\\"invariants\\\": [\\\"Keep the scope bounded.\\\"],\\n+        \\\"failure_conditions\\\": [\\\"No evidence\\\"],\\n+        \\\"side_effects\\\": [],\\n+        \\\"execution_mode\\\": \\\"deterministic\\\",\\n+    }\\n+    assert conn.execute(\\n+        \\\"SELECT status FROM github_skill_candidates WHERE id = 'candidate-1'\\\"\\n+    ).fetchone()[0] == \\\"promoted\\\"\\n+    conn.close()\\n+\\n+\\n+def test_dismiss_updates_candidate_without_skill_file_write(tmp_path: Path) -> None:\\n+    db_path = tmp_path / \\\"aios.db\\\"\\n+    registry_path = tmp_path / \\\"skills.json\\\"\\n+    _seed_db(db_path)\\n+    conn = sqlite3.connect(db_path)\\n+\\n+    result = update_workflow_skill_candidate(\\n+        conn,\\n+        {\\\"id\\\": \\\"candidate-1\\\", \\\"action\\\": \\\"dismiss\\\"},\\n+        skill_registry_path=registry_path,\\n+    )\\n+\\n+    assert result == {\\\"ok\\\": True}\\n+    assert not registry_path.exists()\\n+    assert conn.execute(\\n+        \\\"SELECT status FROM github_skill_candidates WHERE id = 'candidate-1'\\\"\\n+    ).fetchone()[0] == \\\"dismissed\\\"\\n+    conn.close()\\n+\\n+\\n+def test_missing_rows_fail_closed_for_both_actions(tmp_path: Path) -> None:\\n+    db_path = tmp_path / \\\"aios.db\\\"\\n+    _seed_db(db_path)\\n+    conn = sqlite3.connect(db_path)\\n+    conn.row_factory = sqlite3.Row\\n+\\n+    assert update_workflow_skill_candidate(conn, {\\\"id\\\": \\\"missing\\\", \\\"action\\\": \\\"promote\\\"}) == {\\n+        \\\"ok\\\": False,\\n+        \\\"skill_key\\\": \\\"\\\",\\n+    }\\n+    assert update_workflow_skill_candidate(conn, {\\\"id\\\": \\\"missing\\\", \\\"action\\\": \\\"dismiss\\\"}) == {\\n+        \\\"ok\\\": False\\n+    }\\n+    conn.close()\\n+\\n+\\n+@pytest.mark.parametrize(\\n+    \\\"payload, message\\\",\\n+    [\\n+        ({\\\"id\\\": \\\"candidate-1\\\", \\\"action\\\": \\\"keep\\\"}, \\\"action must be one of\\\"),\\n+        ({\\\"id\\\": \\\"candidate-1\\\", \\\"action\\\": \\\"promote\\\", \\\"status\\\": \\\"promoted\\\"}, \\\"Unsupported\\\"),\\n+        ({\\\"id\\\": \\\"\\\", \\\"action\\\": \\\"dismiss\\\"}, \\\"id is required\\\"),\\n+    ],\\n+)\\n+def test_invalid_payload_is_rejected(tmp_path: Path, payload: dict[str, object], message: str) -> None:\\n+    db_path = tmp_path / \\\"aios.db\\\"\\n+    _seed_db(db_path)\\n+    conn = sqlite3.connect(db_path)\\n+\\n+    with pytest.raises(ValueError, match=message):\\n+        update_workflow_skill_candidate(conn, payload)\\n+    conn.close()\\n+\\n+\\n+def test_cli_owns_promote_and_dismiss_json_contracts(\\n+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]\\n+) -> None:\\n+    db_path = tmp_path / \\\"aios.db\\\"\\n+    registry_path = tmp_path / \\\"skills.json\\\"\\n+    registry_path.write_text('{\\\"skills\\\": []}\\\\n', encoding=\\\"utf-8\\\")\\n+    _seed_db(db_path)\\n+    monkeypatch.setattr(workflow_skill_mutations, \\\"DEFAULT_SKILL_REGISTRY\\\", registry_path)\\n+\\n+    promote_exit = run_cli(\\n+        [\\n+            \\\"--json\\\",\\n+            \\\"--db\\\",\\n+            str(db_path),\\n+            \\\"workflow-skill-candidate-update\\\",\\n+            \\\"--payload-json\\\",\\n+            json.dumps({\\\"id\\\": \\\"candidate-1\\\", \\\"action\\\": \\\"promote\\\"}),\\n+        ]\\n+    )\\n+    promote_payload = json.loads(capsys.readouterr().out)\\n+    assert promote_exit == EXIT_OK\\n+    assert promote_payload[\\\"data\\\"] == {\\n+        \\\"action\\\": \\\"promote\\\",\\n+        \\\"ok\\\": True,\\n+        \\\"schema\\\": \\\"workflow-skill-candidate-update-result-v1\\\",\\n+        \\\"skill_key\\\": \\\"debug-skill\\\",\\n+    }\\n+\\n+    dismiss_exit = run_cli(\\n+        [\\n+            \\\"--json\\\",\\n+            \\\"--db\\\",\\n+            str(db_path),\\n+            \\\"workflow-skill-candidate-update\\\",\\n+            \\\"--payload-json\\\",\\n+            json.dumps({\\\"id\\\": \\\"candidate-1\\\", \\\"action\\\": \\\"dismiss\\\"}),\\n+        ]\\n+    )\\n+    dismiss_payload = json.loads(capsys.readouterr().out)\\n+    assert dismiss_exit == EXIT_OK\\n+    assert dismiss_payload[\\\"data\\\"] == {\\n+        \\\"action\\\": \\\"dismiss\\\",\\n+        \\\"ok\\\": True,\\n+        \\\"schema\\\": \\\"workflow-skill-candidate-update-result-v1\\\",\\n+    }\\n+\\n+\\n+def test_cli_reports_missing_and_invalid_candidate_payloads(\\n+    tmp_path: Path, capsys: pytest.CaptureFixture[str]\\n+) -> None:\\n+    db_path = tmp_path / \\\"aios.db\\\"\\n+    _seed_db(db_path)\\n+\\n+    missing_exit = run_cli(\\n+        [\\n+            \\\"--json\\\",\\n+            \\\"--db\\\",\\n+            str(db_path),\\n+            \\\"workflow-skill-candidate-update\\\",\\n+            \\\"--payload-json\\\",\\n+            json.dumps({\\\"id\\\": \\\"missing\\\", \\\"action\\\": \\\"dismiss\\\"}),\\n+        ]\\n+    )\\n+    missing_payload = json.loads(capsys.readouterr().out)\\n+    assert missing_exit == EXIT_OK\\n+    assert missing_payload[\\\"data\\\"][\\\"ok\\\"] is False\\n+\\n+    invalid_exit = run_cli(\\n+        [\\n+            \\\"--json\\\",\\n+            \\\"--db\\\",\\n+            str(db_path),\\n+            \\\"workflow-skill-candidate-update\\\",\\n+            \\\"--payload-json\\\",\\n+            json.dumps({\\\"id\\\": \\\"candidate-1\\\", \\\"action\\\": \\\"keep\\\"}),\\n+        ]\\n+    )\\n+    invalid_payload = json.loads(capsys.readouterr().out)\\n+    assert invalid_exit == EXIT_USAGE\\n+    assert invalid_payload[\\\"error\\\"][\\\"code\\\"] == \\\"workflow-skill-candidate-invalid\\\"\\n*** Update File: /private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-treatment/services/aios_cli.py\\n@@\\n from services.workflow_promotion import (\\n     compare_workflow_effectiveness,\\n     propose_workflow_promotion,\\n )\\n+from services.workflow_skill_mutations import update_workflow_skill_candidate\\n@@\\n def _pattern_approval_update_payload(\\n@@\\n     return {\\\"schema\\\": \\\"pattern-approval-update-result-v1\\\", **result, \\\"decision\\\": payload[\\\"decision\\\"]}\\n+\\n+\\n+def _workflow_skill_candidate_update_payload(\\n+    conn: sqlite3.Connection, args: argparse.Namespace\\n+) -> dict[str, Any]:\\n+    payload = _parse_json_object(args.payload_json)\\n+    if not payload:\\n+        raise CLIError(\\\"invalid-payload\\\", \\\"--payload-json must contain a non-empty object\\\", EXIT_USAGE)\\n+    try:\\n+        result = update_workflow_skill_candidate(conn, payload)\\n+    except ValueError as exc:\\n+        raise CLIError(\\\"workflow-skill-candidate-invalid\\\", str(exc), EXIT_USAGE) from exc\\n+    return {\\\"schema\\\": \\\"workflow-skill-candidate-update-result-v1\\\", **result, \\\"action\\\": payload[\\\"action\\\"]}\\n@@\\n     if args.command == \\\"standards-backfill-update\\\":\\n         return \\\"standards-backfill-update\\\"\\n+    if args.command == \\\"workflow-skill-candidate-update\\\":\\n+        return \\\"workflow-skill-candidate-update\\\"\\n@@\\n         \\\"pattern-approval-update\\\",\\n+        \\\"workflow-skill-candidate-update\\\",\\n         \\\"automation-trigger\\\",\\n@@\\n     pattern_approval_update.add_argument(\\n@@\\n         help=\\\"JSON object containing id and decision (approve or reject)\\\",\\n     )\\n+\\n+    workflow_skill_candidate_update = subparsers.add_parser(\\n+        \\\"workflow-skill-candidate-update\\\",\\n+        help=\\\"Apply one governed workflow skill-candidate transition\\\",\\n+    )\\n+    workflow_skill_candidate_update.add_argument(\\n+        \\\"--payload-json\\\",\\n+        required=True,\\n+        help=\\\"JSON object containing id and action (promote or dismiss)\\\",\\n+    )\\n@@\\n         elif args.command == \\\"pattern-approval-update\\\":\\n             assert conn is not None\\n             data = _pattern_approval_update_payload(conn, args)\\n+        elif args.command == \\\"workflow-skill-candidate-update\\\":\\n+            assert conn is not None\\n+            data = _workflow_skill_candidate_update_payload(conn, args)\\n*** Update File: /private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-treatment/aios-ui/server/routers/workflows.ts\\n@@\\n import { seededWorkflowMetrics } from \\\"@/lib/seed\\\";\\n import type { WorkflowMetric } from \\\"@/lib/types\\\";\\n+import { updateWorkflowSkillCandidateViaPythonOwner } from \\\"@/server/aios/workflow-skill-owner\\\";\\n import { tableExists } from \\\"@/server/db\\\";\\n@@\\n   promoteSkill: publicProcedure\\n     .input(z.object({ id: z.string().min(1) }))\\n-    .mutation(({ ctx, input }): { ok: boolean; skillKey: string } => {\\n-      if (!tableExists(\\\"github_skill_candidates\\\")) return { ok: false, skillKey: \\\"\\\" };\\n-      const row = ctx.db\\n-        .prepare(\\n-          `SELECT skill_key AS skillKey, name, summary, tags_json AS tagsJson, detail_json AS detailJson\\n-           FROM github_skill_candidates WHERE id = ? LIMIT 1`,\\n-        )\\n-        .get(input.id) as { skillKey: string; name: string; summary: string; tagsJson: string; detailJson: string } | undefined;\\n-      if (!row) return { ok: false, skillKey: \\\"\\\" };\\n-\\n-      let detail: Record<string, unknown> = {};\\n-      try { detail = JSON.parse(row.detailJson) as Record<string, unknown>; } catch { /* empty */ }\\n-      let tags: string[] = [];\\n-      try { tags = JSON.parse(row.tagsJson) as string[]; } catch { /* empty */ }\\n-\\n-      const newSkill = {\\n-        key: row.skillKey,\\n-        purpose: row.summary,\\n-        allowed_stages: tags,\\n-        input_schema: {},\\n-        output_schema: {},\\n-        invariants: (detail.invariants as string[] | undefined) ?? [],\\n-        failure_conditions: (detail.failure_conditions as string[] | undefined) ?? [],\\n-        side_effects: [],\\n-        execution_mode: (detail.execution_mode as string | undefined) ?? \\\"heuristic\\\",\\n-      };\\n-\\n-      try {\\n-        const existing = JSON.parse(readFileSync(SKILLS_PATH, \\\"utf8\\\")) as { skills: unknown[] };\\n-        const skills = existing.skills ?? [];\\n-        if (!skills.some((s) => (s as { key?: string }).key === row.skillKey)) {\\n-          skills.push(newSkill);\\n-          writeFileSync(SKILLS_PATH, `${JSON.stringify({ ...existing, skills }, null, 2)}\\\\n`);\\n-        }\\n-      } catch { /* skills.json missing or malformed \u2014 skip file write */ }\\n-\\n-      ctx.db\\n-        .prepare(\\n-          `UPDATE github_skill_candidates SET status = 'promoted',\\n-           updated_at = strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE id = ?`,\\n-        )\\n-        .run(input.id);\\n-      return { ok: true, skillKey: row.skillKey };\\n+    .mutation(({ input }): { ok: boolean; skillKey: string } => {\\n+      return updateWorkflowSkillCandidateViaPythonOwner({ id: input.id, action: \\\"promote\\\" });\\n     }),\\n \\n   dismissSkill: publicProcedure\\n     .input(z.object({ id: z.string().min(1) }))\\n-    .mutation(({ ctx, input }): { ok: boolean } => {\\n-      if (!tableExists(\\\"github_skill_candidates\\\")) return { ok: false };\\n-      ctx.db\\n-        .prepare(\\n-          `UPDATE github_skill_candidates SET status = 'dismissed',\\n-           updated_at = strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE id = ?`,\\n-        )\\n-        .run(input.id);\\n-      return { ok: true };\\n+    .mutation(({ input }): { ok: boolean } => {\\n+      return updateWorkflowSkillCandidateViaPythonOwner({ id: input.id, action: \\\"dismiss\\\" });\\n     }),\\n*** End Patch\";\ntext(await tools.apply_patch(patch));\n",
+              "const r = await tools.exec_command({\n  cmd: \".venv/bin/pytest -q tests/test_workflow_skill_mutations.py\",\n  workdir: \"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-treatment\",\n  yield_time_ms: 1000,\n  max_output_tokens: 12000\n});\ntext(JSON.stringify(r));\n",
+              "const r = await tools.exec_command({\n  cmd: \"PYTHONPATH=. .venv/bin/pytest -q tests/test_workflow_skill_mutations.py\",\n  workdir: \"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-treatment\",\n  yield_time_ms: 1000,\n  max_output_tokens: 12000\n});\ntext(JSON.stringify(r));\n",
+              "const r = await tools.exec_command({\n  cmd: \"PYTHONPATH=. .venv/bin/ruff check services/workflow_skill_mutations.py services/aios_cli.py tests/test_workflow_skill_mutations.py\\nPYTHONPATH=. .venv/bin/basedpyright services/workflow_skill_mutations.py services/aios_cli.py tests/test_workflow_skill_mutations.py\",\n  workdir: \"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-treatment\",\n  yield_time_ms: 1000,\n  max_output_tokens: 16000\n});\ntext(JSON.stringify(r));\n",
+              "const patch = \"*** Begin Patch\\n*** Update File: /private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-treatment/tests/test_workflow_skill_mutations.py\\n@@\\n import pytest\\n \\n import services.workflow_skill_mutations as workflow_skill_mutations\\n-from services.aios_cli import EXIT_OK, EXIT_NOT_FOUND, EXIT_USAGE, run_cli\\n from services.workflow_skill_mutations import update_workflow_skill_candidate\\n+from services.aios_cli import EXIT_OK, EXIT_USAGE, run_cli\\n*** End Patch\";\ntext(await tools.apply_patch(patch));\n",
+              "const r = await tools.exec_command({\n  cmd: \"PYTHONPATH=. .venv/bin/ruff check --fix tests/test_workflow_skill_mutations.py\",\n  workdir: \"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-treatment\",\n  yield_time_ms: 10000,\n  max_output_tokens: 4000\n});\ntext(r.output);\n",
+              "const r = await tools.exec_command({\n  cmd: \"PYTHONPATH=. .venv/bin/pytest -q tests/test_workflow_skill_mutations.py tests/test_workflow_experiments.py\",\n  workdir: \"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-treatment\",\n  yield_time_ms: 1000,\n  max_output_tokens: 16000\n});\ntext(JSON.stringify(r));\n",
+              "const plan = await tools.update_plan({explanation:\"Receipt/context and current mutation paths are verified; owner implementation and focused proof are passing.\",plan:[\n  {step:\"Verify receipt/protected SHA and read packet-listed ownership context\",status:\"completed\"},\n  {step:\"Trace current workflow skill-candidate mutations and existing tests/contracts\",status:\"completed\"},\n  {step:\"Implement Python owner, JSON CLI, typed tRPC adapter, and deletion proof\",status:\"completed\"},\n  {step:\"Run focused and UI/architecture/build/browser verification\",status:\"in_progress\"},\n  {step:\"Review diff against acceptance criteria and report exact evidence/risks\",status:\"pending\"}\n]});\ntext(plan);\nconst r = await tools.exec_command({\n  cmd: \"pnpm --dir aios-ui lint\",\n  workdir: \"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-treatment\",\n  yield_time_ms: 1000,\n  max_output_tokens: 12000\n});\ntext(JSON.stringify(r));\n",
+              "const r = await tools.exec_command({\n  cmd: \"jq '.scripts' aios-ui/package.json\\nprintf '%s\\\\n' '--- browser contract files ---'\\nrg --files aios-ui | rg '(browser|playwright|test)' | sort | head -100\\nprintf '%s\\\\n' '--- current diff stat ---'\\ngit diff --stat\\ngit diff -- services/aios_cli.py aios-ui/server/routers/workflows.ts | sed -n '1,260p'\",\n  workdir: \"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-treatment\",\n  yield_time_ms: 10000,\n  max_output_tokens: 18000\n});\ntext(r.output);\n",
+              "const r = await tools.exec_command({\n  cmd: \"PYTHONPATH=. .venv/bin/ruff check services/workflow_skill_mutations.py services/aios_cli.py tests/test_workflow_skill_mutations.py\\nPYTHONPATH=. .venv/bin/basedpyright services/workflow_skill_mutations.py services/aios_cli.py tests/test_workflow_skill_mutations.py\\nPYTHONPATH=. .venv/bin/pytest -q tests/test_aios_cli.py\",\n  workdir: \"/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-treatment\",\n  yield_time_ms: 1000,\n  max_output_tokens: 16000\n});\ntext(JSON.stringify(r));\n",
+              "const plan = await tools.update_plan({explanation:\"Owner implementation, focused proof, CLI regression, lint/typecheck, source deletion scan, and final receipt/SHA recheck are complete. UI checks are blocked by the protected checkout's external node_modules symlink and pnpm EPERM.\",plan:[\n  {step:\"Verify receipt/protected SHA and read packet-listed ownership context\",status:\"completed\"},\n  {step:\"Trace current workflow skill-candidate mutations and existing tests/contracts\",status:\"completed\"},\n  {step:\"Implement Python owner, JSON CLI, typed tRPC adapter, and deletion proof\",status:\"completed\"},\n  {step:\"Run focused and UI/architecture/build/browser verification\",status:\"completed\"},\n  {step:\"Review diff against acceptance criteria and report exact evidence/risks\",status:\"completed\"}\n]});\ntext(plan);\n"
+            ],
+            "tool_calls": 40,
+            "total_tokens": 4700740
+          }
+        },
+        "prompt_hash": "50ce12430b1422a6ff48e0279deddd3d2c9194bf388636f2035be6cb1976a638",
+        "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+        "report_path": "docs/evals/M6_UNBLOCK_THREE_TASK_REPORT.md",
+        "status": "insufficient_evidence",
+        "superseded_at": null,
+        "superseded_reason": null,
+        "task_hash": "1190688cd83d20cd960d0b14a960cce4aa4b8a3893e6fdd6dc1760b4ab3d146d",
+        "task_id": "eval-task-242b8902-7055-43fc-b36c-23478ab1e662",
+        "treatment_run_id": "eval-run-3ed805c5-4a46-4145-ae76-cf6af373ff06",
+        "treatment_score": null
+      },
+      "pair_id": "eval-pair-cb820bad-9dcb-422c-8eab-41c89faca680",
+      "receipts": {
+        "control": {
+          "budget": {
+            "seconds": 900,
+            "tokens": 20000
+          },
+          "clean_status_before": "",
+          "condition": "baseline_repo_only",
+          "context_manifest_hash": "a8f9a7465cc67ccfaa9879e612e580a384da2bcdeafdd739cd7999b71d60d405",
+          "context_manifest_sha256": "a8f9a7465cc67ccfaa9879e612e580a384da2bcdeafdd739cd7999b71d60d405",
+          "context_profile": "peer_repo_only",
+          "created_at_utc": "2026-07-15T18:45:34.503667+00:00",
+          "events_path": "/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/artifacts/a-control-events.jsonl",
+          "expected_dependency_mounts": [
+            ".venv",
+            "aios-ui/node_modules"
+          ],
+          "final_path": "/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/artifacts/a-control-final.md",
+          "harness": "codex_exec_jsonl_v2",
+          "launch_command_argv": [
+            "codex",
+            "exec",
+            "--json",
+            "--model",
+            "gpt-5.6-luna",
+            "-c",
+            "model_reasoning_effort=high",
+            "-s",
+            "workspace-write",
+            "-C",
+            "/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control",
+            "-o",
+            "/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/artifacts/a-control-final.md",
+            "-"
+          ],
+          "model": "gpt-5.6-luna",
+          "packet_id": null,
+          "packet_sha256": null,
+          "pair_prompt_hash": "50ce12430b1422a6ff48e0279deddd3d2c9194bf388636f2035be6cb1976a638",
+          "prompt_hash": "da99d7162a5f1653ab361cc106438a578e863bfb985d12d0d0657db226ba6ae5",
+          "prompt_sha256": "da99d7162a5f1653ab361cc106438a578e863bfb985d12d0d0657db226ba6ae5",
+          "prompt_snapshot_path": "/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/artifacts/prompts/task-a-control.md",
+          "prompt_source_path": "/Users/jakyeamos/projects/AIOS/.aios/m6-unblock-ledger/benchmark/m6-promotion-prompts/task-a-rerun-control.md",
+          "protected_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "reasoning_effort": "high",
+          "receipt_id": "m6-a-rerun-control",
+          "receipt_sha256": "266f6538c3bb003223254d4503608e3859e0f82c13dd154516220ab07eb85d42",
+          "sandbox": "workspace-write",
+          "schema": "aios-m6-a-pre-run-receipt-v1",
+          "stderr_path": "/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/artifacts/a-control-stderr.log",
+          "task_hash": "1190688cd83d20cd960d0b14a960cce4aa4b8a3893e6fdd6dc1760b4ab3d146d",
+          "task_slug": "task-a-workflow-skill-owner",
+          "tools": [
+            "shell",
+            "rg",
+            "sed",
+            "git",
+            "python3",
+            "pnpm",
+            "pytest",
+            "playwright"
+          ],
+          "treatment_context_files": [
+            {
+              "byte_count": 12048,
+              "path": "docs/modernization/ADR-002-canonical-state-and-migration-authority.md",
+              "sha256": "19b728fb8c4d74f5b13f5dd369e0b176d6533bdc4cb8ec78770a17e7ed8a8aa3"
+            },
+            {
+              "byte_count": 13300,
+              "path": "docs/modernization/ADR-005-subsystem-ownership-and-parallel-v2-strategy.md",
+              "sha256": "0a185fe9dfaa5404691a94a3541e61824f314ef4c094cb4b8c5d3aa405885f68"
+            },
+            {
+              "byte_count": 46338,
+              "path": "docs/modernization/PROGRESS.md",
+              "sha256": "d98e4264fe979155043ce76dc5da4887a96d71c9ce723bf843e1895385353149"
+            },
+            {
+              "byte_count": 20004,
+              "path": ".tracker/PROJECT_TRUTH.md",
+              "sha256": "3c174176c641457a96ab7cad9d1d102558678d053dcd80e4f6671a356f5c2894"
+            },
+            {
+              "byte_count": 2436,
+              "path": ".wayfinder/aios-modernization/tickets/019-migrate-standards-backfill-write-owner.md",
+              "sha256": "6a611fc22857b60443870979c1a04276bcf84e288f2db132f10a55f001bea644"
+            },
+            {
+              "byte_count": 2459,
+              "path": ".wayfinder/aios-modernization/tickets/020-migrate-project-component-settings-owner.md",
+              "sha256": "3757fe6f2c406493db5bb0ab73ada0512418f1513ccdf9631f71d7f4f46937e1"
+            },
+            {
+              "byte_count": 1476,
+              "path": ".wayfinder/aios-modernization/tickets/021-migrate-automation-trigger-owner.md",
+              "sha256": "4c0b59264425d226553aac5d663461b6a269aff8a47c57fa36f52f1dabdf2f73"
+            },
+            {
+              "byte_count": 1640,
+              "path": ".wayfinder/aios-modernization/tickets/022-migrate-pattern-approval-owner.md",
+              "sha256": "b1037064f33669b3e7af861d00e247d12054815e30c896ae11014ab394f18295"
+            }
+          ],
+          "worktree_head_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "worktree_path": "/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control"
+        },
+        "treatment": {
+          "budget": {
+            "seconds": 900,
+            "tokens": 20000
+          },
+          "clean_status_before": "",
+          "condition": "aios_portable_context_packet",
+          "context_manifest_hash": "a8f9a7465cc67ccfaa9879e612e580a384da2bcdeafdd739cd7999b71d60d405",
+          "context_manifest_sha256": "a8f9a7465cc67ccfaa9879e612e580a384da2bcdeafdd739cd7999b71d60d405",
+          "context_profile": "peer_portable_context_packet",
+          "created_at_utc": "2026-07-15T18:45:34.503667+00:00",
+          "events_path": "/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/artifacts/a-treatment-events.jsonl",
+          "expected_dependency_mounts": [
+            ".venv",
+            "aios-ui/node_modules"
+          ],
+          "final_path": "/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/artifacts/a-treatment-final.md",
+          "harness": "codex_exec_jsonl_v2",
+          "launch_command_argv": [
+            "codex",
+            "exec",
+            "--json",
+            "--model",
+            "gpt-5.6-luna",
+            "-c",
+            "model_reasoning_effort=high",
+            "-s",
+            "workspace-write",
+            "-C",
+            "/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-treatment",
+            "-o",
+            "/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/artifacts/a-treatment-final.md",
+            "-"
+          ],
+          "model": "gpt-5.6-luna",
+          "packet_id": "m6-workflow-skill-owner-v1",
+          "packet_sha256": "220285e0e66d572b67ed7ff1eb586d71f5def05555bdc5c0df1172075b5a02f1",
+          "pair_prompt_hash": "50ce12430b1422a6ff48e0279deddd3d2c9194bf388636f2035be6cb1976a638",
+          "prompt_hash": "f3d546c6aa99c362c5fbb320061e18e3698ce02038287a4a2ac3925210865122",
+          "prompt_sha256": "f3d546c6aa99c362c5fbb320061e18e3698ce02038287a4a2ac3925210865122",
+          "prompt_snapshot_path": "/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/artifacts/prompts/task-a-treatment.md",
+          "prompt_source_path": "/Users/jakyeamos/projects/AIOS/.aios/m6-unblock-ledger/benchmark/m6-promotion-prompts/task-a-rerun-treatment.md",
+          "protected_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "reasoning_effort": "high",
+          "receipt_id": "m6-a-rerun-treatment",
+          "receipt_sha256": "67dcd67dc46f2764bc9417205fbfcd5d88d82fc0a5a6faa64886f119a4bae84b",
+          "sandbox": "workspace-write",
+          "schema": "aios-m6-a-pre-run-receipt-v1",
+          "stderr_path": "/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/artifacts/a-treatment-stderr.log",
+          "task_hash": "1190688cd83d20cd960d0b14a960cce4aa4b8a3893e6fdd6dc1760b4ab3d146d",
+          "task_slug": "task-a-workflow-skill-owner",
+          "tools": [
+            "shell",
+            "rg",
+            "sed",
+            "git",
+            "python3",
+            "pnpm",
+            "pytest",
+            "playwright"
+          ],
+          "treatment_context_files": [
+            {
+              "byte_count": 12048,
+              "path": "docs/modernization/ADR-002-canonical-state-and-migration-authority.md",
+              "sha256": "19b728fb8c4d74f5b13f5dd369e0b176d6533bdc4cb8ec78770a17e7ed8a8aa3"
+            },
+            {
+              "byte_count": 13300,
+              "path": "docs/modernization/ADR-005-subsystem-ownership-and-parallel-v2-strategy.md",
+              "sha256": "0a185fe9dfaa5404691a94a3541e61824f314ef4c094cb4b8c5d3aa405885f68"
+            },
+            {
+              "byte_count": 46338,
+              "path": "docs/modernization/PROGRESS.md",
+              "sha256": "d98e4264fe979155043ce76dc5da4887a96d71c9ce723bf843e1895385353149"
+            },
+            {
+              "byte_count": 20004,
+              "path": ".tracker/PROJECT_TRUTH.md",
+              "sha256": "3c174176c641457a96ab7cad9d1d102558678d053dcd80e4f6671a356f5c2894"
+            },
+            {
+              "byte_count": 2436,
+              "path": ".wayfinder/aios-modernization/tickets/019-migrate-standards-backfill-write-owner.md",
+              "sha256": "6a611fc22857b60443870979c1a04276bcf84e288f2db132f10a55f001bea644"
+            },
+            {
+              "byte_count": 2459,
+              "path": ".wayfinder/aios-modernization/tickets/020-migrate-project-component-settings-owner.md",
+              "sha256": "3757fe6f2c406493db5bb0ab73ada0512418f1513ccdf9631f71d7f4f46937e1"
+            },
+            {
+              "byte_count": 1476,
+              "path": ".wayfinder/aios-modernization/tickets/021-migrate-automation-trigger-owner.md",
+              "sha256": "4c0b59264425d226553aac5d663461b6a269aff8a47c57fa36f52f1dabdf2f73"
+            },
+            {
+              "byte_count": 1640,
+              "path": ".wayfinder/aios-modernization/tickets/022-migrate-pattern-approval-owner.md",
+              "sha256": "b1037064f33669b3e7af861d00e247d12054815e30c896ae11014ab394f18295"
+            }
+          ],
+          "worktree_head_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "worktree_path": "/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-treatment"
+        }
+      },
+      "task_id": "eval-task-242b8902-7055-43fc-b36c-23478ab1e662",
+      "treatment_run_id": "eval-run-3ed805c5-4a46-4145-ae76-cf6af373ff06"
+    },
+    {
+      "control_run_id": "eval-run-115edc0a-c0a5-4c63-abd2-64e03f1c0cf3",
+      "pair": {
+        "contamination_evidence": {
+          "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "receipt_identity_verified": true,
+          "root_worktree_untouched": true,
+          "status": "passed"
+        },
+        "contamination_status": "passed",
+        "context_hash": "a8f9a7465cc67ccfaa9879e612e580a384da2bcdeafdd739cd7999b71d60d405",
+        "control_run_id": "eval-run-115edc0a-c0a5-4c63-abd2-64e03f1c0cf3",
+        "control_score": null,
+        "created_at": "2026-07-15T19:14:10.310059+00:00",
+        "decision": "defer",
+        "delta": null,
+        "events": [
+          {
+            "created_at": "2026-07-15T19:14:10.310297+00:00",
+            "event_type": "created",
+            "id": "eval-pair-event-8340b681-8f69-4fa5-9ad9-42f3b14d4338",
+            "pair_id": "eval-pair-c463b851-514d-4d83-b51a-d7d592536577",
+            "payload": {
+              "control_run_id": "eval-run-115edc0a-c0a5-4c63-abd2-64e03f1c0cf3",
+              "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+              "treatment_run_id": "eval-run-1bee23f9-8995-4bc1-9e71-afe5446aed03"
+            }
+          },
+          {
+            "created_at": "2026-07-15T19:14:10.311142+00:00",
+            "event_type": "finalized",
+            "id": "eval-pair-event-7747bfca-c8aa-473e-a5a3-782200afeda1",
+            "pair_id": "eval-pair-c463b851-514d-4d83-b51a-d7d592536577",
+            "payload": {
+              "contamination_status": "passed",
+              "control_score": null,
+              "decision": "defer",
+              "delta": null,
+              "independent_review_status": "failed",
+              "treatment_score": null
+            }
+          }
+        ],
+        "finalized_at": "2026-07-15T19:14:10.310922+00:00",
+        "id": "eval-pair-c463b851-514d-4d83-b51a-d7d592536577",
+        "independent_review_ref": "docs/evals/M6_UNBLOCK_THREE_TASK_ADVERSARIAL_REVIEW.md",
+        "independent_review_status": "failed",
+        "limitations": [
+          "provider cost telemetry unavailable",
+          "quantitative scores intentionally omitted",
+          "promotion remains deferred until score evidence and review findings are resolved"
+        ],
+        "parity_metadata": {
+          "budget": {
+            "seconds": 900,
+            "tokens": 20000
+          },
+          "control_receipt": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/receipts/b2-control.json",
+          "control_receipt_sha256": "b0bc8bdbfd7fdd9bd7c0fe8af9044327923b03711be37d51a875eb9a4381f13f",
+          "control_rollout": null,
+          "control_rollout_telemetry": {},
+          "effort": "high",
+          "harness": "codex_exec_jsonl_v2",
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "high",
+          "tools": [
+            "shell",
+            "rg",
+            "sed",
+            "git",
+            "python3",
+            "pnpm",
+            "pytest",
+            "playwright"
+          ],
+          "treatment_packet_id": "m6-owner-migrations-v1",
+          "treatment_packet_sha256": "dcb106c9050566272972f90d54105f11be37065911bc1ce1c2a73e164390e60e",
+          "treatment_receipt": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/receipts/b2-treatment.json",
+          "treatment_receipt_sha256": "290223644bf478703317aa6761efb9ec6c6eb8fe947fe295e67720f0b8be27a7",
+          "treatment_rollout": null,
+          "treatment_rollout_telemetry": {}
+        },
+        "prompt_hash": "66a522debf9e8ca52061b8f7eb97b8b8e2efa2975ffd8be58636143a54ced94e",
+        "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+        "report_path": "docs/evals/M6_UNBLOCK_THREE_TASK_REPORT.md",
+        "status": "insufficient_evidence",
+        "superseded_at": null,
+        "superseded_reason": null,
+        "task_hash": "a8dbd90fc6df76b025edaddc5a56209f820a2d32e65ceb8d8032e7e91f6eef9c",
+        "task_id": "eval-task-956fa3ca-51ba-4372-af50-89d2befee331",
+        "treatment_run_id": "eval-run-1bee23f9-8995-4bc1-9e71-afe5446aed03",
+        "treatment_score": null
+      },
+      "pair_id": "eval-pair-c463b851-514d-4d83-b51a-d7d592536577",
+      "receipts": {
+        "control": {
+          "budget": {
+            "seconds": 900,
+            "tokens": 20000
+          },
+          "clean_status_before": "",
+          "condition": "baseline_repo_only",
+          "context_manifest_hash": "a8f9a7465cc67ccfaa9879e612e580a384da2bcdeafdd739cd7999b71d60d405",
+          "context_manifest_sha256": "a8f9a7465cc67ccfaa9879e612e580a384da2bcdeafdd739cd7999b71d60d405",
+          "context_profile": "peer_repo_only",
+          "created_at_utc": "2026-07-15T17:44:05.004496+00:00",
+          "events_path": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/b2-control-events.jsonl",
+          "expected_dependency_mounts": [
+            ".venv",
+            "aios-ui/node_modules"
+          ],
+          "final_path": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/b2-control-final.md",
+          "harness": "codex_exec_jsonl_v2",
+          "launch_command_argv": [
+            "codex",
+            "exec",
+            "--json",
+            "--model",
+            "gpt-5.6-luna",
+            "-c",
+            "model_reasoning_effort=high",
+            "-s",
+            "workspace-write",
+            "-C",
+            "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/b-control",
+            "-o",
+            "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/b2-control-final.md",
+            "-"
+          ],
+          "model": "gpt-5.6-luna",
+          "packet_id": null,
+          "packet_sha256": null,
+          "pair_prompt_hash": "66a522debf9e8ca52061b8f7eb97b8b8e2efa2975ffd8be58636143a54ced94e",
+          "prompt_hash": "2062684d81c6f7568f9fb2c30457ab917e29fdb8aeff6746b9077600f18a42a9",
+          "prompt_sha256": "2062684d81c6f7568f9fb2c30457ab917e29fdb8aeff6746b9077600f18a42a9",
+          "prompt_snapshot_path": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/prompts/task-b-control.md",
+          "prompt_source_path": "/Users/jakyeamos/projects/AIOS/.aios/m6-unblock-ledger/benchmark/m6-promotion-prompts/task-b-rerun-control.md",
+          "protected_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "reasoning_effort": "high",
+          "receipt_id": "m6-b-rerun-control",
+          "receipt_sha256": "b0bc8bdbfd7fdd9bd7c0fe8af9044327923b03711be37d51a875eb9a4381f13f",
+          "sandbox": "workspace-write",
+          "schema": "aios-m6-b-pre-run-receipt-v1",
+          "stderr_path": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/b2-control-stderr.log",
+          "task_hash": "a8dbd90fc6df76b025edaddc5a56209f820a2d32e65ceb8d8032e7e91f6eef9c",
+          "task_slug": "task-b-shadow-approval-owner",
+          "tools": [
+            "shell",
+            "rg",
+            "sed",
+            "git",
+            "python3",
+            "pnpm",
+            "pytest",
+            "playwright"
+          ],
+          "treatment_context_files": [
+            {
+              "byte_count": 12048,
+              "path": "docs/modernization/ADR-002-canonical-state-and-migration-authority.md",
+              "sha256": "19b728fb8c4d74f5b13f5dd369e0b176d6533bdc4cb8ec78770a17e7ed8a8aa3"
+            },
+            {
+              "byte_count": 13300,
+              "path": "docs/modernization/ADR-005-subsystem-ownership-and-parallel-v2-strategy.md",
+              "sha256": "0a185fe9dfaa5404691a94a3541e61824f314ef4c094cb4b8c5d3aa405885f68"
+            },
+            {
+              "byte_count": 46338,
+              "path": "docs/modernization/PROGRESS.md",
+              "sha256": "d98e4264fe979155043ce76dc5da4887a96d71c9ce723bf843e1895385353149"
+            },
+            {
+              "byte_count": 20004,
+              "path": ".tracker/PROJECT_TRUTH.md",
+              "sha256": "3c174176c641457a96ab7cad9d1d102558678d053dcd80e4f6671a356f5c2894"
+            },
+            {
+              "byte_count": 2436,
+              "path": ".wayfinder/aios-modernization/tickets/019-migrate-standards-backfill-write-owner.md",
+              "sha256": "6a611fc22857b60443870979c1a04276bcf84e288f2db132f10a55f001bea644"
+            },
+            {
+              "byte_count": 2459,
+              "path": ".wayfinder/aios-modernization/tickets/020-migrate-project-component-settings-owner.md",
+              "sha256": "3757fe6f2c406493db5bb0ab73ada0512418f1513ccdf9631f71d7f4f46937e1"
+            },
+            {
+              "byte_count": 1476,
+              "path": ".wayfinder/aios-modernization/tickets/021-migrate-automation-trigger-owner.md",
+              "sha256": "4c0b59264425d226553aac5d663461b6a269aff8a47c57fa36f52f1dabdf2f73"
+            },
+            {
+              "byte_count": 1640,
+              "path": ".wayfinder/aios-modernization/tickets/022-migrate-pattern-approval-owner.md",
+              "sha256": "b1037064f33669b3e7af861d00e247d12054815e30c896ae11014ab394f18295"
+            }
+          ],
+          "worktree_head_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "worktree_path": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/b-control"
+        },
+        "treatment": {
+          "budget": {
+            "seconds": 900,
+            "tokens": 20000
+          },
+          "clean_status_before": "",
+          "condition": "aios_portable_context_packet",
+          "context_manifest_hash": "a8f9a7465cc67ccfaa9879e612e580a384da2bcdeafdd739cd7999b71d60d405",
+          "context_manifest_sha256": "a8f9a7465cc67ccfaa9879e612e580a384da2bcdeafdd739cd7999b71d60d405",
+          "context_profile": "peer_portable_context_packet",
+          "created_at_utc": "2026-07-15T17:44:05.004496+00:00",
+          "events_path": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/b2-treatment-events.jsonl",
+          "expected_dependency_mounts": [
+            ".venv",
+            "aios-ui/node_modules"
+          ],
+          "final_path": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/b2-treatment-final.md",
+          "harness": "codex_exec_jsonl_v2",
+          "launch_command_argv": [
+            "codex",
+            "exec",
+            "--json",
+            "--model",
+            "gpt-5.6-luna",
+            "-c",
+            "model_reasoning_effort=high",
+            "-s",
+            "workspace-write",
+            "-C",
+            "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/b-treatment",
+            "-o",
+            "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/b2-treatment-final.md",
+            "-"
+          ],
+          "model": "gpt-5.6-luna",
+          "packet_id": "m6-owner-migrations-v1",
+          "packet_sha256": "dcb106c9050566272972f90d54105f11be37065911bc1ce1c2a73e164390e60e",
+          "pair_prompt_hash": "66a522debf9e8ca52061b8f7eb97b8b8e2efa2975ffd8be58636143a54ced94e",
+          "prompt_hash": "606eff5b0fb28af6b9982b46ebf8349099617c9227d94ba620316cd213fc3979",
+          "prompt_sha256": "606eff5b0fb28af6b9982b46ebf8349099617c9227d94ba620316cd213fc3979",
+          "prompt_snapshot_path": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/prompts/task-b-treatment.md",
+          "prompt_source_path": "/Users/jakyeamos/projects/AIOS/.aios/m6-unblock-ledger/benchmark/m6-promotion-prompts/task-b-rerun-treatment.md",
+          "protected_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "reasoning_effort": "high",
+          "receipt_id": "m6-b-rerun-treatment",
+          "receipt_sha256": "290223644bf478703317aa6761efb9ec6c6eb8fe947fe295e67720f0b8be27a7",
+          "sandbox": "workspace-write",
+          "schema": "aios-m6-b-pre-run-receipt-v1",
+          "stderr_path": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts/b2-treatment-stderr.log",
+          "task_hash": "a8dbd90fc6df76b025edaddc5a56209f820a2d32e65ceb8d8032e7e91f6eef9c",
+          "task_slug": "task-b-shadow-approval-owner",
+          "tools": [
+            "shell",
+            "rg",
+            "sed",
+            "git",
+            "python3",
+            "pnpm",
+            "pytest",
+            "playwright"
+          ],
+          "treatment_context_files": [
+            {
+              "byte_count": 12048,
+              "path": "docs/modernization/ADR-002-canonical-state-and-migration-authority.md",
+              "sha256": "19b728fb8c4d74f5b13f5dd369e0b176d6533bdc4cb8ec78770a17e7ed8a8aa3"
+            },
+            {
+              "byte_count": 13300,
+              "path": "docs/modernization/ADR-005-subsystem-ownership-and-parallel-v2-strategy.md",
+              "sha256": "0a185fe9dfaa5404691a94a3541e61824f314ef4c094cb4b8c5d3aa405885f68"
+            },
+            {
+              "byte_count": 46338,
+              "path": "docs/modernization/PROGRESS.md",
+              "sha256": "d98e4264fe979155043ce76dc5da4887a96d71c9ce723bf843e1895385353149"
+            },
+            {
+              "byte_count": 20004,
+              "path": ".tracker/PROJECT_TRUTH.md",
+              "sha256": "3c174176c641457a96ab7cad9d1d102558678d053dcd80e4f6671a356f5c2894"
+            },
+            {
+              "byte_count": 2436,
+              "path": ".wayfinder/aios-modernization/tickets/019-migrate-standards-backfill-write-owner.md",
+              "sha256": "6a611fc22857b60443870979c1a04276bcf84e288f2db132f10a55f001bea644"
+            },
+            {
+              "byte_count": 2459,
+              "path": ".wayfinder/aios-modernization/tickets/020-migrate-project-component-settings-owner.md",
+              "sha256": "3757fe6f2c406493db5bb0ab73ada0512418f1513ccdf9631f71d7f4f46937e1"
+            },
+            {
+              "byte_count": 1476,
+              "path": ".wayfinder/aios-modernization/tickets/021-migrate-automation-trigger-owner.md",
+              "sha256": "4c0b59264425d226553aac5d663461b6a269aff8a47c57fa36f52f1dabdf2f73"
+            },
+            {
+              "byte_count": 1640,
+              "path": ".wayfinder/aios-modernization/tickets/022-migrate-pattern-approval-owner.md",
+              "sha256": "b1037064f33669b3e7af861d00e247d12054815e30c896ae11014ab394f18295"
+            }
+          ],
+          "worktree_head_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "worktree_path": "/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/b-treatment"
+        }
+      },
+      "task_id": "eval-task-956fa3ca-51ba-4372-af50-89d2befee331",
+      "treatment_run_id": "eval-run-1bee23f9-8995-4bc1-9e71-afe5446aed03"
+    },
+    {
+      "control_run_id": "eval-run-d2aac3a3-9149-429f-9e18-4345c93f5d01",
+      "pair": {
+        "contamination_evidence": {
+          "post_rerun_protected_browser_proof": "AIOS_UI_TEST_PORT=3222 pnpm --dir aios-ui test:browser -- m6-verify-review-closeout.spec.ts",
+          "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "receipt_identity_verified": true,
+          "root_worktree_untouched": true,
+          "status": "passed"
+        },
+        "contamination_status": "passed",
+        "context_hash": "ff745064fa9d8188ab3fbcac77c735ddecae7809fa46c6fadd0b7a91beccd7f9",
+        "control_run_id": "eval-run-d2aac3a3-9149-429f-9e18-4345c93f5d01",
+        "control_score": null,
+        "created_at": "2026-07-15T19:14:10.322394+00:00",
+        "decision": "defer",
+        "delta": null,
+        "events": [
+          {
+            "created_at": "2026-07-15T19:14:10.322625+00:00",
+            "event_type": "created",
+            "id": "eval-pair-event-94939ab2-9195-4a70-8897-4814e69bf5c2",
+            "pair_id": "eval-pair-06595cd6-b1ae-4c1e-b706-18f662ffc846",
+            "payload": {
+              "control_run_id": "eval-run-d2aac3a3-9149-429f-9e18-4345c93f5d01",
+              "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+              "treatment_run_id": "eval-run-4703dfcb-88ea-4350-bb9c-7ae1c08d6d52"
+            }
+          },
+          {
+            "created_at": "2026-07-15T19:14:10.323502+00:00",
+            "event_type": "finalized",
+            "id": "eval-pair-event-c87d79e2-2766-4657-a368-0cb1cb3a84de",
+            "pair_id": "eval-pair-06595cd6-b1ae-4c1e-b706-18f662ffc846",
+            "payload": {
+              "contamination_status": "passed",
+              "control_score": null,
+              "decision": "defer",
+              "delta": null,
+              "independent_review_status": "failed",
+              "treatment_score": null
+            }
+          }
+        ],
+        "finalized_at": "2026-07-15T19:14:10.323218+00:00",
+        "id": "eval-pair-06595cd6-b1ae-4c1e-b706-18f662ffc846",
+        "independent_review_ref": "docs/evals/M6_UNBLOCK_THREE_TASK_ADVERSARIAL_REVIEW.md",
+        "independent_review_status": "failed",
+        "limitations": [
+          "provider cost telemetry unavailable",
+          "quantitative scores intentionally omitted",
+          "promotion remains deferred until score evidence and review findings are resolved"
+        ],
+        "parity_metadata": {
+          "budget": {
+            "seconds": 900,
+            "tokens": 20000
+          },
+          "control_receipt": "/private/tmp/aios-m6-promotion-rerun-c-20260715/artifacts/receipts/c-rerun-control.json",
+          "control_receipt_sha256": "b47fe9fe9892b576218bb29193f9cb79813d5cd9a5fa36a4d78502d299899d30",
+          "control_rollout": null,
+          "control_rollout_telemetry": {},
+          "effort": "high",
+          "harness": "codex_exec_jsonl_v2",
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "high",
+          "tools": [
+            "shell",
+            "rg",
+            "sed",
+            "git",
+            "python3",
+            "pnpm",
+            "pytest",
+            "playwright"
+          ],
+          "treatment_packet_id": "m6-browser-contract-rerun-v1",
+          "treatment_packet_sha256": "78de4073e69532c6410e352b70466e3d71b8a480de6697d5588a51e009ec5c71",
+          "treatment_receipt": "/private/tmp/aios-m6-promotion-rerun-c-20260715/artifacts/receipts/c-rerun-treatment.json",
+          "treatment_receipt_sha256": "d7dc67dce9ec3a0b172c695c45a50a87824bfa1b0322fb2414893a86e928f73b",
+          "treatment_rollout": null,
+          "treatment_rollout_telemetry": {}
+        },
+        "prompt_hash": "b09b823a7f971ffe55a757266d1d8f98f0f51dfb493a26d7654b7a8697727fab",
+        "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+        "report_path": "docs/evals/M6_UNBLOCK_THREE_TASK_REPORT.md",
+        "status": "insufficient_evidence",
+        "superseded_at": null,
+        "superseded_reason": null,
+        "task_hash": "f75fafae5bf3271a15a982f12331ed49d0bef9e7ceefe4cecbd1eae68144f80a",
+        "task_id": "eval-task-87efbda4-e410-4846-aae0-6d4e7e48aa1c",
+        "treatment_run_id": "eval-run-4703dfcb-88ea-4350-bb9c-7ae1c08d6d52",
+        "treatment_score": null
+      },
+      "pair_id": "eval-pair-06595cd6-b1ae-4c1e-b706-18f662ffc846",
+      "receipts": {
+        "control": {
+          "budget": {
+            "seconds": 900,
+            "tokens": 20000
+          },
+          "clean_status_before": "",
+          "condition": "baseline_repo_only",
+          "context_files": [
+            {
+              "path": "docs/modernization/ADR-003-task-centred-ia-and-accessible-design-system.md",
+              "sha256": "da99c3d2886fd192d137df4483c560e082668f49f3723b750e275944aa69a9d5"
+            },
+            {
+              "path": "docs/modernization/ADR-004-reproducible-ui-validation-contract.md",
+              "sha256": "b11683fcfce7d82abeba44994da857aea12a7bcb7c66495d50e34be9097ae5ad"
+            },
+            {
+              "path": "docs/modernization/PROGRESS.md",
+              "sha256": "d98e4264fe979155043ce76dc5da4887a96d71c9ce723bf843e1895385353149"
+            },
+            {
+              "path": ".tracker/PROJECT_TRUTH.md",
+              "sha256": "3c174176c641457a96ab7cad9d1d102558678d053dcd80e4f6671a356f5c2894"
+            },
+            {
+              "path": ".wayfinder/aios-modernization/tickets/019-migrate-standards-backfill-write-owner.md",
+              "sha256": "6a611fc22857b60443870979c1a04276bcf84e288f2db132f10a55f001bea644"
+            },
+            {
+              "path": ".wayfinder/aios-modernization/tickets/020-migrate-project-component-settings-owner.md",
+              "sha256": "3757fe6f2c406493db5bb0ab73ada0512418f1513ccdf9631f71d7f4f46937e1"
+            },
+            {
+              "path": ".wayfinder/aios-modernization/tickets/021-migrate-automation-trigger-owner.md",
+              "sha256": "4c0b59264425d226553aac5d663461b6a269aff8a47c57fa36f52f1dabdf2f73"
+            },
+            {
+              "path": ".wayfinder/aios-modernization/tickets/022-migrate-pattern-approval-owner.md",
+              "sha256": "b1037064f33669b3e7af861d00e247d12054815e30c896ae11014ab394f18295"
+            }
+          ],
+          "context_manifest_hash": "ff745064fa9d8188ab3fbcac77c735ddecae7809fa46c6fadd0b7a91beccd7f9",
+          "context_manifest_sha256": "ff745064fa9d8188ab3fbcac77c735ddecae7809fa46c6fadd0b7a91beccd7f9",
+          "context_profile": "peer_repo_only",
+          "created_at_utc": "2026-07-15T17:47:04.601268+00:00",
+          "events_path": "/private/tmp/aios-m6-promotion-rerun-c-20260715/artifacts/c-rerun-control-events.jsonl",
+          "final_path": "/private/tmp/aios-m6-promotion-rerun-c-20260715/artifacts/c-rerun-control-final.md",
+          "harness": "codex_exec_jsonl_v2",
+          "model": "gpt-5.6-luna",
+          "packet_id": null,
+          "packet_sha256": null,
+          "pair_prompt_hash": "b09b823a7f971ffe55a757266d1d8f98f0f51dfb493a26d7654b7a8697727fab",
+          "prompt_hash": "d05d61978b648688178366d03b2369fffcfab4e1a967dbc31fe111f68ce0e6a3",
+          "prompt_sha256": "d05d61978b648688178366d03b2369fffcfab4e1a967dbc31fe111f68ce0e6a3",
+          "prompt_snapshot_path": "/private/tmp/aios-m6-promotion-rerun-c-20260715/artifacts/prompts/task-c-control.md",
+          "prompt_source_path": "/Users/jakyeamos/projects/AIOS/.aios/m6-unblock-ledger/benchmark/m6-promotion-prompts/task-c-rerun-control.md",
+          "protected_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "reasoning_effort": "high",
+          "receipt_id": "m6-c-rerun-control",
+          "receipt_sha256": "b47fe9fe9892b576218bb29193f9cb79813d5cd9a5fa36a4d78502d299899d30",
+          "sandbox": "workspace-write",
+          "schema": "aios-m6-c-pre-run-receipt-v1",
+          "stderr_path": "/private/tmp/aios-m6-promotion-rerun-c-20260715/artifacts/c-rerun-control-stderr.log",
+          "task_hash": "f75fafae5bf3271a15a982f12331ed49d0bef9e7ceefe4cecbd1eae68144f80a",
+          "task_slug": "task-c-browser-contract-rerun",
+          "worktree_head_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "worktree_path": "/private/tmp/aios-m6-promotion-rerun-c-20260715/c-control"
+        },
+        "treatment": {
+          "budget": {
+            "seconds": 900,
+            "tokens": 20000
+          },
+          "clean_status_before": "",
+          "condition": "aios_portable_context_packet",
+          "context_files": [
+            {
+              "path": "docs/modernization/ADR-003-task-centred-ia-and-accessible-design-system.md",
+              "sha256": "da99c3d2886fd192d137df4483c560e082668f49f3723b750e275944aa69a9d5"
+            },
+            {
+              "path": "docs/modernization/ADR-004-reproducible-ui-validation-contract.md",
+              "sha256": "b11683fcfce7d82abeba44994da857aea12a7bcb7c66495d50e34be9097ae5ad"
+            },
+            {
+              "path": "docs/modernization/PROGRESS.md",
+              "sha256": "d98e4264fe979155043ce76dc5da4887a96d71c9ce723bf843e1895385353149"
+            },
+            {
+              "path": ".tracker/PROJECT_TRUTH.md",
+              "sha256": "3c174176c641457a96ab7cad9d1d102558678d053dcd80e4f6671a356f5c2894"
+            },
+            {
+              "path": ".wayfinder/aios-modernization/tickets/019-migrate-standards-backfill-write-owner.md",
+              "sha256": "6a611fc22857b60443870979c1a04276bcf84e288f2db132f10a55f001bea644"
+            },
+            {
+              "path": ".wayfinder/aios-modernization/tickets/020-migrate-project-component-settings-owner.md",
+              "sha256": "3757fe6f2c406493db5bb0ab73ada0512418f1513ccdf9631f71d7f4f46937e1"
+            },
+            {
+              "path": ".wayfinder/aios-modernization/tickets/021-migrate-automation-trigger-owner.md",
+              "sha256": "4c0b59264425d226553aac5d663461b6a269aff8a47c57fa36f52f1dabdf2f73"
+            },
+            {
+              "path": ".wayfinder/aios-modernization/tickets/022-migrate-pattern-approval-owner.md",
+              "sha256": "b1037064f33669b3e7af861d00e247d12054815e30c896ae11014ab394f18295"
+            }
+          ],
+          "context_manifest_hash": "ff745064fa9d8188ab3fbcac77c735ddecae7809fa46c6fadd0b7a91beccd7f9",
+          "context_manifest_sha256": "ff745064fa9d8188ab3fbcac77c735ddecae7809fa46c6fadd0b7a91beccd7f9",
+          "context_profile": "peer_portable_context_packet",
+          "created_at_utc": "2026-07-15T17:47:04.601268+00:00",
+          "events_path": "/private/tmp/aios-m6-promotion-rerun-c-20260715/artifacts/c-rerun-treatment-events.jsonl",
+          "final_path": "/private/tmp/aios-m6-promotion-rerun-c-20260715/artifacts/c-rerun-treatment-final.md",
+          "harness": "codex_exec_jsonl_v2",
+          "model": "gpt-5.6-luna",
+          "packet_id": "m6-browser-contract-rerun-v1",
+          "packet_sha256": "78de4073e69532c6410e352b70466e3d71b8a480de6697d5588a51e009ec5c71",
+          "pair_prompt_hash": "b09b823a7f971ffe55a757266d1d8f98f0f51dfb493a26d7654b7a8697727fab",
+          "prompt_hash": "e60da8398bc0b36fd5dbbe52ffd4dcb5d808e6773e45ea55bf7068961ba21f77",
+          "prompt_sha256": "e60da8398bc0b36fd5dbbe52ffd4dcb5d808e6773e45ea55bf7068961ba21f77",
+          "prompt_snapshot_path": "/private/tmp/aios-m6-promotion-rerun-c-20260715/artifacts/prompts/task-c-treatment.md",
+          "prompt_source_path": "/Users/jakyeamos/projects/AIOS/.aios/m6-unblock-ledger/benchmark/m6-promotion-prompts/task-c-rerun-treatment.md",
+          "protected_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "reasoning_effort": "high",
+          "receipt_id": "m6-c-rerun-treatment",
+          "receipt_sha256": "d7dc67dce9ec3a0b172c695c45a50a87824bfa1b0322fb2414893a86e928f73b",
+          "sandbox": "workspace-write",
+          "schema": "aios-m6-c-pre-run-receipt-v1",
+          "stderr_path": "/private/tmp/aios-m6-promotion-rerun-c-20260715/artifacts/c-rerun-treatment-stderr.log",
+          "task_hash": "f75fafae5bf3271a15a982f12331ed49d0bef9e7ceefe4cecbd1eae68144f80a",
+          "task_slug": "task-c-browser-contract-rerun",
+          "worktree_head_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+          "worktree_path": "/private/tmp/aios-m6-promotion-rerun-c-20260715/c-treatment"
+        }
+      },
+      "task_id": "eval-task-87efbda4-e410-4846-aae0-6d4e7e48aa1c",
+      "treatment_run_id": "eval-run-4703dfcb-88ea-4350-bb9c-7ae1c08d6d52"
+    }
+  ],
+  "promotion_ready": [],
+  "protected_start_sha": "4d8adbca3b89d6259e252f26aaad0db69a9bf102",
+  "schema": "aios-m6-three-task-unblock-rerun-v1"
+}

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Ingest the receipt-backed M6 B/C rerun into a durable eval ledger."""
+"""Ingest receipt-backed M6 benchmark pairs into a durable eval ledger."""
 
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import re
 import sqlite3
 import sys
 from pathlib import Path
@@ -25,8 +26,9 @@ ROOT = Path(__file__).resolve().parents[1]
 SHA = "4d8adbca3b89d6259e252f26aaad0db69a9bf102"
 DEFAULT_B = Path("/private/tmp/aios-m6-promotion-rerun-b-20260715-v3/artifacts")
 DEFAULT_C = Path("/private/tmp/aios-m6-promotion-rerun-c-20260715/artifacts")
-REVIEW_REF = "docs/evals/M6_UNBLOCK_RERUN_ADVERSARIAL_REVIEW.md"
-REPORT_REF = "docs/evals/M6_UNBLOCK_RERUN_REPORT.md"
+DEFAULT_A = Path("/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/artifacts")
+REPORT_REF = "docs/evals/M6_UNBLOCK_THREE_TASK_REPORT.md"
+REVIEW_REF = "docs/evals/M6_UNBLOCK_THREE_TASK_ADVERSARIAL_REVIEW.md"
 
 
 def sha256(path: Path) -> str:
@@ -74,6 +76,72 @@ def event_summary(path: Path) -> dict[str, Any]:
     return {"tool_calls": calls, "failed_commands": failed, "tests": list(dict.fromkeys(tests)), "commands": commands, "blocked": blocked}
 
 
+def rollout_telemetry(path: Path | None) -> dict[str, Any]:
+    if path is None:
+        return {}
+    tool_calls = 0
+    failed_commands = 0
+    tests: list[str] = []
+    session_id: str | None = None
+    duration_ms: int | None = None
+    total_tokens: int | None = None
+    blocked = False
+    for line in path.read_text(encoding="utf-8").splitlines():
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        payload = event.get("payload") or {}
+        if event.get("type") == "session_meta":
+            session_id = payload.get("id") or payload.get("session_id")
+        if event.get("type") == "event_msg":
+            event_type = payload.get("type")
+            if event_type == "token_count":
+                total_tokens = payload.get("info", {}).get("total_token_usage", {}).get("total_tokens")
+            elif event_type == "task_complete":
+                duration_ms = payload.get("duration_ms")
+        if event.get("type") != "response_item":
+            continue
+        response_type = payload.get("type")
+        if response_type == "custom_tool_call" and payload.get("name") == "exec":
+            tool_calls += 1
+            command = str(payload.get("input") or "")
+            if any(token in command.lower() for token in ("pytest", "playwright", "eslint", "tsc", "ruff", "basedpyright", "build")):
+                tests.append(command)
+        if response_type != "custom_tool_call_output":
+            continue
+        raw_output = payload.get("output") or ""
+        output = json.dumps(raw_output)
+        if isinstance(raw_output, list):
+            output = "\n".join(
+                str(item.get("text", ""))
+                for item in raw_output
+                if isinstance(item, dict)
+            )
+        exit_codes = [
+            int(value)
+            for value in re.findall(
+                r'(?:\\")?exit_code(?:\\")?\s*[:=]\s*(-?\d+)', output
+            )
+        ]
+        exit_codes.extend(
+            int(value)
+            for value in re.findall(r'exit code\s+(-?\d+)', output.lower())
+        )
+        failed_commands += sum(code != 0 for code in exit_codes)
+        blocked = blocked or any(token in output.lower() for token in ("blocked", "eperm", "err_aborted", "enotfound"))
+    return {
+        "session_id": session_id,
+        "duration_ms": duration_ms,
+        "total_tokens": total_tokens,
+        "tool_calls": tool_calls,
+        "failed_commands": failed_commands,
+        "tests": list(dict.fromkeys(tests)),
+        "blocked": blocked,
+        "rollout_path": str(path),
+    }
+
+
 def add_pair(
     conn: sqlite3.Connection,
     *,
@@ -88,6 +156,11 @@ def add_pair(
     context_hash: str,
     acceptance: list[str],
     contamination_evidence: dict[str, object],
+    control_rollout: Path | None = None,
+    treatment_rollout: Path | None = None,
+    report_ref: str = REPORT_REF,
+    review_ref: str = REVIEW_REF,
+    review_status: str = "failed",
 ) -> dict[str, Any]:
     control = receipt(control_receipt)
     treatment = receipt(treatment_receipt)
@@ -112,7 +185,9 @@ def add_pair(
         ("aios_portable_context_packet", treatment, treatment_events, treatment_worktree, "peer_portable_context_packet"),
     ):
         summary = event_summary(events)
-        status = "partial" if summary["blocked"] else "success"
+        rollout = rollout_telemetry(control_rollout if condition == "baseline_repo_only" else treatment_rollout)
+        telemetry = {**summary, **{key: value for key, value in rollout.items() if value not in (None, [], "")}}
+        status = "partial" if telemetry["blocked"] else "success"
         run_id = create_eval_run(
             conn,
             task_id=task_id,
@@ -122,13 +197,13 @@ def add_pair(
             model=data["model"],
             context_profile=profile,
             branch_name=str(worktree),
-            duration_ms=None,
-            total_tokens=None,
+            duration_ms=telemetry.get("duration_ms"),
+            total_tokens=telemetry.get("total_tokens"),
             estimated_cost_usd=None,
-            tool_calls=summary["tool_calls"],
-            failed_commands=summary["failed_commands"],
+            tool_calls=telemetry["tool_calls"],
+            failed_commands=telemetry["failed_commands"],
             files_changed=None,
-            tests_run=summary["tests"],
+            tests_run=telemetry["tests"],
             final_status=status,
         )
         run_ids[condition] = run_id
@@ -154,13 +229,17 @@ def add_pair(
             "treatment_receipt_sha256": treatment["receipt_sha256"],
             "treatment_packet_id": treatment["packet_id"],
             "treatment_packet_sha256": treatment["packet_sha256"],
+            "control_rollout": str(control_rollout) if control_rollout else None,
+            "treatment_rollout": str(treatment_rollout) if treatment_rollout else None,
+            "control_rollout_telemetry": rollout_telemetry(control_rollout),
+            "treatment_rollout_telemetry": rollout_telemetry(treatment_rollout),
         },
         contamination_status="passed",
         contamination_evidence=contamination_evidence,
-        independent_review_status="pending",
-        independent_review_ref=None,
-        report_path=REPORT_REF,
-        limitations=["provider cost telemetry unavailable", "quantitative scores intentionally omitted pending independent review"],
+        independent_review_status=review_status,
+        independent_review_ref=review_ref,
+        report_path=report_ref,
+        limitations=["provider cost telemetry unavailable", "quantitative scores intentionally omitted; review found unresolved findings"],
     )
     finalized = finalize_eval_pair(
         conn,
@@ -168,9 +247,10 @@ def add_pair(
         decision="defer",
         contamination_status="passed",
         contamination_evidence=contamination_evidence,
-        independent_review_status="pending",
-        report_path=REPORT_REF,
-        limitations=["provider cost telemetry unavailable", "quantitative scores intentionally omitted pending independent review", "promotion remains deferred until review and score evidence are complete"],
+        independent_review_status=review_status,
+        independent_review_ref=review_ref,
+        report_path=report_ref,
+        limitations=["provider cost telemetry unavailable", "quantitative scores intentionally omitted", "promotion remains deferred until score evidence and review findings are resolved"],
     )
     return {"task_id": task_id, "pair_id": pair_id, "control_run_id": run_ids["baseline_repo_only"], "treatment_run_id": run_ids["aios_portable_context_packet"], "pair": finalized, "receipts": {"control": control, "treatment": treatment}}
 
@@ -179,8 +259,25 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--db", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--a-artifacts", type=Path, default=DEFAULT_A)
     parser.add_argument("--b-artifacts", type=Path, default=DEFAULT_B)
     parser.add_argument("--c-artifacts", type=Path, default=DEFAULT_C)
+    parser.add_argument(
+        "--a-control-rollout",
+        type=Path,
+        default=Path(
+            "/Users/jakyeamos/.codex/sessions/2026/07/15/"
+            "rollout-2026-07-15T14-46-14-019f6719-d8a6-7f53-9729-f7ee2dfcf3ab.jsonl"
+        ),
+    )
+    parser.add_argument(
+        "--a-treatment-rollout",
+        type=Path,
+        default=Path(
+            "/Users/jakyeamos/.codex/sessions/2026/07/15/"
+            "rollout-2026-07-15T14-46-13-019f6719-d1d2-7710-a828-1fba50afcce6.jsonl"
+        ),
+    )
     args = parser.parse_args()
     if args.db.exists() or args.output.exists():
         raise SystemExit("Refusing to overwrite an existing rerun ledger or evidence file.")
@@ -189,6 +286,36 @@ def main() -> int:
     conn = sqlite3.connect(args.db)
     conn.row_factory = sqlite3.Row
     ensure_eval_schema(conn)
+    a = add_pair(
+        conn,
+        slug="task-a-workflow-skill-owner-rerun",
+        title="Receipt-backed workflow skill-candidate owner rerun",
+        control_receipt=args.a_artifacts / "receipts/a-control.json",
+        treatment_receipt=args.a_artifacts / "receipts/a-treatment.json",
+        control_events=args.a_artifacts / "a-control-events.jsonl",
+        treatment_events=args.a_artifacts / "a-treatment-events.jsonl",
+        control_worktree=Path("/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-control"),
+        treatment_worktree=Path("/private/tmp/aios-m6-promotion-rerun-a-20260715-v1/a-treatment"),
+        context_hash=receipt(args.a_artifacts / "receipts/a-treatment.json")["context_manifest_sha256"],
+        acceptance=[
+            "Python owns workflow skill-candidate promote and dismiss mutations",
+            "Existing tRPC response and skills.json behavior are preserved",
+            "Direct TypeScript candidate mutation is removed",
+            "Receipt verification, focused tests, and runtime limits are reported",
+        ],
+        contamination_evidence={
+            "status": "passed",
+            "protected_start_sha": SHA,
+            "receipt_identity_verified": True,
+            "root_worktree_untouched": True,
+            "actual_rollback_parent_sha": "4cd4183f4cb890197507135579a877ac4ade046c",
+            "control_rollout_path": str(args.a_control_rollout),
+            "treatment_rollout_path": str(args.a_treatment_rollout),
+            "treatment_report_rollback_parent_mismatch": True,
+        },
+        control_rollout=args.a_control_rollout,
+        treatment_rollout=args.a_treatment_rollout,
+    )
     b = add_pair(
         conn,
         slug="task-b-shadow-approval-owner-rerun",
@@ -218,9 +345,22 @@ def main() -> int:
         contamination_evidence={"status": "passed", "protected_start_sha": SHA, "receipt_identity_verified": True, "root_worktree_untouched": True, "post_rerun_protected_browser_proof": "AIOS_UI_TEST_PORT=3222 pnpm --dir aios-ui test:browser -- m6-verify-review-closeout.spec.ts"},
     )
     conn.commit()
-    payload = {"schema": "aios-m6-unblock-rerun-v1", "protected_start_sha": SHA, "ledger_db": str(args.db), "decision": "defer", "pairs": [b, c], "promotion_ready": [], "limitations": ["provider cost telemetry unavailable", "scores intentionally omitted pending independent review"]}
+    payload = {
+        "schema": "aios-m6-three-task-unblock-rerun-v1",
+        "protected_start_sha": SHA,
+        "ledger_db": str(args.db),
+        "decision": "defer",
+        "pairs": [a, b, c],
+        "promotion_ready": [],
+        "limitations": [
+            "provider cost telemetry unavailable",
+            "scores intentionally omitted; independent review is recorded separately",
+            "A treatment report uses the protected start SHA as rollback parent; git confirms the actual parent SHA separately",
+            "A UI verification was blocked by the external node_modules EPERM environment limit",
+        ],
+    }
     args.output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(json.dumps({"ledger_db": str(args.db), "output": str(args.output), "pair_count": 2, "promotion_ready_count": 0}, indent=2))
+    print(json.dumps({"ledger_db": str(args.db), "output": str(args.output), "pair_count": 3, "promotion_ready_count": 0}, indent=2))
     conn.close()
     return 0
 
