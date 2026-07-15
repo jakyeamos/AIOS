@@ -3,7 +3,7 @@ import { z } from "zod";
 import { seededAutomations } from "@/lib/seed";
 import type { AutomationHealth } from "@/lib/types";
 import { trustedSignal } from "@/lib/trusted-signals";
-import { invokeControlPlaneRun, planTask } from "@/server/aios/control-plane";
+import { triggerAutomationViaPythonOwner } from "@/server/aios/automation-trigger-owner";
 import { ensureControlPlaneSchema } from "@/server/aios/schema";
 import { tableExists } from "@/server/db";
 import { createTRPCRouter, publicProcedure } from "@/server/trpc";
@@ -234,17 +234,5 @@ export const automationsRouter = createTRPCRouter({
         projectId: z.string().min(1).nullable().optional(),
       }),
     )
-    .mutation(({ ctx, input }) => {
-      const plan = planTask(ctx.db, {
-        objective: `[automation:${input.automationId}] [workflow:${input.workflowKey}] ${input.objective}`,
-        projectId: input.projectId ?? null,
-      });
-      const invocation = invokeControlPlaneRun(ctx.db, { runId: plan.run.id });
-      return {
-        automationId: input.automationId,
-        recommendedWorkflowKey: input.workflowKey,
-        plan,
-        invocation,
-      };
-    }),
+    .mutation(({ input }) => triggerAutomationViaPythonOwner(input)),
 });
