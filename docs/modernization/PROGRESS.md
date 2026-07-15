@@ -1,7 +1,7 @@
 # AIOS V2 Modernization Progress
 
 **Status:** M6 write-owner slices advancing; live effectiveness remains deferred and M6 remains blocked
-**Updated:** 2026-07-14
+**Updated:** 2026-07-15
 **Plan:** [EXEC_PLAN.md](EXEC_PLAN.md)
 
 ## Current slice
@@ -241,6 +241,18 @@ was deleted. Focused Python/CLI proof, UI lint/typecheck/build, dependency
 architecture, and the pinned three-test browser contract pass. Rollback is the
 parent revision with no schema migration. M6 remains deferred while benchmark
 telemetry and the remaining legacy write families are open.
+
+The `automations.triggerWorkflow` mutation is now Python-owned. The validated
+`automation-trigger` JSON CLI preserves the automation/workflow objective
+prefix, creates the canonical route → packet → run → invocation envelope, and
+launches the managed runtime; the typed server adapter preserves the existing
+plan/invocation response shape. The direct TypeScript `planTask`/
+`invokeControlPlaneRun` calls were deleted from the automation router. Four
+focused owner tests, 96 CLI regressions, Ruff, BasedPyright, UI lint,
+architecture, production build, and the pinned three-test browser contract
+pass. Rollback is the parent revision and no schema migration was introduced.
+M6 remains deferred for promotion-grade effectiveness evidence and the
+remaining legacy write families.
 
 ## Completed
 

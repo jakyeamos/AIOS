@@ -1,7 +1,7 @@
 ---
 title: Route Automation Triggers Through the Python Owner
 type: task
-status: open
+status: resolved
 claim: /root (2026-07-15)
 blocked_by: []
 ---
@@ -27,3 +27,14 @@ TypeScript write path from this route.
 ## Deferred
 
 Workflow, pattern, and skill CRUD satellites remain separate bounded tickets.
+
+## Resolution
+
+Commit `85de909` adds the validated `automation-trigger` Python CLI owner,
+launches the managed runtime from that owner, and routes the tRPC mutation
+through a typed adapter. Focused owner proof passes 4 tests; the existing CLI
+regression slice passes 96 tests; Ruff and BasedPyright pass. UI lint,
+architecture, build, and the pinned three-test browser contract pass. A source
+scan confirms the automation router no longer calls `planTask` or
+`invokeControlPlaneRun`; rollback is the parent revision and no schema
+migration was introduced.

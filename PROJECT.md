@@ -1,6 +1,6 @@
 # AIOS Project Truth
 
-Last updated: 2026-07-14
+Last updated: 2026-07-15
 
 ## What AIOS Is
 
@@ -118,6 +118,18 @@ was deleted. Focused Python/CLI proof, UI lint/typecheck/build, dependency
 architecture, and the pinned three-test browser contract pass. Rollback is the
 parent revision with no schema migration. M6 remains deferred while benchmark
 telemetry and the remaining legacy write families are open.
+
+The `automations.triggerWorkflow` mutation is now Python-owned. The validated
+`automation-trigger` JSON CLI preserves the automation/workflow objective
+prefix, creates the canonical route → packet → run → invocation envelope, and
+launches the managed runtime; a typed server adapter preserves the existing
+plan/invocation response shape. The direct TypeScript `planTask`/
+`invokeControlPlaneRun` calls were deleted from the automation router. Four
+focused owner tests, 96 CLI regressions, Ruff, BasedPyright, UI lint,
+architecture, production build, and the three-test browser contract pass.
+Rollback is the parent revision and no schema migration was introduced. M6
+remains deferred for promotion-grade effectiveness evidence and the remaining
+legacy write families.
 
 ## Implemented On 2026-07-10
 

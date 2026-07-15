@@ -6,7 +6,7 @@ healthScore: 85
 statusLabel: warning
 nextStep: Migrate the next legacy UI write family behind the Python owner with rollback/deletion proof; keep M6 deferred pending promotion-grade effectiveness evidence.
 blockers: []
-lastUpdated: 2026-07-14
+lastUpdated: 2026-07-15
 tags: [infra, ai-os, hooks, automation]
 areas: [engineering]
 goals: []
@@ -115,6 +115,18 @@ pass. Rollback is the parent revision with no schema migration. M6 remains
 deferred while benchmark telemetry and the remaining legacy write families are
 open.
 
+Current-state amendment (2026-07-15): The `automations.triggerWorkflow`
+mutation is now Python-owned. The validated `automation-trigger` JSON CLI
+preserves the automation/workflow objective prefix, creates the canonical
+route → packet → run → invocation envelope, and launches the managed runtime;
+the typed server adapter preserves the plan/invocation response shape. The
+direct TypeScript `planTask`/`invokeControlPlaneRun` calls were deleted from
+the automation router. Four focused owner tests, 96 CLI regressions, Ruff,
+BasedPyright, UI lint, architecture, production build, and the pinned
+three-test browser contract pass. Rollback is the parent revision and no
+schema migration was introduced. M6 remains deferred for promotion-grade
+effectiveness evidence and the remaining legacy write families.
+
 _(11 older entries trimmed)_
 
 AIOS now has a read-only workflow router preview surface: `aios route "objective"` resolves the registered project, governed workflow, agent, backend, prompt family, candidate alternatives, and a ready-to-run `aios start-work ...` command without creating orchestration runs, packets, invocations, or sessions. `~/AIOS/bin/route` is a convenience wrapper around the same command.
@@ -140,6 +152,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-15: Routed `automations.triggerWorkflow` through the Python owner, launched the managed runtime from the validated `automation-trigger` CLI, deleted the direct TypeScript plan/invocation path, and passed 4 focused tests, 96 CLI regressions, UI lint, architecture, build, and 3 browser tests (`85de909`).
 - 2026-07-14: Routed Taski project component toggles through the Python owner, deleted the direct UI SQLite helper, and passed 4 focused tests, 96 CLI regressions, UI build, architecture, and 3 browser tests (`82106f3`).
 - 2026-07-14: Routed standards backfill Start/Block/Resolve mutations through the Python owner, deleted the direct UI SQLite helper, and passed 4 focused tests, 96 CLI regressions, UI build, architecture, and 3 browser tests (`fdd1c1d`).
 - 2026-07-14: Migrated the Context Compiler page behind an explicit read-only projection contract with three-viewport browser proof; UI lint, architecture, build, and direct validation passed.
