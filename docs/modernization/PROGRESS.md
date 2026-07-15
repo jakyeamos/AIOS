@@ -4,6 +4,45 @@
 **Updated:** 2026-07-15
 **Plan:** [EXEC_PLAN.md](EXEC_PLAN.md)
 
+## M6 post-remediation status (2026-07-15)
+
+The A/B/C remediation pass is now receipt-backed and independently reviewed.
+A uses a same-registry lock plus crash-recovery journal and passes 111 focused
+tests, Ruff, and BasedPyright. B passes 10 focused tests with approval and
+subsequent-transition timestamps. C passes TypeScript and a focused browser
+proof with a persisted `superseded` status assertion, explicit `Review` mapping,
+and a raw receipt enumerating one expected 412 writeback response, one allowed
+local font abort, no console errors, and one passed test.
+
+The final adversarial review found no P0 findings. M6 remains fail-closed because
+the v6 ledger has zero authoritative `eval_scores` rows, null score/cost
+telemetry, and `promotion_ready=[]`. Remaining bounded risks are the immutable
+A treatment report's rollback-parent wording, the canonical Turbopack symlink
+limitation, and the disposable A `.venv` boundary;
+the A fallback webpack build and three-test browser proof pass. See
+[`M6_UNBLOCK_REMEDIATION_EVIDENCE.md`](../evals/M6_UNBLOCK_REMEDIATION_EVIDENCE.md)
+and
+[`M6_UNBLOCK_REMEDIATION_ADVERSARIAL_REVIEW.md`](../evals/M6_UNBLOCK_REMEDIATION_ADVERSARIAL_REVIEW.md).
+
+The read-only provider telemetry intake is now defined by
+[`M6_PROVIDER_TELEMETRY_CONTRACT.md`](../evals/M6_PROVIDER_TELEMETRY_CONTRACT.md)
+and `benchmark/m6_provider_telemetry.py`. Its pending template is rejected and
+the validator requires provider request identity, exact reported cost, score
+provenance, and SHA-256 evidence links before any future ledger update.
+
+## Optional OpenRouter lane (2026-07-15)
+
+The separate completion-only runner in
+[`M6_OPENROUTER_BENCHMARK.md`](../evals/M6_OPENROUTER_BENCHMARK.md) and
+`benchmark/m6_openrouter_runner.py` now freezes the request body without
+authorization headers, the raw
+provider response, optional /generation lookup, token/cost fields, and
+SHA-256 receipt links. It requires `--allow-network` plus an environment-only
+`OPENROUTER_API_KEY`, refuses to overwrite evidence, rejects tool-call claims
+without a local execution harness, and never writes the existing v6 Codex
+ledger. This lane is exploratory/separately scoped; it does not clear the
+current Codex M6 provider gate.
+
 ## Current slice
 
 Milestone 1 now establishes the first executable Python-owned storage boundary
