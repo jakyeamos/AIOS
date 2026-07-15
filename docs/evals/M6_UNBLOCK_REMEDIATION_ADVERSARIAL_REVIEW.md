@@ -31,6 +31,9 @@ are retained at `/private/tmp/aios-m6-remediation-review-20260715-v5/`.
 1. **P1 — Provider telemetry:** the v6 ledger still has three deferred pairs,
    zero `eval_scores` rows, null score/cost telemetry, and
    `promotion_ready=[]`. No score may be invented; promotion remains blocked.
+   The read-only manifest contract and validator are now recorded in
+   [`M6_PROVIDER_TELEMETRY_CONTRACT.md`](M6_PROVIDER_TELEMETRY_CONTRACT.md) and
+   [`m6_provider_telemetry.py`](../../benchmark/m6_provider_telemetry.py).
 2. **P2 — Immutable treatment provenance:** the A treatment final artifact
    incorrectly labels the protected start SHA as its rollback parent. The
    actual Git parent is `4cd4183f4cb890197507135579a877ac4ade046c`; the durable

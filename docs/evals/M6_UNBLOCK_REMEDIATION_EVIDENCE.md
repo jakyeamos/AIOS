@@ -134,4 +134,7 @@ provider score/cost gate, the immutable treatment-report provenance mismatch,
 the canonical Turbopack symlink limitation, and the disposable A `.venv`
 boundary.
 M6 promotion remains fail-closed until the promotion evidence gate passes and
-the remaining evidence risks are closed or explicitly accepted.
+the remaining evidence risks are closed or explicitly accepted. The
+read-only provider manifest contract is documented in
+`M6_PROVIDER_TELEMETRY_CONTRACT.md`; its pending template is intentionally not
+promotion evidence.

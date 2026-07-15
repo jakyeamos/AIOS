@@ -1,0 +1,12 @@
+{
+  "schema": "aios-m6-provider-telemetry-v1",
+  "status": "pending",
+  "source": {
+    "kind": "provider_api_response",
+    "provider": "",
+    "captured_at": "",
+    "export_path": "",
+    "export_sha256": ""
+  },
+  "runs": []
+}
