@@ -6,7 +6,7 @@ healthScore: 85
 statusLabel: warning
 nextStep: Migrate the next legacy UI write family behind the Python owner with rollback/deletion proof; keep M6 deferred pending promotion-grade effectiveness evidence.
 blockers: []
-lastUpdated: 2026-07-15
+lastUpdated: 2026-07-16
 tags: [infra, ai-os, hooks, automation]
 areas: [engineering]
 goals: []
@@ -47,7 +47,7 @@ AIOS now has a read-only workflow router preview surface: `aios route "objective
 
 AIOS now has a deterministic repo-state closeout helper integrated into daily-flow replay. `aios repo closeout` exposes the canonical `aios-repo-closeout-v0.1` payload, and `daily-flow --run-id` attaches that payload to the run step as `metadata.repo_closeout` when the run's project has a known repo path. The UI daily-flow mirror renders repo path, branch, short HEAD, dirty-file count, and diff stat on Command Center and run-detail surfaces without changing the canonical eight-step trace.
 
-Quality Runner now supersedes the older repo-quality-certifier and quality-evidence-contract path dependencies for AIOS consumption. AIOS consumes `/Users/jakyeamos/projects/quality-runner` through one local `quality-runner` dependency, while Quality Runner provides the compatibility imports, CLI/MCP tools, plugin metadata, deterministic gate-certification workflow, and evidence-normalization helpers still used by existing `quality_evidence_contract` and `repo_quality_certifier` callers. `services/repo_gate_adoption.py` remains the AIOS adapter that injects AIOS TMCP enrichment and preserves existing workflow/CLI imports.
+Quality Runner now supersedes the older repo-quality-certifier and quality-evidence-contract path dependencies for AIOS consumption. AIOS invokes QR as an external source-first tool through `uvx --refresh --from git+https://github.com/jakyeamos/quality-runner.git`, with an explicit local-checkout override for development; the QR compatibility modules remain sourced from the QR Git dependency rather than a machine-specific checkout path. QR remains the owner of compatibility imports, CLI/MCP tools, plugin metadata, deterministic gate-certification workflow, and evidence-normalization helpers used by existing callers. `services/repo_gate_adoption.py` remains the AIOS adapter that injects AIOS TMCP enrichment and preserves existing workflow/CLI imports.
 
 AIOS now exposes `aios quality rollout`, a thin adapter over Quality Runner's multi-repo `rollout_payload`. The adapter launches the external QR controller workflow, defaults captured artifacts to `~/AIOS/artifacts/quality-rollouts/<run-id-prefix>`, writes `aios-rollout-artifact-index.json` beside the QR ledger/controller reports/validation artifacts, and records an AIOS evidence pointer for operator lookup without taking ownership of QR's rollout protocol.
 
@@ -66,6 +66,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-16: Prepared the AIOS source-first QR migration: rollout calls refresh remote QR through `uvx`, compatibility modules move from a local checkout path to the QR Git source at locked `0.5.1`, and 164 focused tests passed (`3e63db4`).
 - 2026-07-15: Routed pattern approval/rejection through the Python owner, deleted direct TypeScript updates, and passed 5 focused tests, the 97-test CLI regression slice, UI lint, architecture, build, and 3 browser tests (`4cd4183`).
 - 2026-07-15: Routed `automations.triggerWorkflow` through the Python owner, launched the managed runtime from the validated `automation-trigger` CLI, deleted the direct TypeScript plan/invocation path, and passed 4 focused tests, 96 CLI regressions, UI lint, architecture, build, and 3 browser tests (`85de909`).
 - 2026-07-14: Routed Taski project component toggles through the Python owner, deleted the direct UI SQLite helper, and passed 4 focused tests, 96 CLI regressions, UI build, architecture, and 3 browser tests (`82106f3`).
@@ -75,7 +76,6 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-07-14: Routed the manual business-memory adapter through `capture.v1` for Markdown, JSON, HTML, and CSV, retaining the SourceRecord/raw-sidecar contract; 11 focused tests, Ruff, and BasedPyright passed (`625056d`).
 - 2026-07-14: Added the `capture.v1` source-normalization boundary with pinned schema, deterministic adapters, provenance/removal records, CLI, fixtures, and focused proof; no network, enrichment, or vault writes (`b408ad5`).
 - 2026-07-14: Closed the corrected three-task live audit benchmark: six clean runs, three pair-specific contamination records, six score IDs, independent review, and a bounded +0.013 treatment delta; M6 remains deferred (`docs/evals/M6_LIVE_BENCHMARK_REPORT.md`).
-- 2026-07-14: Closed the eval-pair report-path contract gap with schema migration compatibility, CLI flags, round-trip tests, and 107 focused tests passing (`10c992a`).
 - 2026-07-14: Captured one clean live control/treatment pair at `7797f3e` with passed contamination, independent review, persisted IDs, and a bounded +0.0500 portable-context delta; broader M6 evidence remains open (`docs/evals/M6_LIVE_PAIRED_REPORT.md`).
 - 2026-07-14: Implemented the durable M5A `eval_pairs` contract with hash/parity validation, contamination and review gates, append-only pair events, CLI create/finalize/list commands, and 139 focused evaluation tests (`2eec354`).
 - 2026-07-14: Recorded M5A deterministic paired harness evidence (AIOS 1.0000 vs control 0.5379, +0.4621) and deferred promotion pending clean live paired runs and independent review (`078f310`, `docs/evals/M5A_EFFECTIVENESS_REPORT.md`).
