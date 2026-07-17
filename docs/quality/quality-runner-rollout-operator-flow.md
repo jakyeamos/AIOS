@@ -16,8 +16,11 @@ does not own a second parser contract.
 
 ## Artifact Capture
 
-AIOS delegates execution to `quality_runner.rollout.rollout_payload`. Quality
-Runner remains the source of truth for:
+AIOS delegates execution to the Quality Runner CLI through the source-first tool
+contract. The default invocation uses `uvx --refresh` against the QR Git
+repository; `QUALITY_RUNNER_MODE=local` and `QUALITY_RUNNER_REPO` opt into a
+specific local checkout for development. Quality Runner remains the source of
+truth for:
 
 - `rollout-ledger.json`
 - `*-controller-report.json`

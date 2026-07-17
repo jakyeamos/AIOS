@@ -40,7 +40,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "agent-eval-contract", directory = "/Users/jakyeamos/agent-eval-contract" },
-    { name = "quality-runner", directory = "/Users/jakyeamos/projects/quality-runner" },
+    { name = "quality-runner", git = "https://github.com/jakyeamos/quality-runner.git" },
 ]
 
 [package.metadata.requires-dev]
@@ -241,8 +241,8 @@ wheels = [
 
 [[package]]
 name = "quality-runner"
-version = "0.3.1"
-source = { directory = "/Users/jakyeamos/projects/quality-runner" }
+version = "0.5.1"
+source = { git = "https://github.com/jakyeamos/quality-runner.git#feb5fd87659eb30808d4371709907926c44fb182" }
 
 [[package]]
 name = "ruff"
