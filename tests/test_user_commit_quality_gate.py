@@ -219,6 +219,27 @@ def test_pre_cr_runner_emits_visible_heartbeat(tmp_path: Path, monkeypatch, caps
     assert "Pre-CR finished" in captured.err
 
 
+def test_pre_cr_runner_reports_timeout(tmp_path: Path, monkeypatch, capsys) -> None:
+    def fake_run(
+        command: list[str], *, timeout: float, **kwargs: object
+    ) -> subprocess.CompletedProcess[str]:
+        raise subprocess.TimeoutExpired(command, timeout, output="partial", stderr="diagnostic")
+
+    monkeypatch.setattr(gate.subprocess, "run", fake_run)
+
+    result = gate.run_pre_cr_command(
+        ["/bin/pre-cr", "run"],
+        tmp_path,
+        timeout_seconds=0.01,
+    )
+
+    captured = capsys.readouterr()
+    assert result.returncode == 124
+    assert "partial" in result.stdout
+    assert "Pre-CR timed out after 0.01s" in result.stderr
+    assert "Pre-CR timed out" in captured.err
+
+
 def test_runs_pre_cr_when_config_and_cli_exist(tmp_path: Path, monkeypatch) -> None:
     (tmp_path / ".pre-cr.json").write_text("{}", encoding="utf-8")
     monkeypatch.setattr(
@@ -235,6 +256,36 @@ def test_runs_pre_cr_when_config_and_cli_exist(tmp_path: Path, monkeypatch) -> N
     findings = gate.check_pre_cr_requirement(tmp_path, ["src/app.ts"])
 
     assert findings == []
+
+
+def test_pre_cr_cache_reuses_success_for_unchanged_staged_surface(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    (tmp_path / ".pre-cr.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setenv("AIOS_PRE_CR_CACHE_DIR", str(tmp_path / "cache"))
+    monkeypatch.setattr(
+        gate.shutil, "which", lambda command: "/bin/pre-cr" if command == "pre-cr" else None
+    )
+    staged = {"src/app.py": "print('stable')\n"}
+    calls = 0
+
+    monkeypatch.setattr(gate, "staged_text", lambda path: staged.get(path))
+
+    def fake_run(command: list[str], root: Path) -> subprocess.CompletedProcess[str]:
+        nonlocal calls
+        calls += 1
+        return subprocess.CompletedProcess(command, 0, stdout='{"ok":true}', stderr="")
+
+    monkeypatch.setattr(gate, "run_pre_cr_command", fake_run)
+
+    assert gate.check_pre_cr_requirement(tmp_path, ["src/app.py"]) == []
+    assert gate.check_pre_cr_requirement(tmp_path, ["src/app.py"]) == []
+    assert calls == 1
+    assert "Pre-CR cache hit" in capsys.readouterr().err
+
+    staged["src/app.py"] = "print('changed')\n"
+    assert gate.check_pre_cr_requirement(tmp_path, ["src/app.py"]) == []
+    assert calls == 2
 
 
 def test_reports_pre_cr_coverage_failure(tmp_path: Path, monkeypatch) -> None:

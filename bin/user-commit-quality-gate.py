@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from collections.abc import Sequence
@@ -88,6 +91,8 @@ PRE_CR_SOURCE_EXTENSIONS = {
     ".swift",
 }
 PRE_CR_HEARTBEAT_SECONDS = 15.0
+PRE_CR_TIMEOUT_SECONDS = 90.0
+PRE_CR_CACHE_SCHEMA = "aios-pre-cr-hook-cache-v0.1"
 AIOS_ROOT = Path(__file__).resolve().parents[1]
 if str(AIOS_ROOT) not in sys.path:
     sys.path.insert(0, str(AIOS_ROOT))
@@ -151,6 +156,85 @@ def staged_text(path: str) -> str | None:
     if "\x00" in result.stdout:
         return None
     return result.stdout
+
+
+def pre_cr_cache_key(root: Path, paths: Sequence[str], cli: str) -> str | None:
+    staged: list[dict[str, str]] = []
+    for path in sorted(paths):
+        text = staged_text(path)
+        if text is None:
+            return None
+        staged.append({"path": path, "sha256": hashlib.sha256(text.encode()).hexdigest()})
+    dependency_files: list[dict[str, str]] = []
+    for name in (
+        ".pre-cr.json",
+        "pyproject.toml",
+        "uv.lock",
+        "package.json",
+        "pnpm-lock.yaml",
+        "package-lock.json",
+        "yarn.lock",
+    ):
+        path = root / name
+        if path.is_symlink() or not path.is_file():
+            continue
+        try:
+            content = path.read_bytes()
+        except OSError:
+            return None
+        dependency_files.append({"path": name, "sha256": hashlib.sha256(content).hexdigest()})
+    payload = {
+        "schema": PRE_CR_CACHE_SCHEMA,
+        "workspace": str(root),
+        "cli": cli,
+        "python": sys.executable,
+        "python_version": sys.version,
+        "staged": staged,
+        "dependency_files": dependency_files,
+    }
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode()).hexdigest()
+
+
+def pre_cr_cache_path(key: str) -> Path:
+    configured = os.environ.get("AIOS_PRE_CR_CACHE_DIR")
+    root = (
+        Path(configured).expanduser()
+        if configured
+        else Path.home() / "Library" / "Caches" / "AIOS" / "pre-cr-hook"
+    )
+    return root / f"{key}.json"
+
+
+def read_pre_cr_cache(key: str) -> bool:
+    path = pre_cr_cache_path(key)
+    if path.is_symlink() or not path.is_file():
+        return False
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return False
+    return payload.get("schema") == PRE_CR_CACHE_SCHEMA and payload.get("status") == "passed"
+
+
+def write_pre_cr_cache(key: str) -> None:
+    path = pre_cr_cache_path(key)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd, temporary = tempfile.mkstemp(prefix="pre-cr-", suffix=".json", dir=path.parent)
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump(
+                {
+                    "schema": PRE_CR_CACHE_SCHEMA,
+                    "status": "passed",
+                    "created_at": time.time(),
+                },
+                handle,
+            )
+            handle.write("\n")
+        os.replace(temporary, path)
+    except OSError:
+        return
 
 
 def should_scan_text(path: str) -> bool:
@@ -388,8 +472,15 @@ def check_pre_cr_requirement(root: Path, paths: Sequence[str]) -> list[Finding]:
             )
         ]
 
+    cache_key = pre_cr_cache_key(root, paths, cli)
+    if cache_key is not None and read_pre_cr_cache(cache_key):
+        print(f"[INFO] Pre-CR cache hit for unchanged staged surface in {root}", file=sys.stderr)
+        return []
+
     result = run_pre_cr_command([cli, "run", "--json", "--workspace", str(root)], root)
     if result.returncode == 0:
+        if cache_key is not None:
+            write_pre_cr_cache(cache_key)
         return []
 
     summary = pre_cr_failure_summary(result.stdout, result.stderr)
@@ -408,6 +499,7 @@ def run_pre_cr_command(
     root: Path,
     *,
     heartbeat_seconds: float = PRE_CR_HEARTBEAT_SECONDS,
+    timeout_seconds: float = PRE_CR_TIMEOUT_SECONDS,
 ) -> subprocess.CompletedProcess[str]:
     started = time.monotonic()
     stop_event = threading.Event()
@@ -425,12 +517,28 @@ def run_pre_cr_command(
 
     heartbeat_thread = threading.Thread(target=emit_heartbeat, daemon=True)
     heartbeat_thread.start()
+    timed_out = False
     try:
         result: subprocess.CompletedProcess[str] = subprocess.run(
             list(command),
             text=True,
             capture_output=True,
             check=False,
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired as error:
+        timed_out = True
+        stdout = _partial_process_output(error.stdout)
+        stderr = _partial_process_output(error.stderr)
+        timeout_message = (
+            f"Pre-CR timed out after {timeout_seconds:g}s; "
+            "the commit was blocked before readiness completed."
+        )
+        result = subprocess.CompletedProcess(
+            list(command),
+            124,
+            stdout=stdout,
+            stderr=f"{stderr}\n{timeout_message}".strip(),
         )
     finally:
         stop_event.set()
@@ -438,14 +546,27 @@ def run_pre_cr_command(
 
     elapsed = int(time.monotonic() - started)
     print(
-        f"[INFO] Pre-CR finished in {elapsed}s with exit code {result.returncode}",
+        f"[INFO] Pre-CR {'timed out' if timed_out else 'finished'} in {elapsed}s "
+        f"with exit code {result.returncode}",
         file=sys.stderr,
         flush=True,
     )
     return result
 
 
+def _partial_process_output(value: str | bytes | None) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode(errors="replace")
+    return value
+
+
 def pre_cr_failure_summary(stdout: str, stderr: str) -> str:
+    if "Pre-CR timed out after" in stderr:
+        return next(
+            line.strip() for line in stderr.splitlines() if "Pre-CR timed out after" in line
+        )
     try:
         payload = json.loads(stdout)
     except json.JSONDecodeError:
