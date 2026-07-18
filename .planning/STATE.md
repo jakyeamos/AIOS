@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Daily-use release readiness is active; Phase 29 linked-repo remediation is paused as the release centerpiece
-last_updated: "2026-07-01T18:30:00Z"
+last_updated: "2026-07-18T18:30:00Z"
 progress:
   total_phases: 29
   completed_phases: 28
@@ -76,6 +76,7 @@ _(truncated)_
 *Last updated: 2026-06-24 after completing Phase 28 and smoke-verifying the expert rubric remediation CLI*
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-07-18 | Bound and accelerated Pre-CR commit checks | `5af1b8e` adds a 90s timeout, progress diagnostics, success caching, and focused regression coverage. |
 | 2026-06-01 | Complete Phase 9 Plan 04 conservative learning optimizer | `.planning/phases/09-continuous-learning-and-conservative-optimization/09-04-SUMMARY.md` records approval-required learning writebacks, conservatism policy… |
 | 2026-06-01 | Complete Phase 9 Plan 05 learning operator surfaces | `.planning/phases/09-continuous-learning-and-conservative-optimization/09-05-SUMMARY.md` records learning CLI commands, closeout `signal_kind` emission,… |
 | 2026-06-01 | Complete Phase 9 Plan 06 governed promotion wiring | `.planning/phases/09-continuous-learning-and-conservative-optimization/09-06-SUMMARY.md` records approval-gated divergent strategy and workflow experiment… |
