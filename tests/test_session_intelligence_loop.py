@@ -302,6 +302,8 @@ def test_session_intelligence_classifies_lanes_and_redacts_report(tmp_path: Path
     assert "Measure whether implemented candidates reduce repeated friction" in decision_report
     assert "## Removal Candidates" in decision_report
     assert "No implemented candidate telemetry is available yet." in decision_report
+    assert "## Adoption Review Signals" in decision_report
+    assert "No dormant or underused implemented helpers detected." in decision_report
     assert "source sessions:" not in decision_report
     assert "[REDACTED:api_key]" in decision_report
 
@@ -693,6 +695,69 @@ def test_session_intelligence_decision_report_lists_tracked_implemented_helpers(
     )
     assert "telemetry candidate coverage: 1" in decision_report
     assert "session-intel-helper-family:repo_state" in decision_report
+
+
+def test_session_intelligence_decision_report_surfaces_non_use_as_adoption_signal(
+    tmp_path: Path,
+) -> None:
+    conn = _memory_conn()
+    ensure_session_intelligence_schema(conn)
+    conn.executemany(
+        """
+        INSERT INTO session_intelligence_implementations (
+          id, lane, helper_family, candidate_ids_json, candidate_count,
+          implementation_status, telemetry_status, removal_status, removal_reason,
+          implemented_artifact_type, implemented_artifact_ref, created_at, updated_at
+        )
+        VALUES (?, 'friction_tool', ?, '[]', ?, 'implemented', 'active', 'monitor', ?, 'helper_family_preset', ?, ?, ?)
+        """,
+        [
+            (
+                "implementation-dormant",
+                "artifact_probe",
+                4,
+                "Track usage before deciding whether to keep or remove this helper family.",
+                "session-intel-helper-family:artifact_probe",
+                "2026-06-30T10:00:00+00:00",
+                "2026-06-30T10:00:00+00:00",
+            ),
+            (
+                "implementation-underused",
+                "repo_state",
+                3,
+                "Track usage before deciding whether to keep or remove this helper family.",
+                "session-intel-helper-family:repo_state",
+                "2026-06-30T10:00:00+00:00",
+                "2026-06-30T10:00:00+00:00",
+            ),
+        ],
+    )
+    conn.execute(
+        """
+        INSERT INTO session_intelligence_helper_telemetry (
+          id, implementation_id, helper_family, candidate_ids_json, invoked_at, status,
+          latency_ms, input_shape_json, error_type, error_message, caller_surface,
+          run_id, session_id, task_id
+        )
+        VALUES ('telemetry-underused', 'implementation-underused', 'repo_state', '[]', ?, 'success', 10, '{}', NULL, NULL, 'test', NULL, NULL, NULL)
+        """,
+        ("2026-07-13T10:00:00+00:00",),
+    )
+    provider = CodexProvider(source_root=tmp_path / "missing", db_path=tmp_path / "aios.db")
+
+    result = run_session_intelligence(
+        conn,
+        provider=provider,
+        options=SessionIntelligenceOptions(since="all", write_report=True, report_root=tmp_path),
+    )
+
+    decision_report = Path(result["decision_report_path"]).read_text(encoding="utf-8")
+    assert "## Adoption Review Signals" in decision_report
+    assert "### dormant or underused helpers" in decision_report
+    assert "- artifact_probe: dormant; invocations 0; candidates covered: 4" in decision_report
+    assert "- repo_state: underused; invocations 1; candidates covered: 3" in decision_report
+    assert "Non-use is a review signal, not an automatic removal decision." in decision_report
+    assert "No implemented helpers currently meet removal thresholds." in decision_report
 
 
 def test_session_intelligence_deduplicates_candidates_across_runs(tmp_path: Path) -> None:

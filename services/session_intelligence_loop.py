@@ -50,6 +50,7 @@ HELPER_FAMILY_PRESETS: dict[str, str] = {
     "workflow_skill": "Workflow skill adoption preset for repeatable successful delivery sequences.",
     "impact_idea": "Impact idea adoption preset for scoped product or workflow improvement bets.",
 }
+ADOPTION_REVIEW_MAX_INVOCATIONS = 1
 DEFAULT_REDACTION_PATTERNS = {
     "api_key": r"sk-[A-Za-z0-9]{20,}",
     "bearer_token": r"Bearer [A-Za-z0-9._-]{10,}",
@@ -1678,6 +1679,53 @@ def _removal_candidate_lines(
                     "telemetry shows neutral value, negative value, stale usage, repeated bypasses, or "
                     "higher failure/maintenance cost than the original manual path."
                 ),
+                "",
+            ]
+        )
+    lines.extend(_adoption_signal_lines(implementations, telemetry_rollups))
+    return lines
+
+
+def _adoption_signal_lines(
+    implementations: list[dict[str, Any]],
+    telemetry_rollups: dict[str, dict[str, Any]],
+) -> list[str]:
+    lines = [
+        "## Adoption Review Signals",
+        "",
+        (
+            "Non-use is a review signal, not an automatic removal decision. Compare the signal "
+            "with expected task frequency, routing quality, and whether the helper is intentionally "
+            "reserved for rare high-impact work."
+        ),
+        "",
+    ]
+    signals: list[tuple[dict[str, Any], str, str, dict[str, Any] | None]] = []
+    for implementation in implementations:
+        rollup = telemetry_rollups.get(str(implementation["helper_family"]))
+        invocation_count = int(rollup["invocation_count"]) if rollup else 0
+        if invocation_count == 0:
+            signals.append((implementation, "dormant", "no recorded invocations", rollup))
+        elif invocation_count <= ADOPTION_REVIEW_MAX_INVOCATIONS:
+            signals.append((implementation, "underused", "only one recorded invocation", rollup))
+
+    if not signals:
+        lines.extend(["No dormant or underused implemented helpers detected.", ""])
+        return lines
+
+    lines.extend(["### dormant or underused helpers", ""])
+    for implementation, signal, basis, rollup in signals:
+        helper_family = implementation["helper_family"]
+        last_used = rollup["last_used_at"] if rollup else "never"
+        lines.extend(
+            [
+                (
+                    f"- {helper_family}: {signal}; invocations "
+                    f"{rollup['invocation_count'] if rollup else 0}; candidates covered: "
+                    f"{implementation['candidate_count']}"
+                ),
+                f"  - signal basis: {basis}; last used: {last_used}",
+                "  - review: check routing, discoverability, expected frequency, and continued value before removal review",
                 "",
             ]
         )
