@@ -32,3 +32,14 @@ CLI. The output is validated before it is printed or written.
 The canonical schema is [`config/contracts/capture.v1.schema.json`](../config/contracts/capture.v1.schema.json).
 The runtime is intentionally downstream of extraction and upstream of any
 optional enrichment or governed vault writeback.
+
+## Business-memory adapter
+
+The manual business-memory inbox consumes this boundary through
+`services.business.normalize.normalize_manual_file`. Markdown, JSON, HTML, and
+CSV files become the existing `SourceRecord` shape; the raw JSON sidecar also
+retains the `capture.v1` adapter, validation, and provenance/removal metadata.
+This adapter does not fetch, enrich, write to the vault, or create a second
+database authority. To roll back this slice, restore the prior
+`normalize_manual_file` implementation and remove the `capture` field from
+new raw sidecars; no database migration is required.

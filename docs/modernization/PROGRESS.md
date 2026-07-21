@@ -1,7 +1,7 @@
 # AIOS V2 Modernization Progress
 
-**Status:** M5A paired-evidence contract complete; live effectiveness remains deferred and M6 blocked
-**Updated:** 2026-07-14
+**Status:** M6 write-owner slices advancing; live effectiveness remains deferred and M6 remains blocked
+**Updated:** 2026-07-15
 **Plan:** [EXEC_PLAN.md](EXEC_PLAN.md)
 
 ## Current slice
@@ -189,6 +189,81 @@ and independent review; the durable export is
 [M6_LIVE_PAIRED_REPORT.md](../evals/M6_LIVE_PAIRED_REPORT.md). This is a
 single-task live evidence slice, not a broad M6 promotion claim; the broader
 three-to-five-task benchmark and adversarial review remain required.
+
+The corrected three-task live audit corpus now has six clean runs, pair-specific
+contamination records, durable score ids, and independent review; its bounded
+`0.963` control versus `0.977` treatment mean (`+0.013`) remains deferred
+because the corpus is audit-only and provider telemetry is unavailable. The
+superseded single-task promote row is excluded from the corrected packet. While
+M6 remains blocked, the first adapter-scoped satellite slice routes the manual
+business-memory inbox through `capture.v1` for Markdown, JSON, HTML, and CSV;
+11 focused tests, Ruff, and BasedPyright pass, with no network, enrichment,
+vault write, schema migration, or promotion behavior added.
+
+The superseded-pair consumer blocker is now closed. `eval_pairs` carries
+durable supersession metadata and an append-only event, while the dedicated
+`list_promotion_ready_eval_pairs`/`eval pair-list --promotion-ready` path
+requires finalized promotion, scores, passed contamination, passed independent
+review with a reference, a report path, and no supersession marker. The normal
+pair list remains the complete audit view. The `pair-supersede` CLI records the
+reason without rewriting the original decision. Focused service/CLI proof
+passed 108 tests, Ruff, and BasedPyright. M6 remains blocked on audit-only
+scope, provider telemetry, browser proof, and remaining satellite migration
+gates.
+
+The Context Compiler is now the first browser-proven read-only satellite
+slice. Its projection envelope names the file-backed context source,
+compiler authority, CLI mutation owner, freshness state, and next action;
+`/context` renders that contract without adding a second context store or
+write path. The pinned browser contract passes mobile, tablet, and desktop
+with zero mutation requests, console errors, failed responses, or overflow;
+UI lint, architecture, build, and direct context validation pass. The root
+`pnpm context:validate` wrapper remains environment-blocked by the existing
+external `context-compiler-contract` file dependency. M6 is advanced but
+remains deferred on promotion-grade effectiveness and write-owner/
+rollback/deletion gates.
+
+The first write-capable standards-health satellite is now Python-owned. Taski
+Start/Block/Resolve transitions call the validated `standards-backfill-update`
+JSON CLI through a typed server adapter while the existing read projection and
+button contract remain unchanged. The prior TypeScript SQLite write helper was
+deleted; rollback is the parent revision and requires no schema migration.
+Focused Python/CLI proof, UI lint/typecheck/build, dependency architecture, and
+the pinned three-test browser contract pass. M6 remains deferred because the
+paired benchmark is audit-only with unavailable provider telemetry and other
+legacy write families still need bounded owner migrations.
+
+The Taski project component-settings toggle is now Python-owned. The validated
+`project-component-update` JSON CLI enforces project identity, component-key
+membership, and boolean state before the idempotent upsert; the tRPC mutation
+reuses the existing TypeScript read projection, and the direct UI write helper
+was deleted. Focused Python/CLI proof, UI lint/typecheck/build, dependency
+architecture, and the pinned three-test browser contract pass. Rollback is the
+parent revision with no schema migration. M6 remains deferred while benchmark
+telemetry and the remaining legacy write families are open.
+
+The `automations.triggerWorkflow` mutation is now Python-owned. The validated
+`automation-trigger` JSON CLI preserves the automation/workflow objective
+prefix, creates the canonical route → packet → run → invocation envelope, and
+launches the managed runtime; the typed server adapter preserves the existing
+plan/invocation response shape. The direct TypeScript `planTask`/
+`invokeControlPlaneRun` calls were deleted from the automation router. Four
+focused owner tests, 96 CLI regressions, Ruff, BasedPyright, UI lint,
+architecture, production build, and the pinned three-test browser contract
+pass. Rollback is the parent revision and no schema migration was introduced.
+M6 remains deferred for promotion-grade effectiveness evidence and the
+remaining legacy write families.
+
+Pattern approval and rejection are now Python-owned. The validated
+`pattern-approval-update` JSON CLI preserves the existing `{ ok, id,
+changedRows }` result contract through a typed server adapter, and the direct
+TypeScript `UPDATE` statements were deleted from the pattern router. Five
+focused owner tests and the 97-test CLI regression slice pass; the full suite
+passes 1,178 tests with one unrelated pre-existing shadow-branch foreign-key
+failure. Ruff, BasedPyright, UI lint/typecheck, architecture, production
+build, and the pinned three-test browser contract pass. Rollback is the parent
+revision and no schema migration was introduced. Pattern extraction, scoring,
+promotion, and other legacy write families remain separate bounded migrations.
 
 ## Completed
 

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from services.business.connectors.base import Connector
 from services.business.models import SourceRecord
-from services.business.normalize import normalize_manual_file
+from services.business.normalize import MANUAL_SOURCE_SUFFIXES, normalize_manual_file
 from services.business.paths import MANUAL_INBOX, MANUAL_PROCESSED
 
 
@@ -28,7 +28,7 @@ class ManualConnector(Connector):
         for path in sorted(self.inbox_path.iterdir()):
             if not path.is_file():
                 continue
-            if path.suffix.lower() not in {".md", ".txt", ".json"}:
+            if path.suffix.lower() not in MANUAL_SOURCE_SUFFIXES:
                 continue
             record = normalize_manual_file(path, fetched_at=fetched_at)
             if since is not None:

@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import os
 import shlex
 import sqlite3
 import subprocess
@@ -25,6 +26,10 @@ from services.asset_lifecycle import (
     promote_asset,
 )
 from services.automation_history import sync_pipeline_automation_history
+from services.automation_trigger import (
+    automation_trigger_objective,
+    validate_automation_trigger_payload,
+)
 from services.capability_truth import capability_truth_payload
 from services.context_loops import (
     DEFAULT_CONTEXT_LOOP_ROOT,
@@ -91,6 +96,7 @@ from services.native_commands import (
     zoom_out as native_zoom_out,
 )
 from services.path_resolution import get_vault_root
+from services.pattern_mutations import update_pattern_approval
 from services.personalized_humanizer import (
     FeedbackVerdict,
     ensure_personalized_humanizer_schema,
@@ -109,6 +115,7 @@ from services.pre_pr_readiness import (
 from services.pre_pr_readiness import (
     DEFAULT_TIMEOUT_SECONDS as DEFAULT_PRE_PR_TIMEOUT_SECONDS,
 )
+from services.project_components import set_project_component_enabled
 from services.project_health_proof import DEFAULT_PROVING_PROJECTS, prove_project_health
 from services.quality_gates import run_gate as run_quality_gate
 from services.quality_rollout_adapter import launch_quality_rollout
@@ -164,6 +171,7 @@ from services.standards_health import (
 from services.standards_health import (
     load_registry as load_standards_registry,
 )
+from services.standards_health_mutations import update_standards_backfill_task
 from services.storage import connect as connect_storage
 from services.success_criteria import (
     EVALUATION_FINDING_LIFECYCLE_STATES,
@@ -2039,11 +2047,13 @@ def _start_work_payload(
     agent_key: str | None,
     backend_key: str | None,
     session_id: str | None,
+    deduplicate: bool = True,
 ) -> dict[str, Any]:
     _ensure_start_work_schema(conn)
-    duplicate = _recent_duplicate_run(conn, objective=objective, project_id=project_id)
-    if duplicate is not None:
-        return duplicate
+    if deduplicate:
+        duplicate = _recent_duplicate_run(conn, objective=objective, project_id=project_id)
+        if duplicate is not None:
+            return duplicate
     explicit_session_id = session_id is not None
     linked_session_id = session_id if explicit_session_id else _current_session_id(logs_dir)
     session_cwd: str | None = None
@@ -3382,15 +3392,37 @@ def cmd_eval_pair_finalize(conn: sqlite3.Connection, args: argparse.Namespace) -
     return {"pair": pair, "pair_id": str(args.pair_id)}
 
 
-def cmd_eval_pair_list(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
-    from services.eval_run_service import list_eval_pairs
+def cmd_eval_pair_supersede(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.eval_run_service import supersede_eval_pair
 
-    pairs = list_eval_pairs(
-        conn,
-        task_id=args.task_id,
-        status=args.status,
-        limit=int(args.limit),
-    )
+    try:
+        pair = supersede_eval_pair(
+            conn,
+            pair_id=str(args.pair_id),
+            reason=str(args.reason),
+        )
+    except ValueError as exc:
+        raise CLIError("eval-pair-supersede-invalid", str(exc), EXIT_USAGE) from exc
+    conn.commit()
+    return {"pair": pair, "pair_id": str(args.pair_id)}
+
+
+def cmd_eval_pair_list(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
+    from services.eval_run_service import list_eval_pairs, list_promotion_ready_eval_pairs
+
+    if args.promotion_ready:
+        pairs = list_promotion_ready_eval_pairs(
+            conn,
+            task_id=args.task_id,
+            limit=int(args.limit),
+        )
+    else:
+        pairs = list_eval_pairs(
+            conn,
+            task_id=args.task_id,
+            status=args.status,
+            limit=int(args.limit),
+        )
     return {"pairs": pairs, "count": len(pairs), "limit": int(args.limit)}
 
 
@@ -4111,6 +4143,8 @@ def cmd_eval(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, An
         return cmd_eval_pair_create(conn, args)
     if args.eval_command == "pair-finalize":
         return cmd_eval_pair_finalize(conn, args)
+    if args.eval_command == "pair-supersede":
+        return cmd_eval_pair_supersede(conn, args)
     if args.eval_command == "pair-list":
         return cmd_eval_pair_list(conn, args)
     if args.eval_command == "summary":
@@ -5735,6 +5769,276 @@ def _standards_override_payload(
     return result
 
 
+def _standards_backfill_update_payload(
+    conn: sqlite3.Connection, args: argparse.Namespace
+) -> dict[str, Any]:
+    payload = _parse_json_object(args.payload_json)
+    if not payload:
+        raise CLIError("invalid-payload", "--payload-json must contain a non-empty object", EXIT_USAGE)
+    try:
+        result = update_standards_backfill_task(conn, payload)
+    except LookupError as exc:
+        raise CLIError("backfill-task-not-found", str(exc), EXIT_NOT_FOUND) from exc
+    except ValueError as exc:
+        raise CLIError("backfill-task-update-failed", str(exc), EXIT_USAGE) from exc
+    return dict(result)
+
+
+def _project_component_update_payload(
+    conn: sqlite3.Connection, args: argparse.Namespace
+) -> dict[str, Any]:
+    payload = _parse_json_object(args.payload_json)
+    if not payload:
+        raise CLIError("invalid-payload", "--payload-json must contain a non-empty object", EXIT_USAGE)
+    try:
+        result = set_project_component_enabled(conn, payload)
+    except LookupError as exc:
+        raise CLIError("project-not-found", str(exc), EXIT_NOT_FOUND) from exc
+    except ValueError as exc:
+        raise CLIError("project-component-update-failed", str(exc), EXIT_USAGE) from exc
+    return dict(result)
+
+
+def _pattern_approval_update_payload(
+    conn: sqlite3.Connection, args: argparse.Namespace
+) -> dict[str, Any]:
+    payload = _parse_json_object(args.payload_json)
+    if not payload:
+        raise CLIError("invalid-payload", "--payload-json must contain a non-empty object", EXIT_USAGE)
+    try:
+        result = update_pattern_approval(conn, payload)
+    except ValueError as exc:
+        raise CLIError("pattern-approval-invalid", str(exc), EXIT_USAGE) from exc
+    return {"schema": "pattern-approval-update-result-v1", **result, "decision": payload["decision"]}
+
+
+def _automation_trigger_payload(
+    conn: sqlite3.Connection,
+    args: argparse.Namespace,
+    *,
+    db_path: Path,
+    logs_dir: Path,
+) -> dict[str, Any]:
+    payload = _parse_json_object(args.payload_json)
+    if not payload:
+        raise CLIError("invalid-payload", "--payload-json must contain a non-empty object", EXIT_USAGE)
+    try:
+        validated = validate_automation_trigger_payload(payload)
+    except ValueError as exc:
+        raise CLIError("automation-trigger-invalid", str(exc), EXIT_USAGE) from exc
+
+    start = _start_work_payload(
+        conn,
+        logs_dir,
+        objective=automation_trigger_objective(validated),
+        project_id=validated["project_id"],
+        workflow_key=validated["workflow_key"],
+        agent_key=None,
+        backend_key=None,
+        session_id=None,
+        deduplicate=False,
+    )
+    run = start["run"]
+    invocation = start["invocation"]
+    invocation_id = str(invocation["id"])
+    run_id = str(run["id"])
+    backend_key = str(invocation["backend_key"])
+    script = Path(__file__).resolve().parents[1] / "bin" / "aios-managed-run.py"
+    command = [
+        "python3",
+        str(script),
+        "--run-id",
+        run_id,
+        "--invocation-id",
+        invocation_id,
+        "--backend-key",
+        backend_key,
+        "--db",
+        str(db_path),
+        "--logs-dir",
+        str(logs_dir),
+    ]
+    now = _now_iso()
+    conn.execute(
+        """
+        UPDATE orchestration_invocations
+        SET status = 'launching', command_json = ?, metadata_json = ?, updated_at = ?
+        WHERE id = ?
+        """,
+        (
+            json.dumps(command),
+            json.dumps({"source": "automation-trigger", "automation_id": validated["automation_id"]}),
+            now,
+            invocation_id,
+        ),
+    )
+    try:
+        child = subprocess.Popen(
+            command,
+            cwd=str(Path(__file__).resolve().parents[1]),
+            env={
+                **os.environ,
+                "AIOS_DB": str(db_path),
+                "AIOS_LOGS_DIR": str(logs_dir),
+                "AIOS_RUN_ID": run_id,
+                "AIOS_INVOCATION_ID": invocation_id,
+                "AIOS_BACKEND_KEY": backend_key,
+            },
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except OSError as exc:
+        conn.execute(
+            "UPDATE orchestration_invocations SET status = 'failed', metadata_json = ?, ended_at = ?, updated_at = ? WHERE id = ?",
+            (json.dumps({"launchError": str(exc)}), now, now, invocation_id),
+        )
+        conn.commit()
+        raise CLIError("automation-trigger-launch-failed", str(exc), EXIT_RUNTIME) from exc
+
+    conn.execute(
+        "UPDATE orchestration_invocations SET pid = ?, updated_at = ? WHERE id = ?",
+        (child.pid, _now_iso(), invocation_id),
+    )
+    conn.commit()
+
+    run_row = conn.execute(
+        """
+        SELECT id, project_id, session_id, objective, workflow_key, agent_key, status,
+               rationale, assumptions_json, context_trace_json, created_at, updated_at,
+               completed_at, started_at, failed_at, canceled_at, backend_key,
+               active_invocation_id, superseded_by_run_id, status_reason_json,
+               result_summary, memory_update_id, packet_id, route_id, route_status,
+               route_result_json
+        FROM orchestration_runs
+        WHERE id = ?
+        LIMIT 1
+        """,
+        (run_id,),
+    ).fetchone()
+    packet_row = conn.execute(
+        """
+        SELECT id, run_id, project_id, objective, workflow_key, agent_key,
+               packet_markdown, sections_json, policy_mode, token_budget, route_id,
+               route_result_json, selection_trace_json, omitted_context_json, created_at
+        FROM briefing_packets
+        WHERE id = ?
+        LIMIT 1
+        """,
+        (start["packet"]["id"],),
+    ).fetchone()
+    invocation_row = conn.execute(
+        """
+        SELECT id, run_id, backend_key, backend_label, status, handshake_token,
+               session_id, pid, command_json, metadata_json, created_at, started_at,
+               ended_at, updated_at
+        FROM orchestration_invocations
+        WHERE id = ?
+        LIMIT 1
+        """,
+        (invocation_id,),
+    ).fetchone()
+    if run_row is None or packet_row is None or invocation_row is None:
+        raise CLIError("automation-trigger-incomplete", "Automation trigger rows could not be reloaded.", EXIT_RUNTIME)
+
+    def json_list(raw: object) -> list[Any]:
+        value = _parse_json_value(str(raw or "[]"))
+        return value if isinstance(value, list) else []
+
+    def json_object(raw: object) -> dict[str, Any]:
+        value = _parse_json_value(str(raw or "{}"))
+        return value if isinstance(value, dict) else {}
+
+    run = {
+        "id": run_row["id"],
+        "project_id": run_row["project_id"],
+        "project_name": None,
+        "session_id": run_row["session_id"],
+        "objective": run_row["objective"],
+        "workflow_key": run_row["workflow_key"],
+        "agent_key": run_row["agent_key"],
+        "status": run_row["status"],
+        "rationale": run_row["rationale"],
+        "assumptions": json_list(run_row["assumptions_json"]),
+        "context_trace": json_list(run_row["context_trace_json"]),
+        "created_at": run_row["created_at"],
+        "updated_at": run_row["updated_at"],
+        "completed_at": run_row["completed_at"],
+        "started_at": run_row["started_at"],
+        "failed_at": run_row["failed_at"],
+        "canceled_at": run_row["canceled_at"],
+        "backend_key": run_row["backend_key"],
+        "active_invocation_id": run_row["active_invocation_id"],
+        "superseded_by_run_id": run_row["superseded_by_run_id"],
+        "status_reason": json_object(run_row["status_reason_json"]),
+        "result_summary": run_row["result_summary"],
+        "memory_update_id": run_row["memory_update_id"],
+        "packet_id": run_row["packet_id"],
+        "route_id": run_row["route_id"],
+        "route_status": run_row["route_status"],
+        "route_result": json_object(run_row["route_result_json"]),
+    }
+    packet = {
+        "id": packet_row["id"],
+        "run_id": packet_row["run_id"],
+        "project_id": packet_row["project_id"],
+        "objective": packet_row["objective"],
+        "workflow_key": packet_row["workflow_key"],
+        "agent_key": packet_row["agent_key"],
+        "created_at": packet_row["created_at"],
+        "markdown": packet_row["packet_markdown"],
+        "sections": json_list(packet_row["sections_json"]),
+        "policy_mode": packet_row["policy_mode"],
+        "token_budget": packet_row["token_budget"],
+        "selection_trace": json_list(packet_row["selection_trace_json"]),
+        "omitted_context": json_list(packet_row["omitted_context_json"]),
+        "route_id": packet_row["route_id"],
+        "route_result": json_object(packet_row["route_result_json"]),
+        "contract_version": GOVERNED_HANDOFF_CONTRACT_VERSION,
+    }
+    invocation = {
+        "id": invocation_row["id"],
+        "run_id": invocation_row["run_id"],
+        "backend_key": invocation_row["backend_key"],
+        "backend_label": invocation_row["backend_label"],
+        "status": invocation_row["status"],
+        "handshake_token": invocation_row["handshake_token"],
+        "session_id": invocation_row["session_id"],
+        "pid": invocation_row["pid"],
+        "command": json_list(invocation_row["command_json"]),
+        "metadata": json_object(invocation_row["metadata_json"]),
+        "created_at": invocation_row["created_at"],
+        "started_at": invocation_row["started_at"],
+        "ended_at": invocation_row["ended_at"],
+        "updated_at": invocation_row["updated_at"],
+    }
+    return {
+        "schema": "automation-trigger-result-v1",
+        "automation_id": validated["automation_id"],
+        "recommended_workflow_key": validated["workflow_key"],
+        "plan": {"run": run, "packet": packet},
+        "invocation": {
+            "run_detail": {
+                "run": run,
+                "events": [],
+                "invocations": [invocation],
+                "writebacks": [],
+                "writeback_events": [],
+                "evaluations": [],
+                "inspection": {
+                    "packet_id": packet["id"],
+                    "selected_sections": [],
+                    "omitted_context_count": 0,
+                    "touched_files": [],
+                    "packet_mentioned_files": [],
+                    "unpredicted_touched_files": [],
+                    "standards_deltas": [],
+                },
+            }
+        },
+    }
+
+
 def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "status":
         print(
@@ -5922,6 +6226,27 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "standards-override":
         print(f"{data['project_id']} {data['standard_id']}={data['status']}")
         return
+    if command == "standards-backfill-update":
+        print(f"task={data['id']} status={data['status']} blocked={data['blocked']}")
+        return
+    if command == "project-component-update":
+        print(
+            f"project={data['project_id']} component={data['component_key']} "
+            f"enabled={data['enabled']}"
+        )
+        return
+    if command == "pattern-approval-update":
+        print(
+            f"pattern={data['id']} decision={data['decision']} "
+            f"changed={data['changed_rows']}"
+        )
+        return
+    if command == "automation-trigger":
+        print(
+            f"automation={data['automation_id']} run={data['plan']['run']['id']} "
+            f"workflow={data['recommended_workflow_key']}"
+        )
+        return
     if command == "prove-project-health":
         summary = data["summary"]
         print(
@@ -6012,6 +6337,10 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
     if command == "eval-pair-finalize":
         pair = data["pair"]
         print(f"pair={data['pair_id']} decision={pair['decision']} status={pair['status']}")
+        return
+    if command == "eval-pair-supersede":
+        pair = data["pair"]
+        print(f"pair={data['pair_id']} superseded_at={pair['superseded_at']}")
         return
     if command == "eval-pair-list":
         print(f"pairs={data['count']} limit={data['limit']}")
@@ -6227,6 +6556,8 @@ def _command_name(args: argparse.Namespace) -> str:
         return f"criteria-finding-{args.criteria_finding_command}"
     if args.command == "standards-resolution":
         return f"standards-resolution-{args.standards_resolution_command}"
+    if args.command == "standards-backfill-update":
+        return "standards-backfill-update"
     return args.command
 
 
@@ -6261,6 +6592,10 @@ def _command_requires_db(args: argparse.Namespace) -> bool:
         "delta-explain",
         "recommend-workflow",
         "standards-override",
+        "standards-backfill-update",
+        "project-component-update",
+        "pattern-approval-update",
+        "automation-trigger",
         "asset-lifecycle",
         "workflow-compare",
         "promote-asset",
@@ -7204,10 +7539,22 @@ def create_parser() -> argparse.ArgumentParser:
     eval_pair_finalize.add_argument("--limitation", action="append", default=[])
     eval_pair_finalize.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
+    eval_pair_supersede = eval_subparsers.add_parser(
+        "pair-supersede", help="Mark an eval pair ineligible for promotion"
+    )
+    eval_pair_supersede.add_argument("--pair-id", required=True)
+    eval_pair_supersede.add_argument("--reason", required=True)
+    eval_pair_supersede.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+
     eval_pair_list = eval_subparsers.add_parser("pair-list", help="List durable eval pairs")
     eval_pair_list.add_argument("--task-id", default=None)
     eval_pair_list.add_argument(
         "--status", choices=["open", "insufficient_evidence", "finalized"], default=None
+    )
+    eval_pair_list.add_argument(
+        "--promotion-ready",
+        action="store_true",
+        help="List only unsuperseded pairs that satisfy every promotion gate",
     )
     eval_pair_list.add_argument("--limit", type=int, default=50)
     eval_pair_list.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
@@ -7591,6 +7938,36 @@ def create_parser() -> argparse.ArgumentParser:
     standards_override.add_argument("--evidence", action="append", default=[])
     standards_override.add_argument("--waiver-review-at", default=None)
 
+    standards_backfill_update = subparsers.add_parser(
+        "standards-backfill-update",
+        help="Apply one governed standards backfill task state transition",
+    )
+    standards_backfill_update.add_argument(
+        "--payload-json",
+        required=True,
+        help="JSON object containing taskId and one or more mutable task fields",
+    )
+
+    project_component_update = subparsers.add_parser(
+        "project-component-update",
+        help="Apply one governed AIOS project component setting transition",
+    )
+    project_component_update.add_argument(
+        "--payload-json",
+        required=True,
+        help="JSON object containing projectId, componentKey, and enabled",
+    )
+
+    pattern_approval_update = subparsers.add_parser(
+        "pattern-approval-update",
+        help="Apply one governed pattern approval or rejection transition",
+    )
+    pattern_approval_update.add_argument(
+        "--payload-json",
+        required=True,
+        help="JSON object containing id and decision (approve or reject)",
+    )
+
     asset_lifecycle = subparsers.add_parser(
         "asset-lifecycle", help="List and transition prompt, skill, and workflow assets"
     )
@@ -7753,6 +8130,15 @@ def create_parser() -> argparse.ArgumentParser:
     start_work.add_argument("--workflow", default=None, help="Workflow key override")
     start_work.add_argument("--agent", default=None, help="Agent profile key override")
     start_work.add_argument("--backend", default=None, help="Invocation backend key override")
+
+    automation_trigger = subparsers.add_parser(
+        "automation-trigger", help="Trigger an automation through the Python-owned runtime"
+    )
+    automation_trigger.add_argument(
+        "--payload-json",
+        required=True,
+        help="JSON object containing automationId, workflowKey, objective, and optional projectId",
+    )
 
     verify_run_parser = subparsers.add_parser(
         "verify-run",
@@ -8278,6 +8664,15 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "standards-override":
             assert conn is not None
             data = _standards_override_payload(conn, args)
+        elif args.command == "standards-backfill-update":
+            assert conn is not None
+            data = _standards_backfill_update_payload(conn, args)
+        elif args.command == "project-component-update":
+            assert conn is not None
+            data = _project_component_update_payload(conn, args)
+        elif args.command == "pattern-approval-update":
+            assert conn is not None
+            data = _pattern_approval_update_payload(conn, args)
         elif args.command == "asset-lifecycle" and args.asset_lifecycle_command == "list":
             assert conn is not None
             data = _asset_lifecycle_list_payload(conn, args)
@@ -8476,6 +8871,14 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
                 agent_key=args.agent,
                 backend_key=args.backend,
                 session_id=args.session_id,
+            )
+        elif args.command == "automation-trigger":
+            assert conn is not None
+            data = _automation_trigger_payload(
+                conn,
+                args,
+                db_path=db_path,
+                logs_dir=logs_dir,
             )
         elif args.command == "pre-pr-readiness":
             data = pre_pr_readiness_payload(

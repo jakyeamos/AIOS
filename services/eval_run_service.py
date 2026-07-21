@@ -234,7 +234,9 @@ def ensure_eval_schema(conn: sqlite3.Connection) -> None:
           limitations_json TEXT NOT NULL DEFAULT '[]',
           status TEXT NOT NULL DEFAULT 'open',
           created_at TEXT NOT NULL,
-          finalized_at TEXT
+          finalized_at TEXT,
+          superseded_at TEXT,
+          superseded_reason TEXT
         );
         CREATE TABLE IF NOT EXISTS eval_pair_events (
           id TEXT PRIMARY KEY,
@@ -255,6 +257,16 @@ def ensure_eval_schema(conn: sqlite3.Connection) -> None:
     }
     if "report_path" not in pair_columns:
         conn.execute("ALTER TABLE eval_pairs ADD COLUMN report_path TEXT")
+    if "superseded_at" not in pair_columns:
+        conn.execute("ALTER TABLE eval_pairs ADD COLUMN superseded_at TEXT")
+    if "superseded_reason" not in pair_columns:
+        conn.execute("ALTER TABLE eval_pairs ADD COLUMN superseded_reason TEXT")
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_eval_pairs_promotion_ready
+        ON eval_pairs(status, decision, superseded_at, created_at DESC)
+        """
+    )
 
 
 def create_eval_task(
@@ -671,6 +683,82 @@ def list_eval_pairs(
         (*params, max(1, int(limit))),
     ).fetchall()
     return [_eval_pair_row_to_dict(row) for row in rows]
+
+
+def list_promotion_ready_eval_pairs(
+    conn: sqlite3.Connection,
+    *,
+    task_id: str | None = None,
+    limit: int = 50,
+) -> list[dict[str, Any]]:
+    """Return only durable, unsuperseded pairs that satisfy promotion gates."""
+
+    ensure_eval_schema(conn)
+    clauses = [
+        "status = 'finalized'",
+        "decision = 'promote'",
+        "superseded_at IS NULL",
+        "control_score IS NOT NULL",
+        "treatment_score IS NOT NULL",
+        "delta IS NOT NULL",
+        "contamination_status = 'passed'",
+        "independent_review_status = 'passed'",
+        "independent_review_ref IS NOT NULL",
+        "independent_review_ref <> ''",
+        "report_path IS NOT NULL",
+        "report_path <> ''",
+    ]
+    params: list[object] = []
+    if task_id:
+        clauses.append("task_id = ?")
+        params.append(task_id)
+    rows = conn.execute(
+        f"""
+        SELECT * FROM eval_pairs
+        WHERE {' AND '.join(clauses)}
+        ORDER BY created_at DESC
+        LIMIT ?
+        """,
+        (*params, max(1, int(limit))),
+    ).fetchall()
+    return [_eval_pair_row_to_dict(row) for row in rows]
+
+
+def supersede_eval_pair(
+    conn: sqlite3.Connection,
+    *,
+    pair_id: str,
+    reason: str,
+) -> dict[str, Any]:
+    """Mark a pair ineligible for promotion without rewriting its audit history."""
+
+    ensure_eval_schema(conn)
+    normalized_reason = reason.strip()
+    if not normalized_reason:
+        raise ValueError("Supersession reason must not be empty.")
+    row = conn.execute(
+        "SELECT superseded_at FROM eval_pairs WHERE id = ? LIMIT 1", (pair_id,)
+    ).fetchone()
+    if row is None:
+        raise ValueError(f"Eval pair not found: {pair_id}")
+    if row["superseded_at"] is not None:
+        raise ValueError(f"Eval pair is already superseded: {pair_id}")
+    superseded_at = _now_iso()
+    conn.execute(
+        """
+        UPDATE eval_pairs
+        SET superseded_at = ?, superseded_reason = ?
+        WHERE id = ? AND superseded_at IS NULL
+        """,
+        (superseded_at, normalized_reason, pair_id),
+    )
+    _record_eval_pair_event(
+        conn,
+        pair_id=pair_id,
+        event_type="superseded",
+        payload={"reason": normalized_reason, "superseded_at": superseded_at},
+    )
+    return get_eval_pair(conn, pair_id)
 
 
 def record_eval_failure(

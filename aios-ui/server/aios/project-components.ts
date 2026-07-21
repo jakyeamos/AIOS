@@ -75,26 +75,3 @@ export const listAiosProjectComponentSettings = (
     };
   });
 };
-
-export const setAiosProjectComponentEnabled = (
-  db: Database.Database,
-  input: {
-    projectId: string;
-    componentKey: AiosProjectComponentKey;
-    enabled: boolean;
-  },
-): AiosProjectComponentSetting[] => {
-  ensureControlPlaneSchema(db);
-  db.prepare(
-    `
-    INSERT INTO project_aios_component_settings (project_id, component_key, enabled, updated_at)
-    VALUES (?, ?, ?, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-    ON CONFLICT(project_id, component_key)
-    DO UPDATE SET
-      enabled = excluded.enabled,
-      updated_at = excluded.updated_at
-  `,
-  ).run(input.projectId, input.componentKey, input.enabled ? 1 : 0);
-
-  return listAiosProjectComponentSettings(db, input.projectId);
-};

@@ -4,7 +4,7 @@ projectName: AIOS
 summary: Active local-first agent operating system with honest evidence verdicts, evidence-gated verify-run completion, durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption, review-gated session-intelligence tools, and progressive colocated context routing across AIOS and linked repos; root and subsystem agent routers are now explicitly scoped.
 healthScore: 85
 statusLabel: warning
-nextStep: Expand the clean live pair to the three-to-five-task benchmark and adversarial review; keep M6 blocked.
+nextStep: Migrate the next legacy UI write family behind the Python owner with rollback/deletion proof; keep M6 deferred pending promotion-grade effectiveness evidence.
 blockers: []
 lastUpdated: 2026-07-21
 tags: [infra, ai-os, hooks, automation]
@@ -35,37 +35,11 @@ agentExpectationsVersion: 1
 
 AIOS now has a completed v2 modernization baseline, accepted local-first operating model, canonical-state contract, task-centred UI contract, reproducible UI validation contract, subsystem modernization strategy, and dependency-ordered target/vertical plan: [`AUDIT.md`](../docs/modernization/AUDIT.md), [`TARGET.md`](../docs/modernization/TARGET.md), [`EXEC_PLAN.md`](../docs/modernization/EXEC_PLAN.md), [`ADR-001`](../docs/modernization/ADR-001-v2-operating-loop-and-trust-boundary.md), [`ADR-002`](../docs/modernization/ADR-002-canonical-state-and-migration-authority.md), [`ADR-003`](../docs/modernization/ADR-003-task-centred-ia-and-accessible-design-system.md), [`ADR-004`](../docs/modernization/ADR-004-reproducible-ui-validation-contract.md), and [`ADR-005`](../docs/modernization/ADR-005-subsystem-ownership-and-parallel-v2-strategy.md). Wayfinder Ticket 006 is resolved; Milestone 0 has the shared JSON fixture, TypeScript boundary guard, Python cross-reference tests, disposable SQLite projection, and daily-flow replay proof. Milestone 1 now has the executable Python storage boundary, copied-store runner, evidence-backed FK transformer, and broad adapter adoption: one resolved `AIOS_DB`, canonical pragmas, read-only projections, idempotent migration/quarantine ledger, schema checksums, preflight/postflight health/counts, unique-path mappings, source-payload quarantine, and immutable backup/restore helpers; lifecycle hooks, high-traffic prompt/compaction/post-tool/session-stop hooks, the managed runtime, Codex ingestion, session CLI, all four provider canonical upserts, stale-session repair, prompt sync, workflow experiment utilities, metrics/reporting paths, history import, inventory sync, Apple-backed ingestion writes, the CLI doctor probe, daily pipeline pending-rule query, pattern schema migration, pattern extraction, pattern scoring, pattern promotion, pattern confirmation/approval/contradiction lifecycle tools, observation review, noise purging, bug-motif extraction, handoff-learning extraction, personal-pattern extraction and promotion, agent synthesis, domain-file projection, DOCX/PDF document indexers, rule-bundle registration, the business-memory path resolver and five CLI adapters, issues/handoffs, query/statusline utilities, and the UI database path converge on the override/pragmas. The actual current read-only store preflight reports 561 FK violations (older audit documents record 555/557); the disposable transformer copy reaches zero and the restored copy replays the canonical daily flow. UI-owned request-time DDL, remaining lower-traffic adapters, and human retention review are still gated. V2 is a single-user, loopback-only local control plane with one logical mutation authority; no live rows have been migrated. The target and plan now turn those decisions into eight vertical milestones plus a paired-effectiveness gate before satellite promotion and cutover. Divergent schema/bootstrap ownership, unenforced UI mutation boundaries, and blocked UI implementation gates remain. The current `dev` worktree was already dirty when this work started, so its shadow lane remains trace-only.
 
-Current-state amendment (2026-07-14): M2 and M3 UI validation is green for the
-read-only Today → Start work → Current run shell. M4 proves the Python-owned
-route → packet → run → invocation → verification envelope against the
-foreign-key-enforced schema, including project-safe session linkage, partial-
-state resume snapshots with verifier provenance, and zero FK findings. M5 is
-resolved: Python-owned governed effect events and closeout reviews enforce
-capability, loopback, egress, redaction, rollback, approval, changed-artifact,
-unresolved-delta, and next-action state. Control-plane and remediation UI
-mutations now fail closed behind the Python owner. M5A records deterministic
-paired fixture evidence (AIOS 1.0000 versus control 0.5379, +0.4621 mean
-delta) with no fixture safety failure, but defers promotion because the
-baseline is dirty and the fixture path lacks live model/tool/budget metadata,
-persisted paired eval ids, contamination proof, and blinded independent
-review. M6 remains blocked pending clean real paired runs.
-The follow-up `eval_pairs` contract now durably links control/treatment runs,
-protected start SHA, task/prompt/context hashes, parity metadata, scores,
-contamination and independent-review state, decisions, and append-only pair
-events. Its CLI create/finalize/list surface fails closed on promotion without
-complete evidence; report paths are now persisted through the schema, service,
-and CLI so live review artifacts can be linked durably. A clean single-task
-live pair at protected SHA `7797f3e` passed contamination and independent review
-with a bounded +0.0500 portable-context delta; the durable report is
-[`M6_LIVE_PAIRED_REPORT.md`](../docs/evals/M6_LIVE_PAIRED_REPORT.md). M6 still
-requires the broader three-to-five-task benchmark and adversarial review.
+Pattern approval and rejection UI mutations now route through the validated
+Python-owned `pattern-approval-update` boundary; direct TypeScript updates were
+deleted, with rollback to the parent revision and no schema migration.
 
-Current-state amendment (2026-07-14): The `capture.v1` source-normalization
-boundary is now implemented in commit `b408ad5`. AIOS owns the pinned schema,
-deterministic HTML/Markdown/JSON/CSV adapter runtime, provenance and removal
-records, CLI, fixtures, and focused tests. The boundary performs no network
-fetches, enrichment, or vault writes; downstream writeback remains governed.
-Focused proof passed four tests, Ruff, and BasedPyright.
+_(9 older entries trimmed)_
 
 _(11 older entries trimmed)_
 
@@ -98,38 +72,32 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - 2026-07-21: Recorded the nested AIOS UI TypeScript 7 audit; the upgrade remains deferred pending toolchain support and a package-level baseline (`0608748`).
 - 2026-07-21: Replaced the oversized root agent contract with a thin router and added scoped `aios-ui/` and `services/` agent routers; remaining active-dev slices are staged for separate verification (`e59df2d`).
 - 2026-07-19: Added session-intelligence adoption review signals for dormant and underused implemented helpers, with 29 focused tests passing and Ruff clean (`f711e3e`).
+- 2026-07-15: Routed pattern approval/rejection through the Python owner, deleted direct TypeScript updates, and passed 5 focused tests, the 97-test CLI regression slice, UI lint, architecture, build, and 3 browser tests (`4cd4183`).
+- 2026-07-15: Routed `automations.triggerWorkflow` through the Python owner, launched the managed runtime from the validated `automation-trigger` CLI, deleted the direct TypeScript plan/invocation path, and passed 4 focused tests, 96 CLI regressions, UI lint, architecture, build, and 3 browser tests (`85de909`).
+- 2026-07-14: Routed Taski project component toggles through the Python owner, deleted the direct UI SQLite helper, and passed 4 focused tests, 96 CLI regressions, UI build, architecture, and 3 browser tests (`82106f3`).
+- 2026-07-14: Routed standards backfill Start/Block/Resolve mutations through the Python owner, deleted the direct UI SQLite helper, and passed 4 focused tests, 96 CLI regressions, UI build, architecture, and 3 browser tests (`fdd1c1d`).
+- 2026-07-14: Migrated the Context Compiler page behind an explicit read-only projection contract with three-viewport browser proof; UI lint, architecture, build, and direct validation passed.
+- 2026-07-14: Added durable eval-pair supersession metadata, append-only events, and a fail-closed promotion-ready consumer; audit history remains visible; 108 focused tests, Ruff, and BasedPyright passed.
+- 2026-07-14: Routed the manual business-memory adapter through `capture.v1` for Markdown, JSON, HTML, and CSV, retaining the SourceRecord/raw-sidecar contract; 11 focused tests, Ruff, and BasedPyright passed (`625056d`).
 - 2026-07-14: Added the `capture.v1` source-normalization boundary with pinned schema, deterministic adapters, provenance/removal records, CLI, fixtures, and focused proof; no network, enrichment, or vault writes (`b408ad5`).
+- 2026-07-14: Closed the corrected three-task live audit benchmark: six clean runs, three pair-specific contamination records, six score IDs, independent review, and a bounded +0.013 treatment delta; M6 remains deferred (`docs/evals/M6_LIVE_BENCHMARK_REPORT.md`).
 - 2026-07-14: Closed the eval-pair report-path contract gap with schema migration compatibility, CLI flags, round-trip tests, and 107 focused tests passing (`10c992a`).
 - 2026-07-14: Captured one clean live control/treatment pair at `7797f3e` with passed contamination, independent review, persisted IDs, and a bounded +0.0500 portable-context delta; broader M6 evidence remains open (`docs/evals/M6_LIVE_PAIRED_REPORT.md`).
 - 2026-07-14: Implemented the durable M5A `eval_pairs` contract with hash/parity validation, contamination and review gates, append-only pair events, CLI create/finalize/list commands, and 139 focused evaluation tests (`2eec354`).
 - 2026-07-14: Recorded M5A deterministic paired harness evidence (AIOS 1.0000 vs control 0.5379, +0.4621) and deferred promotion pending clean live paired runs and independent review (`078f310`, `docs/evals/M5A_EFFECTIVENESS_REPORT.md`).
 - 2026-07-14: Resolved M5 gated review/closeout with governed effect events, explicit capability/loopback/egress/redaction/rollback metadata, terminal writeback transitions, closeout downgrade gates, and fail-closed control-plane/remediation UI mutation procedures (`1ea29a0`).
 - 2026-07-14: Fixed canonical start-work FK ordering, cross-project session linkage, and verification resume snapshots; added the M4 route → packet → run → invocation → verify/resume integration proof (`tests/test_m4_start_work.py`, `e190ca5`).
-- 2026-07-14: Shipped the read-only v2 Today → Start work → Current run shell with canonical projections, task-centred navigation, contextual disclosure, explicit state contracts, and zero-mutation browser proof (`a6adf99`).
-- 2026-07-14: Vendored anti-slop 0.4.0, removed UI request-time DDL in favor of the migration-ledger assertion, and passed ESLint/fixtures/TypeScript/architecture/build/runtime gates.
-- 2026-07-14: Added the pinned Playwright 1.61.1 browser contract, generated prompt/workflow catalogs, and static managed-runtime spawn arguments; browser and production-build M2 gates now pass without NFT warnings.
-- 2026-07-14: Ran the UI loopback smoke after the build fix: `/` and `projects.list` tRPC returned HTTP 200 with source-backed data and clean server logs; the pinned browser/build gates are green without NFT warnings.
-- 2026-07-14: Scoped the UI Turbopack root and refreshed native dependencies: TypeScript, architecture, warning-baseline, and production build passed; workspace-root warning resolved.
-- 2026-07-14: Reran the live recovery preflight and disposable restore drill: 561 FK violations captured, 561 quarantined in the copy, zero restored FK violations, and eight-step daily-flow replay passed.
-- 2026-07-14: Created `docs/modernization/M1_RETENTION_DECISION.md` from a fresh disposable run; it became the approved archive record after live reconciliation.
-- 2026-07-14: Added the guarded transactional live migration runner (`eb59adb`): focused migration/storage tests, Ruff, and BasedPyright passed; archive application then completed successfully.
-- 2026-07-14: Applied the approved archive migration: live `quick_check`/`integrity_check` pass, FK violations are 0, `user_version=1`, 561 quarantine decisions recorded, and 8-step replay/restore passed.
-- 2026-07-14: Routed CTS registry AIOS metadata reads through shared storage (`52d22e5`): passed Ruff/BasedPyright and disposable read-only registry proof.
-- 2026-07-14: Routed lifecycle migration and commit-quality evidence reads through shared storage (`6924d0a`): passed Ruff/BasedPyright, 29 focused tests, and disposable migration proof.
-- 2026-07-14: Routed review, vault-lint, and lab-trigger adapters through shared storage (`c36cf66`): passed Ruff/BasedPyright and disposable vault/lab proof; Flask runtime remains dependency-blocked.
-- 2026-07-14: Routed RTK, discovery, workflow synthesis, and experiment adapters through shared storage (`cfbab64`): passed Ruff/BasedPyright, 14 focused workflow tests, and disposable operational integration.
-- 2026-07-14: Routed pipeline and lab schema migrations through shared storage (`217f29c`): honored `AIOS_DB`, passed Ruff/BasedPyright, and passed disposable state/schema/FK migration proof.
 
 ## Open Problems
 
 1. The live main-store archive migration now reports zero FK violations with an immutable pre/post backup and ledger entry; older 555/557 audit snapshots and distributed runtime DDL still need reconciliation/cleanup.
 2. V2 intentionally excludes remote control. Control-plane and remediation UI mutation endpoints now fail closed behind the Python owner; unrelated legacy UI write surfaces still require later consumer-by-consumer migration.
-3. M2 and M3 UI validation is green, M4 Python route/packet/run/verify proof is green, and M5 governed review/closeout proof is green. M5A fixture evidence, the durable pair contract, and one bounded clean live pair are recorded; broader real paired effectiveness, satellite migration, cutover, and adversarial review remain blocked.
+3. M2 and M3 UI validation is green, M4 Python route/packet/run/verify proof is green, and M5 governed review/closeout proof is green. M5A fixture evidence and the durable pair contract are recorded; the corrected three-task live audit corpus is independently reviewed but explicitly deferred because it is audit-only and provider telemetry is unavailable. The superseded single-task promote row is now excluded by the promotion-ready consumer while remaining in the audit ledger. The Context Compiler read-only, standards backfill owner, and project component owner slices are proven, but remaining write-owner migrations, rollback/deletion, cutover, and broad effectiveness claims remain blocked.
    Milestone 0's fixture/replay contract, storage boundary, copied-store recovery proof, and approved live archive are complete.
 ## Next Concrete Steps
 
-1. Expand the clean live AIOS/non-AIOS pair into the three-to-five-task benchmark through `eval_pairs` and obtain adversarial review.
-2. Keep M6, satellite promotion, and v2 cutover blocked behind promotion-ready paired-effectiveness evidence and adversarial review.
+1. Migrate the next legacy UI write family behind the Python owner with a rollback/deletion ledger and focused proof.
+2. Keep M6 promotion and v2 cutover deferred while the corrected three-task evidence packet remains the bounded benchmark record and provider telemetry is unavailable.
 3. Migrate remaining legacy UI write surfaces only through the Python owner with focused proofs.
 
 ## Risks / Blockers

@@ -3,7 +3,7 @@ title: Migrate Contextual Satellites Behind the Core Loop
 type: task
 status: open
 blocked_by:
-  - 013-close-deferred-live-paired-evidence-gap
+  - 015-expand-clean-live-benchmark-and-adversarial-review
 ---
 
 # Migrate Contextual Satellites Behind the Core Loop

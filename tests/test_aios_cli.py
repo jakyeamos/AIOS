@@ -3789,6 +3789,33 @@ def test_eval_pair_cli_create_finalize_and_list_json(tmp_path: Path, capsys) -> 
     assert list_output["data"]["count"] == 1
     assert list_output["data"]["pairs"][0]["decision"] == "defer"
 
+    promotion_ready_exit = run_cli([*common, "eval", "pair-list", "--promotion-ready"])
+    assert promotion_ready_exit == EXIT_OK
+    promotion_ready_output = json.loads(capsys.readouterr().out)
+    assert promotion_ready_output["data"]["count"] == 0
+
+    supersede_exit = run_cli(
+        [
+            *common,
+            "eval",
+            "pair-supersede",
+            "--pair-id",
+            pair_id,
+            "--reason",
+            "Superseded by the corrected benchmark corpus.",
+        ]
+    )
+    assert supersede_exit == EXIT_OK
+    supersede_output = json.loads(capsys.readouterr().out)
+    assert supersede_output["data"]["pair"]["superseded_reason"] == (
+        "Superseded by the corrected benchmark corpus."
+    )
+
+    audit_list_exit = run_cli([*common, "eval", "pair-list"])
+    assert audit_list_exit == EXIT_OK
+    audit_list_output = json.loads(capsys.readouterr().out)
+    assert audit_list_output["data"]["pairs"][0]["superseded_at"]
+
 
 def test_humanize_run_no_record_outputs_rewrite(capsys) -> None:
     exit_code = run_cli(

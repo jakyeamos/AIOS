@@ -8,7 +8,8 @@ from services.business.connectors.discord import DiscordConnector
 from services.business.connectors.gmail import GmailConnector
 from services.business.connectors.manual import ManualConnector
 from services.business.connectors.x import XConnector
-from services.business.models import IngestRunSummary, SourceRecord
+from services.business.models import IngestRunSummary
+from services.business.normalize import MANUAL_SOURCE_SUFFIXES
 from services.business.paths import MANUAL_INBOX
 from services.business.store import persist_records
 
@@ -75,7 +76,7 @@ def sync_source(
 
     if source_name == "manual" and move_manual_inbox and isinstance(connector, ManualConnector):
         for path in sorted(connector.inbox_path.iterdir()):
-            if path.is_file() and path.suffix.lower() in {".md", ".txt", ".json"}:
+            if path.is_file() and path.suffix.lower() in MANUAL_SOURCE_SUFFIXES:
                 connector.mark_processed(path)
 
     return summary

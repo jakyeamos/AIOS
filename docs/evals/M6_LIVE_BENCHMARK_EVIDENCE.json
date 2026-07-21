@@ -1,0 +1,59 @@
+{
+  "schema": "aios-live-paired-benchmark-v2",
+  "protected_start_sha": "7797f3ed34f15322d34d296f078cfffc604ef28f",
+  "parity_metadata": {
+    "model": "gpt-5.6-luna",
+    "effort": "high",
+    "tools": ["shell", "rg", "sed", "git", "python3", "uv"],
+    "budget": {"tokens": 20000, "seconds": 900}
+  },
+  "conditions": {
+    "control": {"condition": "baseline_repo_only", "context_profile": "peer_repo_only"},
+    "treatment": {"condition": "aios_portable_context_packet", "context_profile": "peer_portable_context_packet"}
+  },
+  "pairs": [
+    {
+      "task_id": "eval-task-87fea31a-afda-4567-ae96-aba8c6f4080f",
+      "control_run_id": "eval-run-9b21a3f2-878b-4591-8a86-fe09ce4af90d",
+      "treatment_run_id": "eval-run-3897f273-b4d6-45c2-aba3-c75c18eae312",
+      "pair_id": "eval-pair-b03e71ec-ab5b-4469-81ea-d4817ee8badd",
+      "task_hash": "d65d867e29d5f8ea3df8aba9278ca09c951b18e4da0a4b94f0d5616bda267012",
+      "prompt_hash": "d65d867e29d5f8ea3df8aba9278ca09c951b18e4da0a4b94f0d5616bda267012",
+      "context_hash": "1900c57612c23ea652c0a9e19a4e49ff787cab7d15652bd4f6e875a376292d98",
+      "scores": {"control": 0.97, "treatment": 0.97, "delta": 0.0},
+      "decision": "defer",
+      "status": "insufficient_evidence"
+    },
+    {
+      "task_id": "eval-task-70b0fdc9-27f1-445d-86ce-f9a80f918e66",
+      "control_run_id": "eval-run-0ebf2d9a-d27c-4516-98d7-98019b7366cc",
+      "treatment_run_id": "eval-run-ccb12906-968a-4c46-af68-14392b26da6b",
+      "pair_id": "eval-pair-daa21647-950b-4c06-8a49-1a28234753d0",
+      "task_hash": "dd430ef0a182536b2a0023b7cbb6802385097ca0493b547bd7d5a5e671f904e0",
+      "prompt_hash": "dd430ef0a182536b2a0023b7cbb6802385097ca0493b547bd7d5a5e671f904e0",
+      "context_hash": "646fbe86d4841f75a6c91d1a5a870f5bcf768266fd68be6a0c86689225033f55",
+      "scores": {"control": 0.97, "treatment": 0.98, "delta": 0.01},
+      "decision": "defer",
+      "status": "insufficient_evidence"
+    },
+    {
+      "task_id": "eval-task-d7e9a6da-fa90-4103-896e-92b6d96fdc92",
+      "control_run_id": "eval-run-a198e8a1-809b-4f0a-a17c-baee5d57417f",
+      "treatment_run_id": "eval-run-2fe1a42c-a0a2-45b9-b203-c6c77e4a387c",
+      "pair_id": "eval-pair-2f676491-0c8a-4384-aa05-b94dcdac2284",
+      "task_hash": "e75e71bde17c68feeb0bc39ea96bf310d63d4113dbbdbeb9070a000b58c226c4",
+      "prompt_hash": "e75e71bde17c68feeb0bc39ea96bf310d63d4113dbbdbeb9070a000b58c226c4",
+      "context_hash": "5e9c66abacf543c958315c8d8927166eb4259970a3e78b673997a394c8b60f0c",
+      "scores": {"control": 0.95, "treatment": 0.98, "delta": 0.03},
+      "decision": "defer",
+      "status": "insufficient_evidence"
+    }
+  ],
+  "aggregate": {"control_mean": 0.963, "treatment_mean": 0.977, "delta": 0.013},
+  "contamination": {"status": "passed", "all_corrected_worktrees_clean": true, "no_production_or_private_state_access": true},
+  "independent_review": {"status": "passed", "ref": "docs/evals/M6_LIVE_BENCHMARK_REVIEW.md"},
+  "report_path": "docs/evals/M6_LIVE_BENCHMARK_REPORT.md",
+  "decision": "defer",
+  "superseded_pair": "eval-pair-c6b68b87-48ac-4268-8908-61c2c5ae5161",
+  "limitations": ["provider token/cost telemetry unavailable", "read-only audit tasks", "bounded three-task corpus", "superseded prior pair excluded"]
+}
