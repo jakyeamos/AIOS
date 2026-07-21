@@ -1,12 +1,12 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with honest evidence verdicts, evidence-gated verify-run completion, durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption, review-gated session-intelligence tools, and progressive colocated context routing across AIOS and linked repos.
+summary: Active local-first agent operating system with honest evidence verdicts, evidence-gated verify-run completion, durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption, review-gated session-intelligence tools, and progressive colocated context routing across AIOS and linked repos; root and subsystem agent routers are now explicitly scoped.
 healthScore: 85
 statusLabel: warning
 nextStep: Expand the clean live pair to the three-to-five-task benchmark and adversarial review; keep M6 blocked.
 blockers: []
-lastUpdated: 2026-07-19
+lastUpdated: 2026-07-21
 tags: [infra, ai-os, hooks, automation]
 areas: [engineering]
 goals: []
@@ -14,7 +14,7 @@ repoType: infra
 sourceOfTruth: mixed
 primaryLanguage: Python
 activeBranch: dev
-lastCommitDate: 2026-07-19
+lastCommitDate: 2026-07-21
 quality:
   lint: fail
   types: fail
@@ -92,6 +92,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-21: Replaced the oversized root agent contract with a thin router and added scoped `aios-ui/` and `services/` agent routers; remaining active-dev slices are staged for separate verification (`e59df2d`).
 - 2026-07-19: Added session-intelligence adoption review signals for dormant and underused implemented helpers, with 29 focused tests passing and Ruff clean (`f711e3e`).
 - 2026-07-14: Added the `capture.v1` source-normalization boundary with pinned schema, deterministic adapters, provenance/removal records, CLI, fixtures, and focused proof; no network, enrichment, or vault writes (`b408ad5`).
 - 2026-07-14: Closed the eval-pair report-path contract gap with schema migration compatibility, CLI flags, round-trip tests, and 107 focused tests passing (`10c992a`).
