@@ -92,6 +92,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-21: Declared Flask for the existing review-app runtime and refreshed the uv lock; `uv lock --check` and Flask import verification pass (`3ffdbee`).
 - 2026-07-21: Refreshed the compiled context briefing and receipts after the router/audit changes; JSON validation and context compiler checks pass (`bd09f21`).
 - 2026-07-21: Recorded the nested AIOS UI TypeScript 7 audit; the upgrade remains deferred pending toolchain support and a package-level baseline (`0608748`).
 - 2026-07-21: Replaced the oversized root agent contract with a thin router and added scoped `aios-ui/` and `services/` agent routers; remaining active-dev slices are staged for separate verification (`e59df2d`).
