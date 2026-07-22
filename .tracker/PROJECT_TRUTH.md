@@ -61,6 +61,8 @@ AIOS now has a strict subsystem ownership map in `.planning/SUBSYSTEM_EXTRACTION
 
 The earlier repo-quality-certifier and quality-evidence-contract repos are now historical extraction sources rather than AIOS dependencies. `context-compiler-contract` remains a separate local file dependency with release governance at commit `de60ba1`.
 
+State-file maintenance now ignores generated `audit-worktrees`, `audit-environments`, and `.audit-tmp` trees and does not follow symlinks, so disposable audit copies cannot fail the canonical trim check; the direct AI Workflow Leverage scan is green.
+
 Research Domain Writing now lives in the standalone repository `/Users/jakyeamos/research-domain-writing`, with remote `git@github.com:jakyeamos/research-domain-writing.git` and pushed tag `v0.1.0` at commit `ba0f608`. AIOS no longer owns RDW prompts, domain packs, examples, installers, packet validation, or release process; local slash commands and agent skills point at the external repo.
 
 Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER_BOUNDARY_AUDIT.md`. The current decision is to keep personalized humanizer runtime, workflow stages, profile governance, SQLite state, and privacy rules inside AIOS. It is an AIOS memory/persona projection, not the next RDW-style standalone product. A future extraction should start with a portable voice-profile/voice-packet/scorecard contract using synthetic fixtures, not with moving runtime or personal profile data.
@@ -70,6 +72,7 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-22: Hardened `trim-state-files.mjs` against generated audit trees and broken symlinks, with a focused regression test and direct AI Workflow Leverage scan passing (`4227c4a`).
 - 2026-07-22: Added repo-configured Pre-CR timeout support; 31 focused tests, Ruff, and BasedPyright pass (`c72c07b`).
 - 2026-07-21: Reconciled the local atomic dev slices with 17 remote canonical-dev commits in merge `8633408`; the working tree is clean, focused checks pass, and the full-suite pytest/Ruff/BasedPyright failures match the untouched origin/dev baseline.
 - 2026-07-21: Added read-only Obsidian skill-package discovery with pinned provenance, host-layout availability, registry-state separation, and three focused tests (`8665ca2`).
@@ -126,6 +129,8 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 | UI structure | Partial | Architecture lint passed; UI lint/typecheck and production build are currently blocked. |
 
 Focused hook slice on 2026-07-22: 31 tests, Ruff, and BasedPyright passed; the full-repo lint/type failures above remain the authoritative baseline.
+
+Focused state-trim scanner slice on 2026-07-22: the generated-audit exclusion regression test passed, and `node bin/trim-state-files.mjs --check /Users/jakyeamos/projects/ai-workflow-leverage` reports one canonical managed file with no generated-copy or broken-symlink errors. The global check still reports existing oversized canonical snapshots for separate maintenance.
 
 Focused user commit gate checks on 2026-06-25:
 - `uv run pytest tests/test_user_commit_quality_gate.py -q` passed with 28 tests.
