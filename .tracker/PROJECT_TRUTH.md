@@ -44,6 +44,12 @@ were preserved; no harvest regeneration or runtime rewrite occurred. Parent
 commit `b80da43` records the audit and nested library commit `e03e406` records
 the banner.
 
+A read-only graph verification after the archival marker resolves every
+`skills.tmcp` graph path and preserves the canonical graph profile. It also
+surfaces a pre-existing generated-corpus drift (`manifest=99` versus
+`skill_dirs=100`); no repair or regeneration was run because the corpus is
+archival and outside this migration's write scope.
+
 The nested AIOS UI now includes a read-only `/portfolio` projection that translates project health, quality readiness, recent durable changes, and next steps into reviewer-friendly cards. It preserves the existing operational Projects table, excludes raw paths and internal workflow language from copy-ready text, provides an evidence preview and copy action, and requires human review before publication. The focused UI lint, dependency architecture check, and production build pass for this slice.
 
 The user commit-quality hook now accepts a finite positive `hookTimeoutSeconds` value from repo `.pre-cr.json`, retaining a 90-second default for invalid or absent configuration; its focused tests, Ruff, and BasedPyright checks pass.
