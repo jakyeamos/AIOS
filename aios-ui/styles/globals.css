@@ -783,6 +783,273 @@ summary:focus-visible {
   background: var(--text-secondary);
 }
 
+.portfolio-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.8fr);
+  gap: 24px;
+  padding: 22px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(72, 145, 94, 0.16), transparent 42%),
+    var(--surface);
+}
+
+.portfolio-eyebrow,
+.portfolio-section-label {
+  margin: 0;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.portfolio-hero-title {
+  max-width: 720px;
+  margin: 8px 0 0;
+  font-size: clamp(24px, 4vw, 38px);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.portfolio-hero-copy,
+.portfolio-review-note p,
+.portfolio-section-header p,
+.portfolio-empty p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.portfolio-hero-copy {
+  max-width: 680px;
+  margin: 14px 0 0;
+  font-size: 14px;
+}
+
+.portfolio-review-note {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(222, 175, 72, 0.35);
+  border-radius: 10px;
+  background: rgba(69, 56, 24, 0.24);
+}
+
+.portfolio-review-note p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.portfolio-hero-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.portfolio-hero-stats div {
+  display: grid;
+  gap: 3px;
+}
+
+.portfolio-hero-stats strong {
+  font-family: var(--font-jetbrains-mono), ui-monospace;
+  font-size: 22px;
+  color: var(--text-primary);
+}
+
+.portfolio-hero-stats span {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.portfolio-section-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 14px;
+}
+
+.portfolio-section-header h3 {
+  margin: 6px 0 0;
+  font-size: 18px;
+}
+
+.portfolio-section-header p {
+  max-width: 440px;
+  margin: 0;
+  font-size: 12px;
+  text-align: right;
+}
+
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.portfolio-project-card {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(30, 32, 37, 0.96), rgba(20, 21, 24, 0.98));
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.12);
+}
+
+.portfolio-project-card.portfolio-tone-healthy {
+  border-color: rgba(82, 165, 104, 0.4);
+}
+
+.portfolio-project-card.portfolio-tone-warning {
+  border-color: rgba(222, 175, 72, 0.4);
+}
+
+.portfolio-project-card.portfolio-tone-error {
+  border-color: rgba(211, 92, 92, 0.42);
+}
+
+.portfolio-card-header,
+.portfolio-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.portfolio-card-title {
+  margin: 6px 0 0;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.portfolio-narrative {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.portfolio-proof-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.portfolio-proof-point {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(8, 9, 11, 0.35);
+}
+
+.portfolio-proof-label,
+.portfolio-meta {
+  color: var(--text-muted);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.portfolio-proof-point strong {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.portfolio-card-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(190px, 0.9fr);
+  gap: 18px;
+}
+
+.portfolio-progress-list {
+  display: grid;
+  gap: 8px;
+  margin: 9px 0 0;
+  padding-left: 18px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.portfolio-next-step {
+  padding: 12px;
+  border-left: 3px solid var(--accent);
+  background: rgba(48, 93, 61, 0.16);
+}
+
+.portfolio-next-step p:last-child {
+  margin: 8px 0 0;
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.portfolio-card-footer {
+  align-items: end;
+  padding-top: 2px;
+  border-top: 1px solid var(--border);
+}
+
+.portfolio-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 8px;
+}
+
+.portfolio-card-actions .button-primary,
+.portfolio-card-actions .button-secondary {
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.portfolio-copy-preview {
+  border-top: 1px dashed var(--border);
+  padding-top: 10px;
+}
+
+.portfolio-copy-preview summary {
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.portfolio-copy-preview pre {
+  max-height: 260px;
+  overflow: auto;
+  margin: 10px 0 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #0b0c0e;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.portfolio-empty {
+  padding: 24px;
+}
+
+.portfolio-empty h3 {
+  margin: 0;
+}
+
+.portfolio-empty p {
+  margin: 8px 0 0;
+}
+
 .provenance-badge {
   display: inline-flex;
   align-items: center;
@@ -1605,6 +1872,23 @@ summary:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .portfolio-hero,
+  .portfolio-grid,
+  .portfolio-card-body {
+    grid-template-columns: 1fr;
+  }
+
+  .portfolio-section-header {
+    align-items: start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .portfolio-section-header p {
+    max-width: none;
+    text-align: left;
+  }
+
   .project-scope-row {
     align-items: stretch;
     flex-direction: column;
@@ -1652,6 +1936,20 @@ summary:focus-visible {
 }
 
 @media (max-width: 540px) {
+  .portfolio-proof-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .portfolio-card-header,
+  .portfolio-card-footer {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .portfolio-card-actions {
+    justify-content: start;
+  }
+
   .v2-fact-grid,
   .v2-stage-rail {
     grid-template-columns: 1fr;

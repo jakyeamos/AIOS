@@ -14,6 +14,7 @@ export const SECONDARY_NAV: NavItem[] = [
   { href: "/knowledge", label: "Knowledge", short: "Wiki" },
   { href: "/search", label: "Search", short: "Search" },
   { href: "/projects", label: "Projects", short: "Projects" },
+  { href: "/portfolio", label: "Portfolio", short: "Portfolio" },
   { href: "/control", label: "Control Plane", short: "Control" },
   { href: "/context", label: "Context Compiler", short: "Context" },
   { href: "/runs", label: "Runs", short: "Runs" },
