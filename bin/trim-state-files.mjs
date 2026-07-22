@@ -42,7 +42,8 @@ const FILE_CEILING = { "STATE.md": 30 * 1024, "PROJECT_TRUTH.md": 25 * 1024 };
 // paragraphs/blocks that fit. Catches project-specific heading names.
 const SECTION_BUDGET = 8 * 1024;
 
-const SKIP = /(\/|^)(node_modules|\.worktrees|worktrees|shadow-worktrees|\.aios\/shadow-worktrees|fixtures)(\/|$)/;
+const SKIP =
+  /(\/|^)(node_modules|\.worktrees|worktrees|shadow-worktrees|\.aios\/shadow-worktrees|fixtures|audit-worktrees|audit-environments|\.audit-tmp)(\/|$)/;
 
 function truncCell(s, max) {
   if (s.length <= max) return s;
@@ -214,9 +215,15 @@ function processFile(file, { write }) {
 
 function collect(target) {
   const out = [];
-  const stat = fs.existsSync(target) ? fs.statSync(target) : null;
-  if (stat?.isFile()) {
-    if (POLICIES[path.basename(target)]) out.push(target);
+  let stat = null;
+  try {
+    stat = fs.lstatSync(target);
+  } catch {
+    return out;
+  }
+  if (stat.isSymbolicLink()) return out;
+  if (stat.isFile()) {
+    if (!SKIP.test(target) && POLICIES[path.basename(target)]) out.push(target);
     return out;
   }
   const roots = stat?.isDirectory() ? [target] : [];
@@ -228,6 +235,7 @@ function collect(target) {
       return;
     }
     for (const e of entries) {
+      if (e.isSymbolicLink()) continue;
       const full = path.join(dir, e.name);
       if (SKIP.test(full)) continue;
       if (e.isDirectory()) walk(full);
