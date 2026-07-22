@@ -1,7 +1,7 @@
 ---
 schemaVersion: 1
 projectName: AIOS
-summary: Active local-first agent operating system with honest evidence verdicts, evidence-gated verify-run completion, durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption, review-gated session-intelligence tools, and progressive colocated context routing across AIOS and linked repos; root and subsystem agent routers are now explicitly scoped.
+summary: Active local-first agent operating system with honest evidence verdicts, evidence-gated verify-run completion, durable eval-run recording, context-loop learning primitives, TMCP expertise compilation, standalone Quality Runner consumption, review-gated session-intelligence tools, progressive colocated context routing, and an archival boundary to the canonical public skill catalog.
 healthScore: 85
 statusLabel: warning
 nextStep: Migrate the next legacy UI write family behind the Python owner with rollback/deletion proof; keep M6 deferred pending promotion-grade effectiveness evidence.
@@ -34,6 +34,15 @@ agentExpectationsVersion: 1
 ## Current State
 
 AIOS now has a completed v2 modernization baseline, accepted local-first operating model, canonical-state contract, task-centred UI contract, reproducible UI validation contract, subsystem modernization strategy, and dependency-ordered target/vertical plan: [`AUDIT.md`](../docs/modernization/AUDIT.md), [`TARGET.md`](../docs/modernization/TARGET.md), [`EXEC_PLAN.md`](../docs/modernization/EXEC_PLAN.md), [`ADR-001`](../docs/modernization/ADR-001-v2-operating-loop-and-trust-boundary.md), [`ADR-002`](../docs/modernization/ADR-002-canonical-state-and-migration-authority.md), [`ADR-003`](../docs/modernization/ADR-003-task-centred-ia-and-accessible-design-system.md), [`ADR-004`](../docs/modernization/ADR-004-reproducible-ui-validation-contract.md), and [`ADR-005`](../docs/modernization/ADR-005-subsystem-ownership-and-parallel-v2-strategy.md). Wayfinder Ticket 006 is resolved; Milestone 0 has the shared JSON fixture, TypeScript boundary guard, Python cross-reference tests, disposable SQLite projection, and daily-flow replay proof. Milestone 1 now has the executable Python storage boundary, copied-store runner, evidence-backed FK transformer, and broad adapter adoption: one resolved `AIOS_DB`, canonical pragmas, read-only projections, idempotent migration/quarantine ledger, schema checksums, preflight/postflight health/counts, unique-path mappings, source-payload quarantine, and immutable backup/restore helpers; lifecycle hooks, high-traffic prompt/compaction/post-tool/session-stop hooks, the managed runtime, Codex ingestion, session CLI, all four provider canonical upserts, stale-session repair, prompt sync, workflow experiment utilities, metrics/reporting paths, history import, inventory sync, Apple-backed ingestion writes, the CLI doctor probe, daily pipeline pending-rule query, pattern schema migration, pattern extraction, pattern scoring, pattern promotion, pattern confirmation/approval/contradiction lifecycle tools, observation review, noise purging, bug-motif extraction, handoff-learning extraction, personal-pattern extraction and promotion, agent synthesis, domain-file projection, DOCX/PDF document indexers, rule-bundle registration, the business-memory path resolver and five CLI adapters, issues/handoffs, query/statusline utilities, and the UI database path converge on the override/pragmas. The actual current read-only store preflight reports 561 FK violations (older audit documents record 555/557); the disposable transformer copy reaches zero and the restored copy replays the canonical daily flow. UI-owned request-time DDL, remaining lower-traffic adapters, and human retention review are still gated. V2 is a single-user, loopback-only local control plane with one logical mutation authority; no live rows have been migrated. The target and plan now turn those decisions into eight vertical milestones plus a paired-effectiveness gate before satellite promotion and cutover. Divergent schema/bootstrap ownership, unenforced UI mutation boundaries, and blocked UI implementation gates remain. The canonical `dev` worktree is clean after local reconciliation; the separate shadow lane remains trace-only.
+
+The public skill mining pass is complete. The private disposition ledger is
+recorded in [`public-skill-mining-2026-07.md`](../docs/audits/public-skill-mining-2026-07.md);
+the nested generated library is marked archival with a redirect to
+[`jakyeamos-agent-skills`](https://github.com/jakyeamos/jakyeamos-agent-skills).
+The generated corpus, `skills.tmcp`, and existing AIOS runtime graph references
+were preserved; no harvest regeneration or runtime rewrite occurred. Parent
+commit `b80da43` records the audit and nested library commit `e03e406` records
+the banner.
 
 The nested AIOS UI now includes a read-only `/portfolio` projection that translates project health, quality readiness, recent durable changes, and next steps into reviewer-friendly cards. It preserves the existing operational Projects table, excludes raw paths and internal workflow language from copy-ready text, provides an evidence preview and copy action, and requires human review before publication. The focused UI lint, dependency architecture check, and production build pass for this slice.
 
@@ -72,6 +81,9 @@ Personalized humanizer has a boundary audit in `.planning/PERSONALIZED_HUMANIZER
 AIOS is not an app — it is the operating layer for all AI-assisted development work across every project. Hook correctness and DB integrity are load-bearing. Breakage here silently degrades all Claude Code sessions. The ops database is the canonical store for sessions, prompts, artifacts, patterns, bug logs, and next-action candidates across all projects.
 
 ## Recent Progress
+- 2026-07-22: Recorded the public skill mining disposition in `b80da43` and
+  marked the generated nested skills library archival with redirect commit
+  `e03e406`; generated graph and runtime references remain unchanged.
 - 2026-07-22: Hardened `trim-state-files.mjs` against generated audit trees and broken symlinks, with a focused regression test and direct AI Workflow Leverage scan passing (`4227c4a`).
 - 2026-07-22: Added repo-configured Pre-CR timeout support; 31 focused tests, Ruff, and BasedPyright pass (`c72c07b`).
 - 2026-07-21: Reconciled the local atomic dev slices with 17 remote canonical-dev commits in merge `8633408`; the working tree is clean, focused checks pass, and the full-suite pytest/Ruff/BasedPyright failures match the untouched origin/dev baseline.
@@ -116,6 +128,9 @@ AIOS is not an app — it is the operating layer for all AI-assisted development
 - UI change acceptance is reliable for M2/M3: anti-slop, ESLint, TypeScript, architecture, warning-baseline, build, seeded routes, responsive browser, console, network, and keyboard gates pass. Mutation ownership remains a separate modernization risk.
 - The parallel v2 strategy still requires strict no-dual-write ownership, immutable backups, restore proof, and an explicit deletion ledger at every migration wave.
 - A clean canonical `dev` is now available for modernization work; the separate shadow lane remains trace-only until its evidence and ownership gates are explicitly reviewed.
+- Portable redistribution now belongs to the public agent-skills catalog; the
+  AIOS generated library remains an internal archival/runtime surface and must
+  not be regenerated or treated as the public promotion authority.
 
 ## Quality Ladder Notes
 
