@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import re
 import shutil
@@ -92,7 +93,8 @@ PRE_CR_SOURCE_EXTENSIONS = {
 }
 PRE_CR_HEARTBEAT_SECONDS = 15.0
 PRE_CR_TIMEOUT_SECONDS = 90.0
-PRE_CR_CACHE_SCHEMA = "aios-pre-cr-hook-cache-v0.1"
+PRE_CR_CACHE_SCHEMA = "aios-pre-cr-hook-cache-v0.2"
+PRE_CR_TIMEOUT_CONFIG_KEY = "hookTimeoutSeconds"
 AIOS_ROOT = Path(__file__).resolve().parents[1]
 if str(AIOS_ROOT) not in sys.path:
     sys.path.insert(0, str(AIOS_ROOT))
@@ -246,6 +248,23 @@ def should_scan_text(path: str) -> bool:
 
 def should_run_pre_cr(paths: Sequence[str]) -> bool:
     return any(Path(path).suffix.lower() in PRE_CR_SOURCE_EXTENSIONS for path in paths)
+
+
+def pre_cr_timeout_seconds(root: Path) -> float:
+    config_path = root / ".pre-cr.json"
+    try:
+        payload = json.loads(config_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return PRE_CR_TIMEOUT_SECONDS
+    if not isinstance(payload, dict):
+        return PRE_CR_TIMEOUT_SECONDS
+    configured = payload.get(PRE_CR_TIMEOUT_CONFIG_KEY)
+    if isinstance(configured, bool) or not isinstance(configured, (int, float)):
+        return PRE_CR_TIMEOUT_SECONDS
+    timeout = float(configured)
+    if not math.isfinite(timeout) or timeout <= 0:
+        return PRE_CR_TIMEOUT_SECONDS
+    return timeout
 
 
 def find_conflict_markers(path: str, text: str) -> list[Finding]:
@@ -477,7 +496,17 @@ def check_pre_cr_requirement(root: Path, paths: Sequence[str]) -> list[Finding]:
         print(f"[INFO] Pre-CR cache hit for unchanged staged surface in {root}", file=sys.stderr)
         return []
 
-    result = run_pre_cr_command([cli, "run", "--json", "--workspace", str(root)], root)
+    timeout_seconds = pre_cr_timeout_seconds(root)
+    print(
+        f"[INFO] Pre-CR timeout budget: {timeout_seconds:g}s for {root}",
+        file=sys.stderr,
+        flush=True,
+    )
+    result = run_pre_cr_command(
+        [cli, "run", "--json", "--workspace", str(root)],
+        root,
+        timeout_seconds=timeout_seconds,
+    )
     if result.returncode == 0:
         if cache_key is not None:
             write_pre_cr_cache(cache_key)

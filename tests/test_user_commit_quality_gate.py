@@ -246,9 +246,12 @@ def test_runs_pre_cr_when_config_and_cli_exist(tmp_path: Path, monkeypatch) -> N
         gate.shutil, "which", lambda command: "/bin/pre-cr" if command == "pre-cr" else None
     )
 
-    def fake_run(command: list[str], root: Path) -> subprocess.CompletedProcess[str]:
+    def fake_run(
+        command: list[str], root: Path, *, timeout_seconds: float
+    ) -> subprocess.CompletedProcess[str]:
         assert command == ["/bin/pre-cr", "run", "--json", "--workspace", str(tmp_path)]
         assert root == tmp_path
+        assert timeout_seconds == gate.PRE_CR_TIMEOUT_SECONDS
         return subprocess.CompletedProcess(command, 0, stdout='{"ok":true}', stderr="")
 
     monkeypatch.setattr(gate, "run_pre_cr_command", fake_run)
@@ -256,6 +259,29 @@ def test_runs_pre_cr_when_config_and_cli_exist(tmp_path: Path, monkeypatch) -> N
     findings = gate.check_pre_cr_requirement(tmp_path, ["src/app.ts"])
 
     assert findings == []
+
+
+def test_pre_cr_timeout_comes_from_repo_config(tmp_path: Path, monkeypatch) -> None:
+    (tmp_path / ".pre-cr.json").write_text(
+        json.dumps({"hookTimeoutSeconds": 180}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        gate.shutil, "which", lambda command: "/bin/pre-cr" if command == "pre-cr" else None
+    )
+    observed: list[float] = []
+
+    def fake_run(
+        command: list[str], root: Path, *, timeout_seconds: float
+    ) -> subprocess.CompletedProcess[str]:
+        assert root == tmp_path
+        observed.append(timeout_seconds)
+        return subprocess.CompletedProcess(command, 0, stdout='{"ok":true}', stderr="")
+
+    monkeypatch.setattr(gate, "run_pre_cr_command", fake_run)
+
+    assert gate.check_pre_cr_requirement(tmp_path, ["src/app.py"]) == []
+    assert observed == [180.0]
 
 
 def test_pre_cr_cache_reuses_success_for_unchanged_staged_surface(
@@ -271,9 +297,12 @@ def test_pre_cr_cache_reuses_success_for_unchanged_staged_surface(
 
     monkeypatch.setattr(gate, "staged_text", lambda path: staged.get(path))
 
-    def fake_run(command: list[str], root: Path) -> subprocess.CompletedProcess[str]:
+    def fake_run(
+        command: list[str], root: Path, *, timeout_seconds: float
+    ) -> subprocess.CompletedProcess[str]:
         nonlocal calls
         calls += 1
+        assert timeout_seconds == gate.PRE_CR_TIMEOUT_SECONDS
         return subprocess.CompletedProcess(command, 0, stdout='{"ok":true}', stderr="")
 
     monkeypatch.setattr(gate, "run_pre_cr_command", fake_run)
@@ -294,8 +323,11 @@ def test_reports_pre_cr_coverage_failure(tmp_path: Path, monkeypatch) -> None:
         gate.shutil, "which", lambda command: "/bin/pre-cr" if command == "pre-cr" else None
     )
 
-    def fake_run(command: list[str], root: Path) -> subprocess.CompletedProcess[str]:
+    def fake_run(
+        command: list[str], root: Path, *, timeout_seconds: float
+    ) -> subprocess.CompletedProcess[str]:
         assert root == tmp_path
+        assert timeout_seconds == gate.PRE_CR_TIMEOUT_SECONDS
         payload = {
             "ok": False,
             "result": {
