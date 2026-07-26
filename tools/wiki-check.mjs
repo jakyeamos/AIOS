@@ -89,7 +89,7 @@ export function buildAgentPacket(page) {
       "Inspect source refs before acting.",
       "Run `pnpm context:validate` when context packets or routing files change.",
       "Run `pnpm wiki:check` after wiki metadata or source refs change.",
-      "Update wiki metadata or project truth when architecture, commands, APIs, workflows, rules, risks, or failure modes changed.",
+      "Update wiki metadata or maintained project notes when architecture, commands, APIs, workflows, rules, risks, or failure modes changed.",
     ],
   };
 }

@@ -199,7 +199,7 @@ export const workflowTemplateCatalog: WorkflowTemplate[] = [
   {
     "key": "standards-backfill",
     "name": "Standards Backfill",
-    "summary": "Use standards health, project truth, and evidence gaps to produce prioritized remediation plans, follow-up items, and learning signals without silently changing standards.",
+    "summary": "Use standards health, project context, and evidence gaps to produce prioritized remediation plans, follow-up items, and learning signals without silently changing standards.",
     "triggers": [
       "bring this project to standard",
       "standards backfill",
@@ -393,7 +393,7 @@ export const workflowTemplateCatalog: WorkflowTemplate[] = [
   {
     "key": "repo_gate_adoption_v1",
     "name": "Repo Gate Adoption v1",
-    "summary": "Create a repo adoption evidence packet that treats command gates and broad quality standards as separate first-class surfaces: scan existing scripts, contracts, hooks, CI, Pre-CR, anti-slop, dead-code, and truth-file signals; conditionally compile TMCP expert context only when source sufficiency passes; synthesize broad repo-class rubrics for complexity, anti-slop/product quality, architecture, test value, UI visual/runtime verification, dead code, security, dependencies, truth/docs, and CI proof; synthesize gate-specific rubrics; then stop at implementation-free GSD phase planning.",
+    "summary": "Create a repo adoption evidence packet that treats command gates and broad quality standards as separate first-class surfaces: scan existing scripts, contracts, hooks, CI, Pre-CR, anti-slop, dead-code, and project-context signals; conditionally compile TMCP expert context only when source sufficiency passes; synthesize broad repo-class rubrics for complexity, anti-slop/product quality, architecture, test value, UI visual/runtime verification, dead code, security, dependencies, project notes/docs, and CI proof; synthesize gate-specific rubrics; then stop at implementation-free GSD phase planning.",
     "triggers": [
       "commit gate adoption",
       "commit gates adoption",

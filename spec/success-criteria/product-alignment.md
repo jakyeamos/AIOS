@@ -18,7 +18,7 @@ Planning, implementation, refactor, review, and UI/product tasks where user prom
 ## Required Checks
 
 - Compare delivered outcome with the requested outcome.
-- Check against PRD, project truth, roadmap, or relevant design packet.
+- Check against PRD, maintained project context, roadmap, or relevant design packet.
 - Identify unrequested features or behavior changes.
 - Preserve the project-specific product principles.
 - Record any scope expansion as a tradeoff or follow-up.
@@ -39,7 +39,7 @@ Planning, implementation, refactor, review, and UI/product tasks where user prom
 
 - Requested outcome.
 - Delivered outcome.
-- Source PRD/project truth checked.
+- Source PRD/project context checked when relevant.
 - Scope drift found or ruled out.
 
 ## Related Criteria
@@ -50,7 +50,7 @@ Planning, implementation, refactor, review, and UI/product tasks where user prom
 
 ## Example Good
 
-A fix repairs the requested workflow, avoids unrelated redesign, and cites the project truth constraint it preserved.
+A fix repairs the requested workflow, avoids unrelated redesign, and cites the relevant project constraint it preserved.
 
 ## Example Bad
 

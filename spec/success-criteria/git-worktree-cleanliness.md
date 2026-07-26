@@ -41,7 +41,7 @@ Session close, delivery closeout, sprint completion, release preparation, and an
 
 ## Example Good
 
-The agent finishes a service hardening slice, commits the source/test change, commits the truth-file update, and session close sees a clean worktree.
+The agent finishes a service hardening slice, commits the source/test change, and session close sees a clean worktree.
 
 ## Example Bad
 

@@ -36,7 +36,7 @@ Any implementation, bugfix, refactor, or review task that changes code structure
 
 - Component or module size is above local guidance but still coherent.
 - Extraction would help but is not required to keep the current change safe.
-- Boundary ownership is unclear and should be clarified in project truth.
+- Boundary ownership is unclear and should be clarified in maintained project context.
 
 ## Evidence To Provide
 
