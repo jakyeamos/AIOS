@@ -1,9 +1,0 @@
-{
-  "condition": "aios_no_project_truth",
-  "description": "Disable project truth files and durable decisions to isolate the value of explicit project memory.",
-  "disable_sources": [
-    "project_truth_files",
-    "durable_decisions"
-  ],
-  "portability_impact": "high"
-}

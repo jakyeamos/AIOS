@@ -21,7 +21,7 @@ validator_spec.loader.exec_module(validator)
 
 def _sources() -> list[dict[str, object]]:
     return [
-        {"id": "raw-project", "source_type": "project_truth", "source_path": "PROJECT.md"},
+        {"id": "raw-project", "source_type": "project_context", "source_path": "PROJECT.md"},
         {"id": "raw-rules", "source_type": "agent_rules", "source_path": "config/agent-rules.md"},
     ]
 
@@ -75,7 +75,7 @@ def test_provenance_present() -> None:
     packet = _compiler().compile({"fact_ids": ["fact-current"]}, token_budget=2_000)
 
     assert "## Sources / Provenance" in packet
-    assert "- project_truth: PROJECT.md" in packet
+    assert "- project_context: PROJECT.md" in packet
     assert validator.validate_packet(packet) == []
 
 
@@ -111,13 +111,13 @@ def test_stable_separated_from_dynamic() -> None:
         aios_operating_rules=("Stable rule.",),
         user_preferences=("Stable preference.",),
         project_memory_summaries={"aios": "Stable project memory."},
-        project_truth_facts=[_facts()[0]],
+        project_context_facts=[_facts()[0]],
         raw_sources=_sources(),
         retrieved_facts=[_facts()[3]],
     ).compile("Dynamic task.", "aios", 2_000)
 
     headings = [section["content"].splitlines()[0] for section in sections]
-    assert headings.index("## Project Truth Packet") < headings.index(
+    assert headings.index("## Project Context Packet") < headings.index(
         "## Task-Specific Retrieved Memory"
     )
 
@@ -155,7 +155,7 @@ def test_stable_prefix_deterministic() -> None:
         aios_operating_rules=("Stable rule.",),
         user_preferences=("Stable preference.",),
         project_memory_summaries={"aios": "Stable summary."},
-        project_truth_facts=[_facts()[0]],
+        project_context_facts=[_facts()[0]],
     )
 
     first = compiler.compile("First task.", "aios", 2_000)

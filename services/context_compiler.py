@@ -17,7 +17,7 @@ class ContextCompiler:
         aios_operating_rules: Sequence[str] = (),
         user_preferences: Sequence[str] = (),
         project_memory_summaries: Mapping[str, str] | None = None,
-        project_truth_facts: Sequence[RowMapping] = (),
+        project_context_facts: Sequence[RowMapping] = (),
         raw_sources: Sequence[RowMapping] = (),
         retrieved_facts: Sequence[RowMapping] = (),
         retrieved_relationships: Sequence[RowMapping] = (),
@@ -27,7 +27,7 @@ class ContextCompiler:
         self.aios_operating_rules = tuple(aios_operating_rules)
         self.user_preferences = tuple(user_preferences)
         self.project_memory_summaries = dict(project_memory_summaries or {})
-        self.project_truth_facts = tuple(dict(row) for row in project_truth_facts)
+        self.project_context_facts = tuple(dict(row) for row in project_context_facts)
         self.raw_sources = tuple(dict(row) for row in raw_sources)
         self.retrieved_facts = tuple(dict(row) for row in retrieved_facts)
         self.retrieved_relationships = tuple(dict(row) for row in retrieved_relationships)
@@ -44,9 +44,9 @@ class ContextCompiler:
     ) -> list[dict[str, str]]:
         del adapter
 
-        project_truth_facts = self._project_truth_facts(project_id, staleness_filter)
-        truth_texts = {_fact_text(row) for row in project_truth_facts if _fact_text(row)}
-        dynamic_facts = self._dynamic_facts(project_id, staleness_filter, truth_texts)
+        project_context_facts = self._project_context_facts(project_id, staleness_filter)
+        context_texts = {_fact_text(row) for row in project_context_facts if _fact_text(row)}
+        dynamic_facts = self._dynamic_facts(project_id, staleness_filter, context_texts)
         dynamic_relationships = self._dynamic_relationships(project_id)
 
         stable_sections = [
@@ -60,7 +60,7 @@ class ContextCompiler:
                     project_id, "No project memory summary supplied."
                 ),
             ),
-            _section("developer", "Project Truth Packet", _fact_list(project_truth_facts)),
+            _section("developer", "Project Context Packet", _fact_list(project_context_facts)),
         ]
         dynamic_sections = [
             _section(
@@ -78,25 +78,25 @@ class ContextCompiler:
         sections = self._fit_budget(stable_sections, dynamic_sections, budget)
         return [{"role": section["role"], "content": section["content"]} for section in sections]
 
-    def _project_truth_facts(
+    def _project_context_facts(
         self, project_id: str, staleness_filter: bool
     ) -> tuple[RowMapping, ...]:
         rows = [
             row
-            for row in self.project_truth_facts
+            for row in self.project_context_facts
             if _matches_project(row, project_id) and _passes_staleness(row, staleness_filter)
         ]
         return tuple(sorted(rows, key=lambda row: (_fact_text(row), _text(row.get("id")))))
 
     def _dynamic_facts(
-        self, project_id: str, staleness_filter: bool, truth_texts: set[str]
+        self, project_id: str, staleness_filter: bool, context_texts: set[str]
     ) -> tuple[RowMapping, ...]:
         rows = [
             row
             for row in self.retrieved_facts
             if _matches_project(row, project_id)
             and _passes_staleness(row, staleness_filter)
-            and _fact_text(row) not in truth_texts
+            and _fact_text(row) not in context_texts
         ]
         return tuple(sorted(rows, key=lambda row: (_fact_text(row), _text(row.get("id")))))
 
@@ -165,7 +165,7 @@ def _bullet_list(items: Sequence[str]) -> str:
 
 def _fact_list(facts: Sequence[RowMapping]) -> str:
     lines = [f"- {_fact_text(row)}" for row in facts if _fact_text(row)]
-    return "\n".join(lines) if lines else "No project truth facts supplied."
+    return "\n".join(lines) if lines else "No project context facts supplied."
 
 
 def _matches_project(row: RowMapping, project_id: str) -> bool:

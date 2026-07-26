@@ -27,7 +27,7 @@ source_refs:
   - code:aios-ui/app/knowledge/page.tsx|Knowledge index UI surface|2026-05-14
   - code:aios-ui/components/knowledge/KnowledgePageView.tsx|Knowledge page detail UI|2026-05-14
   - code:aios-ui/server/aios/knowledge.ts|Knowledge data source assembly|2026-05-14
-  - doc:PROJECT.md|UI project truth summary|2026-05-14
+  - doc:PROJECT.md|UI project context summary|2026-05-14
 known_stale_areas:
   - UI screenshots and visual verification are not captured in this packet; run browser verification for layout-sensitive changes.
 related_pages:

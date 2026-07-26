@@ -1031,7 +1031,7 @@ def writeback_approval_policy(
     normalized_scope = impact_scope.strip().lower()
     change = proposed_change or {}
     high_impact_layers = {
-        "truth",
+        "state",
         "standard",
         "standards",
         "prompt",
@@ -1042,7 +1042,7 @@ def writeback_approval_policy(
     }
     high_impact_scopes = {
         "global",
-        "project-truth",
+        "planning-state",
         "workflow-default",
         "prompt-default",
         "skill-default",
@@ -1240,17 +1240,17 @@ def _extract_section_items(content: str, heading: str) -> list[str]:
     ]
 
 
-def _load_project_truth(repo_path: str | None) -> dict[str, Any]:
+def _load_planning_state(repo_path: str | None) -> dict[str, Any]:
     if not repo_path:
         return {"path": None, "missing": [], "guardrails": [], "last_updated": None}
-    project_truth = Path(repo_path) / "PROJECT.md"
-    if not project_truth.exists():
+    state_file = Path(repo_path) / ".planning" / "STATE.md"
+    if not state_file.exists():
         return {"path": None, "missing": [], "guardrails": [], "last_updated": None}
 
-    content = project_truth.read_text()
+    content = state_file.read_text()
     last_updated_match = re.search(r"^Last updated:\s+(.+)$", content, re.M)
     return {
-        "path": str(project_truth),
+        "path": str(state_file),
         "missing": _extract_section_items(content, "Still Missing"),
         "guardrails": _extract_section_items(content, "Guardrails"),
         "last_updated": last_updated_match.group(1).strip() if last_updated_match else None,
@@ -1427,7 +1427,7 @@ def evaluate_run_consistency(
     project_id = row[1]
     packet_id = row[7]
     session_id = row[9]
-    truth = _load_project_truth(row[8])
+    state = _load_planning_state(row[8])
     packet = _load_packet_context(conn, packet_id)
     memory = _load_latest_memory(conn, run_id)
     recent_runs = _load_recent_runs(conn, project_id, run_id) if project_id else []
@@ -1475,29 +1475,29 @@ def evaluate_run_consistency(
             packet_id,
             invocation_id,
             trigger_kind,
-            f"Evaluating {row[2]} against project truth, memory, recent runs, packet policy, and indexed topics.",
+            f"Evaluating {row[2]} against planning state, memory, recent runs, packet policy, and indexed topics.",
             now_iso(),
         ),
     )
 
     findings: list[dict[str, Any]] = []
 
-    for missing_item in truth["missing"]:
+    for missing_item in state["missing"]:
         overlap = tokenize(missing_item) & evidence_tokens
         if overlap and row[5] == "completed":
             findings.append(
                 {
                     "finding_kind": "likely_stale",
                     "severity": "warning",
-                    "rule_key": "project_truth.missing_vs_completed_run",
+                    "rule_key": "planning_state.missing_vs_completed_run",
                     "summary": (
-                        f"Project truth still lists '{missing_item}' as missing, but run '{row[2]}' "
+                        f"Planning state still lists '{missing_item}' as missing, but run '{row[2]}' "
                         "records it as completed."
                     ),
                     "provenance": [
                         {
-                            "source_kind": "project_truth",
-                            "path": truth["path"],
+                            "source_kind": "planning_state",
+                            "path": state["path"],
                             "value": missing_item,
                         },
                         {"source_kind": "run", "run_id": run_id, "status": row[5]},
@@ -1539,7 +1539,7 @@ def evaluate_run_consistency(
             break
 
     compact_guardrail = any(
-        "compact ranked" in guardrail.lower() for guardrail in truth["guardrails"]
+        "compact ranked" in guardrail.lower() for guardrail in state["guardrails"]
     )
     if compact_guardrail and (
         packet["policy_mode"] == "explore" or (packet["token_budget"] or 0) > 1000
@@ -1551,13 +1551,13 @@ def evaluate_run_consistency(
                 "rule_key": "policy.compact_ranked_default",
                 "summary": (
                     "Packet execution diverged from the compact-ranked default policy and may need "
-                    "either approval or a truth-file update."
+                    "either approval or a planning-state update."
                 ),
                 "provenance": [
                     {
-                        "source_kind": "project_truth",
-                        "path": truth["path"],
-                        "value": truth["guardrails"],
+                        "source_kind": "planning_state",
+                        "path": state["path"],
+                        "value": state["guardrails"],
                     },
                     {
                         "source_kind": "packet",

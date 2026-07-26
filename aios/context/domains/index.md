@@ -16,7 +16,7 @@ last_reviewed: 2026-05-12
 ---
 
 Domain files route tasks into narrower operating standards.
-They should not duplicate global standards or project truth.
+They should not duplicate global standards or optional project context.
 Use domain files to select relevant execution habits and packets.
 
 ## Acceptance Criteria

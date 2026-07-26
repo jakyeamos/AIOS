@@ -22,7 +22,6 @@ class SessionSummary:
     unresolved_follow_ups: list[str]
     reusable_patterns: list[str]
     candidate_skills_to_extract: list[str]
-    should_update_truth_file: bool
     should_create_obsidian_note: bool
     confidence: float
     source_provenance: dict[str, Any]
@@ -50,7 +49,6 @@ def summarize_session(session_id: str, conn: sqlite3.Connection) -> SessionSumma
             unresolved_follow_ups=["Session held because redaction is incomplete."],
             reusable_patterns=[],
             candidate_skills_to_extract=[],
-            should_update_truth_file=False,
             should_create_obsidian_note=False,
             confidence=min(redacted.confidence, 0.2),
             source_provenance=_source_provenance(redacted),
@@ -66,7 +64,6 @@ def summarize_session(session_id: str, conn: sqlite3.Connection) -> SessionSumma
     patterns = _derive_reusable_patterns(commands, decisions)
     confidence = _confidence(redacted, commands, files, decisions, errors)
 
-    should_update_truth = confidence >= 0.8 and bool(files or decisions or fixes)
     should_note = confidence >= 0.6 and bool(_primary_goal(redacted))
 
     return SessionSummary(
@@ -81,7 +78,6 @@ def summarize_session(session_id: str, conn: sqlite3.Connection) -> SessionSumma
         unresolved_follow_ups=follow_ups,
         reusable_patterns=patterns,
         candidate_skills_to_extract=_skill_candidates(patterns),
-        should_update_truth_file=should_update_truth,
         should_create_obsidian_note=should_note,
         confidence=confidence,
         source_provenance=_source_provenance(redacted),

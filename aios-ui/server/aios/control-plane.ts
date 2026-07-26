@@ -502,7 +502,7 @@ export const getGovernanceOverview = (db: Database.Database): GovernanceOverview
     policyClassDrillDowns,
     terminalRunsMissingEvidence: terminal.gaps,
     linkRules: [
-      "Approval-sensitive truth, standards, prompt, skill, workflow, packet, global, project-truth, and destructive-action changes must remain pending until reviewed.",
+      "Approval-sensitive standards, prompt, skill, workflow, packet, global, project-context, and destructive-action changes must remain pending until reviewed.",
       "Terminal runs should have writeback, workflow-learning, closeout, or no-learning evidence before being treated as complete.",
       "Scoped project-memory writebacks may remain proposed, but they do not become accepted truth without a truth update.",
     ],

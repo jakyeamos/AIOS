@@ -178,8 +178,8 @@ const answerTruthOperatorQuestion = (
     intent: "system_state",
     answer:
       proposedCount > 0
-        ? `AIOS has accepted truth in ${topAccepted?.title ?? "the project truth file"}, plus ${proposedCount} recent proposal signal(s) that still require review before becoming truth.`
-        : `AIOS has accepted truth in ${topAccepted?.title ?? "the project truth file"} and no recent proposal evidence requiring promotion review.`,
+        ? `AIOS has accepted project context in ${topAccepted?.title ?? "the available context"}, plus ${proposedCount} recent proposal signal(s) that still require review.`
+        : `AIOS has accepted project context in ${topAccepted?.title ?? "the available context"} and no recent proposal evidence requiring promotion review.`,
     facts: [
       ...boundary.acceptedTruth.slice(0, 4).map((link) => `Accepted truth: ${link.title} - ${link.summary}`),
       ...boundary.proposedKnowledge.slice(0, 4).map((link) => `Recent evidence: ${link.title} - ${link.summary}`),
@@ -193,12 +193,12 @@ const answerTruthOperatorQuestion = (
       "Prompt, skill, workflow, and research links can shape context packets but should not be treated as authoritative project state.",
     ],
     recommendations: [
-      "Review proposed knowledge before updating PROJECT.md or durable standards.",
+      "Review proposed knowledge before promoting it into durable standards or optional project context.",
       "Use accepted truth first, then recent evidence, then inferred context when compiling agent packets.",
     ],
     assumptions:
       boundary.acceptedTruth.length === 0
-        ? ["PROJECT.md was unavailable or not readable from the UI server root."]
+        ? ["No optional project context was available from the UI server root."]
         : [],
     citations: makeTruthBoundaryCitations(boundary),
     retrievalTrace: [
@@ -766,7 +766,7 @@ export const answerGroundedQuestion = (
     inferences: [
       "The main product risk is still architectural drift between documented intent and shipped surfaces.",
       truthBoundary.summary.reviewRequired
-        ? "Recent proposal evidence exists and needs review before it becomes accepted project truth."
+        ? "Recent proposal evidence exists and needs review before it becomes accepted project context."
         : "The current query did not find proposal evidence waiting for truth promotion.",
       ...(topicMatches.length > 0 ? ["The indexed topic graph is now a live retrieval substrate for grounded answers."] : []),
     ],

@@ -214,7 +214,7 @@ export const buildWikiAgentPacket = (input: PacketInput): WikiAgentPacket => {
   ];
 
   if (input.kind === "project" || input.kind === "system") {
-    standards.push("Update PROJECT.md or the nearest project truth file after meaningful architecture/workflow changes.");
+    standards.push("Update optional project notes only when meaningful architecture/workflow context would otherwise be lost.");
   }
 
   return {
@@ -244,7 +244,7 @@ export const buildWikiAgentPacket = (input: PacketInput): WikiAgentPacket => {
       "Run `pnpm context:validate` when context packets or routing files change.",
       "Run `pnpm wiki:check` after wiki metadata, source refs, or context packets change.",
       "Run the relevant project tests/typecheck/lint for changed code.",
-      "Update wiki metadata or project truth when architecture, commands, APIs, workflows, rules, risks, or failure modes changed.",
+      "Update wiki metadata or optional project context when architecture, commands, APIs, workflows, rules, risks, or failure modes changed.",
     ],
   };
 };

@@ -264,17 +264,17 @@ export const assembleRankedPacket = (
   const runCandidates = loadRecentRuns(db, projectId, input.objective);
   const memoryCandidates = loadRecentMemoryCandidates(db, projectId);
   const policyCandidates = loadPolicyCandidates(db, projectId, workflow.key, agent.key);
-  const projectTruthCandidate: RankedCandidate[] = dossier
+  const projectContextCandidate: RankedCandidate[] = dossier
     ? [
         {
-          id: `project-truth-${dossier.slug}`,
+          id: `project-context-${dossier.slug}`,
           label: `${dossier.title} dossier`,
-          section: "Constraints / Stable Truths",
+          section: "Constraints / Stable Context",
           sourceKind: "project-dossier",
           sourceHref: `/projects/${projectId}`,
           score: 32,
           body: dossier.summary,
-          reason: "Direct project truth is always retained near the top of the compact packet.",
+          reason: "Relevant project context is retained near the top of the compact packet.",
         },
       ]
     : [];
@@ -299,7 +299,7 @@ export const assembleRankedPacket = (
       : [];
 
   const allCandidates = [
-    ...projectTruthCandidate,
+    ...projectContextCandidate,
     ...topicCandidates,
     ...memoryCandidates,
     ...runCandidates,

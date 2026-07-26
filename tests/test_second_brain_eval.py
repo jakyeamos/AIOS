@@ -217,7 +217,6 @@ def test_ablation_policy_json_files_have_required_keys() -> None:
     expected_files = {
         "no-second-brain.json",
         "no-personal-corpus.json",
-        "no-project-truth.json",
         "no-prior-task-history.json",
     }
 

@@ -38,7 +38,6 @@ Any task that writes files, modifies project structure, or automates edits.
 
 ## Related Criteria
 
-- `truth-file-consistency`
 - `security-review`
 
 ## Example Good

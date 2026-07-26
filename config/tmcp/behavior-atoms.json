@@ -78,9 +78,9 @@
       "triggers": ["execute", "implement", "make"]
     },
     "doc_staleness_check": {
-      "description": "Check whether durable docs or truth files need updates.",
+      "description": "Check whether durable docs are stale when documentation is in scope.",
       "risk_if_omitted": "medium",
-      "triggers": ["docs", "truth", "stale"]
+      "triggers": ["docs", "stale"]
     },
     "evidence_trace": {
       "description": "Preserve traceable evidence for decisions and findings.",
@@ -162,11 +162,6 @@
       "risk_if_omitted": "high",
       "triggers": ["tool", "mcp", "shell"]
     },
-    "truth_update": {
-      "description": "Update durable truth files after substantive state changes.",
-      "risk_if_omitted": "medium",
-      "triggers": ["truth", "project", "state"]
-    },
     "ui_quality": {
       "description": "Apply visual quality standards to UI work.",
       "risk_if_omitted": "medium",
@@ -202,7 +197,7 @@
     "context_gathering": ["context_selection", "minimal_context"],
     "debugging": ["reproduce_first", "root_cause_analysis"],
     "direct_implementation": ["direct_execution_permission"],
-    "documentation": ["truth_update", "doc_staleness_check"],
+    "documentation": ["doc_staleness_check"],
     "evidence_first": ["read_before_edit", "evidence_trace"],
     "implementation": ["change_execution", "verification_gate"],
     "minimal_patch_policy": ["bounded_change", "avoid_speculative_abstraction"],

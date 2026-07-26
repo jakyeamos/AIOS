@@ -49,7 +49,6 @@ Return an `AgentizedTaskPacket` with:
 - acceptance criteria
 - expected deliverables
 - handoff/update format
-- project truth-file update requirements
 - experiment/logging metadata
 - prompt-pattern evidence
 

@@ -28,10 +28,9 @@ AIOS is a local-first agent operating system for work context, workflows, and du
 | UI work under `aios-ui/` | `aios-ui/AGENTS.md` and `.agents/context/ui.md` |
 | Python control-plane work under `services/` or `bin/` | `services/AGENTS.md` and `.agents/context/python.md` |
 
-## Source Truth
+## Source Material
 
-- `PROJECT.md` is shipped-state truth.
-- `.tracker/PROJECT_TRUTH.md` is live status.
+- `PROJECT.md` is a durable project overview when it is useful.
 - `.agents/context/` is stable repo reference.
 - `aios/context/` is compiler-managed context.
 - Do not re-inline generated GSD sections into `AGENTS.md`.

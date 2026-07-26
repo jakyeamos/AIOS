@@ -18,8 +18,8 @@
       "standard_refs": ["testing.trust_signal", "global.testing"]
     },
     "product-requirements": {
-      "purpose": "Plan against user-visible requirements, acceptance criteria, and truth files.",
-      "standard_refs": ["documentation.truth_file_currency"]
+      "purpose": "Plan against user-visible requirements and acceptance criteria.",
+      "standard_refs": ["global.maintainability"]
     },
     "architecture": {
       "purpose": "Plan within existing boundaries, dependency direction, and subsystem ownership.",
@@ -50,8 +50,8 @@
       "standard_refs": ["api-contract", "regression-safety"]
     },
     "documentation": {
-      "purpose": "Plan truth-file, operator, or developer documentation updates.",
-      "standard_refs": ["documentation.truth_file_currency"]
+      "purpose": "Plan operator or developer documentation updates when they materially help.",
+      "standard_refs": ["global.maintainability"]
     },
     "orchestration": {
       "purpose": "Plan agent/workflow/run lifecycle state and handoff behavior.",
@@ -95,7 +95,7 @@
     },
     "artifact-definition": {
       "purpose": "Plan concrete files, reports, schemas, logs, or durable outputs.",
-      "standard_refs": ["documentation.truth_file_currency"]
+      "standard_refs": ["global.maintainability"]
     },
     "standards-surfacing": {
       "purpose": "Plan which standards and success criteria must be visible before execution begins.",

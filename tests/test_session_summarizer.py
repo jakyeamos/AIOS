@@ -60,9 +60,9 @@ def _conn(*, confidence: float, redaction_incomplete: int = 0) -> sqlite3.Connec
     return conn
 
 
-def test_low_confidence_session_does_not_propose_truth_update() -> None:
+def test_low_confidence_session_does_not_propose_a_writeback_note() -> None:
     summary = summarize_session("fixture:1", _conn(confidence=0.2))
-    assert summary.should_update_truth_file is False
+    assert summary.should_create_obsidian_note is False
 
 
 def test_redaction_incomplete_session_is_held() -> None:

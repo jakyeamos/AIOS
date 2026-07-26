@@ -7,7 +7,6 @@
   "portable_contract": {
     "requires_aios_runtime": false,
     "requires_sqlite": false,
-    "requires_truth_file_workflow": false,
     "requires_eval_archive": false,
     "allowed_state": [
       "repo-local files",
@@ -19,7 +18,7 @@
       "dependency install",
       "hook installation",
       "database writes outside the target repository",
-      "truth-file or roadmap updates"
+      "unrequested roadmap updates"
     ]
   },
   "nodes": {

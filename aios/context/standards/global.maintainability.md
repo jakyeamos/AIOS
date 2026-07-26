@@ -26,9 +26,9 @@ last_reviewed: 2026-05-12
 ---
 
 Prefer boring, inspectable logic over opaque routing or broad abstractions.
-Read existing code and truth files before modifying behavior.
+Read existing code and relevant context before modifying behavior.
 Keep file-backed rules thin and create packets only for repeated needs.
-Architectural changes must update durable project truth.
+Architectural changes must have executable evidence and reviewable artifacts; durable project context is optional.
 Common error surfaces require durable fixes at the source of recurrence, not repeated local workarounds.
 When context is limited, keep agent-facing files small enough to load, scan, and reason over in one pass; split by responsibility when a file becomes context-heavy.
 Machine readability takes precedence over human-friendly presentation: instructions, packets, errors, logs, schemas, receipts, and status surfaces must preserve parseable structure, stable identifiers, explicit states, deterministic labels, and actionable remediation fields before adding prose or visual polish.
@@ -38,7 +38,7 @@ Do not write defensive code for impossible event-loop interleavings. When a sync
 ## Applicability
 
 - Load for most implementation work and always for compiler/routing changes.
-- Pair with project truth when changing system behavior.
+- Pair with relevant project context when it materially improves handoff quality.
 - Apply when a feature turns an implicit default into one option among several.
 - Apply when code sends work to a worker, subprocess, event emitter, queue, actor, or callback-driven runtime and awaits a response.
 
@@ -52,5 +52,5 @@ Do not write defensive code for impossible event-loop interleavings. When a sync
 - Recurring error surfaces are resolved with durable remediation or captured as explicit follow-up work.
 - Agent-facing files fit a bounded context budget, or document why the larger surface remains coherent.
 - Agent-facing artifacts preserve machine-readable structure before prose or visual presentation.
-- Project truth or handoff files reflect meaningful architecture changes.
+- Handoff or optional project-context files reflect meaningful architecture changes when those files are in scope.
 - Context routing remains auditable from receipt output.

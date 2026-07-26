@@ -24,7 +24,7 @@ Do not hide missing or inferred data behind polished summary numbers.
 When a UI task needs visual direction, agents may use Refero Styles
 (`https://styles.refero.design/`) as a design-reference source before implementation.
 Treat Refero output as inspiration and extracted design vocabulary, not as binding
-project truth. Any adopted colors, typography, spacing, or component patterns must be
+project context. Any adopted colors, typography, spacing, or component patterns must be
 named in the task plan or design notes and reconciled with AIOS operational UI rules.
 
 ## Applicability

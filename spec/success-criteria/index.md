@@ -23,7 +23,6 @@ This index is the canonical discovery point for all AIOS-managed success criteri
 | `execution-first-verification` | Execution-First Verification | global | yes | implementation, bugfix, refactor, testing, review with runtime-risk triggers | `spec/success-criteria/execution-first-verification.md` |
 | `security-review` | Security Review Before Sensitive Change Acceptance | domain-specific | yes | security-sensitive implementation, bugfix, review | `spec/success-criteria/security-review.md` |
 | `observability` | Observability Completeness for Operational Changes | domain-specific | no | observability/workflow/reliability-impacting changes | `spec/success-criteria/observability.md` |
-| `truth-file-consistency` | Project Truth File Consistency | project-domain-specific | yes | AIOS implementation, bugfix, refactor | `spec/success-criteria/truth-file-consistency.md` |
 | `repo-boundary-discipline` | Repository Boundary Discipline | global | yes | implementation, bugfix, refactor | `spec/success-criteria/repo-boundary-discipline.md` |
 | `workflow-state-integrity` | Workflow State Integrity | domain-specific | no | orchestration/workflow-affecting work | `spec/success-criteria/workflow-state-integrity.md` |
 | `git-worktree-cleanliness` | Git Worktree Cleanliness at Completion | global | yes | session close and completion closeout | `spec/success-criteria/git-worktree-cleanliness.md` |

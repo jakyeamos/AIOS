@@ -694,38 +694,6 @@ def _evaluate_observability(
     )
 
 
-def _evaluate_truth_file_consistency(
-    context: dict[str, Any],
-    criterion: CriterionRecord,
-) -> CriterionFinding:
-    changed = context.get("changed_files", [])
-    objective = context.get("objective", "")
-    has_truth_file_change = any(Path(path).name == "PROJECT.md" for path in changed)
-    substantial_code_change = any(_is_code_path(path) for path in changed)
-    project_name = (context.get("project_name") or "").lower()
-
-    if substantial_code_change and not has_truth_file_change:
-        level = "blocker" if project_name == "aios" else "warning"
-        return CriterionFinding(
-            criterion.id,
-            criterion.title,
-            criterion.scope,
-            level,
-            "Substantial code changes were detected without a project truth-file update.",
-            changed[:8],
-            {"objective": objective},
-        )
-    return CriterionFinding(
-        criterion.id,
-        criterion.title,
-        criterion.scope,
-        "pass",
-        "Truth-file consistency check passed for this change set.",
-        [path for path in changed if Path(path).name == "PROJECT.md"][:4],
-        {},
-    )
-
-
 def _evaluate_repo_boundary_discipline(
     context: dict[str, Any],
     criterion: CriterionRecord,
@@ -1111,7 +1079,6 @@ def evaluate_criterion(
         "code-simplicity": _evaluate_code_simplicity,
         "security-review": _evaluate_security_review,
         "observability": _evaluate_observability,
-        "truth-file-consistency": _evaluate_truth_file_consistency,
         "repo-boundary-discipline": _evaluate_repo_boundary_discipline,
         "workflow-state-integrity": _evaluate_workflow_state_integrity,
         "git-worktree-cleanliness": _evaluate_git_worktree_cleanliness,

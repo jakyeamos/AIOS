@@ -219,15 +219,6 @@
         ]
       },
       {
-        "key": "repo_truth",
-        "label": "Project Truth / Agent Instructions",
-        "tier": "tier_1_core",
-        "required": true,
-        "applicability": [
-          "all"
-        ]
-      },
-      {
         "key": "pre_cr",
         "label": "Pre-CR / Changed-Line Readiness",
         "tier": "tier_1_core",
@@ -278,7 +269,6 @@
           "architecture",
           "pre_cr",
           "anti_slop",
-          "repo_truth",
           "secret_scan",
           "dependency_security",
           "ci",
@@ -298,7 +288,6 @@
           "architecture",
           "pre_cr",
           "anti_slop",
-          "repo_truth",
           "secret_scan",
           "dependency_security",
           "ci",
@@ -317,7 +306,6 @@
           "architecture",
           "pre_cr",
           "anti_slop",
-          "repo_truth",
           "secret_scan",
           "dependency_security",
           "ci"
@@ -333,7 +321,6 @@
           "validation",
           "architecture",
           "pre_cr",
-          "repo_truth",
           "secret_scan",
           "dependency_security",
           "ci"
@@ -346,7 +333,6 @@
           "validation",
           "architecture",
           "pre_cr",
-          "repo_truth",
           "secret_scan",
           "ci"
         ],
@@ -362,7 +348,6 @@
           "architecture",
           "pre_cr",
           "anti_slop",
-          "repo_truth",
           "secret_scan",
           "dependency_security",
           "ci",
@@ -489,10 +474,6 @@
           "command": ".github/workflows/release-e2e-full.yml",
           "working_directory": "."
         },
-        "repo_truth": {
-          "command": "AGENTS.md / CLAUDE.md / README.md",
-          "working_directory": "."
-        },
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
@@ -543,10 +524,6 @@
         },
         "ci": {
           "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project portfolio",
-          "working_directory": "."
-        },
-        "repo_truth": {
-          "command": "README.md",
           "working_directory": "."
         },
         "pre_cr": {
@@ -632,10 +609,6 @@
           "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project Terrace",
           "working_directory": "."
         },
-        "repo_truth": {
-          "command": "README.md",
-          "working_directory": "."
-        },
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
@@ -708,10 +681,6 @@
           "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project aios",
           "working_directory": "."
         },
-        "repo_truth": {
-          "command": "PROJECT.md / AGENTS.md / README.md",
-          "working_directory": "."
-        },
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
@@ -782,10 +751,6 @@
         },
         "ci": {
           "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project dispatches-from-cyberspace",
-          "working_directory": "."
-        },
-        "repo_truth": {
-          "command": "README.md",
           "working_directory": "."
         },
         "pre_cr": {
@@ -888,10 +853,6 @@
           "command": "pnpm dependency:security",
           "working_directory": "."
         },
-        "repo_truth": {
-          "command": "AGENTS.md / README.md",
-          "working_directory": "."
-        },
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
@@ -953,10 +914,6 @@
         },
         "ci": {
           "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project pre-cr-suite-lsp",
-          "working_directory": "."
-        },
-        "repo_truth": {
-          "command": "README.md",
           "working_directory": "."
         },
         "pre_cr": {
@@ -1025,10 +982,6 @@
         },
         "e2e_smoke": {
           "command": "pnpm smoke",
-          "working_directory": "."
-        },
-        "repo_truth": {
-          "command": "AGENTS.md / CLAUDE.md / README.md",
           "working_directory": "."
         },
         "pre_cr": {
@@ -1101,10 +1054,6 @@
         },
         "build": {
           "command": "pnpm build",
-          "working_directory": "."
-        },
-        "repo_truth": {
-          "command": "README.md",
           "working_directory": "."
         },
         "pre_cr": {
@@ -1186,10 +1135,6 @@
           "command": "npm run schema-check && npm run validate-presets",
           "working_directory": "."
         },
-        "repo_truth": {
-          "command": "PROJECT.md / AGENTS.md / README.md",
-          "working_directory": "."
-        },
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
@@ -1251,10 +1196,6 @@
           "command": "pnpm e2e:smoke",
           "working_directory": "."
         },
-        "repo_truth": {
-          "command": "AGENTS.md / CLAUDE.md / README.md",
-          "working_directory": "."
-        },
         "architecture": {
           "command": "test -f package.json && test -d src && test -d scripts",
           "working_directory": "."
@@ -1304,10 +1245,6 @@
         },
         "ci": {
           "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project eslint-plugin-anti-slop",
-          "working_directory": "."
-        },
-        "repo_truth": {
-          "command": "AGENTS.md / README.md",
           "working_directory": "."
         },
         "pre_cr": {
@@ -1369,10 +1306,6 @@
         },
         "validation": {
           "command": "npm run doctor && npm run sync-check",
-          "working_directory": "."
-        },
-        "repo_truth": {
-          "command": "CLAUDE.md / README.md",
           "working_directory": "."
         },
         "lint": {
@@ -1440,10 +1373,6 @@
           "command": "python3 /Users/jakyeamos/AIOS/scripts/linked-repo-ci-local-proof.py --project Dsci-proj",
           "working_directory": "."
         },
-        "repo_truth": {
-          "command": "README.md",
-          "working_directory": "."
-        },
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
@@ -1492,10 +1421,6 @@
         },
         "validation": {
           "command": "uv run python -m compileall -q agent.py agent-claude.py apply-patch.py && test -f program.md",
-          "working_directory": "."
-        },
-        "repo_truth": {
-          "command": "README.md",
           "working_directory": "."
         },
         "pre_cr": {
@@ -1554,10 +1479,6 @@
       "gates": {
         "validation": {
           "command": "Rscript save_plots.R",
-          "working_directory": "."
-        },
-        "repo_truth": {
-          "command": "README.md",
           "working_directory": "."
         },
         "pre_cr": {
@@ -1634,10 +1555,6 @@
           "command": "uv run lis --help",
           "working_directory": "."
         },
-        "repo_truth": {
-          "command": "CLAUDE.md / README.md",
-          "working_directory": "."
-        },
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
@@ -1684,10 +1601,6 @@
       ],
       "full_pipeline": false,
       "gates": {
-        "repo_truth": {
-          "command": "README.md",
-          "working_directory": "."
-        },
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
@@ -1746,10 +1659,6 @@
       ],
       "full_pipeline": false,
       "gates": {
-        "repo_truth": {
-          "command": "README.md",
-          "working_directory": "."
-        },
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
@@ -1797,10 +1706,6 @@
       ],
       "full_pipeline": false,
       "gates": {
-        "repo_truth": {
-          "command": "README.md / .tracker/PROJECT_TRUTH.md",
-          "working_directory": "."
-        },
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "."
@@ -1865,7 +1770,7 @@
       },
       "repo_class": "developer_tool_package",
       "maturation_blockers": [
-        "No package/build/test/truth surface found; only .pre-cr.json exists, so strict developer-tool readiness is blocked until real tool checks and project truth are added."
+        "No package/build/test or executable quality surface found; only .pre-cr.json exists, so strict developer-tool readiness is blocked until real tool checks are added."
       ],
       "strict_readiness_status": "blocked"
     },
@@ -1880,10 +1785,6 @@
           "command": "python3 /Users/jakyeamos/AIOS/scripts/content-container-validator.py --project BBDSE --repo-root {repo_root} --run-delegated",
           "working_directory": "."
         },
-        "repo_truth": {
-          "command": "AGENTS.md / README.md / docs/project-truth.md",
-          "working_directory": "."
-        },
         "pre_cr": {
           "command": "python3 /Users/jakyeamos/AIOS/scripts/content-container-validator.py --project BBDSE --repo-root {repo_root} --run-delegated",
           "working_directory": "."
@@ -1893,7 +1794,7 @@
           "working_directory": "."
         },
         "install": {
-          "command": "test -f README.md && test -f docs/project-truth.md && test -f docs/child-project-ownership.md",
+          "command": "test -f README.md && test -f docs/child-project-ownership.md",
           "working_directory": "."
         },
         "secret_scan": {
@@ -1945,10 +1846,6 @@
         "validation": {
           "command": "uv run pytest -q && cd ../frontend && npm run build && npm run test:render",
           "working_directory": "backend"
-        },
-        "repo_truth": {
-          "command": "AGENTS.md / CLAUDE.md / README.md",
-          "working_directory": "."
         },
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
@@ -2042,10 +1939,6 @@
           "command": "node bidnet-smoke.mjs",
           "working_directory": "/Users/jakyeamos/projects/BidCamp"
         },
-        "repo_truth": {
-          "command": "test -f AGENTS.md && test -f CLAUDE.md && test -f README.md",
-          "working_directory": "/Users/jakyeamos/projects/BidCamp"
-        },
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "/Users/jakyeamos/projects/BidCamp"
@@ -2119,10 +2012,6 @@
           "command": "npm run test:e2e",
           "working_directory": "/Users/jakyeamos/LayerC0de/tenure"
         },
-        "repo_truth": {
-          "command": "test -f AGENTS.md && test -f CLAUDE.md && test -f README.md",
-          "working_directory": "/Users/jakyeamos/LayerC0de/tenure"
-        },
         "pre_cr": {
           "command": "pre-cr run --json --workspace {repo_root}",
           "working_directory": "/Users/jakyeamos/LayerC0de/tenure"
@@ -2188,10 +2077,6 @@
         },
         "mobile_release": {
           "command": "xcodebuild -workspace ios/Eli.xcworkspace -scheme Eli -configuration Debug -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build",
-          "working_directory": "/Users/jakyeamos/EliHealth"
-        },
-        "repo_truth": {
-          "command": "test -f CLAUDE.md && test -f README.md",
           "working_directory": "/Users/jakyeamos/EliHealth"
         },
         "pre_cr": {

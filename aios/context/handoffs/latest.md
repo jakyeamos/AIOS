@@ -20,7 +20,7 @@ last_validated_at: 2026-05-14
 validated_by: agent
 source_coverage: partial
 source_refs:
-  - doc:PROJECT.md|Durable project truth|2026-05-14
+  - doc:PROJECT.md|Durable project context|2026-05-14
   - doc:docs/wiki-maintenance.md|Wiki maintenance workflow|2026-05-14
   - code:tools/context-compile.mjs|Compiled packet writer|2026-05-14
 known_stale_areas:
@@ -32,9 +32,9 @@ related_pages:
 
 The first Context Compiler version is file-backed, deterministic, and intended to feed future AIOS UI/run-history integration.
 Receipts and compiled packets are written under `aios/context/`.
-Project truth remains `PROJECT.md`; this handoff only summarizes routing state.
+`PROJECT.md` is optional project context; this handoff only summarizes routing state.
 
 ## Acceptance Criteria
 
 - Update this handoff when compiler output shape or routing conventions change.
-- Keep detailed implementation history in docs or project truth, not this routing node.
+- Keep detailed implementation history in docs or optional project context, not this routing node.

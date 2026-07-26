@@ -1580,7 +1580,7 @@
     },
     {
       "key": "repo_gate_fact_scanner",
-      "purpose": "Inspect a repository for package scripts, Python tooling, CI, hooks, Pre-CR, anti-slop, local AIOS quality contracts, dead-code scans, and project truth surfaces.",
+      "purpose": "Inspect a repository for package scripts, Python tooling, CI, hooks, Pre-CR, anti-slop, local AIOS quality contracts, and dead-code scans.",
       "allowed_stages": [
         "enrich_context"
       ],

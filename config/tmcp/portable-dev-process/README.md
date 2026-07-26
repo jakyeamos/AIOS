@@ -1,6 +1,6 @@
 # Portable Dev Process TMCP Pack
 
-This pack is a portable subset of AIOS development-process behavior. It is meant to be vendored into other repositories without AIOS runtime services, databases, truth-file workflow, eval archives, or continuous-improvement requirements.
+This pack is a portable subset of AIOS development-process behavior. It is meant to be vendored into other repositories without AIOS runtime services, databases, eval archives, or continuous-improvement requirements.
 
 Inside AIOS, this is not the canonical local skill graph. The default local TMCP graph is `skills-library/skills.tmcp`, generated from the harvested canonical skills library. This pack is a namespace overlay for portable development-process behavior.
 
@@ -32,7 +32,7 @@ Some visual-polish nodes are distilled from user-supplied source files rather th
 ## Non-Goals
 
 - Do not require AIOS SQLite state.
-- Do not require AIOS truth-file updates.
+- Do not require AIOS-only writebacks.
 - Do not require AIOS eval records.
 - Do not require GSD/Terrace planning artifacts.
 - Do not mutate a host repository unless the user explicitly asked for implementation or hook installation.

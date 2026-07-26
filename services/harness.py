@@ -107,7 +107,6 @@ def brief_task(
     gates = [
         "success_criteria",
         "test_evidence",
-        "truth_file_update",
         "approval_review",
         "writeback_proposal_review",
     ]
@@ -260,8 +259,6 @@ def _evaluate_harness(
     tests_failed = "tests_failed" in event_types
     tests_passed = "tests_passed" in event_types
     claimed_complete = "run_closed_completed" in event_types
-    code_changed = any(_is_code_file(path) and not _is_test_file(path) for path in changed_files)
-    truth_changed = any(Path(path).name == "PROJECT.md" for path in changed_files)
     counts = (criteria_result or {}).get("counts", {})
     blocker_count = int(counts.get("blocker", 0) or 0)
     warning_count = int(counts.get("warning", 0) or 0)
@@ -269,8 +266,6 @@ def _evaluate_harness(
     violations: list[str] = []
     if tests_failed:
         violations.append("tests_failed")
-    if code_changed and project_name == "AIOS" and not truth_changed:
-        violations.append("missing_truth_file_update")
     if claimed_complete and tests_failed:
         violations.append("claimed_complete_after_failed_gate")
     if blocker_count > 0:

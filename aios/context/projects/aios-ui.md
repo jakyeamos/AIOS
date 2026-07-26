@@ -7,7 +7,7 @@ scope:
   - aios-ui
 priority: high
 status: active
-summary: Project truth routing for the local AIOS Next.js command center.
+summary: Project context routing for the local AIOS Next.js command center.
 applies_when:
   - task_touches_aios_ui
   - task_touches_web_app
@@ -28,7 +28,7 @@ last_validated_at: 2026-05-14
 validated_by: agent
 source_coverage: partial
 source_refs:
-  - doc:PROJECT.md|AIOS project truth and UI summary|2026-05-14
+  - doc:PROJECT.md|AIOS project context and UI summary|2026-05-14
   - code:aios-ui/package.json|UI scripts and dependencies|2026-05-14
   - code:aios-ui/app/knowledge/page.tsx|Knowledge UI route|2026-05-14
   - code:aios-ui/server/aios/knowledge.ts|Knowledge UI backend assembly|2026-05-14

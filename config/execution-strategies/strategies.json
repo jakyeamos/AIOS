@@ -37,7 +37,7 @@
       "version": "repo_compact_context_v1",
       "requirements": [
         "objective",
-        "project truth",
+        "project context",
         "success criteria",
         "recent run findings"
       ],

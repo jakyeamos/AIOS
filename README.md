@@ -337,7 +337,7 @@ Rules live in `config/rtk/rules.json`; architecture details live in
 
 ## Important Files
 
-- `PROJECT.md` - project truth and current implementation state
+- `PROJECT.md` - durable project overview and implementation notes
 - `AGENTS.md` - repository agent workflow contract
 - `docs/STORES.md` - storage authority contract
 - `schema.sql` - SQLite schema snapshot

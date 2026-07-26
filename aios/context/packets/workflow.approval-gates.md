@@ -24,7 +24,7 @@ source_refs:
   - code:tools/context-compile.mjs|Writeback candidate generation|2026-05-14
   - code:aios-ui/server/aios/topic-graph.ts|Improvement writeback surfaces|2026-05-14
   - code:aios-ui/server/aios/schema.ts|Improvement writeback tables|2026-05-14
-  - doc:PROJECT.md|Project truth and approval posture|2026-05-14
+  - doc:PROJECT.md|Project context and approval posture|2026-05-14
 known_stale_areas:
   - Approval policy is enforced by workflow conventions and UI surfaces, not a single centralized gate for every writeback path.
 related_pages:
@@ -33,7 +33,7 @@ related_pages:
 ---
 
 Major writebacks should be proposed for review instead of auto-approved.
-Examples include new global rules, changed immutable standards, project truth rewrites, and broad reusable packets.
+Examples include new global rules, changed immutable standards, project-context rewrites, and broad reusable packets.
 Small stale-date or typo fixes can be treated as normal documentation work.
 
 ## Acceptance Criteria

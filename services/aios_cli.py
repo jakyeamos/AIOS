@@ -303,15 +303,6 @@ RESUMABLE_RUN_STATUSES = [
     "partial",
     "needs_follow_up",
 ]
-TRUTH_REQUIRED_FACETS = [
-    "goals",
-    "architecture",
-    "risks",
-    "completed_work",
-    "unresolved_deltas",
-    "next_actions",
-    "decisions",
-]
 KNOWLEDGE_OBJECT_CONTRACT_FIELDS = [
     "stable_id",
     "kind",
@@ -397,43 +388,6 @@ def _parse_iso(value: str | None) -> datetime | None:
     if parsed.tzinfo is None:
         return parsed.replace(tzinfo=UTC)
     return parsed
-
-
-def _extract_markdown_headings(content: str) -> list[str]:
-    headings: list[str] = []
-    for line in content.splitlines():
-        stripped = line.strip()
-        if not stripped.startswith("#"):
-            continue
-        title = stripped.lstrip("#").strip()
-        if title:
-            headings.append(title)
-    return headings
-
-
-def _truth_last_updated(content: str) -> str | None:
-    for line in content.splitlines():
-        stripped = line.strip()
-        if stripped.lower().startswith("last updated:"):
-            return stripped.split(":", 1)[1].strip()
-    return None
-
-
-def _truth_facet_coverage(headings: Sequence[str]) -> dict[str, bool]:
-    heading_text = " ".join(headings).lower()
-    aliases = {
-        "goals": ("goal", "target", "what aios is", "project"),
-        "architecture": ("architecture", "system", "runtime", "stack"),
-        "risks": ("risk", "gap", "missing", "blocker"),
-        "completed_work": ("implemented", "current reality", "shipped", "completed"),
-        "unresolved_deltas": ("unresolved", "delta", "still missing", "gap"),
-        "next_actions": ("next", "follow-up", "roadmap", "phase"),
-        "decisions": ("decision", "guardrail", "constraint"),
-    }
-    return {
-        facet: any(alias in heading_text for alias in facet_aliases)
-        for facet, facet_aliases in aliases.items()
-    }
 
 
 def _resolve_vault_root(explicit: str | None = None) -> Path:
@@ -1665,7 +1619,7 @@ def _planning_governance_sections(route_payload: dict[str, Any]) -> list[dict[st
                 "GSD-compatible PLAN.md or equivalent planning contract.",
                 "Task-level acceptance criteria and validation commands.",
                 "Evidence expectations for route decisions, changed artifacts, and final verification.",
-                "Truth-file and SUMMARY.md writeback plan after evidence exists.",
+                "Optional context-note plan only if evidence shows a durable note is useful.",
             ],
         },
         {
@@ -1712,7 +1666,6 @@ def _required_check_lines(
 
 def _closeout_lines() -> list[str]:
     return [
-        "Update the relevant project truth and memory surfaces after meaningful state changes.",
         "Record unresolved risks, follow-up work, and approval-gated writeback proposals before closeout.",
         "Keep run, invocation, and session identifiers linked through verification and stop-hook evaluation.",
     ]
@@ -5030,102 +4983,6 @@ def _status_payload(conn: sqlite3.Connection) -> dict[str, Any]:
     }
 
 
-def _truth_audit_payload(conn: sqlite3.Connection, truth_file: Path) -> dict[str, Any]:
-    exists = truth_file.exists()
-    content = truth_file.read_text(encoding="utf-8") if exists else ""
-    headings = _extract_markdown_headings(content)
-    last_updated_raw = _truth_last_updated(content)
-    last_updated = _parse_iso(last_updated_raw)
-    age_days = None
-    if last_updated:
-        age_days = (datetime.now(UTC) - last_updated).days
-    facet_coverage = _truth_facet_coverage(headings)
-    missing_facets = [facet for facet in TRUTH_REQUIRED_FACETS if not facet_coverage.get(facet)]
-    recent_closeouts = _recent_closeouts(conn, limit=5)
-    resumable_runs = _resumable_runs(conn, limit=5)
-
-    findings: list[dict[str, Any]] = []
-    if not exists:
-        findings.append(
-            {
-                "severity": "blocker",
-                "code": "truth_file_missing",
-                "summary": f"Truth file does not exist: {truth_file}",
-            }
-        )
-    if exists and not last_updated_raw:
-        findings.append(
-            {
-                "severity": "warning",
-                "code": "truth_last_updated_missing",
-                "summary": "Truth file is missing a Last updated field.",
-            }
-        )
-    if age_days is not None and age_days > 7:
-        findings.append(
-            {
-                "severity": "warning",
-                "code": "truth_stale",
-                "summary": f"Truth file was last updated {age_days} days ago.",
-            }
-        )
-    if missing_facets:
-        findings.append(
-            {
-                "severity": "warning",
-                "code": "truth_facets_missing",
-                "summary": "Truth file is missing required operating facets.",
-                "missing_facets": missing_facets,
-            }
-        )
-    if recent_closeouts:
-        findings.append(
-            {
-                "severity": "info",
-                "code": "truth_update_evidence_available",
-                "summary": "Recent governed closeout evidence is available for truth review.",
-                "closeout_count": len(recent_closeouts),
-            }
-        )
-    if resumable_runs:
-        findings.append(
-            {
-                "severity": "info",
-                "code": "truth_next_action_evidence_available",
-                "summary": "Resumable runs can inform truth next-action updates.",
-                "resumable_run_count": len(resumable_runs),
-            }
-        )
-
-    return {
-        "summary": {
-            "truth_file": str(truth_file),
-            "exists": exists,
-            "last_updated": last_updated_raw,
-            "age_days": age_days,
-            "required_facet_count": len(TRUTH_REQUIRED_FACETS),
-            "missing_facet_count": len(missing_facets),
-            "recent_closeout_count": len(recent_closeouts),
-            "resumable_run_count": len(resumable_runs),
-            "finding_count": len(findings),
-        },
-        "contract": {
-            "required_facets": TRUTH_REQUIRED_FACETS,
-            "accepted_truth_source": str(truth_file),
-            "proposal_sources": [
-                "workflow_execution_reports.report_json",
-                "orchestration_runs.resume_snapshot_json",
-            ],
-            "important_updates_require_review": True,
-            "truth_update_workflow": "project-truth-update",
-        },
-        "facet_coverage": facet_coverage,
-        "recent_closeouts": recent_closeouts,
-        "resumable_runs": resumable_runs,
-        "findings": findings,
-    }
-
-
 def _health_payload(conn: sqlite3.Connection, logs_dir: Path) -> dict[str, Any]:
     status = _status_payload(conn)
     log_files = []
@@ -5583,7 +5440,6 @@ def _metadata_payload(
             "aios knowledge-objects --json",
             "aios workflow-learning-audit --json",
             "aios contracts-audit --json",
-            "aios truth-audit --json",
             "aios governance-audit --json",
             "aios standards-resolution preview --json",
             "aios criteria-finding resolve --json --id <finding> --status accepted",
@@ -6164,14 +6020,6 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
         summary = data["summary"]
         print(f"contracts={summary['canonical_contract_count']} partial={summary['partial_count']}")
         return
-    if command == "truth-audit":
-        summary = data["summary"]
-        print(
-            f"truth_file={summary['truth_file']} "
-            f"missing_facets={summary['missing_facet_count']} "
-            f"findings={summary['finding_count']}"
-        )
-        return
     if command == "governance-audit":
         summary = data["summary"]
         print(
@@ -6599,7 +6447,6 @@ def _command_requires_db(args: argparse.Namespace) -> bool:
         "asset-lifecycle",
         "workflow-compare",
         "promote-asset",
-        "truth-audit",
         "prove-project-health",
         "sync-automation-history",
         "start-work",
@@ -7276,10 +7123,10 @@ def create_parser() -> argparse.ArgumentParser:
     )
     workflow_skill_codex.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
 
-    planning_parser = subparsers.add_parser("planning", help="Planning and truth-state tools")
+    planning_parser = subparsers.add_parser("planning", help="Optional planning-context tools")
     planning_subparsers = planning_parser.add_subparsers(dest="planning_command", required=True)
     planning_state = planning_subparsers.add_parser(
-        "state", help="Inspect planning and PROJECT_TRUTH readiness"
+        "state", help="Inspect optional planning context"
     )
     planning_state.add_argument("--repo", default=".", help="Repository path")
     planning_state.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
@@ -8038,16 +7885,6 @@ def create_parser() -> argparse.ArgumentParser:
     promote_asset_parser.add_argument("--since", default="30d")
     promote_asset_parser.add_argument("--evidence-id", action="append", default=[])
 
-    truth_audit = subparsers.add_parser(
-        "truth-audit",
-        help="Project truth freshness, facet coverage, and governed update contract audit",
-    )
-    truth_audit.add_argument(
-        "--truth-file",
-        default=str(REPO_ROOT / "PROJECT.md"),
-        help="Canonical project truth file to audit",
-    )
-
     prove_project_health_parser = subparsers.add_parser(
         "prove-project-health",
         help="Record standards-health snapshots for tier-one proving projects",
@@ -8685,9 +8522,6 @@ def run_cli(argv: Sequence[str] | None = None) -> int:
         elif args.command == "promote-asset":
             assert conn is not None
             data = _promote_asset_payload(conn, args)
-        elif args.command == "truth-audit":
-            assert conn is not None
-            data = _truth_audit_payload(conn, Path(args.truth_file).expanduser().resolve())
         elif args.command == "prove-project-health":
             assert conn is not None
             data = prove_project_health(

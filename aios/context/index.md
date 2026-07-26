@@ -25,7 +25,7 @@ source_coverage: partial
 source_refs:
   - code:tools/context-compile.mjs|Context compiler implementation|2026-05-14
   - test:tests/context-compiler.test.mjs|Context compiler regression tests|2026-05-14
-  - doc:PROJECT.md|Project truth for context compiler role|2026-05-14
+  - doc:PROJECT.md|Project context for context compiler role|2026-05-14
 known_stale_areas:
   - Compiled latest artifacts are generated outputs and should not be treated as durable truth.
 related_pages:
@@ -34,7 +34,7 @@ related_pages:
 ---
 
 AIOS context is routed through small Markdown manifests, not broad document dumps.
-Agents should classify the task, load the project truth file, then add only matching standards, domains, features, packets, and handoffs.
+Agents should classify the task, optionally load relevant project context, then add only matching standards, domains, features, packets, and handoffs.
 This directory is the authoritative file-backed source for the first Context Compiler version.
 Compiled packets are written to `compiled/latest.md` and receipts to `receipts/latest.md`.
 

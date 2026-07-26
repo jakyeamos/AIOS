@@ -199,39 +199,6 @@
       }
     },
     {
-      "id": "documentation.truth_file_currency",
-      "title": "Truth File Currency",
-      "description": "Project truth documentation exists and is maintained as part of implementation completion.",
-      "domain": "documentation",
-      "weight": 5,
-      "severity_if_missing": 3,
-      "evaluation_method": "auto",
-      "expected_state": {
-        "truth_file_exists": true
-      },
-      "remediation_playbook": {
-        "summary": "Create or update the project truth file after each atomic implementation set.",
-        "effort": 1,
-        "leverage": 1.1
-      },
-      "blocking_dependencies": [],
-      "version": "2026.04.0",
-      "introduced_version": "2026.04.0",
-      "applicability": {
-        "projects": ["*"]
-      },
-      "waiver_policy": {
-        "allowed": true,
-        "requires_owner": true,
-        "requires_review_date": true,
-        "max_days": 7
-      },
-      "related_criteria": ["truth-file-consistency"],
-      "metadata": {
-        "foundational": false
-      }
-    },
-    {
       "id": "workflow_agent_control.explicit_handshake",
       "title": "Explicit Workflow Handshake",
       "description": "Sessions and invocations are linked by explicit run handshake metadata.",
@@ -367,7 +334,7 @@
         "requires_review_date": true,
         "max_days": 21
       },
-      "related_criteria": ["workflow-state-integrity", "truth-file-consistency"],
+      "related_criteria": ["workflow-state-integrity"],
       "metadata": {
         "foundational": false
       }

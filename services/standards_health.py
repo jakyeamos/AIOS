@@ -993,28 +993,6 @@ def _evaluate_known_standard(
             "auto",
         )
 
-    if standard_id == "documentation.truth_file_currency":
-        if repo_path is None or not repo_path.exists():
-            return "unknown", "Project repository path is unavailable.", 0.25, {}, [], "auto"
-        project_file = repo_path / "PROJECT.md"
-        if project_file.exists():
-            return (
-                "pass",
-                "Project truth file exists.",
-                0.8,
-                {"truth_file": str(project_file)},
-                [str(project_file)],
-                "auto",
-            )
-        return (
-            "fail",
-            "Project truth file is missing.",
-            0.85,
-            {"truth_file": str(project_file)},
-            [str(project_file)],
-            "auto",
-        )
-
     if standard_id == "workflow_agent_control.explicit_handshake":
         if not _table_exists(conn, "sessions"):
             return "unknown", "Sessions table is unavailable.", 0.2, {}, [], "auto"

@@ -632,7 +632,7 @@ AIOS Phase 11 Plan 11-02 now has the second-brain eval track:
 
 - `schema.sql` defines second-brain retrieval and gold-set context mapping tables for precision, recall, and staleness measurement
 - `services.second_brain_eval` records retrievals, computes retrieval metrics, registers gold-set context requirements, evaluates missed required sources, and computes Second Brain Lift between full and repo-only runs
-- `config/agent-eval/ablation-policies/` includes no-second-brain, no-personal-corpus, no-project-truth, and no-prior-task-history policy files
+- `config/agent-eval/ablation-policies/` includes no-second-brain, no-personal-corpus, and no-prior-task-history policy files
 - `aios eval second-brain-lift`, `aios eval retrieval-metrics`, and `aios eval gold-set-run` expose the track through the JSON-first CLI
 - focused service and CLI tests verify retrieval math, gold-set recall, missing-run handling, policy JSON shape, and CLI output
 

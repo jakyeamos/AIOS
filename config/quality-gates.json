@@ -238,9 +238,9 @@
       },
       "adoptionMaturity": {
         "status": "class_blocked",
-        "reason": "Only .pre-cr.json is available; no package/build/test/truth surface exists yet.",
+        "reason": "Only .pre-cr.json is available; no package/build/test or executable quality surface exists yet.",
         "requiredNextSteps": [
-          "No package/build/test/truth surface found; only .pre-cr.json exists, so strict developer-tool readiness is blocked until real tool checks and project truth are added."
+          "No package/build/test or executable quality surface found; only .pre-cr.json exists, so strict developer-tool readiness is blocked until real tool checks are added."
         ]
       }
     },
@@ -564,7 +564,7 @@
       },
       "adoptionMaturity": {
         "status": "class_blocked",
-        "reason": "Only .pre-cr.json and basic truth files are visible; no class-specific validation surface exists yet.",
+        "reason": "Only .pre-cr.json and basic documentation are visible; no class-specific validation surface exists yet.",
         "requiredNextSteps": [
           "No install/test/validation surface found beyond pre-cr; needs course-specific validation, CI or exception, secret scan, and project instructions."
         ]
@@ -972,7 +972,7 @@
       },
       "adoptionMaturity": {
         "status": "class_blocked",
-        "reason": "Only .pre-cr.json and basic truth files are visible; no class-specific validation surface exists yet.",
+        "reason": "Only .pre-cr.json and basic documentation are visible; no class-specific validation surface exists yet.",
         "requiredNextSteps": [
           "No install/test/validation surface found beyond pre-cr; needs data-sync validation, CI or exception, secret scan, and dependency security."
         ]

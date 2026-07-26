@@ -6,7 +6,7 @@
     "project_memory",
     "personal_corpus",
     "prior_task_history",
-    "project_truth",
+    "project_context",
     "standards_files"
   ],
   "portability_impact": "high"

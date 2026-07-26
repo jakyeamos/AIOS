@@ -17,9 +17,9 @@ last_reviewed: 2026-05-12
 ---
 
 Taski appears in AIOS as the task/backfill bridge for standards health and remediation work.
-This file is intentionally candidate status until a stronger project truth source is linked.
+This file is intentionally candidate status until a stronger project context source is linked.
 
 ## Acceptance Criteria
 
-- Do not treat this file as complete project truth.
+- Do not treat this file as complete project context.
 - Promote only after authoritative Taski source docs are connected.

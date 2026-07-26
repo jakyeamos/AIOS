@@ -257,7 +257,7 @@ const loadTruthFile = (): { path: string; title: string; lastUpdated: string | n
 
   return {
     path: truthPath,
-    title: extractMarkdownTitle(content, "Project Truth"),
+    title: extractMarkdownTitle(content, "Project Context"),
     lastUpdated,
     facets: extractTruthFacetHeadings(content),
   };
@@ -759,12 +759,12 @@ export const getTruthKnowledgeBoundary = (db: Database.Database): TruthKnowledge
   const acceptedTruth: TruthKnowledgeBoundary["acceptedTruth"] = truth
     ? [
         {
-          id: "project-truth",
+          id: "project-context",
           title: truth.title,
           href: "/knowledge/system-control-plane",
           kind: "truth",
           authority: "accepted",
-          summary: `Canonical local project truth with ${truth.facets.length} indexed section(s).`,
+          summary: `Optional local project context with ${truth.facets.length} indexed section(s).`,
           evidence: [
             path.relative(resolveAiosRoot(), truth.path).split(path.sep).join("/"),
             truth.lastUpdated ? `Last updated: ${truth.lastUpdated}` : "Last updated field missing",
@@ -805,7 +805,7 @@ export const getTruthKnowledgeBoundary = (db: Database.Database): TruthKnowledge
     const nextAction =
       typeof snapshot?.next_recommended_action === "string"
         ? snapshot.next_recommended_action
-        : "Review resumable run state before treating it as project truth.";
+        : "Review resumable run state before treating it as accepted project context.";
 
     return {
       id: `resume-${row.id}`,
@@ -826,7 +826,7 @@ export const getTruthKnowledgeBoundary = (db: Database.Database): TruthKnowledge
       kind: "workflow" as const,
       authority: "inferred" as const,
       summary: workflow.summary,
-      evidence: ["Workflow registry entry; useful for routing, not accepted project truth by itself."],
+      evidence: ["Workflow registry entry; useful for routing, not accepted project context by itself."],
     })),
     ...agentProfiles.slice(0, 6).map((agent) => ({
       id: `agent-${agent.key}`,

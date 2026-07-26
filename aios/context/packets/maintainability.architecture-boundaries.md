@@ -18,7 +18,7 @@ last_reviewed: 2026-05-12
 
 Keep compiler, CLI, UI, and durable-store responsibilities separated.
 File-backed context can feed UI later, but the first compiler should not require DB migration.
-Update project truth when a boundary becomes more explicit.
+Update optional project context only when a boundary change would otherwise be lost.
 
 ## Acceptance Criteria
 

@@ -121,30 +121,6 @@
       ]
     },
     {
-      "id": "truth-file-consistency",
-      "title": "Project Truth File Consistency",
-      "path": "spec/success-criteria/truth-file-consistency.md",
-      "scope": "project-domain-specific",
-      "blocking": true,
-      "evaluation_method": "heuristic",
-      "applies_when": {
-        "task_types": [
-          "implementation",
-          "bugfix",
-          "refactor"
-        ],
-        "domains": [
-          "*"
-        ],
-        "project_names": [
-          "AIOS"
-        ]
-      },
-      "related": [
-        "workflow-state-integrity"
-      ]
-    },
-    {
       "id": "repo-boundary-discipline",
       "title": "Repository Boundary Discipline",
       "path": "spec/success-criteria/repo-boundary-discipline.md",
@@ -161,9 +137,7 @@
           "*"
         ]
       },
-      "related": [
-        "truth-file-consistency"
-      ]
+      "related": []
     },
     {
       "id": "workflow-state-integrity",
@@ -184,9 +158,7 @@
           "reliability"
         ]
       },
-      "related": [
-        "truth-file-consistency"
-      ]
+      "related": []
     },
     {
       "id": "git-worktree-cleanliness",
@@ -203,10 +175,7 @@
           "*"
         ]
       },
-      "related": [
-        "truth-file-consistency",
-        "workflow-state-integrity"
-      ]
+      "related": ["workflow-state-integrity"]
     },
     {
       "id": "complexity-budget",

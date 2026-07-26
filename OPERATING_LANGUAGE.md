@@ -20,12 +20,12 @@ Terms are grouped into:
 |---|---|---|---|---|
 | **AIOS** | The local-first operating layer for work context, agent workflows, durable project memory, governance, and quality control. | Referring to the product as a whole. | dashboard, standards repo, helper scripts | The work preserves local-first state, agent workflow control, durable memory, and governance. |
 | **Agent Operating System** | The product category AIOS is building toward: an execution layer that turns intent into governed, context-rich, verifiable agent work. | Describing the long-term product shape. | productivity app, automation bundle | Specs cover routing, context, execution, evidence, learning, and operator visibility. |
-| **Operator** | The human supervising AIOS workflows, approvals, project truth, and inspection surfaces. | Naming the human role. | user, admin, viewer | Human-facing surfaces expose reviewable state and approval choices. |
+| **Operator** | The human supervising AIOS workflows, approvals, project context, and inspection surfaces. | Naming the human role. | user, admin, viewer | Human-facing surfaces expose reviewable state and approval choices. |
 | **Agent** | The machine executor that consumes packets, skills, standards, prompts, and gates to do work. | Naming the primary AIOS user. | bot, assistant, worker | Instructions optimize for executable context, not only human prose. |
-| **Project Truth** | The durable narrative of what is currently shipped, intended, constrained, and known about a project. | Updating or reading `PROJECT.md` and related truth files. | status doc, summary, readme | Meaningful state changes are reflected in the truth file with current facts. |
+| **Project Context** | Optional durable material that helps explain a project's goals, constraints, and current work. | Reading or curating context when it materially helps a task. | status doc, summary, readme | Context is relevant, scoped, and never a prerequisite for committing work. |
 | **Context Packet** | The smallest sufficient set of selected context, standards, receipts, risks, and acceptance criteria for a task. | Preparing work before execution. | briefing, dump, prompt context | Loaded and skipped context are explicit, scoped, and receipt-backed. |
 | **Context Receipt** | The durable record explaining which context was loaded, skipped, missing, stale, or selected by score. | Auditing context selection. | context log, search result | The receipt explains selection reasons and preserves skipped alternatives. |
-| **Writeback** | A proposed or approved update to durable truth, standards, prompts, skills, workflow metadata, or memory after learning. | Capturing reusable lessons or state changes. | memory update, note, sync | Promotion is reviewable and records target, reason, severity, and evidence. |
+| **Writeback** | A proposed or approved update to standards, prompts, skills, workflow metadata, memory, or optional project context after learning. | Capturing reusable lessons or state changes. | memory update, note, sync | Promotion is reviewable and records target, reason, severity, and evidence. |
 | **Workflow** | A governed multi-stage route for serious work with explicit skills, stages, evidence, and closeout expectations. | Selecting or designing execution paths. | process, flow, recipe | Stage boundaries, selected skills, and required evidence are machine-readable. |
 | **Durable Workspace** | A persistent state surface for a recurring or long-running stream of agent work. | Managing release, quality gate, TMCP skill audit, repo adoption, documentation review, monitoring, or similar threads. | chat thread, running notes, transcript | Decisions, blockers, owners, dates, useful links, verification status, known pitfalls, and next actions survive across sessions. |
 | **Goal Verifier** | The observable check that proves a goal reached its stopping condition. | Defining or closing a durable goal. | done, complete, looks good | Typecheck, lint, tests, build, validation matrix, repro, benchmark, deployment, artifact audit, or accepted blocker evidence is recorded. |
@@ -34,7 +34,7 @@ Terms are grouped into:
 | **Work Surface** | A declared area an agent is allowed to touch or inspect for a workflow. | Scoping repo, artifact, UI, communication, monitoring, or memory reach. | tool access, context, environment | Allowed and out-of-scope surfaces are named before tool reach expands. |
 | **Reviewable Artifact** | A durable source of truth for substantial work when chat is insufficient. | Tracking expected behavior, implementation status, test status, failures, fixes, and verification. | summary, transcript, note | Artifact links expectations, status, evidence, failures, fixes, and final verification. |
 | **Quality Gate** | A blocking or warning criterion used to evaluate changed work against correctness, security, simplicity, tests, architecture, or deployment expectations. | Reviewing, committing, closing out, or deploying. | checklist, lint, best practices | Gate result records pass/fail/warn, evidence, and remediation. |
-| **Truth File** | A durable source file that records canonical project state or planning state. | Changing shipped reality, project assumptions, or roadmap state. | doc, markdown, notes | The relevant file is updated in the same logical change set. |
+| **Planning Note** | An optional durable source file for project context or planning details. | Preserving context that is useful across sessions. | doc, markdown, notes | The note is updated only when the work genuinely changes planning context. |
 | **Learning Candidate** | A possible reusable lesson extracted from a run, review, failure, or repeated friction but not yet promoted. | Evaluating whether behavior should become durable. | insight, memory, suggestion | Candidate has evidence, risk, target surface, and approval status. |
 
 ## Architecture Language
@@ -58,13 +58,13 @@ Terms are grouped into:
 | Leading word | Behavioral meaning | Trigger when | Do not use for | Completion criterion |
 |---|---|---|---|---|
 | **Context Compile** | Select the smallest sufficient authoritative context and preserve a receipt before non-trivial work. | A task touches repo behavior, workflows, standards, prompts, skills, architecture, or multiple files. | trivial read-only answers or single local commands | Receipt exists and loaded/skipped context is explainable. |
-| **Truth First** | Verify claims against authoritative sources before accepting or building on them. | The user, code, docs, or prior state may be stale, conflicting, or asserted without evidence. | subjective preferences or explicitly hypothetical brainstorming | Answer or implementation cites checked source state and rejects false premises when needed. |
+| **Evidence First** | Verify claims against authoritative sources before accepting or building on them. | The user, code, docs, or prior state may be stale, conflicting, or asserted without evidence. | subjective preferences or explicitly hypothetical brainstorming | Answer or implementation cites checked source state and rejects false premises when needed. |
 | **Tracer Bullet** | Build the thinnest real vertical slice through production-shaped boundaries to prove integration risk. | Starting uncertain implementation or validating cross-layer behavior. | throwaway mockups or broad prototypes | One real path works end-to-end through the actual architecture. |
 | **Red Gate** | Produce or identify a failing signal before remediation when debugging or test-driven changes require proof. | Fixing bugs, adding behavior tests, or validating claimed regressions. | pure docs edits or impossible-to-execute environments | A failing test, reproduction, or logged failure is recorded before the fix passes. |
 | **Thin Display** | Keep UI focused on rendering and interaction while moving business decisions to stable seams. | Building or reviewing operator UI. | purely visual one-off components | State and decisions can be tested outside the component. |
 | **Execution-First** | Run the exact code path or closest real path before changing behavior or claiming success. | Side effects, cross-system behavior, core logic, or low-trust tests are involved. | text-only artifacts or design-only planning | Observed runtime evidence informs the change and final verification. |
-| **Approval-First** | Treat risky writebacks, promotions, external effects, and destructive operations as review-gated. | A task mutates durable truth, standards, prompts, skills, memory, remotes, deployments, or user data. | local read-only analysis | Pending changes are proposed or explicitly approved before promotion. |
-| **Clean Closeout** | Finish with verification evidence, truth/writeback updates, and no hidden dirty state for the scoped change. | Completing implementation, planning, or artifact updates. | exploratory investigation with no completion claim | Checks are run or blockers stated, truth artifacts are updated, and unrelated dirty work is not mixed in. |
+| **Approval-First** | Treat risky writebacks, promotions, external effects, and destructive operations as review-gated. | A task mutates standards, prompts, skills, memory, remotes, deployments, or user data. | local read-only analysis | Pending changes are proposed or explicitly approved before promotion. |
+| **Clean Closeout** | Finish with verification evidence, relevant writebacks when warranted, and no hidden dirty state for the scoped change. | Completing implementation, planning, or artifact updates. | exploratory investigation with no completion claim | Checks are run or blockers stated; optional context is updated only when materially changed. |
 | **Complexity Gate** | Evaluate whether the solution is simpler than necessary, duplicates concepts, or creates avoidable sprawl. | Large work, cross-layer changes, new infrastructure, or reusable abstractions. | tiny docs edits or narrow one-file fixes | Gate findings are reported and necessary simplifications are applied or recorded. |
 | **Portable Boundary** | Separate AIOS-local behavior from portable/core behavior and label context-dependent wins accordingly. | Building benchmarks, skills, standards, or workflows meant for reuse outside AIOS. | personal-only local scripts | Output states whether evidence is AIOS-local, personalized, or portable. |
 
@@ -76,10 +76,10 @@ Terms are grouped into:
 - A **Steering Event** changes current execution direction immediately, while **Queued Work** waits for the current checkpoint.
 - A **Reviewable Artifact** is the source of truth for substantial durable work when the chat transcript is insufficient.
 - A **Context Packet** must have a **Context Receipt**.
-- A **Writeback** may update **Project Truth**, **Truth Files**, **Prompt Library**, **Skill Registry**, standards, or memory, but risky promotion passes through an **Approval Gate**.
+- A **Writeback** may update the **Prompt Library**, **Skill Registry**, standards, or memory, but risky promotion passes through an **Approval Gate**.
 - An **Operator Surface** should usually be a **Thin Display** over the **Control Plane** and **Local-First Spine**.
 - **Learning Candidates** become durable behavior only after evidence and approval.
-- **Clean Closeout** depends on **Execution-First** evidence, relevant **Quality Gates**, and truth-file updates.
+- **Clean Closeout** depends on **Execution-First** evidence and relevant **Quality Gates**.
 
 ## Flagged Ambiguities
 
@@ -95,8 +95,8 @@ Terms are grouped into:
 - "Skill" can mean a Codex skill folder, workflow skill metadata, or a general capability.
   - Recommendation: use **Skill Registry** for AIOS metadata and "skill file" for `SKILL.md` artifacts.
   - Update needed in: skill sync docs, workflow registry commentary, and prompts.
-- "Truth" can mean project narrative, runtime evidence, or memory facts.
-  - Recommendation: use **Project Truth**, **Evidence Chain**, or **Memory Layer**.
+- "Context" can mean project notes, runtime evidence, or memory facts.
+  - Recommendation: use **Project Context**, **Evidence Chain**, or **Memory Layer**.
   - Update needed in: closeout reports and writeback proposals.
 
 ## Rejected Terms

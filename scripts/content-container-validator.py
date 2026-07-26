@@ -287,7 +287,7 @@ def _check_quarantine_candidates(root: Path, paths: list[Path]) -> list[str]:
 
 def validate_vault(root: Path) -> int:
     failures: list[str] = []
-    required = ["README.md", ".tracker/PROJECT_TRUTH.md", ".obsidian", "Command-Center"]
+    required = ["README.md", ".obsidian", "Command-Center"]
     for item in required:
         if not (root / item).exists():
             failures.append(f"missing_required:{item}")
@@ -325,7 +325,7 @@ def _precr_status(path: Path) -> str:
 
 def validate_bbdse(root: Path, *, run_delegated: bool) -> int:
     failures: list[str] = []
-    required_docs = ["docs/project-truth.md", "docs/child-project-ownership.md"]
+    required_docs = ["docs/child-project-ownership.md"]
     for item in required_docs:
         if not (root / item).exists():
             failures.append(f"missing_required:{item}")

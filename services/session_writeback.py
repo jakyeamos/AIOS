@@ -37,16 +37,6 @@ def emit_writeback_candidates(
         _write_summary_json(summary_dir, session_id, candidate.payload)
         candidates.append(candidate)
 
-    if summary.should_update_truth_file and summary.confidence >= 0.8:
-        candidates.append(
-            WritebackCandidate(
-                session_id=session_id,
-                candidate_type="truth_update",
-                destination="project_truth",
-                payload=_candidate_payload(summary),
-            )
-        )
-
     if conn is not None:
         candidates.extend(_skillification_candidates(conn, session_id, summary))
         _record_candidates(conn, candidates)

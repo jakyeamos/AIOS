@@ -8,8 +8,7 @@
     ],
     "refactor": [
       "code-simplicity",
-      "execution-first-verification",
-      "truth-file-consistency"
+      "execution-first-verification"
     ],
     "security": [
       "security-review",
@@ -21,8 +20,7 @@
     ],
     "workflow": [
       "execution-first-verification",
-      "workflow-state-integrity",
-      "truth-file-consistency"
+      "workflow-state-integrity"
     ]
   }
 }

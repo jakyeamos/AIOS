@@ -40,7 +40,6 @@ Tasks that trigger orchestration runs, runtime invocations, hook lifecycle trans
 
 ## Related Criteria
 
-- `truth-file-consistency`
 - `observability`
 
 ## Example Good

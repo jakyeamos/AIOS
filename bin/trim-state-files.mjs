@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// trim-state-files.mjs — enforce append/rotation caps on STATE.md and
-// PROJECT_TRUTH.md so their append-only sections stop growing unbounded.
+// trim-state-files.mjs — enforce append/rotation caps on STATE.md so its
+// append-only sections stop growing unbounded.
 //
 // Usage:
 //   node trim-state-files.mjs --check [file-or-dir ...]   report only; exit 1 if any file is over cap
@@ -28,14 +28,10 @@ const POLICIES = {
     "Current Position": { type: "blocks", keep: 8 },
     "Accumulated Context": { type: "blocks", keep: 8 },
   },
-  "PROJECT_TRUTH.md": {
-    "Recent Progress": { type: "bullets", keep: 15 },
-    "Quality Ladder Notes": { type: "tableTail", keep: 5, cellMax: 220 },
-  },
 };
 
 // Whole-file soft ceiling (bytes) used only for --check reporting.
-const FILE_CEILING = { "STATE.md": 30 * 1024, "PROJECT_TRUTH.md": 25 * 1024 };
+const FILE_CEILING = { "STATE.md": 30 * 1024 };
 
 // Any section (covered or not) larger than this gets a generic size cap:
 // keep the head paragraph as the snapshot plus the most recent trailing

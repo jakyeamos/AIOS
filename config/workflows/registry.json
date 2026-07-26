@@ -1544,7 +1544,7 @@
         "quality_backfill"
       ],
       "purpose": "Turn standards health gaps into prioritized remediation plans and governed follow-up work.",
-      "purpose_long": "Use standards health, project truth, and evidence gaps to produce prioritized remediation plans, follow-up items, and learning signals without silently changing standards.",
+      "purpose_long": "Use standards health and evidence gaps to produce prioritized remediation plans, follow-up items, and learning signals without silently changing standards.",
       "trigger_hints": [
         "bring this project to standard",
         "standards backfill",
@@ -1702,10 +1702,6 @@
             }
           ],
           "validations": [
-            {
-              "criterion_id": "truth-file-consistency",
-              "blocking": true
-            },
             {
               "criterion_id": "observability",
               "blocking": false
@@ -2662,8 +2658,7 @@
             }
           ],
           "standards_bindings": [
-            "testing.trust_signal",
-            "documentation.truth_file_currency"
+            "testing.trust_signal"
           ],
           "required_evidence": [
             "acceptance_criteria",
@@ -3241,7 +3236,7 @@
         "pre_cr",
         "anti_slop"
       ],
-      "purpose_long": "Create a repo adoption evidence packet that treats command gates and broad quality standards as separate first-class surfaces: scan existing scripts, contracts, hooks, CI, Pre-CR, anti-slop, dead-code, and truth-file signals; conditionally compile TMCP expert context only when source sufficiency passes; synthesize broad repo-class rubrics for complexity, anti-slop/product quality, architecture, test value, UI visual/runtime verification, dead code, security, dependencies, truth/docs, and CI proof; synthesize gate-specific rubrics; then stop at implementation-free GSD phase planning.",
+      "purpose_long": "Create a repo adoption evidence packet that treats command gates and broad quality standards as separate first-class surfaces: scan existing scripts, contracts, hooks, CI, Pre-CR, anti-slop, and dead-code signals; conditionally compile TMCP expert context only when source sufficiency passes; synthesize broad repo-class rubrics for complexity, anti-slop/product quality, architecture, test value, UI visual/runtime verification, dead code, security, dependencies, docs, and CI proof; synthesize gate-specific rubrics; then stop at implementation-free GSD phase planning.",
       "implementation_bearing": false
     }
   ]

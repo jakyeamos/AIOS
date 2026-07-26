@@ -174,7 +174,7 @@ FALLBACK_BEHAVIOR_ATOMS: dict[str, list[str]] = {
     "planning": ["execution_ready_plan", "acceptance_criteria"],
     "research": ["source_grounding", "citation_discipline"],
     "testing": ["test_authoring", "verification_gate"],
-    "documentation": ["truth_update", "doc_staleness_check"],
+    "documentation": ["doc_staleness_check"],
     "agent_workflow": ["skill_routing", "workflow_selection"],
 }
 
@@ -2328,7 +2328,7 @@ def _behavior_atoms_for(value: str) -> list[str]:
     if any(term in lowered for term in ("frontend", "ui", "visual")):
         atoms.add("ui_quality")
     if any(term in lowered for term in ("docs", "documentation", "readme")):
-        atoms.add("truth_update")
+        atoms.add("doc_staleness_check")
     if any(term in lowered for term in ("tool", "command", "mcp", "bash")):
         atoms.add("tool_safety")
     return sorted(atoms)

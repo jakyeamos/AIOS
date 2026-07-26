@@ -20,7 +20,7 @@ def _compiler() -> ContextCompiler:
                 "It compiles context, workflow rules, evidence, and memory for agents."
             )
         },
-        project_truth_facts=[
+            project_context_facts=[
             {
                 "id": "truth-1",
                 "fact_text": "AIOS uses graph-native memory layers.",
@@ -37,7 +37,7 @@ def _compiler() -> ContextCompiler:
         raw_sources=[
             {
                 "id": "raw-1",
-                "source_type": "project_truth",
+                "source_type": "project_context",
                 "source_path": "PROJECT.md",
             }
         ],
@@ -81,7 +81,7 @@ def test_stable_sections_appear_before_dynamic() -> None:
         "## AIOS Operating Rules",
         "## User Preferences",
         "## Project Memory Summary",
-        "## Project Truth Packet",
+        "## Project Context Packet",
         "## Task-Specific Retrieved Memory",
         "## Current User Request / Task Description",
         "## Scratchpad / Tool Results",
@@ -102,10 +102,10 @@ def test_token_budget_drops_dynamic_first() -> None:
     sections = _compiler().compile("Continue Phase 12.", "aios", 180)
 
     dynamic_memory = sections[5]["content"]
-    project_truth = sections[4]["content"]
+    project_context = sections[4]["content"]
     project_memory = sections[3]["content"]
     assert "Additional lower-priority context omitted for token budget." in dynamic_memory
-    assert "AIOS uses graph-native memory layers." in project_truth
+    assert "AIOS uses graph-native memory layers." in project_context
     assert "AIOS is a local-first agent operating system." in project_memory
 
 

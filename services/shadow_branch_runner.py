@@ -17,7 +17,6 @@ VALID_CONDITIONS = {
     "full-second-brain",
     "aios_no_second_brain",
     "aios_no_personal_context",
-    "aios_no_project_truth",
     "aios_no_prior_task_history",
     "aios_no_context_packets",
     "aios_no_success_criteria",

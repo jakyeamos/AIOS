@@ -1,6 +1,6 @@
 # Portable Dev Process Router
 
-This router builds a minimal custom skill packet from practical AIOS-derived developer tools. It intentionally excludes AIOS governance loops, truth-file writebacks, eval archives, and continuous-learning requirements.
+This router builds a minimal custom skill packet from practical AIOS-derived developer tools. It intentionally excludes AIOS governance loops, eval archives, and continuous-learning requirements.
 
 Allowed traversal actions: LOAD, CONSIDER, USE, SKIP, EXIT, WHY, EVIDENCE, OUTCOME.
 

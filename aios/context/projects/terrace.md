@@ -17,7 +17,7 @@ last_reviewed: 2026-05-12
 ---
 
 Terrace is represented in this repository through workflow skills and project-health inventory.
-This packet should stay thin until a current Terrace truth file is attached.
+This packet should stay thin until relevant current Terrace context is attached.
 
 ## Acceptance Criteria
 

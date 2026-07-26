@@ -142,7 +142,6 @@ def writeback_approval_policy_shim(
     high_impact_layers = {"truth", "standard", "standards", "prompt", "skill", "workflow", "packet"}
     high_impact_scopes = {
         "global",
-        "project-truth",
         "workflow-default",
         "prompt-default",
         "skill-default",

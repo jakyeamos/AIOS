@@ -37,7 +37,6 @@ Session close, delivery closeout, sprint completion, release preparation, and an
 
 ## Related Criteria
 
-- `truth-file-consistency`
 - `workflow-state-integrity`
 
 ## Example Good

@@ -280,8 +280,6 @@ def _quality_certification(
         certification_blockers.append("pre_cr_not_passing")
     if "anti_slop" in required_gate_keys and "anti_slop" not in passing_gate_keys:
         certification_blockers.append("anti_slop_not_passing")
-    if "repo_truth" in required_gate_keys and "repo_truth" not in passing_gate_keys:
-        certification_blockers.append("project_truth_not_passing")
     if summary["strict_readiness_status"] and summary["strict_readiness_status"] != "ready":
         certification_blockers.append(
             f"strict_readiness_status_not_ready:{summary['strict_readiness_status']}"

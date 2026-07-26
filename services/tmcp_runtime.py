@@ -149,7 +149,6 @@ ATOM_EVIDENCE_TERMS: dict[str, tuple[str, ...]] = {
     "visual_verification": ("screenshot", "browser", "playwright", "viewport"),
     "source_grounding": ("source", "citation", "link", "reference", "paper"),
     "citation_discipline": ("citation", "quote", "source", "link"),
-    "truth_update": ("project.md", "truth", "state", "updated"),
     "reproduce_first": ("reproduce", "failing", "failure", "before fix"),
     "root_cause_analysis": ("root cause", "cause", "because", "diagnosed"),
     "bounded_change": ("scoped", "minimal", "bounded", "only changed"),

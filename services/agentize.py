@@ -116,7 +116,6 @@ class AgentizedTaskPacket:
     acceptance_criteria: tuple[str, ...]
     expected_deliverables: tuple[str, ...]
     output_contract: OutputContract
-    project_truth_file_update_requirements: tuple[str, ...]
     experiment_metadata: dict[str, object]
     prompt_pattern_evidence: tuple[PromptPatternEvidence, ...]
     prompt_library_role: str = "supporting_pattern_corpus"
@@ -278,9 +277,6 @@ def _context_plan(
 ) -> tuple[ContextRequirement, ...]:
     context: list[ContextRequirement] = [
         ContextRequirement(
-            "PROJECT.md", "Project truth anchors AIOS behavior and required writebacks."
-        ),
-        ContextRequirement(
             "AGENTS.md", "Repository agent workflow contract and local constraints."
         ),
     ]
@@ -361,14 +357,12 @@ def _standards(classifications: tuple[TaskClassification, ...]) -> tuple[str, ..
         standards.extend(["preserve_existing_behavior", "architecture_boundaries"])
     if TaskClassification.PERFORMANCE_IMPROVEMENT in classifications:
         standards.append("performance")
-    if TaskClassification.DOCUMENTATION in classifications:
-        standards.append("truth_file_consistency")
     return _dedupe(standards)
 
 
 # DEPRECATED: kept as fallback for one cycle, retire in phase 8.
 def _success_criteria(classifications: tuple[TaskClassification, ...]) -> tuple[str, ...]:
-    criteria = ["workflow-state-integrity", "testing-trust", "truth-file-consistency"]
+    criteria = ["workflow-state-integrity", "testing-trust"]
     if TaskClassification.SECURITY_REVIEW in classifications:
         criteria.append("security-review")
     if TaskClassification.REFACTOR in classifications:
@@ -438,11 +432,6 @@ def _verification_plan(
                 "acceptance_review", "Confirm deliverables match the normalized objective."
             )
         )
-    steps.append(
-        VerificationStep(
-            "project_truth_update", "Meaningful AIOS state changes require truth-file updates."
-        )
-    )
     return tuple(steps)
 
 
@@ -604,10 +593,6 @@ def _agentize_request_impl(
         TaskClassification.DEBUG,
         TaskClassification.TEST_GENERATION,
     }
-    truth_requirements = (
-        "Update PROJECT.md when architecture, workflow contracts, or shipped behavior changes.",
-        "Record prompt-pattern or skill learnings as reviewable candidates rather than silently promoting them.",
-    )
     acceptance = [
         "Packet preserves the original user intent.",
         "Execution mode includes concrete reasoning.",
@@ -652,7 +637,6 @@ def _agentize_request_impl(
         ),
         assumptions=(
             "Best-effort execution is acceptable when ambiguity is low and verification can catch mistakes.",
-            "AIOS truth files are authoritative for meaningful architecture state changes.",
         ),
         sub_agent_recommendations=(
             (
@@ -683,10 +667,9 @@ def _agentize_request_impl(
                 "Files changed",
                 "Tests run",
                 "Risks and gaps",
-                "Truth-file and learning writebacks",
+                "Learning writebacks",
             ),
         ),
-        project_truth_file_update_requirements=truth_requirements,
         experiment_metadata={
             "agentize_version": "0.1.0",
             "created_at": _now_iso(),

@@ -14,7 +14,6 @@ ROOT_MARKERS = (
     "package.json",
     "pnpm-lock.yaml",
     "uv.lock",
-    ".tracker/PROJECT_TRUTH.md",
     ".planning/STATE.md",
 )
 
@@ -400,7 +399,6 @@ def codex_workflow_skill_payload() -> JSONDict:
                 {
                     "name": "closeout",
                     "actions": [
-                        "update project truth when required",
                         "commit coherent work after explicit review gate",
                     ],
                 },
@@ -420,29 +418,29 @@ def _frontmatter_value(text: str, key: str) -> str | None:
 
 def planning_state_payload(repo_path: str | Path) -> JSONDict:
     repo = Path(repo_path).expanduser().resolve()
-    truth_path = repo / ".tracker" / "PROJECT_TRUTH.md"
     planning_path = repo / ".planning"
     state_path = planning_path / "STATE.md"
-    truth_text = truth_path.read_text(encoding="utf-8") if truth_path.exists() else ""
     markers = [
         str(path.relative_to(repo))
-        for path in (truth_path, state_path, repo / ".planning" / "ROADMAP.md")
+        for path in (state_path, repo / ".planning" / "ROADMAP.md")
         if path.exists()
     ]
     blockers: list[str] = []
-    if not truth_path.exists():
-        blockers.append("missing .tracker/PROJECT_TRUTH.md")
-    if not planning_path.exists():
-        blockers.append("missing .planning directory")
     return {
         "schema": "aios-planning-state-v0.1",
         "repo": str(repo),
-        "truth": {
-            "exists": truth_path.exists(),
-            "path": str(truth_path),
-            "summary": _frontmatter_value(truth_text, "summary"),
-            "next_step": _frontmatter_value(truth_text, "nextStep"),
-            "last_updated": _frontmatter_value(truth_text, "lastUpdated"),
+        "state": {
+            "exists": state_path.exists(),
+            "path": str(state_path),
+            "summary": _frontmatter_value(
+                state_path.read_text(encoding="utf-8") if state_path.exists() else "", "summary"
+            ),
+            "next_step": _frontmatter_value(
+                state_path.read_text(encoding="utf-8") if state_path.exists() else "", "nextStep"
+            ),
+            "last_updated": _frontmatter_value(
+                state_path.read_text(encoding="utf-8") if state_path.exists() else "", "lastUpdated"
+            ),
         },
         "planning": {
             "exists": planning_path.exists(),

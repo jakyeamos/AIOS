@@ -10,7 +10,7 @@ Use the smallest useful context set before drafting.
 ## Prefer
 
 - current thread or task artifact
-- recent project truth files
+- recent project context notes
 - source-backed memory packets
 - prior decisions from trusted project docs
 - relationship context only when explicitly approved for durable use

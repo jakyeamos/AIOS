@@ -37,7 +37,7 @@ def test_preview_applicable_criteria_includes_project_and_domain_rules() -> None
     criterion_ids = {item["id"] for item in preview["criteria"]}
     assert "code-simplicity" in criterion_ids
     assert "execution-first-verification" in criterion_ids
-    assert "truth-file-consistency" in criterion_ids
+    assert "truth-file-consistency" not in criterion_ids
     assert "workflow-state-integrity" in criterion_ids
     assert "observability" in criterion_ids
     assert "architecture-boundary" in criterion_ids
@@ -466,7 +466,7 @@ def test_evaluate_and_record_persists_rows_and_artifact(tmp_path: Path) -> None:
     ).fetchall()
     conn.close()
     assert len(finding_rows) >= 1
-    assert any(row[0] == "truth-file-consistency" and row[1] == "blocker" for row in finding_rows)
+    assert all(row[0] != "truth-file-consistency" for row in finding_rows)
 
 
 def test_stage_findings_table_exists_after_ensure_schema() -> None:

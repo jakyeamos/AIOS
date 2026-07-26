@@ -559,7 +559,6 @@ def inspect_learning_simulation(db_path: Path, project_id: str) -> list[GateResu
             unresolved_follow_ups=[],
             reusable_patterns=["managed-runtime adoption gate"],
             candidate_skills_to_extract=["field-pressure-gate"],
-            should_update_truth_file=True,
             should_create_obsidian_note=True,
             confidence=0.9,
             source_provenance={"project_id": project_id, "source": "field_pressure_gate"},

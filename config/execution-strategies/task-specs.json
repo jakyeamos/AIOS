@@ -39,7 +39,7 @@
         "verification_rigor": 15
       },
       "default_context_requirements": [
-        "Current project truth status",
+        "Current project context status",
         "Applicable success criteria",
         "Recent orchestration and run findings",
         "Relevant code topology or file context"

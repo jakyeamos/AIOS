@@ -15,7 +15,7 @@ def _compiler() -> ContextCompiler:
         aios_operating_rules=("Stable operating rule.",),
         user_preferences=("Stable user preference.",),
         project_memory_summaries={"aios": "Stable memory summary."},
-        project_truth_facts=[
+        project_context_facts=[
             {
                 "id": "truth-1",
                 "fact_text": "AIOS keeps stable truth before dynamic memory.",
@@ -23,7 +23,7 @@ def _compiler() -> ContextCompiler:
                 "project_scope": "aios",
             }
         ],
-        raw_sources=[{"id": "raw-1", "source_type": "project_truth", "source_path": "PROJECT.md"}],
+        raw_sources=[{"id": "raw-1", "source_type": "project_context", "source_path": "PROJECT.md"}],
         retrieved_facts=[
             {
                 "id": "dyn-duplicate",
@@ -62,7 +62,7 @@ def test_dynamic_after_stable() -> None:
         "## AIOS Operating Rules",
         "## User Preferences",
         "## Project Memory Summary",
-        "## Project Truth Packet",
+        "## Project Context Packet",
     ]
     assert headings[5] == "## Task-Specific Retrieved Memory"
     assert headings[6] == "## Current User Request / Task Description"

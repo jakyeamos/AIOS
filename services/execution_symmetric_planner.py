@@ -311,7 +311,7 @@ def _evidence_contract(lenses: tuple[PlanningLens, ...]) -> list[str]:
     return [
         f"Evidence must cover selected planning lenses: {lens_keys}.",
         "Record validation commands and expected artifacts before implementation work starts.",
-        "Preserve route, packet, summary, and truth-file evidence for later verification.",
+        "Preserve route, packet, and summary evidence for later verification.",
     ]
 
 
