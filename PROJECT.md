@@ -1532,13 +1532,13 @@ Experiment test repo visibility is now implemented:
 
 - canonical registry:
   - `config/experiments/test-repos.json`
-- local git repo workspaces:
-  - `staging/experiment-test-repos/clean-small-app`
-  - `staging/experiment-test-repos/messy-monorepo`
-  - `staging/experiment-test-repos/backend-heavy-service`
-  - `staging/experiment-test-repos/weak-tests-ui`
+- local git repo workspaces under the shared project fixture directory:
+  - `../test-fixtures/clean-small-app`
+  - `../test-fixtures/messy-monorepo`
+  - `../test-fixtures/backend-heavy-service`
+  - `../test-fixtures/weak-tests-ui`
 - `/compare` now shows the registered test repos, readiness, purpose, profile, setup, and path before experiment run history
-- the local repo workspaces live under ignored `staging/` so they can be mutated during experiments without polluting the AIOS control-plane repository
+- the repositories live outside the AIOS control-plane under `projects/test-fixtures`, so experiments can mutate them without polluting AIOS
 
 Phase 1b anti-slop ESLint ratchet is now implemented on top of existing plugin wiring:
 
