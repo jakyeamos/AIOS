@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "revision": 1,
+  "project": {
+    "name": "AIOS",
+    "identity": "A local-first operating system for work context, agent workflows, durable project memory, and governed execution.",
+    "audience": "The local operator and agents responsible for serious AI-assisted work across multiple repositories.",
+    "core_loop": "Start with a vague goal, select the project/context/standards, route a governed run, record execution and evaluation evidence, then write back durable truth and next actions.",
+    "north_star": "Starting serious work in AIOS produces a more trustworthy, inspectable, and reusable result than manually assembling context, rules, workflows, and writebacks.",
+    "not_this": [
+      "A dashboard without an owned operating loop",
+      "An opaque autonomous agent that hides evidence or approval boundaries",
+      "A replacement for project-owned source-of-truth documents"
+    ]
+  },
+  "targets": {
+    "mvp": {
+      "definition": "A dependable local daily flow can turn a vague goal into the right project context, governed run state, evaluation evidence, and explicit next action without manual context assembly."
+    },
+    "complete_product": {
+      "definition": "AIOS is the default operating layer for serious work: it maintains current project truth, routes execution, evaluates outcomes, governs writebacks, and compounds reusable memory across linked projects."
+    }
+  },
+  "pillars": [
+    {
+      "id": "governed-operating-loop",
+      "name": "Governed operating loop",
+      "outcomes": [
+        {
+          "id": "daily-goal-to-writeback",
+          "name": "A vague goal can move through project selection, context compilation, governed execution, evaluation, and closeout with visible evidence and approvals.",
+          "targets": ["mvp", "complete_product"],
+          "maturity": 50,
+          "confidence": "high",
+          "layers": {
+            "intended": "The operator should understand what AIOS selected, why it selected it, what remains uncertain, and what to do next.",
+            "planned": "The project documents define a task-centred flow spanning context, standards, workflow, execution, evaluation, and writeback.",
+            "implemented": "The repository contains a local operator shell, file-backed context compiler, run/invocation state, audits, and governed effect/closeout structures.",
+            "verified": "Repository documentation records focused route, compiler, audit, and governance evidence; this bootstrap did not rerun the full daily flow or promotion gates."
+          },
+          "evidence": [
+            {"ref": "PRODUCT.md", "note": "Defines the primary user, product purpose, and evidence/approval principles.", "observed_at": "2026-08-02T13:25:04Z"},
+            {"ref": "PROJECT.md", "note": "Defines the operating-system vision and current implemented subsystems.", "observed_at": "2026-08-02T13:25:04Z"},
+            {"ref": ".planning/PROJECT.md", "note": "Defines the canonical vague-goal-to-writeback workflow test and active requirements.", "observed_at": "2026-08-02T13:25:04Z"}
+          ],
+          "blockers": [
+            {"kind": "verification", "summary": "M6 promotion remains deferred by audit-only paired evidence, unavailable provider telemetry, incomplete browser coverage, and remaining mutation-owner and rollback gates."}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "durable-project-truth",
+      "name": "Durable project truth and memory",
+      "outcomes": [
+        {
+          "id": "inspectable-context-and-memory",
+          "name": "Project context, standards, decisions, risks, deltas, and reusable lessons remain source-backed and inspectable across sessions.",
+          "targets": ["complete_product"],
+          "maturity": 25,
+          "confidence": "high",
+          "layers": {
+            "intended": "AIOS should maintain accurate current truth for major linked projects and improve future work through governed writebacks.",
+            "planned": "The active requirements include project truth, searchable knowledge, lifecycle-managed assets, and compounding memory.",
+            "implemented": "Context receipts, knowledge surfaces, workflow learning, writeback proposals, and linked-project projections exist as partial subsystems.",
+            "verified": "The repository documents partial implementation but does not establish complete cross-project truth accuracy or durable learning effectiveness in this read-only bootstrap."
+          },
+          "evidence": [
+            {"ref": "PROJECT.md", "note": "Lists the five meaningful subsystems and separates current reality from intended architecture.", "observed_at": "2026-08-02T13:25:04Z"},
+            {"ref": ".planning/PROJECT.md", "note": "Lists active requirements for project truth, knowledge UI, and governed asset lifecycle.", "observed_at": "2026-08-02T13:25:04Z"}
+          ],
+          "blockers": [
+            {"kind": "technical", "summary": "The repository still contains multiple partial subsystems and the mutation-owner migration is not complete."},
+            {"kind": "verification", "summary": "Cross-project accuracy and compounding-memory effectiveness remain unproven."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "source_layers": {
+    "intended": [
+      {"ref": "PRODUCT.md", "note": "Product purpose, users, and design boundaries.", "observed_at": "2026-08-02T13:25:04Z"},
+      {"ref": "PROJECT.md", "note": "System identity and broad operating-layer intent.", "observed_at": "2026-08-02T13:25:04Z"}
+    ],
+    "planned": [
+      {"ref": ".planning/PROJECT.md", "note": "Active requirements, constraints, and canonical workflow test.", "observed_at": "2026-08-02T13:25:04Z"}
+    ],
+    "implemented": [
+      {"ref": "README.md", "note": "Current local commands and operator surfaces.", "observed_at": "2026-08-02T13:25:04Z"},
+      {"ref": "PROJECT.md", "note": "Current subsystem and v2 modernization evidence.", "observed_at": "2026-08-02T13:25:04Z"}
+    ],
+    "verified": [
+      {"ref": "PROJECT.md", "note": "Repository-recorded focused verification and explicit remaining blockers; no new product execution was run by this bootstrap.", "observed_at": "2026-08-02T13:25:04Z"}
+    ]
+  },
+  "drift": [
+    {
+      "kind": "verification-gap",
+      "summary": "Strong partial implementation evidence exists, but promotion-grade effectiveness and the complete default-operating-layer loop remain unproven.",
+      "status": "open",
+      "observed_at": "2026-08-02T13:25:04Z",
+      "evidence": [
+        {"ref": "PROJECT.md", "note": "Records M6 deferral and separates implemented slices from remaining promotion gates.", "observed_at": "2026-08-02T13:25:04Z"}
+      ]
+    }
+  ],
+  "updated_at": "2026-08-02T13:25:04Z"
+}
