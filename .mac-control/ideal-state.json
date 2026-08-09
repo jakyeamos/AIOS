@@ -1,0 +1,171 @@
+{
+  "schema": "mac-control-task-manifest/v1",
+  "repository_id": "repo-f54ae8d91cfda284",
+  "repository_name": "AIOS",
+  "applicability": "applicable",
+  "applicability_reason": "AIOS exposes a runnable Next.js/React product UI under the repository's .aios application surface; this manifest records its supported user-facing workflow catalog while live and measured evidence remain outstanding.",
+  "app": {
+    "name": "AIOS web application"
+  },
+  "criteria": {
+    "stable_identity": true,
+    "correct_semantics": true,
+    "observable_state": true,
+    "useful_hierarchy": true,
+    "efficient_navigation": true,
+    "verifiable_outcomes": true,
+    "route_flexibility": true,
+    "stable_change_behavior": true
+  },
+  "tasks": [
+    {
+      "task_id": "plan-run",
+      "stable_target_id": "aios.control.plan-run",
+      "hierarchy": "aios > control > plan-run",
+      "semantic_action": "press Plan run",
+      "observable_postcondition": "A run card appears with workflow, backend, status, and completion readable",
+      "observable_states": [
+        "enabled",
+        "focused",
+        "selected",
+        "expanded",
+        "visible",
+        "loading",
+        "completed"
+      ],
+      "navigation_strategy": "semantic target lookup by stable identifier, accessible role, and label; use semantic scrolling when the target is offscreen",
+      "eligible_routes": [
+        "accessibility",
+        "keyboard",
+        "scrolling"
+      ],
+      "selected_route": "accessibility",
+      "change_states": [
+        "loading",
+        "modal",
+        "disabled",
+        "permission_unavailable"
+      ],
+      "accessibility": {
+        "identifier": "aios.control.plan-run",
+        "label": "Plan run",
+        "role": "AXButton",
+        "required_actions": [
+          "AXPress"
+        ]
+      }
+    },
+    {
+      "task_id": "search-operator",
+      "stable_target_id": "aios.global-search.input",
+      "hierarchy": "aios > global-search > input",
+      "semantic_action": "set the Search value",
+      "observable_postcondition": "Matches or the explicit no-match state is readable",
+      "observable_states": [
+        "enabled",
+        "focused",
+        "selected",
+        "expanded",
+        "visible",
+        "loading",
+        "completed"
+      ],
+      "navigation_strategy": "semantic target lookup by stable identifier, accessible role, and label; use semantic scrolling when the target is offscreen",
+      "eligible_routes": [
+        "accessibility",
+        "keyboard",
+        "scrolling"
+      ],
+      "selected_route": "accessibility",
+      "change_states": [
+        "loading",
+        "modal",
+        "disabled",
+        "permission_unavailable"
+      ],
+      "accessibility": {
+        "identifier": "global-search-input",
+        "label": "Search",
+        "role": "AXTextField",
+        "required_actions": [
+          "AXFocus",
+          "AXSetValue"
+        ]
+      }
+    },
+    {
+      "task_id": "inspect-run-history",
+      "stable_target_id": "aios.control.run-history",
+      "hierarchy": "aios > control > run-history",
+      "semantic_action": "focus Run History",
+      "observable_postcondition": "Run statuses or the empty state are readable",
+      "observable_states": [
+        "enabled",
+        "focused",
+        "selected",
+        "expanded",
+        "visible",
+        "loading",
+        "completed"
+      ],
+      "navigation_strategy": "semantic target lookup by stable identifier, accessible role, and label; use semantic scrolling when the target is offscreen",
+      "eligible_routes": [
+        "accessibility",
+        "keyboard",
+        "scrolling"
+      ],
+      "selected_route": "accessibility",
+      "change_states": [
+        "loading",
+        "modal",
+        "disabled",
+        "permission_unavailable"
+      ],
+      "accessibility": {
+        "identifier": "aios.control.run-history",
+        "label": "Run History",
+        "role": "AXGroup",
+        "required_actions": [
+          "AXFocus"
+        ]
+      }
+    },
+    {
+      "task_id": "open-settings",
+      "stable_target_id": "aios.navigation.settings",
+      "hierarchy": "aios > navigation > settings",
+      "semantic_action": "press Settings",
+      "observable_postcondition": "Settings is visible and its heading is readable",
+      "observable_states": [
+        "enabled",
+        "focused",
+        "selected",
+        "expanded",
+        "visible",
+        "loading",
+        "completed"
+      ],
+      "navigation_strategy": "semantic target lookup by stable identifier, accessible role, and label; use semantic scrolling when the target is offscreen",
+      "eligible_routes": [
+        "accessibility",
+        "keyboard",
+        "scrolling"
+      ],
+      "selected_route": "accessibility",
+      "change_states": [
+        "loading",
+        "modal",
+        "disabled",
+        "permission_unavailable"
+      ],
+      "accessibility": {
+        "identifier": "aios.navigation.settings",
+        "label": "Settings",
+        "role": "AXButton",
+        "required_actions": [
+          "AXPress"
+        ]
+      }
+    }
+  ]
+}
