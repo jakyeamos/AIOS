@@ -1,170 +1,838 @@
 {
-  "schema": "mac-control-task-manifest/v1",
+  "schema": "mac-control-task-manifest/v4",
   "repository_id": "repo-f54ae8d91cfda284",
   "repository_name": "AIOS",
   "applicability": "applicable",
-  "applicability_reason": "AIOS exposes a runnable Next.js/React product UI under the repository's .aios application surface; this manifest records its supported user-facing workflow catalog while live and measured evidence remain outstanding.",
+  "applicability_reason": "The operator UI exposes app-owned semantic controls, stable task identifiers, explicit pending, empty, failed, ready, and completed states, and independent result readbacks for planning, search, history, and settings workflows.",
   "app": {
-    "name": "AIOS web application"
+    "name": "AIOS web application",
+    "launch": "pnpm --dir aios-ui dev",
+    "url": "http://localhost:3000"
   },
-  "criteria": {
-    "stable_identity": true,
-    "correct_semantics": true,
-    "observable_state": true,
-    "useful_hierarchy": true,
-    "efficient_navigation": true,
-    "verifiable_outcomes": true,
-    "route_flexibility": true,
-    "stable_change_behavior": true
-  },
+  "criteria": {},
   "tasks": [
     {
+      "surface_kind": "web_content",
+      "focus_policy": "foreground",
+      "foreground_postcondition": "target_foreground",
+      "fallback_policy": "fresh_state_handoff",
+      "change_states": [
+        "loading",
+        "disabled",
+        "permission_unavailable"
+      ],
+      "change_state_exemptions": {
+        "modal": "Planning occurs inline."
+      },
+      "navigation_strategy": "direct_semantic",
+      "route_candidates": [
+        {
+          "id": "browser-dom",
+          "provider": "browser_connector",
+          "method": "adapter",
+          "interaction_mode": "semantic"
+        },
+        {
+          "id": "computer-pointer",
+          "provider": "computer_use",
+          "method": "pointer",
+          "interaction_mode": "pointer"
+        }
+      ],
+      "shortcut_acceleration": {
+        "disposition": "not_applicable",
+        "reason": "No task-specific direct shortcut or reversible shortcut assignment surface is implemented."
+      },
       "task_id": "plan-run",
       "stable_target_id": "aios.control.plan-run",
-      "hierarchy": "aios > control > plan-run",
-      "semantic_action": "press Plan run",
-      "observable_postcondition": "A run card appears with workflow, backend, status, and completion readable",
+      "hierarchy": "AIOS > Control Plane > Task Router > Plan run",
+      "semantic_action": "press",
+      "observable_postcondition": "The planning result reports plan_completed and exposes the durable run id",
       "observable_states": [
         "enabled",
         "focused",
-        "selected",
-        "expanded",
         "visible",
         "loading",
         "completed"
       ],
-      "navigation_strategy": "semantic target lookup by stable identifier, accessible role, and label; use semantic scrolling when the target is offscreen",
-      "eligible_routes": [
-        "accessibility",
-        "keyboard",
-        "scrolling"
-      ],
-      "selected_route": "accessibility",
-      "change_states": [
-        "loading",
-        "modal",
-        "disabled",
-        "permission_unavailable"
-      ],
+      "state_exemptions": {
+        "selected": "The plan button is momentary.",
+        "expanded": "The planning result renders in a separate region."
+      },
       "accessibility": {
         "identifier": "aios.control.plan-run",
         "label": "Plan run",
-        "role": "AXButton",
-        "required_actions": [
-          "AXPress"
-        ]
+        "role": "button"
+      },
+      "verification_oracle": {
+        "oracle_id": "plan-run.task-state",
+        "kind": "task_state",
+        "expected_state": "plan_completed",
+        "independent_readback": true
+      },
+      "semantic_evidence": {
+        "stable_identity": {
+          "level": "source_grounded",
+          "claims": {
+            "selector_kind": "data_attribute",
+            "selector_value": "aios.control.plan-run",
+            "scope": "aios-ui",
+            "uniqueness": "exactly_one"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/control/ControlPlaneStudio.tsx",
+              "anchor": "data-mac-control-id=\"aios.control.plan-run\"",
+              "evidence_tokens": [
+                "Plan run",
+                "type=\"button\""
+              ]
+            }
+          ]
+        },
+        "correct_semantics": {
+          "level": "source_grounded",
+          "claims": {
+            "role": "button",
+            "accessible_name": "Plan run",
+            "action": "press"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/control/ControlPlaneStudio.tsx",
+              "anchor": "data-mac-control-id=\"aios.control.plan-run\"",
+              "evidence_tokens": [
+                "Plan run",
+                "type=\"button\""
+              ]
+            }
+          ]
+        },
+        "observable_state": {
+          "level": "source_grounded",
+          "claims": {
+            "property": "data-task-state",
+            "unavailable_behavior": "block_and_explain"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/control/ControlPlaneStudio.tsx",
+              "anchor": "data-task-state={planner.isPending ? \"plan_loading\" : \"plan_ready\"}",
+              "evidence_tokens": [
+                "aria-busy={planner.isPending}",
+                "disabled={planner.isPending"
+              ]
+            }
+          ]
+        },
+        "useful_hierarchy": {
+          "level": "source_grounded",
+          "claims": {
+            "container": "aios-ui",
+            "relationship": "AIOS > Control Plane > Task Router > Plan run",
+            "uniqueness": "exactly_one"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/control/ControlPlaneStudio.tsx",
+              "anchor": "data-mac-control-id=\"aios.control.plan-run\"",
+              "evidence_tokens": [
+                "Plan run",
+                "type=\"button\""
+              ]
+            }
+          ]
+        },
+        "efficient_navigation": {
+          "level": "source_grounded",
+          "claims": {
+            "strategy": "direct_semantic",
+            "entry_point": "aios.control.plan-run"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/control/ControlPlaneStudio.tsx",
+              "anchor": "data-mac-control-id=\"aios.control.plan-run\"",
+              "evidence_tokens": [
+                "Plan run",
+                "type=\"button\""
+              ]
+            }
+          ]
+        },
+        "verifiable_outcomes": {
+          "level": "source_grounded",
+          "claims": {
+            "readback_provider": "browser_connector",
+            "property": "data-task-state",
+            "operator": "equals",
+            "expected": "plan_completed"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/control/ControlPlaneStudio.tsx",
+              "anchor": "data-mac-control-id=\"aios.control.plan-result\"",
+              "evidence_tokens": [
+                "plan_completed",
+                "data-run-id={planner.data.run.id}"
+              ]
+            }
+          ]
+        },
+        "route_flexibility": {
+          "level": "source_grounded",
+          "claims": {
+            "primary_provider": "browser_connector",
+            "secondary_provider": "computer_use",
+            "fallback_policy": "fresh_state_handoff"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/control/ControlPlaneStudio.tsx",
+              "anchor": "data-mac-control-id=\"aios.control.plan-run\"",
+              "evidence_tokens": [
+                "Plan run",
+                "type=\"button\""
+              ]
+            }
+          ]
+        },
+        "stable_change_behavior": {
+          "level": "source_grounded",
+          "claims": {
+            "scenarios": "loading,modal,disabled,permission_unavailable",
+            "failure_behavior": "block_and_explain"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/control/ControlPlaneStudio.tsx",
+              "anchor": "data-task-state={planner.isPending ? \"plan_loading\" : \"plan_ready\"}",
+              "evidence_tokens": [
+                "aria-busy={planner.isPending}",
+                "disabled={planner.isPending"
+              ]
+            }
+          ]
+        }
       }
     },
     {
+      "surface_kind": "web_content",
+      "focus_policy": "foreground",
+      "foreground_postcondition": "target_foreground",
+      "fallback_policy": "fresh_state_handoff",
+      "change_states": [
+        "loading",
+        "permission_unavailable"
+      ],
+      "change_state_exemptions": {
+        "modal": "Search results are inline.",
+        "disabled": "The search input remains editable."
+      },
+      "navigation_strategy": "direct_semantic",
+      "route_candidates": [
+        {
+          "id": "browser-dom",
+          "provider": "browser_connector",
+          "method": "adapter",
+          "interaction_mode": "semantic"
+        },
+        {
+          "id": "computer-pointer",
+          "provider": "computer_use",
+          "method": "pointer",
+          "interaction_mode": "pointer"
+        }
+      ],
+      "shortcut_acceleration": {
+        "disposition": "not_applicable",
+        "reason": "No task-specific direct shortcut or reversible shortcut assignment surface is implemented."
+      },
       "task_id": "search-operator",
       "stable_target_id": "aios.global-search.input",
-      "hierarchy": "aios > global-search > input",
-      "semantic_action": "set the Search value",
-      "observable_postcondition": "Matches or the explicit no-match state is readable",
+      "hierarchy": "AIOS > Top bar > Search",
+      "semantic_action": "set_value",
+      "observable_postcondition": "The search region reports loading, failed, empty, or ready and exposes the result count",
       "observable_states": [
         "enabled",
         "focused",
-        "selected",
-        "expanded",
         "visible",
         "loading",
         "completed"
       ],
-      "navigation_strategy": "semantic target lookup by stable identifier, accessible role, and label; use semantic scrolling when the target is offscreen",
-      "eligible_routes": [
-        "accessibility",
-        "keyboard",
-        "scrolling"
-      ],
-      "selected_route": "accessibility",
-      "change_states": [
-        "loading",
-        "modal",
-        "disabled",
-        "permission_unavailable"
-      ],
+      "state_exemptions": {
+        "selected": "Text selection is native input behavior.",
+        "expanded": "The results region appears once two characters are entered."
+      },
       "accessibility": {
-        "identifier": "global-search-input",
+        "identifier": "aios.global-search.input",
         "label": "Search",
-        "role": "AXTextField",
-        "required_actions": [
-          "AXFocus",
-          "AXSetValue"
-        ]
+        "role": "searchbox"
+      },
+      "verification_oracle": {
+        "oracle_id": "search-operator.task-state",
+        "kind": "task_state",
+        "expected_state": "search_ready",
+        "independent_readback": true
+      },
+      "semantic_evidence": {
+        "stable_identity": {
+          "level": "source_grounded",
+          "claims": {
+            "selector_kind": "data_attribute",
+            "selector_value": "aios.global-search.input",
+            "scope": "aios-ui",
+            "uniqueness": "exactly_one"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/search/GlobalSearchInput.tsx",
+              "anchor": "data-mac-control-id=\"aios.global-search.input\"",
+              "evidence_tokens": [
+                "<input",
+                "aria-controls=\"aios-global-search-results\""
+              ]
+            }
+          ]
+        },
+        "correct_semantics": {
+          "level": "source_grounded",
+          "claims": {
+            "role": "searchbox",
+            "accessible_name": "Search",
+            "action": "set_value"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/search/GlobalSearchInput.tsx",
+              "anchor": "data-mac-control-id=\"aios.global-search.input\"",
+              "evidence_tokens": [
+                "<input",
+                "aria-controls=\"aios-global-search-results\""
+              ]
+            }
+          ]
+        },
+        "observable_state": {
+          "level": "source_grounded",
+          "claims": {
+            "property": "data-task-state",
+            "unavailable_behavior": "block_and_explain"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/search/GlobalSearchInput.tsx",
+              "anchor": "data-mac-control-id=\"aios.global-search\"",
+              "evidence_tokens": [
+                "search_loading",
+                "search_failed",
+                "search_empty",
+                "search_ready"
+              ]
+            }
+          ]
+        },
+        "useful_hierarchy": {
+          "level": "source_grounded",
+          "claims": {
+            "container": "aios-ui",
+            "relationship": "AIOS > Top bar > Search",
+            "uniqueness": "exactly_one"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/search/GlobalSearchInput.tsx",
+              "anchor": "data-mac-control-id=\"aios.global-search.input\"",
+              "evidence_tokens": [
+                "<input",
+                "aria-controls=\"aios-global-search-results\""
+              ]
+            }
+          ]
+        },
+        "efficient_navigation": {
+          "level": "source_grounded",
+          "claims": {
+            "strategy": "direct_semantic",
+            "entry_point": "aios.global-search.input"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/search/GlobalSearchInput.tsx",
+              "anchor": "data-mac-control-id=\"aios.global-search.input\"",
+              "evidence_tokens": [
+                "<input",
+                "aria-controls=\"aios-global-search-results\""
+              ]
+            }
+          ]
+        },
+        "verifiable_outcomes": {
+          "level": "source_grounded",
+          "claims": {
+            "readback_provider": "browser_connector",
+            "property": "data-task-state",
+            "operator": "equals",
+            "expected": "search_ready"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/search/GlobalSearchInput.tsx",
+              "anchor": "id=\"aios-global-search-results\"",
+              "evidence_tokens": [
+                "data-result-count={hits.length}",
+                "aria-live=\"polite\""
+              ]
+            }
+          ]
+        },
+        "route_flexibility": {
+          "level": "source_grounded",
+          "claims": {
+            "primary_provider": "browser_connector",
+            "secondary_provider": "computer_use",
+            "fallback_policy": "fresh_state_handoff"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/search/GlobalSearchInput.tsx",
+              "anchor": "data-mac-control-id=\"aios.global-search.input\"",
+              "evidence_tokens": [
+                "<input",
+                "aria-controls=\"aios-global-search-results\""
+              ]
+            }
+          ]
+        },
+        "stable_change_behavior": {
+          "level": "source_grounded",
+          "claims": {
+            "scenarios": "loading,modal,disabled,permission_unavailable",
+            "failure_behavior": "block_and_explain"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/search/GlobalSearchInput.tsx",
+              "anchor": "data-mac-control-id=\"aios.global-search\"",
+              "evidence_tokens": [
+                "search_loading",
+                "search_failed",
+                "search_empty",
+                "search_ready"
+              ]
+            }
+          ]
+        }
       }
     },
     {
+      "surface_kind": "web_content",
+      "focus_policy": "foreground",
+      "foreground_postcondition": "target_foreground",
+      "fallback_policy": "fresh_state_handoff",
+      "change_states": [
+        "permission_unavailable"
+      ],
+      "change_state_exemptions": {
+        "loading": "Loading is owned by the route.",
+        "modal": "History is inline.",
+        "disabled": "The region remains readable."
+      },
+      "navigation_strategy": "direct_semantic",
+      "route_candidates": [
+        {
+          "id": "browser-dom",
+          "provider": "browser_connector",
+          "method": "adapter",
+          "interaction_mode": "semantic"
+        },
+        {
+          "id": "computer-pointer",
+          "provider": "computer_use",
+          "method": "pointer",
+          "interaction_mode": "pointer"
+        }
+      ],
+      "shortcut_acceleration": {
+        "disposition": "not_applicable",
+        "reason": "No task-specific direct shortcut or reversible shortcut assignment surface is implemented."
+      },
       "task_id": "inspect-run-history",
       "stable_target_id": "aios.control.run-history",
-      "hierarchy": "aios > control > run-history",
-      "semantic_action": "focus Run History",
-      "observable_postcondition": "Run statuses or the empty state are readable",
+      "hierarchy": "AIOS > Control Plane > Run History",
+      "semantic_action": "focus",
+      "observable_postcondition": "The history region reports ready or empty and exposes its run count",
       "observable_states": [
         "enabled",
         "focused",
-        "selected",
-        "expanded",
         "visible",
-        "loading",
         "completed"
       ],
-      "navigation_strategy": "semantic target lookup by stable identifier, accessible role, and label; use semantic scrolling when the target is offscreen",
-      "eligible_routes": [
-        "accessibility",
-        "keyboard",
-        "scrolling"
-      ],
-      "selected_route": "accessibility",
-      "change_states": [
-        "loading",
-        "modal",
-        "disabled",
-        "permission_unavailable"
-      ],
+      "state_exemptions": {
+        "selected": "The history region is not selectable.",
+        "expanded": "History rows are rendered directly.",
+        "loading": "History data is server-rendered before the region appears."
+      },
       "accessibility": {
         "identifier": "aios.control.run-history",
         "label": "Run History",
-        "role": "AXGroup",
-        "required_actions": [
-          "AXFocus"
-        ]
+        "role": "region"
+      },
+      "verification_oracle": {
+        "oracle_id": "inspect-run-history.task-state",
+        "kind": "task_state",
+        "expected_state": "run_history_ready",
+        "independent_readback": true
+      },
+      "semantic_evidence": {
+        "stable_identity": {
+          "level": "source_grounded",
+          "claims": {
+            "selector_kind": "data_attribute",
+            "selector_value": "aios.control.run-history",
+            "scope": "aios-ui",
+            "uniqueness": "exactly_one"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/control/ControlPlaneStudio.tsx",
+              "anchor": "data-mac-control-id=\"aios.control.run-history\"",
+              "evidence_tokens": [
+                "aria-labelledby=\"aios-run-history-title\"",
+                "Run History"
+              ]
+            }
+          ]
+        },
+        "correct_semantics": {
+          "level": "source_grounded",
+          "claims": {
+            "role": "region",
+            "accessible_name": "Run History",
+            "action": "focus"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/control/ControlPlaneStudio.tsx",
+              "anchor": "data-mac-control-id=\"aios.control.run-history\"",
+              "evidence_tokens": [
+                "aria-labelledby=\"aios-run-history-title\"",
+                "Run History"
+              ]
+            }
+          ]
+        },
+        "observable_state": {
+          "level": "source_grounded",
+          "claims": {
+            "property": "data-task-state",
+            "unavailable_behavior": "block_and_explain"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/control/ControlPlaneStudio.tsx",
+              "anchor": "data-run-count={recentRuns.length}",
+              "evidence_tokens": [
+                "run_history_ready",
+                "run_history_empty"
+              ]
+            }
+          ]
+        },
+        "useful_hierarchy": {
+          "level": "source_grounded",
+          "claims": {
+            "container": "aios-ui",
+            "relationship": "AIOS > Control Plane > Run History",
+            "uniqueness": "exactly_one"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/control/ControlPlaneStudio.tsx",
+              "anchor": "data-mac-control-id=\"aios.control.run-history\"",
+              "evidence_tokens": [
+                "aria-labelledby=\"aios-run-history-title\"",
+                "Run History"
+              ]
+            }
+          ]
+        },
+        "efficient_navigation": {
+          "level": "source_grounded",
+          "claims": {
+            "strategy": "direct_semantic",
+            "entry_point": "aios.control.run-history"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/control/ControlPlaneStudio.tsx",
+              "anchor": "data-mac-control-id=\"aios.control.run-history\"",
+              "evidence_tokens": [
+                "aria-labelledby=\"aios-run-history-title\"",
+                "Run History"
+              ]
+            }
+          ]
+        },
+        "verifiable_outcomes": {
+          "level": "source_grounded",
+          "claims": {
+            "readback_provider": "browser_connector",
+            "property": "data-task-state",
+            "operator": "equals",
+            "expected": "run_history_ready"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/control/ControlPlaneStudio.tsx",
+              "anchor": "id=\"aios-run-history-title\"",
+              "evidence_tokens": [
+                "recentRuns.length === 0",
+                "recentRuns.map"
+              ]
+            }
+          ]
+        },
+        "route_flexibility": {
+          "level": "source_grounded",
+          "claims": {
+            "primary_provider": "browser_connector",
+            "secondary_provider": "computer_use",
+            "fallback_policy": "fresh_state_handoff"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/control/ControlPlaneStudio.tsx",
+              "anchor": "data-mac-control-id=\"aios.control.run-history\"",
+              "evidence_tokens": [
+                "aria-labelledby=\"aios-run-history-title\"",
+                "Run History"
+              ]
+            }
+          ]
+        },
+        "stable_change_behavior": {
+          "level": "source_grounded",
+          "claims": {
+            "scenarios": "loading,modal,disabled,permission_unavailable",
+            "failure_behavior": "block_and_explain"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/control/ControlPlaneStudio.tsx",
+              "anchor": "data-run-count={recentRuns.length}",
+              "evidence_tokens": [
+                "run_history_ready",
+                "run_history_empty"
+              ]
+            }
+          ]
+        }
       }
     },
     {
+      "surface_kind": "web_content",
+      "focus_policy": "foreground",
+      "foreground_postcondition": "target_foreground",
+      "fallback_policy": "fresh_state_handoff",
+      "change_states": [
+        "permission_unavailable"
+      ],
+      "change_state_exemptions": {
+        "loading": "Route loading is owned by Next.js.",
+        "modal": "Settings is a page.",
+        "disabled": "The navigation link remains enabled."
+      },
+      "navigation_strategy": "direct_semantic",
+      "route_candidates": [
+        {
+          "id": "browser-dom",
+          "provider": "browser_connector",
+          "method": "adapter",
+          "interaction_mode": "semantic"
+        },
+        {
+          "id": "computer-pointer",
+          "provider": "computer_use",
+          "method": "pointer",
+          "interaction_mode": "pointer"
+        }
+      ],
+      "shortcut_acceleration": {
+        "disposition": "not_applicable",
+        "reason": "No task-specific direct shortcut or reversible shortcut assignment surface is implemented."
+      },
       "task_id": "open-settings",
       "stable_target_id": "aios.navigation.settings",
-      "hierarchy": "aios > navigation > settings",
-      "semantic_action": "press Settings",
-      "observable_postcondition": "Settings is visible and its heading is readable",
+      "hierarchy": "AIOS > More surfaces > Settings",
+      "semantic_action": "press",
+      "observable_postcondition": "The settings surface reports settings_ready",
       "observable_states": [
         "enabled",
         "focused",
-        "selected",
-        "expanded",
         "visible",
-        "loading",
+        "selected",
         "completed"
       ],
-      "navigation_strategy": "semantic target lookup by stable identifier, accessible role, and label; use semantic scrolling when the target is offscreen",
-      "eligible_routes": [
-        "accessibility",
-        "keyboard",
-        "scrolling"
-      ],
-      "selected_route": "accessibility",
-      "change_states": [
-        "loading",
-        "modal",
-        "disabled",
-        "permission_unavailable"
-      ],
+      "state_exemptions": {
+        "expanded": "The settings link navigates directly.",
+        "loading": "The settings route handles navigation loading."
+      },
       "accessibility": {
         "identifier": "aios.navigation.settings",
         "label": "Settings",
-        "role": "AXButton",
-        "required_actions": [
-          "AXPress"
-        ]
+        "role": "link"
+      },
+      "verification_oracle": {
+        "oracle_id": "open-settings.task-state",
+        "kind": "task_state",
+        "expected_state": "settings_ready",
+        "independent_readback": true
+      },
+      "semantic_evidence": {
+        "stable_identity": {
+          "level": "source_grounded",
+          "claims": {
+            "selector_kind": "data_attribute",
+            "selector_value": "aios.navigation.settings",
+            "scope": "aios-ui",
+            "uniqueness": "exactly_one"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/layout/Sidebar.tsx",
+              "anchor": "data-mac-control-id={item.label === \"Settings\" ? \"aios.navigation.settings\" : undefined}",
+              "evidence_tokens": [
+                "<Link",
+                "href={item.href}"
+              ]
+            }
+          ]
+        },
+        "correct_semantics": {
+          "level": "source_grounded",
+          "claims": {
+            "role": "link",
+            "accessible_name": "Settings",
+            "action": "press"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/layout/Sidebar.tsx",
+              "anchor": "data-mac-control-id={item.label === \"Settings\" ? \"aios.navigation.settings\" : undefined}",
+              "evidence_tokens": [
+                "<Link",
+                "href={item.href}"
+              ]
+            }
+          ]
+        },
+        "observable_state": {
+          "level": "source_grounded",
+          "claims": {
+            "property": "data-task-state",
+            "unavailable_behavior": "block_and_explain"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/layout/Sidebar.tsx",
+              "anchor": "data-task-state={item.label === \"Settings\" ? (active ? \"settings_open\" : \"settings_closed\") : undefined}",
+              "evidence_tokens": [
+                "aria-current={active ? \"page\" : undefined}",
+                "settings_open"
+              ]
+            }
+          ]
+        },
+        "useful_hierarchy": {
+          "level": "source_grounded",
+          "claims": {
+            "container": "aios-ui",
+            "relationship": "AIOS > More surfaces > Settings",
+            "uniqueness": "exactly_one"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/layout/Sidebar.tsx",
+              "anchor": "data-mac-control-id={item.label === \"Settings\" ? \"aios.navigation.settings\" : undefined}",
+              "evidence_tokens": [
+                "<Link",
+                "href={item.href}"
+              ]
+            }
+          ]
+        },
+        "efficient_navigation": {
+          "level": "source_grounded",
+          "claims": {
+            "strategy": "direct_semantic",
+            "entry_point": "aios.navigation.settings"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/layout/Sidebar.tsx",
+              "anchor": "data-mac-control-id={item.label === \"Settings\" ? \"aios.navigation.settings\" : undefined}",
+              "evidence_tokens": [
+                "<Link",
+                "href={item.href}"
+              ]
+            }
+          ]
+        },
+        "verifiable_outcomes": {
+          "level": "source_grounded",
+          "claims": {
+            "readback_provider": "browser_connector",
+            "property": "data-task-state",
+            "operator": "equals",
+            "expected": "settings_ready"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/app/settings/page.tsx",
+              "anchor": "data-mac-control-id=\"aios.settings.surface\"",
+              "evidence_tokens": [
+                "settings_ready",
+                "aria-label=\"Settings\""
+              ]
+            }
+          ]
+        },
+        "route_flexibility": {
+          "level": "source_grounded",
+          "claims": {
+            "primary_provider": "browser_connector",
+            "secondary_provider": "computer_use",
+            "fallback_policy": "fresh_state_handoff"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/layout/Sidebar.tsx",
+              "anchor": "data-mac-control-id={item.label === \"Settings\" ? \"aios.navigation.settings\" : undefined}",
+              "evidence_tokens": [
+                "<Link",
+                "href={item.href}"
+              ]
+            }
+          ]
+        },
+        "stable_change_behavior": {
+          "level": "source_grounded",
+          "claims": {
+            "scenarios": "loading,modal,disabled,permission_unavailable",
+            "failure_behavior": "block_and_explain"
+          },
+          "source_refs": [
+            {
+              "path": "aios-ui/components/layout/Sidebar.tsx",
+              "anchor": "data-task-state={item.label === \"Settings\" ? (active ? \"settings_open\" : \"settings_closed\") : undefined}",
+              "evidence_tokens": [
+                "aria-current={active ? \"page\" : undefined}",
+                "settings_open"
+              ]
+            }
+          ]
+        }
       }
     }
   ]
