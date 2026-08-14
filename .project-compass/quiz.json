@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "sessions": [
+    {
+      "id": "aios-root-realignment-20260814",
+      "mode": "realignment",
+      "compass_id": "project",
+      "scope_kind": "root",
+      "status": "active",
+      "questions": [
+        {
+          "id": "aios-five-subsystems",
+          "category": "subsystem-model",
+          "prompt": "The repository currently names five meaningful subsystems: aios-ui, bin and services, docs, aios/context, and aios/context-loops. Should each receive a child Compass?"
+        },
+        {
+          "id": "aios-docs-authority",
+          "category": "authority-boundary",
+          "prompt": "Should docs remain a source layer that informs other Compasses, or should the documentation/design-intent surface have its own child Compass with an independently maintained purpose?"
+        },
+        {
+          "id": "aios-context-boundary",
+          "category": "boundary-and-handoff",
+          "prompt": "Should the Context Compiler and context-loops be separate child Compasses with an explicit handoff, or one combined context-and-memory Compass?"
+        }
+      ],
+      "answers": [],
+      "started_at": "2026-08-14T23:24:00Z",
+      "updated_at": "2026-08-14T23:24:00Z"
+    }
+  ],
+  "updated_at": "2026-08-14T23:24:00Z"
+}
