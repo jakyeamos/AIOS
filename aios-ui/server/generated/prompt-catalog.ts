@@ -38,7 +38,7 @@ export const promptTemplateCatalog: GeneratedPromptTemplate[] = [
     ],
     "lastUpdated": "2026-04-23",
     "file": "prompts/coding_debug.md",
-    "hash": "b88ba38e7acb56c7c566cc15d826f57dbf284079bcb2df89b37f0cb1b57e9e56"
+    "hash": "52f96f7276601c5d083e2a9323b78a835e0bbf189597e88698b83fa17e10e9b3"
   },
   {
     "id": "content_writing",
@@ -61,7 +61,7 @@ export const promptTemplateCatalog: GeneratedPromptTemplate[] = [
     ],
     "lastUpdated": "2026-04-23",
     "file": "prompts/content_writing.md",
-    "hash": "32a10b752c040b4e0189b5ed61b73826d94c064342df2e850522ea1f3723f90d"
+    "hash": "27875c1a5b42397253bf4cb78cb275bfb923f9e402221f61c2d49d56fbbc8d68"
   },
   {
     "id": "reasoning",
