@@ -130,7 +130,9 @@ def _persist_fixture(conn: sqlite3.Connection, fixture: dict[str, object]) -> No
             route["project_id"],
             fixture["objective"],
             route["id"],
-            json.dumps({"source_refs": packet["source_refs"], "omitted_refs": packet["omitted_refs"]}),
+            json.dumps(
+                {"source_refs": packet["source_refs"], "omitted_refs": packet["omitted_refs"]}
+            ),
         ),
     )
     for item in evidence:
@@ -247,8 +249,14 @@ def test_closed_fixture_maps_to_persisted_rows_and_daily_flow_replay() -> None:
     assert steps["route"].evidence_ref == {"table": "orchestration_runs", "id": run["id"]}
     assert steps["packet"].evidence_ref == {"table": "briefing_packets", "id": packet["id"]}
     assert steps["run"].summary == f"Run {run['id']} is completed"
-    assert steps["evaluation"].evidence_ref == {"table": "success_criteria_findings", "id": evidence[0]["id"]}
-    assert steps["writeback"].evidence_ref == {"table": "improvement_writebacks", "id": approvals[0]["id"]}
+    assert steps["evaluation"].evidence_ref == {
+        "table": "success_criteria_findings",
+        "id": evidence[0]["id"],
+    }
+    assert steps["writeback"].evidence_ref == {
+        "table": "improvement_writebacks",
+        "id": approvals[0]["id"],
+    }
     assert steps["next_action"].provenance == "missing"
     assert {
         row[0]
@@ -256,6 +264,9 @@ def test_closed_fixture_maps_to_persisted_rows_and_daily_flow_replay() -> None:
             "SELECT evidence_id FROM evidence_artifacts WHERE run_id = ?", (run["id"],)
         ).fetchall()
     } == {item["id"] for item in evidence}
-    assert conn.execute(
-        "SELECT id FROM improvement_writebacks WHERE run_id = ?", (run["id"],)
-    ).fetchone()[0] == approvals[0]["id"]
+    assert (
+        conn.execute(
+            "SELECT id FROM improvement_writebacks WHERE run_id = ?", (run["id"],)
+        ).fetchone()[0]
+        == approvals[0]["id"]
+    )

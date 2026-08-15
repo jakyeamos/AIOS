@@ -45,10 +45,7 @@ def _count_candidates(conn: sqlite3.Connection) -> list[dict]:
         """,
         NOISE_CLASSES,
     ).fetchall()
-    return [
-        {"class": row[0], "status": row[1], "state": row[2], "count": row[3]}
-        for row in rows
-    ]
+    return [{"class": row[0], "status": row[1], "state": row[2], "count": row[3]} for row in rows]
 
 
 def purge_noise_patterns(conn: sqlite3.Connection, *, dry_run: bool = False) -> dict:

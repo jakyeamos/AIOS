@@ -49,20 +49,26 @@ def test_connection_contract_uses_one_resolved_path_and_pragmas(
 def test_migration_ledger_is_idempotent_and_rejects_checksum_drift(tmp_path: Path) -> None:
     db_path = tmp_path / "ledger.db"
     with connect(db_path) as conn:
-        assert record_migration(
-            conn,
-            version=1,
-            migration_id="m001-storage-contract",
-            checksum="checksum-a",
-            pre_backup_ref="backup-before",
-        ) is True
-        assert record_migration(
-            conn,
-            version=1,
-            migration_id="m001-storage-contract",
-            checksum="checksum-a",
-            pre_backup_ref="backup-before",
-        ) is False
+        assert (
+            record_migration(
+                conn,
+                version=1,
+                migration_id="m001-storage-contract",
+                checksum="checksum-a",
+                pre_backup_ref="backup-before",
+            )
+            is True
+        )
+        assert (
+            record_migration(
+                conn,
+                version=1,
+                migration_id="m001-storage-contract",
+                checksum="checksum-a",
+                pre_backup_ref="backup-before",
+            )
+            is False
+        )
         assert [record.version for record in migration_records(conn)] == [1]
         assert conn.execute("PRAGMA user_version").fetchone()[0] == 1
         with pytest.raises(ValueError, match="different record"):

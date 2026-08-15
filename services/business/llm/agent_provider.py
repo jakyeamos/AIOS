@@ -81,7 +81,9 @@ def load_agent_responses(run_id: str) -> dict[str, SourceAnalysis]:
     for path in sorted(response_dir.glob("*.json")):
         data = json.loads(path.read_text(encoding="utf-8"))
         if "source_id" in data and "summary" in data:
-            results[str(data["source_id"])] = SourceAnalysis.from_dict({**data, "provider": "agent"})
+            results[str(data["source_id"])] = SourceAnalysis.from_dict(
+                {**data, "provider": "agent"}
+            )
             continue
         source_id = path.stem
         if isinstance(data, dict) and "raw" in data:

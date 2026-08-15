@@ -61,7 +61,7 @@ def _seed_db(path: Path) -> None:
             "The core flow is covered.",
             "[]",
             1.0,
-            "[\"upstream\"]",
+            '["upstream"]',
             0.7,
             None,
             None,

@@ -23,7 +23,9 @@ def _compiler() -> ContextCompiler:
                 "project_scope": "aios",
             }
         ],
-        raw_sources=[{"id": "raw-1", "source_type": "project_context", "source_path": "PROJECT.md"}],
+        raw_sources=[
+            {"id": "raw-1", "source_type": "project_context", "source_path": "PROJECT.md"}
+        ],
         retrieved_facts=[
             {
                 "id": "dyn-duplicate",

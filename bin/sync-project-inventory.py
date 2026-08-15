@@ -17,9 +17,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Sync Git repositories into the AIOS/Taski projects table."
     )
-    parser.add_argument(
-        "--db", default=os.environ.get("AIOS_DB", str(ROOT / "data" / "aios.db"))
-    )
+    parser.add_argument("--db", default=os.environ.get("AIOS_DB", str(ROOT / "data" / "aios.db")))
     parser.add_argument("--root", default=str(Path.home() / "projects"))
     args = parser.parse_args()
 

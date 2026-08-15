@@ -14,7 +14,9 @@ class AutomationTriggerPayload(TypedDict):
 MUTABLE_FIELDS = {"automationId", "workflowKey", "objective", "projectId"}
 
 
-def _required_string(payload: Mapping[str, object], key: str, *, minimum: int, maximum: int | None = None) -> str:
+def _required_string(
+    payload: Mapping[str, object], key: str, *, minimum: int, maximum: int | None = None
+) -> str:
     value = payload.get(key)
     if not isinstance(value, str) or len(value) < minimum:
         raise ValueError(f"{key} must be a string with at least {minimum} characters")

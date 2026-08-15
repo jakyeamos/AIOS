@@ -104,9 +104,7 @@ def test_cli_project_component_update_reports_missing_project(tmp_path: Path, ca
             str(path),
             "project-component-update",
             "--payload-json",
-            json.dumps(
-                {"projectId": "missing", "componentKey": "taski_summary", "enabled": True}
-            ),
+            json.dumps({"projectId": "missing", "componentKey": "taski_summary", "enabled": True}),
         ]
     )
 

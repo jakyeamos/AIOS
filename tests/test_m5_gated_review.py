@@ -71,13 +71,19 @@ def _verification(conn: sqlite3.Connection) -> dict[str, object]:
 
 def test_authorize_effect_blocks_capability_loopback_and_egress() -> None:
     assert authorize_effect(capability="unknown")["code"] == "capability_denied"
-    assert authorize_effect(capability="run.closeout", origin="remote")["code"] == "loopback_required"
-    assert authorize_effect(
-        capability="run.closeout", egress_target="https://example.test"
-    )["code"] == "egress_target_denied"
-    assert authorize_effect(
-        capability="run.closeout", egress_target="loopback", redaction_status="incomplete"
-    )["code"] == "redaction_incomplete"
+    assert (
+        authorize_effect(capability="run.closeout", origin="remote")["code"] == "loopback_required"
+    )
+    assert (
+        authorize_effect(capability="run.closeout", egress_target="https://example.test")["code"]
+        == "egress_target_denied"
+    )
+    assert (
+        authorize_effect(
+            capability="run.closeout", egress_target="loopback", redaction_status="incomplete"
+        )["code"]
+        == "redaction_incomplete"
+    )
 
 
 def test_writeback_transition_requires_governed_approval_and_is_terminal(tmp_path: Path) -> None:
@@ -101,9 +107,12 @@ def test_writeback_transition_requires_governed_approval_and_is_terminal(tmp_pat
             actor="remote",
             origin="remote",
         )
-    assert conn.execute(
-        "SELECT status FROM improvement_writebacks WHERE id = ?", (writeback_id,)
-    ).fetchone()[0] == "pending_approval"
+    assert (
+        conn.execute(
+            "SELECT status FROM improvement_writebacks WHERE id = ?", (writeback_id,)
+        ).fetchone()[0]
+        == "pending_approval"
+    )
     transition_writeback(
         conn,
         writeback_id=writeback_id,
@@ -120,9 +129,12 @@ def test_writeback_transition_requires_governed_approval_and_is_terminal(tmp_pat
         capability="writeback.apply",
         rollback_ref="backup:run-1",
     )
-    assert conn.execute(
-        "SELECT status FROM improvement_writebacks WHERE id = ?", (writeback_id,)
-    ).fetchone()[0] == "applied"
+    assert (
+        conn.execute(
+            "SELECT status FROM improvement_writebacks WHERE id = ?", (writeback_id,)
+        ).fetchone()[0]
+        == "applied"
+    )
     with pytest.raises(ValueError, match="terminal"):
         transition_writeback(
             conn,
@@ -156,7 +168,10 @@ def test_closeout_blocks_pending_approval_then_closes_after_approval(tmp_path: P
     )
     assert blocked["allowed"] is False
     assert "approval_required" in blocked["blockers"]
-    assert conn.execute("SELECT status FROM orchestration_runs WHERE id = 'run-1'").fetchone()[0] == "partial"
+    assert (
+        conn.execute("SELECT status FROM orchestration_runs WHERE id = 'run-1'").fetchone()[0]
+        == "partial"
+    )
 
     transition_writeback(
         conn,

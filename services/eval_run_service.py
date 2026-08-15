@@ -252,8 +252,7 @@ def ensure_eval_schema(conn: sqlite3.Connection) -> None:
         """
     )
     pair_columns = {
-        str(row["name"])
-        for row in conn.execute("PRAGMA table_info(eval_pairs)").fetchall()
+        str(row["name"]) for row in conn.execute("PRAGMA table_info(eval_pairs)").fetchall()
     }
     if "report_path" not in pair_columns:
         conn.execute("ALTER TABLE eval_pairs ADD COLUMN report_path TEXT")
@@ -453,9 +452,7 @@ def create_eval_pair(
     _validate_sha256("task_hash", task_hash)
     _validate_sha256("prompt_hash", prompt_hash)
     _validate_sha256("context_hash", context_hash)
-    _validate_pair_status(
-        "contamination_status", contamination_status, PAIR_CONTAMINATION_STATUSES
-    )
+    _validate_pair_status("contamination_status", contamination_status, PAIR_CONTAMINATION_STATUSES)
     _validate_pair_status(
         "independent_review_status", independent_review_status, PAIR_REVIEW_STATUSES
     )
@@ -565,9 +562,7 @@ def finalize_eval_pair(
 ) -> dict[str, Any]:
     ensure_eval_schema(conn)
     _validate_pair_status("decision", decision, PAIR_DECISIONS)
-    _validate_pair_status(
-        "contamination_status", contamination_status, PAIR_CONTAMINATION_STATUSES
-    )
+    _validate_pair_status("contamination_status", contamination_status, PAIR_CONTAMINATION_STATUSES)
     _validate_pair_status(
         "independent_review_status", independent_review_status, PAIR_REVIEW_STATUSES
     )
@@ -637,9 +632,7 @@ def finalize_eval_pair(
 def _eval_pair_row_to_dict(row: sqlite3.Row) -> dict[str, Any]:
     item = dict(row)
     item["parity_metadata"] = json.loads(item.pop("parity_metadata_json") or "{}")
-    item["contamination_evidence"] = json.loads(
-        item.pop("contamination_evidence_json") or "{}"
-    )
+    item["contamination_evidence"] = json.loads(item.pop("contamination_evidence_json") or "{}")
     item["limitations"] = _loads_list(item.pop("limitations_json", None))
     return item
 
@@ -715,7 +708,7 @@ def list_promotion_ready_eval_pairs(
     rows = conn.execute(
         f"""
         SELECT * FROM eval_pairs
-        WHERE {' AND '.join(clauses)}
+        WHERE {" AND ".join(clauses)}
         ORDER BY created_at DESC
         LIMIT ?
         """,

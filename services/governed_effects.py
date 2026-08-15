@@ -257,7 +257,15 @@ def transition_writeback(
     ).fetchone()
     if row is None:
         raise ValueError(f"Unknown writeback: {writeback_id}")
-    run_id, layer_type, layer_key, current_status, requires_approval, proposed_json, evidence_json = row
+    (
+        run_id,
+        layer_type,
+        layer_key,
+        current_status,
+        requires_approval,
+        proposed_json,
+        evidence_json,
+    ) = row
     current = str(current_status or "")
     if current not in _EFFECT_STATUSES:
         raise ValueError(f"Writeback {writeback_id} has unsupported status: {current}")
@@ -357,9 +365,7 @@ def evaluate_governed_closeout(
     no_follow_up: bool = False,
 ) -> dict[str, Any]:
     ensure_governed_effect_schema(conn)
-    run_columns = {
-        str(item[1]) for item in conn.execute("PRAGMA table_info(orchestration_runs)")
-    }
+    run_columns = {str(item[1]) for item in conn.execute("PRAGMA table_info(orchestration_runs)")}
     row = (
         conn.execute(
             "SELECT resume_snapshot_json FROM orchestration_runs WHERE id = ? LIMIT 1",
@@ -378,7 +384,8 @@ def evaluate_governed_closeout(
     effective_no_follow_up = no_follow_up or legacy_run_shape
     next_action = str(snapshot.get("next_recommended_action") or "").strip()
     usable_evidence = [
-        item for item in list_evidence_artifacts(conn, run_id=run_id, limit=200)
+        item
+        for item in list_evidence_artifacts(conn, run_id=run_id, limit=200)
         if is_usable_evidence(item)
     ]
     changed_artifact_count = _changed_artifact_count(conn, run_id)
@@ -505,14 +512,18 @@ def _changed_artifact_count(conn: sqlite3.Connection, run_id: str) -> int:
     return sum(
         1
         for inputs_json, result in rows
-        if str(result) == "pass" and "changed_files" in {str(item) for item in _json_list(inputs_json)}
+        if str(result) == "pass"
+        and "changed_files" in {str(item) for item in _json_list(inputs_json)}
     )
 
 
 def _unresolved_delta_count(conn: sqlite3.Connection, run_id: str) -> int:
     total = 0
     if _table_exists(conn, "success_criteria_stage_findings"):
-        columns = {str(row[1]) for row in conn.execute("PRAGMA table_info(success_criteria_stage_findings)")}
+        columns = {
+            str(row[1])
+            for row in conn.execute("PRAGMA table_info(success_criteria_stage_findings)")
+        }
         if "resolution_status" in columns:
             total += int(
                 conn.execute(
@@ -528,7 +539,9 @@ def _unresolved_delta_count(conn: sqlite3.Connection, run_id: str) -> int:
                 ).fetchone()[0]
             )
     if _table_exists(conn, "success_criteria_findings"):
-        columns = {str(row[1]) for row in conn.execute("PRAGMA table_info(success_criteria_findings)")}
+        columns = {
+            str(row[1]) for row in conn.execute("PRAGMA table_info(success_criteria_findings)")
+        }
         if "run_id" in columns and "resolution_status" in columns:
             total += int(
                 conn.execute(

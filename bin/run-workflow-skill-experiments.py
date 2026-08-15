@@ -21,9 +21,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Run queued workflow-skill experiments without an LLM agent."
     )
-    parser.add_argument(
-        "--db", default=os.environ.get("AIOS_DB", str(ROOT / "data" / "aios.db"))
-    )
+    parser.add_argument("--db", default=os.environ.get("AIOS_DB", str(ROOT / "data" / "aios.db")))
     parser.add_argument("--id", help="Run one workflow_skill_experiments row by id.")
     parser.add_argument("--limit", type=int, default=20)
     parser.add_argument("--dry-run", action="store_true")

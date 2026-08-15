@@ -132,7 +132,11 @@ def _metadata_working_directory(raw: object) -> str | None:
     if not isinstance(parsed, dict):
         return None
     working_directory = parsed.get("working_directory")
-    return working_directory if isinstance(working_directory, str) and working_directory.strip() else None
+    return (
+        working_directory
+        if isinstance(working_directory, str) and working_directory.strip()
+        else None
+    )
 
 
 def _quarantine_quality_projects(conn: sqlite3.Connection, migration_id: str) -> list[int]:
@@ -151,7 +155,9 @@ def _quarantine_quality_projects(conn: sqlite3.Connection, migration_id: str) ->
     quarantined: list[int] = []
     for row in rows:
         working_directory = _metadata_working_directory(row["metadata_json"])
-        candidates = project_paths.get(_normalized_path(working_directory), ()) if working_directory else ()
+        candidates = (
+            project_paths.get(_normalized_path(working_directory), ()) if working_directory else ()
+        )
         row_id = str(row["id"])
         if len(candidates) == 1:
             disposition = "mapped-by-unique-working-directory"

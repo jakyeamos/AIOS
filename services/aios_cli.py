@@ -5630,7 +5630,9 @@ def _standards_backfill_update_payload(
 ) -> dict[str, Any]:
     payload = _parse_json_object(args.payload_json)
     if not payload:
-        raise CLIError("invalid-payload", "--payload-json must contain a non-empty object", EXIT_USAGE)
+        raise CLIError(
+            "invalid-payload", "--payload-json must contain a non-empty object", EXIT_USAGE
+        )
     try:
         result = update_standards_backfill_task(conn, payload)
     except LookupError as exc:
@@ -5645,7 +5647,9 @@ def _project_component_update_payload(
 ) -> dict[str, Any]:
     payload = _parse_json_object(args.payload_json)
     if not payload:
-        raise CLIError("invalid-payload", "--payload-json must contain a non-empty object", EXIT_USAGE)
+        raise CLIError(
+            "invalid-payload", "--payload-json must contain a non-empty object", EXIT_USAGE
+        )
     try:
         result = set_project_component_enabled(conn, payload)
     except LookupError as exc:
@@ -5660,12 +5664,18 @@ def _pattern_approval_update_payload(
 ) -> dict[str, Any]:
     payload = _parse_json_object(args.payload_json)
     if not payload:
-        raise CLIError("invalid-payload", "--payload-json must contain a non-empty object", EXIT_USAGE)
+        raise CLIError(
+            "invalid-payload", "--payload-json must contain a non-empty object", EXIT_USAGE
+        )
     try:
         result = update_pattern_approval(conn, payload)
     except ValueError as exc:
         raise CLIError("pattern-approval-invalid", str(exc), EXIT_USAGE) from exc
-    return {"schema": "pattern-approval-update-result-v1", **result, "decision": payload["decision"]}
+    return {
+        "schema": "pattern-approval-update-result-v1",
+        **result,
+        "decision": payload["decision"],
+    }
 
 
 def _automation_trigger_payload(
@@ -5677,7 +5687,9 @@ def _automation_trigger_payload(
 ) -> dict[str, Any]:
     payload = _parse_json_object(args.payload_json)
     if not payload:
-        raise CLIError("invalid-payload", "--payload-json must contain a non-empty object", EXIT_USAGE)
+        raise CLIError(
+            "invalid-payload", "--payload-json must contain a non-empty object", EXIT_USAGE
+        )
     try:
         validated = validate_automation_trigger_payload(payload)
     except ValueError as exc:
@@ -5723,7 +5735,9 @@ def _automation_trigger_payload(
         """,
         (
             json.dumps(command),
-            json.dumps({"source": "automation-trigger", "automation_id": validated["automation_id"]}),
+            json.dumps(
+                {"source": "automation-trigger", "automation_id": validated["automation_id"]}
+            ),
             now,
             invocation_id,
         ),
@@ -5795,7 +5809,11 @@ def _automation_trigger_payload(
         (invocation_id,),
     ).fetchone()
     if run_row is None or packet_row is None or invocation_row is None:
-        raise CLIError("automation-trigger-incomplete", "Automation trigger rows could not be reloaded.", EXIT_RUNTIME)
+        raise CLIError(
+            "automation-trigger-incomplete",
+            "Automation trigger rows could not be reloaded.",
+            EXIT_RUNTIME,
+        )
 
     def json_list(raw: object) -> list[Any]:
         value = _parse_json_value(str(raw or "[]"))
@@ -6084,10 +6102,7 @@ def _render_human(command: str, data: dict[str, Any]) -> None:
         )
         return
     if command == "pattern-approval-update":
-        print(
-            f"pattern={data['id']} decision={data['decision']} "
-            f"changed={data['changed_rows']}"
-        )
+        print(f"pattern={data['id']} decision={data['decision']} changed={data['changed_rows']}")
         return
     if command == "automation-trigger":
         print(
@@ -7371,7 +7386,9 @@ def create_parser() -> argparse.ArgumentParser:
         "pair-finalize", help="Finalize a durable control/treatment eval pair"
     )
     eval_pair_finalize.add_argument("--pair-id", required=True)
-    eval_pair_finalize.add_argument("--decision", choices=["promote", "revise", "defer"], required=True)
+    eval_pair_finalize.add_argument(
+        "--decision", choices=["promote", "revise", "defer"], required=True
+    )
     eval_pair_finalize.add_argument(
         "--contamination-status", choices=["not_checked", "passed", "failed"], required=True
     )

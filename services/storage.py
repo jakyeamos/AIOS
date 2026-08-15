@@ -232,8 +232,7 @@ def schema_checksum(conn: sqlite3.Connection) -> str:
         """
     ).fetchall()
     canonical = "\n".join(
-        "\x1f".join(str(row[key]) for key in ("type", "name", "tbl_name", "sql"))
-        for row in rows
+        "\x1f".join(str(row[key]) for key in ("type", "name", "tbl_name", "sql")) for row in rows
     )
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
@@ -303,8 +302,12 @@ def quarantine_row(
     proposed_disposition: str,
     detected_at: str | None = None,
 ) -> int:
-    if not all(value.strip() for value in (migration_id, source_table, reason, proposed_disposition)):
-        raise ValueError("migration_id, source_table, reason, and proposed_disposition are required")
+    if not all(
+        value.strip() for value in (migration_id, source_table, reason, proposed_disposition)
+    ):
+        raise ValueError(
+            "migration_id, source_table, reason, and proposed_disposition are required"
+        )
     ensure_migration_schema(conn)
     was_in_transaction = conn.in_transaction
     cursor = conn.execute(
@@ -340,9 +343,7 @@ def list_quarantine(
     if not _table_exists(conn, "migration_quarantine"):
         return ()
     if migration_id is None:
-        rows = conn.execute(
-            "SELECT * FROM migration_quarantine ORDER BY id"
-        ).fetchall()
+        rows = conn.execute("SELECT * FROM migration_quarantine ORDER BY id").fetchall()
     else:
         rows = conn.execute(
             "SELECT * FROM migration_quarantine WHERE migration_id = ? ORDER BY id",

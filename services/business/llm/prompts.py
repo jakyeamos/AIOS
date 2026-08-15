@@ -65,7 +65,9 @@ def parse_analysis_json(raw: str, source_id: str, provider: str) -> SourceAnalys
 def build_query_prompt(question: str, hits: list) -> str:
     context_blocks: list[str] = []
     for hit in hits:
-        cite = f"[src:{hit.source_id.removeprefix('src_')}]" if hit.source_id else f"wiki:{hit.path}"
+        cite = (
+            f"[src:{hit.source_id.removeprefix('src_')}]" if hit.source_id else f"wiki:{hit.path}"
+        )
         context_blocks.append(
             f"### {hit.title} ({hit.tier})\nPath: {hit.path}\nCitation token: {cite}\n{hit.excerpt}\n"
         )
@@ -83,4 +85,3 @@ Question: {question}
 Retrieved context:
 {context}
 """
-

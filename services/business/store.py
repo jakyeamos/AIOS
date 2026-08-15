@@ -203,9 +203,7 @@ def status_snapshot(conn: sqlite3.Connection) -> dict:
         LIMIT 3
         """
     ).fetchall()
-    candidate_pages = conn.execute(
-        "SELECT COUNT(*) FROM business_wiki_fts"
-    ).fetchone()
+    candidate_pages = conn.execute("SELECT COUNT(*) FROM business_wiki_fts").fetchone()
     return {
         "sources_by_type": {row[0]: row[1] for row in by_type},
         "uncompiled_sources": int(uncompiled[0]) if uncompiled else 0,

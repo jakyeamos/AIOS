@@ -23,9 +23,9 @@ class ApiLLMProvider(LLMProvider):
         timeout_s: int = 120,
     ) -> None:
         self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
-        self.base_url = (base_url or os.environ.get("OPENAI_BASE_URL") or "https://api.openai.com/v1").rstrip(
-            "/"
-        )
+        self.base_url = (
+            base_url or os.environ.get("OPENAI_BASE_URL") or "https://api.openai.com/v1"
+        ).rstrip("/")
         self.model = model or os.environ.get("OPENAI_MODEL") or "gpt-4o-mini"
         self.timeout_s = timeout_s
 

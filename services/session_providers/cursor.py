@@ -255,9 +255,12 @@ class CursorProvider(SessionProvider):
         snapshot_root: Path | None = None,
     ) -> None:
         self.home = home or Path.home()
-        self.db_path = db_path or Path(
-            os.environ.get("AIOS_DB", str(self.home / "AIOS" / "data" / "aios.db"))
-        ).expanduser()
+        self.db_path = (
+            db_path
+            or Path(
+                os.environ.get("AIOS_DB", str(self.home / "AIOS" / "data" / "aios.db"))
+            ).expanduser()
+        )
         self.snapshot_root = snapshot_root or self.home / "AIOS" / "staging" / "cursor-snapshots"
         self._read_errors: list[str] = []
 

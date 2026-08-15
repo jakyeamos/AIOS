@@ -41,7 +41,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--llm", action="store_true", help="Use LLM synthesis when available")
     parser.add_argument("--provider", choices=["auto", "api", "cli", "agent"], default=None)
     parser.add_argument("--save-question", action="store_true", help="Save answer as question page")
-    parser.add_argument("--json", action="store_true", help="Output JSON instead of markdown answer")
+    parser.add_argument(
+        "--json", action="store_true", help="Output JSON instead of markdown answer"
+    )
     args = parser.parse_args(argv)
 
     conn = _connect()

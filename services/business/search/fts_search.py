@@ -77,7 +77,11 @@ def search_wiki(conn: sqlite3.Connection, query: str, *, limit: int = 5) -> list
     hits: list[SearchHit] = []
     for row in rows:
         path = str(row[0])
-        rel = path.split("business-wiki-candidates/")[-1] if "business-wiki-candidates/" in path else path
+        rel = (
+            path.split("business-wiki-candidates/")[-1]
+            if "business-wiki-candidates/" in path
+            else path
+        )
         hits.append(
             SearchHit(
                 tier="wiki",

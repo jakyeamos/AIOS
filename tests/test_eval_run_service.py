@@ -346,8 +346,7 @@ def test_eval_pair_round_trip_records_scores_and_defer_decision() -> None:
     assert [event["event_type"] for event in finalized["events"]] == ["created", "finalized"]
     assert get_eval_pair(conn, pair_id)["decision"] == "defer"
     assert (
-        list_eval_pairs(conn, task_id=task_id, status="insufficient_evidence")[0]["id"]
-        == pair_id
+        list_eval_pairs(conn, task_id=task_id, status="insufficient_evidence")[0]["id"] == pair_id
     )
 
 

@@ -92,18 +92,27 @@ def test_start_work_verify_and_resume_use_fk_safe_canonical_envelope(
     conn = sqlite3.connect(db_path)
     conn.execute("PRAGMA foreign_keys = ON")
     assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
-    assert conn.execute(
-        "SELECT active_invocation_id FROM orchestration_runs WHERE id = ?",
-        (run_id,),
-    ).fetchone()[0] == invocation_id
-    assert conn.execute(
-        "SELECT run_id FROM orchestration_invocations WHERE id = ?",
-        (invocation_id,),
-    ).fetchone()[0] == run_id
-    assert conn.execute(
-        "SELECT run_id FROM briefing_packets WHERE id = ?",
-        (packet_id,),
-    ).fetchone()[0] == run_id
+    assert (
+        conn.execute(
+            "SELECT active_invocation_id FROM orchestration_runs WHERE id = ?",
+            (run_id,),
+        ).fetchone()[0]
+        == invocation_id
+    )
+    assert (
+        conn.execute(
+            "SELECT run_id FROM orchestration_invocations WHERE id = ?",
+            (invocation_id,),
+        ).fetchone()[0]
+        == run_id
+    )
+    assert (
+        conn.execute(
+            "SELECT run_id FROM briefing_packets WHERE id = ?",
+            (packet_id,),
+        ).fetchone()[0]
+        == run_id
+    )
     event_rows = conn.execute(
         "SELECT event_type, invocation_id FROM orchestration_run_events WHERE run_id = ?",
         (run_id,),
@@ -160,10 +169,13 @@ def test_start_work_verify_and_resume_use_fk_safe_canonical_envelope(
     assert verification["result"] == "pass"
     assert verification["run_status"] == {"from": "partial", "to": "completed"}
     assert verification["evidence_refs"]
-    assert conn.execute(
-        "SELECT COUNT(*) FROM verifier_artifacts WHERE run_id = ?",
-        (run_id,),
-    ).fetchone()[0] == 1
+    assert (
+        conn.execute(
+            "SELECT COUNT(*) FROM verifier_artifacts WHERE run_id = ?",
+            (run_id,),
+        ).fetchone()[0]
+        == 1
+    )
     assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
     conn.close()
 
@@ -208,7 +220,9 @@ def test_failed_verification_preserves_a_resumable_snapshot(tmp_path: Path, caps
         ).fetchone()[0]
     )
     assert snapshot["current_stage"] == "verification"
-    assert snapshot["next_recommended_action"] == "Resolve verifier blockers and resume verification."
+    assert (
+        snapshot["next_recommended_action"] == "Resolve verifier blockers and resume verification."
+    )
     assert snapshot["verification_result"] == "fail"
     assert snapshot["blocking_issue_count"] == 1
     conn.close()

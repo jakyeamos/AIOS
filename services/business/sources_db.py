@@ -68,7 +68,7 @@ def fetch_uncompiled_sources(
     query = f"""
         SELECT *
         FROM memory_raw_sources
-        WHERE {' AND '.join(where)}
+        WHERE {" AND ".join(where)}
         ORDER BY COALESCE(occurred_at, created_at) ASC
     """
     rows = conn.execute(query, params).fetchall()
@@ -87,7 +87,9 @@ def last_compile_started_at(conn: sqlite3.Connection) -> str | None:
     return str(row[0]) if row else None
 
 
-def mark_sources_compiled(conn: sqlite3.Connection, source_ids: list[str], compiled_at: str) -> None:
+def mark_sources_compiled(
+    conn: sqlite3.Connection, source_ids: list[str], compiled_at: str
+) -> None:
     if not source_ids:
         return
     placeholders = ",".join("?" for _ in source_ids)

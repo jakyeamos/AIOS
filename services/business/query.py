@@ -64,7 +64,9 @@ def answer_question(
                 llm_provider=provider.name if provider else None,
             )
     else:
-        result = QueryResult(question=question, answer=_deterministic_answer(question, hits), hits=hits)
+        result = QueryResult(
+            question=question, answer=_deterministic_answer(question, hits), hits=hits
+        )
 
     if save_question:
         result.saved_question_path = str(_save_question_page(question, result.answer, hits))

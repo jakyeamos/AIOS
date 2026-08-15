@@ -25,6 +25,38 @@ from services.eval_run_service import (  # noqa: E402
 from services.rtk_integration import ensure_rtk_schema  # noqa: E402
 
 
+@pytest.mark.parametrize(
+    "handler_name",
+    [
+        "_standards_backfill_update_payload",
+        "_project_component_update_payload",
+        "_pattern_approval_update_payload",
+    ],
+)
+def test_update_payload_handlers_reject_empty_objects(handler_name: str) -> None:
+    handler = getattr(aios_cli, handler_name)
+    with pytest.raises(aios_cli.CLIError, match="non-empty object"):
+        handler(sqlite3.connect(":memory:"), argparse.Namespace(payload_json="{}"))
+
+
+def test_automation_trigger_rejects_an_empty_payload(tmp_path: Path) -> None:
+    with pytest.raises(aios_cli.CLIError, match="non-empty object"):
+        aios_cli._automation_trigger_payload(
+            sqlite3.connect(":memory:"),
+            argparse.Namespace(payload_json="{}"),
+            db_path=tmp_path / "aios.db",
+            logs_dir=tmp_path / "logs",
+        )
+
+
+def test_pattern_approval_human_output(capsys: pytest.CaptureFixture[str]) -> None:
+    aios_cli._render_human(
+        "pattern-approval-update",
+        {"id": "pattern-1", "decision": "approved", "changed_rows": 1},
+    )
+    assert capsys.readouterr().out == "pattern=pattern-1 decision=approved changed=1\n"
+
+
 def _git(repo: Path, *args: str) -> None:
     subprocess.run(["git", *args], cwd=repo, check=True, stdout=subprocess.PIPE, text=True)
 

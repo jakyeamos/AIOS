@@ -183,9 +183,12 @@ class ClaudeProvider(SessionProvider):
         db_path: Path | None = None,
     ) -> None:
         self.source_root = source_root or Path.home() / ".claude" / "projects"
-        self.db_path = db_path or Path(
-            os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))
-        ).expanduser()
+        self.db_path = (
+            db_path
+            or Path(
+                os.environ.get("AIOS_DB", str(Path.home() / "AIOS" / "data" / "aios.db"))
+            ).expanduser()
+        )
         self._import_ai_history = _load_import_ai_history()
 
     def discover_sources(self) -> list[SourcePath]:

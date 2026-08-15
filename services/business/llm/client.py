@@ -53,6 +53,8 @@ def provider_status(name: str | None = None) -> dict:
         "available": {key: providers[key] for key in providers},
         "resolved": resolved.name if resolved else None,
         "auto_resolved": auto.name if auto else None,
-        "cli_binary": CliLLMProvider().cli if shutil.which("codex") or shutil.which("claude") else None,
+        "cli_binary": CliLLMProvider().cli
+        if shutil.which("codex") or shutil.which("claude")
+        else None,
         "has_openai_api_key": bool(os.environ.get("OPENAI_API_KEY")),
     }

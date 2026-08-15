@@ -168,7 +168,9 @@ def normalize_manual_file(path: Path, *, fetched_at: str | None = None) -> Sourc
         source_type="manual",
         external_id=external_id,
         author_name=str(fields["author_name"]) if fields.get("author_name") is not None else None,
-        author_handle=str(fields["author_handle"]) if fields.get("author_handle") is not None else None,
+        author_handle=str(fields["author_handle"])
+        if fields.get("author_handle") is not None
+        else None,
         timestamp=occurred,
         fetched_at=fetched,
         channel_or_thread=(

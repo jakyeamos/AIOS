@@ -20,7 +20,7 @@ def _compiler() -> ContextCompiler:
                 "It compiles context, workflow rules, evidence, and memory for agents."
             )
         },
-            project_context_facts=[
+        project_context_facts=[
             {
                 "id": "truth-1",
                 "fact_text": "AIOS uses graph-native memory layers.",

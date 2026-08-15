@@ -83,12 +83,18 @@ def test_known_fk_transformers_map_or_archive_without_synthetic_parents(tmp_path
         after = database_health(conn)
         assert len(quarantine_ids) == 6
         assert after.foreign_key_violations == ()
-        assert conn.execute(
-            "SELECT project_id FROM quality_pipeline_runs WHERE id = 'quality-mappable'"
-        ).fetchone()[0] == "project-1"
-        assert conn.execute(
-            "SELECT COUNT(*) FROM quality_pipeline_runs WHERE id = 'quality-unresolved'"
-        ).fetchone()[0] == 0
+        assert (
+            conn.execute(
+                "SELECT project_id FROM quality_pipeline_runs WHERE id = 'quality-mappable'"
+            ).fetchone()[0]
+            == "project-1"
+        )
+        assert (
+            conn.execute(
+                "SELECT COUNT(*) FROM quality_pipeline_runs WHERE id = 'quality-unresolved'"
+            ).fetchone()[0]
+            == 0
+        )
         assert conn.execute("SELECT session_id FROM orchestration_runs").fetchone()[0] is None
         assert conn.execute("SELECT task_id FROM shadow_branch_runs").fetchone()[0] is None
         records = list_quarantine(conn, migration_id="m001-known-fk-classes")
@@ -111,7 +117,10 @@ def test_quality_mapping_requires_unique_path(tmp_path: Path) -> None:
     db_path = tmp_path / "ambiguous.db"
     _seed_production_shaped_fixture(db_path)
     with connect(db_path) as conn:
-        conn.execute("INSERT INTO projects (id, repo_path) VALUES (?, ?)", ("project-duplicate", "/tmp/project-one"))
+        conn.execute(
+            "INSERT INTO projects (id, repo_path) VALUES (?, ?)",
+            ("project-duplicate", "/tmp/project-one"),
+        )
         conn.commit()
         conn.execute("PRAGMA foreign_keys = OFF")
         conn.execute(
@@ -121,10 +130,17 @@ def test_quality_mapping_requires_unique_path(tmp_path: Path) -> None:
         conn.commit()
         conn.execute("PRAGMA foreign_keys = ON")
         quarantine_known_fk_violations(conn, migration_id="m001-ambiguous")
-        assert conn.execute(
-            "SELECT COUNT(*) FROM quality_pipeline_runs WHERE id = 'quality-ambiguous'"
-        ).fetchone()[0] == 0
+        assert (
+            conn.execute(
+                "SELECT COUNT(*) FROM quality_pipeline_runs WHERE id = 'quality-ambiguous'"
+            ).fetchone()[0]
+            == 0
+        )
         records = list_quarantine(conn, migration_id="m001-ambiguous")
-        records = tuple(record for record in records if record.source_table == "quality_pipeline_runs")
+        records = tuple(
+            record for record in records if record.source_table == "quality_pipeline_runs"
+        )
         assert len(records) == 3
-        assert all(record.proposed_disposition == "archive-unresolved-project" for record in records)
+        assert all(
+            record.proposed_disposition == "archive-unresolved-project" for record in records
+        )
