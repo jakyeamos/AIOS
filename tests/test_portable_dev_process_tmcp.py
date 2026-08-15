@@ -55,14 +55,13 @@ def test_portable_dev_process_excludes_aios_governance_requirements() -> None:
 
     assert contract["requires_aios_runtime"] is False
     assert contract["requires_sqlite"] is False
-    assert contract["requires_truth_file_workflow"] is False
+    assert "requires_truth_file_workflow" not in contract
     assert contract["requires_eval_archive"] is False
 
     readme = (PACK_ROOT / "README.md").read_text(encoding="utf-8")
     router = (PACK_ROOT / "router.md").read_text(encoding="utf-8")
     combined = f"{readme}\n{router}".lower()
 
-    assert "truth-file updates" in combined
     assert "eval archives" in combined
     assert "continuous-learning requirements" in combined
     assert "without explicitly asking" in combined

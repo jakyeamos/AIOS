@@ -199,6 +199,39 @@
       }
     },
     {
+      "id": "documentation.maintained_contracts",
+      "title": "Maintained Project Contracts",
+      "description": "Project-facing documentation reflects current commands, interfaces, and operating constraints.",
+      "domain": "documentation",
+      "weight": 5,
+      "severity_if_missing": 3,
+      "evaluation_method": "manual",
+      "expected_state": {
+        "project_contracts_reviewed": true
+      },
+      "remediation_playbook": {
+        "summary": "Review and update project-facing documentation alongside behavior and interface changes.",
+        "effort": 1,
+        "leverage": 1.1
+      },
+      "blocking_dependencies": [],
+      "version": "2026.06.0",
+      "introduced_version": "2026.06.0",
+      "applicability": {
+        "projects": ["*"]
+      },
+      "waiver_policy": {
+        "allowed": true,
+        "requires_owner": true,
+        "requires_review_date": true,
+        "max_days": 14
+      },
+      "related_criteria": ["repo-boundary-discipline"],
+      "metadata": {
+        "foundational": false
+      }
+    },
+    {
       "id": "workflow_agent_control.explicit_handshake",
       "title": "Explicit Workflow Handshake",
       "description": "Sessions and invocations are linked by explicit run handshake metadata.",

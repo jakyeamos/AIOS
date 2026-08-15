@@ -176,7 +176,7 @@ def test_scan_matrix_and_rollout_plan_are_valid(tmp_path: Path) -> None:
     }
     assert expected_hard_gates <= set(by_gate)
     assert all(by_gate[gate_id]["enforcement"] == "hard" for gate_id in expected_hard_gates)
-    assert by_gate["repo_truth"]["status"] == "present"
+    assert "repo_truth" not in by_gate
     assert validate_repo_scan(scan)["passed"] is True
     assert validate_gate_matrix(matrix)["passed"] is True
     assert validate_tmcp_expert_enrichment(tmcp_enrichment)["passed"] is True
@@ -289,9 +289,7 @@ def test_write_gate_adoption_artifacts(tmp_path: Path) -> None:
     assert paths["repo_scan_json"].exists()
     assert output_dir == tmp_path / AIOS_BACKFILL_DIR_NAME / "gate-adoption" / "gate-run-1"
     assert tmp_path / AIOS_BACKFILL_DIR_NAME in paths["repo_scan_json"].parents
-    assert (tmp_path / ".git" / "info" / "exclude").read_text(encoding="utf-8").splitlines() == [
-        f"{AIOS_BACKFILL_DIR_NAME}/"
-    ]
+    assert not (tmp_path / ".git" / "info" / "exclude").exists()
     first_broad_rubric = rubric_pack["broad_rubrics"][0]
     assert first_broad_rubric["audit_doc_path"].startswith(
         f"{AIOS_BACKFILL_DIR_NAME}/gate-adoption/gate-run-1/rubrics/"

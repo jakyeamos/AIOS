@@ -178,8 +178,12 @@ def test_agent_eval_contract_release_metadata_validates() -> None:
     validate_release_metadata(metadata)
 
     assert metadata["package_name"] == "agent-eval-contract"
-    assert "fixture bundle generation" in metadata["public_surfaces"]
-    assert "private workflow vocabulary" in metadata["out_of_scope"]
+    public_surfaces = metadata["public_surfaces"]
+    out_of_scope = metadata["out_of_scope"]
+    assert isinstance(public_surfaces, list)
+    assert isinstance(out_of_scope, list)
+    assert "fixture bundle generation" in public_surfaces
+    assert "private workflow vocabulary" in out_of_scope
 
 
 def test_clean_room_contract_runner_does_not_import_aios_services() -> None:
@@ -201,8 +205,12 @@ def test_clean_room_contract_runner_does_not_import_aios_services() -> None:
 
 def test_fixture_bundle_writer_produces_non_aios_artifacts(tmp_path: Path) -> None:
     result = write_contract_fixture_bundle(tmp_path)
+    metadata = result["metadata"]
+    assert isinstance(metadata, dict)
+    clean_room_check = metadata["clean_room_check"]
+    assert isinstance(clean_room_check, dict)
 
-    assert result["metadata"]["clean_room_check"]["ok"] is True
+    assert clean_room_check["ok"] is True
     assert (tmp_path / "manifest.json").exists()
     assert (tmp_path / "samples" / "eval_task.json").exists()
     assert (tmp_path / "templates" / "major-task-eval.md").exists()

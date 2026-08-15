@@ -42,6 +42,18 @@ def test_shadow_create_worktree_and_cleanup_cli_json(tmp_path: Path, capsys) -> 
         )
         """
     )
+    conn.execute(
+        """
+        INSERT INTO eval_tasks (
+          id, repo_id, source, start_sha, context_profile, task_type,
+          prompt_summary, acceptance_criteria_json, success_criteria_files_json, created_at
+        )
+        VALUES (
+          'Shadow Task', 'repo', 'test', 'abc123', 'repo_only', 'implementation',
+          'Exercise the shadow worktree CLI.', '[]', '[]', '2026-08-15T00:00:00Z'
+        )
+        """
+    )
     conn.commit()
     conn.close()
 

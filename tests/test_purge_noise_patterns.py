@@ -16,6 +16,7 @@ sys.path.insert(0, str(ROOT))
 def _load_purge_module():
     path = ROOT / "bin" / "purge-noise-patterns.py"
     spec = importlib.util.spec_from_file_location("purge_noise_patterns", path)
+    assert spec is not None
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
@@ -62,9 +63,10 @@ def test_purge_discards_noise_classes_only(tmp_path: Path, monkeypatch: pytest.M
     result = purge.purge_noise_patterns(conn, dry_run=False)
     assert result["discarded"] == 3
 
-    remaining = {row[0]: row[1] for row in conn.execute(
-        "SELECT id, status FROM patterns ORDER BY id"
-    ).fetchall()}
+    remaining = {
+        row[0]: row[1]
+        for row in conn.execute("SELECT id, status FROM patterns ORDER BY id").fetchall()
+    }
     conn.close()
     assert remaining["p4"] == "candidate"
     assert remaining["p5"] == "active"
@@ -73,7 +75,9 @@ def test_purge_discards_noise_classes_only(tmp_path: Path, monkeypatch: pytest.M
     assert remaining["p3"] == "discarded"
 
 
-def test_purge_dry_run_counts_without_mutation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_purge_dry_run_counts_without_mutation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     purge = _load_purge_module()
     db_path = tmp_path / "aios.db"
     monkeypatch.setattr(purge, "DB", db_path)

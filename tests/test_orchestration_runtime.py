@@ -152,7 +152,7 @@ def test_writeback_policy_existing_scopes_unchanged() -> None:
 
     for scope in (
         "global",
-        "project-truth",
+        "planning-state",
         "workflow-default",
         "prompt-default",
         "skill-default",
@@ -761,7 +761,7 @@ def test_legacy_linkage_requires_explicit_emergency_flag(monkeypatch: pytest.Mon
     assert hook_stop.legacy_run_link_fallback_enabled() is True
 
 
-def test_structured_evaluator_emits_stale_and_contradiction_findings(
+def test_structured_evaluator_emits_state_gap_and_contradiction_findings(
     runtime_db: Path, tmp_path: Path
 ) -> None:
     from aios_orchestration_runtime import ensure_runtime_schema, evaluate_run_consistency
@@ -913,10 +913,9 @@ def test_structured_evaluator_emits_stale_and_contradiction_findings(
     conn.close()
 
     kinds = {row[0] for row in findings}
-    assert "likely_stale" in kinds
     assert "direct_contradiction" in kinds
-    assert "soft_tension" in kinds
     assert "file_topic_delta" in kinds
+    assert "workflow_state_gap" in kinds
     assert "standards_evidence_gap" in kinds
 
 

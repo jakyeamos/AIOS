@@ -27,6 +27,7 @@ def _init_experiment_repo(repo: Path) -> None:
         ["git", "-C", str(repo), "config", "user.email", "test@example.local"], check=True
     )
     subprocess.run(["git", "-C", str(repo), "config", "user.name", "Test"], check=True)
+    subprocess.run(["git", "-C", str(repo), "config", "core.excludesFile", "/dev/null"], check=True)
     (repo / ".pre-cr.json").write_text(
         json.dumps(
             {
@@ -84,6 +85,8 @@ def _init_experiment_repo(repo: Path) -> None:
             "git",
             "-C",
             str(repo),
+            "-c",
+            "core.excludesFile=/dev/null",
             "add",
             ".gitignore",
             ".pre-cr.json",

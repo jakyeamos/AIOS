@@ -4,6 +4,7 @@ from __future__ import annotations
 import sys
 import trace
 from pathlib import Path
+from types import CodeType
 
 import pytest
 
@@ -30,9 +31,19 @@ def _iter_python_files() -> list[Path]:
     return sorted(files)
 
 
-def _looks_executable(source: str) -> bool:
-    stripped = source.strip()
-    return bool(stripped) and not stripped.startswith("#")
+def _executable_lines(file_path: Path) -> set[int]:
+    source = file_path.read_text(encoding="utf-8")
+    code = compile(source, str(file_path), "exec")
+    lines: set[int] = set()
+
+    def collect(code_object: CodeType) -> None:
+        lines.update(line for _, _, line in code_object.co_lines() if line is not None)
+        for value in code_object.co_consts:
+            if isinstance(value, CodeType):
+                collect(value)
+
+    collect(code)
+    return lines
 
 
 def _write_lcov(counts: dict[tuple[str, int], int]) -> None:
@@ -40,12 +51,7 @@ def _write_lcov(counts: dict[tuple[str, int], int]) -> None:
     with OUTPUT_PATH.open("w", encoding="utf-8") as handle:
         for file_path in _iter_python_files():
             relative_path = file_path.relative_to(ROOT).as_posix()
-            lines = file_path.read_text(encoding="utf-8").splitlines()
-            executable = [
-                line_number
-                for line_number, line in enumerate(lines, start=1)
-                if _looks_executable(line)
-            ]
+            executable = sorted(_executable_lines(file_path))
             if not executable:
                 continue
             handle.write(f"SF:{relative_path}\n")

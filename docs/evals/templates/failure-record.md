@@ -56,7 +56,7 @@ Select one: yes / no / pending
 
 - Status:
 
-## Standards or Project Truth Update Needed
+## Standards or Project Notes Update Needed
 
 Select one: yes / no / pending
 

@@ -5,9 +5,8 @@ import re
 import sqlite3
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 
-from services.business.paths import AIOS_ROOT, DB_PATH, WIKI_CANDIDATES_ROOT
+from services.business.paths import AIOS_ROOT, WIKI_CANDIDATES_ROOT
 from services.business.schema import ensure_business_memory_schema
 
 REQUIRED_FRONTMATTER = {
@@ -107,31 +106,47 @@ def run_business_lint(conn: sqlite3.Connection) -> LintReport:
             slug = path.stem
             if slug in concept_slugs:
                 report.critical.append(
-                    LintFinding("critical", "duplicate_concept_slug", rel, f"duplicate of {concept_slugs[slug]}")
+                    LintFinding(
+                        "critical",
+                        "duplicate_concept_slug",
+                        rel,
+                        f"duplicate of {concept_slugs[slug]}",
+                    )
                 )
             concept_slugs[slug] = rel
 
         missing = REQUIRED_FRONTMATTER - set(fm)
         if missing and fm:
             report.critical.append(
-                LintFinding("critical", "missing_frontmatter", rel, f"missing: {', '.join(sorted(missing))}")
+                LintFinding(
+                    "critical", "missing_frontmatter", rel, f"missing: {', '.join(sorted(missing))}"
+                )
             )
         elif not fm:
-            report.critical.append(LintFinding("critical", "missing_frontmatter", rel, "no YAML frontmatter"))
+            report.critical.append(
+                LintFinding("critical", "missing_frontmatter", rel, "no YAML frontmatter")
+            )
 
         if "## Evidence" in text:
             evidence_block = text.split("## Evidence", 1)[1].split("\n##", 1)[0]
-            if "summary" in rel or "concept" in rel or "course" in rel:
-                if not SRC_CITE_RE.search(evidence_block):
-                    report.critical.append(
-                        LintFinding("critical", "missing_citations", rel, "Evidence section lacks [src:...]")
+            if ("summary" in rel or "concept" in rel or "course" in rel) and not SRC_CITE_RE.search(
+                evidence_block
+            ):
+                report.critical.append(
+                    LintFinding(
+                        "critical", "missing_citations", rel, "Evidence section lacks [src:...]"
                     )
+                )
 
         for source_id in _parse_source_ids(text):
-            row = conn.execute("SELECT 1 FROM memory_raw_sources WHERE id = ?", (source_id,)).fetchone()
+            row = conn.execute(
+                "SELECT 1 FROM memory_raw_sources WHERE id = ?", (source_id,)
+            ).fetchone()
             if not row:
                 report.critical.append(
-                    LintFinding("critical", "invalid_source_id", rel, f"unknown source_id {source_id}")
+                    LintFinding(
+                        "critical", "invalid_source_id", rel, f"unknown source_id {source_id}"
+                    )
                 )
 
         for link in WIKILINK_RE.findall(text):
@@ -141,27 +156,37 @@ def run_business_lint(conn: sqlite3.Connection) -> LintReport:
             if "/" not in target:
                 candidates = list(WIKI_CANDIDATES_ROOT.rglob(f"{target}.md"))
                 if not candidates:
-                    report.critical.append(LintFinding("critical", "broken_wikilink", rel, f"unresolved [[{target}]]"))
+                    report.critical.append(
+                        LintFinding("critical", "broken_wikilink", rel, f"unresolved [[{target}]]")
+                    )
 
         if rel not in indexed_paths and path.parent.name != "questions":
-            report.warnings.append(LintFinding("warning", "missing_index_entry", rel, "not listed in _INDEX.md"))
+            report.warnings.append(
+                LintFinding("warning", "missing_index_entry", rel, "not listed in _INDEX.md")
+            )
 
         reviewed = fm.get("last_reviewed")
         if reviewed and reviewed not in {"null", ""}:
             try:
                 reviewed_date = datetime.fromisoformat(reviewed).date()
                 if reviewed_date < (datetime.now(UTC).date() - timedelta(days=90)):
-                    report.warnings.append(LintFinding("warning", "stale_page", rel, f"last_reviewed {reviewed}"))
+                    report.warnings.append(
+                        LintFinding("warning", "stale_page", rel, f"last_reviewed {reviewed}")
+                    )
             except ValueError:
                 pass
 
         if fm.get("review-status") == "pending" and "contradiction" in rel:
-            report.warnings.append(LintFinding("warning", "open_contradiction", rel, "contradiction still pending"))
+            report.warnings.append(
+                LintFinding("warning", "open_contradiction", rel, "contradiction still pending")
+            )
 
     for indexed in indexed_paths:
         if not (WIKI_CANDIDATES_ROOT / indexed).exists():
             report.critical.append(
-                LintFinding("critical", "index_missing_file", "_INDEX.md", f"missing file {indexed}")
+                LintFinding(
+                    "critical", "index_missing_file", "_INDEX.md", f"missing file {indexed}"
+                )
             )
 
     cutoff = (datetime.now(UTC) - timedelta(days=7)).isoformat()
@@ -176,7 +201,9 @@ def run_business_lint(conn: sqlite3.Connection) -> LintReport:
     ).fetchall()
     for row in stale:
         report.critical.append(
-            LintFinding("critical", "uncompiled_source", str(row[0]), "raw source uncompiled >7 days")
+            LintFinding(
+                "critical", "uncompiled_source", str(row[0]), "raw source uncompiled >7 days"
+            )
         )
 
     return report

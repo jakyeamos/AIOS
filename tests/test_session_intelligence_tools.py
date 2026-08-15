@@ -59,11 +59,6 @@ def sample_repo(tmp_path: Path) -> Path:
     (repo / "README.md").write_text("# Sample\n", encoding="utf-8")
     (repo / ".planning").mkdir()
     (repo / ".planning" / "STATE.md").write_text("## Next\nShip safely.\n", encoding="utf-8")
-    (repo / ".tracker").mkdir()
-    (repo / ".tracker" / "PROJECT_TRUTH.md").write_text(
-        "---\nlastUpdated: 2026-06-28\n---\n\n## Current State\nReady.\n",
-        encoding="utf-8",
-    )
     _git(repo, "add", ".")
     _git(repo, "commit", "-m", "initial")
     (repo / "src.py").write_text("print('dirty')\n", encoding="utf-8")
@@ -152,14 +147,14 @@ def test_workflow_skill_payload_is_review_gated_skill_candidate() -> None:
     assert steps[0]["name"] == "orient"
 
 
-def test_planning_state_reads_truth_and_planning_markers(sample_repo: Path) -> None:
+def test_planning_state_reads_state_and_planning_markers(sample_repo: Path) -> None:
     payload = planning_state_payload(sample_repo)
-    truth = _dict(payload, "truth")
+    state = _dict(payload, "state")
     planning = _dict(payload, "planning")
     decision = _dict(payload, "decision")
 
     assert payload["schema"] == "aios-planning-state-v0.1"
-    assert truth["exists"] is True
+    assert state["exists"] is True
     assert planning["exists"] is True
     assert decision["ready_for_agent_work"] is True
 

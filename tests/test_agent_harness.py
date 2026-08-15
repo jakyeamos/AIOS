@@ -85,7 +85,7 @@ def test_simulate_fixture_blocks_claimed_completion_after_failed_tests(tmp_path:
     assert run["status"] == "failed_validation"
     assert report["evaluation"]["completion_status"] == "not_complete"
     assert "tests_failed" in report["evaluation"]["violations"]
-    assert "missing_truth_file_update" in report["evaluation"]["violations"]
+    assert "claimed_complete_after_failed_gate" in report["evaluation"]["violations"]
     assert report["evaluation"]["health_delta"]["direction"] == "negative"
     assert report["evaluation"]["writeback_proposal_eligible"] is False
     assert writebacks == 0

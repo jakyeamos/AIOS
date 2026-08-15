@@ -106,12 +106,15 @@ def test_execution_mode_selection_uses_request_risk_and_complexity() -> None:
     )
 
 
-def test_context_plan_is_targeted_and_includes_truth_and_success_criteria_when_relevant() -> None:
-    packet = agentize_request("implement this AIOS workflow change with project truth updates")
+def test_context_plan_is_targeted_and_includes_workflow_and_success_criteria_when_relevant() -> (
+    None
+):
+    packet = agentize_request("implement this AIOS workflow change with project context updates")
     paths = [item.path for item in packet.required_context]
 
-    assert "PROJECT.md" in paths
     assert "AGENTS.md" in paths
+    assert "config/workflows/registry.json" in paths
+    assert "config/workflows/skills.json" in paths
     assert "spec/success-criteria/index.md" in paths
     assert all(item.reason for item in packet.required_context)
     assert not any(item.path == "." for item in packet.required_context)
