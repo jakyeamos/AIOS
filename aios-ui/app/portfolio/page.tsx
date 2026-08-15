@@ -4,6 +4,8 @@ import { PortfolioProjectCard } from "@/components/portfolio/PortfolioProjectCar
 import { buildPortfolioProjection } from "@/server/aios/portfolio";
 import { getCaller } from "@/server/caller";
 
+export const dynamic = "force-dynamic";
+
 export default async function PortfolioPage(): Promise<React.JSX.Element> {
   const caller = await getCaller();
   const projects = await caller.projects.list({ limit: 100 });

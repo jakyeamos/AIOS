@@ -5,6 +5,8 @@ import { StatusBadge } from "@/components/primitives/StatusBadge";
 import { formatPercent } from "@/lib/format";
 import { getCaller } from "@/server/caller";
 
+export const dynamic = "force-dynamic";
+
 export default async function AutomationsPage(): Promise<React.JSX.Element> {
   const caller = await getCaller();
   const automations = await caller.automations.list();

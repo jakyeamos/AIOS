@@ -5,6 +5,8 @@ import { StatCard } from "@/components/primitives/StatCard";
 import { formatPercent, formatTokens } from "@/lib/format";
 import { getCaller } from "@/server/caller";
 
+export const dynamic = "force-dynamic";
+
 export default async function WorkflowsPage(): Promise<React.JSX.Element> {
   const caller = await getCaller();
   const [approvedWorkflows, workflows, proposals] = await Promise.all([

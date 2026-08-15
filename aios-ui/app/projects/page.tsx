@@ -5,6 +5,8 @@ import { StatusBadge } from "@/components/primitives/StatusBadge";
 import { sourceLabel } from "@/lib/trusted-signals";
 import { getCaller } from "@/server/caller";
 
+export const dynamic = "force-dynamic";
+
 const pipelineTone = (status: string): "healthy" | "warning" | "error" | "unknown" => {
   if (status === "healthy") {
     return "healthy";

@@ -2,6 +2,8 @@ import { PageShell } from "@/components/layout/PageShell";
 import type { PromptTemplate } from "@/lib/types";
 import { getCaller } from "@/server/caller";
 
+export const dynamic = "force-dynamic";
+
 type SearchParams = Record<string, string | string[] | undefined>;
 
 const getSingleValue = (value: string | string[] | undefined): string | undefined => {

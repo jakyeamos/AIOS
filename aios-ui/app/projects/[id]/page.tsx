@@ -7,6 +7,8 @@ import { NextActionPanel } from "@/components/next-action/NextActionPanel";
 import { TaskiProjectSurface } from "@/components/projects/TaskiProjectSurface";
 import { getCaller } from "@/server/caller";
 
+export const dynamic = "force-dynamic";
+
 export default async function ProjectDetailPage({
   params,
 }: {

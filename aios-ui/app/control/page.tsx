@@ -2,6 +2,8 @@ import { ControlPlaneStudio } from "@/components/control/ControlPlaneStudio";
 import { PageShell } from "@/components/layout/PageShell";
 import { getCaller } from "@/server/caller";
 
+export const dynamic = "force-dynamic";
+
 export default async function ControlPlanePage(): Promise<React.JSX.Element> {
   const caller = await getCaller();
   const [overview, projects] = await Promise.all([

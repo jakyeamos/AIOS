@@ -4,6 +4,8 @@ import { PageShell } from "@/components/layout/PageShell";
 import { formatDateTime } from "@/lib/format";
 import { getCaller } from "@/server/caller";
 
+export const dynamic = "force-dynamic";
+
 const labelForPortfolioKey = (key: string): string =>
   key
     .split("_")

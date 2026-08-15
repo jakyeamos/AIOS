@@ -5,6 +5,8 @@ import { formatDateTime, formatDuration } from "@/lib/format";
 import type { Session } from "@/lib/types";
 import { getCaller } from "@/server/caller";
 
+export const dynamic = "force-dynamic";
+
 type SearchParams = Record<string, string | string[] | undefined>;
 
 type RunSortKey =

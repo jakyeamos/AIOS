@@ -10,6 +10,8 @@ import { CurrentRunSurface, selectCurrentRun } from "@/components/v2/V2OperatorS
 import { formatDateTime } from "@/lib/format";
 import { getCaller } from "@/server/caller";
 
+export const dynamic = "force-dynamic";
+
 type SearchParams = Record<string, string | string[] | undefined>;
 
 const getSingleValue = (value: string | string[] | undefined): string | undefined => {

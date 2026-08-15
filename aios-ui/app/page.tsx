@@ -2,6 +2,8 @@ import { PageShell } from "@/components/layout/PageShell";
 import { TodaySurface } from "@/components/v2/V2OperatorShell";
 import { getCaller } from "@/server/caller";
 
+export const dynamic = "force-dynamic";
+
 export default async function TodayPage(): Promise<React.JSX.Element> {
   const caller = await getCaller();
   const overview = await caller.controlPlane.overview();

@@ -2,6 +2,8 @@ import { PageShell } from "@/components/layout/PageShell";
 import { StartWorkSurface } from "@/components/v2/V2OperatorShell";
 import { getCaller } from "@/server/caller";
 
+export const dynamic = "force-dynamic";
+
 export default async function StartWorkPage(): Promise<React.JSX.Element> {
   const caller = await getCaller();
   const [overview, projects] = await Promise.all([

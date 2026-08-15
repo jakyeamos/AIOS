@@ -3,6 +3,8 @@ import Link from "next/link";
 import { PageShell } from "@/components/layout/PageShell";
 import { getCaller } from "@/server/caller";
 
+export const dynamic = "force-dynamic";
+
 export default async function ComparePage(): Promise<React.JSX.Element> {
   const caller = await getCaller();
   const [experiments, testRepos, workflowSkillExperiments] = await Promise.all([

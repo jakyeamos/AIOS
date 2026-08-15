@@ -3,6 +3,8 @@ import { SearchResults } from "@/components/search/SearchResults";
 import type { EntityKind } from "@/lib/control-plane";
 import { getCaller } from "@/server/caller";
 
+export const dynamic = "force-dynamic";
+
 type SearchParams = Record<string, string | string[] | undefined>;
 
 const entityKinds = new Set<EntityKind>([

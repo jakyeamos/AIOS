@@ -2,6 +2,8 @@ import { PageShell } from "@/components/layout/PageShell";
 import { PromptCard } from "@/components/panels/PromptCard";
 import { getCaller } from "@/server/caller";
 
+export const dynamic = "force-dynamic";
+
 export default async function PromptDetailPage({
   params,
 }: {

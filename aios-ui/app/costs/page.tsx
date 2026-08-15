@@ -6,6 +6,8 @@ import { StatCard } from "@/components/primitives/StatCard";
 import { formatTokens } from "@/lib/format";
 import { getCaller } from "@/server/caller";
 
+export const dynamic = "force-dynamic";
+
 export default async function CostsPage(): Promise<React.JSX.Element> {
   const caller = await getCaller();
   const summary = await caller.costs.summary({ period: "week" });

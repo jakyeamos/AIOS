@@ -5,6 +5,8 @@ import { WorkflowSandbox } from "@/components/workflows/WorkflowSandbox";
 import { PageShell } from "@/components/layout/PageShell";
 import { getCaller } from "@/server/caller";
 
+export const dynamic = "force-dynamic";
+
 export default async function WorkflowDetailPage({
   params,
 }: {

@@ -4,6 +4,8 @@ import { StatusBadge } from "@/components/primitives/StatusBadge";
 import { formatPercent } from "@/lib/format";
 import { getCaller } from "@/server/caller";
 
+export const dynamic = "force-dynamic";
+
 const formatMetricValue = (metricKey: string, value: number | null): string => {
   if (value === null) {
     return "-";

@@ -4,6 +4,8 @@ import { KnowledgePageView } from "@/components/knowledge/KnowledgePageView";
 import { PageShell } from "@/components/layout/PageShell";
 import { getCaller } from "@/server/caller";
 
+export const dynamic = "force-dynamic";
+
 export default async function KnowledgeDetailPage({
   params,
 }: {
