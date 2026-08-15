@@ -46,6 +46,11 @@ changelog:
 6. Use only supplied or verified claims. Do not invent benefits, logistics,
    eligibility, dates, or commitments to make the draft sound complete; mark a
    required missing fact as unknown.
+7. If a word limit is supplied, count the draft words before returning it and
+   trim to at most that limit without dropping required facts, qualifiers,
+   links, dates, or the response path. If the required facts cannot fit, state
+   the constraint and ask for a smaller required set rather than exceeding the
+   limit.
 
 ## Example
 

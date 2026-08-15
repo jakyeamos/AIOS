@@ -48,6 +48,10 @@ required.
 3. Follow the instruction sequence.
 4. Check output against `output_contract` and `eval_criteria`.
 
+If the current request specifies a JSON-only output contract, that user
+contract overrides template presentation guidance: return valid JSON only,
+with no prose, Markdown fences, headings, or commentary outside the object.
+
 ## Add a new template
 
 1. Copy an existing template.
