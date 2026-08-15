@@ -278,6 +278,7 @@ test("selects colocated repo and module context when task-relevant", async () =>
   const tempContextRoot = path.join(tempRepo, "aios", "context");
   try {
     await mkdir(path.join(tempContextRoot, "standards"), { recursive: true });
+    await mkdir(path.join(tempContextRoot, ".context"), { recursive: true });
     await mkdir(path.join(tempRepo, ".agents", "context"), { recursive: true });
     await mkdir(path.join(tempRepo, "services", ".context"), { recursive: true });
     await writeFile(
@@ -297,6 +298,25 @@ tags:
   - context
 ---
 Bootloader.
+`,
+    );
+    await writeFile(
+      path.join(tempContextRoot, ".context", "README.md"),
+      `---
+id: context.module-index
+title: Context Module Index
+tier: global
+scope:
+  - all_projects
+priority: normal
+status: active
+summary: Context compiler module guidance.
+applies_when:
+  - all_tasks
+tags:
+  - context
+---
+Module guidance.
 `,
     );
     await writeFile(
@@ -337,6 +357,10 @@ Read before changing services workflow orchestration.
     const selectedPaths = result.selected_context_files.map((file) => file.path);
     assert(selectedPaths.includes(".agents/context/README.md"));
     assert(selectedPaths.includes("services/.context/README.md"));
+    assert.equal(
+      result.selected_context_files.filter((file) => file.id === "context.module-index").length,
+      1,
+    );
     assert.match(result.context_receipt, /\.agents\/context\/README\.md/);
     assert.match(result.context_receipt, /services\/\.context\/README\.md/);
   } finally {

@@ -4,7 +4,7 @@
   "private": true,
   "packageManager": "pnpm@11.7.0",
   "dependencies": {
-    "context-compiler-contract": "file:/Users/jakyeamos/context-compiler-contract"
+    "context-compiler-contract": "file:../context-compiler-contract"
   },
   "scripts": {
     "context:compile": "node tools/context-compile.mjs",
@@ -12,6 +12,7 @@
     "tmcp:no-op-scan": "node tools/no-op-instruction-scan.mjs",
     "test:context": "node --test tests/context-compiler.test.mjs",
     "test:no-op-scan": "node --test tests/no-op-instruction-scan.test.mjs",
+    "test:pre-cr-coverage": "node --test scripts/merge-pre-cr-coverage.test.mjs",
     "test:wiki": "node --test tests/wiki-maintenance.test.mjs",
     "wiki:check": "node tools/wiki-check.mjs",
     "dead-code": "uv run vulture bin services --min-confidence 70",
@@ -21,5 +22,8 @@
     "corpus:evaluate": "node scripts/aios-corpus-eval.cjs",
     "deploy:preview:watch": "bash scripts/vercel-deploy-watch.sh preview",
     "deploy:prod:watch": "bash scripts/vercel-deploy-watch.sh prod"
+  },
+  "devDependencies": {
+    "c8": "12.0.0"
   }
 }

@@ -582,6 +582,7 @@ async function discoverColocatedContextFiles(repoRoot, contextRoot) {
   }
   for (const absolutePath of await walkModuleContextMarkdown(repoRoot)) {
     if (isInsidePath(absolutePath, repoContextRoot)) continue;
+    if (isInsidePath(absolutePath, contextRoot)) continue;
     files.push(buildColocatedContextFile(repoRoot, absolutePath, "module_context", moduleContextRootFor(absolutePath)));
   }
   return files.sort((a, b) => a.relativePath.localeCompare(b.relativePath));

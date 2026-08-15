@@ -5,6 +5,14 @@
     "/private/tmp/aios-pre-cr-python.lcov"
   ],
   "coverageFormat": "lcov",
+  "coverageAdapters": [
+    {
+      "name": "python-node-lcov",
+      "command": "node scripts/merge-pre-cr-coverage.mjs",
+      "coveragePath": "/private/tmp/aios-pre-cr-combined.lcov",
+      "coverageFormat": "lcov"
+    }
+  ],
   "threshold": 80,
   "excludePatterns": [
     "**/*.test.*",
@@ -12,10 +20,17 @@
     "**/__tests__/**",
     "**/__mocks__/**",
     "**/*.d.ts",
+    ".agents/**",
     ".planning/**",
     "aios-ui/**",
+    "aios/context/.context/**",
+    "aios/context/compiled/**",
+    "aios/context/receipts/**",
     "docs/**",
     "logs/**",
+    "package.json",
+    "pnpm-lock.yaml",
+    "scripts/merge-pre-cr-coverage.mjs",
     "tests/fixtures/**"
   ],
   "checks": {
