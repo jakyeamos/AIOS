@@ -51,6 +51,11 @@ required.
 If the current request specifies a JSON-only output contract, that user
 contract overrides template presentation guidance: return valid JSON only,
 with no prose, Markdown fences, headings, or commentary outside the object.
+This is an output requirement, not merely advice to describe: the response
+itself must parse as one JSON value. For example, return
+`{"decision":"...","requirements":["..."],"unknowns":["..."]}` rather
+than explaining in prose that JSON was requested. Do not copy the older
+template's Markdown table or wrap the JSON in a fence.
 
 ## Add a new template
 
