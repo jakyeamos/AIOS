@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "revision": 1,
+  "project": {
+    "name": "AIOS dashboard observability",
+    "identity": "The AIOS local dashboard that exposes operating state and run observability.",
+    "audience": "Operators and inheritors who need to inspect AIOS state without reconstructing it from files or logs.",
+    "core_loop": "Read durable local state, present the current project or run context, expose the next action, and preserve an inspectable result.",
+    "north_star": "An operator can understand what AIOS knows, what it is doing, and what should happen next from the local dashboard.",
+    "not_this": [
+      "Owning the canonical context compiler",
+      "Replacing durable file or SQLite stores",
+      "Inventing project truth from visual state"
+    ]
+  },
+  "scope": {
+    "id": "dashboard-observability",
+    "kind": "subsystem",
+    "parent_id": "project",
+    "purpose": "Make the local operating loop inspectable through a dashboard of projects, sessions, runs, workflows, and evidence.",
+    "boundary": "Owns the Next.js dashboard under aios-ui and its read-oriented projections; context compilation, storage hooks, and learning-loop contracts remain outside this child.",
+    "non_goals": [
+      "Owning the canonical context compiler",
+      "Replacing durable file or SQLite stores",
+      "Inventing project truth from visual state"
+    ],
+    "parent_outcomes": [
+      "daily-goal-to-writeback",
+      "inspectable-context-and-memory"
+    ],
+    "paths": [
+      "aios-ui"
+    ]
+  },
+  "targets": {
+    "mvp": {
+      "definition": "The scoped boundary is explicitly ratified, its parent outcome is clear, and its smallest local proof is repeatable."
+    },
+    "complete_product": {
+      "definition": "The scoped boundary remains aligned through changes, interfaces, and user-visible or consumer-facing verification."
+    }
+  },
+  "pillars": [
+    {
+      "id": "dashboard-observability-purpose",
+      "name": "Draft scoped purpose",
+      "outcomes": [
+        {
+          "id": "dashboard-observability-aligned-boundary",
+          "name": "The AIOS dashboard observability boundary advances its parent outcome without silently taking on sibling responsibilities.",
+          "targets": [
+            "mvp",
+            "complete_product"
+          ],
+          "maturity": 25,
+          "confidence": "low",
+          "layers": {
+            "intended": "Drafted from explicit repository documentation; pending owner quiz and ratification.",
+            "planned": "Local proof and sibling contracts are pending the boundary decision.",
+            "implemented": "Observed implementation paths: aios-ui.",
+            "verified": "No independently scoped end-to-end proof has been accepted yet."
+          },
+          "evidence": [
+            {
+              "ref": "README.md",
+              "note": "Repository documentation used to draft this child boundary; not treated as user intent until quiz review.",
+              "observed_at": "2026-08-14T23:31:00Z"
+            },
+            {
+              "ref": "PROJECT.md",
+              "note": "Repository documentation used to draft this child boundary; not treated as user intent until quiz review.",
+              "observed_at": "2026-08-14T23:31:00Z"
+            },
+            {
+              "ref": "PRODUCT.md",
+              "note": "Repository documentation used to draft this child boundary; not treated as user intent until quiz review.",
+              "observed_at": "2026-08-14T23:31:00Z"
+            },
+            {
+              "ref": "AGENTS.md",
+              "note": "Repository documentation used to draft this child boundary; not treated as user intent until quiz review.",
+              "observed_at": "2026-08-14T23:31:00Z"
+            }
+          ],
+          "blockers": [
+            {
+              "kind": "product-decision",
+              "summary": "Owner must ratify, split, merge, or retire this draft child Compass through the realignment quiz before it becomes active truth."
+            },
+            {
+              "kind": "verification",
+              "summary": "An independently scoped local proof and its neighboring handoffs are not yet established."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "source_layers": {
+    "intended": [
+      {
+        "ref": "README.md",
+        "note": "Explicit repository documentation is the current basis for this draft; owner quiz remains open.",
+        "observed_at": "2026-08-14T23:31:00Z"
+      },
+      {
+        "ref": "PROJECT.md",
+        "note": "Explicit repository documentation is the current basis for this draft; owner quiz remains open.",
+        "observed_at": "2026-08-14T23:31:00Z"
+      },
+      {
+        "ref": "PRODUCT.md",
+        "note": "Explicit repository documentation is the current basis for this draft; owner quiz remains open.",
+        "observed_at": "2026-08-14T23:31:00Z"
+      },
+      {
+        "ref": "AGENTS.md",
+        "note": "Explicit repository documentation is the current basis for this draft; owner quiz remains open.",
+        "observed_at": "2026-08-14T23:31:00Z"
+      }
+    ],
+    "planned": [],
+    "implemented": [
+      {
+        "ref": "aios-ui",
+        "note": "Observed implementation or contract path used as evidence only.",
+        "observed_at": "2026-08-14T23:31:00Z"
+      }
+    ],
+    "verified": []
+  },
+  "drift": [
+    {
+      "kind": "verification-gap",
+      "summary": "This child boundary is a draft derived from repository documentation and has not yet been ratified or independently verified.",
+      "status": "open",
+      "observed_at": "2026-08-14T23:31:00Z",
+      "evidence": [
+        {
+          "ref": "README.md",
+          "note": "Draft boundary needs explicit owner confirmation and local proof.",
+          "observed_at": "2026-08-14T23:31:00Z"
+        }
+      ]
+    }
+  ],
+  "updated_at": "2026-08-14T23:31:00Z"
+}

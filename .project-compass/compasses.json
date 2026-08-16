@@ -8,8 +8,61 @@
       "path": "contract.json",
       "parent_id": null,
       "status": "active"
+    },
+    {
+      "id": "dashboard-observability",
+      "kind": "subsystem",
+      "path": "dashboard-observability.json",
+      "parent_id": "project",
+      "status": "draft"
+    },
+    {
+      "id": "local-automation-services",
+      "kind": "subsystem",
+      "path": "local-automation-services.json",
+      "parent_id": "project",
+      "status": "draft"
+    },
+    {
+      "id": "context-compiler",
+      "kind": "subsystem",
+      "path": "context-compiler.json",
+      "parent_id": "project",
+      "status": "draft"
+    },
+    {
+      "id": "context-loops",
+      "kind": "subsystem",
+      "path": "context-loops.json",
+      "parent_id": "project",
+      "status": "draft"
     }
   ],
-  "links": [],
-  "updated_at": "2026-08-14T23:11:30.026Z"
+  "links": [
+    {
+      "id": "dashboard-observability-to-context-compiler",
+      "from": "dashboard-observability",
+      "to": "context-compiler",
+      "kind": "depends-on",
+      "summary": "Dashboard context views depend on compiler outputs; exact projection authority remains open.",
+      "status": "unknown"
+    },
+    {
+      "id": "context-compiler-to-context-loops",
+      "from": "context-compiler",
+      "to": "context-loops",
+      "kind": "handoff",
+      "summary": "Compiled context may consume learning-loop policy; the handoff requires owner confirmation.",
+      "status": "unknown"
+    },
+    {
+      "id": "local-automation-services-to-context-compiler",
+      "from": "local-automation-services",
+      "to": "context-compiler",
+      "kind": "depends-on",
+      "summary": "Local automation may feed compiler inputs; the source and authority boundary remain open.",
+      "status": "unknown"
+    }
+  ],
+  "updated_at": "2026-08-14T23:31:00Z"
 }
