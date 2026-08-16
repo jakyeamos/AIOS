@@ -1,7 +1,7 @@
 ---
 id: coding_debug
 name: Coding Debug
-version: "1.0"
+version: "1.1"
 classification: debug
 tags:
   - debug
@@ -24,13 +24,16 @@ eval_criteria:
   - Fix scope is minimal and targeted.
   - Verification plan can detect regressions.
 owner: jakyeamos
-last_updated: "2026-04-23"
+last_updated: "2026-08-14"
 lifecycle_state: active
 applicability:
   - failure_recovery
   - audit_and_implement
 last_evaluated_at: "2026-05-21T00:00:00Z"
 changelog:
+  - version: "1.1"
+    date: "2026-08-14"
+    note: Require explicit false-preserving defaults and absent-value verification.
   - version: "1.0"
     date: "2026-04-23"
     note: Initial seed template for roadmap phase 1a.
@@ -44,6 +47,9 @@ changelog:
 4. Confirm or refute using code/log/test signals.
 5. Propose the minimum safe fix.
 6. Define exact verification steps.
+7. When boolean defaults are involved, preserve explicit `false` (for example,
+   use `v ?? true` rather than `v || true`) and verify false, true, and absent
+   inputs separately.
 
 ## Example
 

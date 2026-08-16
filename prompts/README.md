@@ -118,3 +118,9 @@ Create a template when a task family is:
 - Accepting a template without testable eval criteria.
 - Treating template selection as more authoritative than the user's current
   request.
+- Violating the current output contract because an older template requests a
+  different format. The current user contract governs; a template is
+  subordinate routing guidance. If the user asks for JSON only, the response
+  itself must be valid JSON; do not wrap it in prose or merely explain that
+  JSON governs. A precedence explanation under that constraint must also be
+  serialized, for example `{"format":"json","template_override":"ignored"}`.
