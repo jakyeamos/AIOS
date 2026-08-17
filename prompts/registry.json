@@ -1,6 +1,50 @@
 {
-  "generated_at": "2026-06-01T22:29:38.532859+00:00",
+  "generated_at": "2026-08-15T00:59:11.178711+00:00",
   "templates": [
+    {
+      "id": "behavioral_spec_verification",
+      "name": "Behavioral Spec Verification",
+      "version": "1.0",
+      "classification": "plan",
+      "prompt_family": "",
+      "route_status": "candidate",
+      "applicable_workflow_families": [
+        "mature_repo_rehabilitation"
+      ],
+      "tags": [
+        "behavioral",
+        "verification",
+        "rehabilitation",
+        "spreadsheet",
+        "regression"
+      ],
+      "purpose": "Run a gated mature-repo behavioral spec verification loop with a canonical spreadsheet, evidence-backed testing, defect remediation, regression coverage, and complexity review.",
+      "required_inputs": [
+        {
+          "repo_path": "Current repository path."
+        },
+        {
+          "maturity_report": "Eligibility report explaining the maturity signals."
+        }
+      ],
+      "optional_inputs": [
+        {
+          "manual_override": "Explicit operator opt-in for mature repo rehabilitation."
+        }
+      ],
+      "last_updated": "2026-06-23",
+      "lifecycle_state": "candidate",
+      "applicability": [
+        "mature_repo_rehabilitation"
+      ],
+      "last_evaluated_at": "2026-06-23T00:00:00Z",
+      "usefulness_evidence": {
+        "sample_size": 0,
+        "success_rate": 0,
+        "last_used_at": null
+      },
+      "file": "prompts/behavioral_spec_verification.md"
+    },
     {
       "id": "coding_debug",
       "name": "Coding Debug",
@@ -237,50 +281,6 @@
         "last_used_at": null
       },
       "file": "prompts/summarization.md"
-    },
-    {
-      "id": "behavioral_spec_verification",
-      "name": "Behavioral Spec Verification",
-      "version": "1.0",
-      "classification": "plan",
-      "prompt_family": "mature_repo_rehabilitation",
-      "route_status": "candidate",
-      "applicable_workflow_families": [
-        "mature_repo_rehabilitation"
-      ],
-      "tags": [
-        "behavioral",
-        "verification",
-        "rehabilitation",
-        "spreadsheet",
-        "regression"
-      ],
-      "purpose": "Run a gated mature-repo behavioral spec verification loop with a canonical spreadsheet, evidence-backed testing, defect remediation, regression coverage, and complexity review.",
-      "required_inputs": [
-        {
-          "repo_path": "Current repository path."
-        },
-        {
-          "maturity_report": "Eligibility report explaining the maturity signals."
-        }
-      ],
-      "optional_inputs": [
-        {
-          "manual_override": "Explicit operator opt-in for mature repo rehabilitation."
-        }
-      ],
-      "last_updated": "2026-06-23",
-      "lifecycle_state": "candidate",
-      "applicability": [
-        "mature_repo_rehabilitation"
-      ],
-      "last_evaluated_at": "2026-06-23T00:00:00Z",
-      "usefulness_evidence": {
-        "sample_size": 0,
-        "success_rate": 0,
-        "last_used_at": null
-      },
-      "file": "prompts/behavioral_spec_verification.md"
     }
   ]
 }
