@@ -16,9 +16,33 @@ export type GeneratedPromptTemplate = {
 
 export const promptTemplateCatalog: GeneratedPromptTemplate[] = [
   {
+    "id": "behavioral_spec_verification",
+    "name": "Behavioral Spec Verification",
+    "version": "1.0",
+    "classification": "plan",
+    "tags": [
+      "behavioral",
+      "verification",
+      "rehabilitation",
+      "spreadsheet",
+      "regression"
+    ],
+    "purpose": "Run a gated mature-repo behavioral spec verification loop with a canonical spreadsheet, evidence-backed testing, defect remediation, regression coverage, and complexity review.",
+    "requiredInputs": [
+      "repo_path: Current repository path.",
+      "maturity_report: Eligibility report explaining the maturity signals."
+    ],
+    "optionalInputs": [
+      "manual_override: Explicit operator opt-in for mature repo rehabilitation."
+    ],
+    "lastUpdated": "2026-06-23",
+    "file": "prompts/behavioral_spec_verification.md",
+    "hash": "7e08e5100749d3638595b43a7236995af002fcb4905e1a84b1f57e4c0ea59b05"
+  },
+  {
     "id": "coding_debug",
     "name": "Coding Debug",
-    "version": "1.0",
+    "version": "1.1",
     "classification": "debug",
     "tags": [
       "debug",
@@ -36,14 +60,14 @@ export const promptTemplateCatalog: GeneratedPromptTemplate[] = [
       "hypothesis: Current likely root cause.",
       "constraints: Boundaries such as no new deps or compatibility requirements."
     ],
-    "lastUpdated": "2026-04-23",
+    "lastUpdated": "2026-08-14",
     "file": "prompts/coding_debug.md",
-    "hash": "52f96f7276601c5d083e2a9323b78a835e0bbf189597e88698b83fa17e10e9b3"
+    "hash": "4e44f0b76f929753746f0aa3da5f01216b28e91e266eee6461bfdf82213118b9"
   },
   {
     "id": "content_writing",
     "name": "Audience-Scoped Content Writing",
-    "version": "1.0",
+    "version": "1.1",
     "classification": "other",
     "tags": [
       "writing",
@@ -59,9 +83,9 @@ export const promptTemplateCatalog: GeneratedPromptTemplate[] = [
       "tone: Desired tone constraints.",
       "must_include: Required facts, links, or sections."
     ],
-    "lastUpdated": "2026-04-23",
+    "lastUpdated": "2026-08-14",
     "file": "prompts/content_writing.md",
-    "hash": "27875c1a5b42397253bf4cb78cb275bfb923f9e402221f61c2d49d56fbbc8d68"
+    "hash": "a698a82c2874a5bc5b1f4f4d311903ce5cdc44c98b1962ad0aeee9dc8197f293"
   },
   {
     "id": "reasoning",
@@ -133,29 +157,5 @@ export const promptTemplateCatalog: GeneratedPromptTemplate[] = [
     "lastUpdated": "2026-04-23",
     "file": "prompts/summarization.md",
     "hash": "a9a7bb47844c2a859b29d37edd302a2408b0f43765910906f9fbf1f24e262cf7"
-  },
-  {
-    "id": "behavioral_spec_verification",
-    "name": "Behavioral Spec Verification",
-    "version": "1.0",
-    "classification": "plan",
-    "tags": [
-      "behavioral",
-      "verification",
-      "rehabilitation",
-      "spreadsheet",
-      "regression"
-    ],
-    "purpose": "Run a gated mature-repo behavioral spec verification loop with a canonical spreadsheet, evidence-backed testing, defect remediation, regression coverage, and complexity review.",
-    "requiredInputs": [
-      "repo_path: Current repository path.",
-      "maturity_report: Eligibility report explaining the maturity signals."
-    ],
-    "optionalInputs": [
-      "manual_override: Explicit operator opt-in for mature repo rehabilitation."
-    ],
-    "lastUpdated": "2026-06-23",
-    "file": "prompts/behavioral_spec_verification.md",
-    "hash": "7e08e5100749d3638595b43a7236995af002fcb4905e1a84b1f57e4c0ea59b05"
   }
 ];
