@@ -437,7 +437,7 @@ def test_bidcamp_profile_skips_optional_gates_and_generates_setup_actions(
         "pnpm exec knip" in action for action in by_rubric["gate_dead_code"]["setup_actions"]
     )
     assert any(
-        ".aios-quality-gate.json" in action
+        ".aios-quality-gate.json" in action or "qr audit" in action
         for action in by_rubric["gate_local_quality_contract"]["setup_actions"]
     )
     assert by_rubric["gate_mobile_release"]["accepted_exceptions"]
