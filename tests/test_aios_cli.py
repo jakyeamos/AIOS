@@ -1152,7 +1152,9 @@ def test_gate_adoption_plan_json_writes_artifacts(capsys, tmp_path: Path) -> Non
     gate_matrix_path = Path(data["artifact_paths"]["gate_matrix_json"])
     assert gate_matrix_path.exists()
     assert tmp_path / "AIOS-backfill" in gate_matrix_path.parents
-    assert not (tmp_path / ".git" / "info" / "exclude").exists()
+    exclude_path = tmp_path / ".git" / "info" / "exclude"
+    assert exclude_path.exists()
+    assert "AIOS-backfill/" in exclude_path.read_text(encoding="utf-8")
     assert Path(data["artifact_paths"]["tmcp_expert_enrichment_json"]).exists()
     assert Path(data["artifact_paths"]["rubric_pack_json"]).exists()
     assert Path(data["artifact_paths"]["rubric_docs_dir"]).is_dir()

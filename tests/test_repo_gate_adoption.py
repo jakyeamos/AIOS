@@ -289,7 +289,9 @@ def test_write_gate_adoption_artifacts(tmp_path: Path) -> None:
     assert paths["repo_scan_json"].exists()
     assert output_dir == tmp_path / AIOS_BACKFILL_DIR_NAME / "gate-adoption" / "gate-run-1"
     assert tmp_path / AIOS_BACKFILL_DIR_NAME in paths["repo_scan_json"].parents
-    assert not (tmp_path / ".git" / "info" / "exclude").exists()
+    exclude_path = tmp_path / ".git" / "info" / "exclude"
+    assert exclude_path.exists()
+    assert "AIOS-backfill/" in exclude_path.read_text(encoding="utf-8")
     first_broad_rubric = rubric_pack["broad_rubrics"][0]
     assert first_broad_rubric["audit_doc_path"].startswith(
         f"{AIOS_BACKFILL_DIR_NAME}/gate-adoption/gate-run-1/rubrics/"

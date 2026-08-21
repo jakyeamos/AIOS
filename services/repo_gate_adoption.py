@@ -36,11 +36,16 @@ from repo_quality_certifier.core import (
     validate_rubric_pack,
     validate_tmcp_expert_enrichment,
     write_adoption_doc_quality_report,
-    write_gate_adoption_artifacts,
     write_rubric_detail_documents,
 )
 from repo_quality_certifier.core import (
     build_tmcp_expert_enrichment as _build_tmcp_expert_enrichment,
+)
+from repo_quality_certifier.core import (
+    ensure_aios_backfill_gitignored as _ensure_aios_backfill_gitignored,
+)
+from repo_quality_certifier.core import (
+    write_gate_adoption_artifacts as _write_gate_adoption_artifacts,
 )
 
 from services.tmcp_runtime import DEFAULT_SKILLS_LIBRARY, compile_tmcp_packet
@@ -61,6 +66,27 @@ def build_tmcp_expert_enrichment(
         tmcp_compiler=compile_tmcp_packet,
         default_skills_library=DEFAULT_SKILLS_LIBRARY,
         tmcp_domain="aios_internal",
+    )
+
+
+def write_gate_adoption_artifacts(
+    *,
+    output_dir: Path,
+    repo_root: Path | None = None,
+    repo_scan: dict[str, Any],
+    gate_matrix: dict[str, Any],
+    rubric_pack: dict[str, Any],
+    rollout_plan: dict[str, Any],
+) -> dict[str, Path]:
+    if repo_root is not None:
+        _ensure_aios_backfill_gitignored(repo_root)
+    return _write_gate_adoption_artifacts(
+        output_dir=output_dir,
+        repo_root=repo_root,
+        repo_scan=repo_scan,
+        gate_matrix=gate_matrix,
+        rubric_pack=rubric_pack,
+        rollout_plan=rollout_plan,
     )
 
 

@@ -42,7 +42,7 @@ dev = [
 requires-dist = [
     { name = "agent-eval-contract", directory = "/Users/jakyeamos/agent-eval-contract" },
     { name = "flask", specifier = ">=3.1.3" },
-    { name = "quality-runner", directory = "/Users/jakyeamos/projects/quality-runner" },
+    { name = "quality-runner", git = "https://github.com/jakyeamos/quality-runner.git" },
 ]
 
 [package.metadata.requires-dev]
@@ -365,18 +365,8 @@ wheels = [
 
 [[package]]
 name = "quality-runner"
-source = { directory = "/Users/jakyeamos/projects/quality-runner" }
-
-[package.metadata]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "basedpyright", specifier = "==1.39.0" },
-    { name = "pip-audit", specifier = "==2.10.1" },
-    { name = "pytest", specifier = "==9.0.3" },
-    { name = "ruff", specifier = "==0.15.10" },
-    { name = "vulture", specifier = "==2.16" },
-]
+version = "0.7.0"
+source = { git = "https://github.com/jakyeamos/quality-runner.git#754913e62183cf2c9cf9d062c2ae22913a7e8201" }
 
 [[package]]
 name = "ruff"

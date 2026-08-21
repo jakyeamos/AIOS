@@ -7,9 +7,8 @@ from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
-from quality_runner.rollout import rollout_payload
-
 from services.evidence_artifacts import EvidenceStatus, record_evidence_artifact
+from services.quality_runner_tool import run_quality_runner_rollout
 
 AIOS_ROLLOUT_ADAPTER_SCHEMA = "aios-quality-rollout-adapter-v0.1"
 
@@ -36,7 +35,7 @@ def launch_quality_rollout(
     task_id: str | None = None,
     run_id: str | None = None,
     session_id: str | None = None,
-    rollout_func: RolloutPayloadFunc = rollout_payload,
+    rollout_func: RolloutPayloadFunc = run_quality_runner_rollout,
 ) -> dict[str, object]:
     resolved_run_id_prefix = run_id_prefix or _default_aios_rollout_id()
     resolved_output_dir = (
@@ -80,6 +79,9 @@ def launch_quality_rollout(
         "run_id_prefix": resolved_run_id_prefix,
         "output_dir": str(resolved_output_dir),
         "ledger_path": rollout_result.get("ledger_path"),
+        "quality_runner_version": rollout_result.get("quality_runner_version"),
+        "quality_runner_source": rollout_result.get("quality_runner_source"),
+        "quality_runner_command": rollout_result.get("quality_runner_command"),
         "repo_count": rollout_result.get("repo_count", 0),
         "accepted_reports": rollout_result.get("accepted_reports", 0),
         "rejected_reports": rollout_result.get("rejected_reports", 0),
@@ -144,8 +146,8 @@ def _record_rollout_evidence(
         "rejected_reports": rollout_result.get("rejected_reports", 0),
         "controller_report_paths": artifact_index.get("controller_report_paths", []),
     }
-    # The rollout runs in-process; encode its outcome as an exit code so the
-    # evidence honesty gate can corroborate a command-backed pass verdict.
+    # Encode the external tool outcome as an exit code so the evidence honesty
+    # gate can corroborate a command-backed pass verdict.
     exit_code = {"pass": 0, "fail": 1}.get(status)
     return record_evidence_artifact(
         conn,
@@ -195,6 +197,9 @@ def _artifact_hash(artifact_index: dict[str, object]) -> str:
 
 
 def _recorded_command(rollout_result: dict[str, object]) -> str:
+    quality_runner_command = rollout_result.get("quality_runner_command")
+    if isinstance(quality_runner_command, str) and quality_runner_command:
+        return quality_runner_command
     run_id_prefix = rollout_result.get("run_id_prefix", "")
     output_dir = rollout_result.get("output_dir", "")
     return f"aios quality rollout --run-id-prefix {run_id_prefix} --output-dir {output_dir}"
