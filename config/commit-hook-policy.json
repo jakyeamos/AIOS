@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "preCrTimeoutOverrides": [
+    {
+      "gitCommonDir": "/Users/jakyeamos/projects/tmcp/.git",
+      "timeoutSeconds": 600
+    }
+  ]
+}

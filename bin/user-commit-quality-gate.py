@@ -93,9 +93,11 @@ PRE_CR_SOURCE_EXTENSIONS = {
 }
 PRE_CR_HEARTBEAT_SECONDS = 15.0
 PRE_CR_TIMEOUT_SECONDS = 90.0
+PRE_CR_TIMEOUT_CAP_SECONDS = 600.0
 PRE_CR_CACHE_SCHEMA = "aios-pre-cr-hook-cache-v0.2"
 PRE_CR_TIMEOUT_CONFIG_KEY = "hookTimeoutSeconds"
 AIOS_ROOT = Path(__file__).resolve().parents[1]
+COMMIT_HOOK_POLICY_PATH = AIOS_ROOT / "config" / "commit-hook-policy.json"
 if str(AIOS_ROOT) not in sys.path:
     sys.path.insert(0, str(AIOS_ROOT))
 
@@ -250,7 +252,53 @@ def should_run_pre_cr(paths: Sequence[str]) -> bool:
     return any(Path(path).suffix.lower() in PRE_CR_SOURCE_EXTENSIONS for path in paths)
 
 
-def pre_cr_timeout_seconds(root: Path) -> float:
+def git_common_dir(root: Path) -> Path | None:
+    result = subprocess.run(
+        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        cwd=root,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode != 0 or not result.stdout.strip():
+        return None
+    return Path(result.stdout.strip()).expanduser().resolve()
+
+
+def pre_cr_timeout_seconds(root: Path, *, policy_path: Path = COMMIT_HOOK_POLICY_PATH) -> float:
+    common_dir = git_common_dir(root)
+    if common_dir is not None and not policy_path.is_symlink() and policy_path.is_file():
+        try:
+            policy = json.loads(policy_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            policy = None
+        if isinstance(policy, dict) and policy.get("version") == 1:
+            overrides = policy.get("preCrTimeoutOverrides")
+            if isinstance(overrides, list):
+                matches: list[float] = []
+                invalid_match = False
+                for override in overrides:
+                    if not isinstance(override, dict):
+                        continue
+                    configured_dir = override.get("gitCommonDir")
+                    if not isinstance(configured_dir, str):
+                        continue
+                    if Path(configured_dir).expanduser().resolve() != common_dir:
+                        continue
+                    timeout = override.get("timeoutSeconds")
+                    if isinstance(timeout, bool) or not isinstance(timeout, (int, float)):
+                        invalid_match = True
+                        continue
+                    selected_timeout = float(timeout)
+                    if not PRE_CR_TIMEOUT_SECONDS <= selected_timeout <= PRE_CR_TIMEOUT_CAP_SECONDS:
+                        invalid_match = True
+                        continue
+                    matches.append(selected_timeout)
+                if invalid_match or len(matches) > 1:
+                    return PRE_CR_TIMEOUT_SECONDS
+                if len(matches) == 1:
+                    return matches[0]
+
     config_path = root / ".pre-cr.json"
     try:
         payload = json.loads(config_path.read_text(encoding="utf-8"))

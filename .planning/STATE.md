@@ -32,6 +32,7 @@ progress:
 - Latest completed expert-rubric phases: Phases 26-28 delivered core review artifacts, workflow runtime integration, route support, CLI exposure, quality closeout, and smoke verification.
 - Current release-readiness focus: make AIOS itself useful as the daily operating layer through `doctor -> start-work -> daily-flow replay -> next-action -> closeout evidence` before using portfolio linked-repo certification as the main showpiece.
 - Latest daily-use readiness slice: `doctor --json` now checks local package imports, SQLite, local stores, pnpm-only JavaScript state, context compiler package access, and daily-use command registration; README and `docs/case-study.md` lead with the daily loop; UI CI now uses pnpm.
+- Latest commit-quality policy slice: a Git-common-dir allowlist gives TMCP worktrees a 600-second Pre-CR budget after the measured readiness suite exceeded the 90-second default; unmatched or malformed overrides retain the fail-closed default.
 
 ## Current Roadmap Position
 
@@ -76,6 +77,7 @@ _(truncated)_
 *Last updated: 2026-06-24 after completing Phase 28 and smoke-verifying the expert rubric remediation CLI*
 | Date | Task | Result |
 | --- | --- | --- |
+| 2026-08-21 | Scope the TMCP Pre-CR timeout | `config/commit-hook-policy.json` adds a Git-common-dir-scoped 600s override with focused validation; other repositories retain their existing local configuration or 90s default. |
 | 2026-07-18 | Bound and accelerated Pre-CR commit checks | `5af1b8e` adds a 90s timeout, progress diagnostics, success caching, and focused regression coverage. |
 | 2026-06-01 | Complete Phase 9 Plan 04 conservative learning optimizer | `.planning/phases/09-continuous-learning-and-conservative-optimization/09-04-SUMMARY.md` records approval-required learning writebacks, conservatism policy… |
 | 2026-06-01 | Complete Phase 9 Plan 05 learning operator surfaces | `.planning/phases/09-continuous-learning-and-conservative-optimization/09-05-SUMMARY.md` records learning CLI commands, closeout `signal_kind` emission,… |
