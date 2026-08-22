@@ -154,7 +154,7 @@ def test_fetch_completion_records_optional_generation_lookup(monkeypatch: pytest
         def __init__(self, payload: dict[str, object]) -> None:
             self.payload = payload
 
-        def __enter__(self) -> "FakeResponse":
+        def __enter__(self) -> FakeResponse:
             return self
 
         def __exit__(self, *_args: object) -> None:
