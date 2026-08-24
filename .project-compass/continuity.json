@@ -1,10 +1,66 @@
 {
   "schema_version": 1,
-  "revision": 1,
+  "revision": 2,
   "commitments": [
     {"id": "bootstrap-truth-boundary", "kind": "constraint", "statement": "This Compass bootstrap may modify only .project-compass/ and must preserve unrelated dirty work, ownership, and canonical project documents.", "status": "active", "source": {"ref": "conversation:2026-08-02-project-compass-fleet-bootstrap", "note": "User-authorized scope.", "observed_at": "2026-08-02T13:25:04Z"}},
     {"id": "separate-truth-layers", "kind": "decision", "statement": "Intended, planned, implemented, and verified truth remain separate; weak or unexecuted evidence stays unknown or uncertain.", "status": "active", "source": {"ref": "conversation:2026-08-02-project-compass-fleet-bootstrap", "note": "Canonical Compass workflow requirement.", "observed_at": "2026-08-02T13:25:04Z"}}
   ],
-  "reconciliations": [],
-  "updated_at": "2026-08-02T13:25:04Z"
+  "reconciliations": [
+    {
+      "id": "deprecated-aios-child-split",
+      "observed_at": "2026-08-24T02:28:00Z",
+      "source": {
+        "ref": "conversation:2026-08-24-compass-scope-annotation",
+        "note": "The previously proposed AIOS four-child/source-layer split was explicitly marked deprecated.",
+        "observed_at": "2026-08-24T02:28:00Z"
+      },
+      "classification": "superseding",
+      "materiality": "high",
+      "incoming": "The previously proposed AIOS four-child/source-layer split is deprecated and must not be ratified as current intent.",
+      "project_evidence": [
+        {
+          "ref": ".project-compass/quiz.json",
+          "note": "The earlier boundary quiz had no answers and is now retained as abandoned history; a replacement reassessment is active.",
+          "observed_at": "2026-08-24T02:28:00Z"
+        },
+        {
+          "ref": ".agents/context/governance.md",
+          "note": "AIOS root governance remains the observed source for hard stops and authority boundaries.",
+          "observed_at": "2026-08-24T02:28:00Z"
+        }
+      ],
+      "preserved": [
+        "The AIOS root Compass and its global governance boundaries",
+        "The requirement that child Compasses must have independently meaningful purposes",
+        "The need for an intent-first reassessment before boundary ratification"
+      ],
+      "changed": [
+        "The previous four-child/source-layer proposal is no longer current intent",
+        "AIOS boundary selection is reopened through a replacement realignment quiz"
+      ],
+      "contradicted": [
+        "Any assumption that the earlier four-child split is approved or should be retained"
+      ],
+      "deferred": [
+        "AIOS child Compass activation",
+        "AIOS ICM boundary-map catalog until the replacement quiz is answered"
+      ],
+      "left_behind": [
+        "The abandoned unanswered quiz as an active decision surface"
+      ],
+      "unknown": [
+        "Which AIOS boundaries, if any, should receive child Compasses after reassessment"
+      ],
+      "disposition": "recorded-supersession",
+      "question": "Which AIOS capabilities should receive independently aligned Compasses, if any, after the deprecated split is reconsidered?",
+      "reason": "The owner explicitly deprecated the prior boundary recommendation, so the system must not treat it as ratified intent.",
+      "user_decision": "Deprecated the previously proposed AIOS four-child/source-layer split.",
+      "decision_source": {
+        "ref": "conversation:2026-08-24-compass-scope-annotation",
+        "note": "Explicit user annotation.",
+        "observed_at": "2026-08-24T02:28:00Z"
+      }
+    }
+  ],
+  "updated_at": "2026-08-24T02:28:00Z"
 }

@@ -6,7 +6,7 @@
       "mode": "realignment",
       "compass_id": "project",
       "scope_kind": "root",
-      "status": "active",
+      "status": "abandoned",
       "questions": [
         {
           "id": "aios-five-subsystems",
@@ -26,8 +26,50 @@
       ],
       "answers": [],
       "started_at": "2026-08-14T23:24:00Z",
-      "updated_at": "2026-08-14T23:24:00Z"
+      "updated_at": "2026-08-24T02:28:00Z"
+    },
+    {
+      "id": "aios-boundary-reassessment-20260824",
+      "mode": "realignment",
+      "compass_id": "project",
+      "scope_kind": "root",
+      "status": "active",
+      "questions": [
+        {
+          "id": "aios-desired-boundary",
+          "category": "purpose",
+          "prompt": "What should AIOS's independently aligned boundaries optimize for after the current fold, regardless of the present directory layout?"
+        },
+        {
+          "id": "aios-independent-purpose",
+          "category": "boundary",
+          "prompt": "Which AIOS capabilities deserve separate product truth because they have an independently meaningful user-visible outcome or drift risk?"
+        },
+        {
+          "id": "aios-source-layers",
+          "category": "authority-boundary",
+          "prompt": "Should documentation, skills, configuration, and specifications remain source/contract layers, or should any own an independently maintained Compass?"
+        },
+        {
+          "id": "aios-grouping",
+          "category": "boundary-and-handoff",
+          "prompt": "Should context compilation, context loops, dashboard observability, and local automation be separated, grouped, or remain root-scoped?"
+        },
+        {
+          "id": "aios-preserve-or-retire",
+          "category": "scope",
+          "prompt": "Which current child-boundary proposals should be preserved, redirected, retired, or left unknown after this reassessment?"
+        },
+        {
+          "id": "aios-proof",
+          "category": "verification",
+          "prompt": "What evidence should prove that any chosen AIOS boundary structure is aligned in real use?"
+        }
+      ],
+      "answers": [],
+      "started_at": "2026-08-24T02:28:00Z",
+      "updated_at": "2026-08-24T02:28:00Z"
     }
   ],
-  "updated_at": "2026-08-14T23:24:00Z"
+  "updated_at": "2026-08-24T02:28:00Z"
 }
