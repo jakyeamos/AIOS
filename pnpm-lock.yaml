@@ -9,7 +9,7 @@ importers:
   .:
     dependencies:
       context-compiler-contract:
-        specifier: file:/Users/jakyeamos/context-compiler-contract
+        specifier: file:../context-compiler-contract
         version: file:../context-compiler-contract
 
 packages:

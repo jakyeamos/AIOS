@@ -265,6 +265,15 @@ cd /Users/jakyeamos/AIOS
 UV_CACHE_DIR=/tmp/uv-cache uv run pytest -q
 ```
 
+Quality Runner discovery is configured in `.quality-runner.toml`. The setup
+surfaces are formatter (`pnpm format:check`), lint, typecheck, tests, dead-code,
+runtime smoke, Pre-CR, dependency audit (`pnpm security:audit`), and secrets
+scan (`pnpm security:secrets`). The dependency audit is locked through the
+`pip-audit` development dependency; the secrets scan is read-only and requires
+the host-provided `gitleaks` executable. Quality Runner executes these commands
+in a disposable worktree and records command failures separately from missing
+or unavailable setup evidence.
+
 UI lint and typecheck:
 
 ```bash

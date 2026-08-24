@@ -1,7 +1,61 @@
 [quality_runner]
+default_profile = "default"
+required_capabilities = [
+  "formatter",
+  "lint",
+  "typecheck",
+  "tests",
+  "dead_code",
+  "runtime_smoke",
+  "pre_cr",
+  "security_secrets_scan",
+  "security_dependency_audit",
+]
+allowed_package_managers = ["uv", "pnpm"]
 scan_exclusions = [
   ".aios/shadow-worktrees/**",
   ".worktrees/**",
   ".superpowers/**",
   "tmcp-benchmark/runs/worktrees/**",
 ]
+
+[[quality_runner.gates]]
+id = "formatter"
+command = "uv run --locked ruff format --check ."
+ecosystem = "python"
+source = "pyproject.toml:tool.ruff.format"
+owner = "AIOS"
+required = true
+severity = "blocker"
+mutating_risk = "safe"
+
+[[quality_runner.gates]]
+id = "security_secrets_scan"
+command = "gitleaks detect --source . --no-banner --redact"
+ecosystem = "mixed"
+source = "security-tool:gitleaks"
+owner = "AIOS"
+required = true
+severity = "blocker"
+mutating_risk = "safe"
+
+[[quality_runner.gates]]
+id = "security_dependency_audit"
+command = "uv run --locked pip-audit"
+ecosystem = "python"
+source = "pyproject.toml:dependency-groups.dev.pip-audit"
+owner = "AIOS"
+required = true
+severity = "blocker"
+mutating_risk = "safe"
+
+[quality_runner.gate_timeouts]
+formatter = 300
+lint = 300
+typecheck = 300
+tests = 600
+dead_code = 300
+runtime_smoke = 300
+pre_cr = 600
+security_secrets_scan = 300
+security_dependency_audit = 300
